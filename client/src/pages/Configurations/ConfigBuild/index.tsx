@@ -303,7 +303,7 @@ function Builder({
                     aria-pressed={tableView === 'custom'}
                   >
                     <span>Custom codes</span>
-                    <span>{custom_codes.length}</span>
+                    <span>{custom_codes.length.toLocaleString()}</span>
                   </Button>
                 </li>
                 <li key="sections">
@@ -432,7 +432,7 @@ const ConditionCodeSetButton = forwardRef<
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
-          {codeSetTotalCodes}
+          {codeSetTotalCodes.toLocaleString()}
         </span>
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set

@@ -54,10 +54,12 @@ async def get_event_count_by_condition_db(
         SELECT COUNT(*) AS total_count
         FROM events e
         LEFT JOIN configurations c ON e.configuration_id = c.id
+        LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        LEFT JOIN conditions cond ON cond.id = cc.condition_id AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
         WHERE e.jurisdiction_id = %s
-        AND (%s::TEXT is NULL or c.condition_canonical_url = %s);
+        AND (%s::TEXT IS NULL OR cond.id IS NOT NULL);
     """
-    params = (jurisdiction_id, canonical_url, canonical_url)
+    params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
@@ -102,25 +104,35 @@ async def get_events_by_jd_db(
 
     query = """
         SELECT
-        e.id,
-        u.username,
-        c.name AS configuration_name,
-        c.version as configuration_version,
-        c.id AS condition_id,
-        e.action_text,
-        e.created_at,
-        EXISTS (
-            SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
-        ) AS has_custom_code_upload_events
+            e.id,
+            u.username,
+            c.name AS configuration_name,
+            c.version AS configuration_version,
+            cond.id AS condition_id,
+            e.action_text,
+            e.created_at,
+            EXISTS (
+                SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
+            ) AS has_custom_code_upload_events
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
+        LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        LEFT JOIN conditions cond ON cond.id = cc.condition_id
+                                AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
         WHERE e.jurisdiction_id = %s
-        AND (%s::TEXT is NULL or c.condition_canonical_url = %s)
+        AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
         ORDER BY e.created_at DESC
         LIMIT %s OFFSET %s;
     """
-    params = (jurisdiction_id, canonical_url, canonical_url, page_size, offset)
+    params = (
+        canonical_url,
+        canonical_url,
+        jurisdiction_id,
+        canonical_url,
+        page_size,
+        offset,
+    )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:

@@ -9,8 +9,8 @@ from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
-    get_condition_by_id_db,
     get_conditions_by_child_rsg_snomed_codes_db,
+    get_primary_condition_db,
 )
 from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
@@ -233,18 +233,20 @@ async def run_simulation(
             configuration=configuration, logger=logger, db=db
         )
 
-        condition = await get_condition_by_id_db(id=configuration.condition_id, db=db)
+        primary_condition = await get_primary_condition_db(
+            configuration_id=configuration.id, db=db
+        )
 
-        if not condition:
+        if not primary_condition:
             raise ValueError(
                 f"Unable to determine primary condition of configuration ({configuration.name}) with ID: {configuration.id}"
             )
 
-        rr_code_used = condition.child_rsg_snomed_codes[0]
+        rr_code_used = primary_condition.child_rsg_snomed_codes[0]
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
             rsg_code=rr_code_used,
-            canonical_url=configuration.condition_canonical_url,
+            canonical_url=primary_condition.canonical_url,
             configuration_version=configuration.version,
         )
 
@@ -274,8 +276,8 @@ async def run_simulation(
         logger.info(
             "Simulate testing: Processed one condition",
             extra={
-                "triggered_by_condition": condition.display_name,
-                "triggering_codes": condition.child_rsg_snomed_codes,
+                "triggered_by_condition": primary_condition.display_name,
+                "triggering_codes": primary_condition.child_rsg_snomed_codes,
                 "configuration_found": configuration.name,
                 "total_conditions_used": len(configurations),
                 "configuration_settings": asdict(configuration),

@@ -9,7 +9,8 @@ from app.db.code_systems.db import get_all_code_systems_by_key
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
-    get_included_conditions_db,
+    get_primary_condition_db,
+    get_primary_conditions_for_configurations_db,
 )
 from app.db.configurations.db import (
     get_configuration_by_id_db,
@@ -63,28 +64,46 @@ async def get_configurations(
         List of configuration objects.
     """
 
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # get all configs in a JD
-    all_configs = await get_configurations_db(jurisdiction_id=jd, db=db)
+    all_configs = await get_configurations_db(
+        jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    # fetch all primary conditions in one query
+    primary_conditions = await get_primary_conditions_for_configurations_db(
+        configuration_ids=[c.id for c in all_configs], db=db
+    )
+
+    config_id_to_canonical_url: dict[UUID, str] = {
+        c.id: condition.canonical_url
+        for c in all_configs
+        if (condition := primary_conditions.get(c.id)) is not None
+    }
 
     # active config by condition
-    active_configs_map = {
-        c.condition_canonical_url: c for c in all_configs if c.status == "active"
+    active_configs_map: dict[str, DbConfiguration] = {
+        url: c
+        for c in all_configs
+        if c.status == "active"
+        and (url := config_id_to_canonical_url.get(c.id)) is not None
     }
 
     # draft config by condition
-    draft_configs_map = {
-        c.condition_canonical_url: c for c in all_configs if c.status == "draft"
+    draft_configs_map: dict[str, DbConfiguration] = {
+        url: c
+        for c in all_configs
+        if c.status == "draft"
+        and (url := config_id_to_canonical_url.get(c.id)) is not None
     }
 
     # inactive config with the highest version by condition
     highest_version_inactive_configs_map: dict[str, DbConfiguration] = (
-        get_canonical_url_to_highest_inactive_version_map(all_configs)
+        get_canonical_url_to_highest_inactive_version_map(
+            configs=all_configs, config_id_to_canonical_url=config_id_to_canonical_url
+        )
     )
 
-    unique_urls = {c.condition_canonical_url for c in all_configs}
+    unique_urls = set(config_id_to_canonical_url.values())
     response = []
     for key in unique_urls:
         has_active = key in active_configs_map
@@ -119,7 +138,6 @@ async def get_configurations(
                 )
             )
 
-    # TODO: What should the order be?
     return sorted(response, key=lambda r: r.name.lower())
 
 
@@ -265,11 +283,6 @@ async def get_configuration(
             locked_by = None
             logger.error(f"Error fetching user for lock: {e}")
 
-    # Fetch all included conditions
-    conditions = await get_included_conditions_db(
-        included_conditions=config.included_conditions, db=db
-    )
-
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
@@ -277,35 +290,43 @@ async def get_configuration(
     # precomputed set of included_conditions ids
     included_ids = set(config.included_conditions)
 
+    primary_condition = await get_primary_condition_db(
+        configuration_id=config.id, db=db
+    )
+
+    if not primary_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Could not find primary condition associated with configuration.",
+        )
+
     # fetch all conditions from the db based on the primary condition's version
-    condition_version_to_use = conditions[0].version
     all_conditions = await get_conditions_by_version_db(
-        db=db, version=condition_version_to_use
+        db=db, version=primary_condition.version
     )
 
     latest_config = await get_latest_config_db(
         jurisdiction_id=jd,
-        condition_canonical_url=config.condition_canonical_url,
+        condition_canonical_url=primary_condition.canonical_url,
         db=db,
     )
 
     # Build IncludedCondition objects, marking which are associated
-    included_conditions = []
-    for condition in all_conditions:
-        is_associated = condition.id in included_ids
-        included_conditions.append(
-            IncludedCondition(
-                id=condition.id,
-                display_name=condition.display_name,
-                canonical_url=condition.canonical_url,
-                version=condition.version,
-                associated=is_associated,
-            )
+    included_conditions = [
+        IncludedCondition(
+            id=condition.id,
+            display_name=condition.display_name,
+            canonical_url=condition.canonical_url,
+            version=condition.version,
+            associated=condition.id in included_ids
+            or condition.id == primary_condition.id,
         )
+        for condition in all_conditions
+    ]
 
     all_versions = await get_configuration_versions_db(
         jurisdiction_id=jd,
-        condition_canonical_url=config.condition_canonical_url,
+        condition_canonical_url=primary_condition.canonical_url,
         db=db,
     )
 
@@ -325,8 +346,8 @@ async def get_configuration(
         id=config.id,
         draft_id=draft_id,
         is_draft=is_draft,
-        condition_id=config.condition_id,
-        condition_canonical_url=config.condition_canonical_url,
+        condition_id=primary_condition.id,
+        condition_canonical_url=primary_condition.canonical_url,
         display_name=config.name,
         status=config.status,
         code_sets=config_condition_info,

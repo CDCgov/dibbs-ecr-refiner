@@ -151,7 +151,6 @@ def mock_configuration(mock_user):
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="url-1",
         s3_urls=[],
     )
 

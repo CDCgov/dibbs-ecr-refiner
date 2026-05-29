@@ -19,6 +19,49 @@ EXPECTED_DROWNING_RSG_CODE = "212962007"
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestConfigurations:
+    async def test_configurations_list_has_no_duplicates(
+        self,
+        setup,
+        authed_client,
+        create_config,
+        get_condition_id,
+        activate_config,
+        deactivate_config,
+    ):
+        """
+        Test that configurations using the same condition only appear
+        in the list returned to the client a single time.
+        """
+        acan_id = await get_condition_id("Acanthamoeba")
+        acan_config = await create_config(acan_id)
+
+        # active + draft
+        await activate_config(acan_config["id"])
+        await create_config(acan_id)
+
+        covid_id = await get_condition_id("COVID-19")
+
+        # draft only
+        await create_config(covid_id)
+
+        zika_id = await get_condition_id("Zika Virus Disease")
+        zika_config = await create_config(zika_id)
+
+        # inactive only
+        await activate_config(zika_config["id"])
+        await deactivate_config(zika_config["id"])
+
+        response = await authed_client.get("/api/v1/configurations/")
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+
+        assert len(data) == 3
+
+        # data is returned in alphabetical order by condition name
+        assert data[0]["status"] == "active"  # any active is "active"
+        assert data[1]["status"] == "draft"  # draft only should be "draft"
+        assert data[2]["status"] == "inactive"  # inactive only should be "inactive"
+
     async def test_create_configuration(
         self, setup, authed_client, test_username, get_condition_id
     ):
@@ -100,40 +143,32 @@ class TestConfigurations:
         # Try creating a config with an outdated TES version
         old_condition_id = await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
 
-        # Can't be done through the API so it needs to be done via query
-        old_config_id = None
-        query = """
-            INSERT INTO configurations (
-                jurisdiction_id,
-                condition_id,
-                name,
-                created_by,
-                included_conditions,
-                custom_codes
-            ) VALUES (
-                %s,
-                %s,
-                %s,
-                %s,
-                %s,
-                %s::jsonb
-            )
-            RETURNING id
-        """
-        params = (
-            test_user_jurisdiction_id,
-            old_condition_id,
-            PRIMARY_CONDITION,
-            test_user_id,
-            [old_condition_id],
-            Jsonb([]),
-        )
-
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(query, params)
+                await cur.execute(
+                    """
+                    INSERT INTO configurations (jurisdiction_id, name, created_by, custom_codes, version)
+                    VALUES (%s, %s, %s, %s::jsonb, %s)
+                    RETURNING id
+                    """,
+                    (
+                        test_user_jurisdiction_id,
+                        PRIMARY_CONDITION,
+                        test_user_id,
+                        Jsonb([]),
+                        1,
+                    ),
+                )
                 row = await cur.fetchone()
                 old_config_id = row["id"]
+
+                await cur.execute(
+                    """
+                    INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
+                    VALUES (%s, %s, true)
+                    """,
+                    (old_config_id, old_condition_id),
+                )
 
         assert old_config_id is not None
 

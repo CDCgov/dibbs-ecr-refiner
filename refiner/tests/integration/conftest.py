@@ -82,6 +82,22 @@ async def activate_config(authed_client):
 
 
 @pytest_asyncio.fixture
+async def deactivate_config(authed_client):
+    """
+    Returns a function that deactivates a configuration when given a configuration ID.
+
+    result = await deactivate_config("config-id")
+    """
+
+    async def _get(id: UUID):
+        response = await authed_client.patch(f"/api/v1/configurations/{id}/deactivate")
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
 async def delete_custom_code(authed_client):
     async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
         response = await authed_client.delete(
