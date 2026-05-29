@@ -89,7 +89,7 @@ async def get_logged_in_user(
     user = DbUserWithSessionExpiryTime(**db_user)
 
     # Renew session if it's close to expiring
-    await update_session_expiry_time(
+    await _update_session_expiry_time(
         expires_at=user.expires_at,
         token_hash=token_hash,
         logger=logger,
@@ -119,7 +119,7 @@ async def _fetch_session_user(
             return await cur.fetchone()
 
 
-async def update_session_expiry_time(
+async def _update_session_expiry_time(
     response: Response,
     session_token: str,
     expires_at: datetime,
