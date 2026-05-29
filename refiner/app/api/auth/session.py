@@ -6,6 +6,7 @@ from datetime import UTC, timedelta
 from datetime import datetime as dt
 from logging import Logger
 
+from fastapi import Response
 from psycopg.rows import dict_row
 
 from app.db.pool import AsyncDatabaseConnection
@@ -31,6 +32,26 @@ def get_hashed_token(token: str) -> str:
     return hmac.new(
         SESSION_SECRET_KEY, token.encode("utf-8"), hashlib.sha256
     ).hexdigest()
+
+
+def set_session_cookie(response: Response, session_token: str) -> None:
+    """
+    Sets the user's session cookie.
+
+    Args:
+        response (Response): The response object
+        session_token (str): The user's session token
+    """
+    env = ENVIRONMENT["ENV"]
+
+    response.set_cookie(
+        key="refiner-session",
+        value=session_token,
+        httponly=True,
+        max_age=SESSION_EXPIRY_SECONDS,
+        samesite="lax",
+        secure=env != "local",  # We'll be serving over https in live envs
+    )
 
 
 async def create_session(user_id: str, db: AsyncDatabaseConnection) -> str:
