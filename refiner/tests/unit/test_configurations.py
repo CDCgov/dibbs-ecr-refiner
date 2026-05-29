@@ -65,10 +65,7 @@ def mock_db_functions(
         "app.api.v1.configurations.base.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_included_conditions_db",
-        AsyncMock(return_value=[mock_condition]),
-    )
+
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_latest_config_db",
         AsyncMock(return_value=mock_configuration),
@@ -131,7 +128,6 @@ def mock_db_functions(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
 
@@ -329,7 +325,6 @@ async def test_edit_custom_code_from_configuration(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
     monkeypatch.setattr(

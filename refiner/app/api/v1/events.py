@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.conditions.db import get_primary_conditions_for_configurations_db
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -111,17 +112,24 @@ async def get_events(
     )
 
     jd_configurations = await get_configurations_db(jurisdiction_id=jd, db=db)
+    config_ids = [c.id for c in jd_configurations]
+    primary_conditions = await get_primary_conditions_for_configurations_db(
+        configuration_ids=config_ids, db=db
+    )
 
     seen_urls = set()
     configuration_options = []
 
     for c in jd_configurations:
-        if c.condition_canonical_url not in seen_urls:
-            option = EventFilterOption(
-                name=c.name, id=c.id, canonical_url=c.condition_canonical_url
-            )
-            configuration_options.append(option)
-            seen_urls.add(c.condition_canonical_url)
+        condition = primary_conditions.get(c.id)
+        if condition is None or condition.canonical_url in seen_urls:
+            continue
+
+        option = EventFilterOption(
+            name=c.name, id=c.id, canonical_url=condition.canonical_url
+        )
+        configuration_options.append(option)
+        seen_urls.add(condition.canonical_url)
 
     return EventsResponse(
         total_pages=total_pages,

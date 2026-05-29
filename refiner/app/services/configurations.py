@@ -3,6 +3,7 @@ from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
+from uuid import UUID
 
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.model import (
@@ -221,12 +222,15 @@ async def convert_config_to_storage_payload(
 
 def get_canonical_url_to_highest_inactive_version_map(
     configs: list[DbConfiguration],
+    config_id_to_canonical_url: dict[UUID, str],
 ) -> dict[str, DbConfiguration]:
     """
     Creates a dictionary that maps a condition URL to the highest inactive version configuration.
 
     Args:
         configs (list[DbConfiguration]): List of DbConfigurations
+        config_id_to_canonical_url (dict[str, str]): Mapping of configuration ID to canonical URL
+
 
     Returns:
     a dictionary with the structure:
@@ -236,7 +240,9 @@ def get_canonical_url_to_highest_inactive_version_map(
     highest_version_inactive_configs_map: dict[str, DbConfiguration] = {}
     for c in configs:
         if c.status == "inactive":
-            key = c.condition_canonical_url
+            key = config_id_to_canonical_url.get(c.id)
+            if key is None:
+                continue
             if (
                 key not in highest_version_inactive_configs_map
                 or c.version > highest_version_inactive_configs_map[key].version
