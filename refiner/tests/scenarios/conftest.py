@@ -1,5 +1,14 @@
 import pytest
 
+from ..integration.conftest import (  # noqa: F401
+    assert_schematron_valid,
+    assert_xsd_valid,
+    validate_refined_xml,
+    validate_xml_string,
+    validate_xml_string_xsd,
+    xsd_schema,
+)
+
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     """
@@ -25,3 +34,56 @@ def update_snapshots(request: pytest.FixtureRequest) -> bool:
     """
 
     return bool(request.config.getoption("--update-snapshots"))
+
+
+# NOTE:
+# COMPOSED VALIDATION FIXTURE
+# =============================================================================
+# composes the three validation steps an integration test would run on a refined
+# document into one call per (xml, doc_kind) pair:
+
+
+@pytest.fixture
+def validate_refined_document(
+    validate_xml_string,
+    validate_xml_string_xsd,
+):
+    """
+    Returns a callable that runs full validation on one refined document.
+
+    Scenarios call this twice (once for the refined eICR, once for the
+    refined RR) before snapshot operations so:
+
+      - In compare mode, an invalid document fails the test with a
+        clear validation error rather than as an opaque XML diff.
+      - In --update-snapshots mode, an invalid document fails the test
+        BEFORE the snapshot is overwritten, preventing invalid snapshots
+        from being committed.
+
+    Args (on the returned callable):
+        xml_string: the refined document as a UTF-8 string.
+        doc_kind: "eICR" or "RR" - used only for human-readable labels
+            in failure messages; the actual document type is detected
+            from the root template OID.
+        scenario_name: included in failure messages and labels.
+    """
+
+    def _validate(
+        xml_string: str,
+        doc_kind: str,
+        scenario_name: str,
+    ) -> None:
+        label = f"{scenario_name} {doc_kind}"
+
+        # well-formedness + correct CDA ClinicalDocument root
+        validate_refined_xml(xml_string, doc_kind, label, scenario_name)
+
+        # CDA R2 XSD: schema is session-cached
+        xsd_result = validate_xml_string_xsd(xml_string)
+        assert_xsd_valid(xsd_result, label, scenario_name)
+
+        # schematron - the XSLT is compiled per call
+        schematron_result = validate_xml_string(xml_string, doc_kind.lower())
+        assert_schematron_valid(schematron_result, label, scenario_name)
+
+    return _validate

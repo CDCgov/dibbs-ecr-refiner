@@ -13,14 +13,14 @@
   <templateId root="2.16.840.1.113883.10.20.15.2" extension="2022-05-01"/>
   <!-- Globally unique document ID (extension) is scoped by vendor/software -->
   <templateId root="2.16.840.1.113883.10.20.15.2.1.3" extension="2025-11-01"/>
-  <id root="48c0d1c3-88a9-5604-8258-95023edd319a" assigningAuthorityName="ecr-refiner"/>
+  <id root="238184e6-ae46-5219-8064-bc3515e48392" assigningAuthorityName="ecr-refiner"/>
   <!-- Document Code -->
   <code code="55751-2" codeSystem="2.16.840.1.113883.6.1" displayName="Public Health Case Report" codeSystemName="LOINC"/>
   <title>Initial Public Health Case Report</title>
   <effectiveTime value="20260101000000+0000"/>
   <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="Normal"/>
   <languageCode code="en-US"/>
-  <setId root="166b77e1-fe4f-5931-819f-fa06a2e5c1a6" assigningAuthorityName="ecr-refiner"/>
+  <setId root="a46e41ec-2fed-5b46-a915-aff776ddb82b" assigningAuthorityName="ecr-refiner"/>
   <!-- the second in the series -->
   <versionNumber value="2"/>
   <!-- recordTarget: The patient -->
@@ -431,7 +431,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -641,7 +641,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -789,7 +789,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -843,7 +843,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -903,7 +903,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -996,7 +996,7 @@
           <title>MEDICATIONS</title>
           <text>
             Narrative Text
-          <footnote ID="ecr-refinement-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <footnote ID="ecr-refinement-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v2</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1115699] 'oseltamivir 6 MG/ML [Tamiflu]' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <substanceAdministration classCode="SBADM" moodCode="EVN">
@@ -1126,7 +1126,7 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
           <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           <title>Admission Medications</title>
-          <text>Some text here<footnote ID="ecr-refinement-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refinement-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v2</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1115699] 'oseltamivir 6 MG/ML [Tamiflu]' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1212,7 +1212,7 @@
             <translation code="42347-5" codeSystem="2.16.840.1.113883.6.1" displayName="Admission Diagnosis"/>
           </code>
           <title>HOSPITAL ADMISSION DIAGNOSIS</title>
-          <text>Appendicitis<footnote ID="ecr-refinement-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Appendicitis<footnote ID="ecr-refinement-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v2</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[434921000124108] 'Pneumonia due to Influenza A virus (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1286,7 +1286,7 @@
             <translation code="78375-3" displayName="Discharge Diagnosis" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           </code>
           <title>Discharge Diagnosis</title>
-          <text>Some text here<footnote ID="ecr-refinement-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refinement-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v2</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[434921000124108] 'Pneumonia due to Influenza A virus (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1396,7 +1396,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -1501,7 +1501,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -1583,7 +1583,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -1637,7 +1637,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -1845,7 +1845,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -1927,7 +1927,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -2019,7 +2019,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2532,7 +2532,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2731,7 +2731,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2867,7 +2867,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2992,7 +2992,7 @@
                     <td>Yes</td>
                     <td>retain</td>
                     <td>Yes</td>
-                    <td>v1</td>
+                    <td>v2</td>
                     <td>System rule — always retained</td>
                     <td>Retained as-is</td>
                   </tr>

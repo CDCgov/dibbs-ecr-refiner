@@ -1,9 +1,9 @@
 {
-  "augmented_eicr_id": "48c0d1c3-88a9-5604-8258-95023edd319a",
-  "augmented_rr_id": "545424f5-c84a-5e39-bc4a-436e79344df2",
+  "augmented_eicr_id": "238184e6-ae46-5219-8064-bc3515e48392",
+  "augmented_rr_id": "52caa323-586c-52c4-959d-dd2decb7a4bc",
   "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
   "configuration_resolved": true,
-  "configuration_version": 1,
+  "configuration_version": 2,
   "eicr_size_reduction_percentage": 49,
   "error_detail": null,
   "original_eicr_id": "2.16.840.1.113883.9.9.9.9.9",

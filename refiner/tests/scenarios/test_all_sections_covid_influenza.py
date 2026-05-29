@@ -24,9 +24,34 @@ class Scenario:
     """
     One refinement scenario: fixture + configuration + condition to refine for.
 
-    `name` is used as the parametrize id and as the snapshot subdirectory name.
-    `fixture_dir` is under tests/fixtures/
-    `config_filename` is under <fixture_dir>/configurations/
+    Fields fall into three groups by snapshot impact:
+
+    Filesystem paths — no snapshot impact:
+      `name` — parametrize id and snapshot subdirectory name.
+      `fixture_dir` — directory under tests/fixtures/.
+      `config_filename` — file under <fixture_dir>/configurations/.
+
+    Augmentation seeds: changing these regenerates ALL snapshots (trace,
+    eICR, RR) because they thread into the deterministic UUIDv5 derivation
+    that produces the augmented document identifiers, which appear in the
+    trace JSON and in the augmentation headers of the refined eICR/RR:
+      `jurisdiction_code` — not checked against the RR's jurisdiction; an
+        arbitrary stable label.
+      `canonical_url` — connected to the Condition Grouper of the
+        `rsg_code`; its trailing UUID is the condition_grouper_uuid in
+        the seed.
+
+    Recorded metadata: appears in expected_trace.json but doesn't affect
+    refinement or the XML snapshots; changing these regenerates only the
+    trace JSON:
+      `configuration_version` — arbitrary discriminator; incremented per
+        scenario.
+
+    Pure metadata — no snapshot impact at all:
+      `rsg_code` — the reportable SNOMED code we declare as the condition
+        being refined for. Recorded on the internal RefinementTrace for
+        observability but does not drive refinement (the
+        ProcessedConfiguration does) and does not seed augmentation.
     """
 
     name: str
@@ -43,13 +68,7 @@ SCENARIOS: list[Scenario] = [
         name="covid_baseline",
         fixture_dir="all_sections_COVID_INFLUENZA",
         config_filename="covid_baseline.json",
-        # jurisdiction is the one the activation file was authored under
-        # in localstack; it threads into the augmentation identifier
-        # derivation as a seed component
-        # TODO:
-        # may need to figure out if we need to inject the jurisdiction id from the RR or if
-        # we can continue to use this one
-        jurisdiction_code="SDDH",
+        jurisdiction_code="TEST-JD",
         rsg_code="840539006",  # covid-19 disorder
         canonical_url=(
             "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
@@ -61,37 +80,37 @@ SCENARIOS: list[Scenario] = [
         name="influenza_baseline",
         fixture_dir="all_sections_COVID_INFLUENZA",
         config_filename="influenza_baseline.json",
-        jurisdiction_code="SDDH",
+        jurisdiction_code="TEST-JD",
         rsg_code="541131000124102",  # infection caused by novel Influenza A variant
         canonical_url=(
             "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
             "38475891-387a-4fa2-bbe9-1dc97ce415d1"
         ),
-        configuration_version=1,
+        configuration_version=2,
     ),
     Scenario(
         name="covid_with_custom_codes",
         fixture_dir="all_sections_COVID_INFLUENZA",
         config_filename="covid_with_custom_codes.json",
-        jurisdiction_code="SDDH",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=2,
-    ),
-    Scenario(
-        name="covid_with_section_overrides",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_with_section_overrides.json",
-        jurisdiction_code="SDDH",
+        jurisdiction_code="TEST-JD",
         rsg_code="840539006",
         canonical_url=(
             "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
             "07221093-b8a1-4b1d-8678-259277bfba64"
         ),
         configuration_version=3,
+    ),
+    Scenario(
+        name="covid_with_section_overrides",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_with_section_overrides.json",
+        jurisdiction_code="TEST-JD",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=4,
     ),
 ]
 
@@ -161,14 +180,17 @@ def _summary_from_result(result) -> dict:  # noqa: ANN001 - RefinementResult, av
 def test_scenario_matches_snapshot(
     scenario: Scenario,
     update_snapshots: bool,
+    validate_refined_document,
 ) -> None:
     """
-    Refine the fixture for the scenario's condition, then compare the result
-    against committed snapshots: summary JSON, refined eICR, refined RR.
+    Refine the fixture for the scenario's condition, validate the refined
+    documents, then compare the result against committed snapshots.
 
-    Pass --update-snapshots to overwrite the committed files with the
-    current output instead of comparing. Use when refinement behavior
-    legitimately changes.
+    Validation (well-formedness, CDA R2 XSD, schematron) runs first so
+    invalid output fails the test loudly rather than getting committed as
+    an "expected" snapshot. Pass --update-snapshots to overwrite the
+    committed files with the current output instead of comparing; use
+    when refinement behavior legitimately changes.
     """
 
     xml_files = _load_xml_files(scenario)
@@ -182,6 +204,13 @@ def test_scenario_matches_snapshot(
         canonical_url=scenario.canonical_url,
         configuration_version=scenario.configuration_version,
     )
+
+    # VALIDATE FIRST
+    # catch invalid refined output before either committing it as a
+    # snapshot (update mode) or attempting to compare against a possibly
+    # stale snapshot (compare mode)
+    validate_refined_document(result.refined_eicr, "eICR", scenario.name)
+    validate_refined_document(result.refined_rr, "RR", scenario.name)
 
     actual_summary = _summary_from_result(result)
     actual_eicr = normalize_xml(result.refined_eicr)
@@ -232,7 +261,7 @@ def test_scenario_matches_snapshot(
     )
 
     # Tier 2:
-    # structural truth - the refined eICR
+    # structural truth: the refined eICR
     expected_eicr = eicr_path.read_text().rstrip("\n")
     assert actual_eicr == expected_eicr, (
         f"Refined eICR snapshot mismatch for '{scenario.name}'.\n"
