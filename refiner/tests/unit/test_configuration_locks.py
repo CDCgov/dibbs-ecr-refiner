@@ -125,7 +125,6 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
 

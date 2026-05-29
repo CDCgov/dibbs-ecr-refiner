@@ -73,7 +73,6 @@ def _make_db_configuration_v1_1(**kwargs) -> DbConfiguration:
         "section_processing": [],
         "last_activated_at": None,
         "last_activated_by": None,
-        "condition_canonical_url": "http://example.com/condition/v1.1",
         "created_by": "fake-config-id-v1-1",
         "s3_urls": [],
     }
@@ -124,7 +123,6 @@ def _make_db_configuration_v3_1_1(**kwargs) -> DbConfiguration:
         "section_processing": [],
         "last_activated_at": None,
         "last_activated_by": None,
-        "condition_canonical_url": "http://example.com/condition/v3.1.1",
         "created_by": "fake-config-id-v1-1",
         "s3_urls": [],
     }
