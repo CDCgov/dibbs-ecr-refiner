@@ -112,6 +112,54 @@ SCENARIOS: list[Scenario] = [
         ),
         configuration_version=4,
     ),
+    Scenario(
+        name="covid_plus_unrelated_condition",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_plus_unrelated_condition.json",
+        jurisdiction_code="TEST-JD",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=5,
+    ),
+    Scenario(
+        name="covid_with_substance_admin_custom_code",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_with_substance_admin_custom_code.json",
+        jurisdiction_code="TEST-JD",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=6,
+    ),
+    Scenario(
+        name="covid_with_multi_vital_sign_codes",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_with_multi_vital_sign_codes.json",
+        jurisdiction_code="TEST-JD",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=7,
+    ),
+    Scenario(
+        name="covid_with_procedure_only_code",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_with_procedure_only_code.json",
+        jurisdiction_code="TEST-JD",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=8,
+    ),
 ]
 
 
