@@ -143,7 +143,6 @@ class DbConfiguration:
     last_activated_at: datetime | None
     last_activated_by: UUID | None
     created_by: UUID
-    condition_canonical_url: str
     s3_urls: list[str]
 
     @classmethod
@@ -174,9 +173,19 @@ class DbConfiguration:
             last_activated_at=row["last_activated_at"],
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
-            condition_canonical_url=row["condition_canonical_url"],
             s3_urls=row["s3_urls"],
         )
+
+
+@dataclass(frozen=True)
+class DbConfigurationSummary:
+    """
+    Minimal model for a high-level configuration summary.
+    """
+
+    id: UUID
+    name: str
+    status: DbConfigurationStatus
 
 
 @dataclass(frozen=True)

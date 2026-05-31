@@ -20,6 +20,27 @@ import {
   useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
 
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: ({
+    count,
+    estimateSize,
+  }: {
+    count: number;
+    estimateSize: () => number;
+  }) => ({
+    getVirtualItems: () =>
+      Array.from({ length: count }, (_, i) => ({
+        index: i,
+        start: i * estimateSize(),
+        end: (i + 1) * estimateSize(),
+        size: estimateSize(),
+        key: i,
+        lane: 0,
+      })),
+    getTotalSize: () => count * estimateSize(),
+  }),
+}));
+
 // Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
   { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },

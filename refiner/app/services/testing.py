@@ -9,8 +9,8 @@ from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
-    get_condition_by_id_db,
     get_conditions_by_child_rsg_snomed_codes_db,
+    get_primary_condition_db,
 )
 from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
@@ -38,9 +38,9 @@ from .pipeline import (
 
 
 @dataclass
-class IndependentTestingResult:
+class SimulatorResult:
     """
-    Model to represent the result of running independent testing.
+    Model to represent the result of running simulate testing.
 
     remainder_rr is the augmented RR carrying reportability for
     conditions reportable to the jurisdiction that were not refined.
@@ -197,16 +197,16 @@ def _group_conditions_by_url(
     return grouped
 
 
-async def independent_testing(
+async def run_simulation(
     xml_files: XMLFiles,
     jurisdiction_id: str,
     configurations: list[DbConfiguration],
     conditions_without_config: list[DbCondition],
     logger: Logger,
     db: AsyncDatabaseConnection,
-) -> IndependentTestingResult:
+) -> SimulatorResult:
     """
-    Orchestrates the full independent testing workflow for eICR refinement.
+    Orchestrates the full simulate testing workflow for eICR refinement.
 
     Args:
         xml_files: XMLFiles object containing eICR and RR XML strings
@@ -218,7 +218,7 @@ async def independent_testing(
         db: AsyncDatabaseConnection
 
     Returns:
-        An IndependentTestingResult dictionary containing refined documents and a list of non-matches.
+        A SimulatorResult dictionary containing refined documents and a list of non-matches.
     """
 
     # one session-scoped AugmentationRun, built once and threaded into
@@ -233,18 +233,20 @@ async def independent_testing(
             configuration=configuration, logger=logger, db=db
         )
 
-        condition = await get_condition_by_id_db(id=configuration.condition_id, db=db)
+        primary_condition = await get_primary_condition_db(
+            configuration_id=configuration.id, db=db
+        )
 
-        if not condition:
+        if not primary_condition:
             raise ValueError(
                 f"Unable to determine primary condition of configuration ({configuration.name}) with ID: {configuration.id}"
             )
 
-        rr_code_used = condition.child_rsg_snomed_codes[0]
+        rr_code_used = primary_condition.child_rsg_snomed_codes[0]
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
             rsg_code=rr_code_used,
-            canonical_url=configuration.condition_canonical_url,
+            canonical_url=primary_condition.canonical_url,
             configuration_version=configuration.version,
         )
 
@@ -272,10 +274,10 @@ async def independent_testing(
         )
 
         logger.info(
-            "Independent testing: Processed one condition",
+            "Simulate testing: Processed one condition",
             extra={
-                "triggered_by_condition": condition.display_name,
-                "triggering_codes": condition.child_rsg_snomed_codes,
+                "triggered_by_condition": primary_condition.display_name,
+                "triggering_codes": primary_condition.child_rsg_snomed_codes,
                 "configuration_found": configuration.name,
                 "total_conditions_used": len(configurations),
                 "configuration_settings": asdict(configuration),
@@ -295,7 +297,7 @@ async def independent_testing(
     # code carried on each produced RefinedDocument
     refined_condition_codes = {doc.reportable_condition.code for doc in refined_docs}
 
-    return IndependentTestingResult(
+    return SimulatorResult(
         original_eicr_doc_id=first_original_eicr_doc_id,
         refined_documents=refined_docs,
         remainder_rr=_generate_remainder_rr(
@@ -357,7 +359,7 @@ def _generate_remainder_rr(
     without a usable configuration. The pipeline enforces the
     if-and-only-if rule (returns None when nothing was refined or
     nothing was skipped) and handles augmentation; this projects its
-    result down to the RR string, which is all the demo flow consumes.
+    result down to the RR string, which is all the simulate flow consumes.
 
     Args:
         xml_files: the original XML eCR files

@@ -2,20 +2,20 @@ import { useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import {
   FileInfoResponseValue,
-  IndependentTestUploadResponse,
+  SimulatorUploadResponse,
 } from '../../api/schemas';
 import { Button } from '../Button';
-import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
+import { getDownloadRefinedEcrQueryKey } from '../../api/simulator/simulator';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Warning } from './Warning';
 import { Spinner } from '@components/Spinner';
 import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 
 type DiffProps = Pick<
-  IndependentTestUploadResponse,
+  SimulatorUploadResponse,
   'refined_download_key' | 'unrefined_eicr'
 > & {
-  condition: IndependentTestUploadResponse['refined_conditions'][0];
+  condition: SimulatorUploadResponse['refined_conditions'][0];
   renderDiff: boolean;
 };
 
@@ -106,36 +106,39 @@ export function Diff({
       </div>
 
       {renderDiff ? (
-        <ReactDiffViewer
-          oldValue={unrefined_eicr}
-          newValue={condition.refined_eicr}
-          splitView={splitView}
-          showDiffOnly={showDiffOnly}
-          compareMethod={DiffMethod.WORDS_WITH_SPACE}
-          leftTitle="Original eICR"
-          rightTitle="Refined eICR"
-          loadingElement={() => {
-            return (
-              <div className="m-auto flex w-50 items-center justify-center">
-                <Spinner className="m-2" /> Computing diff...
+        <div className="relative">
+          <ReactDiffViewer
+            oldValue={unrefined_eicr}
+            newValue={condition.refined_eicr}
+            splitView={splitView}
+            showDiffOnly={showDiffOnly}
+            compareMethod={DiffMethod.WORDS_WITH_SPACE}
+            leftTitle="Original eICR"
+            rightTitle="Refined eICR"
+            loadingElement={() => (
+              <div className="absolute inset-x-0 top-16 z-10 flex justify-center">
+                <div className="flex items-center rounded-md bg-white px-4 py-2 shadow">
+                  <Spinner className="mr-2" />
+                  <span>Computing diff...</span>
+                </div>
               </div>
-            );
-          }}
-          styles={{
-            titleBlock: {
-              fontFamily: 'Public Sans, sans-serif',
-              fontSize: '16px',
-            },
-            diffContainer: {
-              borderRadius: '1px',
-              borderStyle: '',
-            },
-            lineNumber: {
-              color: 'black !important',
-              opacity: '100 !important',
-            },
-          }}
-        />
+            )}
+            styles={{
+              titleBlock: {
+                fontFamily: 'Public Sans, sans-serif',
+                fontSize: '16px',
+              },
+              diffContainer: {
+                borderRadius: '1px',
+                borderStyle: '',
+              },
+              lineNumber: {
+                color: 'black !important',
+                opacity: '100 !important',
+              },
+            }}
+          />
+        </div>
       ) : (
         <DiffViewWarning />
       )}
@@ -160,7 +163,7 @@ function SuccessItem({ children }: SuccessItemProps) {
   return (
     <div className="gapx-2 flex items-center p-4 py-1">
       <span className="mr-1 font-bold">Refiner results: </span>
-      <p data-testid="test-refinement-result" className="leading-snug">
+      <p data-testid="simulate-refinement-result" className="leading-snug">
         {children}
       </p>
     </div>

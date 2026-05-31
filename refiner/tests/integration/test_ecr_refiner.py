@@ -42,7 +42,7 @@ async def test_zip_upload_covid_influenza_v1_1(
     activate_config,
 ):
     """
-    Integration test for /api/v1/demo/upload using Mon Mothma COVID+Influenza v1.1.
+    Integration test for /api/v1/simulator/upload using Mon Mothma COVID+Influenza v1.1.
     """
 
     test_name = "test_zip_upload_covid_influenza_v1_1"
@@ -66,7 +66,7 @@ async def test_zip_upload_covid_influenza_v1_1(
             "uploaded_file": (covid_influenza_v1_1_zip_path.name, f, "application/zip")
         }
         response = await authed_client.post(
-            "/api/v1/demo/upload",
+            "/api/v1/simulator/upload",
             data={"body": json.dumps(payload)},
             files=files,
         )
@@ -119,7 +119,7 @@ async def test_zip_upload_zika_v3_1_1(
     activate_config,
 ):
     """
-    Integration test for /api/v1/demo/upload using Mon Mothma Zika v3.1.1.
+    Integration test for /api/v1/simulator/upload using Mon Mothma Zika v3.1.1.
     """
 
     test_name = "test_zip_upload_zika_v3_1_1"
@@ -136,7 +136,7 @@ async def test_zip_upload_zika_v3_1_1(
     with open(zika_v3_1_1_zip_path, "rb") as f:
         files = {"uploaded_file": (zika_v3_1_1_zip_path.name, f, "application/zip")}
         response = await authed_client.post(
-            "/api/v1/demo/upload",
+            "/api/v1/simulator/upload",
             data={"body": json.dumps(payload)},
             files=files,
         )

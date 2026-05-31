@@ -13,6 +13,7 @@ from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
+    DbConfigurationSummary,
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
@@ -43,6 +44,12 @@ def mock_db_functions(
         AsyncMock(return_value=mock_condition),
     )
 
+    fake_config_summary = DbConfigurationSummary(
+        id=mock_configuration.id,
+        name=mock_configuration.name,
+        status=mock_configuration.status,
+    )
+
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
@@ -65,10 +72,7 @@ def mock_db_functions(
         "app.api.v1.configurations.base.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_included_conditions_db",
-        AsyncMock(return_value=[mock_condition]),
-    )
+
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_latest_config_db",
         AsyncMock(return_value=mock_configuration),
@@ -92,10 +96,9 @@ def mock_db_functions(
         AsyncMock(return_value=versions_mock),
     )
 
-    # Mock get_configurations_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_configurations_db",
-        AsyncMock(return_value=[mock_configuration]),
+        "app.api.v1.configurations.base.get_configurations_summary_db",
+        AsyncMock(return_value=[fake_config_summary]),
     )
 
     # Mock is_config_valid_to_insert_db
@@ -131,7 +134,6 @@ def mock_db_functions(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
 
@@ -329,7 +331,6 @@ async def test_edit_custom_code_from_configuration(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
     monkeypatch.setattr(

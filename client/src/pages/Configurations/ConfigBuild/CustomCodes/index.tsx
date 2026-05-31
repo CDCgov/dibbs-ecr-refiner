@@ -3,11 +3,10 @@ import { Search } from '@components/Search';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
-import type { FuseResultMatch } from 'fuse.js';
 import { highlightMatches } from '../../../../utils';
 import { TesLink } from '../../TesLink';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { CompletenessStatusBadge } from './CompletenessStatusBadge';
 import {
   useDeleteCustomCodeFromConfiguration,
@@ -21,6 +20,7 @@ import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -137,7 +137,7 @@ export function CustomCodesDetail({
 
 function ConditionCodeGroupingParagraph() {
   return (
-    <p>
+    <p className="mb-6">
       These condition code sets come from the default groupings in the{' '}
       <TesLink />
     </p>
@@ -159,6 +159,8 @@ export function ConditionCodeTable({
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const codes = useMemo(
     () => response?.data.codes ?? [],
@@ -194,9 +196,6 @@ export function ConditionCodeTable({
 
   function isCodeLikeQuery(value: string) {
     const trimmed = value.trim();
-
-    // Treat inputs like 123, A12, J10, Z21.3 as code-like
-    // and avoid fuzzy matching them too loosely.
     return (
       /^[a-z0-9.-]+$/i.test(trimmed) &&
       !trimmed.includes(' ') &&
@@ -206,18 +205,12 @@ export function ConditionCodeTable({
 
   const visibleCodes = useMemo(() => {
     const trimmedSearch = searchText.trim();
+    if (!trimmedSearch) return filteredCodes;
 
-    if (!trimmedSearch) {
-      return filteredCodes;
-    }
-
-    // For code-like input, do exact/prefix matching on code only
     if (isCodeLikeQuery(trimmedSearch)) {
       const normalizedSearch = trimmedSearch.toLowerCase();
-
       return filteredCodes.filter((code) => {
         const normalizedCode = String(code.code).toLowerCase();
-
         return (
           normalizedCode === normalizedSearch ||
           normalizedCode.includes(normalizedSearch)
@@ -225,9 +218,29 @@ export function ConditionCodeTable({
       });
     }
 
-    // For regular text input, keep existing Fuse behavior
     return results.map((r) => r.item);
   }, [filteredCodes, results, searchText]);
+
+  const resultsByCode = useMemo(() => {
+    return new Map(
+      results.map((result) => [
+        `${result.item.system}-${result.item.code}-${result.item.description}`,
+        result,
+      ])
+    );
+  }, [results]);
+
+  /**
+   * TODO: Known issue
+   * See: https://github.com/TanStack/virtual/issues/1119
+   */
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: visibleCodes.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 48,
+    overscan: 10,
+  });
 
   if (isPending)
     return (
@@ -242,8 +255,14 @@ export function ConditionCodeTable({
     setSelectedCodeSystem(event.target.value);
   }
 
+  const virtualItems = virtualizer.getVirtualItems();
+  const topSpacer = virtualItems[0]?.start ?? 0;
+  const bottomSpacer =
+    virtualizer.getTotalSize() -
+    (virtualItems[virtualItems.length - 1]?.end ?? 0);
+
   return (
-    <div className="min-h-full min-w-full">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex flex-col gap-1">
         <CompletenessStatusBadge
           completenessStatus={response.data.completeness_status}
@@ -277,8 +296,10 @@ export function ConditionCodeTable({
           </Field>
         </SelectContainer>
       </div>
+
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
+
       {isLoadingResults ? (
         <div className="pt-10">
           <p>Loading...</p>
@@ -288,65 +309,82 @@ export function ConditionCodeTable({
           <p>No codes match the search criteria.</p>
         </div>
       ) : (
-        <div role="region">
-          <table
+        <div
+          ref={parentRef}
+          className="h-100 overflow-y-auto sm:h-full"
+          tabIndex={0}
+        >
+          <div
+            role="table"
             id="codeset-table"
-            className="w-full border-separate border-spacing-y-4"
             aria-label={`Codes in set with ID ${conditionId}`}
+            className="grid grid-cols-[1fr_1fr_4fr]"
           >
-            <thead className="bg-opacity-100 sticky -top-6 h-10 bg-white text-left">
-              <tr>
-                <th>Code</th>
-                <th>Code system</th>
-                <th>Condition</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleCodes.map((code, i) => {
-                const matchingResult = results.find(
-                  (r) =>
-                    r.item.code === code.code &&
-                    r.item.description === code.description
-                );
+            <div role="rowgroup" className="contents">
+              <div role="row" className="contents">
+                <Header>Code</Header>
+                <Header>Code system</Header>
+                <Header>Condition</Header>
+              </div>
+            </div>
 
+            <div role="rowgroup" className="contents">
+              <div
+                className="col-span-full"
+                style={{ height: `${topSpacer}px` }}
+              />
+
+              {virtualItems.map((virtualRow) => {
+                const code = visibleCodes[virtualRow.index];
+                const matchingResult = resultsByCode.get(
+                  `${code.system}-${code.code}-${code.description}`
+                );
                 return (
-                  <ConditionCodeRow
-                    key={`${code.system}-${code.code}-${i}`} // TODO: swap this to an ID when possible
-                    codeSystem={code.system}
-                    code={code.code}
-                    text={code.description}
-                    matches={matchingResult?.matches}
-                  />
+                  <div
+                    key={`${code.system}-${code.code}-${virtualRow.index}`}
+                    role="row"
+                    className="contents"
+                  >
+                    <div role="cell" className="pb-6">
+                      {highlightMatches(
+                        code.code,
+                        matchingResult?.matches,
+                        'code'
+                      )}
+                    </div>
+                    <div role="cell" className="text-gray-cool-60 pb-6">
+                      {code.system}
+                    </div>
+                    <div role="cell" className="pb-6">
+                      {highlightMatches(
+                        code.description,
+                        matchingResult?.matches,
+                        'description'
+                      )}
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+
+              <div
+                className="col-span-full"
+                style={{ height: `${bottomSpacer}px` }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-interface ConditionCodeRowProps {
-  code: string;
-  codeSystem: string;
-  text: string;
-  matches?: readonly FuseResultMatch[];
-}
-
-function ConditionCodeRow({
-  code,
-  codeSystem,
-  text,
-  matches,
-}: ConditionCodeRowProps) {
+function Header({ children }: { children: React.ReactNode }) {
   return (
-    <tr>
-      <td className="w-1/6 pb-6">{highlightMatches(code, matches, 'code')}</td>
-      <td className="text-gray-cool-60 w-1/6 pb-6">{codeSystem}</td>
-      <td className="w-4/6 pb-6">
-        {highlightMatches(text, matches, 'description')}
-      </td>
-    </tr>
+    <div
+      role="columnheader"
+      className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
+    >
+      {children}
+    </div>
   );
 }

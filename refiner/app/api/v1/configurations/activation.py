@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.conditions.db import get_conditions_by_ids
+from app.db.conditions.db import get_conditions_by_ids, get_primary_condition_db
 from app.db.conditions.model import DbCondition
 from app.db.configurations.activations.db import (
     activate_configuration_db,
@@ -130,6 +130,16 @@ async def activate_configuration(
             detail="Configuration metadata object could not be created.",
         )
 
+    primary_condition = await get_primary_condition_db(
+        configuration_id=config_to_activate.id, db=db
+    )
+
+    if not primary_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Could not find primary condition associated with configuration.",
+        )
+
     # Write the config data to S3 and get the URLs back
     s3_urls = await run_in_threadpool(
         upload_configuration_payload, config_payload, config_metadata, logger
@@ -139,7 +149,7 @@ async def activate_configuration(
     active_config = await activate_configuration_db(
         configuration_id=config_to_activate.id,
         activated_by_user_id=user.id,
-        canonical_url=config_to_activate.condition_canonical_url,
+        canonical_url=primary_condition.canonical_url,
         jurisdiction_id=user.jurisdiction_id,
         s3_urls=s3_urls,
         db=db,
