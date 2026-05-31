@@ -45,8 +45,12 @@ def update_snapshots(request: pytest.FixtureRequest) -> bool:
 
 @pytest.fixture
 def validate_refined_document(
-    validate_xml_string,
-    validate_xml_string_xsd,
+    # parameter names must match the imported fixture names so pytest's
+    # dependency injection wires them up, but ruff sees the duplication and
+    # fires F811; the suppression below is the standard fix for this
+    # pytest+ruff interaction
+    validate_xml_string,  # noqa: F811
+    validate_xml_string_xsd,  # noqa: F811
 ):
     """
     Returns a callable that runs full validation on one refined document.
