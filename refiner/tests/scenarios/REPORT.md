@@ -53,7 +53,7 @@ The concern has two halves.
 
 **Issue 6 — Vital sign panel returns whole panel on single match** (Direct)
 
-`covid_with_custom_codes` adds Heart Rate (LOINC 8867-4) as a single custom code; the snapshot pins panel pruning at a one-of-nine cardinality. `covid_with_multi_vital_sign_codes` adds three vital sign codes (8867-4, 8480-6, 9279-1) and pins the three-of-nine case. If the bug returned, both snapshots would shift to retaining all nine sub-components.
+`covid_with_custom_codes` adds Heart Rate (LOINC 8867-4) as a single custom code. Combined with body temperature (LOINC 8310-5) -- a member of the COVID condition grouper, matched from the baseline configuration -- the snapshot pins panel pruning at a two-of-nine cardinality. `covid_with_multi_vital_sign_codes` adds three more vital sign codes (8867-4, 8480-6, 9279-1) and pins the four-of-nine case (those three plus body temperature). The surviving sub-components are the configured-and-present codes, not only the custom additions. If the bug returned, both snapshots would shift to retaining all nine sub-components.
 
 
 ## Scenarios

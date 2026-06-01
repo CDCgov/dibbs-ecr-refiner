@@ -41,9 +41,10 @@ class Scenario:
         `rsg_code`; its trailing UUID is the condition_grouper_uuid in
         the seed.
 
-    Recorded metadata: appears in expected_trace.json but doesn't affect
-    refinement or the XML snapshots; changing these regenerates only the
-    trace JSON:
+    Recorded metadata: appears in expected_trace.json AND is rendered into each
+    section's provenance footnote ('Config Version' column) in the refined
+    eICR/RR. Changing it therefore regenerates the trace JSON and every XML
+    snapshot. It does not affect which entries are retained:
       `configuration_version` — arbitrary discriminator; incremented per
         scenario.
 
