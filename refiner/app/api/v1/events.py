@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.events.db import (
-    DbAuditEvent,
+    AuditEvent,
     get_configuration_filter_options_db,
     get_custom_code_upload_events_by_event_id,
     get_event_count_by_condition_db,
@@ -38,7 +38,7 @@ class EventsResponse:
     Response needed for the audit log page.
     """
 
-    audit_events: list[DbAuditEvent]
+    audit_events: list[AuditEvent]
     configuration_options: list[EventFilterOption]
     total_pages: int
 

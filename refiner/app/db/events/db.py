@@ -13,7 +13,7 @@ from .model import EventInput
 
 
 @dataclass(frozen=True)
-class DbAuditEvent:
+class AuditEvent:
     """
     An event returned by the DB function.
     """
@@ -130,7 +130,7 @@ async def get_events_by_jd_db(
     page_size: int,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> list[DbAuditEvent]:
+) -> list[AuditEvent]:
     """
     Fetches all events for a given jurisdiction and condition.
     """
@@ -169,7 +169,7 @@ async def get_events_by_jd_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbAuditEvent)) as cur:
+        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
             await cur.execute(query, params)
             events_rows = await cur.fetchall()
             return events_rows
