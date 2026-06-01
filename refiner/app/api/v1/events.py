@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.core.exceptions import DatabaseConnectionError, DatabaseQueryError
 from app.db.events.db import (
     AuditEvent,
     get_custom_code_upload_events_by_event_id,
@@ -76,24 +77,32 @@ async def get_events(
     PAGE_SIZE = 10
     jd = user.jurisdiction_id
 
-    total_event_count, audit_events, configuration_options = await asyncio.gather(
-        get_event_count_by_condition_db(
-            jurisdiction_id=jd, canonical_url=canonical_url, db=db
-        ),
-        get_events_by_jd_db(
-            jurisdiction_id=jd,
-            page=page,
-            page_size=PAGE_SIZE,
-            canonical_url=canonical_url,
-            db=db,
-        ),
-        get_event_filter_options_db(jurisdiction_id=jd, db=db),
-    )
+    if page < 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="'page' must be a number greater than 0.",
+        )
 
-    if total_event_count is None:
+    try:
+        total_event_count, audit_events, configuration_options = await asyncio.gather(
+            get_event_count_by_condition_db(
+                jurisdiction_id=jd, canonical_url=canonical_url, db=db
+            ),
+            get_events_by_jd_db(
+                jurisdiction_id=jd,
+                page=page,
+                page_size=PAGE_SIZE,
+                canonical_url=canonical_url,
+                db=db,
+            ),
+            get_event_filter_options_db(jurisdiction_id=jd, db=db),
+        )
+    except (DatabaseConnectionError, DatabaseQueryError) as db_err:
         logger.error(
-            msg="Could not retrieve total event count.",
+            msg="Database error occurred while retrieving audit logs.",
             extra={
+                "error": str(db_err),
+                "error_details": db_err.details,
                 "user_id": user.id,
                 "jurisdiction_id": jd,
                 "canonical_url": canonical_url,
@@ -106,10 +115,10 @@ async def get_events(
 
     total_pages = max((total_event_count + PAGE_SIZE - 1) // PAGE_SIZE, 1)
 
-    if page < 1 or page > total_pages:
+    if page > total_pages:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"'page' must be a number between 1 and {total_pages}.",
+            detail=f"'page' must be a number less than or equal to {total_pages}.",
         )
 
     return EventsResponse(

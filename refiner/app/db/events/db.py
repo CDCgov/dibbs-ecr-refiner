@@ -6,6 +6,7 @@ from uuid import UUID
 from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
+from app.core.exceptions import DatabaseQueryError
 from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 
 from ..pool import AsyncDatabaseConnection
@@ -56,7 +57,7 @@ async def get_event_count_by_condition_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> int | None:
+) -> int:
     """
     Gets a count of all events within a jurisdiction by condition.
     """
@@ -76,7 +77,7 @@ async def get_event_count_by_condition_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
-                return None
+                raise DatabaseQueryError("Could not retrieve total event count.")
             return int(row["total_count"])
 
 
