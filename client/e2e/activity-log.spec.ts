@@ -12,6 +12,11 @@ test.describe('Activity log', () => {
 
   test('Check empty state', async ({ activityLogPage, page }) => {
     await activityLogPage.goto();
+
+    await expect(page.getByLabel('Condition').getByRole('option')).toHaveText([
+      'All conditions',
+    ]);
+
     const rowData = await activityLogPage.getTableRows();
     expect(rowData).toHaveLength(0);
     await expect(
