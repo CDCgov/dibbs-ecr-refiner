@@ -21,10 +21,10 @@ from ...db.users.model import DbUser
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
-    SESSION_EXPIRY_SECONDS,
     create_session,
     delete_session,
     get_user_from_session,
+    set_session_cookie,
 )
 
 auth_router = APIRouter()
@@ -201,14 +201,7 @@ async def auth_callback(
             secure=env != "local",
         )
 
-        response.set_cookie(
-            key="refiner-session",
-            value=session_token,
-            httponly=True,
-            max_age=SESSION_EXPIRY_SECONDS,
-            samesite="lax",
-            secure=env != "local",  # We'll be serving over https in live envs
-        )
+        set_session_cookie(response=response, session_token=session_token)
         return response
 
     except Exception:
