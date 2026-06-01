@@ -126,6 +126,7 @@ CREATE TABLE public.codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     value text NOT NULL,
+    version text NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -345,6 +346,14 @@ ALTER TABLE ONLY public.codes
 
 
 --
+-- Name: codes codes_value_system_id_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT codes_value_system_id_version_key UNIQUE (value, system_id, version);
+
+
+--
 -- Name: conditions conditions_canonical_url_version_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -430,6 +439,14 @@ ALTER TABLE ONLY public.configurations_sections
 
 ALTER TABLE ONLY public.custom_codes
     ADD CONSTRAINT custom_codes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_codes custom_codes_value_system_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_value_system_id_key UNIQUE (value, system_id);
 
 
 --

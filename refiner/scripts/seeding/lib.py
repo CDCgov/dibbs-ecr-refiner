@@ -1,7 +1,7 @@
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypedDict
 
 import psycopg
 from config import TES_DATA_DIR, logger
@@ -14,6 +14,19 @@ SYSTEM_MAP = {
     "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
     "http://hl7.org/fhir/sid/cvx": "cvx_codes",
 }
+
+
+SNOMED_OID = "2.16.840.1.113883.6.96"
+
+CODE_SYSTEM_DATA = {
+    "snomed": {"oid": SNOMED_OID, "display_name": "SNOMED"},
+    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
+    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
+    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
+    "other": {"oid": "Other", "display_name": "Other"},
+}
+
 
 COVERAGE_LEVEL_URL = (
     "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-curationCoverageLevel"
@@ -235,6 +248,17 @@ class ConditionData:
             }
             for cg in self.context_groupers
         ]
+
+
+class CodeRow(TypedDict):
+    """
+    A code row to upsert into the DB.
+    """
+
+    name: str
+    value: str
+    version: str
+    system_id: str
 
 
 def get_db_connection(db_url: str, db_password: str) -> psycopg.Connection:

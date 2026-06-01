@@ -1,22 +1,27 @@
-from collections import defaultdict
 import os
 import time
+from collections import defaultdict
 from datetime import datetime
 from typing import TypedDict
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
 from lib import (
+    CODE_SYSTEM_DATA,
+    SNOMED_OID,
+    CodeRow,
     ConditionData,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
+    get_child_rsg_valuesets,
     get_db_connection,
     is_condition_grouper,
     load_valuesets_from_all_files,
+    parse_snomed_from_url,
 )
 from psycopg import Cursor
-from psycopg.rows import TupleRow, dict_row
+from psycopg.rows import TupleRow
 
 
 class Code(TypedDict):
@@ -58,16 +63,6 @@ class ContextGrouperRow(TypedDict):
     code_count: int
 
 
-class CodeRow(TypedDict):
-    """
-    A code row to upsert into the DB.
-    """
-
-    name: str
-    value: str
-    system_id: str
-
-
 class ProcessedCondition(TypedDict):
     """
     A fully processed condition with its associated context grouper rows.
@@ -81,12 +76,48 @@ type SystemId = str
 type SystemOid = str
 
 
+def _parse_display_text_from_use_context(use_context: list[dict[str, dict]]) -> str:
+    for context in use_context:
+        value_codeable_concept = context.get("valueCodeableConcept", "")
+        if not isinstance(value_codeable_concept, str):
+            vs_description = value_codeable_concept.get("text", None)
+            # one of the use contexts in the RSG files is a description of
+            # "this code is an RSG code". Skip that one.
+            if (
+                isinstance(vs_description, str)
+                and vs_description != "Reporting Specification Grouper"
+            ):
+                return vs_description
+
+    raise ValueError("No description found in parsing child RSG display name")
+
+
 def _build_rsg_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
-    system_data: list[tuple[SystemId, SystemOid]],
+    system_data: dict[SystemOid, SystemId],
 ) -> list[CodeRow]:
+    condition_groupers = _build_condition_groupers(valuesets_map=valuesets_map)
+    snomed_db_id = system_data[SNOMED_OID]
+    rsg_codes: list[CodeRow] = []
 
-    return
+    for parent in condition_groupers:
+        for child_vs in get_child_rsg_valuesets(
+            parent=parent, all_vs_map=valuesets_map
+        ):
+            if snomed_code := parse_snomed_from_url(child_vs.get("url", "")):
+                name = _parse_display_text_from_use_context(
+                    child_vs.get("useContext", "")
+                )
+                rsg_codes.append(
+                    CodeRow(
+                        value=snomed_code,
+                        version=parent.get("version", ""),
+                        name=name,
+                        system_id=snomed_db_id,
+                    )
+                )
+
+    return rsg_codes
 
 
 def _build_processed_conditions(
@@ -243,22 +274,56 @@ def _upsert_conditions_and_groupers(
         cursor.executemany(context_grouper_upsert_query, grouper_params)
 
 
+def _upsert_codes(cursor: Cursor, data: list[CodeRow]):
+    """
+    Upserts code rows.
+    """
+
+    logger.info("⏳ Upserting code records...")
+
+    condition_upsert_query = """
+        INSERT INTO codes (
+            name,
+            value,
+            version,
+            system_id
+        )
+        VALUES (
+            %(name)s,
+            %(value)s,
+            %(version)s,
+            %(system_id)s
+        )
+        ON CONFLICT (value, system_id, version)
+        DO UPDATE SET
+            name = EXCLUDED.name,
+            value = EXCLUDED.value,
+            version = EXCLUDED.version
+        WHERE
+            codes.name IS DISTINCT FROM EXCLUDED.name
+            OR codes.value IS DISTINCT FROM EXCLUDED.value
+            OR codes.version IS DISTINCT FROM EXCLUDED.version
+        RETURNING id
+    """
+
+    params = [
+        {
+            "name": code.get("name"),
+            "value": code.get("value"),
+            "version": code.get("version"),
+            "system_id": code.get("system_id"),
+        }
+        for code in data
+    ]
+    cursor.executemany(condition_upsert_query, params)
+
+
 def _build_condition_groupers(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
 ) -> list[VsDict]:
     groupers = [vs for vs in valuesets_map.values() if is_condition_grouper(vs)]
     logger.info(f"🔎 Identified {len(groupers)} condition groupers to process.")
     return groupers
-
-
-CODE_SYSTEM_DATA = {
-    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
-    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
-    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
-    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
-    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
-    "other": {"oid": "Other", "display_name": "Other"},
-}
 
 
 def _build_system_response(
@@ -272,7 +337,10 @@ def _build_system_response(
         response[row[0]] = row[1]
 
     if "Other" not in response.keys():
-        raise ValueError("Fallback system other not found in system response")
+        raise ValueError("Fallback system other not found in db seeding")
+
+    if SNOMED_OID not in response.keys():
+        raise ValueError("SNOMED other not found in db seeding")
 
     return response
 
@@ -330,9 +398,7 @@ def load_system_data(
     return _build_system_response(db_system_response=systems_response)
 
 
-def load_tes_data(
-    cursor: Cursor, system_data: list[tuple[SystemId, SystemOid]]
-) -> None:
+def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemId]) -> None:
     """
     Loads condition grouper data from the TES and upserts condition rows and their associated context grouper rows into the database.
 
@@ -341,6 +407,7 @@ def load_tes_data(
 
     Args:
        cursor: A DB cursor
+       system_data: inserted system data to be used by downstream code seeding
     """
 
     all_valuesets_map = load_valuesets_from_all_files()
@@ -363,6 +430,7 @@ def load_tes_data(
     rsg_codes = _build_rsg_codes(
         valuesets_map=all_valuesets_map, system_data=system_data
     )
+    _upsert_codes(cursor=cursor, data=rsg_codes)
 
 
 def load_static_data(db_url: str, db_password: str) -> None:
