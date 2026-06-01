@@ -175,7 +175,6 @@ async def update_section(
         all_sections=config.section_processing,
         desired_name=section_input.name,
         desired_code=section_input.new_code,
-        desired_action=section_input.action,
     )
 
     section_update = _build_section_update(
@@ -268,7 +267,6 @@ def _raise_if_invalid_section_update(
     all_sections: list[DbConfigurationSectionProcessing],
     desired_name: str | None,
     desired_code: str | None,
-    desired_action: str | None,
 ) -> None:
     """
     Raises an exception if any properties of an update are not valid.
@@ -278,15 +276,7 @@ def _raise_if_invalid_section_update(
         all_sections (list[DbConfigurationSectionProcessing]): All sections associated with a config
         desired_name (str | None): The desired name to update to
         desired_code (str | None): the desired code to update to
-        desired_action (str | None): The desired action to update to
     """
-    # Validation for narrative-only sections
-    if desired_action == "refine" and existing_section.code in NARRATIVE_ONLY_SECTIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"The section {existing_section.name} is narrative-only and cannot be refined.",
-        )
-
     other_sections = [s for s in all_sections if s.code != existing_section.code]
 
     _raise_if_invalid_section_fields(
@@ -331,6 +321,8 @@ def _build_section_update(
         code = prev_section.code
         name = prev_section.name
         section_type = "standard"
+        if code in NARRATIVE_ONLY_SECTIONS:
+            action = "retain"
 
     return DbConfigurationSectionProcessing(
         code=code,
