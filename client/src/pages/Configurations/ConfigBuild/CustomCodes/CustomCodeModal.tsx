@@ -72,7 +72,6 @@ type CustomCodeFormProps = Pick<
   'selectedCustomCode' | 'configurationId' | 'onClose'
 >;
 
-const SELECT_DEFAULT_LITERAL = 'select-default';
 function CustomCodeForm({
   selectedCustomCode,
   configurationId,
@@ -89,19 +88,14 @@ function CustomCodeForm({
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
 
-  const [selectedSystem, setSelectedsystem] = useState(
+  const [selectedSystem, setSelectedSystem] = useState(
     selectedCustomCode?.system_key ?? ''
   );
 
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isButtonEnabled =
-    code &&
-    selectedSystem &&
-    selectedSystem !== SELECT_DEFAULT_LITERAL &&
-    name &&
-    !error;
+  const isButtonEnabled = code && selectedSystem && name && !error;
 
   const handleCodeUpdate = (code: string) => {
     setCode(code);
@@ -204,15 +198,6 @@ function CustomCodeForm({
 
   if (isError || !codeSystems) return 'Error!';
 
-  const systemValues: CodeSystemsReponse[] = [
-    {
-      display_name: 'Select system',
-      key: SELECT_DEFAULT_LITERAL,
-      oid: '',
-      id: 'c107a769-4de6-4b3f-bdf0-261284259cfd',
-    },
-    ...codeSystems.data,
-  ];
   return (
     <>
       <Field>
@@ -234,9 +219,12 @@ function CustomCodeForm({
           <Label>Code system</Label>
           <Select
             value={selectedSystem}
-            onChange={(e) => setSelectedsystem(e.target.value)}
+            onChange={(e) => setSelectedSystem(e.target.value)}
           >
-            {systemValues.map((s) => (
+            <option value="" disabled>
+              Select system
+            </option>
+            {codeSystems.data.map((s) => (
               <option key={s.id} value={s.key}>
                 {s.display_name}
               </option>

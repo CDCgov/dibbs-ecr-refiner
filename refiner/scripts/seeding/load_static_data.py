@@ -262,12 +262,15 @@ def load_system_data(cursor: Cursor):
         ON s.key = v.key OR s.oid = v.oid
 
         WHEN MATCHED THEN
-            UPDATE SET display_name = v.display_name
+            UPDATE SET
+                display_name = v.display_name,
+                oid = v.oid
         WHEN NOT MATCHED THEN
             INSERT (
                 key,
                 display_name,
-                oid)
+                oid
+            )
             VALUES (v.key, v.display_name, v.oid)
         RETURNING id;
     """
