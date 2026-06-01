@@ -7,10 +7,7 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import {
-  DbConfigurationCustomCode,
-  CodeSystemsReponse,
-} from '../../../../api/schemas';
+import { DbConfigurationCustomCode } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
