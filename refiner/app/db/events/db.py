@@ -108,6 +108,8 @@ async def get_configuration_filter_options_db(
     Collects all possible conditions within a jurisdiction a user can filter events by.
     """
     query = """
+    SELECT id, name, canonical_url
+    FROM (
         SELECT DISTINCT ON (cond.canonical_url)
             c.id,
             c.name,
@@ -117,6 +119,8 @@ async def get_configuration_filter_options_db(
         JOIN conditions cond ON cond.id = cc.condition_id
         WHERE c.jurisdiction_id = %s
         ORDER BY cond.canonical_url, c.name
+    ) sub
+    ORDER BY LOWER(name)
     """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbEventFilterOption)) as cur:
