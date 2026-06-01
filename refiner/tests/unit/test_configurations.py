@@ -323,7 +323,7 @@ async def test_edit_custom_code_from_configuration(
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_code_system_by_key_or_raise_db",
+        "app.api.v1.configurations.custom_codes.get_code_system_by_key_db",
         AsyncMock(return_value=create_mock_code_system("loinc")),
     )
     config_id = str(mock_configuration.id)

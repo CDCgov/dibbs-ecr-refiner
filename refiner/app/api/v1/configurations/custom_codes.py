@@ -22,8 +22,7 @@ from app.db.code_systems.db import (
     get_allowed_code_system_display_names,
     get_allowed_code_system_keys,
     get_code_system_by_key_db,
-    get_code_system_by_key_or_display_name_or_raise_db,
-    get_code_system_by_key_or_raise_db,
+    get_code_system_by_key_or_display_name_db,
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
@@ -257,9 +256,13 @@ async def upload_custom_codes_csv(
             await get_allowed_code_system_display_names(db=db)
         )
         try:
-            sanitized_system = await get_code_system_by_key_or_display_name_or_raise_db(
+            sanitized_system = await get_code_system_by_key_or_display_name_db(
                 name=code_system_raw, db=db
             )
+            if sanitized_system is None:
+                raise ValueError(
+                    f"System of name {code_system_raw} doesn't match supported systems"
+                )
             code_systems[sanitized_system.key] = sanitized_system
         except ValueError:
             row_errors.append(
@@ -506,9 +509,13 @@ async def _get_modified_custom_codes(
     custom_codes = config.custom_codes
 
     # find the code to modify
-    sanitized_system = await get_code_system_by_key_or_raise_db(
+    sanitized_system = await get_code_system_by_key_db(
         key=updateInput.system_key, db=db
     )
+    if sanitized_system is None:
+        raise ValueError(
+            f"System of name {updateInput.system_key} doesn't match supported systems"
+        )
     code_to_edit = [
         cc
         for cc in custom_codes
@@ -547,8 +554,9 @@ async def _get_modified_custom_codes(
         else existing_code.system_key
     )
 
-    new_system = await get_code_system_by_key_or_raise_db(key=system_key, db=db)
-
+    new_system = await get_code_system_by_key_db(key=system_key, db=db)
+    if new_system is None:
+        raise ValueError(f"System of name {system_key} doesn't match supported systems")
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,

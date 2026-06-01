@@ -73,7 +73,7 @@ class TestTerminologyService:
             ]
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            "app.services.configurations.get_code_system_by_key_db",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -102,7 +102,7 @@ class TestTerminologyService:
             ]
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            "app.services.configurations.get_code_system_by_key_db",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),

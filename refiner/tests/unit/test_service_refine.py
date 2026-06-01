@@ -223,7 +223,7 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=get_mock_allowed_system_keys()),
     )
     monkeypatch.setattr(
-        "app.services.configurations.get_code_system_by_key_or_raise_db",
+        "app.services.configurations.get_code_system_by_key_db",
         AsyncMock(
             return_value=create_mock_code_system("snomed"),
         ),
@@ -304,7 +304,7 @@ class TestRefiningService:
         """
 
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            "app.services.configurations.get_code_system_by_key_db",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -463,7 +463,7 @@ class TestRefiningService:
         with LOINC codes not in the condition grouper.
         """
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            "app.services.configurations.get_code_system_by_key_db",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -556,7 +556,7 @@ class TestRefiningService:
         """
 
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            "app.services.configurations.get_code_system_by_key_db",
             AsyncMock(
                 side_effect=lambda key, db: create_mock_code_system(key=key),
             ),

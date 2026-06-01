@@ -6,7 +6,9 @@ from fastapi import status
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from app.db.code_systems.db import get_code_system_by_key_or_raise_db
+from app.db.code_systems.db import (
+    get_code_system_by_key_db,
+)
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
@@ -498,7 +500,8 @@ class TestConfigurations:
 
         config_id = config["id"]
         same_code = "VERY-FAKE-CODE-00000"
-        loinc_info = await get_code_system_by_key_or_raise_db(key="loinc", db=db_pool)
+        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc_info
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
@@ -533,7 +536,8 @@ class TestConfigurations:
         config_id = config["id"]
 
         desired_code = "FAKE-DESIRED-CODE-99999"
-        loinc_info = await get_code_system_by_key_or_raise_db(key="loinc", db=db_pool)
+        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc_info
 
         await add_custom_code(
             config_id,
@@ -545,7 +549,8 @@ class TestConfigurations:
         )
 
         code_to_edit = "FAKE-CODE-TO-EDIT-111"
-        rxnorm_info = await get_code_system_by_key_or_raise_db(key="rxnorm", db=db_pool)
+        rxnorm_info = await get_code_system_by_key_db(key="rxnorm", db=db_pool)
+        assert rxnorm_info
 
         await add_custom_code(
             config_id,

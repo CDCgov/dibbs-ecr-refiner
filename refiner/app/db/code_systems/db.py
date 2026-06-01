@@ -133,59 +133,9 @@ async def _get_code_system_by_display_name_db(
             return DbCodeSystem.from_db_row(row)
 
 
-async def get_code_system_by_key_or_raise_db(
-    key: str, db: AsyncDatabaseConnection
-) -> DbCodeSystem:
-    """
-    Get code system by the internal key. If not found, raise an error.
-
-    Args:
-        key: str: the key to query for.
-        db: AsyncDatabaseConnection: A database connection.
-
-    Returns:
-        DbCodeSystem: Matched code system if found.
-
-    Raises:
-        ValueError: if no code system is found
-    """
-
-    by_key = await get_code_system_by_key_db(key=key, db=db)
-
-    if by_key is None:
-        raise ValueError(f"System with key {key} not found")
-
-    return by_key
-
-
-async def _get_code_system_by_display_name_or_raise_db(
+async def get_code_system_by_key_or_display_name_db(
     name: str, db: AsyncDatabaseConnection
-) -> DbCodeSystem:
-    """
-    Get code system by its display name.
-
-    Args:
-        name: the name to query for
-        db: AsyncDatabaseConnection: A database connection.
-        logger: Logger: The system logger.
-
-    Returns:
-        DbCodeSystem: Values from the systems table with matching display name.
-
-    Raises:
-        ValueError: if no code system is found
-    """
-
-    system_by_name = await _get_code_system_by_display_name_db(name=name, db=db)
-    if system_by_name is None:
-        raise ValueError("No system with display name {}")
-
-    return system_by_name
-
-
-async def get_code_system_by_key_or_display_name_or_raise_db(
-    name: str, db: AsyncDatabaseConnection
-) -> DbCodeSystem:
+) -> DbCodeSystem | None:
     """
     Get code system by its display name and fall back to key if not cound.
 
@@ -203,15 +153,14 @@ async def get_code_system_by_key_or_display_name_or_raise_db(
     string_to_search = name.lower()
     if string_to_search == "icd-10":
         string_to_search = "icd10"
-    try:
-        by_name = await _get_code_system_by_display_name_or_raise_db(
-            db=db, name=string_to_search
-        )
+
+    by_name = await _get_code_system_by_display_name_db(db=db, name=string_to_search)
+    if by_name:
         return by_name
-    except ValueError:
-        # fall back to search by key
-        by_key = await get_code_system_by_key_or_raise_db(db=db, key=string_to_search)
-        return by_key
+
+    # fall back to search by key
+    by_key = await get_code_system_by_key_db(db=db, key=string_to_search)
+    return by_key
 
 
 async def get_allowed_code_system_display_names(
