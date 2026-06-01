@@ -10,9 +10,10 @@ from app.db.configurations.model import (
     ConfigurationStoragePayload,
     DbConfiguration,
     DbConfigurationSectionProcessing,
+    DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
-from app.services.ecr.policy import SECTION_PROCESSING_SKIP
+from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
@@ -39,13 +40,21 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     # TODO:
     # we should try to keep `db` related models out of the
     # ecr service as much as practicable
+
+    # Narrative-only sections (has_match_rules=False) should default to "retain"
+    # since there is nothing to match against
     section_processing_defaults = [
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
             narrative=True,
             include=True,
-            action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
+            action=(
+                "retain"
+                if loinc_code in SECTION_PROCESSING_SKIP
+                or loinc_code in NARRATIVE_ONLY_SECTIONS
+                else "refine"
+            ),
             versions=loinc_versions_flat.get(loinc_code, []),
             section_type="standard",
         )
@@ -61,6 +70,9 @@ def clone_section_processing_instructions(
 ) -> list[DbConfigurationSectionProcessing]:
     """
     Clones section processing instruction info from one list of sections into another.
+
+    Handles narrative-only sections specially: ensures they always have action="retain"
+    regardless of what was cloned, since they cannot be refined (no entry match rules).
 
     Args:
         clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info from.
@@ -85,15 +97,21 @@ def clone_section_processing_instructions(
     include_map = {section.code: section.include for section in standard_sections}
     narrative_map = {section.code: section.narrative for section in standard_sections}
 
-    standard_updates = [
-        replace(
-            section,
-            action=action_map.get(section.code, section.action),
-            include=include_map.get(section.code, section.include),
-            narrative=narrative_map.get(section.code, section.narrative),
+    standard_updates = []
+    for section in clone_to:
+        if section.code in NARRATIVE_ONLY_SECTIONS:
+            new_action: DbSectionAction = "retain"
+        else:
+            new_action = action_map.get(section.code, section.action)
+
+        standard_updates.append(
+            replace(
+                section,
+                action=new_action,
+                include=include_map.get(section.code, section.include),
+                narrative=narrative_map.get(section.code, section.narrative),
+            )
         )
-        for section in clone_to
-    ]
 
     return standard_updates + custom_sections
 
