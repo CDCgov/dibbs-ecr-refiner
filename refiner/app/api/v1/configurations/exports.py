@@ -85,7 +85,7 @@ async def get_configuration_export(
             writer.writerow(
                 [
                     "Custom code",
-                    custom.system_key or "",
+                    custom.system or "",
                     custom.code or "",
                     custom.name or "",
                 ]

@@ -22,7 +22,10 @@ vi.mock('../../../api/configurations/configurations', async () => {
           id: 'config-id',
           display_name: 'COVID-19',
           code_sets: mockCodeSets,
-          custom_codes: [],
+          custom_codes: {
+            codes: [],
+            code_systems: {},
+          },
           included_conditions: [
             { id: 'covid-1', display_name: 'COVID-19', associated: true },
           ],

@@ -4,6 +4,6 @@
  */
 export interface DbConfigurationCustomCode {
   code: string;
-  system_key: string;
+  system: string;
   name: string;
 }

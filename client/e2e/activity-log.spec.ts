@@ -59,7 +59,7 @@ test.describe('Activity log', () => {
     const customCodes = Array.from({ length: 50 }, (_, i) => ({
       code: `mc-${i + 1}`,
       name: `mock code ${i + 1}`,
-      system_key: systems[i % systems.length],
+      system: systems[i % systems.length],
     }));
 
     await api.uploadCustomCodeCsv(config.id, customCodes);

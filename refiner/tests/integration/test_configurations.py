@@ -506,7 +506,7 @@ class TestConfigurations:
             config_id,
             DbConfigurationCustomCode(
                 code=same_code,
-                system_key=loinc_info.key,
+                system=loinc_info.key,
                 name="Mock code",
             ),
         )
@@ -543,7 +543,7 @@ class TestConfigurations:
             config_id,
             DbConfigurationCustomCode(
                 code=desired_code,
-                system_key=loinc_info.key,
+                system=loinc_info.key,
                 name="Mock code",
             ),
         )
@@ -556,7 +556,7 @@ class TestConfigurations:
             config_id,
             DbConfigurationCustomCode(
                 code=code_to_edit,
-                system_key=rxnorm_info.key,
+                system=rxnorm_info.key,
                 name="edit me",
             ),
         )

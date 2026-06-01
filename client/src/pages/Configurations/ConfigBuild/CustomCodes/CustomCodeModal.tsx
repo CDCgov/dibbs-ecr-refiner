@@ -86,7 +86,7 @@ function CustomCodeForm({
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
 
   const [selectedSystem, setSelectedSystem] = useState(
-    selectedCustomCode?.system_key ?? ''
+    selectedCustomCode?.system ?? ''
   );
 
   const [isValidating, setIsValidating] = useState(false);
@@ -138,10 +138,10 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: selectedCustomCode.code,
-            system_key: selectedCustomCode.system_key,
+            system: selectedCustomCode.system,
             name: selectedCustomCode.name,
             new_code: code.trim(),
-            new_system_key: selectedSystem,
+            new_system: selectedSystem,
             new_name: name.trim(),
           },
         },
@@ -169,7 +169,7 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: code.trim(),
-            system_key: selectedSystem,
+            system: selectedSystem,
             name: name.trim(),
           },
         },

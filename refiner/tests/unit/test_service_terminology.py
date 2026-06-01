@@ -67,7 +67,7 @@ class TestTerminologyService:
             custom_codes=[
                 DbConfigurationCustomCode(
                     code="B",
-                    system_key="loinc",
+                    system="loinc",
                     name="Custom LOINC",
                 )
             ]
@@ -96,7 +96,7 @@ class TestTerminologyService:
             custom_codes=[
                 DbConfigurationCustomCode(
                     code="DUP",
-                    system_key="loinc",
+                    system="loinc",
                     name="Custom",
                 )
             ]

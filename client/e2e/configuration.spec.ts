@@ -80,7 +80,7 @@ test.describe('Configuration detail flow', () => {
 
     const customCode1 = {
       code: '12-! 345#',
-      system_key: 'other',
+      system: 'other',
       name: 'original code 1~',
     };
 
@@ -93,7 +93,7 @@ test.describe('Configuration detail flow', () => {
     await test.step('Adding a unique code', async () => {
       await configurationPage.addCustomCode(
         customCode1.code,
-        customCode1.system_key,
+        customCode1.system,
         customCode1.name
       );
       await expect(

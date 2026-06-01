@@ -52,7 +52,7 @@ const mockCustomCodes: DbConfigurationCustomCode[] = [
   {
     code: 'custom-code1',
     name: 'test-custom-code1',
-    system_key: 'icd10',
+    system: 'icd10',
   },
 ];
 
@@ -89,7 +89,17 @@ const baseMockConfig: GetConfigurationResponse = {
   display_name: 'COVID-19',
   status: 'draft',
   code_sets: mockCodeSets,
-  custom_codes: mockCustomCodes,
+  custom_codes: {
+    codes: mockCustomCodes,
+    code_systems: {
+      icd10: {
+        key: 'icd10',
+        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
+        display_name: 'ICD-10',
+        oid: '2.16.840.1.113883.6.90',
+      },
+    },
+  },
   section_processing: [
     {
       name: 'Encounters Section',
@@ -111,14 +121,6 @@ const baseMockConfig: GetConfigurationResponse = {
     'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
   locked_by: null,
   is_locked: false,
-  code_systems: {
-    icd10: {
-      key: 'icd10',
-      id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
-      display_name: 'ICD-10',
-      oid: '2.16.840.1.113883.6.90',
-    },
-  },
 };
 
 const mockCodeSystems: CodeSystemsReponse[] = [

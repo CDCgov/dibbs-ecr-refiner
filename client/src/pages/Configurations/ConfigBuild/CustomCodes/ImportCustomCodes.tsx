@@ -24,7 +24,7 @@ import { DbCodeSystem } from '../../../../api/schemas';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
-  system_key: 'other',
+  system: 'other',
   name: '',
 };
 
@@ -374,7 +374,7 @@ export function ImportCustomCodes({
       previewIndex: index,
       systemDisplayName: formatSystemDisplayName(
         previewCodeSystems,
-        item.system_key
+        item.system
       ),
     }));
   }, [previewItems, previewCodeSystems]);
@@ -415,9 +415,7 @@ export function ImportCustomCodes({
   }, [previewData, previewSearchResults, searchText]);
 
   const isEditSaveDisabled =
-    !previewEditForm.code ||
-    !previewEditForm.name ||
-    !previewEditForm.system_key;
+    !previewEditForm.code || !previewEditForm.name || !previewEditForm.system;
 
   return (
     <>
@@ -546,7 +544,7 @@ export function ImportCustomCodes({
               <tbody>
                 {previewRows.map(({ item, matches }) => (
                   <tr
-                    key={`${item.code}-${item.system_key}-${item.previewIndex ?? item.row}`}
+                    key={`${item.code}-${item.system}-${item.previewIndex ?? item.row}`}
                     className="border-y border-blue-50"
                   >
                     <td className="px-2 py-1">

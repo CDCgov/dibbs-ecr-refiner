@@ -52,10 +52,10 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "code" is missing.',
         )
-    if not input.system_key:
+    if not input.system:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_key" is missing.',
+            detail='Required field "system" is missing.',
         )
     if not input.name:
         raise HTTPException(
@@ -124,7 +124,7 @@ async def add_custom_code(
         )
 
     # Create a custom code object
-    selected_code_system = await get_code_system_by_key_db(key=body.system_key, db=db)
+    selected_code_system = await get_code_system_by_key_db(key=body.system, db=db)
     if not selected_code_system:
         allowed_keys = await get_allowed_code_system_keys(db=db)
         raise HTTPException(
@@ -133,7 +133,7 @@ async def add_custom_code(
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system_key=selected_code_system.key,
+        system=selected_code_system.key,
         name=body.name,
     )
 
@@ -237,7 +237,7 @@ async def upload_custom_codes_csv(
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
-    code_keys = [(cc.code.lower(), cc.system_key) for cc in config.custom_codes]
+    code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
     batch_keys = set()
     code_systems: dict[CodeSystemKey, DbCodeSystem] = defaultdict()
     for row_number, row in enumerate(csv_reader, start=2):
@@ -283,7 +283,7 @@ async def upload_custom_codes_csv(
             preview_items.append(
                 UploadCustomCodesPreviewItem(
                     code=code,
-                    system_key=sanitized_system.key,
+                    system=sanitized_system.key,
                     name=name,
                     row=row_number,
                 )
@@ -362,7 +362,7 @@ async def confirm_upload_custom_codes_csv(
             custom_codes=[
                 DbConfigurationCustomCode(
                     code=item.code,
-                    system_key=item.system_key,
+                    system=item.system,
                     name=item.name,
                 )
                 for item in body.custom_codes
@@ -491,11 +491,11 @@ class UpdateCustomCodeInput(BaseModel):
     Input model when updating a config's custom code.
     """
 
-    system_key: str
+    system: str
     code: str
     name: str
     new_code: str | None
-    new_system_key: str | None
+    new_system: str | None
     new_name: str | None
 
 
@@ -509,17 +509,15 @@ async def _get_modified_custom_codes(
     custom_codes = config.custom_codes
 
     # find the code to modify
-    sanitized_system = await get_code_system_by_key_db(
-        key=updateInput.system_key, db=db
-    )
+    sanitized_system = await get_code_system_by_key_db(key=updateInput.system, db=db)
     if sanitized_system is None:
         raise ValueError(
-            f"System of name {updateInput.system_key} doesn't match supported systems"
+            f"System of name {updateInput.system} doesn't match supported systems"
         )
     code_to_edit = [
         cc
         for cc in custom_codes
-        if cc.system_key == sanitized_system.key
+        if cc.system == sanitized_system.key
         and cc.code == updateInput.code
         and cc.name == updateInput.name
     ]
@@ -544,29 +542,25 @@ async def _get_modified_custom_codes(
 
     # create a new code using the changes provided by the user.
     # use the old values as fallbacks.
-    if not updateInput.new_system_key:
+    if not updateInput.new_system:
         logger.warning(
-            f"No new system information found in updateInput, falling back to existing system {existing_code.system_key}"
+            f"No new system information found in updateInput, falling back to existing system {existing_code.system}"
         )
-    system_key = (
-        updateInput.new_system_key
-        if updateInput.new_system_key
-        else existing_code.system_key
-    )
+    system = updateInput.new_system if updateInput.new_system else existing_code.system
 
-    new_system = await get_code_system_by_key_db(key=system_key, db=db)
+    new_system = await get_code_system_by_key_db(key=system, db=db)
     if new_system is None:
-        raise ValueError(f"System of name {system_key} doesn't match supported systems")
+        raise ValueError(f"System of name {system} doesn't match supported systems")
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
-        system_key=new_system.key,
+        system=new_system.key,
     )
 
     # check for duplicates
     if any(
         cc.code == updated_code.code
-        and cc.system_key == updated_code.system_key
+        and cc.system == updated_code.system
         and cc.name == updated_code.name
         for cc in custom_codes
     ):
@@ -590,10 +584,10 @@ def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "code" is missing.',
         )
-    if not input.system_key:
+    if not input.system:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_key" is missing.',
+            detail='Required field "system" is missing.',
         )
 
 
@@ -754,10 +748,10 @@ async def edit_custom_code(
         updated_custom_codes=custom_codes,
         user_id=user.id,
         prev_code=body.code,
-        prev_system=body.system_key,
+        prev_system=body.system,
         prev_name=body.name,
         new_code=body.new_code,
-        new_system=body.system_key,
+        new_system=body.system,
         new_name=body.new_name,
         db=db,
     )

@@ -4,6 +4,6 @@
  */
 export interface AddCustomCodeInput {
   code: string;
-  system_key: string;
+  system: string;
   name: string;
 }

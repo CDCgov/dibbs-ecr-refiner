@@ -164,8 +164,8 @@ export function PreviewEditModal({
           <Field>
             <Label>Code system</Label>
             <Select
-              value={previewEditForm.system_key}
-              onChange={handlePreviewEditChange('system_key')}
+              value={previewEditForm.system}
+              onChange={handlePreviewEditChange('system')}
             >
               {codeSystems.data.map((s) => (
                 <option key={s.id} value={s.key}>
