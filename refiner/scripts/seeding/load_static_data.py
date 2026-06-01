@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 import time
 from datetime import datetime
@@ -15,6 +16,7 @@ from lib import (
     load_valuesets_from_all_files,
 )
 from psycopg import Cursor
+from psycopg.rows import TupleRow, dict_row
 
 
 class Code(TypedDict):
@@ -56,6 +58,16 @@ class ContextGrouperRow(TypedDict):
     code_count: int
 
 
+class CodeRow(TypedDict):
+    """
+    A code row to upsert into the DB.
+    """
+
+    name: str
+    value: str
+    system_id: str
+
+
 class ProcessedCondition(TypedDict):
     """
     A fully processed condition with its associated context grouper rows.
@@ -63,6 +75,18 @@ class ProcessedCondition(TypedDict):
 
     condition: ConditionRow
     context_groupers: list[ContextGrouperRow]
+
+
+type SystemId = str
+type SystemOid = str
+
+
+def _build_rsg_codes(
+    valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
+    system_data: list[tuple[SystemId, SystemOid]],
+) -> list[CodeRow]:
+
+    return
 
 
 def _build_processed_conditions(
@@ -233,11 +257,29 @@ CODE_SYSTEM_DATA = {
     "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
     "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
     "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
-    "other": {"oid": None, "display_name": "Other"},
+    "other": {"oid": "Other", "display_name": "Other"},
 }
 
 
-def load_system_data(cursor: Cursor):
+def _build_system_response(
+    db_system_response: list[TupleRow | None],
+) -> dict[SystemOid, SystemId]:
+    response = defaultdict()
+    for row in db_system_response:
+        if row is None:
+            continue
+
+        response[row[0]] = row[1]
+
+    if "Other" not in response.keys():
+        raise ValueError("Fallback system other not found in system response")
+
+    return response
+
+
+def load_system_data(
+    cursor: Cursor,
+) -> dict[SystemOid, SystemId]:
     """
     Loads system data into the data.
 
@@ -269,7 +311,7 @@ def load_system_data(cursor: Cursor):
                 display_name,
                 oid)
             VALUES (v.key, v.display_name, v.oid)
-        RETURNING id;
+        RETURNING s.oid, id;
     """
 
     params = [
@@ -281,10 +323,16 @@ def load_system_data(cursor: Cursor):
         for key, item in CODE_SYSTEM_DATA.items()
     ]
 
-    cursor.executemany(system_upsert_query, params)
+    cursor.executemany(system_upsert_query, params, returning=True)
+
+    systems_response = [cursor.fetchone() for _ in cursor.results()]
+
+    return _build_system_response(db_system_response=systems_response)
 
 
-def load_tes_data(cursor: Cursor) -> None:
+def load_tes_data(
+    cursor: Cursor, system_data: list[tuple[SystemId, SystemOid]]
+) -> None:
     """
     Loads condition grouper data from the TES and upserts condition rows and their associated context grouper rows into the database.
 
@@ -311,6 +359,11 @@ def load_tes_data(cursor: Cursor) -> None:
     logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
     _upsert_conditions_and_groupers(cursor=cursor, processed=processed)
 
+    # seed codes row partially, eventually this will replace the entirety of the jsonb-forward functionality
+    rsg_codes = _build_rsg_codes(
+        valuesets_map=all_valuesets_map, system_data=system_data
+    )
+
 
 def load_static_data(db_url: str, db_password: str) -> None:
     """
@@ -325,8 +378,8 @@ def load_static_data(db_url: str, db_password: str) -> None:
     try:
         with get_db_connection(db_url, db_password) as conn:
             with conn.cursor() as cursor:
-                load_tes_data(cursor=cursor)
-                load_system_data(cursor=cursor)
+                system_data = load_system_data(cursor=cursor)
+                load_tes_data(cursor=cursor, system_data=system_data)
 
                 logger.info("🏁 Done!")
 

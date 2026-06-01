@@ -124,7 +124,7 @@ SET default_table_access_method = heap;
 
 CREATE TABLE public.codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    display_name text NOT NULL,
+    name text NOT NULL,
     value text NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -239,7 +239,7 @@ CREATE TABLE public.configurations_sections (
 
 CREATE TABLE public.custom_codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    display_name text NOT NULL,
+    name text NOT NULL,
     value text NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,

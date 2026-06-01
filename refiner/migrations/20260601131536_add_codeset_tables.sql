@@ -1,7 +1,7 @@
 -- migrate:up
 CREATE TABLE custom_codes(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-    display_name TEXT NOT NULL,
+    name TEXT NOT NULL,
     value TEXT NOT NULL,
     system_id UUID NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -14,7 +14,7 @@ CREATE TABLE custom_codes(
 
 CREATE TABLE codes(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-    display_name TEXT NOT NULL,
+    name TEXT NOT NULL,
     value TEXT NOT NULL,
     system_id UUID NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
