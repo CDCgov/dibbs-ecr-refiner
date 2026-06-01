@@ -12,11 +12,37 @@ test.describe('Activity log', () => {
 
   test('Check empty state', async ({ activityLogPage, page }) => {
     await activityLogPage.goto();
+
+    await expect(page.getByLabel('Condition').getByRole('option')).toHaveText([
+      'All conditions',
+    ]);
+
     const rowData = await activityLogPage.getTableRows();
     expect(rowData).toHaveLength(0);
     await expect(
       page.getByRole('navigation', { name: 'Pagination' }).getByRole('button')
     ).toHaveCount(1);
+  });
+
+  test('Check that condition filters are sorted alphabetically by name', async ({
+    activityLogPage,
+    api,
+    page,
+  }) => {
+    const conditionOne = 'Coal Workers’ Pneumoconiosis (CWP)';
+    const conditionTwo = 'COVID-19';
+    const conditionThree = 'Zika Virus Disease';
+    await api.createConfiguration(conditionOne);
+    await api.createConfiguration(conditionTwo);
+    await api.createConfiguration(conditionThree);
+    await activityLogPage.goto();
+
+    await expect(page.getByLabel('Condition').getByRole('option')).toHaveText([
+      'All conditions',
+      conditionOne,
+      conditionTwo,
+      conditionThree,
+    ]);
   });
 
   test('Check entries from configuration creation', async ({
