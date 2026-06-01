@@ -19,6 +19,27 @@ test.describe('Activity log', () => {
     ).toHaveCount(1);
   });
 
+  test('Check that condition filters are sorted alphabetically by name', async ({
+    activityLogPage,
+    api,
+    page,
+  }) => {
+    const conditionOne = 'Coal Workers’ Pneumoconiosis (CWP)';
+    const conditionTwo = 'COVID-19';
+    const conditionThree = 'Zika Virus Disease';
+    await api.createConfiguration(conditionOne);
+    await api.createConfiguration(conditionTwo);
+    await api.createConfiguration(conditionThree);
+    await activityLogPage.goto();
+
+    await expect(page.getByLabel('Condition').getByRole('option')).toHaveText([
+      'All conditions',
+      conditionOne,
+      conditionTwo,
+      conditionThree,
+    ]);
+  });
+
   test('Check entries from configuration creation', async ({
     activityLogPage,
     api,
