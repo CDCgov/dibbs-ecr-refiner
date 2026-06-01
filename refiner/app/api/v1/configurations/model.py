@@ -13,10 +13,6 @@ from app.db.configurations.model import (
 )
 from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.ecr.policy import (
-    DisabledSection,
-    NarrativeOnlySection,
-)
 from app.services.terminology import CodeSystem
 
 
