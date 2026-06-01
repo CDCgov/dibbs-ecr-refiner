@@ -292,13 +292,13 @@ test.describe('Configuration detail flow', () => {
           })
         ).not.toBeChecked();
 
-        const chiefComplaintSwitchText =
-          'Toggle to refine or retain the narrative block in the Chief Complaint section';
-        const chiefComplaintSwitch = page.getByRole('switch', {
-          name: chiefComplaintSwitchText,
-        });
-        await chiefComplaintSwitch.click();
-        await expect(chiefComplaintSwitch).not.toBeChecked();
+        const chiefComplaintText = 'Not applicable for this section';
+        await expect(
+          page
+            .locator('tr')
+            .filter({ hasText: 'Chief Complaint' })
+            .getByText(chiefComplaintText)
+        ).toBeVisible();
 
         await expect(makeAxeBuilder).toHaveNoAxeViolations();
       });
