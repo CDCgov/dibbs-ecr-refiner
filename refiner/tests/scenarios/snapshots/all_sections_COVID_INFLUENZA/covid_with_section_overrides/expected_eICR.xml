@@ -746,15 +746,24 @@
       </component>
       <!-- History of Present Illness Section -->
       <component>
-        <section>
+        <section nullFlavor="NI">
           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.4"/>
           <code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="HISTORY OF PRESENT ILLNESS"/>
           <title>History of Present Illness</title>
-          <text mediaType="text/x-hl7-text+xml">
-            <paragraph> Persistent Cough REPORTED starting on 2020/10/05<br/> Whooping Respiration
-              not reported<br/> Paroxysms Of Coughing REPORTED starting on 2020/11/04<br/>
-              Post-tussive vomiting not reported<br/>
-            </paragraph>
+          <text>
+            <table border="1">
+              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Section details have been removed as requested by jurisdiction for this condition.</td>
+                </tr>
+              </tbody>
+            </table>
             <footnote ID="ecr-refinement-10164-2-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
@@ -776,12 +785,12 @@
                   <tr>
                     <td>10164-2</td>
                     <td>History of Present Illness Section</td>
-                    <td>Yes</td>
+                    <td>No</td>
                     <td>retain</td>
                     <td>Yes</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Retained as-is</td>
+                    <td>Removed by configuration</td>
                   </tr>
                 </tbody>
               </table>
@@ -1444,16 +1453,24 @@
       </component>
       <!-- Review of systems section -->
       <component>
-        <section>
+        <section nullFlavor="NI">
           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.18"/>
           <code code="10187-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="REVIEW OF SYSTEMS"/>
           <title>REVIEW OF SYSTEMS</title>
           <text>
-            <paragraph>
-              Patient denies recent history of fever or malaise. Positive
-              For weakness and shortness of breath. One episode of melena. No recent
-              headaches. Positive for osteoarthritis in hips, knees and hands.
-            </paragraph>
+            <table border="1">
+              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Section details have been removed as requested by jurisdiction for this condition.</td>
+                </tr>
+              </tbody>
+            </table>
             <footnote ID="ecr-refinement-10187-3-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
@@ -1475,12 +1492,12 @@
                   <tr>
                     <td>10187-3</td>
                     <td>Review of Systems Section</td>
-                    <td>Yes</td>
+                    <td>No</td>
                     <td>retain</td>
                     <td>Yes</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Retained as-is</td>
+                    <td>Removed by configuration</td>
                   </tr>
                 </tbody>
               </table>
@@ -1491,13 +1508,9 @@
       <!-- Problem Section (entries required) (V3) -->
       <component>
         <section>
-          <!-- [C-CDA R1.1] Problem Section (entries optional) -->
           <templateId root="2.16.840.1.113883.10.20.22.2.5"/>
-          <!-- [C-CDA R2.1] Problem Section (entries optional) (V3) -->
           <templateId root="2.16.840.1.113883.10.20.22.2.5" extension="2015-08-01"/>
-          <!-- [C-CDA R1.1] Problem Section (entries required) -->
           <templateId root="2.16.840.1.113883.10.20.22.2.5.1"/>
-          <!-- [C-CDA R2.1] Problem Section (entries required) (V3) -->
           <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01"/>
           <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem List"/>
           <title>Problems</title>
@@ -1585,65 +1598,37 @@
                     <td>11450-4</td>
                     <td>Problem Section</td>
                     <td>Yes</td>
-                    <td>retain</td>
+                    <td>refine</td>
                     <td>Yes</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Retained as-is</td>
+                    <td>Refined; matches found</td>
                   </tr>
                 </tbody>
               </table>
             </footnote>
           </text>
+          <!-- eCR Refiner matched: value[1119303003] 'Post-acute COVID-19 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry typeCode="DRIV">
             <act classCode="ACT" moodCode="EVN">
-              <!-- [C-CDA 1.1] Problem Concern Act -->
               <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
-              <!-- [C-CDA 2.1] Problem Concern Act (V3) -->
               <templateId root="2.16.840.1.113883.10.20.22.4.3" extension="2015-08-01"/>
               <id root="ec8a6ff8-ed4b-4f7e-82c3-e98e58b45de7"/>
               <code code="CONC" codeSystem="2.16.840.1.113883.5.6" displayName="Concern"/>
-              <!-- The statusCode represents the need to continue tracking the problem -->
-              <!-- This is of ongoing concern to the provider -->
               <statusCode code="active"/>
               <effectiveTime>
-                <!-- The low value represents when the problem was first recorded in the patient's
-                chart -->
                 <low value="20201107"/>
               </effectiveTime>
               <entryRelationship typeCode="SUBJ">
                 <observation classCode="OBS" moodCode="EVN">
-                  <!-- [C-CDA R1.1] Problem Observation -->
                   <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
-                  <!-- [C-CDA R2.1] Problem Observation (V3) -->
-                  <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01"/>
-                  <id root="ab1791b0-5c71-11db-b0de-0800200c9a66"/>
-                  <code code="75325-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Symptom">
-                    <translation code="418799008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Symptom"/>
-                  </code>
-                  <!-- The statusCode reflects the status of the observation itself -->
-                  <statusCode code="completed"/>
-                  <effectiveTime>
-                    <!-- The low value reflects the date of onset -->
-                    <low value="20201101"/>
-                  </effectiveTime>
-                  <value code="10628911000119103" codeSystem="2.16.840.1.113883.6.96" displayName="Gastroenteritis caused by Influenza A virus (disorder)" xsi:type="CD"/>
-                </observation>
-              </entryRelationship>
-              <entryRelationship typeCode="SUBJ">
-                <observation classCode="OBS" moodCode="EVN">
-                  <!-- [C-CDA R1.1] Problem Observation -->
-                  <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
-                  <!-- [C-CDA R2.1] Problem Observation (V3) -->
                   <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01"/>
                   <id root="ab1791b0-5c71-11db-b0de-0800200c9a67"/>
                   <code code="75322-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Complaint">
                     <translation code="409586006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Complaint"/>
                   </code>
-                  <!-- The statusCode reflects the status of the observation itself -->
                   <statusCode code="completed"/>
                   <effectiveTime>
-                    <!-- The low value reflects the date of onset -->
                     <low value="20201104"/>
                   </effectiveTime>
                   <value code="1119303003" codeSystem="2.16.840.1.113883.6.96" displayName="Post-acute COVID-19 (disorder)" xsi:type="CD"/>
@@ -1655,12 +1640,24 @@
       </component>
       <!-- Chief Complaint Section -->
       <component>
-        <section>
+        <section nullFlavor="NI">
           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.13.2.1"/>
           <code code="10154-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Chief complaint Narrative - Reported"/>
           <title>Chief Complaint</title>
           <text>
-            <paragraph>Chief Complaint (the patient's own description): Headache and rash</paragraph>
+            <table border="1">
+              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Section details have been removed as requested by jurisdiction for this condition.</td>
+                </tr>
+              </tbody>
+            </table>
             <footnote ID="ecr-refinement-10154-3-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
@@ -1682,12 +1679,12 @@
                   <tr>
                     <td>10154-3</td>
                     <td>Chief Complaint Section</td>
-                    <td>Yes</td>
+                    <td>No</td>
                     <td>retain</td>
                     <td>Yes</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Retained as-is</td>
+                    <td>Removed by configuration</td>
                   </tr>
                 </tbody>
               </table>
@@ -1697,12 +1694,24 @@
       </component>
       <!-- Reason for Visit Section-->
       <component>
-        <section>
+        <section nullFlavor="NI">
           <templateId root="2.16.840.1.113883.10.20.22.2.12"/>
           <code code="29299-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Reason for visit Narrative"/>
           <title>Reason for Visit</title>
           <text>
-            <paragraph>Reason for Visit (as documented by provider): Headache, rash, and fever</paragraph>
+            <table border="1">
+              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Section details have been removed as requested by jurisdiction for this condition.</td>
+                </tr>
+              </tbody>
+            </table>
             <footnote ID="ecr-refinement-29299-5-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
@@ -1724,12 +1733,12 @@
                   <tr>
                     <td>29299-5</td>
                     <td>Reason for Visit Section</td>
-                    <td>Yes</td>
+                    <td>No</td>
                     <td>retain</td>
                     <td>Yes</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Retained as-is</td>
+                    <td>Removed by configuration</td>
                   </tr>
                 </tbody>
               </table>

@@ -4,7 +4,7 @@
   "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
   "configuration_resolved": true,
   "configuration_version": 2,
-  "eicr_size_reduction_percentage": 49,
+  "eicr_size_reduction_percentage": 50,
   "error_detail": null,
   "original_eicr_id": "2.16.840.1.113883.9.9.9.9.9",
   "original_rr_id": "329b9b59-c1be-4036-8984-42266155b321",
