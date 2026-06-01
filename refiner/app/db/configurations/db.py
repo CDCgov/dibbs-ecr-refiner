@@ -25,6 +25,7 @@ from .model import (
     DbConfigurationCustomCode,
     DbConfigurationSection,
     DbConfigurationSectionProcessing,
+    DbConfigurationSummary,
     DbSectionAction,
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
@@ -1198,6 +1199,48 @@ async def get_configuration_versions_db(
         async with conn.cursor(
             row_factory=class_row(GetConfigurationResponseVersion)
         ) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return rows
+
+
+async def get_configurations_summary_db(
+    jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbConfigurationSummary]:
+    """
+    Returns a high-level summary of all configuration info within a jurisdiction.
+    """
+    query = """
+        WITH ranked AS (
+            SELECT
+                c.id,
+                c.name,
+                c.status,
+                cond.canonical_url,
+                ROW_NUMBER() OVER (
+                    PARTITION BY cond.canonical_url
+                    ORDER BY
+                        CASE c.status
+                            WHEN 'active' THEN 1
+                            WHEN 'draft' THEN 2
+                            WHEN 'inactive' THEN 3
+                        END,
+                        c.version DESC
+                ) AS rn
+            FROM configurations c
+            JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+            JOIN conditions cond ON cond.id = cc.condition_id
+            WHERE c.jurisdiction_id = %s
+        )
+        SELECT id, name, status
+        FROM ranked
+        WHERE rn = 1
+        ORDER BY LOWER(name)
+    """
+    params = (jurisdiction_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfigurationSummary)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 

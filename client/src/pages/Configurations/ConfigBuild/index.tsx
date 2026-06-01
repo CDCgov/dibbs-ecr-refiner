@@ -216,7 +216,7 @@ function Builder({
   }
 
   return (
-    <div className="bg-blue-cool-5 h-140 rounded-lg p-4">
+    <div className="bg-blue-cool-5 h-auto overflow-y-auto rounded-lg p-4 sm:h-140 sm:overflow-y-hidden">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
@@ -331,14 +331,12 @@ function Builder({
             </OptionsListContainer>
           </div>
         </div>
-        <div className="flex h-full! max-h-138! w-full! flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex min-h-0 w-full! flex-col items-start overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
-            <>
-              <ConditionCodeTable
-                defaultCondition={selectedCodesetName}
-                conditionId={selectedCodesetId}
-              />
-            </>
+            <ConditionCodeTable
+              defaultCondition={selectedCodesetName}
+              conditionId={selectedCodesetId}
+            />
           ) : tableView === 'custom' ? (
             <div className="min-h-full min-w-full">
               <h3 className="mb-2 text-xl font-bold">Custom codes</h3>

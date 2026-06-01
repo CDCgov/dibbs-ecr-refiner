@@ -181,6 +181,17 @@ class DbConfiguration:
 
 
 @dataclass(frozen=True)
+class DbConfigurationSummary:
+    """
+    Minimal model for a high-level configuration summary.
+    """
+
+    id: UUID
+    name: str
+    status: DbConfigurationStatus
+
+
+@dataclass(frozen=True)
 class ConfigurationStoragePayload:
     """
     The model for a configuration that is being written to S3.
