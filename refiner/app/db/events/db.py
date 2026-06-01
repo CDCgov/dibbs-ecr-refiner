@@ -113,12 +113,13 @@ async def get_event_filter_options_db(
         SELECT DISTINCT ON (cond.canonical_url)
             c.id,
             c.name,
+            c.version,
             cond.canonical_url
         FROM configurations c
         JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
         JOIN conditions cond ON cond.id = cc.condition_id
         WHERE c.jurisdiction_id = %s
-        ORDER BY cond.canonical_url, c.name
+        ORDER BY cond.canonical_url, c.version DESC
     ) sub
     ORDER BY LOWER(name)
     """
