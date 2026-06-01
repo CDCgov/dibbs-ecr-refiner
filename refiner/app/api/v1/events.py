@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.auth.middleware import get_logged_in_user
 from app.db.events.db import (
     AuditEvent,
-    get_configuration_filter_options_db,
     get_custom_code_upload_events_by_event_id,
     get_event_count_by_condition_db,
+    get_event_filter_options_db,
     get_events_by_jd_db,
     is_event_valid,
 )
@@ -87,7 +87,7 @@ async def get_events(
             canonical_url=canonical_url,
             db=db,
         ),
-        get_configuration_filter_options_db(jurisdiction_id=jd, db=db),
+        get_event_filter_options_db(jurisdiction_id=jd, db=db),
     )
 
     if total_event_count is None:

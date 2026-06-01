@@ -101,7 +101,7 @@ async def is_event_valid(
             return row is not None
 
 
-async def get_configuration_filter_options_db(
+async def get_event_filter_options_db(
     jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> list[DbEventFilterOption]:
     """
