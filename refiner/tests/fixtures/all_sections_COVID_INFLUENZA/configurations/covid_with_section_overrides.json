@@ -14391,7 +14391,7 @@
   ],
   "sections": [
     {
-      "include": true,
+      "include": false,
       "narrative": true,
       "action": "retain",
       "name": "Chief Complaint Section",
@@ -14415,7 +14415,7 @@
       "section_type": "standard"
     },
     {
-      "include": true,
+      "include": false,
       "narrative": true,
       "action": "retain",
       "name": "History of Present Illness Section",
@@ -14428,7 +14428,7 @@
       "section_type": "standard"
     },
     {
-      "include": true,
+      "include": false,
       "narrative": true,
       "action": "retain",
       "name": "Review of Systems Section",
@@ -14467,7 +14467,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "retain",
+      "action": "refine",
       "name": "Problem Section",
       "code": "11450-4",
       "versions": [
@@ -14503,7 +14503,7 @@
       "section_type": "standard"
     },
     {
-      "include": true,
+      "include": false,
       "narrative": true,
       "action": "retain",
       "name": "Reason for Visit Section",

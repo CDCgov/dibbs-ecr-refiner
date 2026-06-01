@@ -16875,7 +16875,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Chief Complaint Section",
       "code": "10154-3",
       "versions": [
@@ -16899,7 +16899,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "History of Present Illness Section",
       "code": "10164-2",
       "versions": [
@@ -16912,7 +16912,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Review of Systems Section",
       "code": "10187-3",
       "versions": [
@@ -16987,7 +16987,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Reason for Visit Section",
       "code": "29299-5",
       "versions": [

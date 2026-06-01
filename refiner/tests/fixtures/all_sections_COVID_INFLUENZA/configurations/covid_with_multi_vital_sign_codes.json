@@ -14396,7 +14396,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Chief Complaint Section",
       "code": "10154-3",
       "versions": [
@@ -14420,7 +14420,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "History of Present Illness Section",
       "code": "10164-2",
       "versions": [
@@ -14433,7 +14433,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Review of Systems Section",
       "code": "10187-3",
       "versions": [
@@ -14508,7 +14508,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Reason for Visit Section",
       "code": "29299-5",
       "versions": [
@@ -48716,12 +48716,12 @@
       },
       {
         "code": "8480-6",
-        "display": "Systolic BP",
+        "display": "Systolic blood pressure",
         "system": "2.16.840.1.113883.6.1"
       },
       {
         "code": "9279-1",
-        "display": "Respiratory Rate",
+        "display": "Respiratory rate",
         "system": "2.16.840.1.113883.6.1"
       },
       {

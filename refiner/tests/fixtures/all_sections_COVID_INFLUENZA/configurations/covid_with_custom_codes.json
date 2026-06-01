@@ -14397,7 +14397,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Chief Complaint Section",
       "code": "10154-3",
       "versions": [
@@ -14421,7 +14421,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "History of Present Illness Section",
       "code": "10164-2",
       "versions": [
@@ -14434,7 +14434,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Review of Systems Section",
       "code": "10187-3",
       "versions": [
@@ -14509,7 +14509,7 @@
     {
       "include": true,
       "narrative": true,
-      "action": "refine",
+      "action": "retain",
       "name": "Reason for Visit Section",
       "code": "29299-5",
       "versions": [
@@ -14664,13 +14664,13 @@
   "code_system_sets": {
     "snomed": [
       {
-        "code": "233573008",
-        "display": "Extracorporeal membrane oxygenation (procedure)",
+        "code": "10628911000119103",
+        "display": "Gastroenteritis caused by Influenza A virus",
         "system": "2.16.840.1.113883.6.96"
       },
       {
-        "code": "10628911000119103",
-        "display": "Gastroenteritis caused by Influenza",
+        "code": "233573008",
+        "display": "Extracorporeal membrane oxygenation",
         "system": "2.16.840.1.113883.6.96"
       },
       {
@@ -86628,7 +86628,7 @@
     "cvx": [
       {
         "code": "2563008",
-        "display": "Influenza vaccine",
+        "display": "Flucelvax Quadrivalent 2021-2022 Injectable Product",
         "system": "2.16.840.1.113883.12.292"
       }
     ],
