@@ -6,13 +6,14 @@ from uuid import UUID
 from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
+from app.core.exceptions import DatabaseQueryError
 from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
 
 
-@dataclass
+@dataclass(frozen=True)
 class AuditEvent:
     """
     An event returned by the DB function.
@@ -28,8 +29,19 @@ class AuditEvent:
     has_custom_code_upload_events: bool
 
 
-@dataclass
-class CustomCodeUploadEvent:
+@dataclass(frozen=True)
+class DbEventFilterOption:
+    """
+    Filter option from the DB.
+    """
+
+    id: UUID
+    name: str
+    canonical_url: str
+
+
+@dataclass(frozen=True)
+class DbCustomCodeUploadEvent:
     """
     Custom code upload event.
     """
@@ -45,7 +57,7 @@ async def get_event_count_by_condition_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> int | None:
+) -> int:
     """
     Gets a count of all events within a jurisdiction by condition.
     """
@@ -65,7 +77,7 @@ async def get_event_count_by_condition_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
-                return None
+                raise DatabaseQueryError("Could not retrieve total event count.")
             return int(row["total_count"])
 
 
@@ -88,6 +100,34 @@ async def is_event_valid(
             await cur.execute(query, params)
             row = await cur.fetchone()
             return row is not None
+
+
+async def get_event_filter_options_db(
+    jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbEventFilterOption]:
+    """
+    Collects all possible conditions within a jurisdiction a user can filter events by.
+    """
+    query = """
+    SELECT id, name, canonical_url
+    FROM (
+        SELECT DISTINCT ON (cond.canonical_url)
+            c.id,
+            c.name,
+            c.version,
+            cond.canonical_url
+        FROM configurations c
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE c.jurisdiction_id = %s
+        ORDER BY cond.canonical_url, c.version DESC
+    ) sub
+    ORDER BY LOWER(name)
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbEventFilterOption)) as cur:
+            await cur.execute(query, (jurisdiction_id,))
+            return await cur.fetchall()
 
 
 async def get_events_by_jd_db(
@@ -143,7 +183,7 @@ async def get_events_by_jd_db(
 
 async def get_custom_code_upload_events_by_event_id(
     event_id: UUID, db: AsyncDatabaseConnection
-) -> list[CustomCodeUploadEvent]:
+) -> list[DbCustomCodeUploadEvent]:
     """
     Returns all custom code upload events for an event ID.
     """
@@ -160,7 +200,7 @@ async def get_custom_code_upload_events_by_event_id(
     params = (event_id,)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(CustomCodeUploadEvent)) as cur:
+        async with conn.cursor(row_factory=class_row(DbCustomCodeUploadEvent)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
             return rows
