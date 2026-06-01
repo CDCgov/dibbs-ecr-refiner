@@ -1,4 +1,4 @@
-import type { CustomCodesSystems } from './customCodesSystems';
+import type { CustomCodesCodeSystems } from './customCodesCodeSystems';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 
 /**
@@ -6,5 +6,5 @@ import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
  */
 export interface CustomCodes {
   codes: DbConfigurationCustomCode[];
-  systems: CustomCodesSystems;
+  code_systems: CustomCodesCodeSystems;
 }

@@ -69,6 +69,16 @@ class LockedByUser(UserInfoBase):
 
 
 @dataclass(frozen=True)
+class CustomCodes:
+    """
+    Model for custom codes response, with systems bundled alongside codes for frontend display.
+    """
+
+    codes: list[DbConfigurationCustomCode]
+    code_systems: dict[CodeSystemKey, DbCodeSystem]
+
+
+@dataclass(frozen=True)
 class GetConfigurationResponse:
     """
     Model for a configration response.
@@ -83,7 +93,7 @@ class GetConfigurationResponse:
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
-    custom_codes: list[DbConfigurationCustomCode]
+    custom_codes: CustomCodes
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
     version: int
@@ -92,7 +102,6 @@ class GetConfigurationResponse:
     latest_version: int
     is_locked: bool
     locked_by: LockedByUser | None
-    code_systems: dict[CodeSystemKey, DbCodeSystem]
 
 
 @dataclass(frozen=True)
