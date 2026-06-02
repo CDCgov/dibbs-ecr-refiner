@@ -10,7 +10,7 @@ type Condition = {
   display_name: string;
 };
 
-type CustomCode = { code: string; system: string; name: string };
+type CustomCode = { code: string; system_key: string; name: string };
 
 export class Api {
   constructor(private request: APIRequestContext) {}
