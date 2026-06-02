@@ -149,14 +149,12 @@ async def add_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
-    code_systems = await get_all_code_systems_by_key(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
-        code_systems=code_systems,
     )
 
 
@@ -474,14 +472,12 @@ async def delete_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
-    code_systems = await get_all_code_systems_by_key(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
-        code_systems=code_systems,
     )
 
 
@@ -750,7 +746,7 @@ async def edit_custom_code(
         prev_system=body.system,
         prev_name=body.name,
         new_code=body.new_code,
-        new_system=body.system,
+        new_system=body.new_system,
         new_name=body.new_name,
         db=db,
     )
@@ -765,12 +761,10 @@ async def edit_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
-    code_systems = await get_all_code_systems_by_key(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
-        code_systems=code_systems,
     )

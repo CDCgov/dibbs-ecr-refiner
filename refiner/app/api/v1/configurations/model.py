@@ -114,7 +114,6 @@ class ConfigurationCustomCodeResponse:
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
     custom_codes: list[DbConfigurationCustomCode]
-    code_systems: dict[CodeSystemKey, DbCodeSystem]
 
 
 class AssociateCodesetInput(BaseModel):
