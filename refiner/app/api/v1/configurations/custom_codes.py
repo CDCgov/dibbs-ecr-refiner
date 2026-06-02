@@ -1,12 +1,12 @@
 import csv
 import io
-from collections import defaultdict
 from dataclasses import dataclass
 from logging import Logger
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from refiner.app.core.exceptions import CsvUploadValidationError
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
@@ -178,6 +178,112 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     total_custom_codes_in_configuration: int | None = None
 
 
+def _create_csv_reader(
+    body: UploadCustomCodesCsvInput,
+):
+    decoded = body.csv_text
+    return csv.DictReader(io.StringIO(decoded))
+
+
+def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
+
+    required_columns = {"code_number", "code_system", "display_name"}
+    if not required_columns.issubset(set(csv_reader.fieldnames or [])):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV must contain headers: code_number,code_system,display_name",
+        )
+
+
+async def _get_requested_config_or_raise(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+):
+    # Get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # Find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=jd,
+        db=db,
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+    return config
+
+
+def _validate_row_code_system(
+    code_system_raw: str,
+    supported_systems_by_key: dict[str, DbCodeSystem],
+):
+    supported_systems_by_name = {
+        s.display_name: s for s in supported_systems_by_key.values()
+    }
+    return supported_systems_by_key.get(
+        code_system_raw
+    ) or supported_systems_by_name.get(code_system_raw)
+
+
+def _validate_csv_upload_row(
+    row: dict, supported_systems: dict
+) -> tuple[str, DbCodeSystem, str] | list[str]:
+    code = (row.get("code_number") or "").strip()
+    code_system_raw = (row.get("code_system") or "").strip()
+    name = (row.get("display_name") or "").strip()
+
+    row_errors = []
+    sanitized_system = None
+
+    if not code:
+        row_errors.append("Missing code_number")
+    if not name:
+        row_errors.append("Missing display_name")
+
+    if not code_system_raw:
+        row_errors.append("Missing code_system")
+    else:
+        sanitized_system = _validate_row_code_system(
+            code_system_raw=code_system_raw,
+            supported_systems_by_key=supported_systems,
+        )
+        if sanitized_system is None:
+            allowed_systems_str = ", ".join(supported_systems.keys())
+            row_errors.append(
+                f"Invalid system: {code_system_raw}. "
+                f"[code_system] must be one of [{allowed_systems_str}]"
+            )
+
+    if row_errors:
+        return row_errors
+
+    # get the type checker to recognize that santized_system will be defined here
+    assert sanitized_system is not None
+    return (code, sanitized_system, name)
+
+
+def _check_row_response_for_duplicates(
+    code: str,
+    system: DbCodeSystem,
+    custom_code_keys: list[tuple[str, str]],
+    codes_seen_so_far: set,
+) -> tuple[str, CodeSystemKey] | list[str]:
+    row_errors = []
+    code_key = (code.lower(), system.key)
+    if code_key in custom_code_keys:
+        row_errors.append("Duplicate: matches existing custom code")
+    if code_key in codes_seen_so_far:
+        row_errors.append("Duplicate: matches uploaded batch code")
+    if row_errors:
+        return row_errors
+
+    return code_key
+
+
 @router.post(
     "/upload",
     tags=["configurations"],
@@ -187,7 +293,6 @@ class UploadCustomCodesPreviewResponse(BaseModel):
 async def upload_custom_codes_csv(
     configuration_id: UUID,
     body: UploadCustomCodesCsvInput,
-    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> UploadCustomCodesPreviewResponse:
@@ -206,87 +311,48 @@ async def upload_custom_codes_csv(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be a CSV.",
         )
+    csv_reader = _create_csv_reader(body)
+    _validate_required_columns_or_raise(csv_reader)
 
-    # Get user jurisdiction
-    jd = user.jurisdiction_id
-
-    # Find config
-    config = await get_configuration_by_id_db(
-        id=configuration_id,
-        jurisdiction_id=jd,
-        db=db,
-    )
-    if not config:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Configuration not found.",
-        )
-
-    # Parse CSV from text
-    decoded = body.csv_text
-    csv_reader = csv.DictReader(io.StringIO(decoded))
-
-    required_columns = {"code_number", "code_system", "display_name"}
-    if not required_columns.issubset(set(csv_reader.fieldnames or [])):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSV must contain headers: code_number,code_system,display_name",
-        )
+    config = await _get_requested_config_or_raise(configuration_id=configuration_id)
+    supported_systems = await get_all_code_systems_by_key(db=db)
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
-    code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
-    batch_keys = set()
-    code_systems: dict[CodeSystemKey, DbCodeSystem] = defaultdict()
-    systems_by_key = await get_all_code_systems_by_key(db=db)
-    allowed_systems_str = ", ".join(systems_by_key.keys())
-    systems_by_name = {s.display_name: s for s in systems_by_key.values()}
-    for row_number, row in enumerate(csv_reader, start=2):
-        code = (row.get("code_number") or "").strip()
-        code_system_raw = (row.get("code_system") or "").strip()
-        name = (row.get("display_name") or "").strip()
-        row_errors = []
-        if not code:
-            row_errors.append("Missing code_number")
-        if not code_system_raw:
-            row_errors.append("Missing code_system")
-        if not name:
-            row_errors.append("Missing display_name")
-        sanitized_system = None
+    custom_code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
+    codes_seen_so_far = set()
 
-        try:
-            sanitized_system = systems_by_name.get(
-                code_system_raw
-            ) or systems_by_name.get(code_system_raw)
-            if sanitized_system is None:
-                raise ValueError(
-                    f"System of name {code_system_raw} doesn't match supported systems"
-                )
-            code_systems[sanitized_system.key] = sanitized_system
-        except ValueError:
-            row_errors.append(
-                f"Invalid system: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
-            )
-        code_key = None
-        if sanitized_system:
-            code_key = (code.lower(), sanitized_system.key)
-        if code_key in code_keys:
-            row_errors.append("Duplicate: matches existing custom code")
-        if code_key in batch_keys:
-            row_errors.append("Duplicate: matches uploaded batch code")
-        if row_errors:
-            errors.append({"row": row_number, "error": ", ".join(row_errors)})
+    for row_number, row in enumerate(csv_reader, start=2):
+        row_errors = []
+        row_response = _validate_csv_upload_row(
+            row, supported_systems=supported_systems
+        )
+        if isinstance(row_response, list):
+            row_errors.extend(row_response)
             continue
-        batch_keys.add(code_key)
-        if sanitized_system:
-            preview_items.append(
-                UploadCustomCodesPreviewItem(
-                    code=code,
-                    system=sanitized_system.key,
-                    name=name,
-                    row=row_number,
-                )
+
+        (code, sanitized_system, name) = row_response
+
+        duplicate_reponse = _check_row_response_for_duplicates(
+            code=code,
+            system=sanitized_system,
+            custom_code_keys=custom_code_keys,
+            codes_seen_so_far=codes_seen_so_far,
+        )
+        if isinstance(duplicate_reponse, list):
+            row_errors.extend(duplicate_reponse)
+            continue
+
+        codes_seen_so_far.add(duplicate_reponse)
+        preview_items.append(
+            UploadCustomCodesPreviewItem(
+                code=code,
+                system=sanitized_system.key,
+                name=name,
+                row=row_number,
             )
+        )
+
     if errors:
         logger.error("CSV upload errors", extra={"errors": errors})
         raise HTTPException(
@@ -303,7 +369,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
-        code_systems=code_systems,
+        code_systems=supported_systems,
     )
 
 

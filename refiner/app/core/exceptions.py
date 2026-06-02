@@ -91,6 +91,14 @@ class FileProcessingError(ProcessingError):
     pass
 
 
+class CsvUploadValidationError(FileProcessingError):
+    """
+    Raised when validation for a particular row in a CSV bulk upload fails.
+    """
+
+    pass
+
+
 class ZipValidationError(BaseApplicationException):
     """
     Raised when there are issues with ZIP file validation or processing.
