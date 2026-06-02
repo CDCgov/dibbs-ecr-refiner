@@ -10,7 +10,6 @@ from app.db.configurations.model import (
 )
 from tests.unit.helpers.code_systems import (
     create_mock_code_system,
-    create_mock_code_systems,
     get_mock_allowed_system_keys,
 )
 from tests.unit.helpers.configuration import create_processed_config
