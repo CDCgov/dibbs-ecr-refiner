@@ -1,3 +1,5 @@
+from app.api.v1.configurations.model import SectionUpdateInput
+from app.api.v1.configurations.sections import _build_section_update
 from app.db.configurations.model import DbConfigurationSectionProcessing
 from app.services.configurations import (
     clone_section_processing_instructions,
@@ -243,3 +245,94 @@ class TestCloneSectionProcessingInstructions:
         assert result_map[refinable_code].action == "refine"
         assert result_map[refinable_code].include is False
         assert result_map[custom_code].section_type == "custom"
+
+
+class TestBuildSectionUpdateNormalization:
+    def test_narrative_only_standard_section_normalized_to_retain(self):
+        """
+        Tests that standard sections with narrative-only codes are normalized to action="retain"
+        even when action="refine" is requested (handles legacy DB rows).
+        """
+        narrative_code = NARRATIVE_ONLY_SECTIONS[0]
+
+        prev_section = DbConfigurationSectionProcessing(
+            code=narrative_code,
+            name="Chief Complaint",
+            action="refine",  # Legacy value from before narrative refinement PR
+            include=True,
+            narrative=True,
+            versions=["1.1"],
+            section_type="standard",
+        )
+
+        section_input = SectionUpdateInput(
+            current_code=narrative_code,
+            action="refine",  # Attempting to set to refine
+        )
+
+        result = _build_section_update(prev_section, section_input)
+
+        assert result.code == narrative_code
+        assert result.action == "retain", (
+            f"Narrative-only standard section should be normalized to 'retain', got '{result.action}'"
+        )
+        assert result.section_type == "standard"
+
+    def test_narrative_only_custom_section_not_normalized(self):
+        """
+        Tests that custom sections with narrative-only codes are NOT normalized,
+        allowing them to keep their requested action.
+        """
+        narrative_code = NARRATIVE_ONLY_SECTIONS[0]
+
+        prev_section = DbConfigurationSectionProcessing(
+            code=narrative_code,
+            name="Custom Narrative Section",
+            action="refine",
+            include=True,
+            narrative=True,
+            versions=[],
+            section_type="custom",
+        )
+
+        section_input = SectionUpdateInput(
+            current_code=narrative_code,
+            action="refine",
+        )
+
+        result = _build_section_update(prev_section, section_input)
+
+        assert result.code == narrative_code
+        assert result.action == "refine", (
+            f"Custom section should keep 'refine' action, got '{result.action}'"
+        )
+        assert result.section_type == "custom"
+
+    def test_refinable_standard_section_keeps_refine_action(self):
+        """
+        Tests that standard sections with match rules keep action="refine" when requested.
+        """
+        refinable_code = "11450-4"  # Problem Section
+
+        prev_section = DbConfigurationSectionProcessing(
+            code=refinable_code,
+            name="Problem Section",
+            action="retain",
+            include=True,
+            narrative=False,
+            versions=["1.1"],
+            section_type="standard",
+        )
+
+        section_input = SectionUpdateInput(
+            current_code=refinable_code,
+            action="refine",
+        )
+
+        result = _build_section_update(prev_section, section_input)
+
+        assert result.code == refinable_code
+        assert result.action == "refine", (
+            f"Refinable standard section should keep 'refine' action, got '{result.action}'"
+        )
+        assert result.section_type == "standard"
