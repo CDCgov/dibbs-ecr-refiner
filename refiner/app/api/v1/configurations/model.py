@@ -141,7 +141,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: str
+    system_key: str
     name: str
 
 
@@ -216,7 +216,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: str
+    system_key: str
     name: str
     row: int | None = None
 

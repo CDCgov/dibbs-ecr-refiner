@@ -192,11 +192,11 @@ async def convert_config_to_storage_payload(
     for cc in configuration.custom_codes:
         codes.add(cc.code)
         cur_code_system = await get_code_system_by_key_or_display_name(
-            name=cc.system, db=db
+            name=cc.system_key, db=db
         )
         if cur_code_system is None:
             raise ValueError(
-                f"System of name {cc.system} doesn't match supported systems"
+                f"System of name {cc.system_key} doesn't match supported systems"
             )
 
         system_to_extend = cur_code_system.key

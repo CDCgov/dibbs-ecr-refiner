@@ -275,7 +275,7 @@ async def get_configuration(
             DbConfigurationCustomCode(
                 code=c.code,
                 name=c.name,
-                system=c.system,
+                system_key=c.system_key,
             )
             for c in config.custom_codes
         ],

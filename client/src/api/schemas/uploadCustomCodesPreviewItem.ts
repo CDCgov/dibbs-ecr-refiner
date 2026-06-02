@@ -4,7 +4,7 @@
  */
 export interface UploadCustomCodesPreviewItem {
   code: string;
-  system: string;
+  system_key: string;
   name: string;
   row?: number | null;
 }

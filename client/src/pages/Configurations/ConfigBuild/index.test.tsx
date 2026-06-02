@@ -52,7 +52,7 @@ const mockCustomCodes: DbConfigurationCustomCode[] = [
   {
     code: 'custom-code1',
     name: 'test-custom-code1',
-    system: 'icd10',
+    system_key: 'icd10',
   },
 ];
 
@@ -156,7 +156,7 @@ const mockCodeSystems: CodeSystemsReponse[] = [
   },
   {
     id: 'f65063a3-6836-41ce-8ab8-253994907faa',
-    oid: null,
+    oid: 'Other',
     key: 'other',
     display_name: 'Other',
   },

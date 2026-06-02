@@ -24,7 +24,7 @@ const mockCustomCodes: DbConfigurationCustomCode[] = [
   {
     code: 'custom-code1',
     name: 'test-custom-code1',
-    system: 'icd-10',
+    system_key: 'icd-10',
   },
 ];
 
