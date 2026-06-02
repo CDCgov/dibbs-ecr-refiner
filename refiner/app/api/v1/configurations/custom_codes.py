@@ -18,8 +18,6 @@ from app.api.v1.configurations.model import (
 )
 from app.db.code_systems.db import (
     DbCodeSystem,
-    get_all_code_systems_by_key,
-    get_allowed_code_system_keys,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -37,6 +35,10 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.code_systems import (
+    get_all_code_systems_by_key,
+    get_allowed_code_system_keys,
+)
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
 from app.services.terminology import CodeSystemKey

@@ -3,8 +3,8 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from refiner.app.api.v1.code_systems import CodeSystemsReponse
 
+from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.model import DbConditionsContextGrouper
 

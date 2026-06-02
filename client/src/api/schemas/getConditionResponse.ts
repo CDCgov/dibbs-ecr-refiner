@@ -1,5 +1,5 @@
+import type { CodeSystemsReponse } from './codeSystemsReponse';
 import type { CompletenessStatus } from './completenessStatus';
-import type { DbCodeSystem } from './dbCodeSystem';
 import type { GetConditionCode } from './getConditionCode';
 
 /**
@@ -10,5 +10,5 @@ export interface GetConditionResponse {
   display_name: string;
   completeness_status: CompletenessStatus;
   codes: GetConditionCode[];
-  systems: DbCodeSystem[];
+  systems: CodeSystemsReponse[];
 }

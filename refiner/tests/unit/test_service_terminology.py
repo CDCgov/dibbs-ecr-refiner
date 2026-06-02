@@ -60,7 +60,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(self, monkeypatch):
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            "app.services.configurations.get_code_system_by_key_or_display_name",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -84,7 +84,7 @@ class TestTerminologyService:
             ),
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            "app.services.configurations.get_code_system_by_key_or_display_name",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -125,7 +125,7 @@ class TestTerminologyService:
             ),
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            "app.services.configurations.get_code_system_by_key_or_display_name",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
