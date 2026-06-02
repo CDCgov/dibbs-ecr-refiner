@@ -322,7 +322,7 @@ async def upload_custom_codes_csv(
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
     custom_code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
-    codes_seen_so_far = set()
+    codes_seen_so_far: set[tuple[str, CodeSystemKey]] = set()
 
     for row_number, row in enumerate(csv_reader, start=2):
         row_errors = []
