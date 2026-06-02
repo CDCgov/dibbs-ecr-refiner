@@ -309,7 +309,7 @@ async def insert_configuration_db(
                     # custom_codes
                     Jsonb(
                         [
-                            {"name": c.name, "code": c.code, "system": c.system}
+                            {"name": c.name, "code": c.code, "system_key": c.system_key}
                             for c in config_to_clone.custom_codes
                         ]
                     ),
@@ -688,7 +688,7 @@ async def add_custom_code_to_configuration_db(
     custom_codes = config.custom_codes
 
     exists = any(
-        (c.code == custom_code.code and c.system == custom_code.system)
+        (c.code == custom_code.code and c.system_key == custom_code.system_key)
         for c in custom_codes
     )
 
@@ -696,7 +696,8 @@ async def add_custom_code_to_configuration_db(
         custom_codes.append(custom_code)
 
     json = [
-        {"code": cc.code, "system": cc.system, "name": cc.name} for cc in custom_codes
+        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
+        for cc in custom_codes
     ]
 
     params = (Jsonb(json), config.id)
@@ -748,20 +749,21 @@ async def add_bulk_custom_codes_to_configuration_db(
 
     existing_codes = config.custom_codes or []
 
-    # Build a set of (code, system) for fast lookup
-    existing_keys = {(c.code, c.system) for c in existing_codes}
+    # Build a set of (code, system_key) for fast lookup
+    existing_keys = {(c.code, c.system_key) for c in existing_codes}
 
     new_codes_added: list[DbConfigurationCustomCode] = []
 
     for code in custom_codes:
-        key = (code.code, code.system)
+        key = (code.code, code.system_key)
         if key not in existing_keys:
             existing_codes.append(code)
             existing_keys.add(key)
             new_codes_added.append(code)
 
     json_payload = [
-        {"code": cc.code, "system": cc.system, "name": cc.name} for cc in existing_codes
+        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
+        for cc in existing_codes
     ]
 
     params = (Jsonb(json_payload), config.id)
@@ -797,13 +799,13 @@ async def add_bulk_custom_codes_to_configuration_db(
 
 async def delete_custom_code_from_configuration_db(
     config: DbConfiguration,
-    system: str,
+    system_key: str,
     code: str,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
-    Given a config, system, and custom code, deletes the custom code from the configuration.
+    Given a config, system_key, and custom code, deletes the custom code from the configuration.
     """
 
     query = """
@@ -815,9 +817,9 @@ async def delete_custom_code_from_configuration_db(
             """
 
     updated_custom_codes = [
-        {"code": cc.code, "system": cc.system, "name": cc.name}
+        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
         for cc in config.custom_codes
-        if not (cc.system == system and cc.code == code)
+        if not (cc.system_key == system_key and cc.code == code)
     ]
 
     params = (Jsonb(updated_custom_codes), config.id)
@@ -851,10 +853,10 @@ async def edit_custom_code_from_configuration_db(
     updated_custom_codes: list[DbConfigurationCustomCode],
     user_id: UUID,
     prev_code: str,
-    prev_system: str,
+    prev_system_key: str,
     prev_name: str,
     new_code: str | None,
-    new_system: str | None,
+    new_system_key: str | None,
     new_name: str | None,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -871,7 +873,7 @@ async def edit_custom_code_from_configuration_db(
             """
 
     json_codes = [
-        {"code": cc.code, "system": cc.system, "name": cc.name}
+        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
         for cc in updated_custom_codes
     ]
 
@@ -913,14 +915,14 @@ async def edit_custom_code_from_configuration_db(
                 )
 
             # 3. System changed
-            if new_system is not None and new_system != prev_system:
+            if new_system_key is not None and new_system_key != prev_system_key:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated system for custom code '{prev_code}' from '{prev_system}' to '{new_system}'",
+                        action_text=f"Updated system for custom code '{prev_code}' from '{prev_system_key}' to '{new_system_key}'",
                     )
                 )
 

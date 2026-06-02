@@ -49,7 +49,7 @@ class DbConfigurationCustomCode:
     """
 
     code: str
-    system: str
+    system_key: str
     name: str
 
 
@@ -164,7 +164,7 @@ class DbConfiguration:
             included_conditions=row.get("included_conditions") or [],
             custom_codes=[
                 DbConfigurationCustomCode(
-                    system=c["system"], code=c["code"], name=c["name"]
+                    system_key=c["system_key"], code=c["code"], name=c["name"]
                 )
                 for c in row["custom_codes"]
             ],

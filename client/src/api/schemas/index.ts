@@ -14,7 +14,6 @@ export * from './codeSystemsReponse';
 export * from './completenessStatus';
 export * from './condition';
 export * from './configurationCustomCodeResponse';
-export * from './configurationCustomCodeResponseCodeSystems';
 export * from './configurationStatusUpdateResponse';
 export * from './configurationTestResponse';
 export * from './confirmUploadCustomCodesInput';

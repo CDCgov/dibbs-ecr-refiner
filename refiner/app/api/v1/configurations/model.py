@@ -114,7 +114,6 @@ class ConfigurationCustomCodeResponse:
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
     custom_codes: list[DbConfigurationCustomCode]
-    code_systems: dict[CodeSystemKey, DbCodeSystem]
 
 
 class AssociateCodesetInput(BaseModel):
@@ -142,7 +141,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: str
+    system_key: str
     name: str
 
 
@@ -217,7 +216,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: str
+    system_key: str
     name: str
     row: int | None = None
 

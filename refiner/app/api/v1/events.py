@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.exceptions import DatabaseConnectionError, DatabaseQueryError
-from app.db.code_systems.db import get_all_code_systems_by_key
 from app.db.events.db import (
     AuditEvent,
     get_custom_code_upload_events_by_event_id,
@@ -18,6 +17,7 @@ from app.db.events.db import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.code_systems import get_all_code_systems_by_key
 from app.services.logger import get_logger
 
 router = APIRouter(prefix="/events")
@@ -184,7 +184,7 @@ async def get_custom_code_upload_events(
     return [
         CustomCodeUploadEventResponse(
             id=cc.id,
-            system_display_name=system_by_key[cc.system].display_name,
+            system_display_name=system_by_key[cc.system_key].display_name,
             code=cc.code,
             name=cc.name,
         )

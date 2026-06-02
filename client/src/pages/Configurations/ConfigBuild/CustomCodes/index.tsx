@@ -46,9 +46,9 @@ function enrichCustomCodeWithSystemDisplay(
     return {
       ...c,
       codeSystemDisplayName:
-        codeSystems && Object.keys(codeSystems).includes(c.system)
-          ? codeSystems[c.system].display_name
-          : c.system,
+        codeSystems && Object.keys(codeSystems).includes(c.system_key)
+          ? codeSystems[c.system_key].display_name
+          : c.system_key,
     };
   });
 }
@@ -90,7 +90,7 @@ export function CustomCodesDetail({
         <tbody>
           {displayCustomCodes.map((customCode) => (
             <tr
-              key={customCode.code + customCode.system}
+              key={customCode.code + customCode.system_key}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
@@ -123,7 +123,7 @@ export function CustomCodesDetail({
                           {
                             // encode to prevent special characters from breaking the action
                             code: encodeURIComponent(customCode.code),
-                            system: customCode.system,
+                            systemKey: customCode.system_key,
                             configurationId: configurationId,
                           },
                           {

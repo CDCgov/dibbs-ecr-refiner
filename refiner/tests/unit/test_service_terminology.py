@@ -10,7 +10,6 @@ from app.db.configurations.model import (
 )
 from tests.unit.helpers.code_systems import (
     create_mock_code_system,
-    create_mock_code_systems,
     get_mock_allowed_system_keys,
 )
 from tests.unit.helpers.configuration import create_processed_config
@@ -61,7 +60,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(self, monkeypatch):
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            "app.services.configurations.get_code_system_by_key_or_display_name",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -73,7 +72,7 @@ class TestTerminologyService:
             custom_codes=[
                 DbConfigurationCustomCode(
                     code="B",
-                    system="loinc",
+                    system_key="loinc",
                     name="Custom LOINC",
                 )
             ]
@@ -85,7 +84,7 @@ class TestTerminologyService:
             ),
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            "app.services.configurations.get_code_system_by_key_or_display_name",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -108,7 +107,7 @@ class TestTerminologyService:
             custom_codes=[
                 DbConfigurationCustomCode(
                     code="DUP",
-                    system="loinc",
+                    system_key="loinc",
                     name="Custom",
                 )
             ]
@@ -126,7 +125,7 @@ class TestTerminologyService:
             ),
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            "app.services.configurations.get_code_system_by_key_or_display_name",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
