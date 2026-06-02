@@ -14,7 +14,7 @@ SET custom_codes = COALESCE((
                 WHEN elem->>'system' = 'CVX' THEN '{"system_key": "cvx"}'::jsonb
                 WHEN elem->>'system' = 'Other' THEN '{"system_key": "other"}'::jsonb
                 ELSE '{}'::jsonb
-            END)
+            END) - 'system'
             ORDER BY ord
     )
     FROM jsonb_array_elements(c.custom_codes) WITH ORDINALITY AS t(elem, ord)
@@ -35,7 +35,7 @@ SET custom_codes = COALESCE((
                 WHEN elem->>'system_key' = 'cvx' THEN '{"system":"CVX" }'::jsonb
                 WHEN elem->>'system_key' = 'other' THEN '{"system":"Other" }'::jsonb
                 ELSE '{}'::jsonb
-            END)
+            END) - 'system_key'
             ORDER BY ord
     )
     FROM jsonb_array_elements(c.custom_codes) WITH ORDINALITY AS t(elem, ord)
