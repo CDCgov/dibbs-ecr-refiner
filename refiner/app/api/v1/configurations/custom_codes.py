@@ -546,7 +546,9 @@ async def _get_modified_custom_codes(
             f"No new system_key information found in updateInput, falling back to existing system_key {existing_code.system_key}"
         )
     system_key = (
-        updateInput.system_key if updateInput.system_key else existing_code.system_key
+        updateInput.new_system_key
+        if updateInput.new_system_key
+        else existing_code.system_key
     )
 
     new_system = await get_code_system_by_key_db(key=system_key, db=db)
