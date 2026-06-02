@@ -97,90 +97,92 @@ export function Sections({
         </p>
       </div>
 
-      <table className="w-full table-fixed">
-        <thead>
-          <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-            <th scope="col" className="w-32 pb-3">
-              Include
-            </th>
-            <th scope="col" className="w-auto pb-3 text-left">
-              Section name
-            </th>
-            <th scope="col" className="align-right w-2/6 pb-3">
-              <div className="flex items-center justify-center gap-1">
-                <span>Data handling approach</span>
-                <Tooltip
-                  position="left"
-                  label={`Set to "Refine & optimize" if you'd like to filter the
-                    content of this section down to coded elements matching the
-                    codes in your configuration in your refined output. Set to
-                    "Preserve & retain" if you'd like to keep the information in
-                    this section in its entirety in the refined output.`}
-                />
-              </div>
-            </th>
-            <th scope="col" className="w-1/6 pb-3">
-              <div className="flex items-center justify-center gap-1">
-                <span>Narrative</span>
-                <Tooltip
-                  position="left"
-                  label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
-                />
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-gray-cool-20 divide-y">
-          {sectionProcessing.map((section) => (
-            <tr key={section.code} className="text-gray-cool-60">
-              <td>
-                <div className="flex justify-center p-8">
-                  <IncludeCheckbox
-                    configurationId={configurationId}
-                    currentSection={section}
-                    sections={sectionProcessing}
-                    disabled={disabled || isDisabledSection(section.code)}
+      <div className="max-h-[calc(100vh-400px)] overflow-y-auto">
+        <table className="w-full table-fixed">
+          <thead className="sticky top-0 z-10 bg-white">
+            <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
+              <th scope="col" className="w-32 pt-3 pb-3">
+                Include
+              </th>
+              <th scope="col" className="w-auto pt-3 pb-3 text-left">
+                Section name
+              </th>
+              <th scope="col" className="align-right w-2/6 pt-3 pb-3">
+                <div className="flex items-center justify-center gap-1">
+                  <span>Data handling approach</span>
+                  <Tooltip
+                    position="left"
+                    label={`Set to "Refine & optimize" if you'd like to filter the
+                      content of this section down to coded elements matching the
+                      codes in your configuration in the refined output. Set to
+                      "Preserve & retain" if you'd like to keep the information in
+                      this section in its entirety in the refined output.`}
                   />
                 </div>
-              </td>
-              <td>
-                <SectionName
-                  configurationId={configurationId}
-                  section={section}
-                  disabled={disabled}
-                  setSelectedSection={() => onSelectedSection(section)}
-                />
-              </td>
-              <td>
-                {section.include ? (
-                  <div className="flex justify-center">
-                    <RefineSwitch
-                      configurationId={configurationId}
-                      currentSection={section}
-                      sections={sectionProcessing}
-                      disabled={disabled || isDisabledSection(section.code)}
-                      isNarrativeOnly={isNarrativeSection(section.code)}
-                    />
-                  </div>
-                ) : null}
-              </td>
-
-              <td>
-                {section.include ? (
-                  <div className="flex justify-center">
-                    <NarrativeSwitch
-                      configurationId={configurationId}
-                      currentSection={section}
-                      sections={sectionProcessing}
-                      disabled={disabled || isDisabledSection(section.code)}
-                    />
-                  </div>
-                ) : null}
-              </td>
+              </th>
+              <th scope="col" className="w-1/6 pt-3 pb-3">
+                <div className="flex items-center justify-center gap-1">
+                  <span>Narrative</span>
+                  <Tooltip
+                    position="left"
+                    label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
+                  />
+                </div>
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-gray-cool-20 divide-y">
+            {sectionProcessing.map((section) => (
+              <tr key={section.code} className="text-gray-cool-60">
+                <td>
+                  <div className="flex justify-center p-8">
+                    <IncludeCheckbox
+                      configurationId={configurationId}
+                      currentSection={section}
+                      sections={sectionProcessing}
+                      disabled={disabled || isDisabledSection(section.code)}
+                    />
+                  </div>
+                </td>
+                <td>
+                  <SectionName
+                    configurationId={configurationId}
+                    section={section}
+                    disabled={disabled}
+                    setSelectedSection={() => onSelectedSection(section)}
+                  />
+                </td>
+                <td>
+                  {section.include ? (
+                    <div className="flex justify-center">
+                      <RefineSwitch
+                        configurationId={configurationId}
+                        currentSection={section}
+                        sections={sectionProcessing}
+                        disabled={disabled || isDisabledSection(section.code)}
+                        isNarrativeOnly={isNarrativeSection(section.code)}
+                      />
+                    </div>
+                  ) : null}
+                </td>
+
+                <td>
+                  {section.include ? (
+                    <div className="flex justify-center">
+                      <NarrativeSwitch
+                        configurationId={configurationId}
+                        currentSection={section}
+                        sections={sectionProcessing}
+                        disabled={disabled || isDisabledSection(section.code)}
+                      />
+                    </div>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
@@ -213,27 +215,25 @@ function SectionName({
         </span>
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
-      {isCustom ? (
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm">{section.code}</span>
-          {disabled ? null : (
-            <div className="flex items-center gap-1">
-              <EditButton
-                name={section.name}
-                setSelectedSection={setSelectedSection}
-              />
-              <span className="text-sm" aria-hidden>
-                |
-              </span>
-              <DeleteButton
-                configurationId={configurationId}
-                code={section.code}
-                name={section.name}
-              />
-            </div>
-          )}
-        </div>
-      ) : null}
+      <div className="flex items-center gap-2">
+        <span className="truncate text-sm">{section.code}</span>
+        {isCustom && !disabled ? (
+          <div className="flex items-center gap-1">
+            <EditButton
+              name={section.name}
+              setSelectedSection={setSelectedSection}
+            />
+            <span className="text-sm" aria-hidden>
+              |
+            </span>
+            <DeleteButton
+              configurationId={configurationId}
+              code={section.code}
+              name={section.name}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
