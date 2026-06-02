@@ -6,7 +6,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from refiner.app.core.exceptions import CsvUploadValidationError
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
@@ -197,8 +196,8 @@ def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
 
 async def _get_requested_config_or_raise(
     configuration_id: UUID,
-    user: DbUser = Depends(get_logged_in_user),
-    db: AsyncDatabaseConnection = Depends(get_db),
+    user: DbUser,
+    db: AsyncDatabaseConnection,
 ):
     # Get user jurisdiction
     jd = user.jurisdiction_id
@@ -217,7 +216,7 @@ async def _get_requested_config_or_raise(
     return config
 
 
-def _validate_row_code_system(
+def _get_row_code_system(
     code_system_raw: str,
     supported_systems_by_key: dict[str, DbCodeSystem],
 ):
@@ -237,7 +236,7 @@ def _validate_csv_upload_row(
     name = (row.get("display_name") or "").strip()
 
     row_errors = []
-    sanitized_system = None
+    row_system = None
 
     if not code:
         row_errors.append("Missing code_number")
@@ -247,11 +246,11 @@ def _validate_csv_upload_row(
     if not code_system_raw:
         row_errors.append("Missing code_system")
     else:
-        sanitized_system = _validate_row_code_system(
+        row_system = _get_row_code_system(
             code_system_raw=code_system_raw,
             supported_systems_by_key=supported_systems,
         )
-        if sanitized_system is None:
+        if row_system is None:
             allowed_systems_str = ", ".join(supported_systems.keys())
             row_errors.append(
                 f"Invalid system: {code_system_raw}. "
@@ -262,8 +261,8 @@ def _validate_csv_upload_row(
         return row_errors
 
     # get the type checker to recognize that santized_system will be defined here
-    assert sanitized_system is not None
-    return (code, sanitized_system, name)
+    assert row_system is not None
+    return (code, row_system, name)
 
 
 def _check_row_response_for_duplicates(
@@ -294,6 +293,7 @@ async def upload_custom_codes_csv(
     configuration_id: UUID,
     body: UploadCustomCodesCsvInput,
     db: AsyncDatabaseConnection = Depends(get_db),
+    user: DbUser = Depends(get_logged_in_user),
     logger: Logger = Depends(get_logger),
 ) -> UploadCustomCodesPreviewResponse:
     """
@@ -314,7 +314,9 @@ async def upload_custom_codes_csv(
     csv_reader = _create_csv_reader(body)
     _validate_required_columns_or_raise(csv_reader)
 
-    config = await _get_requested_config_or_raise(configuration_id=configuration_id)
+    config = await _get_requested_config_or_raise(
+        configuration_id=configuration_id, db=db, user=user
+    )
     supported_systems = await get_all_code_systems_by_key(db=db)
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
@@ -331,11 +333,11 @@ async def upload_custom_codes_csv(
             row_errors.extend(row_response)
             continue
 
-        (code, sanitized_system, name) = row_response
+        (code, row_system, name) = row_response
 
         duplicate_reponse = _check_row_response_for_duplicates(
             code=code,
-            system=sanitized_system,
+            system=row_system,
             custom_code_keys=custom_code_keys,
             codes_seen_so_far=codes_seen_so_far,
         )
@@ -347,7 +349,7 @@ async def upload_custom_codes_csv(
         preview_items.append(
             UploadCustomCodesPreviewItem(
                 code=code,
-                system=sanitized_system.key,
+                system=row_system.key,
                 name=name,
                 row=row_number,
             )

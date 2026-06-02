@@ -13,10 +13,6 @@ CODE_SYSTEM_DATA = {
 }
 
 
-def get_mock_allowed_system_keys():
-    return CODE_SYSTEM_DATA.keys()
-
-
 def create_mock_code_systems():
     return {
         key: DbCodeSystem(
@@ -31,3 +27,7 @@ def create_mock_code_systems():
 
 def create_mock_code_system(key: CodeSystemKey):
     return create_mock_code_systems()[key]
+
+
+def get_mock_allowed_system_keys():
+    return create_mock_code_systems().keys()
