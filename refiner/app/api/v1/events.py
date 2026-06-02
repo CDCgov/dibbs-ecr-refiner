@@ -184,7 +184,7 @@ async def get_custom_code_upload_events(
     return [
         CustomCodeUploadEventResponse(
             id=cc.id,
-            system_display_name=system_by_key[cc.system_key].display_name,
+            system_display_name=system_by_key[cc.system].display_name,
             code=cc.code,
             name=cc.name,
         )
