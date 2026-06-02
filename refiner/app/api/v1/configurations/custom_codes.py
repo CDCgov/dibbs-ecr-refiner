@@ -19,10 +19,8 @@ from app.api.v1.configurations.model import (
 from app.db.code_systems.db import (
     DbCodeSystem,
     get_all_code_systems_by_key,
-    get_allowed_code_system_display_names,
     get_allowed_code_system_keys,
     get_code_system_by_key_db,
-    get_code_system_by_key_or_display_name_db,
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
@@ -240,6 +238,9 @@ async def upload_custom_codes_csv(
     code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
     batch_keys = set()
     code_systems: dict[CodeSystemKey, DbCodeSystem] = defaultdict()
+    systems_by_key = await get_all_code_systems_by_key(db=db)
+    allowed_systems_str = ", ".join(systems_by_key.keys())
+    systems_by_name = {s.display_name: s for s in systems_by_key.values()}
     for row_number, row in enumerate(csv_reader, start=2):
         code = (row.get("code_number") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
@@ -252,13 +253,11 @@ async def upload_custom_codes_csv(
         if not name:
             row_errors.append("Missing display_name")
         sanitized_system = None
-        allowed_systems_str = ", ".join(
-            await get_allowed_code_system_display_names(db=db)
-        )
+
         try:
-            sanitized_system = await get_code_system_by_key_or_display_name_db(
-                name=code_system_raw, db=db
-            )
+            sanitized_system = systems_by_name.get(
+                code_system_raw
+            ) or systems_by_name.get(code_system_raw)
             if sanitized_system is None:
                 raise ValueError(
                     f"System of name {code_system_raw} doesn't match supported systems"

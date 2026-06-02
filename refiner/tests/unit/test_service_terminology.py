@@ -10,6 +10,7 @@ from app.db.configurations.model import (
 )
 from tests.unit.helpers.code_systems import (
     create_mock_code_system,
+    create_mock_code_systems,
     get_mock_allowed_system_keys,
 )
 from tests.unit.helpers.configuration import create_processed_config
@@ -59,7 +60,12 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
 @pytest.mark.asyncio
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(self, monkeypatch):
-
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            AsyncMock(
+                return_value=create_mock_code_system("loinc"),
+            ),
+        )
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
@@ -74,6 +80,12 @@ class TestTerminologyService:
         )
         monkeypatch.setattr(
             "app.services.configurations.get_code_system_by_key_db",
+            AsyncMock(
+                return_value=create_mock_code_system("loinc"),
+            ),
+        )
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_display_name_db",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
@@ -102,15 +114,24 @@ class TestTerminologyService:
             ]
         )
         monkeypatch.setattr(
+            "app.services.configurations.get_allowed_code_system_keys",
+            AsyncMock(
+                return_value=get_mock_allowed_system_keys(),
+            ),
+        )
+        monkeypatch.setattr(
             "app.services.configurations.get_code_system_by_key_db",
             AsyncMock(
                 return_value=create_mock_code_system("loinc"),
             ),
         )
         monkeypatch.setattr(
-            "app.services.configurations.get_allowed_code_system_keys",
-            AsyncMock(return_value=get_mock_allowed_system_keys()),
+            "app.services.configurations.get_code_system_by_key_or_display_name_db",
+            AsyncMock(
+                return_value=create_mock_code_system("loinc"),
+            ),
         )
+
         processed = await create_processed_config(
             config=config, conditions=[cond1, cond2]
         )
