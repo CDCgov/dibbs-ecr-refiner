@@ -18,7 +18,7 @@ class CodeSystemsReponse:
     id: UUID
     key: str
     display_name: str
-    oid: str | None
+    oid: str
 
 
 @router.get(

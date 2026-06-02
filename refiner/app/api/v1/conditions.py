@@ -3,8 +3,9 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from refiner.app.api.v1.code_systems import CodeSystemsReponse
 
-from app.db.code_systems.db import DbCodeSystem, get_all_code_systems_db
+from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.model import DbConditionsContextGrouper
 
 from ...db.conditions.db import (
@@ -92,7 +93,7 @@ class GetConditionResponse:
     display_name: str
     completeness_status: CompletenessStatus
     codes: list[GetConditionCode]
-    systems: list[DbCodeSystem]
+    systems: list[CodeSystemsReponse]
 
 
 def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
@@ -178,5 +179,10 @@ async def get_condition(
             code_category_statuses=code_category_statuses,
         ),
         codes=condition_codes,
-        systems=list(systems.values()),
+        systems=[
+            CodeSystemsReponse(
+                id=s.id, key=s.key, display_name=s.display_name, oid=s.oid
+            )
+            for s in systems.values()
+        ],
     )
