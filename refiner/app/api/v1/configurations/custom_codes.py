@@ -40,7 +40,6 @@ from app.services.code_systems import (
 )
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
-from app.services.terminology import CodeSystemKey
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
