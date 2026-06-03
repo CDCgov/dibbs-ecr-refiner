@@ -17,7 +17,6 @@ from app.db.events.db import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
-from app.services.code_systems import get_all_code_systems_by_key
 from app.services.logger import get_logger
 
 router = APIRouter(prefix="/events")
@@ -179,12 +178,10 @@ async def get_custom_code_upload_events(
         event_id=event_id, db=db
     )
 
-    system_by_key = await get_all_code_systems_by_key(db=db)
-
     return [
         CustomCodeUploadEventResponse(
             id=cc.id,
-            system_display_name=system_by_key[cc.system_key].display_name,
+            system_display_name=cc.system,
             code=cc.code,
             name=cc.name,
         )

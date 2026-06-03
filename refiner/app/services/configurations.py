@@ -19,8 +19,8 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.code_systems import (
+    get_all_code_systems_by_key,
     get_allowed_code_system_keys,
-    get_code_system_by_key_or_display_name,
 )
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.specification import (
@@ -187,16 +187,15 @@ async def convert_config_to_storage_payload(
 
     # build per-system code dicts for CodeSystemSets
     coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-
+    code_systems = await get_all_code_systems_by_key(db)
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = await get_code_system_by_key_or_display_name(
-            name=cc.system_key, db=db
-        )
+        cur_code_system = code_systems[cc.system_key]
+
         if cur_code_system is None:
             raise ValueError(
-                f"System of name {cc.system_key} doesn't match supported systems"
+                f"System with key {cc.system_key} doesn't match supported systems"
             )
 
         system_to_extend = cur_code_system.key
@@ -252,7 +251,8 @@ async def convert_config_to_storage_payload(
 
     # STEP 3: build the CodeSystemSets
     code_system_sets = CodeSystemSets.from_dict(
-        s3_data=coding_by_code_system, oid_to_system_map=OID_TO_SYSTEM_KEY_MAP
+        coding_by_code_system=coding_by_code_system,
+        oid_to_system_map=OID_TO_SYSTEM_KEY_MAP,
     )
 
     return ConfigurationStoragePayload(

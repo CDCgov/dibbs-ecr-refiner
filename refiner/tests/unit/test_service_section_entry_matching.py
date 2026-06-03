@@ -10,7 +10,7 @@ from app.services.ecr.section import get_section_by_code
 from app.services.ecr.section.entry_matching import process
 from app.services.ecr.specification import load_spec
 from app.services.terminology import CodeSystemSets, Oid
-from tests.unit.helpers.code_systems import create_mock_code_systems
+from tests.unit.conftest import create_mock_systems
 
 # NOTE:
 # HELPERS
@@ -51,7 +51,7 @@ def _get_refiner_comments(section: _Element) -> list[str]:
 def _make_oid_to_system_map() -> dict[Oid, CodeSystemKey]:
     systems: dict[Oid, CodeSystemKey] = defaultdict()
 
-    for key, system in create_mock_code_systems().items():
+    for key, system in create_mock_systems().items():
         oid = system.oid
         systems[oid] = key
     return systems
@@ -79,7 +79,7 @@ def _make_code_system_sets(codes_by_system: dict[str, list[str]]) -> CodeSystemS
             )
 
     return CodeSystemSets.from_dict(
-        s3_data=data, oid_to_system_map=_make_oid_to_system_map()
+        coding_by_code_system=data, oid_to_system_map=_make_oid_to_system_map()
     )
 
 

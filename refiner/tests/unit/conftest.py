@@ -1,8 +1,6 @@
 import os
 from unittest.mock import AsyncMock, MagicMock
 
-from tests.unit.helpers.code_systems import create_mock_code_systems
-
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "unit-test"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
@@ -35,7 +33,7 @@ from lxml.etree import _Element
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
 from app.db.code_systems.db import (
-    get_all_code_systems_db,
+    DbCodeSystem,
 )
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration
@@ -116,11 +114,6 @@ def mock_user():
 
 
 @pytest.fixture
-def mock_supported_systems():
-    return create_mock_code_systems()
-
-
-@pytest.fixture
 def mock_condition():
     return DbCondition(
         id=uuid4(),
@@ -178,17 +171,31 @@ def mock_logged_in_user(mock_user, test_app):
     test_app.dependency_overrides.pop(get_logged_in_user, None)
 
 
-@pytest.fixture
-def mock_code_systems(test_app):
-    """
-    Mock a read to the code system table
-    """
+CODE_SYSTEM_DATA = {
+    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
+    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
+    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
+    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
+    "other": {"oid": "Other", "display_name": "Other"},
+}
 
-    test_app.dependency_overrides[get_all_code_systems_db] = lambda: (
-        mock_supported_systems
-    )
-    yield
-    test_app.dependency_overrides.pop(get_all_code_systems_db, None)
+
+def create_mock_systems():
+    return {
+        key: DbCodeSystem(
+            id=uuid4(),
+            oid=system["oid"],
+            display_name=system["display_name"],
+            key=key,
+        )
+        for key, system in CODE_SYSTEM_DATA.items()
+    }
+
+
+@pytest.fixture
+def mock_all_systems():
+    return create_mock_systems()
 
 
 @pytest.fixture(scope="session")

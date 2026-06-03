@@ -183,7 +183,7 @@ class CodeSystemSets:
     @classmethod
     def from_dict(
         cls,
-        s3_data: dict[CodeSystemKey, list[dict[Code, str]]],
+        coding_by_code_system: dict[CodeSystemKey, list[dict[Code, str]]],
         oid_to_system_map: dict[Oid, CodeSystemKey],
     ) -> "CodeSystemSets":
         """
@@ -194,7 +194,7 @@ class CodeSystemSets:
         lookup dictionaries.
 
         Args:
-            s3_data: Dictionary with system names as keys and lists of Coding dicts as values, as stored in S3.
+            coding_by_code_system: Dictionary with system names as keys and lists of Coding dicts as values, as stored in S3.
             oid_to_system_map: Map between OID and internal system key used to index S3 code system information
 
         Returns:
@@ -217,8 +217,8 @@ class CodeSystemSets:
             }
 
         system_to_code_maps = {
-            system_key: _deserialize_system(s3_data.get(system_key))
-            if s3_data.get(system_key)
+            system_key: _deserialize_system(coding_by_code_system.get(system_key))
+            if coding_by_code_system.get(system_key)
             else {}
             for system_key in oid_to_system_map.values()
         }
@@ -306,7 +306,7 @@ class ProcessedConfiguration:
         if validated.code_system_sets is not None:
             # enriched format: deserialize the per-system code structure
             code_system_sets = CodeSystemSets.from_dict(
-                s3_data=validated.code_system_sets,
+                coding_by_code_system=validated.code_system_sets,
                 oid_to_system_map=OID_TO_SYSTEM_KEY_MAP,
             )
         else:

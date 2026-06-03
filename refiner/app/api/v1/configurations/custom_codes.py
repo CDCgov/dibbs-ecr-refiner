@@ -16,7 +16,7 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
-    DbCodeSystem,
+    CodeSystemIndex,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -172,7 +172,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
     preview: list[UploadCustomCodesPreviewItem]
-    code_systems: dict[CodeSystemKey, DbCodeSystem]
+    code_systems: CodeSystemIndex
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
 
@@ -350,6 +350,7 @@ async def upload_custom_codes_csv(
             UploadCustomCodesPreviewItem(
                 code=code,
                 system_key=row_system.key,
+                system_display_name=row_system.display_name,
                 name=name,
                 row=row_number,
             )
@@ -593,12 +594,12 @@ async def _get_modified_custom_codes(
     if len(code_to_edit) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find custom code with specified system_key/code pair.",
+            detail="Could not find custom code with specified system/code pair.",
         )
     if len(code_to_edit) > 1:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Multiple custom codes with system_key/code pair found.",
+            detail="Multiple custom codes with system/code pair found.",
         )
 
     # get the code
@@ -621,7 +622,10 @@ async def _get_modified_custom_codes(
 
     new_system = await get_code_system_by_key_db(key=system_key, db=db)
     if new_system is None:
-        raise ValueError(f"System of name {system_key} doesn't match supported systems")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"System of name {system_key} doesn't match supported systems",
+        )
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,

@@ -25,6 +25,7 @@ import { DbCodeSystem } from '../../../../api/schemas';
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
   system_key: 'other',
+  system_display_name: 'Other',
   name: '',
 };
 
@@ -44,7 +45,7 @@ type PreviewError = { row: number; error: string };
 
 type SearchPreviewItem = UploadCustomCodesPreviewItem & {
   previewIndex: number;
-  systemDisplayName: string;
+  system_display_name: string;
 };
 
 export function ImportCustomCodes({
@@ -368,11 +369,11 @@ export function ImportCustomCodes({
       }));
 
   const previewData = useMemo<SearchPreviewItem[]>(() => {
-    if (!previewItems) return [];
+    if (!previewItems || !previewCodeSystems) return [];
     return previewItems.map((item, index) => ({
       ...item,
       previewIndex: index,
-      systemDisplayName: formatSystemDisplayName(
+      system_display_name: formatSystemDisplayName(
         previewCodeSystems,
         item.system_key
       ),
@@ -552,7 +553,7 @@ export function ImportCustomCodes({
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.systemDisplayName}</td>
+                    <td className="px-2 py-1">{item.system_display_name}</td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>
@@ -629,14 +630,11 @@ export function ImportCustomCodes({
 }
 
 function formatSystemDisplayName(
-  previewCodeSystems: { [key: string]: DbCodeSystem } | null,
+  previewCodeSystems: { [key: string]: DbCodeSystem },
   keyToCheck: string
 ) {
-  if (
-    previewCodeSystems &&
-    Object.keys(previewCodeSystems).includes(keyToCheck)
-  ) {
+  if (Object.keys(previewCodeSystems).includes(keyToCheck)) {
     return previewCodeSystems[keyToCheck].display_name;
   }
-  return keyToCheck;
+  return keyToCheck.toUpperCase();
 }
