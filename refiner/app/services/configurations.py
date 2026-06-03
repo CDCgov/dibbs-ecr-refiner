@@ -21,7 +21,6 @@ from app.db.pool import AsyncDatabaseConnection
 from app.services.code_systems import (
     get_all_code_systems_by_key,
     get_allowed_code_system_keys,
-    get_code_system_by_key_or_display_name,
 )
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.specification import (
