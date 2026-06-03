@@ -1,3 +1,4 @@
+import itertools
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -6,10 +7,13 @@ from fastapi import status
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+from app.db.code_systems.db import (
+    get_code_system_by_key_db,
+)
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
-from app.services.terminology import CodeSystem
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -445,6 +449,76 @@ class TestConfigurations:
         # FastAPI shouldn't allow this to work
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
+    @pytest.mark.parametrize(
+        "new_code, new_system_key, new_name",
+        list(
+            itertools.product(
+                ["VERY-FAKE-CODE-00000-WITH-UPDATE", None],
+                ["snomed", "icd10"],
+                ["Mock code with update", None],
+            )
+        ),
+    )
+    async def test_custom_code_editing_succeds_on_all_fields(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        add_custom_code,
+        edit_custom_code,
+        new_code,
+        new_name,
+        new_system_key,
+        db_pool,
+    ):
+        """
+        A custom code once completed can have all of its fields edited.
+        """
+        condition_id = await get_condition_id("Diphtheria")
+        config = await create_config(condition_id)
+
+        config_id = config["id"]
+        initial_code = "VERY-FAKE-CODE-00000"
+        initial_code_name = "Mock code"
+        initial_system = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert initial_system
+        await add_custom_code(
+            config_id,
+            DbConfigurationCustomCode(
+                code=initial_code,
+                system_key=initial_system.key,
+                name=initial_code_name,
+            ),
+        )
+
+        edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
+            system_key=initial_system.key,
+            code=initial_code,
+            name=initial_code_name,
+            new_code=new_code,
+            new_name=new_name,
+            new_system_key=new_system_key,
+        )
+
+        edit_response = await edit_custom_code(config_id, edit_payload)
+        assert len(edit_response["custom_codes"]) == 1
+        edited_custom_code = edit_response["custom_codes"][0]
+
+        if new_code:
+            assert edited_custom_code["code"] == new_code
+        else:
+            assert edited_custom_code["code"] == initial_code
+
+        if new_system_key:
+            assert edited_custom_code["system_key"] == new_system_key
+        else:
+            assert edited_custom_code["system_key"] == initial_system.key
+        if new_name:
+            assert edited_custom_code["name"] == new_name
+        else:
+            assert edited_custom_code["name"] == initial_code_name
+
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
         setup,
@@ -482,7 +556,13 @@ class TestConfigurations:
         assert response.json()["valid"]
 
     async def test_adding_custom_code_validation_fails_on_conflicting_custom_code(
-        self, setup, authed_client, get_condition_id, create_config, add_custom_code
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        add_custom_code,
+        db_pool,
     ):
         """
         A brand new custom code can't have the value of another custom code attached to the same config.
@@ -492,10 +572,14 @@ class TestConfigurations:
 
         config_id = config["id"]
         same_code = "VERY-FAKE-CODE-00000"
+        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc_info
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=same_code, system=CodeSystem("loinc"), name="Mock code"
+                code=same_code,
+                system_key=loinc_info.key,
+                name="Mock code",
             ),
         )
 
@@ -507,7 +591,13 @@ class TestConfigurations:
         assert not response.json()["valid"]
 
     async def test_editing_custom_code_validation_fails_on_conflicting_custom_code(
-        self, setup, authed_client, get_condition_id, create_config, add_custom_code
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        add_custom_code,
+        db_pool,
     ):
         """
         An edited custom code can't have the value of another custom code attached to the same config.
@@ -518,18 +608,28 @@ class TestConfigurations:
         config_id = config["id"]
 
         desired_code = "FAKE-DESIRED-CODE-99999"
+        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc_info
+
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=desired_code, system=CodeSystem("loinc"), name="Mock code"
+                code=desired_code,
+                system_key=loinc_info.key,
+                name="Mock code",
             ),
         )
 
         code_to_edit = "FAKE-CODE-TO-EDIT-111"
+        rxnorm_info = await get_code_system_by_key_db(key="rxnorm", db=db_pool)
+        assert rxnorm_info
+
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=code_to_edit, system=CodeSystem("rxnorm"), name="edit me"
+                code=code_to_edit,
+                system_key=rxnorm_info.key,
+                name="edit me",
             ),
         )
 

@@ -76,6 +76,7 @@ def create_lifespan(
         app.state.db = db
         await db.connect()
         logger.info("Database pool opened", extra={"db_pool_stats": db.get_stats()})
+
         # Start the cleanup tasks in the background
         asyncio.create_task(run_expired_session_cleanup_task(logger, db=db))
         yield

@@ -7,13 +7,15 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
+import { DbConfigurationCustomCode } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 import { Select, SelectContainer } from '@components/Select';
+import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
+import { Spinner } from '@components/Spinner';
 
 interface CustomCodeModalProps {
   configurationId: string;
@@ -21,10 +23,6 @@ interface CustomCodeModalProps {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedCustomCode: DbConfigurationCustomCode | null;
   onClose: () => void;
-}
-
-function normalizeSystem(system: CodeSystem | string): CodeSystem {
-  return system.toLowerCase() as CodeSystem;
 }
 
 export function CustomCodeModal({
@@ -82,24 +80,19 @@ function CustomCodeForm({
   const queryClient = useQueryClient();
   const showToast = useToast();
 
-  // TODO: this should come from the server.
-  // Maybe get this info as part of the seed script?
-  const systemValues = [
-    { name: 'Select system', value: '' },
-    ...Object.values(CodeSystem).map((s) => ({
-      name: s,
-      value: s.toLowerCase(),
-    })),
-  ];
+  const { data: codeSystems, isPending, isError } = useGetCodeSystems();
 
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
-  const [system, setSystem] = useState(selectedCustomCode?.system ?? '');
+
+  const [selectedSystem, setSelectedSystem] = useState(
+    selectedCustomCode?.system_key ?? ''
+  );
 
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isButtonEnabled = code && system && name && !error;
+  const isButtonEnabled = code && selectedSystem && name && !error;
 
   const handleCodeUpdate = (code: string) => {
     setCode(code);
@@ -145,10 +138,10 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: selectedCustomCode.code,
-            system: normalizeSystem(selectedCustomCode.system),
+            system_key: selectedCustomCode.system_key,
             name: selectedCustomCode.name,
             new_code: code.trim(),
-            new_system: normalizeSystem(system),
+            new_system_key: selectedSystem,
             new_name: name.trim(),
           },
         },
@@ -176,7 +169,7 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: code.trim(),
-            system: normalizeSystem(system),
+            system_key: selectedSystem,
             name: name.trim(),
           },
         },
@@ -192,6 +185,15 @@ function CustomCodeForm({
       );
     }
   };
+
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+
+  if (isError || !codeSystems) return 'Error!';
 
   return (
     <>
@@ -213,12 +215,15 @@ function CustomCodeForm({
         <Field>
           <Label>Code system</Label>
           <Select
-            value={normalizeSystem(system)}
-            onChange={(e) => setSystem(normalizeSystem(e.target.value))}
+            value={selectedSystem}
+            onChange={(e) => setSelectedSystem(e.target.value)}
           >
-            {systemValues.map((sv) => (
-              <option key={sv.value} value={sv.value}>
-                {sv.name}
+            <option value="" disabled>
+              Select system
+            </option>
+            {codeSystems.data.map((s) => (
+              <option key={s.id} value={s.key}>
+                {s.display_name}
               </option>
             ))}
           </Select>

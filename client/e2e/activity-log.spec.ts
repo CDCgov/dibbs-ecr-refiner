@@ -81,11 +81,13 @@ test.describe('Activity log', () => {
     const config = await api.createConfiguration(condition);
 
     // Create 50 codes to upload
-    const systems = ['LOINC', 'ICD-10', 'SNOMED', 'RxNorm', 'CVX'];
+    const systems = ['loinc', 'icd10', 'snomed', 'rxnorm', 'cvx', 'other'];
+    const systemNames = ['LOINC', 'ICD-10', 'SNOMED', 'RxNorm', 'CVX', 'Other'];
     const customCodes = Array.from({ length: 50 }, (_, i) => ({
       code: `mc-${i + 1}`,
       name: `mock code ${i + 1}`,
-      system: systems[i % systems.length],
+      system_key: systems[i % systems.length],
+      system_display_name: systemNames[i % systems.length],
     }));
 
     await api.uploadCustomCodeCsv(config.id, customCodes);

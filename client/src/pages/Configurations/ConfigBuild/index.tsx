@@ -300,7 +300,7 @@ function Builder({
                     aria-pressed={tableView === 'custom'}
                   >
                     <span>Custom codes</span>
-                    <span>{custom_codes.length.toLocaleString()}</span>
+                    <span>{custom_codes.codes.length.toLocaleString()}</span>
                   </Button>
                 </li>
                 <li key="sections">
@@ -356,7 +356,8 @@ function Builder({
                 isOpen={isModalOpen}
                 setIsOpen={setIsModalOpen}
                 configurationId={id}
-                customCodes={custom_codes}
+                customCodes={custom_codes.codes}
+                codeSystems={custom_codes.code_systems}
                 disabled={disabled}
               />
             </div>
