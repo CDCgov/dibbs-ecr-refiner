@@ -210,7 +210,7 @@ def _make_plan(
 
 
 @pytest.fixture(autouse=True)
-def mock_db_functions(monkeypatch, mock_all_systems, mock_single_system):
+def mock_db_functions(monkeypatch, mock_all_systems):
     """
     Mock return values of the `_db` functions called by the routes.
     """
@@ -530,9 +530,7 @@ class TestRefiningService:
         assert "59621000" not in section_text  # hypertension
         assert "44054006" not in section_text  # diabetes
 
-    async def test_display_name_enrichment_v1_1(
-        self, eicr_root_v1_1: etree._Element, monkeypatch, mock_second_system
-    ):
+    async def test_display_name_enrichment_v1_1(self, eicr_root_v1_1: etree._Element):
         """
         Tests that missing displayName attributes are filled in from the condition
         grouper, both at match time (observation code) and during the post-prune
