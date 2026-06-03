@@ -60,10 +60,14 @@ async def get_logged_in_user(
         DbUser: Returns the user information
     """
     session_token = request.cookies.get("refiner-session")
+
+    session_expiry_msg = "Your session has expired due to inactivity. Please refresh the page and log in again."
+
     if not session_token:
+        logger.info("Session cookie token is missing.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing session token",
+            detail=session_expiry_msg,
         )
 
     token_hash = get_hashed_token(session_token)
@@ -81,9 +85,10 @@ async def get_logged_in_user(
         )
 
     if not db_user:
+        logger.info("User session could not be found in the database.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired session token",
+            detail=session_expiry_msg,
         )
 
     user = DbUserWithSessionExpiryTime(**db_user)

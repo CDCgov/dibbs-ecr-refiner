@@ -22,6 +22,21 @@ SET custom_codes = COALESCE((
 WHERE c.custom_codes IS NOT NULL
   AND jsonb_typeof(c.custom_codes) = 'array';
 
+ALTER TABLE events_custom_code_uploads RENAME COLUMN system TO system_key;
+
+UPDATE events_custom_code_uploads
+SET system_key = CASE system_key
+    WHEN 'ICD-10' THEN 'icd10'
+    WHEN 'SNOMED' THEN 'snomed'
+    WHEN 'LOINC'  THEN 'loinc'
+    WHEN 'RxNorm' THEN 'rxnorm'
+    WHEN 'CVX'    THEN 'cvx'
+    WHEN 'Other'  THEN 'other'
+END
+WHERE system_key IN ('ICD-10', 'SNOMED', 'LOINC', 'RxNorm', 'CVX', 'Other');
+
+
+
 -- migrate:down
 UPDATE configurations c 
 SET custom_codes = COALESCE((
@@ -42,3 +57,16 @@ SET custom_codes = COALESCE((
 ), '[]'::jsonb) 
 WHERE c.custom_codes IS NOT NULL
   AND jsonb_typeof(c.custom_codes) = 'array';
+
+ALTER TABLE events_custom_code_uploads RENAME COLUMN system_key TO system;
+
+UPDATE events_custom_code_uploads
+SET system = CASE system
+    WHEN 'icd10'  THEN 'ICD-10'
+    WHEN 'snomed' THEN 'SNOMED'
+    WHEN 'loinc'  THEN 'LOINC'
+    WHEN 'rxnorm' THEN 'RxNorm'
+    WHEN 'cvx'    THEN 'CVX'
+    WHEN 'other'  THEN 'Other'
+END
+WHERE system IN ('icd10', 'snomed', 'loinc', 'rxnorm', 'cvx', 'other');

@@ -1,3 +1,4 @@
+import itertools
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -6,6 +7,7 @@ from fastapi import status
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
 from app.db.code_systems.db import (
     get_code_system_by_key_db,
 )
@@ -446,6 +448,74 @@ class TestConfigurations:
         )
         # FastAPI shouldn't allow this to work
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    new_code = ["VERY-FAKE-CODE-00000-WITH-UPDATE", None]
+    new_system_key = ["snomed", "icd10"]
+    new_name = ["Mock code with update", None]
+
+    @pytest.mark.parametrize(
+        "new_code, new_system_key, new_name",
+        list(itertools.product(new_code, new_system_key, new_name)),
+    )
+    async def test_custom_code_editing_succeds_on_all_fields(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        add_custom_code,
+        edit_custom_code,
+        new_code,
+        new_name,
+        new_system_key,
+        db_pool,
+    ):
+        """
+        A custom code once completed can have all of its fields edited.
+        """
+        condition_id = await get_condition_id("Diphtheria")
+        config = await create_config(condition_id)
+
+        config_id = config["id"]
+        initial_code = "VERY-FAKE-CODE-00000"
+        initial_code_name = "Mock code"
+        initial_system = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert initial_system
+        await add_custom_code(
+            config_id,
+            DbConfigurationCustomCode(
+                code=initial_code,
+                system_key=initial_system.key,
+                name=initial_code_name,
+            ),
+        )
+
+        edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
+            system_key=initial_system.key,
+            code=initial_code,
+            name=initial_code_name,
+            new_code=new_code,
+            new_name=new_name,
+            new_system_key=new_system_key,
+        )
+
+        edit_response = await edit_custom_code(config_id, edit_payload)
+        assert len(edit_response["custom_codes"]) == 1
+        edited_custom_code = edit_response["custom_codes"][0]
+
+        if new_code:
+            assert edited_custom_code["code"] == new_code
+        else:
+            assert edited_custom_code["code"] == initial_code
+
+        if new_system_key:
+            assert edited_custom_code["system_key"] == new_system_key
+        else:
+            assert edited_custom_code["system_key"] == initial_system.key
+        if new_name:
+            assert edited_custom_code["name"] == new_name
+        else:
+            assert edited_custom_code["name"] == initial_code_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
