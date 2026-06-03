@@ -282,6 +282,7 @@ async def upload_custom_codes_csv(
                 UploadCustomCodesPreviewItem(
                     code=code,
                     system_key=sanitized_system.key,
+                    system_display_name=sanitized_system.display_name,
                     name=name,
                     row=row_number,
                 )
