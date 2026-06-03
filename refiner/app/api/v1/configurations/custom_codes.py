@@ -553,7 +553,10 @@ async def _get_modified_custom_codes(
 
     new_system = await get_code_system_by_key_db(key=system_key, db=db)
     if new_system is None:
-        raise ValueError(f"System of name {system_key} doesn't match supported systems")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"System of name {system_key} doesn't match supported systems",
+        )
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
