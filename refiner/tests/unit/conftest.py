@@ -181,8 +181,7 @@ CODE_SYSTEM_DATA = {
 }
 
 
-@pytest.fixture
-def mock_all_systems():
+def create_mock_systems():
     return {
         key: DbCodeSystem(
             id=uuid4(),
@@ -192,6 +191,11 @@ def mock_all_systems():
         )
         for key, system in CODE_SYSTEM_DATA.items()
     }
+
+
+@pytest.fixture
+def mock_all_systems():
+    return create_mock_systems()
 
 
 @pytest.fixture(scope="session")
