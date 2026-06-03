@@ -12,6 +12,7 @@ from app.db.conditions.db import (
 )
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
+from app.services.code_systems import get_all_code_systems_by_key
 from app.services.configurations import (
     clone_section_processing_instructions,
     get_default_sections,
@@ -753,6 +754,7 @@ async def add_bulk_custom_codes_to_configuration_db(
     existing_keys = {(c.code, c.system_key) for c in existing_codes}
 
     new_codes_added: list[DbConfigurationCustomCode] = []
+    system_info = await get_all_code_systems_by_key(db=db)
 
     for code in custom_codes:
         key = (code.code, code.system_key)
@@ -781,6 +783,7 @@ async def add_bulk_custom_codes_to_configuration_db(
                 configuration=config,
                 user_id=user_id,
                 custom_codes=new_codes_added,
+                system_info=system_info,
                 cursor=cur,
             )
 
