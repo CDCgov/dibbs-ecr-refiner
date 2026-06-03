@@ -193,7 +193,7 @@ async def get_custom_code_upload_events_by_event_id(
     SELECT
         id,
         event_id,
-        system_key,
+        system,
         code,
         name
     FROM events_custom_code_uploads
