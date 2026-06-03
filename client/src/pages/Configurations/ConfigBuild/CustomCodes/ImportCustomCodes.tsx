@@ -25,6 +25,7 @@ import { DbCodeSystem } from '../../../../api/schemas';
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
   system_key: 'other',
+  system_display_name: 'Other',
   name: '',
 };
 

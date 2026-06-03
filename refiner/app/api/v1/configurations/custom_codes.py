@@ -283,6 +283,7 @@ async def upload_custom_codes_csv(
                 UploadCustomCodesPreviewItem(
                     code=code,
                     system_key=sanitized_system.key,
+                    system_display_name=sanitized_system.display_name,
                     name=name,
                     row=row_number,
                 )
@@ -525,12 +526,12 @@ async def _get_modified_custom_codes(
     if len(code_to_edit) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find custom code with specified system_key/code pair.",
+            detail="Could not find custom code with specified system/code pair.",
         )
     if len(code_to_edit) > 1:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Multiple custom codes with system_key/code pair found.",
+            detail="Multiple custom codes with system/code pair found.",
         )
 
     # get the code
