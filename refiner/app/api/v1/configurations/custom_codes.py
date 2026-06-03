@@ -237,7 +237,6 @@ async def upload_custom_codes_csv(
     errors: list[dict] = []
     code_keys = [(cc.code.lower(), cc.system_key) for cc in config.custom_codes]
     batch_keys = set()
-    code_systems: dict[CodeSystemKey, DbCodeSystem] = defaultdict()
     systems_by_key = await get_all_code_systems_by_key(db=db)
     allowed_systems_str = ", ".join(systems_by_key.keys())
     systems_by_name = {s.display_name: s for s in systems_by_key.values()}
@@ -259,10 +258,10 @@ async def upload_custom_codes_csv(
                 code_system_raw
             ) or systems_by_name.get(code_system_raw)
             if sanitized_system is None:
-                raise ValueError(
+                logger.error(
                     f"System of name {code_system_raw} doesn't match supported systems"
                 )
-            code_systems[sanitized_system.key] = sanitized_system
+                raise ValueError()
         except ValueError:
             row_errors.append(
                 f"Invalid system_key: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
@@ -303,7 +302,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
-        code_systems=code_systems,
+        code_systems=systems_by_key,
     )
 
 
@@ -525,12 +524,12 @@ async def _get_modified_custom_codes(
     if len(code_to_edit) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find custom code with specified system_key/code pair.",
+            detail="Could not find custom code with specified system/code pair.",
         )
     if len(code_to_edit) > 1:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Multiple custom codes with system_key/code pair found.",
+            detail="Multiple custom codes with system/code pair found.",
         )
 
     # get the code

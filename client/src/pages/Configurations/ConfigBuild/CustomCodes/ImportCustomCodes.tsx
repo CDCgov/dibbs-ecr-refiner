@@ -44,7 +44,7 @@ type PreviewError = { row: number; error: string };
 
 type SearchPreviewItem = UploadCustomCodesPreviewItem & {
   previewIndex: number;
-  systemDisplayName: string;
+  system_display_name: string;
 };
 
 export function ImportCustomCodes({
@@ -372,7 +372,7 @@ export function ImportCustomCodes({
     return previewItems.map((item, index) => ({
       ...item,
       previewIndex: index,
-      systemDisplayName: formatSystemDisplayName(
+      system_display_name: formatSystemDisplayName(
         previewCodeSystems,
         item.system_key
       ),
@@ -552,7 +552,7 @@ export function ImportCustomCodes({
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.systemDisplayName}</td>
+                    <td className="px-2 py-1">{item.system_display_name}</td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>
