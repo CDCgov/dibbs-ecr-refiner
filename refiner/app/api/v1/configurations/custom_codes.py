@@ -17,6 +17,7 @@ from app.api.v1.configurations.model import (
 )
 from app.db.code_systems.db import (
     CodeSystemIndex,
+    DbCodeSystem,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -218,7 +219,7 @@ async def _get_requested_config_or_raise(
 
 def _get_row_code_system(
     code_system_raw: str,
-    supported_systems_by_key: dict[str, DbCodeSystem],
+    supported_systems_by_key: CodeSystemIndex,
 ):
     supported_systems_by_name = {
         s.display_name: s for s in supported_systems_by_key.values()
@@ -242,7 +243,6 @@ def _validate_csv_upload_row(
         row_errors.append("Missing code_number")
     if not name:
         row_errors.append("Missing display_name")
-
     if not code_system_raw:
         row_errors.append("Missing code_system")
     else:
