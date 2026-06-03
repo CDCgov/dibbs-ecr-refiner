@@ -172,7 +172,6 @@ export function Sections({
                     </div>
                   ) : null}
                 </td>
-
                 <td className="w-[17%]">
                   {section.include ? (
                     <div className="flex justify-center">
