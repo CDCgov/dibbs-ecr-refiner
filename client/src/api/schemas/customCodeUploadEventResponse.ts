@@ -4,7 +4,7 @@
  */
 export interface CustomCodeUploadEventResponse {
   id: string;
-  system: string;
+  system_display_name: string;
   code: string;
   name: string;
 }

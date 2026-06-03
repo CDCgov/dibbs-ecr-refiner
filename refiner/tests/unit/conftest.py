@@ -32,6 +32,9 @@ from lxml.etree import _Element
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
+from app.db.code_systems.db import (
+    DbCodeSystem,
+)
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration
 from app.db.pool import get_db
@@ -166,6 +169,33 @@ def mock_logged_in_user(mock_user, test_app):
     test_app.dependency_overrides[get_logged_in_user] = lambda: mock_user
     yield
     test_app.dependency_overrides.pop(get_logged_in_user, None)
+
+
+CODE_SYSTEM_DATA = {
+    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
+    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
+    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
+    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
+    "other": {"oid": "Other", "display_name": "Other"},
+}
+
+
+def create_mock_systems():
+    return {
+        key: DbCodeSystem(
+            id=uuid4(),
+            oid=system["oid"],
+            display_name=system["display_name"],
+            key=key,
+        )
+        for key, system in CODE_SYSTEM_DATA.items()
+    }
+
+
+@pytest.fixture
+def mock_all_systems():
+    return create_mock_systems()
 
 
 @pytest.fixture(scope="session")

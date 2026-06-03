@@ -4,7 +4,12 @@ from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
+from app.db.code_systems.db import (
+    CodeSystemKey,
+    get_code_system_by_key_db,
+)
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
+from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.model import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
@@ -13,13 +18,17 @@ from app.db.configurations.model import (
     DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
+from app.services.code_systems import (
+    get_all_code_systems_by_key,
+    get_allowed_code_system_keys,
+)
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
 )
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
-    CodeSystem,
     CodeSystemSets,
     Coding,
     index_condition_code_list_by_system,
@@ -178,12 +187,18 @@ async def convert_config_to_storage_payload(
 
     # build per-system code dicts for CodeSystemSets
     coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-
+    code_systems = await get_all_code_systems_by_key(db)
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = CodeSystem(cc.system)
-        system_to_extend = cur_code_system.format_system_string()
+        cur_code_system = code_systems[cc.system_key]
+
+        if cur_code_system is None:
+            raise ValueError(
+                f"System with key {cc.system_key} doesn't match supported systems"
+            )
+
+        system_to_extend = cur_code_system.key
 
         # route custom codes to the correct system dict
         coding_by_code_system[system_to_extend].append(
@@ -199,21 +214,29 @@ async def convert_config_to_storage_payload(
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
-
+    systems_keys_to_index_by = await get_allowed_code_system_keys(db=db)
     # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
         # map each db code list to its target dict + OID
-        code_system_map: dict[CodeSystem, list] = index_condition_code_list_by_system(
-            condition
+        code_system_map: dict[CodeSystemKey, list[DbConditionCoding]] = (
+            index_condition_code_list_by_system(
+                condition=condition, system_keys_to_index_by=systems_keys_to_index_by
+            )
         )
 
-        for code_system, code_list in code_system_map.items():
+        for key, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
-            system_to_extend = CodeSystem(code_system).format_system_string()
-            coding_by_code_system[system_to_extend].extend(
+            system_metadata = await get_code_system_by_key_db(key=key, db=db)
+            if system_metadata is None:
+                raise ValueError(
+                    f"System of name {key} doesn't match supported systems"
+                )
+            coding_by_code_system[system_metadata.key].extend(
                 [
                     asdict(
-                        Coding(code=c.code, display=c.display, system=code_system.oid)
+                        Coding(
+                            code=c.code, display=c.display, system=system_metadata.oid
+                        )
                     )
                     for c in code_list
                 ]
@@ -227,7 +250,10 @@ async def convert_config_to_storage_payload(
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
     # STEP 3: build the CodeSystemSets
-    code_system_sets = CodeSystemSets.from_dict(data=coding_by_code_system)
+    code_system_sets = CodeSystemSets.from_dict(
+        coding_by_code_system=coding_by_code_system,
+        oid_to_system_map=OID_TO_SYSTEM_KEY_MAP,
+    )
 
     return ConfigurationStoragePayload(
         codes=codes,

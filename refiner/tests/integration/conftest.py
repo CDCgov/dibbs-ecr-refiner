@@ -101,7 +101,7 @@ async def deactivate_config(authed_client):
 async def delete_custom_code(authed_client):
     async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
         response = await authed_client.delete(
-            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code.system}/{custom_code.code}"
+            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code.system_key}/{custom_code.code}"
         )
         assert response.status_code == status.HTTP_200_OK
         return response.json()
@@ -114,6 +114,21 @@ async def add_custom_code(authed_client):
     async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
         payload = asdict(custom_code)
         response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/custom-codes", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def edit_custom_code(authed_client):
+    from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+
+    async def _get(config_id: UUID, body: UpdateCustomCodeInput):
+        payload = vars(body)
+        response = await authed_client.put(
             f"/api/v1/configurations/{config_id}/custom-codes", json=payload
         )
         assert response.status_code == status.HTTP_200_OK
