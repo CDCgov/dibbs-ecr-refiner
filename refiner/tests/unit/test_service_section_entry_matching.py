@@ -79,7 +79,7 @@ def _make_code_system_sets(codes_by_system: dict[str, list[str]]) -> CodeSystemS
             )
 
     return CodeSystemSets.from_dict(
-        s3_data=data, oid_to_system_map=_make_oid_to_system_map()
+        coding_by_code_system=data, oid_to_system_map=_make_oid_to_system_map()
     )
 
 
