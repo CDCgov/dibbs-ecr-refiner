@@ -369,7 +369,7 @@ export function ImportCustomCodes({
       }));
 
   const previewData = useMemo<SearchPreviewItem[]>(() => {
-    if (!previewItems) return [];
+    if (!previewItems || !previewCodeSystems) return [];
     return previewItems.map((item, index) => ({
       ...item,
       previewIndex: index,
@@ -630,14 +630,11 @@ export function ImportCustomCodes({
 }
 
 function formatSystemDisplayName(
-  previewCodeSystems: { [key: string]: DbCodeSystem } | null,
+  previewCodeSystems: { [key: string]: DbCodeSystem },
   keyToCheck: string
 ) {
-  if (
-    previewCodeSystems &&
-    Object.keys(previewCodeSystems).includes(keyToCheck)
-  ) {
+  if (Object.keys(previewCodeSystems).includes(keyToCheck)) {
     return previewCodeSystems[keyToCheck].display_name;
   }
-  return keyToCheck;
+  return keyToCheck.toUpperCase();
 }

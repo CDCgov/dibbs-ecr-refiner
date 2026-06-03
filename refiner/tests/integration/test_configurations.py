@@ -449,13 +449,15 @@ class TestConfigurations:
         # FastAPI shouldn't allow this to work
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    new_code = ["VERY-FAKE-CODE-00000-WITH-UPDATE", None]
-    new_system_key = ["snomed", "icd10"]
-    new_name = ["Mock code with update", None]
-
     @pytest.mark.parametrize(
         "new_code, new_system_key, new_name",
-        list(itertools.product(new_code, new_system_key, new_name)),
+        list(
+            itertools.product(
+                ["VERY-FAKE-CODE-00000-WITH-UPDATE", None],
+                ["snomed", "icd10"],
+                ["Mock code with update", None],
+            )
+        ),
     )
     async def test_custom_code_editing_succeds_on_all_fields(
         self,
