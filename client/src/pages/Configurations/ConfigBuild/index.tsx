@@ -300,7 +300,7 @@ function Builder({
                     aria-pressed={tableView === 'custom'}
                   >
                     <span>Custom codes</span>
-                    <span>{custom_codes.codes.length.toLocaleString()}</span>
+                    <span>{custom_codes.codes.length?.toLocaleString()}</span>
                   </Button>
                 </li>
                 <li key="sections">
