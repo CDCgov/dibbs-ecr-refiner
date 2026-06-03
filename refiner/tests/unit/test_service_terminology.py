@@ -52,24 +52,30 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
     return DbConfiguration(**defaults)
 
 
+@pytest.fixture(autouse=True)
+def mock_db_functions(monkeypatch, mock_all_systems):
+    """
+    Mock return values of the `_db` functions called by the routes.
+    """
+    monkeypatch.setattr(
+        "app.services.code_systems.get_all_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
+    )
+
+    monkeypatch.setattr(
+        "app.services.configurations.get_code_system_by_key_db",
+        AsyncMock(
+            side_effect=lambda key, db: mock_all_systems[key],
+        ),
+    )
+
+
 @pytest.mark.asyncio
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(
-        self, monkeypatch, mock_all_systems, mock_single_system
+        self,
     ):
 
-        monkeypatch.setattr(
-            "app.services.code_systems.get_all_code_systems_db",
-            AsyncMock(
-                return_value=mock_all_systems,
-            ),
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                return_value=mock_single_system,
-            ),
-        )
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
@@ -86,21 +92,9 @@ class TestTerminologyService:
         assert processed.codes == {"A", "B"}
 
     async def test_processed_configuration_duplicate_codes(
-        self, monkeypatch, mock_all_systems, mock_single_system
+        self,
     ):
 
-        monkeypatch.setattr(
-            "app.services.code_systems.get_all_code_systems_db",
-            AsyncMock(
-                return_value=mock_all_systems,
-            ),
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                return_value=mock_single_system,
-            ),
-        )
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
