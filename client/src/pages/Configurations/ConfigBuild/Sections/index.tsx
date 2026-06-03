@@ -1,7 +1,11 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
-import { DbSectionAction } from '../../../../api/schemas';
+import {
+  DbSectionAction,
+  DisabledSection,
+  NarrativeOnlySection,
+} from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
   useUpdateSection,
@@ -19,16 +23,6 @@ import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Tooltip } from '@components/Tooltip';
 
-/**
- * TODO: please refer to specification.py
- *
- * These sections are "skipped" so we don't allow users to make selections for them.
- * This will change in the future when we know how the sections will be used.
- * Ask @robertmitchellv about this for more detail.
- */
-
-const disabledSections = new Set(['88085-6', '83910-0']);
-
 interface SectionsProps {
   configurationId: string;
   sections: DbConfigurationSectionProcessing[];
@@ -43,6 +37,19 @@ export function Sections({
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
+  //   - disabled_sections: sections that are always retained by the refiner regardless of
+  //     configuration, so the user shouldn't be able to toggle them in the UI
+  //   - narrative_only_sections: sections with no entry match rules in the eICR spec, so
+  //     "refine" is meaningless for them — we surface "Not applicable" instead of a switch
+  const disabledSections = Object.values(DisabledSection);
+  const isDisabledSection = (s: string): s is DisabledSection =>
+    disabledSections.some((v) => (v as string) === s);
+
+  const narrativeOnlySections = Object.values(NarrativeOnlySection);
+  const isNarrativeSection = (s: string): s is NarrativeOnlySection =>
+    narrativeOnlySections.some((v) => (v as string) === s);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
     setSelectedSection(section);
@@ -132,7 +139,7 @@ export function Sections({
                     configurationId={configurationId}
                     currentSection={section}
                     sections={sectionProcessing}
-                    disabled={disabled || disabledSections.has(section.code)}
+                    disabled={disabled || isDisabledSection(section.code)}
                   />
                 </div>
               </td>
@@ -151,7 +158,8 @@ export function Sections({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={disabled || disabledSections.has(section.code)}
+                      disabled={disabled || isDisabledSection(section.code)}
+                      isNarrativeOnly={isNarrativeSection(section.code)}
                     />
                   </div>
                 ) : null}
@@ -164,7 +172,7 @@ export function Sections({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={disabled || disabledSections.has(section.code)}
+                      disabled={disabled || isDisabledSection(section.code)}
                     />
                   </div>
                 ) : null}
@@ -380,8 +388,23 @@ function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-}: SelectionToggleProps) {
+  isNarrativeOnly,
+}: SelectionToggleProps & { isNarrativeOnly: boolean }) {
   const updateSection = useSectionUpdater(configurationId);
+
+  if (isNarrativeOnly) {
+    return (
+      <Field className="flex -translate-x-4 flex-row items-center">
+        <Label
+          className="text-gray-cool-40 mr-2 w-72 text-right italic"
+          aria-hidden
+        >
+          Not applicable for this section
+        </Label>
+        <div className="w-12" />
+      </Field>
+    );
+  }
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine & optimize';

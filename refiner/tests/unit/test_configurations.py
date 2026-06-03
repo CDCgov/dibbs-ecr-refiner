@@ -84,7 +84,7 @@ def mock_db_functions(
             status="draft",
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
-            created_by=mock_user.id,
+            created_by=mock_user.username,
             created_at=datetime.now(),
             last_activated_at=None,
             last_activated_by=None,

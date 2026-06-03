@@ -327,7 +327,7 @@ class SectionOutcome(StrEnum):
     policy override that fires when filtering removes everything from
     a section configured for refinement.
 
-    The seven outcomes cover the full configuration space (current and
+    The nine outcomes cover the full configuration space (current and
     future):
 
         REMOVED_BY_CONFIG:
@@ -336,11 +336,28 @@ class SectionOutcome(StrEnum):
 
         RETAINED:
             include=True, action="retain", narrative="retain". Section
-            left untouched.
+            with coded entries left untouched because the jurisdiction
+            asked us to.
 
         RETAINED_NARRATIVE_REMOVED:
-            include=True, action="retain", narrative="remove". Entries
-            kept as provided, narrative replaced with the removal notice.
+            include=True, action="retain", narrative="remove". Coded
+            entries kept as provided, narrative replaced with the
+            removal notice.
+
+        NARRATIVE_ONLY_RETAINED:
+            include=True, narrative="retain", section is narrative-only
+            (the eICR spec defines no entry match rules for it). There
+            was no coded data to refine — the section is conveyed
+            entirely through its <text> element — so the only decision
+            was what to do with the narrative. Distinct from RETAINED:
+            this is the spec's structural reality, not a configuration
+            choice the jurisdiction made.
+
+        NARRATIVE_ONLY_REMOVED:
+            include=True, narrative="remove", section is narrative-only.
+            Narrative replaced with the removal notice; there are no
+            coded entries to preserve. Distinct from
+            RETAINED_NARRATIVE_REMOVED for the same reason as above.
 
         REFINED_WITH_MATCHES:
             include=True, action="refine", narrative="retain". Entries
@@ -372,6 +389,8 @@ class SectionOutcome(StrEnum):
     REMOVED_BY_CONFIG = "removed_by_config"
     RETAINED = "retained"
     RETAINED_NARRATIVE_REMOVED = "retained_narrative_removed"
+    NARRATIVE_ONLY_RETAINED = "narrative_only_retained"
+    NARRATIVE_ONLY_REMOVED = "narrative_only_removed"
     REFINED_WITH_MATCHES = "refined_with_matches"
     REFINED_NARRATIVE_REMOVED = "refined_narrative_removed"
     REFINED_NARRATIVE_RECONSTRUCTED = "refined_narrative_reconstructed"

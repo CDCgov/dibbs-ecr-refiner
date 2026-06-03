@@ -42,6 +42,7 @@ import type {
   HTTPValidationError,
   SectionUpdateInput,
   UpdateCustomCodeInput,
+  UpdateSectionProcessingResponse,
   UploadCustomCodesCsvInput,
   UploadCustomCodesPreviewResponse,
   UploadCustomCodesResponse,
@@ -1243,13 +1244,12 @@ Returns:
 export const updateSection = (
     configurationId: string,
     sectionUpdateInput: SectionUpdateInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<string>> => {
+ ): Promise<AxiosResponse<UpdateSectionProcessingResponse>> => {
 
 
     return axios.default.patch(
       `/api/v1/configurations/${configurationId}/sections`,
-      sectionUpdateInput,{
-    ...options,}
+      sectionUpdateInput,options
     );
   }
 
