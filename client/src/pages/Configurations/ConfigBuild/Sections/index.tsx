@@ -1,6 +1,5 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
-import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import {
   DbSectionAction,
   DisabledSection,
@@ -8,7 +7,6 @@ import {
 } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
-  useUpdateSection,
   useDeleteCustomSection,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,6 +16,8 @@ import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Checkbox } from '@components/Checkbox';
 import { Switch } from './Switch';
+import { NarrativeSelect } from './NarrativeSelect';
+import { useSectionUpdater } from './useSectionUpdater';
 import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
@@ -154,31 +154,22 @@ export function Sections({
                 <td className="w-[33%]">
                   {section.include ? (
                     <div className="flex justify-center">
-                      {isNarrativeSection(section.code) ? (
-                        <span
-                          className="text-gray-cool-50 text-center italic lg:text-right"
-                          aria-hidden
-                        >
-                          Not applicable for this section
-                        </span>
-                      ) : (
-                        <RefineSwitch
-                          configurationId={configurationId}
-                          currentSection={section}
-                          sections={sectionProcessing}
-                          disabled={disabled || isDisabledSection(section.code)}
-                        />
-                      )}
+                      <RefineSwitch
+                        configurationId={configurationId}
+                        currentSection={section}
+                        sections={sectionProcessing}
+                        disabled={disabled || isDisabledSection(section.code)}
+                        isNarrativeOnly={isNarrativeSection(section.code)}
+                      />
                     </div>
                   ) : null}
                 </td>
                 <td className="w-[17%]">
                   {section.include ? (
                     <div className="flex justify-center">
-                      <NarrativeSwitch
+                      <NarrativeSelect
                         configurationId={configurationId}
                         currentSection={section}
-                        sections={sectionProcessing}
                         disabled={disabled || isDisabledSection(section.code)}
                       />
                     </div>
@@ -343,59 +334,27 @@ function IncludeCheckbox({
   );
 }
 
-type SectionPatch = Partial<
-  Pick<
-    DbConfigurationSectionProcessing,
-    'action' | 'include' | 'narrative' | 'code'
-  >
->;
-
-function useSectionUpdater(configurationId: string) {
-  const { mutate: updateSection } = useUpdateSection();
-  const queryClient = useQueryClient();
-  const formatError = useApiErrorFormatter();
-  const showToast = useToast();
-
-  return (
-    currentSection: DbConfigurationSectionProcessing,
-    patch: SectionPatch
-  ) => {
-    updateSection(
-      {
-        configurationId,
-        data: {
-          action: patch.action ?? currentSection.action,
-          current_code: patch.code ?? currentSection.code,
-          include: patch.include ?? currentSection.include,
-          narrative: patch.narrative ?? currentSection.narrative,
-        },
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationId),
-          });
-        },
-        onError: (error) => {
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            heading: 'Section failed to update',
-            body: errorDetail,
-            variant: 'error',
-          });
-        },
-      }
-    );
-  };
-}
-
 function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-}: SelectionToggleProps) {
+  isNarrativeOnly,
+}: SelectionToggleProps & { isNarrativeOnly: boolean }) {
   const updateSection = useSectionUpdater(configurationId);
+
+  if (isNarrativeOnly) {
+    return (
+      <Field className="flex -translate-x-4 flex-row items-center">
+        <Label
+          className="text-gray-cool-40 mr-2 w-72 text-right italic"
+          aria-hidden
+        >
+          Not applicable for this section
+        </Label>
+        <div className="w-12" />
+      </Field>
+    );
+  }
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine';
@@ -427,29 +386,6 @@ function RefineSwitch({
             action: checked ? DbSectionAction.refine : DbSectionAction.retain,
           });
         }}
-      />
-    </Field>
-  );
-}
-
-function NarrativeSwitch({
-  currentSection,
-  configurationId,
-  disabled,
-}: SelectionToggleProps) {
-  const updateSection = useSectionUpdater(configurationId);
-
-  return (
-    <Field className="flex items-center gap-3">
-      <Switch
-        disabled={disabled}
-        checked={currentSection.narrative}
-        onChange={(checked) => {
-          updateSection(currentSection, {
-            narrative: checked,
-          });
-        }}
-        aria-label={`Toggle to refine or retain the narrative block in the ${currentSection.name} section`}
       />
     </Field>
   );
