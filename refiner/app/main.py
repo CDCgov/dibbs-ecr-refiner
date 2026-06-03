@@ -31,6 +31,7 @@ from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
 
+# Pydantic warnings will be reported as errors in local dev / testing
 if ENVIRONMENT["ENV"] == "local":
     warnings.filterwarnings("error", category=UserWarning, module="pydantic")
 
