@@ -270,7 +270,7 @@ CREATE TABLE public.events (
 CREATE TABLE public.events_custom_code_uploads (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     event_id uuid NOT NULL,
-    system_key text CONSTRAINT events_custom_code_uploads_system_not_null NOT NULL,
+    system text NOT NULL,
     code text NOT NULL,
     name text NOT NULL
 );
@@ -803,5 +803,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260511160133'),
     ('20260520185510'),
     ('20260526153052'),
-    ('20260601131536');
+    ('20260601131536'),
     ('20260602161536');
