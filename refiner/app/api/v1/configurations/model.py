@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import DbCodeSystem
+from app.db.code_systems.db import CodeSystemIndex
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
@@ -14,7 +14,6 @@ from app.db.configurations.model import (
 )
 from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.terminology import CodeSystemKey
 
 
 @dataclass(frozen=True)
@@ -75,7 +74,7 @@ class CustomCodes:
     """
 
     codes: list[DbConfigurationCustomCode]
-    code_systems: dict[CodeSystemKey, DbCodeSystem]
+    code_systems: CodeSystemIndex
 
 
 @dataclass(frozen=True)

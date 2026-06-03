@@ -8,11 +8,6 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
 )
-from tests.unit.helpers.code_systems import (
-    create_mock_code_system,
-    create_mock_code_systems,
-    get_mock_allowed_system_keys,
-)
 from tests.unit.helpers.configuration import create_processed_config
 
 
@@ -59,11 +54,20 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
 
 @pytest.mark.asyncio
 class TestTerminologyService:
-    async def test_processed_configuration_from_payload_and_xpath(self, monkeypatch):
+    async def test_processed_configuration_from_payload_and_xpath(
+        self, monkeypatch, mock_all_systems, mock_single_system
+    ):
+
         monkeypatch.setattr(
-            "app.services.configurations.get_all_code_systems_by_key",
+            "app.services.code_systems.get_all_code_systems_db",
             AsyncMock(
-                return_value=create_mock_code_systems(),
+                return_value=mock_all_systems,
+            ),
+        )
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_db",
+            AsyncMock(
+                return_value=mock_single_system,
             ),
         )
         cond1: DbCondition = make_condition(
@@ -78,26 +82,25 @@ class TestTerminologyService:
                 )
             ]
         )
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                return_value=create_mock_code_system("loinc"),
-            ),
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_all_code_systems_by_key",
-            AsyncMock(
-                return_value=create_mock_code_systems(),
-            ),
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_allowed_code_system_keys",
-            AsyncMock(return_value=get_mock_allowed_system_keys()),
-        )
         processed = await create_processed_config(config=config, conditions=[cond1])
         assert processed.codes == {"A", "B"}
 
-    async def test_processed_configuration_duplicate_codes(self, monkeypatch):
+    async def test_processed_configuration_duplicate_codes(
+        self, monkeypatch, mock_all_systems, mock_single_system
+    ):
+
+        monkeypatch.setattr(
+            "app.services.code_systems.get_all_code_systems_db",
+            AsyncMock(
+                return_value=mock_all_systems,
+            ),
+        )
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_db",
+            AsyncMock(
+                return_value=mock_single_system,
+            ),
+        )
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
@@ -112,24 +115,6 @@ class TestTerminologyService:
                     name="Custom",
                 )
             ]
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_allowed_code_system_keys",
-            AsyncMock(
-                return_value=get_mock_allowed_system_keys(),
-            ),
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                return_value=create_mock_code_system("loinc"),
-            ),
-        )
-        monkeypatch.setattr(
-            "app.services.configurations.get_all_code_systems_by_key",
-            AsyncMock(
-                return_value=create_mock_code_systems(),
-            ),
         )
 
         processed = await create_processed_config(

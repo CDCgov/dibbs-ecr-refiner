@@ -187,11 +187,11 @@ async def convert_config_to_storage_payload(
 
     # build per-system code dicts for CodeSystemSets
     coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-    system_info = await get_all_code_systems_by_key(db)
+    code_systems = await get_all_code_systems_by_key(db)
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = system_info[cc.system_key]
+        cur_code_system = code_systems[cc.system_key]
 
         if cur_code_system is None:
             raise ValueError(

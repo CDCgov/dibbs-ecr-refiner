@@ -754,7 +754,7 @@ async def add_bulk_custom_codes_to_configuration_db(
     existing_keys = {(c.code, c.system_key) for c in existing_codes}
 
     new_codes_added: list[DbConfigurationCustomCode] = []
-    system_info = await get_all_code_systems_by_key(db=db)
+    code_systems = await get_all_code_systems_by_key(db=db)
 
     for code in custom_codes:
         key = (code.code, code.system_key)
@@ -783,7 +783,7 @@ async def add_bulk_custom_codes_to_configuration_db(
                 configuration=config,
                 user_id=user_id,
                 custom_codes=new_codes_added,
-                system_info=system_info,
+                code_systems=code_systems,
                 cursor=cur,
             )
 

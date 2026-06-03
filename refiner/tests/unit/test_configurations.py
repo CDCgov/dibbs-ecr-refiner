@@ -18,10 +18,7 @@ from app.db.configurations.model import (
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
-from tests.unit.helpers.code_systems import (
-    create_mock_code_system,
-    get_mock_allowed_system_keys,
-)
+from tests.unit.conftest import create_mock_systems
 
 
 @pytest.fixture
@@ -36,6 +33,7 @@ def mock_db_functions(
     mock_configuration,
     mock_condition,
     new_config_id,
+    mock_all_systems,
 ):
     """
     Mock return values of the `_db` functions called by the routes.
@@ -175,6 +173,18 @@ def mock_db_functions(
         AsyncMock(return_value=None),
     )
 
+    monkeypatch.setattr(
+        "app.services.code_systems.get_all_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_code_system_by_key_db",
+        AsyncMock(
+            side_effect=lambda key, db: mock_all_systems[key],
+        ),
+    )
+
     yield
 
 
@@ -230,15 +240,15 @@ async def test_disassociate_codeset_with_configuration(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("code_system", list(get_mock_allowed_system_keys()))
+@pytest.mark.parametrize("code_system", list(create_mock_systems()))
 async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch, code_system
 ):
     # Mock adding read of systems information to a config
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_code_system_by_key_db",
+        "app.services.configurations.get_code_system_by_key_db",
         AsyncMock(
-            return_value=create_mock_code_system(code_system),
+            return_value=create_mock_systems()[code_system],
         ),
     )
 
@@ -304,7 +314,11 @@ async def test_delete_custom_code_from_configuration(
 
 @pytest.mark.asyncio
 async def test_edit_custom_code_from_configuration(
-    authed_client, monkeypatch, mock_configuration, mock_condition, mock_user
+    authed_client,
+    monkeypatch,
+    mock_configuration,
+    mock_condition,
+    mock_user,
 ):
     # Mock editing a custom code from a config
     custom_code_edit_mock = replace(
@@ -322,10 +336,6 @@ async def test_edit_custom_code_from_configuration(
         AsyncMock(return_value=custom_code_edit_mock),
     )
 
-    monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_code_system_by_key_db",
-        AsyncMock(return_value=create_mock_code_system("loinc")),
-    )
     config_id = str(mock_configuration.id)
     # explicitly monkeypatch to ensure the code to edit is present
     mock_config = DbConfiguration(

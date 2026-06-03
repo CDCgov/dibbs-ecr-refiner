@@ -16,7 +16,7 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
-    DbCodeSystem,
+    CodeSystemIndex,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -172,7 +172,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
     preview: list[UploadCustomCodesPreviewItem]
-    code_systems: dict[CodeSystemKey, DbCodeSystem]
+    code_systems: CodeSystemIndex
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
 

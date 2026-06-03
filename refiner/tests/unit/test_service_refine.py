@@ -19,10 +19,6 @@ from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refi
 from app.services.ecr.section.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
-from tests.unit.helpers.code_systems import (
-    create_mock_code_system,
-    get_mock_allowed_system_keys,
-)
 from tests.unit.helpers.configuration import create_processed_config
 
 # NOTE:
@@ -214,18 +210,19 @@ def _make_plan(
 
 
 @pytest.fixture(autouse=True)
-def mock_db_functions(monkeypatch):
+def mock_db_functions(monkeypatch, mock_all_systems, mock_single_system):
     """
     Mock return values of the `_db` functions called by the routes.
     """
     monkeypatch.setattr(
-        "app.services.configurations.get_allowed_code_system_keys",
-        AsyncMock(return_value=get_mock_allowed_system_keys()),
+        "app.services.code_systems.get_all_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
     )
+
     monkeypatch.setattr(
         "app.services.configurations.get_code_system_by_key_db",
         AsyncMock(
-            return_value=create_mock_code_system("snomed"),
+            side_effect=lambda key, db: mock_all_systems[key],
         ),
     )
 
@@ -296,19 +293,12 @@ class TestRefiningService:
         assert problems_section.get("nullFlavor") == "NI"
 
     async def test_refine_action_with_matches_v1_1(
-        self, eicr_root_v1_1: etree._Element, monkeypatch
+        self, eicr_root_v1_1: etree._Element
     ):
         """
         Tests the 'refine' action for v1.1, ensuring it correctly uses the
         terminology pipeline to build codes and filter a section.
         """
-
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                return_value=create_mock_code_system("loinc"),
-            ),
-        )
 
         processed_config = await _make_processed_config_v1_1(
             loinc_codes=[DbConditionCoding(code="94533-7", display="")]
@@ -455,19 +445,13 @@ class TestRefiningService:
     # internal functions, making them resilient to internal refactoring
 
     async def test_section_aware_results_filtering_v1_1(
-        self, eicr_root_v1_1: etree._Element, monkeypatch
+        self, eicr_root_v1_1: etree._Element
     ):
         """
         Tests that the section-aware path correctly filters the Results section:
         keeps entries with LOINC codes in the condition grouper and removes entries
         with LOINC codes not in the condition grouper.
         """
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                return_value=create_mock_code_system("loinc"),
-            ),
-        )
 
         processed_config = await _make_processed_config_v1_1(
             loinc_codes=[
@@ -547,20 +531,13 @@ class TestRefiningService:
         assert "44054006" not in section_text  # diabetes
 
     async def test_display_name_enrichment_v1_1(
-        self, eicr_root_v1_1: etree._Element, monkeypatch
+        self, eicr_root_v1_1: etree._Element, monkeypatch, mock_second_system
     ):
         """
         Tests that missing displayName attributes are filled in from the condition
         grouper, both at match time (observation code) and during the post-prune
         enrichment pass (organizer code, result value).
         """
-
-        monkeypatch.setattr(
-            "app.services.configurations.get_code_system_by_key_db",
-            AsyncMock(
-                side_effect=lambda key, db: create_mock_code_system(key=key),
-            ),
-        )
 
         processed_config = await _make_processed_config_v1_1(
             loinc_codes=[

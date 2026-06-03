@@ -1,14 +1,13 @@
 from app.db.code_systems.db import (
-    DbCodeSystem,
+    CodeSystemIndex,
     get_all_code_systems_db,
 )
 from app.db.pool import AsyncDatabaseConnection
-from app.services.terminology import CodeSystemKey
 
 
 async def get_all_code_systems_by_key(
     db: AsyncDatabaseConnection,
-) -> dict[CodeSystemKey, DbCodeSystem]:
+) -> CodeSystemIndex:
     """
     Helper method that returns a map of key to code system.
 
