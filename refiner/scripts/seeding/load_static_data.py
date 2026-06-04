@@ -331,9 +331,9 @@ def _upsert_conditions_and_groupers(
     return condition_to_code_relationships
 
 
-def _upsert_condition_to_code_relationships(
+def _insert_condition_to_child_rsg_relationships(
     cursor: Cursor, data: ConditionToCodeRelationshipIndex
-):
+) -> None:
     relationship_upsert_query = """
         INSERT INTO condition_child_rsg_codes (
             condition_id,
@@ -343,6 +343,7 @@ def _upsert_condition_to_code_relationships(
             %(condition_id)s,
             %(code_id)s
         )
+        RETURNING id
     """
     params = [
         {
@@ -526,7 +527,7 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
         condition_groupers=condition_groupers,
     )
     _upsert_codes(cursor=cursor, data=rsg_codes)
-    _upsert_condition_to_code_relationships(
+    _insert_condition_to_child_rsg_relationships(
         cursor=cursor, data=condition_to_code_relationships
     )
 
