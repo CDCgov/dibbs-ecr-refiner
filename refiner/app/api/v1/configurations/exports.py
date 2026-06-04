@@ -15,6 +15,7 @@ from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.code_systems import get_all_code_systems_by_key
 
 router = APIRouter(prefix="/{configuration_id}/export")
 
@@ -66,6 +67,9 @@ async def _build_config_csv(
     db: AsyncDatabaseConnection,
 ) -> bytes:
     """Build the CSV export content for a configuration."""
+
+    code_systems = await get_all_code_systems_by_key(db=db)
+
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)
         writer.writerow(
@@ -90,7 +94,7 @@ async def _build_config_csv(
                 [
                     "Custom code",
                     "",
-                    cc.system_key,
+                    code_systems[cc.system_key].display_name,
                     cc.code,
                     cc.name,
                 ]
