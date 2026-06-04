@@ -164,7 +164,7 @@ describe('Configuration sections', () => {
     expect(options).toHaveLength(3);
     expect(options[0]).toHaveTextContent('Keep original');
     expect(options[0]).toHaveValue('retain');
-    expect(options[1]).toHaveTextContent('Remove');
+    expect(options[1]).toHaveTextContent('Exclude');
     expect(options[1]).toHaveValue('remove');
     expect(options[2]).toHaveTextContent('Reconstruct');
     expect(options[2]).toHaveValue('refine');
