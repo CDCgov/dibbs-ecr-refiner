@@ -134,6 +134,17 @@ CREATE TABLE public.codes (
 
 
 --
+-- Name: condition_child_rsg_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.condition_child_rsg_codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    code_id uuid,
+    condition_id uuid
+);
+
+
+--
 -- Name: conditions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -346,11 +357,27 @@ ALTER TABLE ONLY public.codes
 
 
 --
--- Name: codes codes_value_system_id_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: codes codes_system_id_version_value_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_value_system_id_version_key UNIQUE (value, system_id, version);
+    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, value);
+
+
+--
+-- Name: condition_child_rsg_codes condition_child_rsg_codes_condition_id_code_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.condition_child_rsg_codes
+    ADD CONSTRAINT condition_child_rsg_codes_condition_id_code_id_key UNIQUE (condition_id, code_id);
+
+
+--
+-- Name: condition_child_rsg_codes condition_child_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.condition_child_rsg_codes
+    ADD CONSTRAINT condition_child_rsg_codes_pkey PRIMARY KEY (id);
 
 
 --
@@ -442,11 +469,11 @@ ALTER TABLE ONLY public.custom_codes
 
 
 --
--- Name: custom_codes custom_codes_value_system_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: custom_codes custom_codes_system_id_value_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.custom_codes
-    ADD CONSTRAINT custom_codes_value_system_id_key UNIQUE (value, system_id);
+    ADD CONSTRAINT custom_codes_system_id_value_key UNIQUE (system_id, value);
 
 
 --
@@ -651,6 +678,22 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 
 
 --
+-- Name: condition_child_rsg_codes condition_child_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.condition_child_rsg_codes
+    ADD CONSTRAINT condition_child_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id);
+
+
+--
+-- Name: condition_child_rsg_codes condition_child_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.condition_child_rsg_codes
+    ADD CONSTRAINT condition_child_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
+
+
+--
 -- Name: conditions_context_groupers conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -803,6 +846,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260511160133'),
     ('20260520185510'),
     ('20260526153052'),
-    ('20260601131536'),
     ('20260602161536'),
     ('20260604134336');

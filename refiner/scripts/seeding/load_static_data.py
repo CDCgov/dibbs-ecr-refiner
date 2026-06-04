@@ -3,6 +3,7 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from typing import TypedDict
+from uuid import UUID, uuid4
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
@@ -38,6 +39,7 @@ class ConditionRow(TypedDict):
     A condition row to upsert into the DB.
     """
 
+    id: UUID
     canonical_url: str
     version: str
     display_name: str
@@ -72,8 +74,26 @@ class ProcessedCondition(TypedDict):
     context_groupers: list[ContextGrouperRow]
 
 
-type SystemId = str
+type SystemDbId = str
 type SystemOid = str
+
+
+class ConditionToCodeRelationshipTrace(TypedDict):
+    """
+    A trace object to keep track of condition <> code relationships to seed the relevant join tables.
+    """
+
+    condition_id: UUID
+    condition_display_name: str
+    child_rsg_snomed_code_ids: list[UUID]
+    version: str
+
+
+type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
+
+type ConditionToCodeRelationshipIndex = dict[
+    ConditionUniqueIndex, ConditionToCodeRelationshipTrace
+]
 
 
 def _parse_display_text_from_use_context(use_context: list[dict[str, dict]]) -> str:
@@ -94,13 +114,22 @@ def _parse_display_text_from_use_context(use_context: list[dict[str, dict]]) -> 
 
 def _build_rsg_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
-    system_data: dict[SystemOid, SystemId],
-) -> list[CodeRow]:
-    condition_groupers = _build_condition_groupers(valuesets_map=valuesets_map)
+    condition_groupers: list[VsDict],
+    system_data: dict[SystemOid, SystemDbId],
+    condition_to_code_relationships: ConditionToCodeRelationshipIndex,
+) -> tuple[list[CodeRow], ConditionToCodeRelationshipIndex]:
     snomed_db_id = system_data[SNOMED_OID]
     rsg_codes: list[CodeRow] = []
 
     for parent in condition_groupers:
+        child_rsg_code_ids: list[UUID] = []
+        cond_canonical_url = parent.get("url")
+        cond_version = parent.get("version")
+
+        # TODO figure out how to properly error handle this
+        if not isinstance(cond_version, str) or not isinstance(cond_canonical_url, str):
+            continue
+
         for child_vs in get_child_rsg_valuesets(
             parent=parent, all_vs_map=valuesets_map
         ):
@@ -108,16 +137,26 @@ def _build_rsg_codes(
                 name = _parse_display_text_from_use_context(
                     child_vs.get("useContext", "")
                 )
+                child_code_db_id = uuid4()
+                child_rsg_code_ids.append(child_code_db_id)
                 rsg_codes.append(
                     CodeRow(
+                        id=child_code_db_id,
                         value=snomed_code,
-                        version=parent.get("version", ""),
+                        version=cond_version,
                         name=name,
                         system_id=snomed_db_id,
                     )
                 )
+        cond_index = (cond_canonical_url, cond_version)
+        if cond_index in list(condition_to_code_relationships.keys()):
+            relationship = condition_to_code_relationships[cond_index]
+            print(
+                f"adding {len(child_rsg_code_ids)} rsg codes to condition {relationship.get('condition_display_name')}"
+            )
+            relationship.get("child_rsg_snomed_code_ids").extend(child_rsg_code_ids)
 
-    return rsg_codes
+    return (rsg_codes, condition_to_code_relationships)
 
 
 def _build_processed_conditions(
@@ -142,7 +181,7 @@ def _build_processed_conditions(
 def _upsert_conditions_and_groupers(
     cursor: Cursor,
     processed: list[ProcessedCondition],
-) -> None:
+) -> ConditionToCodeRelationshipIndex:
     """
     Upserts condition rows and their associated context grouper rows.
 
@@ -159,6 +198,7 @@ def _upsert_conditions_and_groupers(
     condition_upsert_query = """
         WITH upsert_condition AS (
             INSERT INTO conditions (
+                id,
                 canonical_url,
                 version,
                 display_name,
@@ -173,6 +213,7 @@ def _upsert_conditions_and_groupers(
                 coverage_level_date
             )
             VALUES (
+                %(id)s,
                 %(canonical_url)s,
                 %(version)s,
                 %(display_name)s,
@@ -188,6 +229,7 @@ def _upsert_conditions_and_groupers(
             )
             ON CONFLICT (canonical_url, version)
             DO UPDATE SET
+                id = EXCLUDED.id,
                 display_name = EXCLUDED.display_name,
                 child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
                 loinc_codes = EXCLUDED.loinc_codes,
@@ -199,7 +241,8 @@ def _upsert_conditions_and_groupers(
                 coverage_level_reason = EXCLUDED.coverage_level_reason,
                 coverage_level_date = EXCLUDED.coverage_level_date
             WHERE
-                conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
+                conditions.id IS DISTINCT FROM EXCLUDED.id
+                OR conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
                 OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
                 OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
                 OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
@@ -249,12 +292,12 @@ def _upsert_conditions_and_groupers(
             OR conditions_context_groupers.category IS DISTINCT FROM EXCLUDED.category
             OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
     """
-
+    condition_to_code_relationships: dict[
+        ConditionUniqueIndex, ConditionToCodeRelationshipTrace
+    ] = defaultdict()
     for item in processed:
         cond = item["condition"]
-
         cursor.execute(condition_upsert_query, cond)
-        condition_id = cursor.fetchone()[0]
 
         groupers = item.get("context_groupers", [])
         if not groupers:
@@ -262,7 +305,7 @@ def _upsert_conditions_and_groupers(
 
         grouper_params = [
             {
-                "condition_id": condition_id,
+                "condition_id": cond.get("id"),
                 "name": cg["name"],
                 "category": cg["category"],
                 "canonical_url": cg["canonical_url"],
@@ -270,8 +313,48 @@ def _upsert_conditions_and_groupers(
             }
             for cg in groupers
         ]
+        condition_canonical_url = cond.get("canonical_url")
+        condition_version = cond.get("version")
+        condition_name = cond.get("display_name")
+        condition_index = (condition_canonical_url, condition_version)
+
+        condition_to_code_relationships[condition_index] = (
+            ConditionToCodeRelationshipTrace(
+                condition_id=cond.get("id"),
+                condition_display_name=condition_name,
+                child_rsg_snomed_code_ids=[],
+                version=condition_version,
+            )
+        )
 
         cursor.executemany(context_grouper_upsert_query, grouper_params)
+    return condition_to_code_relationships
+
+
+def _upsert_condition_to_code_relationships(
+    cursor: Cursor, data: ConditionToCodeRelationshipIndex
+):
+    relationship_upsert_query = """
+        INSERT INTO condition_child_rsg_codes (
+            condition_id,
+            code_id
+        )
+        VALUES (
+            %(condition_id)s,
+            %(code_id)s
+        )
+    """
+    params = [
+        {
+            "condition_id": condition.get("condition_id"),
+            "code_id": child_rsg_code_id,
+        }
+        for condition in data.values()
+        for child_rsg_code_id in condition.get("child_rsg_snomed_code_ids", [])
+    ]
+
+    cursor.executemany(relationship_upsert_query, params)
+    return
 
 
 def _upsert_codes(cursor: Cursor, data: list[CodeRow]):
@@ -283,12 +366,14 @@ def _upsert_codes(cursor: Cursor, data: list[CodeRow]):
 
     condition_upsert_query = """
         INSERT INTO codes (
+            id,
             name,
             value,
             version,
             system_id
         )
         VALUES (
+            %(id)s,
             %(name)s,
             %(value)s,
             %(version)s,
@@ -308,6 +393,7 @@ def _upsert_codes(cursor: Cursor, data: list[CodeRow]):
 
     params = [
         {
+            "id": code.get("id"),
             "name": code.get("name"),
             "value": code.get("value"),
             "version": code.get("version"),
@@ -328,7 +414,7 @@ def _build_condition_groupers(
 
 def _build_system_response(
     db_system_response: list[TupleRow | None],
-) -> dict[SystemOid, SystemId]:
+) -> dict[SystemOid, SystemDbId]:
     response = defaultdict()
     for row in db_system_response:
         if row is None:
@@ -347,7 +433,7 @@ def _build_system_response(
 
 def load_system_data(
     cursor: Cursor,
-) -> dict[SystemOid, SystemId]:
+) -> dict[SystemOid, SystemDbId]:
     """
     Loads system data into the data.
 
@@ -401,7 +487,7 @@ def load_system_data(
     return _build_system_response(db_system_response=systems_response)
 
 
-def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemId]) -> None:
+def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> None:
     """
     Loads condition grouper data from the TES and upserts condition rows and their associated context grouper rows into the database.
 
@@ -427,13 +513,22 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemId]) -> Non
         return
 
     logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
-    _upsert_conditions_and_groupers(cursor=cursor, processed=processed)
+    condition_to_code_relationships = _upsert_conditions_and_groupers(
+        cursor=cursor, processed=processed
+    )
 
-    # seed codes row partially, eventually this will replace the entirety of the jsonb-forward functionality
-    rsg_codes = _build_rsg_codes(
-        valuesets_map=all_valuesets_map, system_data=system_data
+    # seed codes, eventually this will replace the entirety
+    # of the jsonb-forward functionality
+    (rsg_codes, condition_to_code_relationships) = _build_rsg_codes(
+        valuesets_map=all_valuesets_map,
+        system_data=system_data,
+        condition_to_code_relationships=condition_to_code_relationships,
+        condition_groupers=condition_groupers,
     )
     _upsert_codes(cursor=cursor, data=rsg_codes)
+    _upsert_condition_to_code_relationships(
+        cursor=cursor, data=condition_to_code_relationships
+    )
 
 
 def load_static_data(db_url: str, db_password: str) -> None:
