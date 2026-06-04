@@ -38,7 +38,7 @@ class TestConfigurationExport:
 
         cd_header = response.headers.get("content-disposition", "")
         assert re.search(
-            r'filename=".+_Code_Export_\d{6}_\d{2}:\d{2}:\d{2}\.csv"',
+            r'filename=".+_Code_Export_\d{6}_\d{2}_\d{2}_\d{2}\.csv"',
             cd_header,
         ), f"Unexpected Content-Disposition: {cd_header!r}"
 

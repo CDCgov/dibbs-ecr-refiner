@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import UTC, datetime
 from io import StringIO
 from logging import Logger
 from uuid import UUID
@@ -119,5 +119,5 @@ async def _build_config_csv(
 def _build_export_filename(config_name: str) -> str:
     """Build a timestamped filename for a configuration export."""
     safe_name = config_name.replace(" ", "_")
-    timestamp = datetime.now().strftime("%m%d%y_%H:%M:%S")
+    timestamp = datetime.now(UTC).strftime("%m%d%y_%H_%M_%S")
     return f"{safe_name}_Code_Export_{timestamp}.csv"
