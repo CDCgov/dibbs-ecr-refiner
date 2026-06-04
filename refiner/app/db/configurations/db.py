@@ -1051,7 +1051,7 @@ async def update_configuration_section_db(
         (
             prev_section.narrative,
             section_update.narrative,
-            lambda old, new: f"narrative from '{old}' to '{new}'",
+            lambda old, new: (f"narrative from '{old}' to '{new}'"),
         ),
     ]
 
