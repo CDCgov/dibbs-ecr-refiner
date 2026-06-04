@@ -341,7 +341,7 @@ export function ConditionCodeTable({
               <div role="row" className="contents">
                 <Header>Code</Header>
                 <Header>Code system</Header>
-                <Header>Condition</Header>
+                <Header>Display name</Header>
               </div>
             </div>
 

@@ -10,6 +10,23 @@ test.describe('Configuration detail flow', () => {
     await deleteAllConfigurations();
   });
 
+  test('Validate code set table appearance', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToBuildTab();
+    await page.getByLabel('View TES code set information for Anotia').click();
+
+    await expect(page.getByRole('columnheader')).toHaveText([
+      'Code',
+      'Code system',
+      'Display name',
+    ]);
+  });
+
   test('Check code set status and individual grouper statuses', async ({
     page,
     configurationsPage,
