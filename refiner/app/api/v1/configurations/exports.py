@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 from io import StringIO
+from logging import Logger
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -16,6 +17,7 @@ from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import get_all_code_systems_by_key
+from app.services.logger import get_logger
 
 router = APIRouter(prefix="/{configuration_id}/export")
 
@@ -29,6 +31,7 @@ router = APIRouter(prefix="/{configuration_id}/export")
 async def get_configuration_export(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
+    logger: Logger = Depends(get_logger),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> Response:
     """
@@ -50,8 +53,9 @@ async def get_configuration_export(
     )
 
     csv_bytes = await _build_config_csv(
-        config=config, conditions=included_conditions, db=db
+        config=config, conditions=included_conditions, logger=logger, db=db
     )
+
     filename = _build_export_filename(config_name=config.name)
 
     return Response(
@@ -64,6 +68,7 @@ async def get_configuration_export(
 async def _build_config_csv(
     config: DbConfiguration,
     conditions: list[DbCondition],
+    logger: Logger,
     db: AsyncDatabaseConnection,
 ) -> bytes:
     """Build the CSV export content for a configuration."""
@@ -90,11 +95,19 @@ async def _build_config_csv(
                 )
 
         for cc in config.custom_codes or []:
+            code_system = code_systems.get(cc.system_key)
+            if code_system is None:
+                logger.warning(
+                    "Could not find code system for custom code, skipping",
+                    extra={"system_key": cc.system_key, "code": cc.code},
+                )
+                continue
+
             writer.writerow(
                 [
                     "Custom code",
                     "",
-                    code_systems[cc.system_key].display_name,
+                    code_system.display_name,
                     cc.code,
                     cc.name,
                 ]
