@@ -37,6 +37,10 @@ export function Sections({
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [errorSectionCode, setErrorSectionCode] = useState<string | null>(null);
+
+  const clearError = () => setErrorSectionCode(null);
+  const setError = (code: string) => setErrorSectionCode(code);
 
   // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
   //   - disabled_sections: sections that are always retained by the refiner regardless of
@@ -140,6 +144,7 @@ export function Sections({
                       currentSection={section}
                       sections={sectionProcessing}
                       disabled={disabled || isDisabledSection(section.code)}
+                      onClearError={clearError}
                     />
                   </div>
                 </td>
@@ -160,6 +165,9 @@ export function Sections({
                         sections={sectionProcessing}
                         disabled={disabled || isDisabledSection(section.code)}
                         isNarrativeOnly={isNarrativeSection(section.code)}
+                        showError={errorSectionCode === section.code}
+                        onError={() => setError(section.code)}
+                        onClearError={clearError}
                       />
                     </div>
                   ) : null}
@@ -171,6 +179,9 @@ export function Sections({
                         configurationId={configurationId}
                         currentSection={section}
                         disabled={disabled || isDisabledSection(section.code)}
+                        isNarrativeOnly={isNarrativeSection(section.code)}
+                        codedDataAction={section.action}
+                        onClearError={clearError}
                       />
                     </div>
                   ) : null}
@@ -318,7 +329,8 @@ function IncludeCheckbox({
   currentSection,
   configurationId,
   disabled,
-}: SelectionToggleProps) {
+  onClearError,
+}: SelectionToggleProps & { onClearError: () => void }) {
   const updateSection = useSectionUpdater(configurationId);
 
   return (
@@ -328,6 +340,7 @@ function IncludeCheckbox({
       checked={currentSection.include}
       disabled={disabled}
       onChange={(checked) => {
+        onClearError();
         updateSection(currentSection, { include: checked });
       }}
     />
@@ -339,7 +352,15 @@ function RefineSwitch({
   configurationId,
   disabled,
   isNarrativeOnly,
-}: SelectionToggleProps & { isNarrativeOnly: boolean }) {
+  showError,
+  onError,
+  onClearError,
+}: SelectionToggleProps & {
+  isNarrativeOnly: boolean;
+  showError: boolean;
+  onError: () => void;
+  onClearError: () => void;
+}) {
   const updateSection = useSectionUpdater(configurationId);
 
   if (isNarrativeOnly) {
@@ -360,6 +381,18 @@ function RefineSwitch({
   const refineLabelText = 'Refine';
   const preserveLabelText = 'Keep original';
 
+  const handleSwitchChange = (checked: boolean) => {
+    // TODO: This validation should eventually be enforced by backend API as well
+    if (!checked && currentSection.narrative === 'refine') {
+      onError();
+      return;
+    }
+    onClearError();
+    updateSection(currentSection, {
+      action: checked ? DbSectionAction.refine : DbSectionAction.retain,
+    });
+  };
+
   return (
     <Field className="flex -translate-x-4 flex-row items-center">
       <Label
@@ -370,7 +403,7 @@ function RefineSwitch({
             : // "Keep original for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
-        className="mr-2 w-48 text-right"
+        className="mr-2 w-48 shrink-0 text-right"
       >
         {isRefineToggled ? (
           <span>{refineLabelText}</span>
@@ -378,15 +411,21 @@ function RefineSwitch({
           <span className="italic">{preserveLabelText}</span>
         )}
       </Label>
-      <Switch
-        disabled={disabled}
-        checked={isRefineToggled}
-        onChange={(checked) => {
-          updateSection(currentSection, {
-            action: checked ? DbSectionAction.refine : DbSectionAction.retain,
-          });
-        }}
-      />
+      <div className="relative">
+        <Switch
+          disabled={disabled}
+          checked={isRefineToggled}
+          onChange={handleSwitchChange}
+        />
+      </div>
+      {showError && (
+        <p
+          className="absolute top-full -left-7 mt-1 text-xs text-red-300"
+          role="alert"
+        >
+          To reconstruct narrative, refine must be selected
+        </p>
+      )}
     </Field>
   );
 }
