@@ -10,7 +10,11 @@ test.describe('Activity log', () => {
     await deleteAllConfigurations();
   });
 
-  test('Check empty state', async ({ activityLogPage, page, makeAxeBuilder }) => {
+  test('Check empty state', async ({
+    activityLogPage,
+    page,
+    makeAxeBuilder,
+  }) => {
     await activityLogPage.goto();
 
     await expect(page.getByLabel('Condition').getByRole('option')).toHaveText([
@@ -29,7 +33,7 @@ test.describe('Activity log', () => {
     activityLogPage,
     api,
     page,
-    makeAxeBuilder
+    makeAxeBuilder,
   }) => {
     const conditionOne = 'Coal Workers’ Pneumoconiosis (CWP)';
     const conditionTwo = 'COVID-19';
@@ -51,7 +55,7 @@ test.describe('Activity log', () => {
   test('Check entries from configuration creation', async ({
     activityLogPage,
     api,
-    makeAxeBuilder
+    makeAxeBuilder,
   }) => {
     const conditionOne = 'COVID-19';
     const conditionTwo = 'Zika Virus Disease';
@@ -81,7 +85,7 @@ test.describe('Activity log', () => {
     page,
     api,
     activityLogPage,
-    makeAxeBuilder
+    makeAxeBuilder,
   }) => {
     const condition = 'Lead in Blood';
     const config = await api.createConfiguration(condition);
