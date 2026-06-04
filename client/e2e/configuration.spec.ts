@@ -356,6 +356,8 @@ test.describe('Configuration detail flow', () => {
       await configurationPage.goToBuildTab();
       await configurationPage.deleteCodeSet(additionalCodeSetName);
 
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await configurationPage.deleteCustomCode(customCodeName);
       await expect(page.getByText('Deleted code')).toBeVisible();
@@ -366,6 +368,9 @@ test.describe('Configuration detail flow', () => {
 
     await test.step('Delete custom section', async () => {
       await page.getByRole('button', { name: 'Sections' }).click();
+
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await page
         .getByRole('button', {
           name: `Delete custom section ${customSectionName}`,
@@ -405,7 +410,11 @@ test.describe('Configuration detail flow', () => {
 
     await test.step('Upload custom code CSV', async () => {
       await page.getByRole('button', { name: 'Custom codes' }).click();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await page.getByRole('button', { name: 'Import from CSV' }).click();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await expect(
         page.getByRole('heading', {
           name: 'Import from CSV',
@@ -422,6 +431,9 @@ test.describe('Configuration detail flow', () => {
       const deleteAllButton = page.getByRole('button', {
         name: 'Undo & delete codes',
       });
+
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await expect(saveAllButton).toBeVisible();
       await expect(deleteAllButton).toBeVisible();
 
@@ -441,6 +453,8 @@ test.describe('Configuration detail flow', () => {
       await expect(deleteButton).toBeVisible();
 
       await editButton.click();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await expect(
         page.getByRole('heading', { name: 'Edit 12345', level: 2 })
       ).toBeVisible();
@@ -475,6 +489,8 @@ test.describe('Configuration detail flow', () => {
           level: 2,
         })
       ).toBeVisible();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await page.getByRole('button', { name: 'Yes, save codes' }).click();
 
       const savedCodeTableRows = page.locator('table tbody tr');
@@ -486,6 +502,8 @@ test.describe('Configuration detail flow', () => {
 
     await test.step('Activate modified draft', async () => {
       await configurationPage.goToActivateTab();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
       await expect(page.getByText('Switch to version 2')).toBeVisible();
       await expect(page.getByText('Turn off configuration')).toBeVisible();
 
