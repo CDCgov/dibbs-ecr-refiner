@@ -452,10 +452,10 @@ function NarrativeSwitch({
     <Field className="flex items-center gap-3">
       <Switch
         disabled={disabled}
-        checked={currentSection.narrative}
+        checked={currentSection.narrative === 'retain'}
         onChange={(checked) => {
           updateSection(currentSection, {
-            narrative: checked,
+            narrative: checked ? 'retain' : 'remove',
           });
         }}
         aria-label={`Toggle to refine or retain the narrative block in the ${currentSection.name} section`}

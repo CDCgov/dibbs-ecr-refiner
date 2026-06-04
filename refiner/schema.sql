@@ -83,6 +83,17 @@ CREATE TYPE public.section_action AS ENUM (
 
 
 --
+-- Name: section_narrative; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.section_narrative AS ENUM (
+    'retain',
+    'remove',
+    'refine'
+);
+
+
+--
 -- Name: configurations_set_last_activated_at_on_status_change(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -211,11 +222,11 @@ CREATE TABLE public.configurations_sections (
     name text NOT NULL,
     action public.section_action NOT NULL,
     include boolean NOT NULL,
-    narrative boolean NOT NULL,
     versions text[] DEFAULT '{}'::text[] NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    section_type public.configurations_sections_type NOT NULL
+    section_type public.configurations_sections_type NOT NULL,
+    narrative public.section_narrative CONSTRAINT configurations_sections_narrative_new_not_null NOT NULL
 );
 
 
@@ -241,7 +252,7 @@ CREATE TABLE public.events (
 CREATE TABLE public.events_custom_code_uploads (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     event_id uuid NOT NULL,
-    system_key text CONSTRAINT events_custom_code_uploads_system_not_null NOT NULL,
+    system text NOT NULL,
     code text NOT NULL,
     name text NOT NULL
 );
@@ -712,4 +723,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260511160133'),
     ('20260520185510'),
     ('20260526153052'),
-    ('20260602161536');
+    ('20260602161536'),
+    ('20260603120000');

@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -242,7 +243,7 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
-    narrative: bool
+    narrative: Literal["retain", "remove", "refine"]
     include: bool
 
 

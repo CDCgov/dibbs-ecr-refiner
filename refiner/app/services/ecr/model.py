@@ -446,7 +446,7 @@ class SectionProvenanceRecord:
     display_name: str
     include: bool
     action: str
-    narrative: bool
+    narrative: Literal["retain", "remove", "refine"]
     config_version: int | None
     source: SectionSource
     outcome: SectionOutcome = SectionOutcome.REFINED_WITH_MATCHES
