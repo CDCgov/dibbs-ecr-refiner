@@ -10,7 +10,9 @@ from app.db.conditions.db import (
     get_condition_codes_by_condition_id_db,
     get_included_conditions_db,
 )
+from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 
@@ -32,9 +34,8 @@ async def get_configuration_export(
     Create a CSV export of a configuration and all associated codes.
     """
 
-    jd = user.jurisdiction_id
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if not config:
@@ -47,18 +48,31 @@ async def get_configuration_export(
         included_conditions=config.included_conditions, db=db
     )
 
+    csv_bytes = await _build_config_csv(
+        config=config, conditions=included_conditions, db=db
+    )
+    filename = _build_export_filename(config_name=config.name)
+
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+async def _build_config_csv(
+    config: DbConfiguration,
+    conditions: list[DbCondition],
+    db: AsyncDatabaseConnection,
+) -> bytes:
+    """Build the CSV export content for a configuration."""
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)
         writer.writerow(
-            [
-                "Code Type",
-                "Condition",
-                "Code System",
-                "Code",
-                "Display Name",
-            ]
+            ["Code Type", "Condition", "Code System", "Code", "Display Name"]
         )
-        for cond in included_conditions:
+
+        for cond in conditions:
             codes = await get_condition_codes_by_condition_id_db(id=cond.id, db=db)
             for code in codes:
                 writer.writerow(
@@ -70,27 +84,23 @@ async def get_configuration_export(
                         code.description,
                     ]
                 )
+
         for cc in config.custom_codes or []:
             writer.writerow(
                 [
                     "Custom code",
-                    "",  # Custom codes are not associated with a system
+                    "",
                     cc.system_key,
                     cc.code,
                     cc.name,
                 ]
             )
 
-        csv_bytes = csv_text.getvalue().encode("utf-8")
+        return csv_text.getvalue().encode("utf-8")
 
-    safe_name = config.name.replace(" ", "_")
 
+def _build_export_filename(config_name: str) -> str:
+    """Build a timestamped filename for a configuration export."""
+    safe_name = config_name.replace(" ", "_")
     timestamp = datetime.now().strftime("%m%d%y_%H:%M:%S")
-
-    filename = f"{safe_name}_Code Export_{timestamp}.csv"
-
-    return Response(
-        content=csv_bytes,
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    return f"{safe_name}_Code_Export_{timestamp}.csv"
