@@ -65,6 +65,7 @@ async def get_configuration_export(
         writer.writerow(
             [
                 "Code Type",
+                "Condition",
                 "Code System",
                 "Code",
                 "Display Name",
@@ -72,22 +73,24 @@ async def get_configuration_export(
         )
         for cond in included_conditions:
             codes = await get_condition_codes_by_condition_id_db(id=cond.id, db=db)
-            for code_obj in codes:
+            for code in codes:
                 writer.writerow(
                     [
                         "TES condition grouper code",
-                        code_obj.system or "",
-                        code_obj.code or "",
-                        code_obj.description or "",
+                        cond.display_name,
+                        code.system,
+                        code.code,
+                        code.description,
                     ]
                 )
-        for custom in config.custom_codes or []:
+        for cc in config.custom_codes or []:
             writer.writerow(
                 [
                     "Custom code",
-                    custom.system_key or "",
-                    custom.code or "",
-                    custom.name or "",
+                    "",  # Custom codes are not associated with a system
+                    cc.system_key,
+                    cc.code,
+                    cc.name,
                 ]
             )
 
