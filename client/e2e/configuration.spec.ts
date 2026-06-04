@@ -272,6 +272,9 @@ test.describe('Configuration detail flow', () => {
     await test.step('Configure standard sections', async () => {
       await test.step('Select and check options', async () => {
         await page.getByRole('button', { name: 'Sections' }).click();
+
+        await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
         const admissionDiagnosisCheckboxText = 'Include Admission Diagnosis';
         await page
           .getByRole('checkbox', { name: admissionDiagnosisCheckboxText })
