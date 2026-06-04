@@ -149,7 +149,6 @@ class TestConfigurationExport:
         get_condition_id,
         create_config,
         add_custom_code,
-        db_pool,
     ):
         """
         Custom code rows should have a blank "Condition" column.
