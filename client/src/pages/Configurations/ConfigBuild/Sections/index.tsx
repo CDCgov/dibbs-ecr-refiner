@@ -61,7 +61,7 @@ export function Sections({
   };
 
   return (
-    <section className="flex w-full flex-col gap-6">
+    <section className="flex min-h-0 w-full flex-1 flex-col gap-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
@@ -97,44 +97,46 @@ export function Sections({
         </p>
       </div>
 
-      <div className="max-h-[calc(100vh-400px)] overflow-y-auto">
+      <table className="w-full table-fixed">
+        <thead className="bg-white">
+          <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
+            <th scope="col" className="w-[10%] pt-3 pb-3">
+              Include
+            </th>
+            <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
+              Section name
+            </th>
+            <th scope="col" className="align-right w-[33%] pt-3 pb-3">
+              <div className="flex items-center justify-center gap-1">
+                <span>Data handling approach</span>
+                <Tooltip
+                  position="left"
+                  label={`Set to "Refine & optimize" if you'd like to filter the
+                    content of this section down to coded elements matching the
+                    codes in your configuration in the refined output. Set to
+                    "Preserve & retain" if you'd like to keep the information in
+                    this section in its entirety in the refined output.`}
+                />
+              </div>
+            </th>
+            <th scope="col" className="w-[17%] pt-3 pb-3">
+              <div className="flex items-center justify-center gap-1">
+                <span>Narrative</span>
+                <Tooltip
+                  position="left"
+                  label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
+                />
+              </div>
+            </th>
+          </tr>
+        </thead>
+      </table>
+      <div className="min-h-0 flex-1 overflow-y-scroll">
         <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-10 bg-white">
-            <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-              <th scope="col" className="w-32 pt-3 pb-3">
-                Include
-              </th>
-              <th scope="col" className="w-auto pt-3 pb-3 text-left">
-                Section name
-              </th>
-              <th scope="col" className="align-right w-2/6 pt-3 pb-3">
-                <div className="flex items-center justify-center gap-1">
-                  <span>Data handling approach</span>
-                  <Tooltip
-                    position="left"
-                    label={`Set to "Refine & optimize" if you'd like to filter the
-                      content of this section down to coded elements matching the
-                      codes in your configuration in the refined output. Set to
-                      "Preserve & retain" if you'd like to keep the information in
-                      this section in its entirety in the refined output.`}
-                  />
-                </div>
-              </th>
-              <th scope="col" className="w-1/6 pt-3 pb-3">
-                <div className="flex items-center justify-center gap-1">
-                  <span>Narrative</span>
-                  <Tooltip
-                    position="left"
-                    label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
-                  />
-                </div>
-              </th>
-            </tr>
-          </thead>
           <tbody className="divide-gray-cool-20 divide-y">
             {sectionProcessing.map((section) => (
               <tr key={section.code} className="text-gray-cool-60">
-                <td>
+                <td className="w-[10%]">
                   <div className="flex justify-center p-8">
                     <IncludeCheckbox
                       configurationId={configurationId}
@@ -144,7 +146,7 @@ export function Sections({
                     />
                   </div>
                 </td>
-                <td>
+                <td className="w-[40%]">
                   <SectionName
                     configurationId={configurationId}
                     section={section}
@@ -152,7 +154,7 @@ export function Sections({
                     setSelectedSection={() => onSelectedSection(section)}
                   />
                 </td>
-                <td>
+                <td className="w-[33%]">
                   {section.include ? (
                     <div className="flex justify-center">
                       <RefineSwitch
@@ -166,7 +168,7 @@ export function Sections({
                   ) : null}
                 </td>
 
-                <td>
+                <td className="w-[17%]">
                   {section.include ? (
                     <div className="flex justify-center">
                       <NarrativeSwitch
