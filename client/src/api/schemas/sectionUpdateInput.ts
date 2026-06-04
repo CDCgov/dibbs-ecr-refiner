@@ -1,11 +1,12 @@
 import type { DbSectionAction } from './dbSectionAction';
+import type { DbSectionNarrative } from './dbSectionNarrative';
 
 /**
- * Request body for modifying a section.
+ * Input model for updating a section's processing instructions.
  */
 export interface SectionUpdateInput {
   include?: boolean | null;
-  narrative?: boolean | null;
+  narrative?: DbSectionNarrative | null;
   action?: DbSectionAction | null;
   name?: string | null;
   current_code: string;
