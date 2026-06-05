@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { FuseResultMatch } from 'fuse.js';
 import { useRef, useState, useEffect, ChangeEvent } from 'react';
 import {
   useUploadCustomCodesCsv,
