@@ -46,7 +46,7 @@ export function RunSimulation({
       <div className="flex flex-col gap-6 xl:flex-row">
         <Container className="flex-1" color="white">
           <Content className="flex items-center gap-6">
-            <img className="px-3 py-1" src={UploadSvg} role="presentation" />
+            <img className="px-3 py-1" src={UploadSvg} alt="" />
             <div className="flex flex-col items-center gap-10">
               <p className="flex flex-col items-center gap-2 text-black">
                 <span className="font-bold">
@@ -131,20 +131,14 @@ function UploadZipFile({
               Refine .zip file
             </Button>
           ) : null}
-          <label
-            htmlFor="zip-upload"
-            aria-label="Open system file browser for simulating"
-            role="button"
+          <Button
+            variant="unstyled"
             className={labelStyling}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                inputRef.current?.click();
-              }
-            }}
+            type="button"
+            onClick={() => inputRef.current?.click()}
           >
             {selectedFile ? 'Change file' : 'Upload .zip file'}
-          </label>
+          </Button>
         </div>
         {/* render an autoupload file for QoL in local dev */}
         {env === 'local' ? (

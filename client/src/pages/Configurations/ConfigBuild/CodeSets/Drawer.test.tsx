@@ -21,7 +21,7 @@ vi.mock('@trussworks/react-uswds', () => ({
   ) => <input {...props} />,
 }));
 vi.mock('focus-trap-react', () => ({
-  default: ({ children }: any) => <div>{children}</div>,
+  FocusTrap: ({ children }: any) => <div>{children}</div>,
 }));
 
 // Initial setup

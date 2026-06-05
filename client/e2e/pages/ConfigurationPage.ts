@@ -50,7 +50,8 @@ export class ConfigurationPage {
     await this.page
       .getByRole('listitem')
       .filter({ hasText: conditionName })
-      .click();
+      .hover();
+    await this.page.getByLabel(`Add ${conditionName}`).click();
     await this.page.getByRole('button', { name: 'Close drawer' }).click();
   }
 
