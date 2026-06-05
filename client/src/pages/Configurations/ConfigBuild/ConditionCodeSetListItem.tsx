@@ -26,8 +26,6 @@ export function ConditionCodeSetListItem({
   reportable_condition_display_name,
   disabled,
 }: ConditionCodeSetListItemProps) {
-  const [showButton, setShowButton] = useState(false);
-
   const { mutate: associateMutation } =
     useAssociateConditionWithConfiguration();
   const { mutate: disassociateMutation } =
@@ -37,11 +35,7 @@ export function ConditionCodeSetListItem({
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
 
-  const [prevAssociation, setPrevAssociation] = useState(condition.associated);
-  if (prevAssociation !== condition.associated) {
-    setPrevAssociation(condition.associated);
-    setShowButton(condition.associated);
-  }
+  const [showButton, setShowButton] = useState(false);
 
   function handleAssociate() {
     associateMutation(
@@ -110,7 +104,6 @@ export function ConditionCodeSetListItem({
     } else {
       handleAssociate();
     }
-    setShowButton(true);
   }
 
   const isDefault =
@@ -121,50 +114,42 @@ export function ConditionCodeSetListItem({
         'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white'
       )}
       onMouseEnter={() => setShowButton(true)}
-      onMouseLeave={() => {
-        if (!condition.associated) setShowButton(false);
-      }}
+      onMouseLeave={() => setShowButton(false)}
       onFocus={() => setShowButton(true)}
-      onBlur={() => {
-        if (!condition.associated) setShowButton(false);
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setShowButton(false);
+        }
       }}
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
-      {showButton ? (
-        isDefault ? (
-          <span className="text-bold mr-0! w-20! text-black">Default</span>
-        ) : condition.associated ? (
-          <Button
-            variant="secondary"
-            aria-pressed={true}
-            aria-label={`Remove ${condition.display_name}`}
-            className="mr-0! w-20!"
-            onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-              e.stopPropagation();
-              onClick(condition.associated);
-            }}
-            tabIndex={-1}
-            disabled={disabled}
-          >
-            Remove
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            aria-pressed={false}
-            aria-label={`Add ${condition.display_name}`}
-            className="mr-0! w-20!"
-            onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-              e.stopPropagation();
-              onClick(condition.associated);
-            }}
-            tabIndex={-1}
-            disabled={disabled}
-          >
-            Add
-          </Button>
-        )
-      ) : null}
+      {isDefault ? (
+        <span className="text-bold mr-0! w-20! text-black">Default</span>
+      ) : condition.associated ? (
+        <Button
+          variant="secondary"
+          aria-pressed={true}
+          aria-label={`Remove ${condition.display_name}`}
+          className="mr-0! w-20!"
+          onClick={() => onClick(condition.associated)}
+          disabled={disabled}
+        >
+          Remove
+        </Button>
+      ) : (
+        <Button
+          variant="primary"
+          aria-pressed={false}
+          aria-label={`Add ${condition.display_name}`}
+          className={classNames('mr-0! w-20!', {
+            'sr-only!': !showButton,
+          })}
+          onClick={() => onClick(condition.associated)}
+          disabled={disabled}
+        >
+          Add
+        </Button>
+      )}
     </li>
   );
 }
