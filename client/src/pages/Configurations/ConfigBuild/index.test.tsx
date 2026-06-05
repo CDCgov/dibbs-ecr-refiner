@@ -738,6 +738,7 @@ describe('Config builder page', () => {
           message: 'Successfully uploaded custom codes.',
           codes_processed: 2,
           total_custom_codes_in_configuration: 2,
+          preview_items: [],
         },
         status: 200,
         statusText: 'OK',

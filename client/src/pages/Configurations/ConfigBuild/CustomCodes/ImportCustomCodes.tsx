@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { FuseResultMatch, IFuseOptions } from 'fuse.js';
-import { useRef, useState, useEffect, ChangeEvent, useMemo } from 'react';
+import { FuseResultMatch } from 'fuse.js';
+import { useRef, useState, useEffect, ChangeEvent } from 'react';
 import {
   useUploadCustomCodesCsv,
   useConfirmUploadCustomCodesCsv,
@@ -32,10 +32,6 @@ const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example
 6789,ICD-10,ICD-10 Example
 99999A,LOINC,LOINC Example`;
-
-type UploadSearchResult = UploadCustomCodesPreviewItem & {
-  matches?: readonly FuseResultMatch[];
-};
 
 type UploadCsvError = {
   response?: {
