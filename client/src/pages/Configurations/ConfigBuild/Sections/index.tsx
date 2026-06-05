@@ -97,42 +97,41 @@ export function Sections({
         </p>
       </div>
 
-      <table className="w-full table-fixed">
-        <thead className="bg-white">
-          <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-            <th scope="col" className="w-[10%] pt-3 pb-3">
-              Include
-            </th>
-            <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
-              Section name
-            </th>
-            <th scope="col" className="align-right w-[33%] pt-3 pb-3">
-              <div className="flex items-center justify-center gap-1">
-                <span>Data handling approach</span>
-                <Tooltip
-                  position="left"
-                  label={`Set to "Refine & optimize" if you'd like to filter the
-                    content of this section down to coded elements matching the
-                    codes in your configuration in the refined output. Set to
-                    "Preserve & retain" if you'd like to keep the information in
-                    this section in its entirety in the refined output.`}
-                />
-              </div>
-            </th>
-            <th scope="col" className="w-[17%] pt-3 pb-3">
-              <div className="flex items-center justify-center gap-1">
-                <span>Narrative</span>
-                <Tooltip
-                  position="left"
-                  label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
-                />
-              </div>
-            </th>
-          </tr>
-        </thead>
-      </table>
       <div className="min-h-0 flex-1 overflow-y-scroll">
+        {/* TODO: Revisit table layout for Refiner 2.0 UI migration (see Section 2 - Refiner 2.0 Readiness in ../tech-lead-feedback-2026/front-end-component-refactoring-action-plan.md). Evaluate whether a virtualized list is appropriate for large section counts. */}
         <table className="w-full table-fixed">
+          <thead className="sticky top-0 z-10 bg-white">
+            <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
+              <th scope="col" className="w-[10%] pt-3 pb-3">
+                Include
+              </th>
+              <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
+                Section name
+              </th>
+              <th scope="col" className="align-right w-[33%] pt-3 pb-3">
+                <div className="flex items-center justify-center gap-1">
+                  <span>Data handling approach</span>
+                  <Tooltip
+                    position="left"
+                    label={`Set to "Refine & optimize" if you'd like to filter the
+                      content of this section down to coded elements matching the
+                      codes in your configuration in the refined output. Set to
+                      "Preserve & retain" if you'd like to keep the information in
+                      this section in its entirety in the refined output.`}
+                  />
+                </div>
+              </th>
+              <th scope="col" className="w-[17%] pt-3 pb-3">
+                <div className="flex items-center justify-center gap-1">
+                  <span>Narrative</span>
+                  <Tooltip
+                    position="left"
+                    label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
+                  />
+                </div>
+              </th>
+            </tr>
+          </thead>
           <tbody className="divide-gray-cool-20 divide-y">
             {sectionProcessing.map((section) => (
               <tr key={section.code} className="text-gray-cool-60">
