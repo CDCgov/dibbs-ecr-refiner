@@ -78,7 +78,7 @@ export function CustomCodesDetail({
 
   return (
     <div role="region">
-      <table id="custom-table" className="mt-6! w-full border-separate">
+      <table className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
@@ -335,7 +335,6 @@ export function ConditionCodeTable({
         >
           <div
             role="table"
-            id="codeset-table"
             aria-label={`Codes in set with ID ${conditionId}`}
             className="grid grid-cols-[1fr_1fr_4fr]"
           >

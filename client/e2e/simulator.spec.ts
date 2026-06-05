@@ -9,8 +9,14 @@ test.describe('Simulate testing', () => {
   });
   test.afterEach(async () => await deleteAllConfigurations());
 
-  test('No available configurations', async ({ page, simulatorPage }) => {
+  test('No available configurations', async ({
+    page,
+    simulatorPage,
+    makeAxeBuilder,
+  }) => {
     await simulatorPage.goto();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
@@ -21,6 +27,8 @@ test.describe('Simulate testing', () => {
     // no configs to select from
     await expect(page.getByRole('checkbox')).toHaveCount(0);
     await expect(page.getByRole('combobox')).toHaveCount(0);
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // only displays a list of conditions that were detected with no matching config
     await expect(
@@ -45,6 +53,7 @@ test.describe('Simulate testing', () => {
   test('Should be able to handle a reasonable amount of configuration options', async ({
     simulatorPage,
     api,
+    makeAxeBuilder,
   }) => {
     for (let i = 0; i < 20; i++) {
       /*
@@ -67,12 +76,15 @@ test.describe('Simulate testing', () => {
     await expect(
       simulatorPage.getConditionSelect('COVID-19').locator('option:checked')
     ).toHaveText('Version 20 (active)');
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Only COVID-19 has been configured', async ({
     page,
     simulatorPage,
     api,
+    makeAxeBuilder,
   }) => {
     // create config and activate it
     const covid = await api.createConfiguration('COVID-19');
@@ -123,6 +135,8 @@ test.describe('Simulate testing', () => {
       page.getByRole('listitem').getByText('COVID-19')
     ).not.toBeVisible();
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     const refineButton = page.getByRole('button', { name: 'Refine eCR' });
 
     await expect(refineButton).toBeEnabled();
@@ -138,12 +152,15 @@ test.describe('Simulate testing', () => {
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
       'COVID-19',
     ]);
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Only Influenza is selected for refinement', async ({
     page,
     simulatorPage,
     api,
+    makeAxeBuilder,
   }) => {
     await api.createConfiguration('COVID-19');
     await api.createConfiguration('Influenza');
@@ -159,16 +176,21 @@ test.describe('Simulate testing', () => {
 
     await simulatorPage.getConditionCheckbox('Influenza').click();
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await simulatorPage.runRefinement();
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
       'COVID-19',
     ]);
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Refine eCR button is disabled when no selections are made', async ({
     page,
     simulatorPage,
     api,
+    makeAxeBuilder,
   }) => {
     await api.createConfiguration('COVID-19');
     await api.createConfiguration('Influenza');
@@ -195,6 +217,8 @@ test.describe('Simulate testing', () => {
     const refineButton = page.getByRole('button', { name: 'Refine eCR' });
     await expect(refineButton).toBeDisabled();
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await checkboxes.nth(0).check();
     await expect(refineButton).toBeEnabled();
   });
@@ -203,6 +227,7 @@ test.describe('Simulate testing', () => {
     page,
     simulatorPage,
     api,
+    makeAxeBuilder,
   }) => {
     const covidActive = await api.createConfiguration('COVID-19');
     await api.updateConfigurationStatus(covidActive.id, 'active');
@@ -266,6 +291,8 @@ test.describe('Simulate testing', () => {
       page.getByRole('button', { name: 'Start over' })
     ).toBeEnabled();
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await refineButton.click();
     await expect(
       page.getByRole('heading', { name: 'eCR refinement results' })
@@ -275,5 +302,7 @@ test.describe('Simulate testing', () => {
       'COVID-19',
       'Influenza',
     ]);
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 });
