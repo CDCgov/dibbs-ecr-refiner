@@ -23,7 +23,9 @@ type Fixtures = {
 const extendedTest = baseTest.extend<Fixtures>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () =>
-      new AxeBuilder({ page }).withTags(['wcag21aa']);
+      new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag21aa'])
+        .exclude('#refinement-diff'); // react-diff-viewer has known a11y issues we can't fix ourselves
     await use(makeAxeBuilder);
   },
   api: async ({ request }, use) => {
@@ -47,17 +49,16 @@ const extendedExpect = baseExpect.extend({
   async toHaveNoAxeViolations(makeAxeBuilder: () => AxeBuilder) {
     const assertionName = 'toHaveNoAxeViolations';
     const axe = makeAxeBuilder();
-    let pass: boolean;
+    let pass = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let results: any;
+    let violations: any[] = [];
     try {
-      results = await axe.analyze();
+      const results = await axe.analyze();
+      violations = results.violations ?? [];
+      pass = violations.length === 0;
     } catch {
       pass = false;
     }
-    const violations = results.violations ?? [];
-
-    pass = violations.length === 0;
 
     const message = pass
       ? () =>
