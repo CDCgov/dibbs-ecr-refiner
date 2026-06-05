@@ -10,9 +10,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
-import { Search } from '../../../../components/Search';
-import { Title } from '../../../../components/Title';
-import { Button } from '../../../../components/Button';
+import { Search } from '@components/Search';
+import { Title } from '@components/Title';
+import { Button } from '@components/Button';
 
 type DrawerProps = {
   title: string | React.ReactNode;
