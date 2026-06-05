@@ -124,30 +124,19 @@ export function ConditionCodeSetListItem({
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
       {isDefault ? (
-        <span className="text-bold mr-0! w-20! text-black">Default</span>
-      ) : condition.associated ? (
-        <Button
-          variant="secondary"
-          aria-pressed={true}
-          aria-label={`Remove ${condition.display_name}`}
-          className="mr-0! w-20!"
-          onClick={() => onClick(condition.associated)}
-          disabled={disabled}
-        >
-          Remove
-        </Button>
+        <span className="text-bold mr-3 text-black">Default</span>
       ) : (
         <Button
-          variant="primary"
-          aria-pressed={false}
-          aria-label={`Add ${condition.display_name}`}
+          variant={condition.associated ? 'secondary' : 'primary'}
+          aria-pressed={condition.associated}
+          aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
           className={classNames('mr-0! w-20!', {
-            'sr-only!': !showButton,
+            'sr-only!': !showButton && !condition.associated,
           })}
           onClick={() => onClick(condition.associated)}
           disabled={disabled}
         >
-          Add
+          {condition.associated ? 'Remove' : 'Add'}
         </Button>
       )}
     </li>
