@@ -18,17 +18,17 @@ import {
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
-import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
+import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
-import { ConfigLockBanner } from './ConfigLockBanner';
+import { ConfigLockBanner } from './Lock/ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
-import { ImportCustomCodes } from './CustomCodes/ImportCustomCodes';
+import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Icon } from '@trussworks/react-uswds';
 import { ConditionCodeTable, CustomCodesDetail } from './CustomCodes/index';
 import { TesLink } from '../TesLink';
