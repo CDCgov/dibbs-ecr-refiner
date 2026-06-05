@@ -107,17 +107,9 @@ export function Drawer({
                 ) : null}
               </section>
             </div>
-
             <div className="flex flex-col">{children}</div>
           </div>
         </div>
-
-        {isOpen && (
-          <div
-            className="fixed top-0 left-0 z-[11039] h-full w-full"
-            onClick={handleClose}
-          ></div>
-        )}
       </div>
     </FocusTrap>
   );

@@ -118,17 +118,8 @@ export function ConditionCodeSetListItem({
   return (
     <li
       className={classNames(
-        'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white',
-        {
-          'cursor-pointer': !isDefault,
-        }
+        'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white'
       )}
-      role="listitem"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (isDefault) return;
-        onClick(condition.associated);
-      }}
       onMouseEnter={() => setShowButton(true)}
       onMouseLeave={() => {
         if (!condition.associated) setShowButton(false);
@@ -136,13 +127,6 @@ export function ConditionCodeSetListItem({
       onFocus={() => setShowButton(true)}
       onBlur={() => {
         if (!condition.associated) setShowButton(false);
-      }}
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          onClick(condition.associated);
-        }
       }}
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
