@@ -172,8 +172,7 @@ class UploadCustomCodesResponse(BaseModel):
 class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
-    preview: list[UploadCustomCodesPreviewItem]
-    code_systems: CodeSystemIndex
+    preview_items: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
 
@@ -186,7 +185,6 @@ def _create_csv_reader(
 
 
 def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
-
     required_columns = {"code_number", "code_system", "display_name"}
     if not required_columns.issubset(set(csv_reader.fieldnames or [])):
         raise HTTPException(
@@ -247,8 +245,7 @@ def _validate_csv_upload_row(
         row_errors.append("Missing code_system")
     else:
         row_system = _get_row_code_system(
-            code_system_raw=code_system_raw,
-            supported_systems_by_key=supported_systems,
+            code_system_raw=code_system_raw, supported_systems_by_key=supported_systems
         )
         if row_system is None:
             allowed_systems_str = ", ".join(supported_systems.keys())
@@ -268,12 +265,12 @@ def _validate_csv_upload_row(
 def _check_row_response_for_duplicates(
     code: str,
     system: DbCodeSystem,
-    custom_code_keys: list[tuple[str, str]],
+    custom_codes: list[tuple[str, str]],
     codes_seen_so_far: set,
 ) -> tuple[str, CodeSystemKey] | list[str]:
     row_errors = []
-    code_key = (code.lower(), system.key)
-    if code_key in custom_code_keys:
+    code_key = (code, system.key)
+    if code_key in custom_codes:
         row_errors.append("Duplicate: matches existing custom code")
     if code_key in codes_seen_so_far:
         row_errors.append("Duplicate: matches uploaded batch code")
@@ -321,7 +318,7 @@ async def upload_custom_codes_csv(
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
-    custom_code_keys = [(cc.code.lower(), cc.system_key) for cc in config.custom_codes]
+    custom_codes = [(cc.code, cc.system_key) for cc in config.custom_codes]
     codes_seen_so_far: set[tuple[str, CodeSystemKey]] = set()
 
     for row_number, row in enumerate(csv_reader, start=2):
@@ -331,21 +328,23 @@ async def upload_custom_codes_csv(
         )
         if isinstance(row_response, list):
             row_errors.extend(row_response)
+            errors.append({"row": row_number, "error": ", ".join(row_errors)})
             continue
 
         (code, row_system, name) = row_response
 
-        duplicate_reponse = _check_row_response_for_duplicates(
+        duplicate_check_response = _check_row_response_for_duplicates(
             code=code,
             system=row_system,
-            custom_code_keys=custom_code_keys,
+            custom_codes=custom_codes,
             codes_seen_so_far=codes_seen_so_far,
         )
-        if isinstance(duplicate_reponse, list):
-            row_errors.extend(duplicate_reponse)
+        if isinstance(duplicate_check_response, list):
+            row_errors.extend(duplicate_check_response)
+            errors.append({"row": row_number, "error": ", ".join(row_errors)})
             continue
 
-        codes_seen_so_far.add(duplicate_reponse)
+        codes_seen_so_far.add(duplicate_check_response)
         preview_items.append(
             UploadCustomCodesPreviewItem(
                 code=code,
@@ -365,14 +364,15 @@ async def upload_custom_codes_csv(
     if not preview_items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"errors": [{"row": 0, "error": "No valid rows"}]},
+            detail={
+                "errors": [{"row": 0, "error": "No valid rows"}],
+            },
         )
     return UploadCustomCodesPreviewResponse(
-        preview=preview_items,
+        preview_items=preview_items,
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
-        code_systems=supported_systems,
     )
 
 

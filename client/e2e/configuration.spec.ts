@@ -454,10 +454,13 @@ test.describe('Configuration detail flow', () => {
         page.getByText('Other Example', { exact: true })
       ).not.toBeVisible();
       await page.getByRole('searchbox', { name: 'Search codes' }).clear();
-      await expect(page.getByText(testCode)).toBeVisible();
 
       const rows = page.locator('table tbody tr');
       const firstRow = rows.first();
+      // first row should have the most recent updated values
+      await expect(firstRow.getByText(testCode)).toBeVisible();
+      await expect(firstRow.getByText('test code_name')).toBeVisible();
+      await expect(firstRow.getByText('CVX')).toBeVisible();
 
       expect(await rows.all()).toHaveLength(3);
       await firstRow.getByRole('button', { name: 'Delete' }).click();
