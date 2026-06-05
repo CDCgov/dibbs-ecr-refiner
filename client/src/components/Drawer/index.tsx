@@ -7,7 +7,7 @@
  * filtering for child content.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import FocusTrap from 'focus-trap-react';
+import { FocusTrap } from 'focus-trap-react';
 import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 import { Search } from '../Search';
