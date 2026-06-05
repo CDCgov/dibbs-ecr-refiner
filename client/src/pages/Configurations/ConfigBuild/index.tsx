@@ -30,8 +30,9 @@ import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Icon } from '@trussworks/react-uswds';
-import { ConditionCodeTable, CustomCodesDetail } from './CustomCodes/index';
+import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
+import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
