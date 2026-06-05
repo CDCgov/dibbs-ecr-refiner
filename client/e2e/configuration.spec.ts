@@ -381,7 +381,7 @@ test.describe('Configuration detail flow', () => {
         page.getByRole('combobox', {
           name: `Narrative data handling for ${customSectionName} section`,
         })
-      ).toHaveValue('retain');
+      ).toHaveValue('remove');
     });
 
     await test.step('Run inline test', async () => {
