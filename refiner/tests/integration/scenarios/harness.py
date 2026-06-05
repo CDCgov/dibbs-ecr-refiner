@@ -10,6 +10,7 @@ from app.services.pipeline import (
     refine_for_condition,
 )
 from app.services.terminology import ProcessedConfiguration
+from tests.integration.conftest import test_user_jurisdiction_id
 
 # NOTE:
 # DETERMINISTIC TIMESTAMP
@@ -61,9 +62,9 @@ def make_fixed_run(xml_files: XMLFiles) -> AugmentationRun:
 def refine_one(
     xml_files: XMLFiles,
     processed_configuration: ProcessedConfiguration,
-    jurisdiction_code: str,
     rsg_code: str,
     canonical_url: str,
+    jurisdiction_code: str = test_user_jurisdiction_id,
     configuration_version: int | None = None,
     run: AugmentationRun | None = None,
 ) -> RefinementResult:
@@ -81,6 +82,11 @@ def refine_one(
     construct one run via make_fixed_run() and pass it to every refine_one
     call, matching production behavior where a single AugmentationRun is
     shared across all per-condition refinements in a session.
+
+    NOTE: Augmentation is seeded by the jurisdiction the config was activated
+    under (the live test infra: SDDH), NOT the RR's reportable-to jurisdiction.
+    The fixture RR may be reportable elsewhere; that's intentionally not
+    consulted here--it isn't a refinement input.
 
     Args:
         xml_files: The eICR/RR pair to refine.

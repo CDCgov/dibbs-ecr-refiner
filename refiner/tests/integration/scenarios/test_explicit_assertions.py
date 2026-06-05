@@ -1,41 +1,12 @@
-import json
 from typing import Final
 
+import pytest
 from lxml import etree
 
-from app.core.models.types import XMLFiles
-from app.services.terminology import ProcessedConfiguration
-
-from ...fixtures.loader import load_fixture_str
+from .conftest import SCENARIOS_BY_NAME, load_scenario_xml_files
 from .harness import refine_one
 
-# NOTE:
-# SHARED CONTEXT
-# =============================================================================
-
-FIXTURE_DIR: Final[str] = "all_sections_COVID_INFLUENZA"
-
-COVID_BASELINE_CONFIG: Final[str] = "covid_baseline.json"
-COVID_CUSTOM_CODES_CONFIG: Final[str] = "covid_with_custom_codes.json"
-COVID_PLUS_UNRELATED_CONFIG: Final[str] = "covid_plus_unrelated_condition.json"
-COVID_SUBSTANCE_ADMIN_CONFIG: Final[str] = "covid_with_substance_admin_custom_code.json"
-COVID_MULTI_VITAL_CONFIG: Final[str] = "covid_with_multi_vital_sign_codes.json"
-
-COVID_RSG_CODE: Final[str] = "840539006"
-COVID_CANONICAL_URL: Final[str] = (
-    "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-    "07221093-b8a1-4b1d-8678-259277bfba64"
-)
 JURISDICTION: Final[str] = "SDDH"
-
-# configuration_version per scenario, mirroring the SCENARIOS list in
-# test_all_sections_covid_influenza.py
-# * recorded on the trace AND rendered into the section provenance footnotes
-VERSION_BASELINE: Final[int] = 1
-VERSION_CUSTOM_CODES: Final[int] = 3
-VERSION_PLUS_UNRELATED: Final[int] = 5
-VERSION_SUBSTANCE_ADMIN: Final[int] = 6
-VERSION_MULTI_VITAL: Final[int] = 7
 
 # section LOINCs (from the refined-eICR section table in REPORT.md)
 IMMUNIZATIONS_LOINC: Final[str] = "11369-6"
@@ -79,7 +50,7 @@ HL7_NS: Final[dict[str, str]] = {"hl7": "urn:hl7-org:v3"}
 #  *6  vital-sign panel pruned to its matched sub-components (single + multi)
 #
 #  *3  (validation) is covered by the `validate_refined_document` fixture in
-#      `tests/scenarios/conftest.py`, not duplicated here
+#      `tests/integration/scenarios/conftest.py`, not duplicated here
 #
 # plus one invariant pin discovered while tightening these:
 # * configuration_version is rendered into the section provenance footnotes,
@@ -96,27 +67,31 @@ HL7_NS: Final[dict[str, str]] = {"hl7": "urn:hl7-org:v3"}
 # =============================================================================
 
 
-def _load_xml_files() -> XMLFiles:
-    return XMLFiles(
-        eicr=load_fixture_str(f"{FIXTURE_DIR}/eICR.xml"),
-        rr=load_fixture_str(f"{FIXTURE_DIR}/RR.xml"),
-    )
+def _refine(scenario, config, *, configuration_version: int | None = None):  # noqa: ANN001 - RefinementResult, avoid import cycle
+    """
+    Run the production refinement path for a scenario's config.
 
+    Reads rsg_code / canonical_url / configuration_version off the scenario so
+    these stay in lockstep with the snapshot suite. `configuration_version` can
+    be overridden for the one test that pins an arbitrary version's rendering.
 
-def _load_config(filename: str) -> ProcessedConfiguration:
-    return ProcessedConfiguration.from_dict(
-        json.loads(load_fixture_str(f"{FIXTURE_DIR}/configurations/{filename}"))
-    )
+    Augmentation is seeded by JURISDICTION (the live infra jurisdiction, SDDH),
+    not the RR's reportable-to jurisdiction--the same bypass the snapshot
+    suite documents. None of these explicit tests assert on augmented document
+    identifiers, so the jurisdiction only needs to be internally consistent.
+    """
 
-
-def _refine(config: ProcessedConfiguration, *, configuration_version: int):  # noqa: ANN201 - RefinementResult, avoid import cycle
     return refine_one(
-        xml_files=_load_xml_files(),
+        xml_files=load_scenario_xml_files(scenario),
         processed_configuration=config,
         jurisdiction_code=JURISDICTION,
-        rsg_code=COVID_RSG_CODE,
-        canonical_url=COVID_CANONICAL_URL,
-        configuration_version=configuration_version,
+        rsg_code=scenario.rsg_code,
+        canonical_url=scenario.canonical_url,
+        configuration_version=(
+            configuration_version
+            if configuration_version is not None
+            else scenario.configuration_version
+        ),
     )
 
 
@@ -178,7 +153,12 @@ def _retained_entry_ids(xml: str) -> list[str]:
 # and is rendered into the provenance footnotes (see the dedicated pin below)
 
 
-def test_adding_unrelated_condition_codes_does_not_change_refinement() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_adding_unrelated_condition_codes_does_not_change_refinement(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #1.
 
@@ -193,19 +173,22 @@ def test_adding_unrelated_condition_codes_does_not_change_refinement() -> None:
     adds codes). If it isn't, the test no longer exercises Issue #1.
     """
 
-    baseline_config = _load_config(COVID_BASELINE_CONFIG)
-    plus_config = _load_config(COVID_PLUS_UNRELATED_CONFIG)
+    baseline_scenario = SCENARIOS_BY_NAME["covid_baseline"]
+    plus_scenario = SCENARIOS_BY_NAME["covid_plus_unrelated_condition"]
+
+    baseline_config, _ = await build_scenario_configuration(baseline_scenario)
+    plus_config, _ = await build_scenario_configuration(plus_scenario)
 
     added = set(plus_config.codes) - set(baseline_config.codes)
     assert added, (
-        f"{COVID_PLUS_UNRELATED_CONFIG} adds no codes beyond "
-        f"{COVID_BASELINE_CONFIG}; this test no longer exercises Roll-up "
-        f"Issue #1 (adding unrelated code sets). Restore the unrelated codes "
-        f"to the configuration or remove this test."
+        "covid_plus_unrelated_condition adds no codes beyond covid_baseline; "
+        "this test no longer exercises Roll-up Issue #1 (adding unrelated code "
+        "sets). Restore the unrelated codes to the configuration or remove "
+        "this test."
     )
 
-    baseline = _refine(baseline_config, configuration_version=VERSION_BASELINE)
-    plus = _refine(plus_config, configuration_version=VERSION_PLUS_UNRELATED)
+    baseline = _refine(baseline_scenario, baseline_config)
+    plus = _refine(plus_scenario, plus_config)
 
     # load-bearing assertion (readable headline): identical size reduction
     assert (
@@ -247,7 +230,12 @@ def test_adding_unrelated_condition_codes_does_not_change_refinement() -> None:
 # and retain the immunization
 
 
-def test_immunization_retained_via_cross_oid_custom_code_match() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_immunization_retained_via_cross_oid_custom_code_match(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #2.
 
@@ -265,14 +253,14 @@ def test_immunization_retained_via_cross_oid_custom_code_match() -> None:
     2563008. A regression that requires OID agreement drops it.
     """
 
-    config = _load_config(COVID_CUSTOM_CODES_CONFIG)
-    xml_files = _load_xml_files()
+    scenario = SCENARIOS_BY_NAME["covid_with_custom_codes"]
+    config, _ = await build_scenario_configuration(scenario)
+    xml_files = load_scenario_xml_files(scenario)
 
     assert CROSS_OID_IMMUNIZATION_CODE in config.codes, (
-        f"CVX {CROSS_OID_IMMUNIZATION_CODE} is not in "
-        f"{COVID_CUSTOM_CODES_CONFIG}'s matchable codes; this test no longer "
-        f"exercises Roll-up Issue #2's cross-OID match. Restore the custom "
-        f"code or remove this test."
+        f"CVX {CROSS_OID_IMMUNIZATION_CODE} is not in covid_with_custom_codes' "
+        f"matchable codes; this test no longer exercises Roll-up Issue #2's "
+        f"cross-OID match. Restore the custom code or remove this test."
     )
 
     source_root = etree.fromstring(xml_files.eicr.encode("utf-8"))
@@ -289,7 +277,7 @@ def test_immunization_retained_via_cross_oid_custom_code_match() -> None:
         f"the data. Restore the fixture or remove this test."
     )
 
-    result = _refine(config, configuration_version=VERSION_CUSTOM_CODES)
+    result = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained = refined_root.xpath(
         f".//hl7:section[hl7:code/@code='{IMMUNIZATIONS_LOINC}']"
@@ -313,7 +301,12 @@ def test_immunization_retained_via_cross_oid_custom_code_match() -> None:
 # reach into that nesting and retain the entry
 
 
-def test_custom_code_in_problem_entry_relationship_value_retains_entry() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_custom_code_in_problem_entry_relationship_value_retains_entry(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #4 (nested entryRelationship/value half).
 
@@ -330,11 +323,12 @@ def test_custom_code_in_problem_entry_relationship_value_retains_entry() -> None
     nested code.
     """
 
-    config = _load_config(COVID_CUSTOM_CODES_CONFIG)
-    xml_files = _load_xml_files()
+    scenario = SCENARIOS_BY_NAME["covid_with_custom_codes"]
+    config, _ = await build_scenario_configuration(scenario)
+    xml_files = load_scenario_xml_files(scenario)
 
     assert NESTED_PROBLEM_CODE in config.codes, (
-        f"Code {NESTED_PROBLEM_CODE} is not in {COVID_CUSTOM_CODES_CONFIG}'s "
+        f"Code {NESTED_PROBLEM_CODE} is not in covid_with_custom_codes' "
         f"matchable codes; this test no longer exercises Roll-up Issue #4's "
         f"nested-value half. Restore the custom code or remove this test."
     )
@@ -352,7 +346,7 @@ def test_custom_code_in_problem_entry_relationship_value_retains_entry() -> None
         f"this test."
     )
 
-    result = _refine(config, configuration_version=VERSION_CUSTOM_CODES)
+    result = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained_entries = refined_root.xpath(
         f".//hl7:section[hl7:code/@code='{PROBLEMS_LOINC}']"
@@ -377,7 +371,12 @@ def test_custom_code_in_problem_entry_relationship_value_retains_entry() -> None
 # absolute counts, and needs no knowledge of the specific custom code value
 
 
-def test_substance_admin_custom_code_retains_one_more_medication_entry_each() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_substance_admin_custom_code_retains_one_more_medication_entry_each(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #4 (substanceAdministration half).
 
@@ -390,19 +389,22 @@ def test_substance_admin_custom_code_retains_one_more_medication_entry_each() ->
     Precondition: the substance-admin config adds codes baseline lacks.
     """
 
-    baseline_config = _load_config(COVID_BASELINE_CONFIG)
-    substance_config = _load_config(COVID_SUBSTANCE_ADMIN_CONFIG)
+    baseline_scenario = SCENARIOS_BY_NAME["covid_baseline"]
+    substance_scenario = SCENARIOS_BY_NAME["covid_with_substance_admin_custom_code"]
+
+    baseline_config, _ = await build_scenario_configuration(baseline_scenario)
+    substance_config, _ = await build_scenario_configuration(substance_scenario)
 
     added = set(substance_config.codes) - set(baseline_config.codes)
     assert added, (
-        f"{COVID_SUBSTANCE_ADMIN_CONFIG} adds no codes beyond "
-        f"{COVID_BASELINE_CONFIG}; this test no longer exercises Roll-up "
-        f"Issue #4's substanceAdministration half. Restore the custom code or "
-        f"remove this test."
+        "covid_with_substance_admin_custom_code adds no codes beyond "
+        "covid_baseline; this test no longer exercises Roll-up Issue #4's "
+        "substanceAdministration half. Restore the custom code or remove this "
+        "test."
     )
 
-    baseline = _refine(baseline_config, configuration_version=VERSION_BASELINE)
-    substance = _refine(substance_config, configuration_version=VERSION_SUBSTANCE_ADMIN)
+    baseline = _refine(baseline_scenario, baseline_config)
+    substance = _refine(substance_scenario, substance_config)
 
     base_root = etree.fromstring(baseline.refined_eicr.encode("utf-8"))
     sub_root = etree.fromstring(substance.refined_eicr.encode("utf-8"))
@@ -425,13 +427,6 @@ def test_substance_admin_custom_code_retains_one_more_medication_entry_each() ->
 # NOTE:
 # ROLL-UP ISSUE #5 -- procedures NOT retained via entryRelationship-only match
 # =============================================================================
-# RECONSTRUCTED FROM README -- this block restates the behavior the README
-# attributes to `test_covid_baseline_does_not_retain_procedures_via_entry_
-# relationship_only_match`. Reconcile with the committed version: if your file
-# already defines this test, keep yours and delete this block (or vice versa)
-# * the XPaths below encode the README's description of the fixture; adjust if
-# the fixture's Procedures statements nest Nausea differently.
-#
 # structural precedence: nausea (SNOMED 422587007) is a configured COVID
 # matching code, and the fixture's procedure entries each carry Nausea in an
 # entryRelationship--but NOT at an entry-level code/value location
@@ -439,9 +434,12 @@ def test_substance_admin_custom_code_retains_one_more_medication_entry_each() ->
 # section is stubbed (0 entries) under covid_baseline
 
 
-def test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_match() -> (
-    None
-):
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_match(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #5 (negative case).
 
@@ -463,12 +461,13 @@ def test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_m
     Assertion: the refined Procedures section has 0 entries.
     """
 
-    config = _load_config(COVID_BASELINE_CONFIG)
-    xml_files = _load_xml_files()
+    scenario = SCENARIOS_BY_NAME["covid_baseline"]
+    config, _ = await build_scenario_configuration(scenario)
+    xml_files = load_scenario_xml_files(scenario)
 
     assert NAUSEA_SNOMED in config.codes, (
-        f"SNOMED {NAUSEA_SNOMED} (Nausea) is not in {COVID_BASELINE_CONFIG}'s "
-        f"matchable codes; this test no longer exercises Roll-up Issue #5 -- a "
+        f"SNOMED {NAUSEA_SNOMED} (Nausea) is not in covid_baseline's matchable "
+        f"codes; this test no longer exercises Roll-up Issue #5 -- a "
         f"non-configured code cannot demonstrate the entryRelationship-only "
         f"guard. Restore the code or remove this test."
     )
@@ -510,7 +509,7 @@ def test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_m
         f"entryRelationship-only guard. Fix the fixture or remove this test."
     )
 
-    result = _refine(config, configuration_version=VERSION_BASELINE)
+    result = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     assert _entry_count(refined_root, PROCEDURES_LOINC) == 0, (
         f"Refined Procedures section ({PROCEDURES_LOINC}) retained "
@@ -534,7 +533,12 @@ def test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_m
 # panel returned on any match" regression would leave all nine components.
 
 
-def test_single_vital_sign_code_prunes_panel_to_matched_components() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_single_vital_sign_code_prunes_panel_to_matched_components(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #6 (single custom code).
 
@@ -550,13 +554,14 @@ def test_single_vital_sign_code_prunes_panel_to_matched_components() -> None:
          (i.e. there is a panel to prune) and includes 8867-4.
     """
 
-    config = _load_config(COVID_CUSTOM_CODES_CONFIG)
-    xml_files = _load_xml_files()
+    scenario = SCENARIOS_BY_NAME["covid_with_custom_codes"]
+    config, _ = await build_scenario_configuration(scenario)
+    xml_files = load_scenario_xml_files(scenario)
 
     assert HEART_RATE_LOINC in config.codes, (
-        f"LOINC {HEART_RATE_LOINC} is not in {COVID_CUSTOM_CODES_CONFIG}'s "
-        f"matchable codes; this test no longer exercises Roll-up Issue #6's "
-        f"single-code case. Restore the custom code or remove this test."
+        f"LOINC {HEART_RATE_LOINC} is not in covid_with_custom_codes' matchable "
+        f"codes; this test no longer exercises Roll-up Issue #6's single-code "
+        f"case. Restore the custom code or remove this test."
     )
 
     source_root = etree.fromstring(xml_files.eicr.encode("utf-8"))
@@ -573,7 +578,7 @@ def test_single_vital_sign_code_prunes_panel_to_matched_components() -> None:
         f"Restore the fixture/config or remove this test."
     )
 
-    result = _refine(config, configuration_version=VERSION_CUSTOM_CODES)
+    result = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained = _vital_component_codes(refined_root)
 
@@ -590,7 +595,12 @@ def test_single_vital_sign_code_prunes_panel_to_matched_components() -> None:
     )
 
 
-def test_multiple_vital_sign_codes_prune_panel_to_matched_components() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_multiple_vital_sign_codes_prune_panel_to_matched_components(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Explicit assertion of Roll-up Issue #6 (multiple custom codes).
 
@@ -603,14 +613,15 @@ def test_multiple_vital_sign_codes_prune_panel_to_matched_components() -> None:
     the configured-and-present set is a strict subset of the source panel.
     """
 
-    config = _load_config(COVID_MULTI_VITAL_CONFIG)
-    xml_files = _load_xml_files()
+    scenario = SCENARIOS_BY_NAME["covid_with_multi_vital_sign_codes"]
+    config, _ = await build_scenario_configuration(scenario)
+    xml_files = load_scenario_xml_files(scenario)
 
     assert MULTI_VITAL_CODES <= set(config.codes), (
         f"Not all of {sorted(MULTI_VITAL_CODES)} are in "
-        f"{COVID_MULTI_VITAL_CONFIG}'s matchable codes; this test no longer "
-        f"exercises Roll-up Issue #6's multi-code case. Restore the custom "
-        f"codes or remove this test."
+        f"covid_with_multi_vital_sign_codes' matchable codes; this test no "
+        f"longer exercises Roll-up Issue #6's multi-code case. Restore the "
+        f"custom codes or remove this test."
     )
 
     source_root = etree.fromstring(xml_files.eicr.encode("utf-8"))
@@ -624,7 +635,7 @@ def test_multiple_vital_sign_codes_prune_panel_to_matched_components() -> None:
         f"Restore the fixture/config or remove this test."
     )
 
-    result = _refine(config, configuration_version=VERSION_MULTI_VITAL)
+    result = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained = _vital_component_codes(refined_root)
 
@@ -649,11 +660,16 @@ def test_multiple_vital_sign_codes_prune_panel_to_matched_components() -> None:
 # refined XML, not only the trace. pinning it converts the surprise into a
 # readable failure: a future change to footnote rendering fails here with a
 # clear message rather than as an opaque XML snapshot diff. if this ever fails
-# intentionally, the Scenario docstring in test_all_sections_covid_influenza.py
-# and the scenarios README must be updated to match
+# intentionally, the Scenario docstring in conftest.py and the scenarios README
+# must be updated to match
 
 
-def test_configuration_version_is_rendered_into_section_provenance_footnotes() -> None:
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_configuration_version_is_rendered_into_section_provenance_footnotes(
+    setup,
+    build_scenario_configuration,
+) -> None:
     """
     Documents that configuration_version affects the refined XML.
 
@@ -663,8 +679,11 @@ def test_configuration_version_is_rendered_into_section_provenance_footnotes() -
     snapshots rewrites every section footnote in the XML snapshot.
     """
 
+    scenario = SCENARIOS_BY_NAME["covid_baseline"]
+    config, _ = await build_scenario_configuration(scenario)
+
     version = 42
-    result = _refine(_load_config(COVID_BASELINE_CONFIG), configuration_version=version)
+    result = _refine(scenario, config, configuration_version=version)
     root = etree.fromstring(result.refined_eicr.encode("utf-8"))
 
     rendered = set(
@@ -676,7 +695,7 @@ def test_configuration_version_is_rendered_into_section_provenance_footnotes() -
     assert rendered == {f"v{version}"}, (
         f"configuration_version v{version} did not render into any section "
         f"provenance footnote 'Config Version' cell. If this is intentional, "
-        f"update the Scenario docstring in test_all_sections_covid_influenza.py "
-        f"and the scenarios README, which would then be wrong to describe "
-        f"configuration_version's relationship to the XML."
+        f"update the Scenario docstring in conftest.py and the scenarios "
+        f"README, which would then be wrong to describe configuration_version's "
+        f"relationship to the XML."
     )

@@ -1,207 +1,31 @@
 import json
-from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
-from app.core.models.types import XMLFiles
-from app.services.terminology import ProcessedConfiguration
-
-from ...fixtures.loader import load_fixture_str
 from ...unit.conftest import normalize_xml
+from .conftest import SCENARIOS, Scenario, load_scenario_xml_files
 from .harness import refine_one
-
-# NOTE:
-# SCENARIO DEFINITIONS
-# =============================================================================
-# each Scenario identifies one (fixture, configuration, condition) triple:
-# * to add a scenario, append an entry below; the parametrized test picks it
-# up automatically
-
-
-@dataclass(frozen=True)
-class Scenario:
-    """
-    One refinement scenario: fixture + configuration + condition to refine for.
-
-    Fields fall into three groups by snapshot impact:
-
-    Filesystem paths — no snapshot impact:
-      `name` — parametrize id and snapshot subdirectory name.
-      `fixture_dir` — directory under tests/fixtures/.
-      `config_filename` — file under <fixture_dir>/configurations/.
-
-    Augmentation seeds: changing these regenerates ALL snapshots (trace,
-    eICR, RR) because they thread into the deterministic UUIDv5 derivation
-    that produces the augmented document identifiers, which appear in the
-    trace JSON and in the augmentation headers of the refined eICR/RR:
-      `jurisdiction_code` — not checked against the RR's jurisdiction; an
-        arbitrary stable label.
-      `canonical_url` — connected to the Condition Grouper of the
-        `rsg_code`; its trailing UUID is the condition_grouper_uuid in
-        the seed.
-
-    Recorded metadata: appears in expected_trace.json AND is rendered into each
-    section's provenance footnote ('Config Version' column) in the refined
-    eICR/RR. Changing it therefore regenerates the trace JSON and every XML
-    snapshot. It does not affect which entries are retained:
-      `configuration_version` — arbitrary discriminator; incremented per
-        scenario.
-
-    Pure metadata — no snapshot impact at all:
-      `rsg_code` — the reportable SNOMED code we declare as the condition
-        being refined for. Recorded on the internal RefinementTrace for
-        observability but does not drive refinement (the
-        ProcessedConfiguration does) and does not seed augmentation.
-    """
-
-    name: str
-    fixture_dir: str
-    config_filename: str
-    jurisdiction_code: str
-    rsg_code: str
-    canonical_url: str
-    configuration_version: int
-
-
-SCENARIOS: list[Scenario] = [
-    Scenario(
-        name="covid_baseline",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_baseline.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",  # covid-19 disorder
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=1,
-    ),
-    Scenario(
-        name="influenza_baseline",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="influenza_baseline.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="541131000124102",  # infection caused by novel Influenza A variant
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "38475891-387a-4fa2-bbe9-1dc97ce415d1"
-        ),
-        configuration_version=2,
-    ),
-    Scenario(
-        name="covid_with_custom_codes",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_with_custom_codes.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=3,
-    ),
-    Scenario(
-        name="covid_with_section_overrides",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_with_section_overrides.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=4,
-    ),
-    Scenario(
-        name="covid_plus_unrelated_condition",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_plus_unrelated_condition.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=5,
-    ),
-    Scenario(
-        name="covid_with_substance_admin_custom_code",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_with_substance_admin_custom_code.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=6,
-    ),
-    Scenario(
-        name="covid_with_multi_vital_sign_codes",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_with_multi_vital_sign_codes.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=7,
-    ),
-    Scenario(
-        name="covid_with_procedure_only_code",
-        fixture_dir="all_sections_COVID_INFLUENZA",
-        config_filename="covid_with_procedure_only_code.json",
-        jurisdiction_code="TEST-JD",
-        rsg_code="840539006",
-        canonical_url=(
-            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-            "07221093-b8a1-4b1d-8678-259277bfba64"
-        ),
-        configuration_version=8,
-    ),
-]
-
 
 # NOTE:
 # SNAPSHOT PATHS
 # =============================================================================
-# snapshots live alongside the tests, not alongside the fixtures: a
-# fixture is a static input but the snapshot is an output of refinement,
-# and a single fixture may be exercised by multiple tests in the future
+# snapshots live alongside the tests, not alongside the fixtures: a fixture is
+# a static input but the snapshot is an output of refinement, and a single
+# fixture may be exercised by multiple tests
 
 SNAPSHOT_ROOT: Path = Path(__file__).parent / "snapshots"
 
 
 def _snapshot_dir(scenario: Scenario) -> Path:
-    return SNAPSHOT_ROOT / scenario.fixture_dir / scenario.name
-
-
-# NOTE:
-# FIXTURE LOADING
-# =============================================================================
-
-
-def _load_xml_files(scenario: Scenario) -> XMLFiles:
-    return XMLFiles(
-        eicr=load_fixture_str(f"{scenario.fixture_dir}/eICR.xml"),
-        rr=load_fixture_str(f"{scenario.fixture_dir}/RR.xml"),
-    )
-
-
-def _load_processed_configuration(scenario: Scenario) -> ProcessedConfiguration:
-    raw = load_fixture_str(
-        f"{scenario.fixture_dir}/configurations/{scenario.config_filename}"
-    )
-    return ProcessedConfiguration.from_dict(json.loads(raw))
+    return SNAPSHOT_ROOT / Path(scenario.fixture_dir).name / scenario.name
 
 
 # NOTE:
 # SUMMARY DICT (the contents of expected_trace.json)
 # =============================================================================
 # a small, stable, human-readable dict pulled from the RefinementResult
-# * sorted-key JSON serialization makes diffs trivial to read
+# * sorted-key json serialization makes diffs trivial to read
 
 
 def _summary_from_result(result) -> dict:  # noqa: ANN001 - RefinementResult, avoid import cycle
@@ -225,32 +49,46 @@ def _summary_from_result(result) -> dict:  # noqa: ANN001 - RefinementResult, av
 # =============================================================================
 
 
+@pytest.mark.integration
+@pytest.mark.asyncio
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=[s.name for s in SCENARIOS])
-def test_scenario_matches_snapshot(
+async def test_scenario_matches_snapshot(
     scenario: Scenario,
+    setup,
     update_snapshots: bool,
     validate_refined_document,
+    build_scenario_configuration,
+    test_user_jurisdiction_id,
 ) -> None:
     """
-    Refine the fixture for the scenario's condition, validate the refined
-    documents, then compare the result against committed snapshots.
+    Build the scenario's configuration through the API, refine the fixture for
+    its condition, validate the refined documents, then compare the result
+    against committed snapshots.
 
-    Validation (well-formedness, CDA R2 XSD, schematron) runs first so
-    invalid output fails the test loudly rather than getting committed as
-    an "expected" snapshot. Pass --update-snapshots to overwrite the
-    committed files with the current output instead of comparing; use
-    when refinement behavior legitimately changes.
+    Validation (well-formedness, CDA R2 XSD, schematron) runs first so invalid
+    output fails the test loudly rather than getting committed as an "expected"
+    snapshot. Pass --update-snapshots to overwrite the committed files with the
+    current output instead of comparing; use when refinement behavior
+    legitimately changes.
     """
 
-    xml_files = _load_xml_files(scenario)
-    processed_configuration = _load_processed_configuration(scenario)
+    xml_files = load_scenario_xml_files(scenario)
+    processed_configuration, canonical_url = await build_scenario_configuration(
+        scenario
+    )
 
     result = refine_one(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
-        jurisdiction_code=scenario.jurisdiction_code,
+        # augmentation is seeded by the jurisdiction the config was activated
+        # under (the live test infra: SDDH), NOT the RR's reportable-to
+        # jurisdiction. the fixture RR may be reportable elsewhere; that is
+        # intentionally not consulted here--it is not a refinement input, and
+        # bypassing it lets us reuse arbitrary test data without standing up
+        # matching fake jurisdictions
+        jurisdiction_code=test_user_jurisdiction_id,
         rsg_code=scenario.rsg_code,
-        canonical_url=scenario.canonical_url,
+        canonical_url=canonical_url,
         configuration_version=scenario.configuration_version,
     )
 
@@ -271,9 +109,9 @@ def test_scenario_matches_snapshot(
     rr_path = snapshot_dir / "expected_RR.xml"
 
     # WRITE PATH
-    # update mode: write current output as the new snapshot, then pass.
-    # always run a print so the user has visible confirmation of what
-    # was written, even when many scenarios are regenerated at once.
+    # update mode: write current output as the new snapshot, then pass
+    # * always run a print so the user has visible confirmation of what
+    #   was written, even when many scenarios are regenerated at once
     if update_snapshots:
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         trace_path.write_text(
