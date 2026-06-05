@@ -178,7 +178,9 @@ export function ConditionCodeTable({
         <div
           ref={parentRef}
           className="h-100 overflow-y-auto sm:h-full"
-          tabIndex={0}
+          role="region"
+          aria-label="Code set results"
+          tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- scroll container needs focus for keyboard users to scroll virtualized list
         >
           <div
             role="table"
