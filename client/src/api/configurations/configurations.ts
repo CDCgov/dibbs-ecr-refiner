@@ -533,18 +533,16 @@ export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidati
       return useMutation(getAddCustomCodeToConfigurationMutationOptions(options), queryClient);
     }
     /**
- * Modify a configuration's custom code based on system/code pair.
+ * Modify a configuration's custom code based on system_key/code pair.
 
 Args:
     configuration_id (UUID): The ID of the configuration to modify.
     body (UpdateCustomCodeInput): User-provided object containing custom code info.
     user (dict[str, Any]): The logged-in user.
     db (AsyncDatabaseConnection): The database connection.
+    logger (Logger): The system logger.
 
 Raises:
-    HTTPException: 400 if a system is not provided
-    HTTPException: 400 if a code is not provided
-    HTTPException: 404 if the configuration can't be found
     HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if the configuration can't be updated
 
@@ -745,13 +743,13 @@ export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidatio
 
 Args:
     configuration_id (UUID): The ID of the configuration to modify.
-    system (str): System of the custom code.
+    system_key (str): System of the custom code.
     code (str): Code of the custom code.
     user (dict[str, Any]): The logged-in user.
     db (AsyncDatabaseConnection): The database connection.
 
 Raises:
-    HTTPException: 400 if system is not provided
+    HTTPException: 400 if system_key is not provided
     HTTPException: 400 if code is not provided
     HTTPException: 404 if configuration can't be found
     HTTPException: 409 if configuration is not a draft and therefore not editable
@@ -763,21 +761,21 @@ Returns:
  */
 export const deleteCustomCodeFromConfiguration = (
     configurationId: string,
-    system: string,
+    systemKey: string,
     code: string, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
 
 
     return axios.default.delete(
-      `/api/v1/configurations/${configurationId}/custom-codes/${system}/${code}`,options
+      `/api/v1/configurations/${configurationId}/custom-codes/${systemKey}/${code}`,options
     );
   }
 
 
 
 export const getDeleteCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;systemKey: string;code: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;systemKey: string;code: string}, TContext> => {
 
 const mutationKey = ['deleteCustomCodeFromConfiguration'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -789,10 +787,10 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, {configurationId: string;system: string;code: string}> = (props) => {
-          const {configurationId,system,code} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, {configurationId: string;systemKey: string;code: string}> = (props) => {
+          const {configurationId,systemKey,code} = props ?? {};
 
-          return  deleteCustomCodeFromConfiguration(configurationId,system,code,axiosOptions)
+          return  deleteCustomCodeFromConfiguration(configurationId,systemKey,code,axiosOptions)
         }
 
 
@@ -810,11 +808,11 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  * @summary Delete Custom Code
  */
 export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;systemKey: string;code: string}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
         TError,
-        {configurationId: string;system: string;code: string},
+        {configurationId: string;systemKey: string;code: string},
         TContext
       > => {
       return useMutation(getDeleteCustomCodeFromConfigurationMutationOptions(options), queryClient);

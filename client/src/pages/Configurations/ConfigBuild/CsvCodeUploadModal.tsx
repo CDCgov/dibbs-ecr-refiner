@@ -1,5 +1,5 @@
 import React from 'react';
-import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
+import { UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
@@ -13,6 +13,8 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
+import { useGetCodeSystems } from '../../../api/code-systems/code-systems';
+import { Spinner } from '@components/Spinner';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -88,13 +90,12 @@ interface PreviewEditModalProps {
   >;
   isEditSaveDisabled: boolean;
   handlePreviewEditSubmit: () => void;
-  PREVIEW_CODE_SYSTEMS: CodeSystem[];
   previewItems: UploadCustomCodesPreviewItem[] | null;
   previewEditIndex: number | null;
   setError: (err: string | null) => void;
   error: string | null;
   handlePreviewEditChange: (
-    field: 'code' | 'system' | 'name'
+    field: keyof UploadCustomCodesPreviewItem
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }
 
@@ -105,13 +106,23 @@ export function PreviewEditModal({
   setPreviewEditForm,
   isEditSaveDisabled,
   handlePreviewEditSubmit,
-  PREVIEW_CODE_SYSTEMS,
   previewItems,
   previewEditIndex,
   setError,
   error,
   handlePreviewEditChange,
 }: PreviewEditModalProps) {
+  const { data: codeSystems, isPending, isError } = useGetCodeSystems();
+
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+
+  if (isError || !codeSystems) return 'Error!';
+
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
       <ModalHeader>
@@ -144,7 +155,7 @@ export function PreviewEditModal({
                   setError(null);
                 }
               }}
-              autoFocus
+              autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- focus first input on modal open for keyboard/screen reader users
             />
           </Field>
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
@@ -153,12 +164,12 @@ export function PreviewEditModal({
           <Field>
             <Label>Code system</Label>
             <Select
-              value={previewEditForm.system}
-              onChange={handlePreviewEditChange('system')}
+              value={previewEditForm.system_key}
+              onChange={handlePreviewEditChange('system_key')}
             >
-              {PREVIEW_CODE_SYSTEMS.map((system: string) => (
-                <option key={system} value={system}>
-                  {system}
+              {codeSystems.data.map((s) => (
+                <option key={s.id} value={s.key}>
+                  {s.display_name}
                 </option>
               ))}
             </Select>

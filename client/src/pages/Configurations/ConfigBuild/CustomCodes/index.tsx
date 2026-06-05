@@ -1,4 +1,3 @@
-import { CodeSystem } from '../../../../api/schemas/codeSystem';
 import { Search } from '@components/Search';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
@@ -12,7 +11,11 @@ import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { DbConfigurationCustomCode } from '../../../../api/schemas';
+import {
+  CodeSystemsReponse,
+  DbCodeSystem,
+  DbConfigurationCustomCode,
+} from '../../../../api/schemas';
 import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
@@ -25,23 +28,49 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 interface CustomCodesDetailProps {
   configurationId: string;
   customCodes: DbConfigurationCustomCode[];
+  codeSystems: { [key: string]: DbCodeSystem };
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+type ConfigurationCustomCodeDisplay = DbConfigurationCustomCode & {
+  codeSystemDisplayName: string;
+};
+
+function enrichCustomCodeWithSystemDisplay(
+  customCodes: DbConfigurationCustomCode[],
+  codeSystems: { [key: string]: DbCodeSystem } | null
+): ConfigurationCustomCodeDisplay[] {
+  return customCodes.map((c) => {
+    return {
+      ...c,
+      codeSystemDisplayName:
+        codeSystems && Object.keys(codeSystems).includes(c.system_key)
+          ? codeSystems[c.system_key].display_name
+          : c.system_key,
+    };
+  });
+}
+
 export function CustomCodesDetail({
   configurationId,
   customCodes,
+  codeSystems,
   disabled,
   isOpen,
   setIsOpen,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
-    useState<DbConfigurationCustomCode | null>(null);
+    useState<ConfigurationCustomCodeDisplay | null>(null);
   const queryClient = useQueryClient();
   const showToast = useToast();
+
+  const displayCustomCodes = enrichCustomCodeWithSystemDisplay(
+    customCodes,
+    codeSystems
+  );
 
   const resetModal = () => {
     setSelectedCustomCode(null);
@@ -49,7 +78,7 @@ export function CustomCodesDetail({
 
   return (
     <div role="region">
-      <table id="custom-table" className="mt-6! w-full border-separate">
+      <table className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
@@ -59,14 +88,14 @@ export function CustomCodesDetail({
           </tr>
         </thead>
         <tbody>
-          {customCodes.map((customCode) => (
+          {displayCustomCodes.map((customCode) => (
             <tr
-              key={customCode.code + customCode.system}
+              key={customCode.code + customCode.system_key}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
-                {customCode.system}
+                {customCode.codeSystemDisplayName}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
@@ -94,7 +123,7 @@ export function CustomCodesDetail({
                           {
                             // encode to prevent special characters from breaking the action
                             code: encodeURIComponent(customCode.code),
-                            system: customCode.system,
+                            systemKey: customCode.system_key,
                             configurationId: configurationId,
                           },
                           {
@@ -277,24 +306,12 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <SelectContainer className="max-w-3xs!">
-          <Field>
-            <Label>Code system</Label>
-            <Select
-              value={selectedCodeSystem}
-              onChange={handleCodeSystemSelect}
-            >
-              <option key="all-code-systems" value="all">
-                All code systems
-              </option>
-              {Object.keys(CodeSystem).map((system) => (
-                <option key={system} value={system}>
-                  {system}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </SelectContainer>
+
+        <CodeSystemSelection
+          selectedCodeSystem={selectedCodeSystem}
+          handleCodeSystemSelect={handleCodeSystemSelect}
+          codeSystems={response.data.systems}
+        />
       </div>
 
       <hr className="border-blue-cool-5! mb-6 w-full border" />
@@ -312,11 +329,12 @@ export function ConditionCodeTable({
         <div
           ref={parentRef}
           className="h-100 overflow-y-auto sm:h-full"
-          tabIndex={0}
+          role="region"
+          aria-label="Code set results"
+          tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- scroll container needs focus for keyboard users to scroll virtualized list
         >
           <div
             role="table"
-            id="codeset-table"
             aria-label={`Codes in set with ID ${conditionId}`}
             className="grid grid-cols-[1fr_1fr_4fr]"
           >
@@ -324,7 +342,7 @@ export function ConditionCodeTable({
               <div role="row" className="contents">
                 <Header>Code</Header>
                 <Header>Code system</Header>
-                <Header>Condition</Header>
+                <Header>Display name</Header>
               </div>
             </div>
 
@@ -386,5 +404,37 @@ function Header({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+type CodeSystemSelectionProps = {
+  selectedCodeSystem: string;
+  handleCodeSystemSelect: (
+    event: React.ChangeEvent<HTMLSelectElement, Element>
+  ) => void;
+  codeSystems: CodeSystemsReponse[];
+};
+
+function CodeSystemSelection({
+  selectedCodeSystem,
+  handleCodeSystemSelect,
+  codeSystems,
+}: CodeSystemSelectionProps) {
+  return (
+    <SelectContainer className="max-w-3xs!">
+      <Field>
+        <Label>Code system</Label>
+        <Select value={selectedCodeSystem} onChange={handleCodeSystemSelect}>
+          <option key="all-code-systems" value="all">
+            All code systems
+          </option>
+          {codeSystems.map((s) => (
+            <option key={s.id} value={s.key}>
+              {s.display_name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </SelectContainer>
   );
 }

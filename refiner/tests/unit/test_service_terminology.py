@@ -1,3 +1,4 @@
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -6,9 +7,6 @@ from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
-)
-from app.services.terminology import (
-    CodeSystem,
 )
 from tests.unit.helpers.configuration import create_processed_config
 
@@ -54,23 +52,49 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
     return DbConfiguration(**defaults)
 
 
+@pytest.fixture(autouse=True)
+def mock_db_functions(monkeypatch, mock_all_systems):
+    """
+    Mock return values of the `_db` functions called by the routes.
+    """
+    monkeypatch.setattr(
+        "app.services.code_systems.get_all_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
+    )
+
+    monkeypatch.setattr(
+        "app.services.configurations.get_code_system_by_key_db",
+        AsyncMock(
+            side_effect=lambda key, db: mock_all_systems[key],
+        ),
+    )
+
+
 @pytest.mark.asyncio
 class TestTerminologyService:
-    async def test_processed_configuration_from_payload_and_xpath(self):
+    async def test_processed_configuration_from_payload_and_xpath(
+        self,
+    ):
+
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbConfigurationCustomCode(
-                    code="B", system=CodeSystem.LOINC, name="Custom LOINC"
+                    code="B",
+                    system_key="loinc",
+                    name="Custom LOINC",
                 )
             ]
         )
         processed = await create_processed_config(config=config, conditions=[cond1])
         assert processed.codes == {"A", "B"}
 
-    async def test_processed_configuration_duplicate_codes(self):
+    async def test_processed_configuration_duplicate_codes(
+        self,
+    ):
+
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
@@ -80,10 +104,13 @@ class TestTerminologyService:
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbConfigurationCustomCode(
-                    code="DUP", system=CodeSystem.LOINC, name="Custom"
+                    code="DUP",
+                    system_key="loinc",
+                    name="Custom",
                 )
             ]
         )
+
         processed = await create_processed_config(
             config=config, conditions=[cond1, cond2]
         )

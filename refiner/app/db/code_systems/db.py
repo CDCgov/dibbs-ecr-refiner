@@ -1,12 +1,10 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-
-type CodeSystemKey = str
+from app.services.terminology import CodeSystemKey
 
 
 @dataclass
@@ -19,6 +17,9 @@ class DbCodeSystem:
     key: CodeSystemKey
     display_name: str
     oid: str
+
+
+type CodeSystemIndex = dict[CodeSystemKey, DbCodeSystem]
 
 
 async def get_all_code_systems_db(
@@ -35,17 +36,73 @@ async def get_all_code_systems_db(
     """
 
     query = """
-    SELECT * FROM systems;
+    SELECT id, display_name, oid, key FROM systems;
     """
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
             await cur.execute(query)
             rows = await cur.fetchall()
+            return {system.id: system for system in rows}
 
-            systems_data: dict[UUID, DbCodeSystem] = defaultdict()
 
-            for system in rows:
-                systems_data[system.id] = system
+async def get_code_system_by_key_db(
+    key: str,
+    db: AsyncDatabaseConnection,
+) -> DbCodeSystem | None:
+    """
+    Get code system by the internal key.
 
-            return systems_data
+    Args:
+        key: str: the key to query for.
+        db: AsyncDatabaseConnection: A database connection.
+
+    Returns:
+        DbCodeSystem | None: Matched code system if found, none otherwise.
+    """
+
+    query = """
+    SELECT id, display_name, oid, key FROM systems WHERE key = %s;
+    """
+    params = (key,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
+            await cur.execute(query=query, params=params)
+            row = await cur.fetchone()
+
+            if not row:
+                return None
+
+            return row
+
+
+async def get_code_system_by_display_name_db(
+    name: str, db: AsyncDatabaseConnection
+) -> DbCodeSystem | None:
+    """
+    Get code system by its display name.
+
+    Args:
+        name: the name to query for
+        db: AsyncDatabaseConnection: A database connection.
+        logger: Logger: The system logger.
+
+    Returns:
+        DbCodeSystem | None: Values from the systems table to be consumed by the system enum.
+    """
+
+    query = """
+    SELECT id, display_name, oid, key FROM systems WHERE display_name = %s;
+    """
+    params = (name,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+            if not row:
+                return None
+
+            return row
