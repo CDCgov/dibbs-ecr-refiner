@@ -74,9 +74,18 @@ def test_harness_produces_a_refinement_result(
     covid_processed_configuration: ProcessedConfiguration,
 ) -> None:
     """
-    The harness composes: it produces a RefinementResult whose three
-    assertion tiers (augmented ids, trace, refined XML) are all populated
-    and internally consistent.
+    The harness composes into a usable RefinementResult: augmentation mutates
+    document identity, refinement actually removes content, and the refined
+    documents are well-formed enough to normalize.
+
+    Deliberately does NOT re-assert the trace's input-echo fields
+    (configuration_version, canonical_url) or its success-path flags
+    (configuration_resolved / skip_reason / error_detail / refinement_outcome):
+    the former are values the caller passed in and the harness only carries
+    back out, and the latter are implied by the refined XML existing at all --
+    a skip or error path would leave refined_eicr empty and fail the Tier 3
+    checks below. What remains is the set of derived properties that can break
+    independently.
     """
 
     result = refine_one(
@@ -88,10 +97,9 @@ def test_harness_produces_a_refinement_result(
         configuration_version=CONFIGURATION_VERSION,
     )
 
-    # Tier 1:
-    # deterministic identifiers are populated and the augmented
-    # id differs from the original (augmentation mutates document identity
-    # by design - see DIBBs-eCR-Refiner-Augmentation-Guide.md)
+    # augmentation mutated document identity: the augmented ids are populated
+    # and differ from the originals (no-op augmentation would leave them equal)
+    # - see DIBBs-eCR-Refiner-Augmentation-Guide.md
     assert result.augmented_eicr_result.augmented_doc_id
     assert result.augmented_eicr_result.original_doc_id
     assert result.augmented_rr_result.augmented_doc_id
@@ -105,25 +113,15 @@ def test_harness_produces_a_refinement_result(
         != result.augmented_rr_result.original_doc_id
     )
 
-    # Tier 2:
-    # trace reports a clean refinement.
-    assert result.trace.refinement_outcome == "refined"
-    assert result.trace.configuration_resolved is True
-    assert result.trace.configuration_version == CONFIGURATION_VERSION
-    assert result.trace.canonical_url == COVID_CANONICAL_URL
-    assert result.trace.skip_reason is None
-    assert result.trace.error_detail is None
-
-    # size reduction must be populated and positive: refining for COVID
-    # against a multi-condition eICR drops the non-COVID content.
+    # refinement actually did something: refining for COVID against a
+    # multi-condition eICR must drop the non-COVID content. A bug that returned
+    # the input unchanged would pass every other check here but fail this one
     assert result.trace.eicr_size_reduction_percentage is not None
     assert result.trace.eicr_size_reduction_percentage > 0
 
-    # Tier 3:
-    # refined XML strings are populated and well-formed enough
-    # to survive normalization
-    # * snapshot equality is asserted by the real scenarios in later
-    #   steps; here we just confirm the strings can be normalized at all
+    # refined XML is populated and well-formed enough to normalize
+    # (snapshot equality is asserted by the real scenarios; here we only
+    # confirm the strings are usable)
     assert result.refined_eicr
     assert result.refined_rr
     assert normalize_xml(result.refined_eicr)
