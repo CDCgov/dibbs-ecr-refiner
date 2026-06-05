@@ -7,8 +7,8 @@ import pytest
 from app.core.models.types import XMLFiles
 from app.services.terminology import ProcessedConfiguration
 
-from ..fixtures.loader import load_fixture_str
-from ..unit.conftest import normalize_xml
+from ...fixtures.loader import load_fixture_str
+from ...unit.conftest import normalize_xml
 from .harness import refine_one
 
 # NOTE:

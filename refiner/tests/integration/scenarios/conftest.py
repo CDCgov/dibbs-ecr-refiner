@@ -1,12 +1,9 @@
 import pytest
 
-from ..integration.conftest import (  # noqa: F401
+from ..conftest import (
     assert_schematron_valid,
     assert_xsd_valid,
     validate_refined_xml,
-    validate_xml_string,
-    validate_xml_string_xsd,
-    xsd_schema,
 )
 
 
@@ -39,18 +36,18 @@ def update_snapshots(request: pytest.FixtureRequest) -> bool:
 # NOTE:
 # COMPOSED VALIDATION FIXTURE
 # =============================================================================
-# composes the three validation steps an integration test would run on a refined
-# document into one call per (xml, doc_kind) pair:
+# composes the three validation steps an integration test would run on a
+# refined document into one call per (xml, doc_kind) pair. the underlying
+# validators (validate_xml_string, validate_xml_string_xsd) and their
+# session-cached xsd_schema are inherited from the parent integration
+# conftest -- this suite is now a subdirectory of tests/integration/, so
+# pytest applies that conftest's fixtures here by injection.
 
 
 @pytest.fixture
 def validate_refined_document(
-    # parameter names must match the imported fixture names so pytest's
-    # dependency injection wires them up, but ruff sees the duplication and
-    # fires F811; the suppression below is the standard fix for this
-    # pytest+ruff interaction
-    validate_xml_string,  # noqa: F811
-    validate_xml_string_xsd,  # noqa: F811
+    validate_xml_string,
+    validate_xml_string_xsd,
 ):
     """
     Returns a callable that runs full validation on one refined document.

@@ -6,7 +6,7 @@ from lxml import etree
 from app.core.models.types import XMLFiles
 from app.services.terminology import ProcessedConfiguration
 
-from ..fixtures.loader import load_fixture_str
+from ...fixtures.loader import load_fixture_str
 from .harness import refine_one
 
 # NOTE:
