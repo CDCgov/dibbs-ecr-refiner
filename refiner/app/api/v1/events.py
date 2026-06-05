@@ -138,7 +138,7 @@ class CustomCodeUploadEventResponse:
     """
 
     id: UUID
-    system: str
+    system_display_name: str
     code: str
     name: str
 
@@ -180,7 +180,10 @@ async def get_custom_code_upload_events(
 
     return [
         CustomCodeUploadEventResponse(
-            id=cc.id, system=cc.system, code=cc.code, name=cc.name
+            id=cc.id,
+            system_display_name=cc.system,
+            code=cc.code,
+            name=cc.name,
         )
         for cc in custom_code_events
     ]

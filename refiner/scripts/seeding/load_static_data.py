@@ -233,7 +233,7 @@ CODE_SYSTEM_DATA = {
     "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
     "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
     "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
-    "other": {"oid": None, "display_name": "Other"},
+    "other": {"oid": "Other", "display_name": "Other"},
 }
 
 
@@ -262,12 +262,15 @@ def load_system_data(cursor: Cursor):
         ON s.key = v.key OR s.oid = v.oid
 
         WHEN MATCHED THEN
-            UPDATE SET display_name = v.display_name
+            UPDATE SET
+                display_name = v.display_name,
+                oid = v.oid
         WHEN NOT MATCHED THEN
             INSERT (
                 key,
                 display_name,
-                oid)
+                oid
+            )
             VALUES (v.key, v.display_name, v.oid)
         RETURNING id;
     """

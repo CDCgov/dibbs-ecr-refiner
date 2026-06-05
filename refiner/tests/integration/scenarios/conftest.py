@@ -6,7 +6,7 @@ from fastapi import status
 
 from app.core.models.types import XMLFiles
 from app.db.configurations.model import DbConfigurationCustomCode
-from app.services.terminology import CodeSystem, ProcessedConfiguration
+from app.services.terminology import ProcessedConfiguration
 
 from ...fixtures.loader import load_fixture_str
 from ..conftest import (
@@ -152,15 +152,15 @@ SCENARIOS: list[Scenario] = [
         configuration_version=3,
         custom_codes=(
             CustomCode(
-                "2563008", "CVX", "Flucelvax Quadrivalent 2021-2022 Injectable Product"
+                "2563008", "cvx", "Flucelvax Quadrivalent 2021-2022 Injectable Product"
             ),
             CustomCode(
                 "10628911000119103",
-                "SNOMED",
+                "snomed",
                 "Gastroenteritis caused by Influenza A virus",
             ),
-            CustomCode("233573008", "SNOMED", "Extracorporeal membrane oxygenation"),
-            CustomCode("8867-4", "LOINC", "Heart rate"),
+            CustomCode("233573008", "snomed", "Extracorporeal membrane oxygenation"),
+            CustomCode("8867-4", "loinc", "Heart rate"),
         ),
     ),
     Scenario(
@@ -203,7 +203,7 @@ SCENARIOS: list[Scenario] = [
             "07221093-b8a1-4b1d-8678-259277bfba64"
         ),
         configuration_version=6,
-        custom_codes=(CustomCode("1115699", "RxNorm", "Oseltamivir"),),
+        custom_codes=(CustomCode("1115699", "rxnorm", "Oseltamivir"),),
     ),
     Scenario(
         name="covid_with_multi_vital_sign_codes",
@@ -216,9 +216,9 @@ SCENARIOS: list[Scenario] = [
         ),
         configuration_version=7,
         custom_codes=(
-            CustomCode("8867-4", "LOINC", "Heart rate"),
-            CustomCode("8480-6", "LOINC", "Systolic blood pressure"),
-            CustomCode("9279-1", "LOINC", "Respiratory rate"),
+            CustomCode("8867-4", "loinc", "Heart rate"),
+            CustomCode("8480-6", "loinc", "Systolic blood pressure"),
+            CustomCode("9279-1", "loinc", "Respiratory rate"),
         ),
     ),
     Scenario(
@@ -231,7 +231,7 @@ SCENARIOS: list[Scenario] = [
             "07221093-b8a1-4b1d-8678-259277bfba64"
         ),
         configuration_version=8,
-        custom_codes=(CustomCode("385857005", "SNOMED", "Artificial respiration"),),
+        custom_codes=(CustomCode("385857005", "snomed", "Artificial respiration"),),
     ),
 ]
 
@@ -399,7 +399,7 @@ async def build_scenario_configuration(
             await add_custom_code(
                 config_id,
                 DbConfigurationCustomCode(
-                    code=cc.code, system=CodeSystem(cc.system), name=cc.name
+                    code=cc.code, system_key=cc.system, name=cc.name
                 ),
             )
 

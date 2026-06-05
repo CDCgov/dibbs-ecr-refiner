@@ -17,8 +17,8 @@ from app.db.configurations.model import (
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
-from app.services.terminology import CodeSystem
 from app.services.testing import InlineTestingResult
+from tests.unit.conftest import create_mock_systems
 
 
 @pytest.fixture
@@ -33,6 +33,7 @@ def mock_db_functions(
     mock_configuration,
     mock_condition,
     new_config_id,
+    mock_all_systems,
 ):
     """
     Mock return values of the `_db` functions called by the routes.
@@ -172,6 +173,18 @@ def mock_db_functions(
         AsyncMock(return_value=None),
     )
 
+    monkeypatch.setattr(
+        "app.services.code_systems.get_all_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_code_system_by_key_db",
+        AsyncMock(
+            side_effect=lambda key, db: mock_all_systems[key],
+        ),
+    )
+
     yield
 
 
@@ -227,13 +240,18 @@ async def test_disassociate_codeset_with_configuration(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "code_system",
-    list(CodeSystem),
-)
+@pytest.mark.parametrize("code_system", list(create_mock_systems()))
 async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch, code_system
 ):
+    # Mock adding read of systems information to a config
+    monkeypatch.setattr(
+        "app.services.configurations.get_code_system_by_key_db",
+        AsyncMock(
+            return_value=create_mock_systems()[code_system],
+        ),
+    )
+
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
@@ -243,7 +261,7 @@ async def test_add_custom_code_to_configuration(
         mock_configuration,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="test-code", name="test-name", system=code_system
+                code="test-code", name="test-name", system_key=code_system
             )
         ],
     )
@@ -253,7 +271,7 @@ async def test_add_custom_code_to_configuration(
     )
 
     config_id = str(mock_configuration.id)
-    payload = {"code": "test-code", "name": "test-name", "system": code_system}
+    payload = {"code": "test-code", "name": "test-name", "system_key": code_system}
     response = await authed_client.post(
         f"/api/v1/configurations/{config_id}/custom-codes", json=payload
     )
@@ -261,7 +279,7 @@ async def test_add_custom_code_to_configuration(
     data = response.json()
     assert len(data["custom_codes"]) == 1
     assert data["custom_codes"][0]["code"] == "test-code"
-    assert data["custom_codes"][0]["system"] == code_system
+    assert data["custom_codes"][0]["system_key"] == code_system
 
 
 @pytest.mark.asyncio
@@ -296,14 +314,20 @@ async def test_delete_custom_code_from_configuration(
 
 @pytest.mark.asyncio
 async def test_edit_custom_code_from_configuration(
-    authed_client, monkeypatch, mock_configuration, mock_condition, mock_user
+    authed_client,
+    monkeypatch,
+    mock_configuration,
+    mock_condition,
+    mock_user,
 ):
     # Mock editing a custom code from a config
     custom_code_edit_mock = replace(
         mock_configuration,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="edited-code", name="updated-name", system=CodeSystem.SNOMED
+                code="edited-code",
+                name="updated-name",
+                system_key="snomed",
             )
         ],
     )
@@ -322,7 +346,9 @@ async def test_edit_custom_code_from_configuration(
         included_conditions=[],
         custom_codes=[
             DbConfigurationCustomCode(
-                code="test-code", name="test-name", system=CodeSystem.LOINC
+                code="test-code",
+                name="test-name",
+                system_key="loinc",
             )
         ],
         section_processing=[],
@@ -340,10 +366,10 @@ async def test_edit_custom_code_from_configuration(
 
     payload = {
         "code": "test-code",
-        "system": "loinc",
+        "system_key": "loinc",
         "name": "test-name",
         "new_code": "edited-code",
-        "new_system": "snomed",
+        "new_system_key": "snomed",
         "new_name": "updated-name",
     }
 
@@ -354,7 +380,7 @@ async def test_edit_custom_code_from_configuration(
     data = response.json()
     assert len(data["custom_codes"]) == 1
     assert data["custom_codes"][0]["code"] == "edited-code"
-    assert data["custom_codes"][0]["system"] == "SNOMED"
+    assert data["custom_codes"][0]["system_key"] == "snomed"
     assert data["custom_codes"][0]["name"] == "updated-name"
 
 

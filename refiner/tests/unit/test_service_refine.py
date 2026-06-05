@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from lxml import etree
 
@@ -205,6 +207,24 @@ def _make_plan(
 # NOTE:
 # EICR REFINEMENT TESTS — existing (fixed)
 # =============================================================================
+
+
+@pytest.fixture(autouse=True)
+def mock_db_functions(monkeypatch, mock_all_systems):
+    """
+    Mock return values of the `_db` functions called by the routes.
+    """
+    monkeypatch.setattr(
+        "app.services.code_systems.get_all_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
+    )
+
+    monkeypatch.setattr(
+        "app.services.configurations.get_code_system_by_key_db",
+        AsyncMock(
+            side_effect=lambda key, db: mock_all_systems[key],
+        ),
+    )
 
 
 @pytest.mark.asyncio

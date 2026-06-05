@@ -5,7 +5,7 @@ import { ConfigBuild } from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
-  CodeSystem,
+  CodeSystemsReponse,
   DbConfigurationCustomCode,
   DbTotalConditionCodeCount,
   GetConfigurationResponse,
@@ -49,7 +49,11 @@ const mockCodeSets: DbTotalConditionCodeCount[] = [
 ];
 
 const mockCustomCodes: DbConfigurationCustomCode[] = [
-  { code: 'custom-code1', name: 'test-custom-code1', system: 'ICD-10' },
+  {
+    code: 'custom-code1',
+    name: 'test-custom-code1',
+    system_key: 'icd10',
+  },
 ];
 
 const mockVersions: GetConfigurationResponseVersion[] = [
@@ -85,7 +89,17 @@ const baseMockConfig: GetConfigurationResponse = {
   display_name: 'COVID-19',
   status: 'draft',
   code_sets: mockCodeSets,
-  custom_codes: mockCustomCodes,
+  custom_codes: {
+    codes: mockCustomCodes,
+    code_systems: {
+      icd10: {
+        key: 'icd10',
+        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
+        display_name: 'ICD-10',
+        oid: '2.16.840.1.113883.6.90',
+      },
+    },
+  },
   section_processing: [
     {
       name: 'Encounters Section',
@@ -108,6 +122,45 @@ const baseMockConfig: GetConfigurationResponse = {
   locked_by: null,
   is_locked: false,
 };
+
+const mockCodeSystems: CodeSystemsReponse[] = [
+  {
+    id: '157a00b0-62e6-48c8-b822-475c5d855f3f',
+    key: 'snomed',
+    display_name: 'SNOMED',
+    oid: '2.16.840.1.113883.6.96',
+  },
+  {
+    id: 'bd5ad8fd-f94c-4fcf-97ee-5b63c2e7a42b',
+    oid: '2.16.840.1.113883.6.1',
+    key: 'loinc',
+    display_name: 'LOINC',
+  },
+  {
+    id: '375d4fd5-81f8-4b9e-abd9-979c7987691f',
+    oid: '2.16.840.1.113883.6.90',
+    key: 'icd10',
+    display_name: 'ICD-10',
+  },
+  {
+    id: 'c645801a-26f2-495c-b07f-e9be5ac26275',
+    oid: '2.16.840.1.113883.6.88',
+    key: 'rxnorm',
+    display_name: 'RxNorm',
+  },
+  {
+    id: '4306c91c-a8e2-4f4b-b673-0da9a6432b38',
+    oid: '2.16.840.1.113883.12.292',
+    key: 'cvx',
+    display_name: 'CVX',
+  },
+  {
+    id: 'f65063a3-6836-41ce-8ab8-253994907faa',
+    oid: 'Other',
+    key: 'other',
+    display_name: 'Other',
+  },
+];
 
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {
@@ -147,6 +200,8 @@ vi.mock('../../../api/conditions/conditions', async () => {
             { code: '1', system: 'LOINC', description: 'idk' },
             { code: '2', system: 'SNOMED', description: 'example' },
           ],
+
+          systems: mockCodeSystems,
         },
       },
     })),
@@ -157,6 +212,16 @@ vi.mock('../../../api/conditions/conditions', async () => {
           { id: 'chlamydia-1', display_name: 'Chlamydia' },
           { id: 'gonorrhea-1', display_name: 'Gonorrhea' },
         ],
+      },
+    })),
+  };
+});
+
+vi.mock('../../../api/code-systems/code-systems', () => {
+  return {
+    useGetCodeSystems: vi.fn(() => ({
+      data: {
+        data: mockCodeSystems,
       },
     })),
   };
@@ -407,8 +472,8 @@ describe('Config builder page', () => {
     const optionList = within(select)
       .getAllByRole('option')
       .map((o) => o.textContent);
-    Object.values(CodeSystem).forEach((c) => {
-      expect(optionList.includes(c.toLocaleLowerCase()));
+    mockCodeSystems.forEach((c) => {
+      expect(optionList.includes(c.key));
     });
     await user.selectOptions(select, 'SNOMED');
 
@@ -576,6 +641,13 @@ describe('Config builder page', () => {
       reset: vi.fn(),
     });
 
+    (useValidateCustomCodeFromConfiguration as unknown as Mock).mockReturnValue(
+      {
+        mutate: vi.fn().mockReturnValue(true),
+        reset: vi.fn(),
+      }
+    );
+
     await user.click(screen.getByText('Custom codes', { selector: 'span' }));
     expect(
       screen.getByText(
@@ -593,8 +665,8 @@ describe('Config builder page', () => {
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
     expect(screen.getByLabelText('Code #')).toHaveValue('custom-code1');
-    expect(screen.getByLabelText('Code system')).toHaveValue('icd-10');
     expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
+    expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
     await user.type(screen.getByLabelText('Code #'), '12345');
 

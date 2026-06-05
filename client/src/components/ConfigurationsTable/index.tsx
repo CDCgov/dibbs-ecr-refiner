@@ -22,7 +22,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
         </thead>
         <tbody>
           <tr>
-            <td data-label={reportableConditionHeader} scope="row">
+            <td data-label={reportableConditionHeader}>
               No configurations available
             </td>
           </tr>
@@ -47,7 +47,6 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
               <td
                 data-label={reportableConditionHeader}
                 className="p-0! font-bold!"
-                scope="row"
               >
                 <Link
                   aria-label={`Configure ${name}`}
