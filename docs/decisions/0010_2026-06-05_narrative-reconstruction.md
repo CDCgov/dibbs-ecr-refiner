@@ -200,7 +200,9 @@ A runnable toy reconstructs Results and Medications
 from a tiny eICR fragment. It made the abstract argument concrete:
 
 <details>
-<summary>Expand to view python example</summary>
+  <summary>
+    📝 Expand to view Python example
+  </summary>
 
 ```python
 from typing import NamedTuple
@@ -582,7 +584,7 @@ if __name__ == "__main__":
     main()
 ```
 
-</detail>
+</details>
 
 - **The B-vs-C contrast is visible in code.** `reconstruct_medications` has no
   join to express (one `extract_fields` call); `reconstruct_results` reaches up
