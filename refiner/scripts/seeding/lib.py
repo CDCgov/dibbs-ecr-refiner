@@ -541,3 +541,22 @@ def load_valuesets_from_all_files() -> dict[tuple[VsCanonicalUrl, VsVersion], Vs
 
     logger.info(f"📊 Loaded {len(vs_map)} unique ValueSets from all TES files.")
     return vs_map
+
+
+def parse_child_rsg_details_from_use_context(use_context: list[dict[str, dict]]) -> str:
+    """
+    Traverses the use context block in the valueset dict to get the display context for an RSG code.
+    """
+    for context in use_context:
+        value_codeable_concept = context.get("valueCodeableConcept", "")
+        if not isinstance(value_codeable_concept, str):
+            vs_description = value_codeable_concept.get("text", None)
+            # one of the use contexts in the RSG files is a description of
+            # "this code is an RSG code". Skip that one.
+            if (
+                isinstance(vs_description, str)
+                and vs_description != "Reporting Specification Grouper"
+            ):
+                return vs_description
+
+    raise ValueError("No description found in parsing child RSG display name")

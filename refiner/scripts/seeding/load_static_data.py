@@ -19,6 +19,7 @@ from lib import (
     get_db_connection,
     is_condition_grouper,
     load_valuesets_from_all_files,
+    parse_child_rsg_details_from_use_context,
     parse_snomed_from_url,
 )
 from psycopg import Cursor
@@ -96,22 +97,6 @@ type ConditionToCodeRelationshipIndex = dict[
 ]
 
 
-def _parse_display_text_from_use_context(use_context: list[dict[str, dict]]) -> str:
-    for context in use_context:
-        value_codeable_concept = context.get("valueCodeableConcept", "")
-        if not isinstance(value_codeable_concept, str):
-            vs_description = value_codeable_concept.get("text", None)
-            # one of the use contexts in the RSG files is a description of
-            # "this code is an RSG code". Skip that one.
-            if (
-                isinstance(vs_description, str)
-                and vs_description != "Reporting Specification Grouper"
-            ):
-                return vs_description
-
-    raise ValueError("No description found in parsing child RSG display name")
-
-
 def _build_rsg_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
@@ -130,7 +115,7 @@ def _build_rsg_codes(
             parent=parent, all_vs_map=valuesets_map
         ):
             if snomed_code := parse_snomed_from_url(child_vs.get("url", "")):
-                name = _parse_display_text_from_use_context(
+                name = parse_child_rsg_details_from_use_context(
                     child_vs.get("useContext", "")
                 )
                 child_code_db_id = uuid4()
