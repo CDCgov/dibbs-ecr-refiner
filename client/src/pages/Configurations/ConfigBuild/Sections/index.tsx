@@ -98,7 +98,9 @@ export function Sections({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-scroll">
-        {/* TODO: Revisit table layout for Refiner 2.0 UI migration (see Section 2 - Refiner 2.0 Readiness in ../tech-lead-feedback-2026/front-end-component-refactoring-action-plan.md). Evaluate whether a virtualized list is appropriate for large section counts. */}
+        {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
+            whether a virtualized list is appropriate for large section counts.
+            */}
         <table className="w-full table-fixed">
           <thead className="sticky top-0 z-10 bg-white">
             <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
@@ -110,23 +112,19 @@ export function Sections({
               </th>
               <th scope="col" className="align-right w-[33%] pt-3 pb-3">
                 <div className="flex items-center justify-center gap-1">
-                  <span>Data handling approach</span>
+                  <span>Coded data</span>
                   <Tooltip
                     position="left"
-                    label={`Set to "Refine & optimize" if you'd like to filter the
-                      content of this section down to coded elements matching the
-                      codes in your configuration in the refined output. Set to
-                      "Preserve & retain" if you'd like to keep the information in
-                      this section in its entirety in the refined output.`}
+                    label="Keep all original coded data included in the section, or set to Refine to choose the data you want to retain."
                   />
                 </div>
               </th>
               <th scope="col" className="w-[17%] pt-3 pb-3">
                 <div className="flex items-center justify-center gap-1">
-                  <span>Narrative</span>
+                  <span>Narrative data</span>
                   <Tooltip
                     position="left"
-                    label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
+                    label="Keep the original data included in the narrative block, reconstruct the data from refined coded data, or omit exclude the narrative block for this section."
                   />
                 </div>
               </th>
@@ -401,17 +399,17 @@ function RefineSwitch({
   const updateSection = useSectionUpdater(configurationId);
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
-  const refineLabelText = 'Refine & optimize';
-  const preserveLabelText = 'Preserve & retain all data';
+  const refineLabelText = 'Refine';
+  const preserveLabelText = 'Keep original';
 
   return (
     <Field className="flex -translate-x-4 flex-row items-center">
       <Label
         aria-label={
           isRefineToggled
-            ? // "Refine & optimize Admission Diagnosis section"
+            ? // "Refine Admission Diagnosis section"
               `${refineLabelText} ${currentSection.name} section`
-            : // "Preserve & retain all data for Admission Diagnosis section"
+            : // "Keep original for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
         className="mr-2 w-48 text-right"
