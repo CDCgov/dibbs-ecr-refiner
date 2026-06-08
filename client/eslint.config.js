@@ -4,12 +4,12 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
-import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import { defineConfig } from 'eslint/config';
 import reactPlugin from 'eslint-plugin-react';
 import testingLibraryPlugin from 'eslint-plugin-testing-library';
 import tanstackQuery from '@tanstack/eslint-plugin-query';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default defineConfig(
   { ignores: ['dist', 'tests/setup.ts', 'src/api'] },
@@ -18,6 +18,7 @@ export default defineConfig(
       js.configs.recommended,
       eslintConfigPrettier,
       importPlugin.flatConfigs.recommended,
+      jsxA11y.flatConfigs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
     ],
     files: ['**/*.{ts,tsx}'],
@@ -122,7 +123,5 @@ export default defineConfig(
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/exhaustive-deps': 'off',
     },
-  },
-
-  prettier
+  }
 );

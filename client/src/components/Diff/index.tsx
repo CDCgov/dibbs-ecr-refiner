@@ -106,7 +106,7 @@ export function Diff({
       </div>
 
       {renderDiff ? (
-        <div className="relative">
+        <div id="refinement-diff" className="relative">
           <ReactDiffViewer
             oldValue={unrefined_eicr}
             newValue={condition.refined_eicr}

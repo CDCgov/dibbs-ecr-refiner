@@ -10,7 +10,11 @@ test.describe('Activity log', () => {
     await deleteAllConfigurations();
   });
 
-  test('Check empty state', async ({ activityLogPage, page }) => {
+  test('Check empty state', async ({
+    activityLogPage,
+    page,
+    makeAxeBuilder,
+  }) => {
     await activityLogPage.goto();
 
     await expect(page.getByLabel('Condition').getByRole('option')).toHaveText([
@@ -22,12 +26,14 @@ test.describe('Activity log', () => {
     await expect(
       page.getByRole('navigation', { name: 'Pagination' }).getByRole('button')
     ).toHaveCount(1);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Check that condition filters are sorted alphabetically by name', async ({
     activityLogPage,
     api,
     page,
+    makeAxeBuilder,
   }) => {
     const conditionOne = 'Coal Workers’ Pneumoconiosis (CWP)';
     const conditionTwo = 'COVID-19';
@@ -43,11 +49,13 @@ test.describe('Activity log', () => {
       conditionTwo,
       conditionThree,
     ]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Check entries from configuration creation', async ({
     activityLogPage,
     api,
+    makeAxeBuilder,
   }) => {
     const conditionOne = 'COVID-19';
     const conditionTwo = 'Zika Virus Disease';
@@ -70,12 +78,14 @@ test.describe('Activity log', () => {
     await activityLogPage.selectConditionFromDropdown(conditionOne);
     const conditionOneOnlyRows = await activityLogPage.getTableRows();
     expect(conditionOneOnlyRows).toHaveLength(1);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Check individual custom code entries from CSV upload', async ({
     page,
     api,
     activityLogPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Lead in Blood';
     const config = await api.createConfiguration(condition);
@@ -99,6 +109,7 @@ test.describe('Activity log', () => {
     expect(expectedRow?.action).toContain(expectedAction);
 
     const modalButton = page.getByRole('button', { name: 'View all' });
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
     await expect(modalButton).toBeVisible();
     await expect(modalButton).toBeEnabled();
     await modalButton.click();
@@ -126,5 +137,6 @@ test.describe('Activity log', () => {
     await expect(
       page.getByRole('heading', { name: 'Activity log' })
     ).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 });
