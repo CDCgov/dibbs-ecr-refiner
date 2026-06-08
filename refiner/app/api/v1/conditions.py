@@ -110,6 +110,16 @@ def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
     return "not expanded"
 
 
+def _get_code_category_status(value: str | None) -> CodeCategoryStatus:
+    if value == "fully complete":
+        return "fully complete"
+
+    if value == "partially complete":
+        return "partially complete"
+
+    return "not included"
+
+
 def _get_code_category_statuses(
     groupers: list[DbConditionsContextGrouper],
 ) -> list[CodeCategoryCompletenessStatus]:
@@ -128,9 +138,8 @@ def _get_code_category_statuses(
         CodeCategoryCompletenessStatus(
             category=category,
             name=name,
-            completeness=completeness_by_category.get(
-                category,
-                "not included",
+            completeness=_get_code_category_status(
+                completeness_by_category.get(category)
             ),
         )
         for category, name in category_names.items()
