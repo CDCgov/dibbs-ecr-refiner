@@ -71,6 +71,7 @@ class CoverageLevel:
     reason: str | None = None
     date: str | None = None
 
+
 @dataclass
 class AcgCompleteness:
     """
@@ -80,6 +81,7 @@ class AcgCompleteness:
     NOT_INCLUDED = "not included"
     PARTIALLY_COMPLETE = "partially complete"
     FULLY_COMPLETE = "fully complete"
+
 
 @dataclass
 class ContextGrouperInfo:
@@ -322,6 +324,7 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
         return CoverageLevel(level=level, reason=reason, date=date)
 
     return None
+
 
 def map_coverage_level_to_acg_completeness(vs: dict) -> str:
     """

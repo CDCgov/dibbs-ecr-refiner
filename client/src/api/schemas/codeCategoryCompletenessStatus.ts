@@ -1,4 +1,4 @@
-import type { CodeCategoryCompletenessStatusCompleteness } from './codeCategoryCompletenessStatusCompleteness';
+import type { CodeCategoryStatus } from './codeCategoryStatus';
 
 /**
  * Code category completeness status model.
@@ -6,5 +6,5 @@ import type { CodeCategoryCompletenessStatusCompleteness } from './codeCategoryC
 export interface CodeCategoryCompletenessStatus {
   category: string;
   name: string;
-  completeness: CodeCategoryCompletenessStatusCompleteness;
+  completeness: CodeCategoryStatus;
 }

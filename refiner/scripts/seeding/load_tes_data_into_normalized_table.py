@@ -59,6 +59,7 @@ def upsert_condition_to_codes_relationship(
     # to insert store the condition and code entity relationships
     return True
 
+
 def upsert_condition_context_groupers(
     conditions: list[_IdentifiableCondition],
 ):
@@ -69,7 +70,9 @@ def upsert_condition_context_groupers(
     rows = []
 
     for condition in conditions:
-        for context_grouper_payload in condition.condition_data.context_grouper_payloads:
+        for (
+            context_grouper_payload
+        ) in condition.condition_data.context_grouper_payloads:
             rows.append(
                 {
                     "condition_id": condition.condition_id,
@@ -82,6 +85,7 @@ def upsert_condition_context_groupers(
 
     # do the relevant SQL work
     return True
+
 
 # build conditions to insert
 def _build_processed_conditions() -> dict[UrlVersionTuple, _IdentifiableCondition]:
