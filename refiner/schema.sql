@@ -138,9 +138,8 @@ CREATE TABLE public.codes (
 --
 
 CREATE TABLE public.condition_child_rsg_codes (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    code_id uuid,
-    condition_id uuid
+    code_id uuid NOT NULL,
+    condition_id uuid NOT NULL
 );
 
 
@@ -365,19 +364,11 @@ ALTER TABLE ONLY public.codes
 
 
 --
--- Name: condition_child_rsg_codes condition_child_rsg_codes_condition_id_code_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.condition_child_rsg_codes
-    ADD CONSTRAINT condition_child_rsg_codes_condition_id_code_id_key UNIQUE (condition_id, code_id);
-
-
---
 -- Name: condition_child_rsg_codes condition_child_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.condition_child_rsg_codes
-    ADD CONSTRAINT condition_child_rsg_codes_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT condition_child_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
 --

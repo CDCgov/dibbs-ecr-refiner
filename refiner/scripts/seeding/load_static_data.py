@@ -333,7 +333,6 @@ def _insert_condition_to_child_rsg_relationships(
             %(code_id)s
         )
         ON CONFLICT (condition_id, code_id) DO NOTHING
-        RETURNING id
     """
     params = [
         {
