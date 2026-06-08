@@ -323,8 +323,9 @@ class TestConfigurations:
         assert response.json()["section_updated_code"] == medications_admin_code
 
     async def test_section_updates_success(
-        self, setup, authed_client, get_condition_id
+        self, setup, authed_client, get_condition_id, update_section_processing
     ):
+
         # helper function to get section
         def require_section_by_code(sections, code):
             section = next((s for s in sections if s["code"] == code), None)
@@ -343,7 +344,7 @@ class TestConfigurations:
         admission_diagnosis_code = "46241-6"
 
         response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-        response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
         # Get the admission diagnosis section
         admission_diagnosis_section = require_section_by_code(
@@ -362,32 +363,25 @@ class TestConfigurations:
         assert admission_diagnosis_section is not None
         assert admission_diagnosis_section == expected_section_defaults
 
-        url = f"/api/v1/configurations/{draft_id}/sections"
-
-        # set to "retain" and exclude
-        response = await authed_client.patch(
-            url,
-            json={
-                "action": "retain",
-                "current_code": admission_diagnosis_code,
-                "include": False,
-                "narrative": False,
-            },
+        # refine the section but drop its narrative
+        update_response = await update_section_processing(
+            draft_id,
+            current_code=admission_diagnosis_code,
+            action="refine",
+            narrative=False,
         )
-        assert response.status_code == status.HTTP_200_OK
-        update_response = response.json()
         assert update_response["section_updated_code"] == admission_diagnosis_code
 
         # Get the updated admission diagnosis section
         response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-        response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
         admission_diagnosis_section = require_section_by_code(
             response.json()["section_processing"], admission_diagnosis_code
         )
         expected_section_updates = {
-            "include": False,
+            "include": True,
             "narrative": False,
-            "action": "retain",
+            "action": "refine",
             "name": "Admission Diagnosis",
             "code": "46241-6",
             "versions": ["3.1", "3.1.1"],
