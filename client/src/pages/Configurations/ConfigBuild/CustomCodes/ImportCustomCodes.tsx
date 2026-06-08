@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRef, useState, useEffect, ChangeEvent } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   useUploadCustomCodesCsv,
   useConfirmUploadCustomCodesCsv,
@@ -19,13 +19,7 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
 import { Search } from '@components/Search';
-
-const EMPTY_PREVIEW_ITEM: UploadCustomCodesPreviewItem = {
-  code: '',
-  system_key: 'other',
-  system_display_name: 'Other',
-  name: '',
-};
+import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 
 const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example
@@ -81,23 +75,13 @@ export function ImportCustomCodes({
   const [step, setStep] = useState<CsvImportStep>('intro');
   const [isUploading, setIsUploading] = useState(false);
   const [previewEditIndex, setPreviewEditIndex] = useState<number | null>(null);
-  const [previewEditForm, setPreviewEditForm] =
-    useState<UploadCustomCodesPreviewItem>(EMPTY_PREVIEW_ITEM);
-  const [curOpenModal, setCurModalOpen] = useState<OpenModalType>('none');
+  const [previewEditItem, setPreviewEditItem] =
+    useState<UploadCustomCodesPreviewItem | null>(null);
+  const [curOpenModal, setCurOpenModal] = useState<OpenModalType>('none');
 
   useEffect(() => {
     onStepChange?.(step);
   }, [step, onStepChange]);
-
-  useEffect(() => {
-    if (step !== 'preview') return;
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [step]);
 
   const handleFileUpload = () => {
     if (!disabled && fileInputRef.current) {
@@ -138,6 +122,7 @@ export function ImportCustomCodes({
         onSuccess: (res) => {
           setUploadRowErrors(null);
 
+          // TODO: get the code systems information here in one fetch
           const previewItems = res.data.preview_items;
           setPreviewItems(previewItems);
           setStep('preview');
@@ -180,7 +165,7 @@ export function ImportCustomCodes({
   const handleConfirm = () => {
     if (!previewItems?.length) return;
 
-    setCurModalOpen('none');
+    setCurOpenModal('none');
     confirmCsvMutation(
       {
         configurationId,
@@ -240,39 +225,32 @@ export function ImportCustomCodes({
     const target = previewItems?.[previewIndex];
     if (!target) return;
     setPreviewEditIndex(previewIndex);
-    setPreviewEditForm({ ...target });
-    setCurModalOpen('preview');
+    setPreviewEditItem({ ...target });
+    setCurOpenModal('preview');
   };
 
   const closePreviewEditModal = () => {
-    setCurModalOpen('none');
+    setCurOpenModal('none');
     setPreviewEditIndex(null);
-    setPreviewEditForm(EMPTY_PREVIEW_ITEM);
+    setPreviewEditItem(null);
   };
 
-  const handlePreviewEditSubmit = () => {
-    if (previewEditIndex === null || !previewItems) {
+  const handlePreviewEditSubmit = (
+    payload: UploadCustomCodesPreviewItem | null,
+    editIdx: number | null
+  ) => {
+    console.log(payload, editIdx);
+    if (payload === null || !editIdx === null) {
       closePreviewEditModal();
       return;
     }
-
     setPreviewItems((prev) =>
       prev
-        ? prev.map((item, index) =>
-            index === previewEditIndex ? { ...previewEditForm } : item
-          )
+        ? prev.map((item, index) => (index === editIdx ? { ...payload } : item))
         : prev
     );
     closePreviewEditModal();
   };
-
-  const handlePreviewEditChange =
-    (field: keyof UploadCustomCodesPreviewItem) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setPreviewEditForm((prev) => ({
-        ...prev,
-        [field]: event.target.value,
-      }));
 
   const {
     searchText,
@@ -293,10 +271,6 @@ export function ImportCustomCodes({
   }, [step, setSearchText]);
 
   const uploading = isUploading || isUploadPending;
-  const isEditSaveDisabled =
-    !previewEditForm.code ||
-    !previewEditForm.name ||
-    !previewEditForm.system_key;
 
   const previewDisplayItems = searchText
     ? previewSearchResults
@@ -406,14 +380,14 @@ export function ImportCustomCodes({
             <div className="flex flex-wrap gap-3">
               <Button
                 variant="primary"
-                onClick={() => setCurModalOpen('confirm')}
+                onClick={() => setCurOpenModal('confirm')}
                 disabled={isConfirming}
               >
                 Confirm & save codes
               </Button>
               <Button
                 variant="tertiary"
-                onClick={() => setCurModalOpen('undo')}
+                onClick={() => setCurOpenModal('undo')}
               >
                 Undo & delete codes
               </Button>
@@ -499,29 +473,29 @@ export function ImportCustomCodes({
 
       <ConfirmModal
         isOpen={curOpenModal === 'confirm'}
-        onClose={() => setCurModalOpen('none')}
+        onClose={() => setCurOpenModal('none')}
         handleConfirm={handleConfirm}
       />
 
       <UndoModal
         isOpen={curOpenModal === 'undo'}
-        onClose={() => setCurModalOpen('none')}
+        onClose={() => setCurOpenModal('none')}
         handleDelete={handleDelete}
       />
 
-      <PreviewEditModal
-        isOpen={curOpenModal === 'preview'}
-        closePreviewEditModal={closePreviewEditModal}
-        previewEditForm={previewEditForm}
-        setPreviewEditForm={setPreviewEditForm}
-        isEditSaveDisabled={isEditSaveDisabled}
-        handlePreviewEditSubmit={handlePreviewEditSubmit}
-        previewItems={previewItems}
-        previewEditIndex={previewEditIndex}
-        setError={setError}
-        error={error}
-        handlePreviewEditChange={handlePreviewEditChange}
-      />
+      {previewEditItem && (
+        <PreviewEditModal
+          previewEditItem={previewEditItem}
+          isOpen={curOpenModal === 'preview'}
+          closePreviewEditModal={closePreviewEditModal}
+          handlePreviewEditSubmit={handlePreviewEditSubmit}
+          previewItems={previewItems}
+          previewEditIndex={previewEditIndex}
+          setError={setError}
+          error={error}
+          codeSystems={codeSystems?.data}
+        />
+      )}
     </>
   );
 }

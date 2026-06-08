@@ -1,5 +1,9 @@
-import React from 'react';
-import { UploadCustomCodesPreviewItem } from '../../../api/schemas';
+import React, { ChangeEvent, useState } from 'react';
+import {
+  CodeSystemsReponse,
+  DbCodeSystem,
+  UploadCustomCodesPreviewItem,
+} from '../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
@@ -82,52 +86,57 @@ export function UndoModal({ isOpen, onClose, handleDelete }: UndoModalProps) {
 }
 
 interface PreviewEditModalProps {
-  isOpen: boolean;
-  closePreviewEditModal: () => void;
-  previewEditForm: UploadCustomCodesPreviewItem;
-  setPreviewEditForm: React.Dispatch<
-    React.SetStateAction<UploadCustomCodesPreviewItem>
-  >;
-  isEditSaveDisabled: boolean;
-  handlePreviewEditSubmit: () => void;
+  previewEditItem: UploadCustomCodesPreviewItem;
   previewItems: UploadCustomCodesPreviewItem[] | null;
   previewEditIndex: number | null;
+  isOpen: boolean;
+  closePreviewEditModal: () => void;
+  handlePreviewEditSubmit: (
+    payload: UploadCustomCodesPreviewItem | null,
+    editIdx: number | null
+  ) => void;
   setError: (err: string | null) => void;
   error: string | null;
-  handlePreviewEditChange: (
-    field: keyof UploadCustomCodesPreviewItem
-  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  codeSystems: CodeSystemsReponse[] | undefined;
 }
 
 export function PreviewEditModal({
   isOpen,
   closePreviewEditModal,
-  previewEditForm,
-  setPreviewEditForm,
-  isEditSaveDisabled,
+  previewEditItem,
   handlePreviewEditSubmit,
   previewItems,
   previewEditIndex,
   setError,
   error,
-  handlePreviewEditChange,
+  codeSystems,
 }: PreviewEditModalProps) {
-  const { data: codeSystems, isPending, isError } = useGetCodeSystems();
+  const [previewEditForm, setPreviewEditForm] = useState(previewEditItem);
 
-  if (isPending)
-    return (
-      <div className="flex w-full justify-center">
-        <Spinner />
-      </div>
-    );
+  const isEditSaveDisabled =
+    !previewEditItem ||
+    !previewEditItem.code ||
+    !previewEditItem.name ||
+    !previewEditItem.system_key;
 
-  if (isError || !codeSystems) return 'Error!';
+  function handlePreviewEditChange<
+    K extends keyof UploadCustomCodesPreviewItem,
+  >(field: K, event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const value = event.target.value as UploadCustomCodesPreviewItem[K];
+    setPreviewEditForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  }
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
       <ModalHeader>
         <ModalTitle>
-          {previewEditForm.code ? `Edit ${previewEditForm.code}` : 'Edit code'}
+          {previewEditItem.code ? `Edit ${previewEditItem.code}` : 'Edit code'}
         </ModalTitle>
       </ModalHeader>
       <ModalBody>
@@ -137,7 +146,7 @@ export function PreviewEditModal({
             <TextInput
               type="text"
               value={previewEditForm.code}
-              onChange={handlePreviewEditChange('code')}
+              onChange={(e) => handlePreviewEditChange('code', e)}
               onBlur={() => {
                 const trimmedCode = previewEditForm.code.trim();
                 if (
@@ -165,7 +174,7 @@ export function PreviewEditModal({
             <Label>Code system</Label>
             <Select
               value={previewEditForm.system_key}
-              onChange={handlePreviewEditChange('system_key')}
+              onChange={(e) => handlePreviewEditChange('system_key', e)}
             >
               {codeSystems.data.map((s) => (
                 <option key={s.id} value={s.key}>
@@ -180,13 +189,15 @@ export function PreviewEditModal({
           <TextInput
             type="text"
             value={previewEditForm.name}
-            onChange={handlePreviewEditChange('name')}
+            onChange={(e) => handlePreviewEditChange('name', e)}
           />
         </Field>
       </ModalBody>
       <ModalFooter align="right">
         <Button
-          onClick={handlePreviewEditSubmit}
+          onClick={() =>
+            handlePreviewEditSubmit(previewEditForm, previewEditIndex)
+          }
           disabled={isEditSaveDisabled}
           variant="primary"
         >
