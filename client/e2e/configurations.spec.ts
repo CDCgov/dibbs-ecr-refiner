@@ -9,7 +9,7 @@ test.describe('Configurations screen', () => {
 
   test.afterEach(async () => await deleteAllConfigurations());
 
-  test('Check empty page state', async ({ page }) => {
+  test('Check empty page state', async ({ page, makeAxeBuilder }) => {
     await expect(
       page.getByRole('heading', {
         name: 'Configurations',
@@ -25,12 +25,14 @@ test.describe('Configurations screen', () => {
     await expect(page.getByRole('cell')).toHaveText(
       'No configurations available'
     );
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Check table with configurations', async ({
     page,
     api,
     configurationsPage,
+    makeAxeBuilder,
   }) => {
     const config = await api.createConfiguration('Anotia');
 
@@ -46,8 +48,12 @@ test.describe('Configurations screen', () => {
     await configurationsPage.search('ano');
     await expect(conditionCell).toHaveText(config.name);
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await configurationsPage.search('covid');
     await expect(conditionCell).toHaveText('No configurations available');
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await configurationsPage.clearSearch();
 
@@ -55,11 +61,14 @@ test.describe('Configurations screen', () => {
     await expect(
       page.getByRole('heading', { name: config.name, level: 1 })
     ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Navigates to the active config when one exists', async ({
     api,
     page,
+    makeAxeBuilder,
   }) => {
     // create and activate config
     const condition = 'Anotia';
@@ -75,11 +84,14 @@ test.describe('Configurations screen', () => {
 
     await expect(page.getByText('Viewing: Version 1')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Go to draft' })).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Navigates to the draft config when only a draft and inactive configs exist', async ({
     api,
     page,
+    makeAxeBuilder,
   }) => {
     // create and activate config
     const condition = 'Anotia';
@@ -96,11 +108,14 @@ test.describe('Configurations screen', () => {
     await page.getByText(condition).click();
 
     await expect(page.getByText('Editing: Version 2')).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Navigates to the latest inactive config when only inactive configs exist', async ({
     api,
     page,
+    makeAxeBuilder,
   }) => {
     // create and activate config
     const condition = 'Anotia';
@@ -117,5 +132,7 @@ test.describe('Configurations screen', () => {
     await page.getByText(condition).click();
 
     await expect(page.getByText('Viewing: Version 2')).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 });

@@ -78,7 +78,7 @@ export function CustomCodesDetail({
 
   return (
     <div role="region">
-      <table id="custom-table" className="mt-6! w-full border-separate">
+      <table className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
@@ -329,11 +329,12 @@ export function ConditionCodeTable({
         <div
           ref={parentRef}
           className="h-100 overflow-y-auto sm:h-full"
-          tabIndex={0}
+          role="region"
+          aria-label="Code set results"
+          tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- scroll container needs focus for keyboard users to scroll virtualized list
         >
           <div
             role="table"
-            id="codeset-table"
             aria-label={`Codes in set with ID ${conditionId}`}
             className="grid grid-cols-[1fr_1fr_4fr]"
           >
@@ -341,7 +342,7 @@ export function ConditionCodeTable({
               <div role="row" className="contents">
                 <Header>Code</Header>
                 <Header>Code system</Header>
-                <Header>Condition</Header>
+                <Header>Display name</Header>
               </div>
             </div>
 
@@ -428,7 +429,7 @@ function CodeSystemSelection({
             All code systems
           </option>
           {codeSystems.map((s) => (
-            <option key={s.id} value={s.key}>
+            <option key={s.id} value={s.display_name}>
               {s.display_name}
             </option>
           ))}

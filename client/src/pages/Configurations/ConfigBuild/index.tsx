@@ -258,8 +258,10 @@ function Builder({
                           codeSet.condition_id
                         )
                       }
-                      aria-controls={
-                        selectedCodesetId ? 'codeset-table' : undefined
+                      aria-current={
+                        selectedCodesetId === codeSet.condition_id
+                          ? 'true'
+                          : undefined
                       }
                     />
 
@@ -294,10 +296,7 @@ function Builder({
                       }
                     )}
                     onClick={onCustomCodeClick}
-                    aria-controls={
-                      tableView === 'custom' ? 'custom-table' : undefined
-                    }
-                    aria-pressed={tableView === 'custom'}
+                    aria-current={tableView === 'custom' ? 'true' : undefined}
                   >
                     <span>Custom codes</span>
                     <span>{custom_codes.codes.length?.toLocaleString()}</span>
@@ -316,10 +315,7 @@ function Builder({
                       setSelectedCodesetId(null);
                       setTableView('sections');
                     }}
-                    aria-controls={
-                      tableView === 'sections' ? 'sections-table' : undefined
-                    }
-                    aria-pressed={tableView === 'sections'}
+                    aria-current={tableView === 'sections' ? 'true' : undefined}
                   >
                     <span>Sections</span>
                   </Button>
@@ -427,7 +423,7 @@ const ConditionCodeSetButton = forwardRef<
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
-          {codeSetTotalCodes.toLocaleString()}
+          {codeSetTotalCodes?.toLocaleString()}
         </span>
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set

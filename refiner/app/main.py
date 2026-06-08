@@ -2,6 +2,7 @@ import asyncio
 import json
 import time
 import uuid
+import warnings
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import UTC
@@ -29,6 +30,10 @@ from .core.app.openapi import create_custom_openapi
 from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
+
+# Pydantic warnings will be reported as errors in local dev / testing
+if ENVIRONMENT["ENV"] == "local":
+    warnings.filterwarnings("error", category=UserWarning, module="pydantic")
 
 
 class CharsetStaticFiles(StaticFiles):
