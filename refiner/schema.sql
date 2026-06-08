@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.0
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -241,7 +241,7 @@ CREATE TABLE public.events (
 CREATE TABLE public.events_custom_code_uploads (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     event_id uuid NOT NULL,
-    system_key text CONSTRAINT events_custom_code_uploads_system_not_null NOT NULL,
+    system text NOT NULL,
     code text NOT NULL,
     name text NOT NULL
 );
