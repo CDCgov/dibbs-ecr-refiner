@@ -29,10 +29,9 @@ CREATE TABLE IF NOT EXISTS codes(
 );
 
 CREATE TABLE IF NOT EXISTS condition_child_rsg_codes (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     code_id UUID REFERENCES codes(id) ON DELETE CASCADE, 
     condition_id UUID REFERENCES conditions(id) ON DELETE CASCADE,
-    UNIQUE (condition_id, code_id)
+    PRIMARY KEY (condition_id, code_id)
 );
 
 ALTER TABLE conditions_context_groupers 
