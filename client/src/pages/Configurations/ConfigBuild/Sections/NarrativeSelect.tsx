@@ -30,7 +30,7 @@ export function NarrativeSelect({
           });
         }}
         aria-label={`Narrative data handling for ${currentSection.name} section`}
-        className="min-w-52"
+        className="min-w-38"
       >
         <option value="retain">Keep original</option>
         <option value="remove">Remove</option>
