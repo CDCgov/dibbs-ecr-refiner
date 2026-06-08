@@ -3,11 +3,11 @@
 *Auto-generated. To regenerate:*
 
 ```
-pytest tests/scenarios/ --update-snapshots
-python tests/scenarios/authoring/build_report.py
+pytest tests/integration/scenarios/ --update-snapshots
+python tests/integration/scenarios/authoring/build_report.py
 ```
 
-This report summarizes the behaviors pinned by the scenarios test suite at `tests/scenarios/`. Each scenario refines a committed eICR/RR pair against a committed configuration JSON and asserts in two layers: validation (well-formedness, CDA R2 XSD, schematron) and snapshot comparison against committed expected files.
+This report summarizes the behaviors pinned by the scenarios test suite at `tests/integration/scenarios/`. Each scenario refines a committed eICR/RR pair against a committed configuration JSON and asserts in two layers: validation (well-formedness, CDA R2 XSD, schematron) and snapshot comparison against committed expected files.
 
 See the [scenarios README](./README.md) for the full mechanics. This document is the high-level summary intended for stakeholder review.
 
@@ -37,7 +37,7 @@ Mapping of the issues identified during early testing (Roll-up sheet, May 2026) 
 
 **Issue 3 — Schematron validation of refined output** (Covered by validation)
 
-Every refined eICR and RR is validated against CDA R2 XSD and schematron on every test run, before snapshot comparison. Errors and fatal severity fail the test; warnings are tolerated. Enforced by the `validate_refined_document` fixture in `tests/scenarios/conftest.py`.
+Every refined eICR and RR is validated against CDA R2 XSD and schematron on every test run, before snapshot comparison. Errors and fatal severity fail the test; warnings are tolerated. Enforced by the `validate_refined_document` fixture in `tests/integration/scenarios/conftest.py`.
 
 **Issue 4 — Custom codes in nested locations (entryRelationship/value, substanceAdministration)** (Direct)
 
@@ -47,7 +47,7 @@ Every refined eICR and RR is validated against CDA R2 XSD and schematron on ever
 
 The concern has two halves.
 
-**Negative case (procedures not retained via entryRelationship match):** Nausea (SNOMED 422587007) is in both the COVID and Influenza condition groupers, so it is a configured matching code under `covid_baseline`. The fixture's three procedure entries (Colonic polypectomy, ECMO, Ventilator care) all carry Nausea in their entryRelationship. Despite both conditions being true, `covid_baseline` shows the Procedures section stubbed at 0 entries — the matcher correctly does not retain procedures based on a match found only in entryRelationship. The explicit assertion `test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_match` in `tests/scenarios/test_explicit_assertions.py` pins this directly with precondition guards that fail diagnostically if the fixture or configuration drifts.
+**Negative case (procedures not retained via entryRelationship match):** Nausea (SNOMED 422587007) is in both the COVID and Influenza condition groupers, so it is a configured matching code under `covid_baseline`. The fixture's three procedure entries (Colonic polypectomy, ECMO, Ventilator care) all carry Nausea in their entryRelationship. Despite both conditions being true, `covid_baseline` shows the Procedures section stubbed at 0 entries — the matcher correctly does not retain procedures based on a match found only in entryRelationship. The explicit assertion `test_covid_baseline_does_not_retain_procedures_via_entry_relationship_only_match` in `tests/integration/scenarios/test_explicit_assertions.py` pins this directly with precondition guards that fail diagnostically if the fixture or configuration drifts.
 
 **Positive case (procedures retained when their primary code matches as a custom code):** `covid_with_custom_codes` adds ECMO (SNOMED 233573008) as a custom code; `covid_with_procedure_only_code` adds Ventilator care (SNOMED 385857005). Both snapshots show the matching procedure surviving whole.
 
@@ -436,10 +436,10 @@ Total: 8 scenarios across 1 fixture.
 ## Appendix — running the suite
 
 ```
-pytest tests/scenarios/                                  # run all scenarios + smoke tests
-pytest tests/scenarios/test_<fixture>.py -k <scenario>   # one scenario
-pytest tests/scenarios/ --update-snapshots               # regenerate after intentional changes
-python tests/scenarios/authoring/build_report.py        # regenerate this report
+pytest tests/integration/scenarios/                                  # run all scenarios + smoke tests
+pytest tests/integration/scenarios/test_<fixture>.py -k <scenario>   # one scenario
+pytest tests/integration/scenarios/ --update-snapshots               # regenerate after intentional changes
+python tests/integration/scenarios/authoring/build_report.py        # regenerate this report
 ```
 
-See [`tests/scenarios/README.md`](./README.md) for adding fixtures, configurations, and scenarios.
+See [`tests/integration/scenarios/README.md`](./README.md) for adding fixtures, configurations, and scenarios.

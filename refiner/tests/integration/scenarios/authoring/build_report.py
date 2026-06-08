@@ -94,7 +94,7 @@ ROLLUP_COVERAGE: list[RollupRow] = [
             "schematron on every test run, before snapshot comparison. Errors "
             "and fatal severity fail the test; warnings are tolerated. "
             "Enforced by the `validate_refined_document` fixture in "
-            "`tests/scenarios/conftest.py`."
+            "`tests/integration/scenarios/conftest.py`."
         ),
     ),
     RollupRow(
@@ -133,7 +133,7 @@ ROLLUP_COVERAGE: list[RollupRow] = [
             "based on a match found only in entryRelationship. The explicit "
             "assertion `test_covid_baseline_does_not_retain_procedures_via_"
             "entry_relationship_only_match` in "
-            "`tests/scenarios/test_explicit_assertions.py` pins this directly "
+            "`tests/integration/scenarios/test_explicit_assertions.py` pins this directly "
             "with precondition guards that fail diagnostically if the fixture "
             "or configuration drifts.\n\n"
             "**Positive case (procedures retained when their primary code "
@@ -270,7 +270,7 @@ def discover_scenarios() -> list[ScenarioSnapshot]:
     if not SNAPSHOTS_DIR.is_dir():
         raise SystemExit(
             f"Snapshots directory not found: {SNAPSHOTS_DIR}\n"
-            "Run `pytest tests/scenarios/ --update-snapshots` first."
+            "Run `pytest tests/integration/scenarios/ --update-snapshots` first."
         )
 
     scenarios: list[ScenarioSnapshot] = []
@@ -293,7 +293,7 @@ def discover_scenarios() -> list[ScenarioSnapshot]:
                 raise SystemExit(
                     f"Incomplete snapshot at {fixture_dir.name}/{scenario_dir.name}: "
                     f"missing {', '.join(missing)}.\n"
-                    "Run `pytest tests/scenarios/ --update-snapshots`."
+                    "Run `pytest tests/integration/scenarios/ --update-snapshots`."
                 )
 
             scenarios.append(
@@ -311,7 +311,7 @@ def discover_scenarios() -> list[ScenarioSnapshot]:
     if not scenarios:
         raise SystemExit(
             f"No scenarios found in {SNAPSHOTS_DIR}. "
-            "Run `pytest tests/scenarios/ --update-snapshots` first."
+            "Run `pytest tests/integration/scenarios/ --update-snapshots` first."
         )
 
     return scenarios
@@ -348,11 +348,11 @@ def _render_header() -> str:
             *Auto-generated. To regenerate:*
 
             ```
-            pytest tests/scenarios/ --update-snapshots
-            python tests/scenarios/authoring/build_report.py
+            pytest tests/integration/scenarios/ --update-snapshots
+            python tests/integration/scenarios/authoring/build_report.py
             ```
 
-            This report summarizes the behaviors pinned by the scenarios test suite at `tests/scenarios/`. Each scenario refines a committed eICR/RR pair against a committed configuration JSON and asserts in two layers: validation (well-formedness, CDA R2 XSD, schematron) and snapshot comparison against committed expected files.
+            This report summarizes the behaviors pinned by the scenarios test suite at `tests/integration/scenarios/`. Each scenario refines a committed eICR/RR pair against a committed configuration JSON and asserts in two layers: validation (well-formedness, CDA R2 XSD, schematron) and snapshot comparison against committed expected files.
 
             See the [scenarios README](./README.md) for the full mechanics. This document is the high-level summary intended for stakeholder review.
         """).strip()
@@ -468,13 +468,13 @@ def _render_appendix() -> str:
             ## Appendix — running the suite
 
             ```
-            pytest tests/scenarios/                                  # run all scenarios + smoke tests
-            pytest tests/scenarios/test_<fixture>.py -k <scenario>   # one scenario
-            pytest tests/scenarios/ --update-snapshots               # regenerate after intentional changes
-            python tests/scenarios/authoring/build_report.py        # regenerate this report
+            pytest tests/integration/scenarios/                                  # run all scenarios + smoke tests
+            pytest tests/integration/scenarios/test_<fixture>.py -k <scenario>   # one scenario
+            pytest tests/integration/scenarios/ --update-snapshots               # regenerate after intentional changes
+            python tests/integration/scenarios/authoring/build_report.py        # regenerate this report
             ```
 
-            See [`tests/scenarios/README.md`](./README.md) for adding fixtures, configurations, and scenarios.
+            See [`tests/integration/scenarios/README.md`](./README.md) for adding fixtures, configurations, and scenarios.
         """).strip()
         + "\n"
     )
@@ -526,7 +526,7 @@ def _check_coverage_references_known_scenarios(
             "ROLLUP_COVERAGE references scenarios that don't exist as "
             f"snapshots: {sorted(missing)}\n"
             "Either remove the references or generate the missing snapshots "
-            "with `pytest tests/scenarios/ --update-snapshots`."
+            "with `pytest tests/integration/scenarios/ --update-snapshots`."
         )
 
 
