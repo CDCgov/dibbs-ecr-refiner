@@ -38,7 +38,7 @@ const POSITION_MAPPING: Record<TooltipPosition, PositionConfig> = {
   bottom: {
     left: (r) => r.left + r.width / 2,
     top: (r) => r.bottom + BOUNDING_GAP,
-    transform: 'translate(-50%, -100%)',
+    transform: 'translateX(-50%)',
   },
   left: {
     left: (r) => r.left - BOUNDING_GAP,
