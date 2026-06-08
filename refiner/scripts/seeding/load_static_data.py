@@ -152,10 +152,6 @@ def _build_rsg_codes(
             relationship = condition_to_code_relationships[cond_index]
             relationship.get("child_rsg_snomed_code_ids").extend(child_rsg_code_ids)
 
-    logger.info(
-        f"🔎 Identified {len(rsg_codes)} RSG codes corresponding to {len(condition_to_code_relationships)} condition <> child RSG relationships to process."
-    )
-
     return (rsg_codes, condition_to_code_relationships)
 
 
@@ -295,9 +291,23 @@ def _upsert_conditions_and_groupers(
     condition_to_code_relationships: dict[
         ConditionUniqueIndex, ConditionToCodeRelationshipTrace
     ] = defaultdict()
+
     for item in processed:
         cond = item["condition"]
         cursor.execute(condition_upsert_query, cond)
+
+        condition_canonical_url = cond.get("canonical_url")
+        condition_version = cond.get("version")
+        condition_name = cond.get("display_name")
+        condition_index = (condition_canonical_url, condition_version)
+        condition_payload = ConditionToCodeRelationshipTrace(
+            condition_id=cond.get("id"),
+            condition_display_name=condition_name,
+            child_rsg_snomed_code_ids=[],
+            version=condition_version,
+        )
+
+        condition_to_code_relationships[condition_index] = condition_payload
 
         groupers = item.get("context_groupers", [])
         if not groupers:
@@ -313,21 +323,9 @@ def _upsert_conditions_and_groupers(
             }
             for cg in groupers
         ]
-        condition_canonical_url = cond.get("canonical_url")
-        condition_version = cond.get("version")
-        condition_name = cond.get("display_name")
-        condition_index = (condition_canonical_url, condition_version)
-
-        condition_to_code_relationships[condition_index] = (
-            ConditionToCodeRelationshipTrace(
-                condition_id=cond.get("id"),
-                condition_display_name=condition_name,
-                child_rsg_snomed_code_ids=[],
-                version=condition_version,
-            )
-        )
 
         cursor.executemany(context_grouper_upsert_query, grouper_params)
+
     return condition_to_code_relationships
 
 
@@ -335,7 +333,6 @@ def _insert_condition_to_child_rsg_relationships(
     cursor: Cursor, data: ConditionToCodeRelationshipIndex
 ) -> None:
     logger.info("⏳ Upserting code <> child RSG relationships...")
-
     relationship_upsert_query = """
         INSERT INTO condition_child_rsg_codes (
             condition_id,
@@ -345,8 +342,7 @@ def _insert_condition_to_child_rsg_relationships(
             %(condition_id)s,
             %(code_id)s
         )
-        ON CONFLICT (condition_id, code_id) DO NOTHING;
-
+        ON CONFLICT (condition_id, code_id) DO NOTHING
         RETURNING id
     """
     params = [
