@@ -21,44 +21,49 @@ const arrowClasses: Record<TooltipPosition, string> = {
     'right-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent border-r-[#1b1b1b]',
 };
 
+const BOUNDING_GAP = 8;
+
+type PositionConfig = {
+  top: (r: DOMRect) => number;
+  left: (r: DOMRect) => number;
+  transform: string;
+};
+
+const POSITION_MAPPING: Record<TooltipPosition, PositionConfig> = {
+  top: {
+    left: (r) => r.left + r.width / 2,
+    top: (r) => r.top - BOUNDING_GAP,
+    transform: 'translate(-50%, -100%)',
+  },
+  bottom: {
+    left: (r) => r.left + r.width / 2,
+    top: (r) => r.bottom + BOUNDING_GAP,
+    transform: 'translateX(-50%)',
+  },
+  left: {
+    left: (r) => r.left - BOUNDING_GAP,
+    top: (r) => r.top + r.height / 2,
+    transform: 'translate(-100%, -50%)',
+  },
+  right: {
+    left: (r) => r.right + BOUNDING_GAP,
+    top: (r) => r.top + r.height / 2,
+    transform: 'translateY(-50%)',
+  },
+};
+
 function getTooltipStyle(
   position: TooltipPosition,
   rect: DOMRect | null
 ): React.CSSProperties {
   if (!rect) return { position: 'fixed', visibility: 'hidden' };
-
-  const gap = 8;
-
-  switch (position) {
-    case 'top':
-      return {
-        position: 'fixed',
-        left: rect.left + rect.width / 2,
-        top: rect.top - gap,
-        transform: 'translate(-50%, -100%)',
-      };
-    case 'bottom':
-      return {
-        position: 'fixed',
-        left: rect.left + rect.width / 2,
-        top: rect.bottom + gap,
-        transform: 'translateX(-50%)',
-      };
-    case 'left':
-      return {
-        position: 'fixed',
-        left: rect.left - gap,
-        top: rect.top + rect.height / 2,
-        transform: 'translate(-100%, -50%)',
-      };
-    case 'right':
-      return {
-        position: 'fixed',
-        left: rect.right + gap,
-        top: rect.top + rect.height / 2,
-        transform: 'translateY(-50%)',
-      };
-  }
+  const config = POSITION_MAPPING[position];
+  return {
+    position: 'fixed',
+    left: config.left(rect),
+    top: config.top(rect),
+    transform: config.transform,
+  };
 }
 
 export function Tooltip({ label, position = 'top' }: TooltipProps) {
