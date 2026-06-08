@@ -1,6 +1,7 @@
 import { Select } from '@components/Select';
 import { Field } from '@components/Field';
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { DbSectionNarrative } from '../../../../api/schemas/dbSectionNarrative';
 import { useSectionUpdater } from './useSectionUpdater';
 
 // TODO: Add "Reconstruct" option once backend `narrative` field supports 3-value enum
@@ -26,7 +27,10 @@ export function NarrativeSelect({
         value={currentSection.narrative ? 'retain' : 'remove'}
         onChange={(e) => {
           updateSection(currentSection, {
-            narrative: e.target.value === 'retain',
+            narrative:
+              e.target.value === 'retain'
+                ? DbSectionNarrative.retain
+                : DbSectionNarrative.remove,
           });
         }}
         aria-label={`Narrative data handling for ${currentSection.name} section`}
