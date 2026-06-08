@@ -52,7 +52,7 @@ const sectionsWithDisabled: DbConfigurationSectionProcessing[] = [
     action: 'retain',
     include: true,
     code: '83910-0',
-    narrative: true,
+    narrative: 'retain',
     versions: ['3.1'],
     section_type: 'standard',
   },
