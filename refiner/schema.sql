@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.0
+-- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -698,7 +698,7 @@ ALTER TABLE ONLY public.condition_child_rsg_codes
 --
 
 ALTER TABLE ONLY public.conditions_context_groupers
-    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
+    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
