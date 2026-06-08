@@ -16,6 +16,7 @@ class DbConditionsContextGrouper:
     category: str
     canonical_url: str
     code_count: int
+    completeness: str
     created_at: datetime
     updated_at: datetime
 

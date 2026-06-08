@@ -50,8 +50,8 @@ export function CompletenessStatusBadge({
           <ModalBody>
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-2/3" />
-                <col className="w-1/3" />
+                <col className="w-3/5" />
+                <col className="w-2/5" />
               </colgroup>
               <thead>
                 <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
@@ -65,8 +65,8 @@ export function CompletenessStatusBadge({
                 {completenessStatus.code_category_statuses.map((ccs) => (
                   <tr key={ccs.category}>
                     <td className="px-2 py-3">{ccs.name}</td>
-                    <td className="text-center">
-                      <IncludedStatus included={ccs.included} />
+                    <td className="px-2 py-3 align-middle">
+                      <CategoryCompletenessStatus completeness={ccs.completeness} />
                     </td>
                   </tr>
                 ))}
@@ -106,25 +106,36 @@ function Badge({ status }: BadgeProps) {
   );
 }
 
-interface IncludedStatusProps {
-  included: boolean;
+type CodeCategoryStatus =
+    | 'not included'
+    | 'partially complete'
+    | 'fully complete';
+
+interface CategoryCompletenessStatusProps {
+  completeness: CodeCategoryStatus;
 }
 
-function IncludedStatus({ included }: IncludedStatusProps) {
+function CategoryCompletenessStatus({
+                                      completeness,
+                                    }: CategoryCompletenessStatusProps) {
   return (
-    <div
-      className={classNames('flex items-center gap-2', {
-        'text-green-800': included,
-        'text-gray-600': !included,
-      })}
-    >
-      {included ? <CheckIcon /> : <XIcon />}
-      {included ? (
-        <span>included</span>
-      ) : (
-        <span className="italic">not included</span>
-      )}
-    </div>
+      <div
+          className={classNames('flex items-center gap-3 whitespace-nowrap', {
+            'text-state-success-dark font-public-sans font-semibold': completeness === 'fully complete',
+            'text-gray-cool-60 font-public-sans font-normal italic': completeness === 'not included',
+            'text-yellow-vivid-50v font-public-sans font-normal italic': completeness === 'partially complete',
+          })}
+      >
+        {completeness === 'fully complete' && <CheckIcon />}
+        {completeness === 'partially complete' && <DashIcon />}
+        {completeness === 'not included' && <XIcon />}
+
+        {completeness === 'not included' ? (
+            <span className="italic">{completeness}</span>
+        ) : (
+            <span className="whitespace-nowrap">{completeness}</span>
+        )}
+      </div>
   );
 }
 
@@ -171,5 +182,21 @@ function XIcon() {
         fill="#565C65"
       />
     </svg>
+  );
+}
+
+function DashIcon() {
+  return (
+      <svg
+          className="shrink-0"
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+      >
+        <path d="M5 10H15" stroke="#947100" strokeWidth="2" />
+      </svg>
   );
 }

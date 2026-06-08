@@ -505,6 +505,7 @@ async def get_context_groupers_by_condition_id_db(
             category,
             canonical_url,
             code_count,
+            completeness,
             created_at,
             updated_at
         FROM conditions_context_groupers

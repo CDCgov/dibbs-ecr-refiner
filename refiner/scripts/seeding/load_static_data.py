@@ -54,6 +54,7 @@ class ContextGrouperRow(TypedDict):
     category: str
     canonical_url: str
     code_count: int
+    completeness: str
 
 
 class ProcessedCondition(TypedDict):
@@ -175,24 +176,28 @@ def _upsert_conditions_and_groupers(
             name,
             category,
             canonical_url,
-            code_count
+            code_count,
+            completeness
         )
         VALUES (
             %(condition_id)s,
             %(name)s,
             %(category)s,
             %(canonical_url)s,
-            %(code_count)s
+            %(code_count)s,
+            %(completeness)s
         )
         ON CONFLICT (condition_id, canonical_url)
         DO UPDATE SET
             name = EXCLUDED.name,
             category = EXCLUDED.category,
-            code_count = EXCLUDED.code_count
+            code_count = EXCLUDED.code_count,
+            completeness = EXCLUDED.completeness
         WHERE
             conditions_context_groupers.name IS DISTINCT FROM EXCLUDED.name
             OR conditions_context_groupers.category IS DISTINCT FROM EXCLUDED.category
             OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
+            OR conditions_context_groupers.completeness IS DISTINCT FROM EXCLUDED.completeness
     """
 
     for item in processed:
@@ -212,6 +217,7 @@ def _upsert_conditions_and_groupers(
                 "category": cg["category"],
                 "canonical_url": cg["canonical_url"],
                 "code_count": cg["code_count"],
+                "completeness": cg["completeness"],
             }
             for cg in groupers
         ]

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -61,6 +61,11 @@ async def get_conditions(
 
 type CodeSetStatus = Literal["not expanded", "partially complete", "fully complete"]
 
+CodeCategoryStatus: TypeAlias = Literal[
+    "not included",
+    "partially complete",
+    "fully complete",
+]
 
 @dataclass
 class CodeCategoryCompletenessStatus:
@@ -70,8 +75,7 @@ class CodeCategoryCompletenessStatus:
 
     category: str
     name: str
-    included: bool
-
+    completeness: CodeCategoryStatus
 
 @dataclass
 class CompletenessStatus:
@@ -118,13 +122,18 @@ def _get_code_category_statuses(
         "specimen_source": "Specimen source codes",
     }
 
-    found_categories = {row.category for row in groupers}
+    completeness_by_category = {
+        row.category: row.completeness for row in groupers
+    }
 
     return [
         CodeCategoryCompletenessStatus(
             category=category,
             name=name,
-            included=category in found_categories,
+            completeness=completeness_by_category.get(
+                category,
+                "not included",
+            ),
         )
         for category, name in category_names.items()
     ]
