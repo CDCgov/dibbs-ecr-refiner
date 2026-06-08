@@ -54,10 +54,9 @@ const POSITION_MAPPING: Record<TooltipPosition, PositionConfig> = {
 
 function getTooltipStyle(
   position: TooltipPosition,
-  triggerEl: HTMLButtonElement | null
+  rect: DOMRect | null
 ): React.CSSProperties {
-  if (!triggerEl) return { position: 'fixed', visibility: 'hidden' };
-  const rect = triggerEl.getBoundingClientRect();
+  if (!rect) return { position: 'fixed', visibility: 'hidden' };
   const config = POSITION_MAPPING[position];
   return {
     position: 'fixed',
@@ -69,11 +68,15 @@ function getTooltipStyle(
 
 export function Tooltip({ label, position = 'top' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
-  const [triggerEl, setTriggerEl] = useState<HTMLButtonElement | null>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const tooltipId = useId();
   const showTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   function show() {
+    if (triggerRef.current) {
+      setTriggerRect(triggerRef.current.getBoundingClientRect());
+    }
     showTimeout.current = setTimeout(() => setVisible(true), 300);
   }
 
@@ -85,7 +88,7 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
   return (
     <span className="inline-flex items-center">
       <button
-        ref={setTriggerEl}
+        ref={triggerRef}
         type="button"
         aria-describedby={tooltipId}
         onMouseEnter={show}
@@ -113,7 +116,7 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
           <span
             id={tooltipId}
             role="tooltip"
-            style={getTooltipStyle(position, triggerEl)}
+            style={getTooltipStyle(position, triggerRect)}
             className="bg-gray-90 pointer-events-none z-50 w-max max-w-xs rounded-sm p-2 font-normal text-white"
           >
             {label}
