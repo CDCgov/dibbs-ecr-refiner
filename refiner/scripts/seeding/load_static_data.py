@@ -123,12 +123,8 @@ def _build_rsg_codes(
 
     for parent in condition_groupers:
         child_rsg_code_ids: list[UUID] = []
-        cond_canonical_url = parent.get("url")
-        cond_version = parent.get("version")
-
-        # TODO figure out how to properly error handle this
-        if not isinstance(cond_version, str) or not isinstance(cond_canonical_url, str):
-            continue
+        cond_canonical_url = parent.get("url", "")
+        cond_version = parent.get("version", "")
 
         for child_vs in get_child_rsg_valuesets(
             parent=parent, all_vs_map=valuesets_map
@@ -148,13 +144,17 @@ def _build_rsg_codes(
                         system_id=snomed_db_id,
                     )
                 )
+
         cond_index = (cond_canonical_url, cond_version)
-        if cond_index in list(condition_to_code_relationships.keys()):
+        if len(child_rsg_code_ids) > 0 and cond_index in list(
+            condition_to_code_relationships.keys()
+        ):
             relationship = condition_to_code_relationships[cond_index]
-            print(
-                f"adding {len(child_rsg_code_ids)} rsg codes to condition {relationship.get('condition_display_name')}"
-            )
             relationship.get("child_rsg_snomed_code_ids").extend(child_rsg_code_ids)
+
+    logger.info(
+        f"🔎 Identified {len(rsg_codes)} RSG codes corresponding to {len(condition_to_code_relationships)} condition <> child RSG relationships to process."
+    )
 
     return (rsg_codes, condition_to_code_relationships)
 
@@ -334,6 +334,8 @@ def _upsert_conditions_and_groupers(
 def _insert_condition_to_child_rsg_relationships(
     cursor: Cursor, data: ConditionToCodeRelationshipIndex
 ) -> None:
+    logger.info("⏳ Upserting code <> child RSG relationships...")
+
     relationship_upsert_query = """
         INSERT INTO condition_child_rsg_codes (
             condition_id,
@@ -343,6 +345,8 @@ def _insert_condition_to_child_rsg_relationships(
             %(condition_id)s,
             %(code_id)s
         )
+        ON CONFLICT (condition_id, code_id) DO NOTHING;
+
         RETURNING id
     """
     params = [
