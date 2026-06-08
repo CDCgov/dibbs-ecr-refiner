@@ -45,6 +45,16 @@ ALTER TABLE conditions_context_groupers
     ON UPDATE CASCADE 
     ON DELETE CASCADE;
 
+ALTER TABLE configurations_conditions 
+    DROP CONSTRAINT configurations_conditions_condition_id_fkey;
+
+ALTER TABLE configurations_conditions 
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey 
+    FOREIGN KEY (condition_id) 
+    REFERENCES conditions (id) 
+    ON UPDATE CASCADE 
+    ON DELETE CASCADE;
+
 CREATE TRIGGER update_custom_codes_updated_at
 BEFORE UPDATE ON custom_codes
 FOR EACH ROW
@@ -63,6 +73,16 @@ ALTER TABLE conditions_context_groupers
 
 ALTER TABLE conditions_context_groupers 
     ADD CONSTRAINT conditions_context_groupers_condition_id_fkey 
+    FOREIGN KEY (condition_id) 
+    REFERENCES conditions (id) 
+    ON DELETE CASCADE;
+
+
+ALTER TABLE configurations_conditions 
+    DROP CONSTRAINT configurations_conditions_condition_id_fkey;
+
+ALTER TABLE configurations_conditions 
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey 
     FOREIGN KEY (condition_id) 
     REFERENCES conditions (id) 
     ON DELETE CASCADE;
