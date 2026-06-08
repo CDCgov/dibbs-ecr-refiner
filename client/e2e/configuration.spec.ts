@@ -27,6 +27,33 @@ test.describe('Configuration detail flow', () => {
     ]);
   });
 
+  test('Code set table can be filtered by code system', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToBuildTab();
+    await page.getByLabel('View TES code set information for Anotia').click();
+    const codeSystemSelect = page.getByRole('combobox', {
+      name: 'Code system',
+    });
+    await expect(codeSystemSelect).toHaveValue('all');
+    const tableRows = page.getByRole('row');
+    await expect(tableRows).toHaveCount(3); // including header
+
+    await codeSystemSelect.selectOption('ICD-10');
+    const rows = page.getByRole('row');
+    const rowCount = await rows.count();
+
+    for (let i = 1; i < rowCount; i++) {
+      // start at 1 to skip header row
+      const cell = rows.nth(i).getByRole('cell').nth(1); // 2nd column
+      await expect(cell).toHaveText('ICD-10');
+    }
+  });
+
   test('Check code set status and individual grouper statuses', async ({
     page,
     configurationsPage,
