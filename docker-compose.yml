@@ -52,7 +52,7 @@ services:
       retries: 10
 
   auth:
-    image: quay.io/keycloak/keycloak:26.6.2-2
+    image: quay.io/keycloak/keycloak:26.6.3-0
     command:
       - "start-dev"
       - "--import-realm"
