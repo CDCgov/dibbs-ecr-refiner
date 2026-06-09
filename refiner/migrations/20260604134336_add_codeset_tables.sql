@@ -42,7 +42,7 @@ ALTER TABLE conditions_context_groupers
     FOREIGN KEY (condition_id) 
     REFERENCES conditions (id) 
     ON UPDATE CASCADE 
-    ON DELETE CASCADE;
+    ON DELETE RESTRICT;
 
 ALTER TABLE configurations_conditions 
     DROP CONSTRAINT configurations_conditions_condition_id_fkey;
@@ -52,7 +52,7 @@ ALTER TABLE configurations_conditions
     FOREIGN KEY (condition_id) 
     REFERENCES conditions (id) 
     ON UPDATE CASCADE 
-    ON DELETE CASCADE;
+    ON DELETE RESTRICT;
 
 CREATE TRIGGER update_custom_codes_updated_at
 BEFORE UPDATE ON custom_codes
@@ -76,15 +76,13 @@ ALTER TABLE conditions_context_groupers
     REFERENCES conditions (id) 
     ON DELETE CASCADE;
 
-
 ALTER TABLE configurations_conditions 
     DROP CONSTRAINT configurations_conditions_condition_id_fkey;
 
 ALTER TABLE configurations_conditions 
     ADD CONSTRAINT configurations_conditions_condition_id_fkey 
     FOREIGN KEY (condition_id) 
-    REFERENCES conditions (id) 
-    ON DELETE CASCADE;
+    REFERENCES conditions (id);
 
 DROP TABLE IF EXISTS condition_child_rsg_codes;
 DROP TABLE IF EXISTS custom_codes;
