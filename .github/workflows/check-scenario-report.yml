@@ -1,0 +1,36 @@
+name: Check scenario report
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  PYTHON_RUNNER_VERSION: "3.14"
+
+jobs:
+  check-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup python ${{ env.PYTHON_RUNNER_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_RUNNER_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -U pip
+          pip install -r dev-requirements.txt -r requirements.txt
+
+      - name: Update snapshots
+        run: pytest tests/integration/scenarios/test_all_sections_covid_influenza.py --update-snapshots
+
+      - name: Build report
+        run: python tests/integration/scenarios/authoring/build_report.py
+
+      - name: Fail if report is stale
+        run: git diff --exit-code REPORT.md
