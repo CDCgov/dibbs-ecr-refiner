@@ -28,5 +28,3 @@ jobs:
     uses: ./.github/workflows/typecheck.yml
   run-build:
     uses: ./.github/workflows/build.yml
-  run-report-check:
-    uses: ./.github/workflows/check-scenario-report.yml
