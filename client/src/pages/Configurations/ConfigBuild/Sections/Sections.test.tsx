@@ -158,12 +158,7 @@ describe('Configuration sections', () => {
     const disabledSectionName = screen.getByText('Disabled section');
     const row = disabledSectionName.closest('tr');
     expect(row).not.toBeNull();
-
-    if (!row) {
-      throw new Error('Could not find table row for "Disabled section"');
-    }
-
-    const select = within(row).queryByRole('combobox');
+    const select = row && within(row).queryByRole('combobox');
     expect(select).toBeInTheDocument();
     expect(select).toBeDisabled();
   });
