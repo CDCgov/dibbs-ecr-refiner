@@ -169,10 +169,10 @@ async def convert_config_to_storage_payload(
     """
     Takes a DbConfiguration and distills it down to the bare minimum data required for refining.
 
-    Produces both a flat code set (for the generic fallback matching path) and a
-    structured CodeSystemSets (for section-aware matching with proper code system
-    routing and displayName enrichment). Both are serialized into the active.json
-    file so that lambda has full parity with the webapp's refinement pipeline.
+    Builds structured CodeSystemSets for refinement with proper code system
+    routing and display name enrichment. The legacy flat codes array is intentionally
+    not serialized into active.json because code_system_sets contains the required
+    code information without duplication.
 
     Args:
         configuration (DbConfiguration): The configuration from the database
@@ -181,7 +181,6 @@ async def convert_config_to_storage_payload(
     Returns:
         ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
     """
-    codes: set[str] = set()
     sections: list[dict[str, Any]] = []
     included_condition_rsg_codes: set[str] = set()
 
@@ -190,7 +189,6 @@ async def convert_config_to_storage_payload(
     code_systems = await get_all_code_systems_by_key(db)
     # custom codes
     for cc in configuration.custom_codes:
-        codes.add(cc.code)
         cur_code_system = code_systems[cc.system_key]
 
         if cur_code_system is None:
@@ -225,7 +223,6 @@ async def convert_config_to_storage_payload(
         )
 
         for key, code_list in code_system_map.items():
-            codes = codes | {c.code for c in code_list}
             system_metadata = await get_code_system_by_key_db(key=key, db=db)
             if system_metadata is None:
                 raise ValueError(
@@ -256,7 +253,6 @@ async def convert_config_to_storage_payload(
     )
 
     return ConfigurationStoragePayload(
-        codes=codes,
         sections=sections,
         included_condition_rsg_codes=included_condition_rsg_codes,
         code_system_sets=code_system_sets.to_dict(),
