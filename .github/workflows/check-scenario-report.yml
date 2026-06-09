@@ -39,4 +39,4 @@ jobs:
         run: python tests/integration/scenarios/authoring/build_report.py
 
       - name: Fail if report is stale
-        run: git diff --exit-code REPORT.md
+        run: git diff --exit-code tests/integration/scenarios/REPORT.md
