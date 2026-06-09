@@ -12,7 +12,7 @@ from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
-from app.db.configurations.model import DbConfigurationCustomCode
+from app.db.configurations.model import DbConfigurationCustomCode, DbSectionAction
 
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
@@ -123,7 +123,33 @@ async def add_custom_code(authed_client):
 
 
 @pytest_asyncio.fixture
-async def edit_custom_code(authed_client):
+def update_section_processing(authed_client):
+    async def _get(
+        config_id: UUID,
+        current_code: str,
+        *,
+        include: bool | None = None,
+        narrative: bool | None = None,
+        action: DbSectionAction | None = None,
+    ):
+        payload = {
+            "current_code": current_code,
+            "include": include,
+            "narrative": narrative,
+            "action": action,
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+def edit_custom_code(authed_client):
     from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
 
     async def _get(config_id: UUID, body: UpdateCustomCodeInput):
@@ -421,7 +447,7 @@ def setup(request):
 
     print("🩺 Seeding conditions...")
     refiner_service.exec_in_container(
-        ["python", "/app/scripts/seeding/seed_db.py"],
+        ["python", "/app/scripts/seeding/load_static_data.py"],
         "server",
     )
 

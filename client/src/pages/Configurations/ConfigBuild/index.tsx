@@ -18,20 +18,21 @@ import {
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
-import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
+import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
-import { ConfigLockBanner } from './ConfigLockBanner';
+import { ConfigLockBanner } from './Lock/ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
-import { ImportCustomCodes } from './CustomCodes/ImportCustomCodes';
+import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Icon } from '@trussworks/react-uswds';
-import { ConditionCodeTable, CustomCodesDetail } from './CustomCodes/index';
+import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
+import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -299,7 +300,7 @@ function Builder({
                     aria-current={tableView === 'custom' ? 'true' : undefined}
                   >
                     <span>Custom codes</span>
-                    <span>{custom_codes.codes.length.toLocaleString()}</span>
+                    <span>{custom_codes.codes.length?.toLocaleString()}</span>
                   </Button>
                 </li>
                 <li key="sections">
@@ -423,7 +424,7 @@ const ConditionCodeSetButton = forwardRef<
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
-          {codeSetTotalCodes.toLocaleString()}
+          {codeSetTotalCodes?.toLocaleString()}
         </span>
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set

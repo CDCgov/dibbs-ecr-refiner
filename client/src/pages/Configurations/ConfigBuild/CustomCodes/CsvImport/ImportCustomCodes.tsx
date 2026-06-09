@@ -4,22 +4,17 @@ import {
   useUploadCustomCodesCsv,
   useConfirmUploadCustomCodesCsv,
   getGetConfigurationQueryKey,
-} from '../../../../api/configurations/configurations';
-import { UploadCustomCodesPreviewItem } from '../../../../api/schemas/uploadCustomCodesPreviewItem';
-import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
-import { useSearch } from '../../../../hooks/useSearch';
-import { useToast } from '../../../../hooks/useToast';
-import { highlightMatches } from '../../../../utils';
-import {
-  ConfirmModal,
-  UndoModal,
-  PreviewEditModal,
-} from '../CsvCodeUploadModal';
+} from '../../../../../api/configurations/configurations';
+import { UploadCustomCodesPreviewItem } from '../../../../../api/schemas/uploadCustomCodesPreviewItem';
+import { useApiErrorFormatter } from '../../../../../hooks/useErrorFormatter';
+import { useSearch } from '../../../../../hooks/useSearch';
+import { useToast } from '../../../../../hooks/useToast';
+import { highlightMatches } from '../../../../../utils';
+import { ConfirmModal, UndoModal, PreviewEditModal } from './Modals';
 import { Button } from '@components/Button';
-import { CsvImportStep } from '../';
-import UploadSvg from '../../../../assets/upload.svg';
+import { CsvImportStep } from '../..';
+import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
-import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 
 const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example

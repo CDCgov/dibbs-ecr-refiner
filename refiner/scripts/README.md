@@ -2,37 +2,7 @@
 
 This directory contains all scripts and resources for managing the DIBBS eCR Refiner database seeding, maintenance, validation workflows, and exports. The organization is shaped to keep app-facing data, foundational test sources, validation logic, and pipeline operations clearly separated.
 
-Below is an overview of the high-level directory structure and a guide to getting started with local development and validation.
-
-## Directory Structure
-
-```
-.
-├── data/
-│   ├── source-ecr-files/
-│   ├── source-tes-groupers/
-│   ├── jurisdiction-packages/
-│   └── sample-configurations/
-├── exports/
-│   ├── export_groupers.py
-│   └── tes-export-groupers-*.csv
-├── maintenance/
-│   ├── check_seeded_db.py
-│   └── validate_parsing.py
-├── pipeline/
-│   ├── detect_changes.py
-│   ├── fetch_api_data.py
-│   └── __init__.py
-├── seeding/
-│   └── seed_db.py
-├── validation/
-│   ├── generate_xslt_from_sch.py
-│   ├── validate_source_data.py
-│   └── [validation artifacts, schematron, etc.]
-└── README.md
-```
-
-### Directory Purposes
+## Directory Purposes
 
 | Directory      | Purpose / Contents                                                                                                 |
 | -------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -85,8 +55,8 @@ just db validate-tes-data
 Use Docker Compose to build and start the PostgreSQL container.
 On first run, this will initialize the server, apply schemas, and run the seeding script to populate the database.
 
-The main seeding script lives in `seeding/seed_db.py`.
-While you can run it directly with `python seeding/seed_db.py`, the recommended way is:
+The main seeding script lives in `seeding/load_static_data.py`.
+While you can run it directly with `python seeding/load_static_data.py`, the recommended way is:
 
 ```bash
 just db seed

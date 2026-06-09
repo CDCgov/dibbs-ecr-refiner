@@ -1,9 +1,7 @@
-import React, { ChangeEvent, useState } from 'react';
 import {
   CodeSystemsReponse,
-  DbCodeSystem,
   UploadCustomCodesPreviewItem,
-} from '../../../api/schemas';
+} from '../../../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
@@ -17,8 +15,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { useGetCodeSystems } from '../../../api/code-systems/code-systems';
-import { Spinner } from '@components/Spinner';
+import { useState, ChangeEvent } from 'react';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -97,7 +94,7 @@ interface PreviewEditModalProps {
   ) => void;
   setError: (err: string | null) => void;
   error: string | null;
-  codeSystems: CodeSystemsReponse[] | undefined;
+  codeSystems: CodeSystemsReponse[];
 }
 
 export function PreviewEditModal({
@@ -176,7 +173,7 @@ export function PreviewEditModal({
               value={previewEditForm.system_key}
               onChange={(e) => handlePreviewEditChange('system_key', e)}
             >
-              {codeSystems.data.map((s) => (
+              {codeSystems.map((s) => (
                 <option key={s.id} value={s.key}>
                   {s.display_name}
                 </option>
