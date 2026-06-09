@@ -60,33 +60,6 @@ def upsert_condition_to_codes_relationship(
     return True
 
 
-def upsert_condition_context_groupers(
-    conditions: list[_IdentifiableCondition],
-):
-    """
-    Upserts Additional Context Grouper metadata for each condition.
-    """
-
-    rows = []
-
-    for condition in conditions:
-        for (
-            context_grouper_payload
-        ) in condition.condition_data.context_grouper_payloads:
-            rows.append(
-                {
-                    "condition_id": condition.condition_id,
-                    **context_grouper_payload,
-                }
-            )
-
-    if not rows:
-        return True
-
-    # do the relevant SQL work
-    return True
-
-
 # build conditions to insert
 def _build_processed_conditions() -> dict[UrlVersionTuple, _IdentifiableCondition]:
     conditions_map: dict[UrlVersionTuple, _IdentifiableCondition] = defaultdict()
