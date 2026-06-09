@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 import pytest
 import pytest_asyncio
@@ -64,13 +65,13 @@ class SectionOverride:
 
     Only the fields set here are changed; anything left None keeps the
     section's seeded default. "Exclude a section" is include=False; "refine but
-    drop the prose" is narrative=False; narrative-only sections are forced to
+    drop the prose" is narrative="remove""; narrative-only sections are forced to
     action="retain" by the API regardless of what is passed.
     """
 
     current_code: str
     include: bool | None = None
-    narrative: bool | None = None
+    narrative: Literal["retain", "remove", "refine"] | None = None
     action: str | None = None  # DbSectionAction; kept as str to avoid the import
 
 
@@ -177,7 +178,7 @@ SCENARIOS: list[Scenario] = [
             SectionOverride(current_code="10154-3", include=False),
             SectionOverride(current_code="10164-2", include=False),
             SectionOverride(current_code="29299-5", include=False),
-            SectionOverride(current_code="30954-2", narrative=False),
+            SectionOverride(current_code="30954-2", narrative="remove"),
             SectionOverride(current_code="29762-2", action="retain"),
         ),
     ),
