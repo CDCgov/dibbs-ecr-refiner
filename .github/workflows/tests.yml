@@ -71,7 +71,7 @@ jobs:
       - name: Build report
         run: python tests/integration/scenarios/authoring/build_report.py
       - name: Fail if report is stale
-        run: git diff --exit-code tests/integration/scenarios/REPORT.md
+        run: git diff --exit-code refiner/tests/integration/scenarios/REPORT.md
 
   run-lambda-tests:
     runs-on: ubuntu-latest
