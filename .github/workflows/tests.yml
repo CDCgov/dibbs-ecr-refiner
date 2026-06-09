@@ -67,13 +67,9 @@ jobs:
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt
       - name: Run scenarios
-        run: pytest tests/integration/scenarios --update-snapshots
+        run: pytest tests/integration/scenarios
       - name: Build report
         run: python tests/integration/scenarios/authoring/build_report.py
-      - name: Debug
-        run: |
-          git status
-          find . -name "REPORT.md"
       - name: Fail if report is stale
         run: git diff --exit-code -- tests/integration/scenarios/REPORT.md
 
