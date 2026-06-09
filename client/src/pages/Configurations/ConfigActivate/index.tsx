@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { ConfigLockBanner } from '../ConfigBuild/ConfigLockBanner';
+import { ConfigLockBanner } from '../ConfigBuild/Lock/ConfigLockBanner';
 import { Title } from '@components/Title';
 import {
   NavigationContainer,
