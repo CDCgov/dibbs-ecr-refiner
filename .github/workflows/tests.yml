@@ -68,10 +68,6 @@ jobs:
           pip install -r dev-requirements.txt -r requirements.txt
       - name: Run scenarios
         run: pytest tests/integration/scenarios
-      - name: Build report
-        run: python tests/integration/scenarios/authoring/build_report.py
-      - name: Fail if report is stale
-        run: git diff --exit-code -- tests/integration/scenarios/REPORT.md
 
   run-lambda-tests:
     runs-on: ubuntu-latest

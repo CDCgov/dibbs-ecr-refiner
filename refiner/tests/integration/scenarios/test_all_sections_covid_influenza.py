@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from ...unit.conftest import normalize_xml
+from .build_report import build_report
 from .conftest import SCENARIOS, Scenario, load_scenario_xml_files
 from .harness import refine_one
 
@@ -120,6 +121,7 @@ async def test_scenario_matches_snapshot(
         eicr_path.write_text(actual_eicr + "\n")
         rr_path.write_text(actual_rr + "\n")
         print(f"\nSnapshot updated: {snapshot_dir.relative_to(SNAPSHOT_ROOT.parent)}")
+        build_report()
         return
 
     # COMPARE PATH

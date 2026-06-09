@@ -11,7 +11,7 @@ from lxml import etree
 # PATHS
 # =============================================================================
 
-SCRIPT_DIR: Path = Path(__file__).resolve().parent
+SCRIPT_DIR: Path = Path(__file__).resolve()
 SCENARIOS_DIR: Path = SCRIPT_DIR.parent
 SNAPSHOTS_DIR: Path = SCENARIOS_DIR / "snapshots"
 REPORT_PATH: Path = SCENARIOS_DIR / "REPORT.md"
@@ -480,7 +480,7 @@ def _render_appendix() -> str:
     )
 
 
-def build_report(scenarios: list[ScenarioSnapshot]) -> str:
+def _compose_report(scenarios: list[ScenarioSnapshot]) -> str:
     """
     Compose the full report from its sections, single trailing newline.
     """
@@ -530,13 +530,17 @@ def _check_coverage_references_known_scenarios(
         )
 
 
-def main() -> int:
+def build_report() -> int:
     scenarios = discover_scenarios()
     _check_coverage_references_known_scenarios(scenarios)
-    report = build_report(scenarios)
+    report = _compose_report(scenarios)
     REPORT_PATH.write_text(report)
     print(f"Wrote {REPORT_PATH.relative_to(SCENARIOS_DIR.parent.parent)}")
     return 0
+
+
+def main() -> int:
+    return build_report()
 
 
 if __name__ == "__main__":
