@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Button } from '@components/Button';
 import { useQueryClient } from '@tanstack/react-query';
+import classNames from 'classnames';
 import {
   useAssociateConditionWithConfiguration,
   useDisassociateConditionWithConfiguration,
   getGetConfigurationQueryKey,
-} from '../../../api/configurations/configurations';
-import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { useToast } from '../../../hooks/useToast';
-import { IncludedCondition } from '../../../api/schemas';
-import classNames from 'classnames';
+} from '../../../../api/configurations/configurations';
+import { IncludedCondition } from '../../../../api/schemas';
+import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
+import { useToast } from '../../../../hooks/useToast';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
