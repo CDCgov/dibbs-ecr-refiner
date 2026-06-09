@@ -16,7 +16,7 @@ defaults:
     working-directory: ./refiner
 
 jobs:
-  run-python-tests:
+  run-unit-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,10 +30,49 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt
-      - name: Run tests
-        # Scenarios are run automatically in the report job
+      - name: Run integration tests
+        run: |
+          pytest tests/unit
+
+  run-integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup python ${{env.PYTHON_RUNNER_VERSION}}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{env.PYTHON_RUNNER_VERSION}}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -U pip
+          pip install -r dev-requirements.txt -r requirements.txt
+      - name: Run integration tests
         run: |
           pytest tests --ignore=tests/integration/scenarios
+
+  run-scenarios:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup python ${{env.PYTHON_RUNNER_VERSION}}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{env.PYTHON_RUNNER_VERSION}}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -U pip
+          pip install -r dev-requirements.txt -r requirements.txt
+      - name: Run scenarios
+        run: pytest tests/integration/scenarios --update-snapshots
+      - name: Build report
+        run: python tests/integration/scenarios/authoring/build_report.py
+      - name: Fail if report is stale
+        run: git diff --exit-code tests/integration/scenarios/REPORT.md
+
   run-lambda-tests:
     runs-on: ubuntu-latest
     steps:
