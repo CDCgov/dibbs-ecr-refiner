@@ -75,7 +75,7 @@ jobs:
           git status
           find . -name "REPORT.md"
       - name: Fail if report is stale
-        run: git diff --exit-code refiner/tests/integration/scenarios/REPORT.md
+        run: git diff --exit-code -- tests/integration/scenarios/REPORT.md
 
   run-lambda-tests:
     runs-on: ubuntu-latest
