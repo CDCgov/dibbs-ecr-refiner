@@ -330,12 +330,12 @@ test.describe('Configuration detail flow', () => {
         const admissionMedicationsText = 'Admission Medications';
         await page
           .getByRole('switch', {
-            name: `Refine & optimize ${admissionMedicationsText}`,
+            name: `Refine ${admissionMedicationsText}`,
           })
           .click();
         await expect(
           page.getByRole('switch', {
-            name: `Preserve & retain all data for ${admissionMedicationsText}`,
+            name: `Keep original for ${admissionMedicationsText}`,
           })
         ).not.toBeChecked();
 

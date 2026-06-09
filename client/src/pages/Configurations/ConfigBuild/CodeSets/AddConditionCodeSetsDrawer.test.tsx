@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
+import { AddConditionCodeSetsDrawer } from './AddConditionCodeSetsDrawer';
 import userEvent from '@testing-library/user-event';
 
 // Mocks for child components and hooks
-vi.mock('../../../components/Drawer', () => ({
+vi.mock('./Drawer', () => ({
   Drawer: ({
     children,
     title,
@@ -59,7 +59,7 @@ vi.mock('./ConditionCodeSet', () => ({
   ),
 }));
 
-vi.mock('../../../hooks/useToast', () => ({
+vi.mock('../../../../hooks/useToast', () => ({
   useToast: () => vi.fn(),
 }));
 
@@ -69,13 +69,13 @@ vi.mock('@tanstack/react-query', () => ({
   }),
 }));
 
-vi.mock('../../../api/configurations/configurations', () => ({
+vi.mock('../../../../api/configurations/configurations', () => ({
   useAssociateConditionWithConfiguration: () => ({ mutate: vi.fn() }),
   useDisassociateConditionWithConfiguration: () => ({ mutate: vi.fn() }),
   getGetConfigurationQueryKey: vi.fn(),
 }));
 
-vi.mock('../../../api/conditions/conditions', () => ({
+vi.mock('../../../../api/conditions/conditions', () => ({
   getGetConditionsByConfigurationQueryKey: vi.fn(),
 }));
 

@@ -66,7 +66,7 @@ describe('Configuration sections', () => {
       return {
         checkbox: within(row).getByRole('checkbox'),
         nameCell: within(row).getAllByRole('cell')[1],
-        switches: within(row).queryAllByRole('switch'), // [0] = data handling approach, [1] = narrative
+        switches: within(row).queryAllByRole('switch'), // [0] = coded data, [1] = narrative data
       };
     };
 
