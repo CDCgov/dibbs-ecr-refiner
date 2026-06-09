@@ -10,6 +10,9 @@ env:
 jobs:
   check-report:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./refiner
 
     steps:
       - name: Checkout
