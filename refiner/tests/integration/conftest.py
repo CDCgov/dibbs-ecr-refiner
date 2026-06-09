@@ -447,7 +447,7 @@ def setup(request):
 
     print("🩺 Seeding conditions...")
     refiner_service.exec_in_container(
-        ["python", "/app/scripts/seeding/seed_db.py"],
+        ["python", "/app/scripts/seeding/load_static_data.py"],
         "server",
     )
 
