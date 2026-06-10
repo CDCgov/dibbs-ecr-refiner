@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import CodeSystemIndex
+from app.db.codes.model import DbCode
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
@@ -95,6 +96,7 @@ class GetConfigurationResponse:
     custom_codes: CustomCodes
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
+    rsg_codes: list[DbCode]
     version: int
     active_configuration_id: UUID | None
     active_version: int | None

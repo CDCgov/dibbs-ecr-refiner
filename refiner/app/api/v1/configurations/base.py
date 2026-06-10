@@ -31,6 +31,7 @@ from app.services.configurations import (
     format_section_naming,
 )
 from app.services.logger import get_logger
+from app.db.codes.db import get_configuration_rsg_codes
 
 from .model import (
     CreateConfigInput,
@@ -282,6 +283,9 @@ async def get_configuration(
         code_systems=code_systems,
     )
 
+    rsg_codes = await get_configuration_rsg_codes(
+        db=db, configuration_primary_condition_id=primary_condition.id
+    )
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
@@ -297,6 +301,7 @@ async def get_configuration(
             [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.name.lower(),
         ),
+        rsg_codes=rsg_codes,
         all_versions=all_versions,
         version=config.version,
         active_version=active_version,

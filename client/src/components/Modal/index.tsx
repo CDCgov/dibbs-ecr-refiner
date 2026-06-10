@@ -106,8 +106,14 @@ interface ModalSectionProps {
   className?: string;
 }
 
-function ModalHeader({ children }: ModalSectionProps) {
-  return <div className="mx-auto mt-6 w-full pr-10 pb-6 pl-6">{children}</div>;
+function ModalHeader({ children, className }: ModalSectionProps) {
+  return (
+    <div
+      className={classNames('mx-auto mt-6 w-full pr-10 pb-6 pl-6', className)}
+    >
+      {children}
+    </div>
+  );
 }
 
 function ModalTitle({ children, className }: ModalSectionProps) {

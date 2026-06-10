@@ -33,15 +33,8 @@ import { Icon } from '@trussworks/react-uswds';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
-import {
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-} from '@components/Modal';
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { InfoIcon } from '@components/Tooltip/InfoIcon';
-import { Table } from '@components/Table';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -590,33 +583,64 @@ function RsgDetailsModal({
   onClose,
   configurationData,
 }: RsgDetailsModal) {
-  console.log(configurationData);
+  const rsgCodesString = joinWithAnd(
+    configurationData.rsg_codes.map((c) => c.value)
+  );
+
   return (
-    <Modal open={open} onClose={onClose} position="top">
-      <ModalHeader>
+    <Modal
+      className="max-w-160!"
+      open={open}
+      onClose={onClose}
+      position="center"
+    >
+      <ModalHeader className="pb-1!">
         <ModalTitle className="font-public-sans">
           {configurationData.display_name}
         </ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <p>
-          Applies to eCR documents reportable for [these reportable condition
-          SNOMED codes]. Only one output will be produced per condition group.
+        <p className="wrap-break-word">
+          Applies to eCR documents reportable for reportable condition SNOMED
+          codes {rsgCodesString}. Only one output will be produced per condition
+          group.
         </p>
 
         <table>
           <thead className="border-b-gray-cool-20 border-b">
-            <th className="px-2 py-3 font-bold">SNOMED code</th>
-            <th className="px-2 py-3 font-bold">Display name</th>
+            <tr>
+              <th scope="col" className="w-[40%] px-2 py-3 font-bold">
+                SNOMED code
+              </th>
+              <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
+            </tr>
           </thead>
           <tbody>
-            <tr className="border-b-gray-cool-20 border-b">
-              <td className="px-2 py-3">rsgCode</td>
-              <td className="px-2 py-3">rsgDisplayName</td>
-            </tr>
+            {configurationData.rsg_codes.map((c, i) => {
+              return (
+                <tr
+                  key={c.value}
+                  className={
+                    i === configurationData.rsg_codes.length - 1
+                      ? ''
+                      : 'border-b-gray-cool-20 border-b'
+                  }
+                >
+                  <td className="py-3 pl-2">{c.value}</td>
+                  <td className="py-3 pl-2">{c.name}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </ModalBody>
     </Modal>
   );
+}
+
+function joinWithAnd(arr: string[]) {
+  if (arr.length === 0) return '';
+  if (arr.length === 1) return arr[0];
+
+  return arr.slice(0, -1).join(', ') + ', and ' + arr.slice(-1).join();
 }
