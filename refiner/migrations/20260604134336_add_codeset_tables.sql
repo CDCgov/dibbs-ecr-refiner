@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS codes(
 );
 
 CREATE TABLE IF NOT EXISTS condition_child_rsg_codes (
-    code_id UUID REFERENCES codes(id) ON DELETE CASCADE, 
-    condition_id UUID REFERENCES conditions(id) ON DELETE CASCADE,
+    condition_id UUID REFERENCES conditions(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    code_id UUID REFERENCES codes(id) ON DELETE CASCADE ON UPDATE CASCADE, 
     PRIMARY KEY (condition_id, code_id)
 );
 

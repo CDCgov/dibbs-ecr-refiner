@@ -286,12 +286,13 @@ def _upsert_conditions_and_groupers(
         cond = item["condition"]
         cursor.execute(condition_upsert_query, cond)
 
+        cond_id = cond.get("id")
         condition_canonical_url = cond.get("canonical_url")
         condition_version = cond.get("version")
         condition_name = cond.get("display_name")
         condition_index = (condition_canonical_url, condition_version)
         condition_payload = ConditionToCodeRelationshipTrace(
-            condition_id=cond.get("id"),
+            condition_id=cond_id,
             condition_display_name=condition_name,
             child_rsg_snomed_code_ids=[],
             version=condition_version,
@@ -305,7 +306,7 @@ def _upsert_conditions_and_groupers(
 
         grouper_params = [
             {
-                "condition_id": cond.get("id"),
+                "condition_id": cond_id,
                 "name": cg["name"],
                 "category": cg["category"],
                 "canonical_url": cg["canonical_url"],
@@ -371,11 +372,13 @@ def _upsert_codes(cursor: Cursor, data: list[CodeRow]):
         )
         ON CONFLICT (value, system_id, version)
         DO UPDATE SET
+            id = EXCLUDED.id,
             name = EXCLUDED.name,
             value = EXCLUDED.value,
             version = EXCLUDED.version
         WHERE
-            codes.name IS DISTINCT FROM EXCLUDED.name
+            codes.id IS DISTINCT FROM EXCLUDED.id
+            OR codes.name IS DISTINCT FROM EXCLUDED.name
             OR codes.value IS DISTINCT FROM EXCLUDED.value
             OR codes.version IS DISTINCT FROM EXCLUDED.version
         RETURNING id
