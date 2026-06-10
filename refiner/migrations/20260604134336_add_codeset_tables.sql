@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS codes(
         ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS condition_child_rsg_codes (
+CREATE TABLE IF NOT EXISTS conditions_rsg_codes (
     condition_id UUID REFERENCES conditions(id) ON DELETE CASCADE,
     code_id UUID REFERENCES codes(id) ON DELETE CASCADE, 
     PRIMARY KEY (condition_id, code_id)
@@ -84,6 +84,6 @@ ALTER TABLE configurations_conditions
     FOREIGN KEY (condition_id) 
     REFERENCES conditions (id);
 
-DROP TABLE IF EXISTS condition_child_rsg_codes;
+DROP TABLE IF EXISTS conditions_rsg_codes;
 DROP TABLE IF EXISTS custom_codes;
 DROP TABLE IF EXISTS codes;

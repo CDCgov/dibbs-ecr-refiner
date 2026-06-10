@@ -324,7 +324,7 @@ def _insert_condition_to_child_rsg_relationships(
 ) -> None:
     logger.info("⏳ Upserting code <> child RSG relationships...")
     relationship_upsert_query = """
-        INSERT INTO condition_child_rsg_codes (
+        INSERT INTO conditions_rsg_codes (
             condition_id,
             code_id
         )
