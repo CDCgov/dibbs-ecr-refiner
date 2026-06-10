@@ -50,7 +50,7 @@ jobs:
           pip install -r dev-requirements.txt -r requirements.txt
       - name: Run integration tests
         run: |
-          pytest tests --ignore=tests/integration/scenarios
+          pytest tests/integration --ignore=tests/integration/scenarios
 
   run-scenarios:
     runs-on: ubuntu-latest
