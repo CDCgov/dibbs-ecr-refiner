@@ -33,6 +33,15 @@ import { Icon } from '@trussworks/react-uswds';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@components/Modal';
+import { InfoIcon } from '@components/Tooltip/InfoIcon';
+import { Table } from '@components/Table';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -55,6 +64,8 @@ export function ConfigBuild() {
     isError,
   } = useGetConfiguration(id ?? '');
 
+  const [isRsgDetailsModalOpen, setIsRsgDetailsModalOpen] = useState(false);
+
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
@@ -70,7 +81,25 @@ export function ConfigBuild() {
   return (
     <>
       <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
+        <div className="flex items-center">
+          <Title>{configuration.data.display_name}</Title>
+          <button
+            onClick={() =>
+              setIsRsgDetailsModalOpen((prev) => {
+                return !prev;
+              })
+            }
+            aria-hidden
+            className="ml-2! text-white hover:cursor-pointer"
+          >
+            <InfoIcon />
+          </button>
+          <RsgDetailsModal
+            open={isRsgDetailsModalOpen}
+            onClose={() => setIsRsgDetailsModalOpen(false)}
+            configurationData={configuration.data}
+          ></RsgDetailsModal>
+        </div>
         <Status version={configuration.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
@@ -548,4 +577,46 @@ function OptionsListContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsList({ children }: { children: React.ReactNode }) {
   return <ul className="flex flex-col gap-2">{children}</ul>;
+}
+
+interface RsgDetailsModal {
+  open: boolean;
+  onClose: () => void;
+  configurationData: GetConfigurationResponse;
+}
+
+function RsgDetailsModal({
+  open,
+  onClose,
+  configurationData,
+}: RsgDetailsModal) {
+  console.log(configurationData);
+  return (
+    <Modal open={open} onClose={onClose} position="top">
+      <ModalHeader>
+        <ModalTitle className="font-public-sans">
+          {configurationData.display_name}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p>
+          Applies to eCR documents reportable for [these reportable condition
+          SNOMED codes]. Only one output will be produced per condition group.
+        </p>
+
+        <table>
+          <thead className="border-b-gray-cool-20 border-b">
+            <th className="px-2 py-3 font-bold">SNOMED code</th>
+            <th className="px-2 py-3 font-bold">Display name</th>
+          </thead>
+          <tbody>
+            <tr className="border-b-gray-cool-20 border-b">
+              <td className="px-2 py-3">rsgCode</td>
+              <td className="px-2 py-3">rsgDisplayName</td>
+            </tr>
+          </tbody>
+        </table>
+      </ModalBody>
+    </Modal>
+  );
 }
