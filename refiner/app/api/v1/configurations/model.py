@@ -8,8 +8,8 @@ from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
+    DbNarrativeAction,
     DbSectionAction,
-    DbSectionNarrative,
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
 )
@@ -178,7 +178,7 @@ class SectionUpdateInput(BaseModel):
     """
 
     include: bool | None = None
-    narrative: DbSectionNarrative | None = None
+    narrative: DbNarrativeAction | None = None
     action: DbSectionAction | None = None
     name: str | None = None
     current_code: str

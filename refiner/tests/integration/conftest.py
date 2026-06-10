@@ -14,8 +14,8 @@ from testcontainers.compose import DockerCompose
 
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
+    DbNarrativeAction,
     DbSectionAction,
-    DbSectionNarrative,
 )
 
 os.environ["ENV"] = "local"
@@ -133,7 +133,7 @@ def update_section_processing(authed_client):
         current_code: str,
         *,
         include: bool | None = None,
-        narrative: DbSectionNarrative | None = None,
+        narrative: DbNarrativeAction | None = None,
         action: DbSectionAction | None = None,
     ):
         payload = {
