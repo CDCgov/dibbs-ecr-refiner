@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from typing import TypedDict
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv

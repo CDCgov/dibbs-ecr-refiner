@@ -2,7 +2,6 @@ import json
 import re
 from dataclasses import dataclass, field
 from typing import Any, TypedDict
-from uuid import UUID, uuid4
 
 import psycopg
 from config import TES_DATA_DIR, logger
