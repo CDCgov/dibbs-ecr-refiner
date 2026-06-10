@@ -316,6 +316,8 @@ class ProcessedConfiguration:
                 system_to_code_maps={"other": other_codings}
             )
 
+#         TODO concatenate code_system[i].code into codes to be returned
+
         return cls(
             codes=validated.codes,
             code_system_sets=code_system_sets,
