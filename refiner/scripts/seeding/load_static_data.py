@@ -40,7 +40,6 @@ class ConditionRow(TypedDict):
     A condition row to upsert into the DB.
     """
 
-    id: UUID
     canonical_url: str
     version: str
     display_name: str
@@ -96,21 +95,24 @@ type ConditionToCodeRelationshipIndex = dict[
     ConditionUniqueIndex, ConditionToCodeRelationshipTrace
 ]
 
+type ConditionIndexedCodeRow = dict[ConditionUniqueIndex, CodeRow]
+
 
 def _build_rsg_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
     system_data: dict[SystemOid, SystemDbId],
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
-) -> tuple[list[CodeRow], ConditionToCodeRelationshipIndex]:
+) -> tuple[list[ConditionIndexedCodeRow], ConditionToCodeRelationshipIndex]:
     snomed_db_id = system_data[SNOMED_OID]
-    rsg_codes: list[CodeRow] = []
+    rsg_codes: list[ConditionIndexedCodeRow] = []
     joins_to_update = 0
 
     for parent in condition_groupers:
         child_rsg_code_ids: list[UUID] = []
         cond_canonical_url = parent.get("url", "")
         cond_version = parent.get("version", "")
+        cond_index = (cond_canonical_url, cond_version)
 
         for child_vs in get_child_rsg_valuesets(
             parent=parent, all_vs_map=valuesets_map
@@ -119,19 +121,14 @@ def _build_rsg_codes(
                 name = parse_child_rsg_details_from_use_context(
                     child_vs.get("useContext", "")
                 )
-                child_code_db_id = uuid4()
-                child_rsg_code_ids.append(child_code_db_id)
-                rsg_codes.append(
-                    CodeRow(
-                        id=child_code_db_id,
-                        value=snomed_code,
-                        version=cond_version,
-                        name=name,
-                        system_id=snomed_db_id,
-                    )
+                code_data = CodeRow(
+                    value=snomed_code,
+                    version=cond_version,
+                    name=name,
+                    system_id=snomed_db_id,
                 )
 
-        cond_index = (cond_canonical_url, cond_version)
+                rsg_codes.append({cond_index: code_data})
 
         if len(child_rsg_code_ids) > 0 and cond_index in list(
             condition_to_code_relationships.keys()
@@ -184,7 +181,6 @@ def _upsert_conditions_and_groupers(
     condition_upsert_query = """
         WITH upsert_condition AS (
             INSERT INTO conditions (
-                id,
                 canonical_url,
                 version,
                 display_name,
@@ -199,7 +195,6 @@ def _upsert_conditions_and_groupers(
                 coverage_level_date
             )
             VALUES (
-                %(id)s,
                 %(canonical_url)s,
                 %(version)s,
                 %(display_name)s,
@@ -215,7 +210,6 @@ def _upsert_conditions_and_groupers(
             )
             ON CONFLICT (canonical_url, version)
             DO UPDATE SET
-                id = EXCLUDED.id,
                 display_name = EXCLUDED.display_name,
                 child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
                 loinc_codes = EXCLUDED.loinc_codes,
@@ -285,8 +279,12 @@ def _upsert_conditions_and_groupers(
     for item in processed:
         cond = item["condition"]
         cursor.execute(condition_upsert_query, cond)
+        condition_response = cursor.fetchone()
 
-        cond_id = cond.get("id")
+        if condition_response is None or not condition_response[0]:
+            raise ValueError("Condition upsert did not return ID")
+
+        cond_id = condition_response[0]
         condition_canonical_url = cond.get("canonical_url")
         condition_version = cond.get("version")
         condition_name = cond.get("display_name")
@@ -348,53 +346,75 @@ def _insert_condition_to_child_rsg_relationships(
     return
 
 
-def _upsert_codes(cursor: Cursor, data: list[CodeRow]):
+def _upsert_codes(
+    cursor: Cursor,
+    data: list[ConditionIndexedCodeRow],
+    condition_to_code_relationships: ConditionToCodeRelationshipIndex,
+):
     """
     Upserts code rows.
     """
 
     logger.info("⏳ Upserting code records...")
 
-    condition_upsert_query = """
-        INSERT INTO codes (
-            id,
-            name,
-            value,
-            version,
-            system_id
+    code_upsert_query = """
+        WITH upsert_code AS (
+            INSERT INTO codes (
+                name,
+                value,
+                version,
+                system_id
+            )
+            VALUES (
+                %(name)s,
+                %(value)s,
+                %(version)s,
+                %(system_id)s
+            )
+            ON CONFLICT (value, system_id, version)
+            DO UPDATE SET
+                name = EXCLUDED.name,
+                value = EXCLUDED.value,
+                version = EXCLUDED.version
+            WHERE
+                codes.name IS DISTINCT FROM EXCLUDED.name
+                OR codes.value IS DISTINCT FROM EXCLUDED.value
+                OR codes.version IS DISTINCT FROM EXCLUDED.version
+            RETURNING id
         )
-        VALUES (
-            %(id)s,
-            %(name)s,
-            %(value)s,
-            %(version)s,
-            %(system_id)s
-        )
-        ON CONFLICT (value, system_id, version)
-        DO UPDATE SET
-            id = EXCLUDED.id,
-            name = EXCLUDED.name,
-            value = EXCLUDED.value,
-            version = EXCLUDED.version
-        WHERE
-            codes.id IS DISTINCT FROM EXCLUDED.id
-            OR codes.name IS DISTINCT FROM EXCLUDED.name
-            OR codes.value IS DISTINCT FROM EXCLUDED.value
-            OR codes.version IS DISTINCT FROM EXCLUDED.version
-        RETURNING id
+        SELECT id FROM upsert_code
+
+        UNION ALL
+
+        SELECT id
+        FROM codes
+        WHERE value = %(value)s
+            AND system_id = %(system_id)s
+            AND version = %(version)s
+            AND NOT EXISTS (SELECT 1 FROM upsert_code)
+
+        LIMIT 1
     """
 
-    params = [
-        {
-            "id": code.get("id"),
-            "name": code.get("name"),
-            "value": code.get("value"),
-            "version": code.get("version"),
-            "system_id": code.get("system_id"),
-        }
-        for code in data
-    ]
-    cursor.executemany(condition_upsert_query, params)
+    for code in data:
+        for condition_index, code in code.items():
+            params = {
+                "name": code.get("name"),
+                "value": code.get("value"),
+                "version": code.get("version"),
+                "system_id": code.get("system_id"),
+            }
+
+            cursor.execute(code_upsert_query, params)
+            code_response = cursor.fetchone()
+
+            if code_response is None or not code_response[0]:
+                raise ValueError("Code upsert did not return ID")
+
+            condition_to_code_relationships[condition_index].get(
+                "child_rsg_snomed_code_ids"
+            ).append(code_response[0])
+    return condition_to_code_relationships
 
 
 def _build_condition_groupers(
@@ -510,8 +530,8 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
         cursor=cursor, processed=processed
     )
 
-    # seed codes, eventually this will replace the entirety
-    # of the jsonb-forward functionality
+    # # seed codes, eventually this will replace the entirety
+    # # of the jsonb-forward functionality
     (rsg_codes, condition_to_code_relationships) = _build_rsg_codes(
         valuesets_map=all_valuesets_map,
         system_data=system_data,
@@ -519,7 +539,11 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
         condition_groupers=condition_groupers,
     )
     logger.info(f"⬆️  Total RSG codes to upsert: {len(rsg_codes)}")
-    _upsert_codes(cursor=cursor, data=rsg_codes)
+    condition_to_code_relationships = _upsert_codes(
+        cursor=cursor,
+        data=rsg_codes,
+        condition_to_code_relationships=condition_to_code_relationships,
+    )
     _insert_condition_to_child_rsg_relationships(
         cursor=cursor, data=condition_to_code_relationships
     )
