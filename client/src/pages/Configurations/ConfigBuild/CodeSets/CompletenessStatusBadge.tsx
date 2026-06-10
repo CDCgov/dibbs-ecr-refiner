@@ -50,22 +50,24 @@ export function CompletenessStatusBadge({
           <ModalBody>
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-3/5" />
-                <col className="w-2/5" />
+                <col className="w-[55%]" />
+                <col className="w-[45%]" />
               </colgroup>
               <thead>
                 <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                  <th className="p-2" scope="col">
+                  <th className="px-2 py-2 text-left" scope="col">
                     Expanded codes
                   </th>
-                  <th scope="col">Status</th>
+                  <th className="px-2 py-2 text-left" scope="col">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-gray-cool-20 divide-y">
                 {completenessStatus.code_category_statuses.map((ccs) => (
                   <tr key={ccs.category}>
                     <td className="px-2 py-3">{ccs.name}</td>
-                    <td className="px-2 py-3 align-middle">
+                    <td className="px-2 py-3">
                       <CategoryCompletenessStatus
                         completeness={ccs.completeness}
                       />
@@ -123,7 +125,7 @@ function CategoryCompletenessStatus({
   return (
     <div
       className={classNames(
-        'font-public-sans flex items-center gap-3 whitespace-nowrap',
+        'font-public-sans flex items-center gap-2 whitespace-nowrap',
         {
           'text-state-success-dark font-semibold':
             completeness === 'fully complete',
