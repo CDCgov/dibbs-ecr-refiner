@@ -54,7 +54,7 @@ class ContextGrouperRow(TypedDict):
     category: str
     canonical_url: str
     code_count: int
-    completeness: str
+    completeness: str | None
 
 
 class ProcessedCondition(TypedDict):

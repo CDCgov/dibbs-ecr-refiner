@@ -1,7 +1,7 @@
 -- migrate:up
 
 ALTER TABLE conditions_context_groupers
-    ADD COLUMN completeness TEXT NOT NULL DEFAULT 'partially complete';
+ADD COLUMN completeness TEXT;
 
 -- migrate:down
 

@@ -141,7 +141,7 @@ CREATE TABLE public.conditions_context_groupers (
     code_count integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    completeness text DEFAULT 'partially complete'::text NOT NULL
+    completeness text
 );
 
 

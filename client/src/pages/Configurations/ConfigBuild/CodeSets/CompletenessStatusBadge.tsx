@@ -7,7 +7,11 @@ import {
   ModalFooter,
 } from '@components/Modal';
 import { Button } from '@components/Button';
-import { CodeSetStatus, CompletenessStatus } from '../../../../api/schemas';
+import {
+  CodeCategoryStatus,
+  CodeSetStatus,
+  CompletenessStatus,
+} from '../../../../api/schemas';
 import classNames from 'classnames';
 
 export interface CompletenessStatusBadgeProps {
@@ -110,11 +114,6 @@ function Badge({ status }: BadgeProps) {
   );
 }
 
-type CodeCategoryStatus =
-  | 'not included'
-  | 'partially complete'
-  | 'fully complete';
-
 interface CategoryCompletenessStatusProps {
   completeness: CodeCategoryStatus;
 }
@@ -123,24 +122,23 @@ function CategoryCompletenessStatus({
   completeness,
 }: CategoryCompletenessStatusProps) {
   return (
-    <div
-      className={classNames(
-        'font-public-sans flex items-center gap-2 whitespace-nowrap',
-        {
+    <div className="flex items-center gap-2">
+      {completeness === 'fully complete' && <CheckIcon />}
+      {completeness === 'partially complete' && <DashIcon />}
+      {completeness === 'not included' && <XIcon />}
+
+      <span
+        className={classNames('font-public-sans whitespace-nowrap', {
           'text-state-success-dark font-semibold':
             completeness === 'fully complete',
           'text-gray-cool-60 font-normal italic':
             completeness === 'not included',
           'text-yellow-vivid-50v font-normal italic':
             completeness === 'partially complete',
-        }
-      )}
-    >
-      {completeness === 'fully complete' && <CheckIcon />}
-      {completeness === 'partially complete' && <DashIcon />}
-      {completeness === 'not included' && <XIcon />}
-
-      <span>{completeness}</span>
+        })}
+      >
+        {completeness}
+      </span>
     </div>
   );
 }

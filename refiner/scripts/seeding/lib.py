@@ -93,7 +93,7 @@ class ContextGrouperInfo:
     category: str
     canonical_url: str
     code_count: int
-    completeness: str
+    completeness: str | None
 
 
 @dataclass
@@ -326,20 +326,17 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
     return None
 
 
-def map_coverage_level_to_acg_completeness(vs: dict) -> str:
+def map_coverage_level_to_acg_completeness(vs: dict) -> str | None:
     """
-    Maps a ValueSet's CRMI curation coverage level to the app's ACG completeness label.
+    Maps TES CRMI curation coverage level to the app's ACG completeness label.
 
-    Rules:
-    - No coverage extension / no level: "partially complete" if the ACG exists
-    - level == "partial": "partially complete"
-    - level == "complete": "fully complete"
+    Missing coverage returns None so it is stored as NULL.
     """
 
     coverage = parse_coverage_level(vs)
 
     if coverage is None:
-        return AcgCompleteness.PARTIALLY_COMPLETE
+        return None
 
     if coverage.level == "complete":
         return AcgCompleteness.FULLY_COMPLETE
@@ -352,7 +349,7 @@ def map_coverage_level_to_acg_completeness(vs: dict) -> str:
         f"{vs.get('title') or vs.get('url')}"
     )
 
-    return AcgCompleteness.PARTIALLY_COMPLETE
+    return None
 
 
 def parse_acg_category(name: str) -> str:
