@@ -673,7 +673,7 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 --
 
 ALTER TABLE ONLY public.condition_child_rsg_codes
-    ADD CONSTRAINT condition_child_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT condition_child_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
 
 
 --
@@ -681,7 +681,7 @@ ALTER TABLE ONLY public.condition_child_rsg_codes
 --
 
 ALTER TABLE ONLY public.condition_child_rsg_codes
-    ADD CONSTRAINT condition_child_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT condition_child_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
 --

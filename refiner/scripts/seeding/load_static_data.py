@@ -221,8 +221,7 @@ def _upsert_conditions_and_groupers(
                 coverage_level_reason = EXCLUDED.coverage_level_reason,
                 coverage_level_date = EXCLUDED.coverage_level_date
             WHERE
-                conditions.id IS DISTINCT FROM EXCLUDED.id
-                OR conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
+                conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
                 OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
                 OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
                 OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
@@ -282,7 +281,9 @@ def _upsert_conditions_and_groupers(
         condition_response = cursor.fetchone()
 
         if condition_response is None or not condition_response[0]:
-            raise ValueError("Condition upsert did not return ID")
+            raise ValueError(
+                f"Condition upsert for condition with params {cond} did not return ID"
+            )
 
         cond_id = condition_response[0]
         condition_canonical_url = cond.get("canonical_url")
@@ -409,7 +410,9 @@ def _upsert_codes(
             code_response = cursor.fetchone()
 
             if code_response is None or not code_response[0]:
-                raise ValueError("Code upsert did not return ID")
+                raise ValueError(
+                    f"Code upsert for code with params {params} did not return ID"
+                )
 
             condition_to_code_relationships[condition_index].get(
                 "child_rsg_snomed_code_ids"
