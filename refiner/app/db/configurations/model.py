@@ -5,7 +5,7 @@ from uuid import UUID
 
 type DbSectionAction = Literal["retain", "refine"]
 
-type DbSectionNarrative = Literal["retain", "remove", "refine"]
+type DbNarrativeAction = Literal["retain", "remove", "reconstruct"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
@@ -62,7 +62,7 @@ class DbConfigurationSectionInstructions:
     """
 
     include: bool
-    narrative: DbSectionNarrative
+    narrative: DbNarrativeAction
     action: DbSectionAction
 
 

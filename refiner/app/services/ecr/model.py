@@ -2,7 +2,10 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final, Literal, TypedDict
 
-from app.db.configurations.model import DbConfigurationSectionInstructions
+from app.db.configurations.model import (
+    DbConfigurationSectionInstructions,
+    DbNarrativeAction,
+)
 
 if TYPE_CHECKING:
     from app.services.terminology import CodeSystemSets
@@ -445,7 +448,7 @@ class SectionProvenanceRecord:
     display_name: str
     include: bool
     action: str
-    narrative: Literal["retain", "remove", "refine"]
+    narrative: DbNarrativeAction
     config_version: int | None
     source: SectionSource
     outcome: SectionOutcome = SectionOutcome.REFINED_WITH_MATCHES

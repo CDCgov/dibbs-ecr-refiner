@@ -1,8 +1,11 @@
 import { Select } from '@components/Select';
 import { Field } from '@components/Field';
-import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
-import { DbSectionAction, DbSectionNarrative } from '../../../../api/schemas';
 import { useSectionUpdater } from './useSectionUpdater';
+import {
+  DbSectionAction,
+  DbNarrativeAction,
+  DbConfigurationSectionProcessing,
+} from '../../../../api/schemas';
 
 // TODO: Actual reconstruction logic is not yet implemented in backend.
 // When narrative="refine" is selected, the backend currently treats it as "remove".
@@ -38,7 +41,7 @@ export function NarrativeSelect({
         onChange={(e) => {
           onClearError();
           updateSection(currentSection, {
-            narrative: e.target.value as DbSectionNarrative,
+            narrative: e.target.value as DbNarrativeAction,
           });
         }}
         aria-label={`Narrative data handling for ${currentSection.name} section`}

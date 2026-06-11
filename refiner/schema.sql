@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.0
+-- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -130,6 +130,21 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    value text NOT NULL,
+    version text NOT NULL,
+    system_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: conditions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -165,7 +180,18 @@ CREATE TABLE public.conditions_context_groupers (
     canonical_url text NOT NULL,
     code_count integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    completeness text
+);
+
+
+--
+-- Name: conditions_rsg_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conditions_rsg_codes (
+    condition_id uuid NOT NULL,
+    code_id uuid NOT NULL
 );
 
 
@@ -227,6 +253,20 @@ CREATE TABLE public.configurations_sections (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     section_type public.configurations_sections_type NOT NULL,
     narrative public.section_narrative CONSTRAINT configurations_sections_narrative_new_not_null NOT NULL
+);
+
+
+--
+-- Name: custom_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.custom_codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    value text NOT NULL,
+    system_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -320,6 +360,22 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: codes codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT codes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codes codes_system_id_version_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, value);
+
+
+--
 -- Name: conditions conditions_canonical_url_version_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -349,6 +405,14 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conditions_rsg_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_rsg_codes
+    ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
 --
@@ -397,6 +461,22 @@ ALTER TABLE ONLY public.configurations_sections
 
 ALTER TABLE ONLY public.configurations_sections
     ADD CONSTRAINT configurations_sections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_codes custom_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_codes custom_codes_system_id_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_system_id_value_key UNIQUE (system_id, value);
 
 
 --
@@ -545,6 +625,13 @@ CREATE TRIGGER configurations_set_last_activated_at_on_status_change_trigger BEF
 
 
 --
+-- Name: codes update_codes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_codes_updated_at BEFORE UPDATE ON public.codes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: conditions_context_groupers update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -573,6 +660,13 @@ CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configur
 
 
 --
+-- Name: custom_codes update_custom_codes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_custom_codes_updated_at BEFORE UPDATE ON public.custom_codes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: systems update_systems_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -591,7 +685,23 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 --
 
 ALTER TABLE ONLY public.conditions_context_groupers
-    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
+    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: conditions_rsg_codes conditions_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_rsg_codes
+    ADD CONSTRAINT conditions_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions_rsg_codes conditions_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_rsg_codes
+    ADD CONSTRAINT conditions_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
 --
@@ -599,7 +709,7 @@ ALTER TABLE ONLY public.conditions_context_groupers
 --
 
 ALTER TABLE ONLY public.configurations_conditions
-    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -659,11 +769,27 @@ ALTER TABLE ONLY public.configurations_sections
 
 
 --
+-- Name: custom_codes custom_codes_system_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
+
+
+--
 -- Name: events_custom_code_uploads events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.events_custom_code_uploads
     ADD CONSTRAINT events_custom_code_uploads_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: codes fk_codes_system_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT fk_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
 
 
 --
@@ -724,4 +850,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260520185510'),
     ('20260526153052'),
     ('20260602161536'),
-    ('20260603120000');
+    ('20260603120000'),
+    ('20260604134336'),
+    ('20260608203714');
