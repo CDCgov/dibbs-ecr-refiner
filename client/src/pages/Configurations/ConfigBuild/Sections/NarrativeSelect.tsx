@@ -9,7 +9,7 @@ import {
 
 // TODO: Actual reconstruction logic is not yet implemented in backend.
 // When narrative="refine" is selected, the backend currently treats it as "remove".
-// See refiner/app/services/ecr/refine.py for the TODO comment.
+// See refiner/app/services/ecr/refine.py for the `TODO:`
 
 // TODO: Audit the existing frontend architecture in `client/src/pages` to identify
 // bottlenecks for forthcoming Refiner 2.0 designs
