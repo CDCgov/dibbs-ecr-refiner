@@ -19,6 +19,7 @@ export function Select({ children, className, ...props }: SelectProps) {
         className={classNames(
           'border-gray-cool-60 w-full appearance-none border bg-white px-2 py-2.5 text-black',
           'outline-black focus:not-data-focus:outline-none data-focus:outline-2 data-focus:-outline-offset-2',
+          'data-disabled:bg-gray-cool-10! data-disabled:cursor-not-allowed data-disabled:text-gray-600 data-disabled:opacity-60',
           className
         )}
         {...props}
