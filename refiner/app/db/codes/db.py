@@ -10,7 +10,7 @@ async def get_rsg_codes_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
 ) -> list[DbCode]:
     """
-    Function to get all RSG code objects for a configuration.
+    Function to get all RSG code objects for an identified condition.
     """
 
     query = """
