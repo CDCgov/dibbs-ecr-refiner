@@ -7,9 +7,9 @@ from lxml.etree import _Element
 from app.services.terminology import CodeSystemSets
 
 from ..model import NamespaceMap, SectionRunResult, SectionSpecification
+from ..narrative import append_section_provenance_footnote, create_minimal_section
 from . import entry_matching as _entry_matching
 from . import generic_matching as _generic_matching
-from .narrative import append_section_provenance_footnote, create_minimal_section
 from .traversal import get_section_by_code, get_section_loinc_codes
 
 # NOTE:

@@ -17,6 +17,7 @@ from app.services.ecr.model import (
     SectionRunResult,
     SectionSource,
 )
+from app.services.ecr.narrative import replace_narrative_with_removal_notice
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.section import (
     append_section_provenance_footnote,
@@ -25,7 +26,6 @@ from app.services.ecr.section import (
     get_section_loinc_codes,
     process_section,
 )
-from app.services.ecr.section.narrative import replace_narrative_with_removal_notice
 from app.services.ecr.specification import detect_eicr_version, load_spec
 from app.services.format import remove_element
 from app.services.terminology import ProcessedConfiguration

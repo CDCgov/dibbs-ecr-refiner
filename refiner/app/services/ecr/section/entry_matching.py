@@ -15,7 +15,7 @@ from ..model import (
     SectionRunResult,
     SectionSpecification,
 )
-from .narrative import (
+from ..narrative import (
     create_minimal_section,
     remove_all_comments,
     replace_narrative_with_removal_notice,

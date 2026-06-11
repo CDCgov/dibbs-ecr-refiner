@@ -20,7 +20,7 @@ REPORT_PATH: Path = SCENARIOS_DIR / "REPORT.md"
 # NOTE:
 # REFINER OUTPUT MARKER STRINGS
 # =============================================================================
-# duplicated from app/services/ecr/section/constants.py rather than imported
+# duplicated from app/services/ecr/narrative/constants.py rather than imported
 # * if the production strings change without a corresponding update
 # here, the report's "Disposition" column will show outdated labels (e.g.
 # "refined or retained" where the section is actually stubbed). that's a
