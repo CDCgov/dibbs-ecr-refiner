@@ -74,23 +74,24 @@ export function ConfigBuild() {
   return (
     <>
       <TitleContainer>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Title>{configuration.data.display_name}</Title>
-          <button
+          <Button
+            variant="unstyled"
             onClick={() => setIsRsgDetailsModalOpen(true)}
-            className="ml-2! text-white hover:cursor-pointer"
+            className="hover:cursor-pointer"
             aria-label="Open reporting specification details modal"
-            name="rsg-details-open-button"
           >
             <InfoIcon />
-          </button>
+          </Button>
           <RsgDetailsModal
             open={isRsgDetailsModalOpen}
             onClose={() => setIsRsgDetailsModalOpen(false)}
             primaryConditionDisplayName={configuration.data.display_name}
             rsgCodes={configuration.data.rsg_codes}
-          ></RsgDetailsModal>
+          />
         </div>
+
         <Status version={configuration.data.active_version} />
       </TitleContainer>
       <NavigationContainer>

@@ -232,7 +232,8 @@ async def get_configuration(
 
     # fetch all conditions from the db based on the primary condition's version
     all_conditions = await get_conditions_by_version_db(
-        db=db, version=primary_condition.version
+        version=primary_condition.version,
+        db=db,
     )
 
     latest_config = await get_latest_config_db(
@@ -284,7 +285,8 @@ async def get_configuration(
     )
 
     rsg_codes = await get_configuration_rsg_codes(
-        db=db, configuration_primary_condition_id=primary_condition.id
+        configuration_primary_condition_id=primary_condition.id,
+        db=db,
     )
     return GetConfigurationResponse(
         id=config.id,

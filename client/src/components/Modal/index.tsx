@@ -106,24 +106,13 @@ interface ModalSectionProps {
   className?: string;
 }
 
-function ModalHeader({ children, className }: ModalSectionProps) {
-  return (
-    <div
-      className={classNames('mx-auto mt-6 w-full pr-10 pb-6 pl-6', className)}
-    >
-      {children}
-    </div>
-  );
+function ModalHeader({ children }: ModalSectionProps) {
+  return <div className="mx-auto mt-6 w-full pr-10 pb-6 pl-6">{children}</div>;
 }
 
-function ModalTitle({ children, className }: ModalSectionProps) {
+function ModalTitle({ children }: ModalSectionProps) {
   return (
-    <DialogTitle
-      className={classNames(
-        'font-merriweather text-gray-90 text-3xl font-bold',
-        className
-      )}
-    >
+    <DialogTitle className="font-merriweather text-gray-90 text-3xl font-bold">
       {children}
     </DialogTitle>
   );
