@@ -583,8 +583,6 @@ function RsgDetailsModal({
   rsgCodes,
   primaryConditionDisplayName,
 }: RsgDetailsModal) {
-  const rsgCodesString = joinWithAnd(rsgCodes.map((c) => c.value));
-
   return (
     <Modal
       className="max-w-160!"
@@ -599,9 +597,8 @@ function RsgDetailsModal({
       </ModalHeader>
       <ModalBody>
         <p className="wrap-break-word">
-          Applies to eCR documents reportable for condition SNOMED codes{' '}
-          {rsgCodesString}. Only one output will be produced per condition
-          group.
+          Applies to eCR documents reportable for the conditions below. Only one
+          output will be produced per condition group.
         </p>
 
         <table>
@@ -627,11 +624,4 @@ function RsgDetailsModal({
       </ModalBody>
     </Modal>
   );
-}
-
-function joinWithAnd(arr: string[]) {
-  if (arr.length === 0) return '';
-  if (arr.length === 1) return arr[0];
-
-  return arr.slice(0, -1).join(', ') + ', and ' + arr.slice(-1).join();
 }
