@@ -18,11 +18,19 @@ test.describe('Configuration detail flow', () => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToBuildTab();
+
     await page.getByLabel('View TES code set information for Anotia').click();
 
     await expect(page.getByRole('columnheader')).toHaveText([
       'Code',
       'Code system',
+      'Display name',
+    ]);
+
+    await page.getByLabel('Open reporting specification details modal').click();
+
+    await expect(page.getByRole('columnheader')).toHaveText([
+      'SNOMED code',
       'Display name',
     ]);
   });

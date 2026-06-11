@@ -17,7 +17,7 @@ import {
   useDisassociateConditionWithConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { GetConfigurationResponse } from '../../../api/schemas';
+import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
@@ -77,20 +77,19 @@ export function ConfigBuild() {
         <div className="flex items-center">
           <Title>{configuration.data.display_name}</Title>
           <button
-            onClick={() =>
-              setIsRsgDetailsModalOpen((prev) => {
-                return !prev;
-              })
-            }
+            onClick={() => setIsRsgDetailsModalOpen(true)}
             aria-hidden
             className="ml-2! text-white hover:cursor-pointer"
+            aria-label="Open reporting specification details modal"
+            name="rsg-details-open-button"
           >
             <InfoIcon />
           </button>
           <RsgDetailsModal
             open={isRsgDetailsModalOpen}
             onClose={() => setIsRsgDetailsModalOpen(false)}
-            configurationData={configuration.data}
+            primaryConditionDisplayName={configuration.data.display_name}
+            rsgCodes={configuration.data.rsg_codes}
           ></RsgDetailsModal>
         </div>
         <Status version={configuration.data.active_version} />
@@ -575,17 +574,17 @@ function OptionsList({ children }: { children: React.ReactNode }) {
 interface RsgDetailsModal {
   open: boolean;
   onClose: () => void;
-  configurationData: GetConfigurationResponse;
+  rsgCodes: DbCode[];
+  primaryConditionDisplayName: string;
 }
 
 function RsgDetailsModal({
   open,
   onClose,
-  configurationData,
+  rsgCodes,
+  primaryConditionDisplayName,
 }: RsgDetailsModal) {
-  const rsgCodesString = joinWithAnd(
-    configurationData.rsg_codes.map((c) => c.value)
-  );
+  const rsgCodesString = joinWithAnd(rsgCodes.map((c) => c.value));
 
   return (
     <Modal
@@ -596,7 +595,7 @@ function RsgDetailsModal({
     >
       <ModalHeader className="pb-1!">
         <ModalTitle className="font-public-sans">
-          {configurationData.display_name}
+          {primaryConditionDisplayName}
         </ModalTitle>
       </ModalHeader>
       <ModalBody>
@@ -615,17 +614,10 @@ function RsgDetailsModal({
               <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
             </tr>
           </thead>
-          <tbody>
-            {configurationData.rsg_codes.map((c, i) => {
+          <tbody className="divide-gray-cool-20 divide-y">
+            {rsgCodes.map((c) => {
               return (
-                <tr
-                  key={c.value}
-                  className={
-                    i === configurationData.rsg_codes.length - 1
-                      ? ''
-                      : 'border-b-gray-cool-20 border-b'
-                  }
-                >
+                <tr key={c.value}>
                   <td className="py-3 pl-2">{c.value}</td>
                   <td className="py-3 pl-2">{c.name}</td>
                 </tr>
