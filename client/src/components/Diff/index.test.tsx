@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { Diff } from '.';
-import { Condition } from '../../api/schemas';
+import { Condition, FileInfoResponseValue } from '../../api/schemas';
 
 const mockMatchedCondition: Condition = {
   code: '840539006',
@@ -10,7 +10,7 @@ const mockMatchedCondition: Condition = {
   render_diff: true,
 };
 
-describe('ExternalLink', () => {
+describe('Diff view', () => {
   it('should display a warning if the file size is too big', () => {
     render(
       <Diff
@@ -21,9 +21,9 @@ describe('ExternalLink', () => {
       />
     );
     expect(
-      screen.getByText('Maximum uncompressed file size is', {
-        exact: false,
-      })
+      screen.getByText(
+        `Maximum uncompressed file size is ${FileInfoResponseValue.max_for_diff_rendering_mb}MB`
+      )
     ).toBeInTheDocument();
   });
 });
