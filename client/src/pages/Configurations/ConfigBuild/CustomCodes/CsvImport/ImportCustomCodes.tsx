@@ -17,7 +17,7 @@ import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import { IndexedCodeSystem } from '../../../../../api/schemas';
 
-const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
+export const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example
 6789,ICD-10,ICD-10 Example
 99999A,LOINC,LOINC Example`;
@@ -146,7 +146,6 @@ export function ImportCustomCodes({
         onSuccess: (res) => {
           setUploadRowErrors(null);
 
-          // TODO: get the code systems information here in one fetch
           const previewItems = res.data.preview_items;
           const codeSystems = res.data.code_systems;
 

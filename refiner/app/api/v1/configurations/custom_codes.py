@@ -229,7 +229,7 @@ def _get_row_code_system(
 
 
 def _validate_csv_upload_row(
-    row: dict, supported_systems: dict
+    row: dict, supported_systems: IndexedCodeSystem
 ) -> tuple[str, DbCodeSystem, str] | list[str]:
     code = (row.get("code_number") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
@@ -249,7 +249,9 @@ def _validate_csv_upload_row(
             code_system_raw=code_system_raw, supported_systems_by_key=supported_systems
         )
         if row_system is None:
-            allowed_systems_str = ", ".join(supported_systems.keys())
+            allowed_systems_str = ", ".join(
+                [s.display_name for s in supported_systems.values()]
+            )
             row_errors.append(
                 f"Invalid system: {code_system_raw}. "
                 f"[code_system] must be one of [{allowed_systems_str}]"
