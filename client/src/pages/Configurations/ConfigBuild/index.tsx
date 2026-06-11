@@ -600,8 +600,8 @@ function RsgDetailsModal({
       </ModalHeader>
       <ModalBody>
         <p className="wrap-break-word">
-          Applies to eCR documents reportable for reportable condition SNOMED
-          codes {rsgCodesString}. Only one output will be produced per condition
+          Applies to eCR documents reportable for condition SNOMED codes{' '}
+          {rsgCodesString}. Only one output will be produced per condition
           group.
         </p>
 
