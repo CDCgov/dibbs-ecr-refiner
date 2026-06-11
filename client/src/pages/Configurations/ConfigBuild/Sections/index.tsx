@@ -154,13 +154,21 @@ export function Sections({
                 <td className="w-[33%]">
                   {section.include ? (
                     <div className="flex justify-center">
-                      <RefineSwitch
-                        configurationId={configurationId}
-                        currentSection={section}
-                        sections={sectionProcessing}
-                        disabled={disabled || isDisabledSection(section.code)}
-                        isNarrativeOnly={isNarrativeSection(section.code)}
-                      />
+                      {isNarrativeSection(section.code) ? (
+                        <span
+                          className="text-gray-cool-50 text-center italic lg:text-right"
+                          aria-hidden
+                        >
+                          Not applicable for this section
+                        </span>
+                      ) : (
+                        <RefineSwitch
+                          configurationId={configurationId}
+                          currentSection={section}
+                          sections={sectionProcessing}
+                          disabled={disabled || isDisabledSection(section.code)}
+                        />
+                      )}
                     </div>
                   ) : null}
                 </td>
@@ -338,23 +346,8 @@ function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-  isNarrativeOnly,
-}: SelectionToggleProps & { isNarrativeOnly: boolean }) {
+}: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
-
-  if (isNarrativeOnly) {
-    return (
-      <Field className="flex -translate-x-4 flex-row items-center">
-        <Label
-          className="text-gray-cool-40 mr-2 w-72 text-right italic"
-          aria-hidden
-        >
-          Not applicable for this section
-        </Label>
-        <div className="w-12" />
-      </Field>
-    );
-  }
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine';
