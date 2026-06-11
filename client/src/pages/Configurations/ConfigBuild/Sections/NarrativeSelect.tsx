@@ -49,7 +49,7 @@ export function NarrativeSelect({
       >
         <option value="retain">Keep original</option>
         {!isNarrativeOnly && (
-          <option value="refine" disabled={codedDataAction === 'retain'}>
+          <option value="reconstruct" disabled={codedDataAction === 'retain'}>
             Reconstruct
           </option>
         )}

@@ -165,7 +165,7 @@ describe('Configuration sections', () => {
     expect(options[0]).toHaveTextContent('Keep original');
     expect(options[0]).toHaveValue('retain');
     expect(options[1]).toHaveTextContent('Reconstruct');
-    expect(options[1]).toHaveValue('refine');
+    expect(options[1]).toHaveValue('reconstruct');
     expect(options[2]).toHaveTextContent('Exclude');
     expect(options[2]).toHaveValue('remove');
   });
@@ -311,7 +311,7 @@ describe('Configuration sections', () => {
     const select = within(row).getByRole('combobox');
     const options = within(select).getAllByRole('option');
     const reconstructOption = options.find(
-      (opt) => opt.getAttribute('value') === 'refine'
+      (opt) => opt.getAttribute('value') === 'reconstruct'
     );
     expect(reconstructOption).toBeDefined();
     expect(reconstructOption).toBeDisabled();
@@ -337,7 +337,7 @@ describe('Configuration sections', () => {
     const select = within(row).getByRole('combobox');
     const options = within(select).getAllByRole('option');
     const reconstructOption = options.find(
-      (opt) => opt.getAttribute('value') === 'refine'
+      (opt) => opt.getAttribute('value') === 'reconstruct'
     );
     expect(reconstructOption).toBeDefined();
     expect(reconstructOption).not.toBeDisabled();

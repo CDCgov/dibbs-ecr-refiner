@@ -383,7 +383,7 @@ function RefineSwitch({
 
   const handleSwitchChange = (checked: boolean) => {
     // TODO: This validation should eventually be enforced by backend API as well
-    if (!checked && currentSection.narrative === 'refine') {
+    if (!checked && currentSection.narrative === 'reconstruct') {
       onError();
       return;
     }
