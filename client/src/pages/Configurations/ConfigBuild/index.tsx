@@ -78,7 +78,6 @@ export function ConfigBuild() {
           <Title>{configuration.data.display_name}</Title>
           <button
             onClick={() => setIsRsgDetailsModalOpen(true)}
-            aria-hidden
             className="ml-2! text-white hover:cursor-pointer"
             aria-label="Open reporting specification details modal"
             name="rsg-details-open-button"
