@@ -89,7 +89,7 @@ CREATE TYPE public.section_action AS ENUM (
 CREATE TYPE public.section_narrative AS ENUM (
     'retain',
     'remove',
-    'refine'
+    'reconstruct'
 );
 
 
