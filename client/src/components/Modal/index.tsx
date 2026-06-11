@@ -121,7 +121,7 @@ function ModalTitle({ children }: ModalSectionProps) {
 function ModalBody({ children, className }: ModalSectionProps) {
   return (
     <div className={classNames('px-6 pb-6', className)}>
-      <div className="flex flex-col text-left">{children}</div>
+      <div className="flex flex-col gap-4 text-left">{children}</div>
     </div>
   );
 }
