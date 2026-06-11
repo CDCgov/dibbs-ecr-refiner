@@ -18,7 +18,7 @@ describe('Diff view', () => {
         unrefined_eicr=""
         condition={mockMatchedCondition}
         renderDiff={false}
-      ></Diff>
+      />
     );
     expect(
       screen.getByText(

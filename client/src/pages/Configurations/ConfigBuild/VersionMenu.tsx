@@ -62,7 +62,7 @@ export function VersionMenu({
                   aria-hidden
                   key={`${config.id}-divider`}
                   className="bg-gray-cool-10 my-1 h-px"
-                ></div>
+                />
               )}
             </Fragment>
           ))}
@@ -71,7 +71,7 @@ export function VersionMenu({
       <div
         aria-hidden
         className="border-gray-cool-20 mx-1 hidden h-10 border-l md:block"
-      ></div>
+      />
     </>
   );
 }

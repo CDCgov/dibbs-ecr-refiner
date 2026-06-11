@@ -39,6 +39,13 @@ export default defineConfig(
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...tanstackQuery.configs.recommended.rules,
+      'react/self-closing-comp': [
+        'error',
+        {
+          component: true,
+          html: true,
+        },
+      ],
 
       'react/jsx-curly-brace-presence': [
         'error',
