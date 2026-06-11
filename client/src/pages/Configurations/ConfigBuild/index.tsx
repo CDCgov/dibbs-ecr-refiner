@@ -597,7 +597,7 @@ function RsgDetailsModal({
       </ModalHeader>
       <ModalBody>
         <p className="wrap-break-word">
-          Applies to eCR documents reportable for the conditions below. Only one
+          Applies to eCR documents reportable for the codes below. Only one
           output will be produced per condition group.
         </p>
 
