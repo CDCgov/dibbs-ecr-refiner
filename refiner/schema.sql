@@ -16,20 +16,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS '';
-
-
---
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -169,7 +155,8 @@ CREATE TABLE public.conditions_context_groupers (
     canonical_url text NOT NULL,
     code_count integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    completeness text
 );
 
 
@@ -838,4 +825,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260520185510'),
     ('20260526153052'),
     ('20260602161536'),
-    ('20260604134336');
+    ('20260608203714');
