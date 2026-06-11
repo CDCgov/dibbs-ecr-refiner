@@ -11,8 +11,8 @@ from lxml import etree
 # PATHS
 # =============================================================================
 
-SCRIPT_DIR: Path = Path(__file__).resolve().parent
-SCENARIOS_DIR: Path = SCRIPT_DIR.parent
+SCRIPT_FILE: Path = Path(__file__).resolve()
+SCENARIOS_DIR: Path = SCRIPT_FILE.parent
 SNAPSHOTS_DIR: Path = SCENARIOS_DIR / "snapshots"
 REPORT_PATH: Path = SCENARIOS_DIR / "REPORT.md"
 
@@ -349,7 +349,7 @@ def _render_header() -> str:
 
             ```
             pytest tests/integration/scenarios/ --update-snapshots
-            python tests/integration/scenarios/authoring/build_report.py
+            python tests/integration/scenarios/build_report.py
             ```
 
             This report summarizes the behaviors pinned by the scenarios test suite at `tests/integration/scenarios/`. Each scenario refines a committed eICR/RR pair against a committed configuration JSON and asserts in two layers: validation (well-formedness, CDA R2 XSD, schematron) and snapshot comparison against committed expected files.
@@ -471,7 +471,7 @@ def _render_appendix() -> str:
             pytest tests/integration/scenarios/                                  # run all scenarios + smoke tests
             pytest tests/integration/scenarios/test_<fixture>.py -k <scenario>   # one scenario
             pytest tests/integration/scenarios/ --update-snapshots               # regenerate after intentional changes
-            python tests/integration/scenarios/authoring/build_report.py        # regenerate this report
+            python tests/integration/scenarios/build_report.py        # regenerate this report
             ```
 
             See [`tests/integration/scenarios/README.md`](./README.md) for adding fixtures, configurations, and scenarios.
@@ -480,7 +480,7 @@ def _render_appendix() -> str:
     )
 
 
-def build_report(scenarios: list[ScenarioSnapshot]) -> str:
+def _compose_report(scenarios: list[ScenarioSnapshot]) -> str:
     """
     Compose the full report from its sections, single trailing newline.
     """
@@ -530,13 +530,17 @@ def _check_coverage_references_known_scenarios(
         )
 
 
-def main() -> int:
+def build_report() -> int:
     scenarios = discover_scenarios()
     _check_coverage_references_known_scenarios(scenarios)
-    report = build_report(scenarios)
+    report = _compose_report(scenarios)
     REPORT_PATH.write_text(report)
     print(f"Wrote {REPORT_PATH.relative_to(SCENARIOS_DIR.parent.parent)}")
     return 0
+
+
+def main() -> int:
+    return build_report()
 
 
 if __name__ == "__main__":

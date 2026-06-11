@@ -11,7 +11,7 @@ alias id := install-dev
 @_default:
     just --list server
 
-set dotenv-load := true
+set dotenv-load
 
 _venv:
     [ -d .venv ] || python3 -m venv .venv
@@ -47,5 +47,5 @@ install-dev: _venv
 
 [doc('Seed Localstack with the infra needed for manual tests')]
 [group('localstack')]
-seed-localstack:
-    python ./tests/localstack/seed.py
+seed-localstack: _venv
+    .venv/bin/python ./tests/localstack/seed.py
