@@ -39,6 +39,13 @@ export default defineConfig(
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...tanstackQuery.configs.recommended.rules,
+      'react/function-component-definition': [
+        'error',
+        {
+          namedComponents: 'function-declaration',
+          unnamedComponents: 'arrow-function',
+        },
+      ],
       'react/self-closing-comp': [
         'error',
         {
