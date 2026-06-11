@@ -46,6 +46,14 @@ export default defineConfig(
           unnamedComponents: 'arrow-function',
         },
       ],
+      'react/self-closing-comp': [
+        'error',
+        {
+          component: true,
+          html: true,
+        },
+      ],
+
       'react/jsx-curly-brace-presence': [
         'error',
         {
