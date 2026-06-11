@@ -86,6 +86,17 @@ class CoverageLevel:
 
 
 @dataclass
+class AcgCompleteness:
+    """
+    Metadata for ACG Completeness.
+    """
+
+    NOT_INCLUDED = "not included"
+    PARTIALLY_COMPLETE = "partially complete"
+    FULLY_COMPLETE = "fully complete"
+
+
+@dataclass
 class ContextGrouperInfo:
     """
     Metadata for a single Additional Context Grouper ValueSet.
@@ -95,6 +106,7 @@ class ContextGrouperInfo:
     category: str
     canonical_url: str
     code_count: int
+    completeness: str | None
 
 
 @dataclass
@@ -169,6 +181,7 @@ class ConditionData:
                     category=parse_acg_category(name),
                     canonical_url=sibling_vs.get("url", ""),
                     code_count=len(codes),
+                    completeness=map_coverage_level_to_acg_completeness(sibling_vs),
                 )
             )
 
@@ -245,6 +258,7 @@ class ConditionData:
                 "category": cg.category,
                 "canonical_url": cg.canonical_url,
                 "code_count": cg.code_count,
+                "completeness": cg.completeness,
             }
             for cg in self.context_groupers
         ]
@@ -334,6 +348,32 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
             return None
 
         return CoverageLevel(level=level, reason=reason, date=date)
+
+    return None
+
+
+def map_coverage_level_to_acg_completeness(vs: dict) -> str | None:
+    """
+    Maps TES CRMI curation coverage level to the app's ACG completeness label.
+
+    Missing coverage returns None so it is stored as NULL.
+    """
+
+    coverage = parse_coverage_level(vs)
+
+    if coverage is None:
+        return None
+
+    if coverage.level == "complete":
+        return AcgCompleteness.FULLY_COMPLETE
+
+    if coverage.level == "partial":
+        return AcgCompleteness.PARTIALLY_COMPLETE
+
+    logger.warning(
+        f"Unexpected ACG coverage level '{coverage.level}' on "
+        f"{vs.get('title') or vs.get('url')}"
+    )
 
     return None
 
