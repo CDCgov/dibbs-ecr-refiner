@@ -3,7 +3,7 @@
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'section_narrative') THEN
-    CREATE TYPE section_narrative AS ENUM ('retain', 'remove', 'refine');
+    CREATE TYPE section_narrative AS ENUM ('retain', 'remove', 'reconstruct');
   END IF;
 END $$;
 
@@ -36,7 +36,7 @@ ALTER TABLE configurations_sections
 ALTER TABLE configurations_sections
   ADD COLUMN narrative_old boolean;
 
--- Migrate data back: 'retain' -> true, 'remove'/'refine' -> false
+-- Migrate data back: 'retain' -> true, 'remove'/'reconstruct' -> false
 UPDATE configurations_sections
 SET narrative_old = CASE
   WHEN narrative = 'retain' THEN true
