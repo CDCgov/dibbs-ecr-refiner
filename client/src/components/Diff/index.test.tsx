@@ -22,7 +22,7 @@ describe('Diff view', () => {
     );
     expect(
       screen.getByText(
-        `Maximum uncompressed file size is ${FileInfoResponseValue.max_for_diff_rendering_mb}`
+        `Maximum uncompressed file size is ${FileInfoResponseValue.max_for_diff_rendering_mb}MB`
       )
     ).toBeInTheDocument();
   });
