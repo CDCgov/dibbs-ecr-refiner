@@ -98,20 +98,17 @@ export function Sections({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-scroll">
-        {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
-            whether a virtualized list is appropriate for large section counts.
-            */}
         <table className="w-full table-fixed">
           <thead className="sticky top-0 z-10 bg-white">
             <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-              <th scope="col" className="w-[10%] pt-3 pb-3">
+              <th scope="col" className="w-20 py-3">
                 Include
               </th>
-              <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
+              <th scope="col" className="w-60 text-left">
                 Section name
               </th>
-              <th scope="col" className="align-right w-[33%] pt-3 pb-3">
-                <div className="flex items-center justify-center gap-1">
+              <th scope="col" className="w-60">
+                <div className="flex gap-1">
                   <span>Coded data</span>
                   <Tooltip
                     position="left"
@@ -119,8 +116,8 @@ export function Sections({
                   />
                 </div>
               </th>
-              <th scope="col" className="w-[17%] pt-3 pb-3">
-                <div className="flex items-center justify-center gap-1">
+              <th scope="col" className="w-60">
+                <div className="flex gap-1">
                   <span>Narrative data</span>
                   <Tooltip
                     position="left"
@@ -133,7 +130,7 @@ export function Sections({
           <tbody className="divide-gray-cool-20 divide-y">
             {sectionProcessing.map((section) => (
               <tr key={section.code} className="text-gray-cool-60">
-                <td className="w-[10%]">
+                <td>
                   <div className="flex justify-center p-8">
                     <IncludeCheckbox
                       configurationId={configurationId}
@@ -143,7 +140,7 @@ export function Sections({
                     />
                   </div>
                 </td>
-                <td className="w-[40%]">
+                <td>
                   <SectionName
                     configurationId={configurationId}
                     section={section}
@@ -151,28 +148,24 @@ export function Sections({
                     setSelectedSection={() => onSelectedSection(section)}
                   />
                 </td>
-                <td className="w-[33%]">
+                <td>
                   {section.include ? (
-                    <div className="flex justify-center">
-                      <RefineSwitch
-                        configurationId={configurationId}
-                        currentSection={section}
-                        sections={sectionProcessing}
-                        disabled={disabled || isDisabledSection(section.code)}
-                        isNarrativeOnly={isNarrativeSection(section.code)}
-                      />
-                    </div>
+                    <RefineSwitch
+                      configurationId={configurationId}
+                      currentSection={section}
+                      sections={sectionProcessing}
+                      disabled={disabled || isDisabledSection(section.code)}
+                      isNarrativeOnly={isNarrativeSection(section.code)}
+                    />
                   ) : null}
                 </td>
-                <td className="w-[17%]">
+                <td>
                   {section.include ? (
-                    <div className="flex justify-center">
-                      <NarrativeSelect
-                        configurationId={configurationId}
-                        currentSection={section}
-                        disabled={disabled || isDisabledSection(section.code)}
-                      />
-                    </div>
+                    <NarrativeSelect
+                      configurationId={configurationId}
+                      currentSection={section}
+                      disabled={disabled || isDisabledSection(section.code)}
+                    />
                   ) : null}
                 </td>
               </tr>
@@ -244,7 +237,7 @@ function EditButton({ setSelectedSection, name }: EditButtonProps) {
   return (
     <Button
       aria-label={`Edit custom section ${name}`}
-      className="text-sm!"
+      className="p-0! text-sm!"
       variant="tertiary"
       onClick={setSelectedSection}
     >
@@ -298,7 +291,7 @@ function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
   return (
     <Button
       aria-label={`Delete custom section ${name}`}
-      className="text-sm!"
+      className="p-0! text-sm!"
       variant="tertiary"
       onClick={onClick}
     >
@@ -344,11 +337,8 @@ function RefineSwitch({
 
   if (isNarrativeOnly) {
     return (
-      <Field className="flex -translate-x-4 flex-row items-center">
-        <Label
-          className="text-gray-cool-40 mr-2 w-72 text-right italic"
-          aria-hidden
-        >
+      <Field>
+        <Label className="text-gray-cool-40 italic" aria-hidden>
           Not applicable for this section
         </Label>
         <div className="w-12" />
@@ -361,7 +351,7 @@ function RefineSwitch({
   const preserveLabelText = 'Keep original';
 
   return (
-    <Field className="flex -translate-x-4 flex-row items-center">
+    <Field className="flex flex-row items-center">
       <Label
         aria-label={
           isRefineToggled
@@ -370,12 +360,11 @@ function RefineSwitch({
             : // "Keep original for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
-        className="mr-2 w-48 text-right"
       >
         {isRefineToggled ? (
-          <span>{refineLabelText}</span>
+          <span className="inline-block w-16">{refineLabelText}</span>
         ) : (
-          <span className="italic">{preserveLabelText}</span>
+          <span className="inline-block w-16 italic">{preserveLabelText}</span>
         )}
       </Label>
       <Switch

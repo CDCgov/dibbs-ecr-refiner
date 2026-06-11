@@ -1,5 +1,4 @@
 import { Select } from '@components/Select';
-import { Field } from '@components/Field';
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useSectionUpdater } from './useSectionUpdater';
 
@@ -20,7 +19,7 @@ export function NarrativeSelect({
   const updateSection = useSectionUpdater(configurationId);
 
   return (
-    <Field className="flex items-center gap-3">
+    <div className="flex-start flex">
       <Select
         disabled={disabled}
         value={currentSection.narrative ? 'retain' : 'remove'}
@@ -35,6 +34,6 @@ export function NarrativeSelect({
         <option value="retain">Keep original</option>
         <option value="remove">Remove</option>
       </Select>
-    </Field>
+    </div>
   );
 }
