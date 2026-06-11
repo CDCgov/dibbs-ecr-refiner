@@ -10,7 +10,7 @@ const mockMatchedCondition: Condition = {
   render_diff: true,
 };
 
-describe('ExternalLink', () => {
+describe('Diff view', () => {
   it('should display a warning if the file size is too big', () => {
     render(
       <Diff
@@ -22,10 +22,7 @@ describe('ExternalLink', () => {
     );
     expect(
       screen.getByText(
-        `Maximum uncompressed file size is ${FileInfoResponseValue.max_for_diff_rendering_mb}`,
-        {
-          exact: false,
-        }
+        `Maximum uncompressed file size is ${FileInfoResponseValue.max_for_diff_rendering_mb}`
       )
     ).toBeInTheDocument();
   });
