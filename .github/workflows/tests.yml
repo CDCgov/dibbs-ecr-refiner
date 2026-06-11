@@ -30,7 +30,7 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt
-      - name: Run integration tests
+      - name: Run unit tests
         run: |
           pytest tests/unit
 
