@@ -116,7 +116,7 @@ export function Sections({
                   />
                 </div>
               </th>
-              <th scope="col" className="w-60">
+              <th scope="col" className="w-40">
                 <div className="flex gap-1">
                   <span>Narrative data</span>
                   <Tooltip
@@ -362,9 +362,9 @@ function RefineSwitch({
         }
       >
         {isRefineToggled ? (
-          <span className="inline-block w-16">{refineLabelText}</span>
+          <span className="inline-block w-24">{refineLabelText}</span>
         ) : (
-          <span className="inline-block w-16 italic">{preserveLabelText}</span>
+          <span className="inline-block w-24 italic">{preserveLabelText}</span>
         )}
       </Label>
       <Switch
