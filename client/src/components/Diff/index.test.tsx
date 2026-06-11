@@ -18,7 +18,7 @@ describe('ExternalLink', () => {
         unrefined_eicr=""
         condition={mockMatchedCondition}
         renderDiff={false}
-      ></Diff>
+       />
     );
     expect(
       screen.getByText('Maximum uncompressed file size is', {
