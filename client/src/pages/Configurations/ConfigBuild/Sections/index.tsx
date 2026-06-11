@@ -104,11 +104,11 @@ export function Sections({
               <th scope="col" className="w-20 py-3">
                 Include
               </th>
-              <th scope="col" className="w-60 text-left">
+              <th scope="col" className="w-80 text-left">
                 Section name
               </th>
-              <th scope="col" className="w-60">
-                <div className="flex gap-1">
+              <th scope="col" className="w-60 pr-8">
+                <div className="flex justify-end gap-1">
                   <span>Coded data</span>
                   <Tooltip
                     position="left"
@@ -148,7 +148,7 @@ export function Sections({
                     setSelectedSection={() => onSelectedSection(section)}
                   />
                 </td>
-                <td>
+                <td className="pr-8">
                   {section.include ? (
                     <RefineSwitch
                       configurationId={configurationId}
@@ -337,11 +337,10 @@ function RefineSwitch({
 
   if (isNarrativeOnly) {
     return (
-      <Field>
+      <Field className="flex flex-row items-center justify-end">
         <Label className="text-gray-cool-40 italic" aria-hidden>
           Not applicable for this section
         </Label>
-        <div className="w-12" />
       </Field>
     );
   }
@@ -351,7 +350,7 @@ function RefineSwitch({
   const preserveLabelText = 'Keep original';
 
   return (
-    <Field className="flex flex-row items-center">
+    <Field className="flex flex-row items-center justify-end">
       <Label
         aria-label={
           isRefineToggled
