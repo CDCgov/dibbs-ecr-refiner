@@ -378,10 +378,10 @@ test.describe('Configuration detail flow', () => {
       await page.getByLabel('LOINC code').fill(customSectionCode);
       await page.getByRole('button', { name: 'Add section' }).click();
       await expect(
-        page.getByRole('switch', {
-          name: `Toggle to refine or retain the narrative block in the ${customSectionName} section`,
+        page.getByRole('combobox', {
+          name: `Narrative data handling for ${customSectionName} section`,
         })
-      ).not.toBeChecked();
+      ).toHaveValue('remove');
     });
 
     await test.step('Run inline test', async () => {
