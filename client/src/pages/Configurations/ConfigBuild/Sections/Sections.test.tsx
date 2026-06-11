@@ -77,7 +77,7 @@ const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
     action: 'refine',
     include: true,
     code: '11450-4',
-    narrative: 'refine',
+    narrative: 'reconstruct',
     versions: ['1.1', '3.1'],
     section_type: 'standard',
   },
