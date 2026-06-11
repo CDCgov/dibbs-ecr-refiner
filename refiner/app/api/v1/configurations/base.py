@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.codes.db import get_configuration_rsg_codes
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -31,7 +32,6 @@ from app.services.configurations import (
     format_section_naming,
 )
 from app.services.logger import get_logger
-from app.db.codes.db import get_configuration_rsg_codes
 
 from .model import (
     CreateConfigInput,

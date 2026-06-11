@@ -14,7 +14,7 @@ async def get_configuration_rsg_codes(
     """
 
     query = """
-        SELECT c.name, c.value, c.version, c.system_id 
+        SELECT c.name, c.value, c.version, c.system_id
         FROM conditions_rsg_codes as rsg
         LEFT JOIN codes c on c.id = rsg.code_id
         WHERE rsg.condition_id = %s;
