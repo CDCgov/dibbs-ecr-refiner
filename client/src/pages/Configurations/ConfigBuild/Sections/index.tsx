@@ -104,7 +104,7 @@ export function Sections({
               <th scope="col" className="w-20 py-3">
                 Include
               </th>
-              <th scope="col" className="w-80 text-left">
+              <th scope="col" className="w-70 text-left">
                 Section name
               </th>
               <th scope="col" className="w-60 pr-8">
@@ -338,7 +338,10 @@ function RefineSwitch({
   if (isNarrativeOnly) {
     return (
       <Field className="flex flex-row items-center justify-end">
-        <Label className="text-gray-cool-40 italic" aria-hidden>
+        <Label
+          className="text-gray-cool-40 whitespace-nowrap italic"
+          aria-hidden
+        >
           Not applicable for this section
         </Label>
       </Field>
@@ -361,9 +364,9 @@ function RefineSwitch({
         }
       >
         {isRefineToggled ? (
-          <span className="inline-block w-24">{refineLabelText}</span>
+          <span>{refineLabelText}</span>
         ) : (
-          <span className="inline-block w-24 italic">{preserveLabelText}</span>
+          <span className="italic">{preserveLabelText}</span>
         )}
       </Label>
       <Switch
