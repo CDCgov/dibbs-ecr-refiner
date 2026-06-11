@@ -18,7 +18,7 @@ export function SessionRedirect({
             <Icon.Home
               aria-label="Home icon indicating a need to return to homepage to login again"
               className="text-gray-cool-50 h-30! w-30!"
-             />
+            />
             <h1 className="text-center">
               Your session has ended. <br />
               Please log back in to access the app.
