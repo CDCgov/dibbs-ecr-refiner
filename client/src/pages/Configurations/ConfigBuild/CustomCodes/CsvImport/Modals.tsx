@@ -1,5 +1,5 @@
 import {
-  CodeSystemsReponse,
+  IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 
@@ -85,36 +85,42 @@ export function UndoModal({ isOpen, onClose, handleDelete }: UndoModalProps) {
 interface PreviewEditModalProps {
   previewEditItem: UploadCustomCodesPreviewItem;
   previewItems: UploadCustomCodesPreviewItem[] | null;
-  previewEditIndex: number | null;
+  setPreviewItems: React.Dispatch<
+    React.SetStateAction<UploadCustomCodesPreviewItem[]>
+  >;
   isOpen: boolean;
   closePreviewEditModal: () => void;
-  handlePreviewEditSubmit: (
-    payload: UploadCustomCodesPreviewItem | null,
-    editIdx: number | null
-  ) => void;
   setError: (err: string | null) => void;
   error: string | null;
-  codeSystems: CodeSystemsReponse[];
+  codeSystems: IndexedCodeSystem;
 }
 
 export function PreviewEditModal({
+  previewEditItem,
+  previewItems,
+  setPreviewItems,
   isOpen,
   closePreviewEditModal,
-  previewEditItem,
-  handlePreviewEditSubmit,
-  previewItems,
-  previewEditIndex,
   setError,
   error,
   codeSystems,
 }: PreviewEditModalProps) {
   const [previewEditForm, setPreviewEditForm] = useState(previewEditItem);
 
-  const isEditSaveDisabled =
-    !previewEditItem ||
-    !previewEditItem.code ||
-    !previewEditItem.name ||
-    !previewEditItem.system_key;
+  const handlePreviewEditSubmit = (
+    payload: UploadCustomCodesPreviewItem | null
+  ) => {
+    if (payload === null) {
+      closePreviewEditModal();
+      return;
+    }
+    setPreviewItems((prev) =>
+      prev
+        ? prev.map((item) => (payload.id === item.id ? { ...payload } : item))
+        : prev
+    );
+    closePreviewEditModal();
+  };
 
   function handlePreviewEditChange<
     K extends keyof UploadCustomCodesPreviewItem,
@@ -128,6 +134,13 @@ export function PreviewEditModal({
       };
     });
   }
+
+  const isEditSaveDisabled =
+    error != null ||
+    !previewEditForm ||
+    !previewEditForm.code ||
+    !previewEditForm.name ||
+    !previewEditForm.system_key;
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
@@ -148,8 +161,9 @@ export function PreviewEditModal({
                 const trimmedCode = previewEditForm.code.trim();
                 if (
                   previewItems?.some(
-                    (item, idx) =>
-                      item.code === trimmedCode && idx !== previewEditIndex
+                    (item) =>
+                      item.code === trimmedCode &&
+                      item.id !== previewEditForm.id
                   )
                 ) {
                   setError(`The code "${trimmedCode}" already exists.`);
@@ -173,7 +187,7 @@ export function PreviewEditModal({
               value={previewEditForm.system_key}
               onChange={(e) => handlePreviewEditChange('system_key', e)}
             >
-              {codeSystems.map((s) => (
+              {Object.values(codeSystems).map((s) => (
                 <option key={s.id} value={s.key}>
                   {s.display_name}
                 </option>
@@ -192,9 +206,7 @@ export function PreviewEditModal({
       </ModalBody>
       <ModalFooter align="right">
         <Button
-          onClick={() =>
-            handlePreviewEditSubmit(previewEditForm, previewEditIndex)
-          }
+          onClick={() => handlePreviewEditSubmit(previewEditForm)}
           disabled={isEditSaveDisabled}
           variant="primary"
         >

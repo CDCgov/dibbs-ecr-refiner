@@ -2,7 +2,7 @@ import csv
 import io
 from dataclasses import dataclass
 from logging import Logger
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -16,8 +16,8 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
-    CodeSystemIndex,
     DbCodeSystem,
+    IndexedCodeSystem,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -175,6 +175,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     preview_items: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
+    code_systems: IndexedCodeSystem
 
 
 def _create_csv_reader(
@@ -217,7 +218,7 @@ async def _get_requested_config_or_raise(
 
 def _get_row_code_system(
     code_system_raw: str,
-    supported_systems_by_key: CodeSystemIndex,
+    supported_systems_by_key: IndexedCodeSystem,
 ):
     supported_systems_by_name = {
         s.display_name: s for s in supported_systems_by_key.values()
@@ -347,14 +348,15 @@ async def upload_custom_codes_csv(
         codes_seen_so_far.add(duplicate_check_response)
         preview_items.append(
             UploadCustomCodesPreviewItem(
+                id=uuid4(),
                 code=code,
                 system_key=row_system.key,
-                system_display_name=row_system.display_name,
                 name=name,
                 row=row_number,
             )
         )
 
+    code_systems = await get_all_code_systems_by_key(db=db)
     if errors:
         logger.error("CSV upload errors", extra={"errors": errors})
         raise HTTPException(
@@ -373,6 +375,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
+        code_systems=code_systems,
     )
 
 

@@ -3,9 +3,9 @@
  * Validated CSV row ready for confirmation.
  */
 export interface UploadCustomCodesPreviewItem {
+  id: string;
   code: string;
   system_key: string;
-  system_display_name: string;
   name: string;
   row?: number | null;
 }

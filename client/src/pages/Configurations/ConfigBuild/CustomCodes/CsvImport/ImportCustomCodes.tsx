@@ -15,6 +15,7 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
 import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
+import { IndexedCodeSystem } from '../../../../../api/schemas';
 
 const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example
@@ -59,24 +60,52 @@ export function ImportCustomCodes({
   const { mutate: confirmCsvMutation, isPending: isConfirming } =
     useConfirmUploadCustomCodesCsv();
 
+  const [previewItems, setPreviewItems] = useState<
+    UploadCustomCodesPreviewItem[]
+  >([]);
+  const [previewEditItem, setPreviewEditItem] =
+    useState<UploadCustomCodesPreviewItem | null>(null);
+  const [codeSystems, setCodeSystems] = useState<IndexedCodeSystem | null>(
+    null
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [uploadRowErrors, setUploadRowErrors] = useState<RowError[] | null>(
     null
   );
-  const [previewItems, setPreviewItems] = useState<
-    UploadCustomCodesPreviewItem[]
-  >([]);
 
   const [step, setStep] = useState<CsvImportStep>('intro');
   const [isUploading, setIsUploading] = useState(false);
-  const [previewEditIndex, setPreviewEditIndex] = useState<number | null>(null);
-  const [previewEditItem, setPreviewEditItem] =
-    useState<UploadCustomCodesPreviewItem | null>(null);
   const [curOpenModal, setCurOpenModal] = useState<OpenModalType>('none');
 
+  const {
+    searchText,
+    setSearchText,
+    results: previewSearchResults,
+  } = useSearch(previewItems, {
+    keys: [
+      { name: 'code', weight: 0.6 },
+      { name: 'name', weight: 0.4 },
+    ],
+    includeMatches: true,
+  });
   useEffect(() => {
     onStepChange?.(step);
-  }, [step, onStepChange]);
+
+    if (step === 'preview') {
+      setSearchText('');
+    }
+  }, [step, onStepChange, setSearchText]);
+
+  const exitPreviewStep = (resetStep: boolean) => {
+    setPreviewItems([]);
+    setUploadRowErrors(null);
+    setError(null);
+    onSuccess?.();
+    if (resetStep) {
+      setStep('intro');
+    }
+  };
 
   const handleFileUpload = () => {
     if (!disabled && fileInputRef.current) {
@@ -119,6 +148,9 @@ export function ImportCustomCodes({
 
           // TODO: get the code systems information here in one fetch
           const previewItems = res.data.preview_items;
+          const codeSystems = res.data.code_systems;
+
+          setCodeSystems(codeSystems);
           setPreviewItems(previewItems);
           setStep('preview');
         },
@@ -177,7 +209,7 @@ export function ImportCustomCodes({
             heading: 'CSV confirmed',
             body: `${res.data.codes_processed ?? previewItems.length} codes imported.`,
           });
-          handleDelete({ resetStep: false });
+          handleDelete(false);
         },
         onError: (err: unknown) => {
           const message = formatApiError(err);
@@ -192,14 +224,24 @@ export function ImportCustomCodes({
     );
   };
 
-  const handleDelete = ({ resetStep = true }: { resetStep?: boolean } = {}) => {
-    setPreviewItems([]);
-    setUploadRowErrors(null);
-    setError(null);
-    if (resetStep) {
-      setStep('intro');
+  const handleDelete = (resetStep: boolean = false) => {
+    exitPreviewStep(resetStep);
+  };
+
+  const handleRowDelete = (itemToDelete: UploadCustomCodesPreviewItem) => {
+    const updated =
+      previewItems?.filter(
+        (itemToCheck) => itemToCheck.id !== itemToDelete.id
+      ) ?? [];
+    if (updated.length === 0) {
+      exitPreviewStep(true);
+    } else {
+      setPreviewItems(updated);
     }
-    onSuccess?.();
+    showToast({
+      heading: 'Row deleted',
+      body: itemToDelete.code,
+    });
   };
 
   const handleBack = () => {
@@ -209,61 +251,24 @@ export function ImportCustomCodes({
     }
 
     if (step === 'preview') {
-      handleDelete({ resetStep: false });
+      handleDelete(false);
       return;
     }
 
     onSuccess?.();
   };
 
-  const openPreviewEditModal = (previewIndex: number) => {
-    const target = previewItems?.[previewIndex];
+  const openPreviewEditModal = (editIndex: string) => {
+    const target = previewItems.find((i) => i.id === editIndex);
     if (!target) return;
-    setPreviewEditIndex(previewIndex);
     setPreviewEditItem({ ...target });
     setCurOpenModal('preview');
   };
 
   const closePreviewEditModal = () => {
     setCurOpenModal('none');
-    setPreviewEditIndex(null);
     setPreviewEditItem(null);
   };
-
-  const handlePreviewEditSubmit = (
-    payload: UploadCustomCodesPreviewItem | null,
-    editIdx: number | null
-  ) => {
-    console.log(payload, editIdx);
-    if (payload === null || !editIdx === null) {
-      closePreviewEditModal();
-      return;
-    }
-    setPreviewItems((prev) =>
-      prev
-        ? prev.map((item, index) => (index === editIdx ? { ...payload } : item))
-        : prev
-    );
-    closePreviewEditModal();
-  };
-
-  const {
-    searchText,
-    setSearchText,
-    results: previewSearchResults,
-  } = useSearch(previewItems, {
-    keys: [
-      { name: 'code', weight: 0.6 },
-      { name: 'name', weight: 0.4 },
-    ],
-    includeMatches: true,
-  });
-
-  useEffect(() => {
-    if (step === 'preview') {
-      setSearchText('');
-    }
-  }, [step, setSearchText]);
 
   const uploading = isUploading || isUploadPending;
 
@@ -413,45 +418,32 @@ export function ImportCustomCodes({
               </thead>
 
               <tbody>
-                {previewDisplayItems.map(({ item, matches }, idx) => (
-                  <tr
-                    key={`code-${item.system_key}-${idx} ?? row}`}
-                    className="border-y border-blue-50"
-                  >
+                {previewDisplayItems.map(({ item, matches }) => (
+                  <tr key={item.id} className="border-y border-blue-50">
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.system_display_name}</td>
+                    <td className="px-2 py-1">
+                      {/* code systems should always be rendered at this point, 
+                      but do a check / a fallback to make Typescript happy */}
+                      {codeSystems
+                        ? codeSystems[item.system_key].display_name
+                        : item.system_key.toUpperCase()}
+                    </td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>
                     <td className="px-2 py-1 text-right text-sm">
                       <Button
                         variant="tertiary"
-                        onClick={() => openPreviewEditModal(idx)}
+                        onClick={() => openPreviewEditModal(item.id)}
                       >
                         Edit
                       </Button>
                       <span className="px-2 text-gray-400">&nbsp;</span>
                       <Button
                         variant="tertiary"
-                        onClick={() => {
-                          const updated =
-                            previewItems?.filter((_, idx) => idx !== idx) ?? [];
-                          if (updated.length === 0) {
-                            setPreviewItems([]);
-                            setUploadRowErrors(null);
-                            setError(null);
-                            setStep('intro');
-                            onSuccess?.();
-                          } else {
-                            setPreviewItems(updated);
-                          }
-                          showToast({
-                            heading: 'Row deleted',
-                            body: item.code,
-                          });
-                        }}
+                        onClick={() => handleRowDelete(item)}
                       >
                         Delete
                       </Button>
@@ -478,17 +470,16 @@ export function ImportCustomCodes({
         handleDelete={handleDelete}
       />
 
-      {previewEditItem && (
+      {previewEditItem && codeSystems && (
         <PreviewEditModal
           previewEditItem={previewEditItem}
+          setPreviewItems={setPreviewItems}
           isOpen={curOpenModal === 'preview'}
           closePreviewEditModal={closePreviewEditModal}
-          handlePreviewEditSubmit={handlePreviewEditSubmit}
           previewItems={previewItems}
-          previewEditIndex={previewEditIndex}
           setError={setError}
           error={error}
-          codeSystems={codeSystems?.data}
+          codeSystems={codeSystems}
         />
       )}
     </>
