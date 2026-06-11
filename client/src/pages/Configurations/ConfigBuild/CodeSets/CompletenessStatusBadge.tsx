@@ -7,7 +7,11 @@ import {
   ModalFooter,
 } from '@components/Modal';
 import { Button } from '@components/Button';
-import { CodeSetStatus, CompletenessStatus } from '../../../../api/schemas';
+import {
+  CodeCategoryStatus,
+  CodeSetStatus,
+  CompletenessStatus,
+} from '../../../../api/schemas';
 import classNames from 'classnames';
 
 export interface CompletenessStatusBadgeProps {
@@ -50,23 +54,27 @@ export function CompletenessStatusBadge({
           <ModalBody>
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-2/3" />
-                <col className="w-1/3" />
+                <col className="w-[55%]" />
+                <col className="w-[45%]" />
               </colgroup>
               <thead>
                 <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                  <th className="p-2" scope="col">
+                  <th className="px-2 py-2 text-left" scope="col">
                     Expanded codes
                   </th>
-                  <th scope="col">Status</th>
+                  <th className="px-2 py-2 text-left" scope="col">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-gray-cool-20 divide-y">
                 {completenessStatus.code_category_statuses.map((ccs) => (
                   <tr key={ccs.category}>
                     <td className="px-2 py-3">{ccs.name}</td>
-                    <td className="text-center">
-                      <IncludedStatus included={ccs.included} />
+                    <td className="px-2 py-3">
+                      <CategoryCompletenessStatus
+                        completeness={ccs.completeness}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -106,24 +114,31 @@ function Badge({ status }: BadgeProps) {
   );
 }
 
-interface IncludedStatusProps {
-  included: boolean;
+interface CategoryCompletenessStatusProps {
+  completeness: CodeCategoryStatus;
 }
 
-function IncludedStatus({ included }: IncludedStatusProps) {
+function CategoryCompletenessStatus({
+  completeness,
+}: CategoryCompletenessStatusProps) {
   return (
-    <div
-      className={classNames('flex items-center gap-2', {
-        'text-green-800': included,
-        'text-gray-600': !included,
-      })}
-    >
-      {included ? <CheckIcon /> : <XIcon />}
-      {included ? (
-        <span>included</span>
-      ) : (
-        <span className="italic">not included</span>
-      )}
+    <div className="flex items-center gap-2">
+      {completeness === 'fully complete' && <CheckIcon />}
+      {completeness === 'partially complete' && <DashIcon />}
+      {completeness === 'not included' && <XIcon />}
+
+      <span
+        className={classNames('font-public-sans whitespace-nowrap', {
+          'text-state-success-dark font-semibold':
+            completeness === 'fully complete',
+          'text-gray-cool-60 font-normal italic':
+            completeness === 'not included',
+          'text-yellow-vivid-50v font-normal italic':
+            completeness === 'partially complete',
+        })}
+      >
+        {completeness}
+      </span>
     </div>
   );
 }
@@ -170,6 +185,22 @@ function XIcon() {
         d="M6.175 14.999L10 11.1824L13.825 14.999L15 13.824L10 8.82402L5 13.824L6.175 14.999Z"
         fill="#565C65"
       />
+    </svg>
+  );
+}
+
+function DashIcon() {
+  return (
+    <svg
+      className="shrink-0"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path d="M5 10H15" stroke="#947100" strokeWidth="2" />
     </svg>
   );
 }
