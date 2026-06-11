@@ -330,12 +330,12 @@ test.describe('Configuration detail flow', () => {
         const admissionMedicationsText = 'Admission Medications';
         await page
           .getByRole('switch', {
-            name: `Refine & optimize ${admissionMedicationsText}`,
+            name: `Refine ${admissionMedicationsText}`,
           })
           .click();
         await expect(
           page.getByRole('switch', {
-            name: `Preserve & retain all data for ${admissionMedicationsText}`,
+            name: `Keep original for ${admissionMedicationsText}`,
           })
         ).not.toBeChecked();
 
@@ -378,10 +378,10 @@ test.describe('Configuration detail flow', () => {
       await page.getByLabel('LOINC code').fill(customSectionCode);
       await page.getByRole('button', { name: 'Add section' }).click();
       await expect(
-        page.getByRole('switch', {
-          name: `Toggle to refine or retain the narrative block in the ${customSectionName} section`,
+        page.getByRole('combobox', {
+          name: `Narrative data handling for ${customSectionName} section`,
         })
-      ).not.toBeChecked();
+      ).toHaveValue('remove');
     });
 
     await test.step('Run inline test', async () => {

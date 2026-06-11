@@ -1,5 +1,5 @@
 import React from 'react';
-import { UploadCustomCodesPreviewItem } from '../../../api/schemas';
+import { UploadCustomCodesPreviewItem } from '../../../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
@@ -13,7 +13,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { useGetCodeSystems } from '../../../api/code-systems/code-systems';
+import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
 import { Spinner } from '@components/Spinner';
 
 interface ConfirmModalProps {

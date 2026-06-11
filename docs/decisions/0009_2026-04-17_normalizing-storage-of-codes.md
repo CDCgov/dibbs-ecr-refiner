@@ -4,7 +4,7 @@ Date: 2026-04-17
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context and Problem Statement
 
@@ -134,7 +134,7 @@ In this configuration, two pairwise tables (TES codes and conditions, custom cod
 
 ### Store normalized codesets in two tables
 
-The team will store normalized codes over extending the existing JSON configuration to better enable future development and maintenance. Furthermore, TES and custom codesets will be stored in a two tables, one for custom codes and one for TES codes. After discussion, custom codes have several attributes that make them unique to TES codes: editability, relationship to different parent entities, and provenance from user input compared to ingestion from an API. Thus, two separate tables will be created and seeded based on user input for custom codes and a modified TES ingestion script. Compared to existing structures, codeset relationships will to be centralized and searched more conveniently .
+The team will store normalized codes over extending the existing JSON configuration to better enable future development and maintenance. Furthermore, TES and custom codesets will be stored in a two tables, one for custom codes and one for TES codes. After discussion, custom codes have several attributes that make them unique to TES codes: editability, relationship to different parent entities, and provenance from user input compared to ingestion from an API. Thus, two separate tables will be created and seeded based on user input for custom codes and a modified TES ingestion script. Compared to existing structures, codeset relationships will to be centralized and searched more conveniently.
 
 ### Manage joins via a junction table
 

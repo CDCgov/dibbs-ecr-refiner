@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Drawer } from '@components/Drawer';
+import { Drawer } from './Drawer';
+
+import { highlightMatches } from '../../../../utils';
+import { IncludedCondition } from '../../../../api/schemas';
+import { TesLink } from '../../TesLink';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
-import { highlightMatches } from '../../../utils';
-import { IncludedCondition } from '../../../api/schemas';
-import { TesLink } from '../TesLink';
 
 type AddConditionCodeSetsDrawerProps = {
   isOpen: boolean;
