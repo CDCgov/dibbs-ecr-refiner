@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.codes.db import get_configuration_rsg_codes
+from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -284,8 +284,8 @@ async def get_configuration(
         code_systems=code_systems,
     )
 
-    rsg_codes = await get_configuration_rsg_codes(
-        configuration_primary_condition_id=primary_condition.id,
+    rsg_codes = await get_rsg_codes_by_condition_id_db(
+        condition_id=primary_condition.id,
         db=db,
     )
     return GetConfigurationResponse(

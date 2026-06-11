@@ -112,7 +112,7 @@ function ModalHeader({ children }: ModalSectionProps) {
 
 function ModalTitle({ children }: ModalSectionProps) {
   return (
-    <DialogTitle className="font-merriweather text-gray-90 text-3xl font-bold">
+    <DialogTitle className="font-public-sans text-gray-90 text-3xl font-bold">
       {children}
     </DialogTitle>
   );
@@ -121,7 +121,7 @@ function ModalTitle({ children }: ModalSectionProps) {
 function ModalBody({ children, className }: ModalSectionProps) {
   return (
     <div className={classNames('px-6 pb-6', className)}>
-      <div className="flex flex-col gap-4 text-left">{children}</div>
+      <div className="flex flex-col text-left">{children}</div>
     </div>
   );
 }
@@ -136,7 +136,7 @@ function ModalFooter({
   align = 'left',
 }: ModalFooterProps) {
   return (
-    <div className={classNames('py-4', className)}>
+    <div className={className}>
       <div
         className={classNames('mx-auto flex w-full max-w-md gap-3 px-6', {
           'justify-start': align === 'left',

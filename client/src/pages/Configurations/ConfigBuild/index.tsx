@@ -595,13 +595,12 @@ function RsgDetailsModal({
         <ModalTitle className="font-public-sans">
           {primaryConditionDisplayName}
         </ModalTitle>
-      </ModalHeader>
-      <ModalBody>
         <p className="wrap-break-word">
           Applies to eCR documents reportable for the codes below. Only one
           output will be produced per condition group.
         </p>
-
+      </ModalHeader>
+      <ModalBody>
         <table>
           <thead className="border-b-gray-cool-20 border-b">
             <tr>
