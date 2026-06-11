@@ -93,7 +93,7 @@ describe('Configuration sections', () => {
     expect(history.codedDataSwitch).toBeInTheDocument();
     expect(history.codedDataSwitch).toBeChecked();
     expect(history.narrativeSelect).toBeInTheDocument();
-    expect(history.narrativeSelect).toHaveValue('retain');
+    expect(history.narrativeSelect).toHaveValue('remove');
 
     expect(med.checkbox).not.toBeChecked();
     expect(med.nameCell).toHaveTextContent('Med section');
@@ -105,7 +105,7 @@ describe('Configuration sections', () => {
     expect(imm.codedDataSwitch).toBeInTheDocument();
     expect(imm.codedDataSwitch).not.toBeChecked();
     expect(imm.narrativeSelect).toBeInTheDocument();
-    expect(imm.narrativeSelect).toHaveValue('retain');
+    expect(imm.narrativeSelect).toHaveValue('remove');
 
     expect(custom.checkbox).toBeChecked();
     expect(custom.nameCell).toHaveTextContent(
