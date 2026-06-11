@@ -1,0 +1,290 @@
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
+
+import * as axios from 'axios';
+import type {
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosResponse
+} from 'axios';
+
+import type {
+  BodyDiscoverConfigurations,
+  BodyUploadEcr,
+  DiscoveredConfigurationsResponse,
+  HTTPValidationError,
+  SimulatorUploadResponse
+} from '../schemas';
+
+
+
+
+
+/**
+ * Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
+
+Configurations are returned to the client.
+
+Args:
+    uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
+    simulator_zip_path (Path, optional): The path to the demo zip file.
+    user (DbUser, optional): The logged in user.
+    db (AsyncDatabaseConnection, optional): The database connection.
+    logger (Logger, optional): The app logger.
+
+Returns:
+    DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
+ * @summary Discover Configurations
+ */
+export const discoverConfigurations = (
+    bodyDiscoverConfigurations?: BodyDiscoverConfigurations, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<DiscoveredConfigurationsResponse>> => {
+
+    const formData = new FormData();
+if(bodyDiscoverConfigurations?.uploaded_file !== undefined && bodyDiscoverConfigurations.uploaded_file !== null) {
+ formData.append(`uploaded_file`, bodyDiscoverConfigurations.uploaded_file);
+ }
+
+    return axios.default.post(
+      `/api/v1/simulator/discover-configurations`,
+      formData,options
+    );
+  }
+
+
+
+export const getDiscoverConfigurationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext> => {
+
+const mutationKey = ['discoverConfigurations'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discoverConfigurations>>, {data?: BodyDiscoverConfigurations}> = (props) => {
+          const {data} = props ?? {};
+
+          return  discoverConfigurations(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DiscoverConfigurationsMutationResult = NonNullable<Awaited<ReturnType<typeof discoverConfigurations>>>
+    export type DiscoverConfigurationsMutationBody = BodyDiscoverConfigurations | undefined
+    export type DiscoverConfigurationsMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Discover Configurations
+ */
+export const useDiscoverConfigurations = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof discoverConfigurations>>,
+        TError,
+        {data?: BodyDiscoverConfigurations},
+        TContext
+      > => {
+      return useMutation(getDiscoverConfigurationsMutationOptions(options), queryClient);
+    }
+    /**
+ * Handles the simulator upload workflow for eICR refinement.
+
+Steps:
+1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in
+    refiner/assets/demo/mon-mothma-covid-influenza.zip).
+2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
+3. Call the service layer (`simulator`) to orchestrate the refinement workflow.
+4. For each unique reportable condition code found in the RR (and having a configuration),
+    build a refined XML document and collect metadata. The code used is the actual code
+    from the RR that triggered the match, not a canonical or database code.
+5. Package all refined and original files into a ZIP.
+6. Upload the ZIP to S3 and get a download URL.
+7. Construct and return the response model for the frontend, including per-condition
+    refinement results and a link to the ZIP of outputs.
+
+Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
+ * @summary Simulator Upload
+ */
+export const uploadEcr = (
+    bodyUploadEcr: BodyUploadEcr, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<SimulatorUploadResponse>> => {
+
+    const formData = new FormData();
+formData.append(`body`, bodyUploadEcr.body);
+if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== null) {
+ formData.append(`uploaded_file`, bodyUploadEcr.uploaded_file);
+ }
+
+    return axios.default.post(
+      `/api/v1/simulator/upload`,
+      formData,options
+    );
+  }
+
+
+
+export const getUploadEcrMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext> => {
+
+const mutationKey = ['uploadEcr'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEcr>>, {data: BodyUploadEcr}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadEcr(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadEcrMutationResult = NonNullable<Awaited<ReturnType<typeof uploadEcr>>>
+    export type UploadEcrMutationBody = BodyUploadEcr
+    export type UploadEcrMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Simulator Upload
+ */
+export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof uploadEcr>>,
+        TError,
+        {data: BodyUploadEcr},
+        TContext
+      > => {
+      return useMutation(getUploadEcrMutationOptions(options), queryClient);
+    }
+    /**
+ * Stream refined eCR zip from S3 by filename.
+
+The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
+server constructs the S3 object key based on the authenticated user.
+ * @summary Download Refined Ecr
+ */
+export const downloadRefinedEcr = (
+    filename: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+
+
+    return axios.default.get(
+      `/api/v1/simulator/download/${filename}`,options
+    );
+  }
+
+
+
+
+export const getDownloadRefinedEcrQueryKey = (filename: string,) => {
+    return [
+    `/api/v1/simulator/download/${filename}`
+    ] as const;
+    }
+
+
+export const getDownloadRefinedEcrQueryOptions = <TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadRefinedEcrQueryKey(filename);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadRefinedEcr>>> = ({ signal }) => downloadRefinedEcr(filename, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: filename !== null && filename !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadRefinedEcrQueryResult = NonNullable<Awaited<ReturnType<typeof downloadRefinedEcr>>>
+export type DownloadRefinedEcrQueryError = AxiosError<HTTPValidationError>
+
+
+export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
+ filename: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadRefinedEcr>>,
+          TError,
+          Awaited<ReturnType<typeof downloadRefinedEcr>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
+ filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadRefinedEcr>>,
+          TError,
+          Awaited<ReturnType<typeof downloadRefinedEcr>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
+ filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Download Refined Ecr
+ */
+
+export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
+ filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadRefinedEcrQueryOptions(filename,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
