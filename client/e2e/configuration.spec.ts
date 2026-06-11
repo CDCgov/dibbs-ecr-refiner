@@ -33,6 +33,11 @@ test.describe('Configuration detail flow', () => {
       'SNOMED code',
       'Display name',
     ]);
+    const rsgDetailsTable = page.getByRole('table').getByRole('row');
+    await expect(rsgDetailsTable.first()).toBeVisible();
+    const rowCount = await rsgDetailsTable.count();
+    // header plus at least one RSG row
+    expect(rowCount).toBeGreaterThanOrEqual(2);
   });
 
   test('Code set table can be filtered by code system', async ({
