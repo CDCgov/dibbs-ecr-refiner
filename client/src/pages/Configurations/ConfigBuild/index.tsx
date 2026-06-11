@@ -591,12 +591,10 @@ function RsgDetailsModal({
       onClose={onClose}
       position="center"
     >
-      <ModalHeader className="pb-1!">
-        <ModalTitle className="font-public-sans">
-          {primaryConditionDisplayName}
-        </ModalTitle>
-        <p className="wrap-break-word">
-          Applies to eCR documents reportable for the codes below. Only one
+      <ModalHeader>
+        <ModalTitle>{primaryConditionDisplayName}</ModalTitle>
+        <p>
+          Applies to eCR documents reportable for the conditions below. Only one
           output will be produced per condition group.
         </p>
       </ModalHeader>
