@@ -196,6 +196,7 @@ function SectionName({
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <span
+          title={section.name}
           className={classNames('truncate', {
             italic: !section.include,
             'font-bold': section.include,
@@ -206,7 +207,9 @@ function SectionName({
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       <div className="flex items-center gap-2">
-        <span className="truncate text-sm">{section.code}</span>
+        <span title={section.code} className="truncate text-sm">
+          {section.code}
+        </span>
         {isCustom && !disabled ? (
           <div className="flex items-center gap-1">
             <EditButton
