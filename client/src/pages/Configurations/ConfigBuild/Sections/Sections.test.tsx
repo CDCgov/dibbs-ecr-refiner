@@ -317,7 +317,7 @@ describe('Configuration sections', () => {
     expect(reconstructOption).toBeDisabled();
   });
 
-  it('should enable Reconstruct option when coded data action is refine', () => {
+  it('should enable Reconstruct option when coded data action is reconstruct', () => {
     renderWithClient(
       <Sections
         configurationId={testId}
