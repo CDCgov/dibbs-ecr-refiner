@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
+from ..db.configurations.model import DbNarrativeAction
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -242,7 +243,7 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
-    narrative: bool
+    narrative: DbNarrativeAction
     include: bool
 
 

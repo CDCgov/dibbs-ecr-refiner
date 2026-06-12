@@ -40,16 +40,16 @@ from app.services.terminology import ProcessedConfiguration
 #   - if the action is "retain" we should keep (retain) the narrative as-is
 # * DEFAULT_SECTION_INSTRUCTIONS
 #   - we should match how it shows up in the UI where narrative is set
-#     to 'false' and refine is set to 'true'
+#     to 'remove' and refine is set to 'refine'
 SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
-    narrative=True,
+    narrative="retain",
     action="retain",
 )
 
 DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
-    narrative=False,
+    narrative="remove",
     action="refine",
 )
 
@@ -486,7 +486,7 @@ def refine_eicr(
             # RETAINED_NARRATIVE_REMOVED below because this branch
             # reflects the spec's structural reality, not a
             # configuration choice the jurisdiction made.
-            if not section_rules.narrative:
+            if section_rules.narrative == "remove":
                 replace_narrative_with_removal_notice(
                     section=section, namespaces=HL7_NS
                 )
@@ -498,11 +498,11 @@ def refine_eicr(
             # BRANCH 2b: refinable section, jurisdiction chose to retain
             # it. honor the narrative setting.
             #
-            # the narrative=False case used to be a silent no-op (the
+            # the narrative="remove" case used to be a silent no-op (the
             # old `retain` branch was a literal `pass`); it now
             # correctly replaces the narrative with the removal notice
             # while leaving the entries untouched.
-            if not section_rules.narrative:
+            if section_rules.narrative == "remove":
                 replace_narrative_with_removal_notice(
                     section=section, namespaces=HL7_NS
                 )
@@ -515,13 +515,17 @@ def refine_eicr(
             # process_section returns a SectionRunResult describing what
             # actually happened, which _interpret_run_result maps to a
             # user-facing outcome (including the no-match policy override)
+            # TODO: When narrative="refine" is implemented, this should trigger
+            # narrative reconstruction logic. For now, treat "refine" as "remove"
+            # to avoid keeping stale narrative when entries are being filtered.
+            include_narrative = section_rules.narrative == "retain"
             run_result = process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,
                 namespaces=HL7_NS,
                 section_specification=section_specification,
                 code_system_sets=plan.code_system_sets,
-                include_narrative=section_rules.narrative,
+                include_narrative=include_narrative,
             )
             outcome = _interpret_run_result(run_result=run_result)
 
