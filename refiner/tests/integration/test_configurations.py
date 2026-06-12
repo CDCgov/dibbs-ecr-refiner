@@ -391,9 +391,9 @@ class TestConfigurations:
             response.json()["section_processing"], admission_diagnosis_code
         )
         expected_section_updates = {
-            "include": True,
-            "narrative": "remove",
-            "action": "refine",
+            "include": False,
+            "narrative": "retain",
+            "action": "retain",
             "name": "Admission Diagnosis",
             "code": "46241-6",
             "versions": ["3.1", "3.1.1"],
