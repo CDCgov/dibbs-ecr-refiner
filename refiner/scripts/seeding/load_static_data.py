@@ -107,10 +107,8 @@ def _build_rsg_codes(
 ) -> tuple[list[ConditionIndexedCodeRow], ConditionToCodeRelationshipIndex]:
     snomed_db_id = system_data[SNOMED_OID]
     rsg_codes: list[ConditionIndexedCodeRow] = []
-    joins_to_update = 0
 
     for parent in condition_groupers:
-        child_rsg_code_ids: list[UUID] = []
         cond_canonical_url = parent.get("url", "")
         cond_version = parent.get("version", "")
         cond_index = (cond_canonical_url, cond_version)
@@ -130,15 +128,6 @@ def _build_rsg_codes(
                 )
 
                 rsg_codes.append({cond_index: code_data})
-
-        if len(child_rsg_code_ids) > 0 and cond_index in list(
-            condition_to_code_relationships.keys()
-        ):
-            relationship = condition_to_code_relationships[cond_index]
-            relationship.get("child_rsg_snomed_code_ids").extend(child_rsg_code_ids)
-            joins_to_update += 1
-
-    logger.info(f"🛠️  Total condition <> RSG joins processed: {joins_to_update}")
 
     return (rsg_codes, condition_to_code_relationships)
 
@@ -402,7 +391,7 @@ def _upsert_codes(
 
         LIMIT 1
     """
-
+    joins_to_update = 0
     for code in data:
         for condition_index, code in code.items():
             params = {
@@ -423,6 +412,10 @@ def _upsert_codes(
             condition_to_code_relationships[condition_index].get(
                 "child_rsg_snomed_code_ids"
             ).append(code_response[0])
+            joins_to_update += 1
+
+    logger.info(f"🛠️  Total condition <> RSG joins to update: {joins_to_update}")
+
     return condition_to_code_relationships
 
 
