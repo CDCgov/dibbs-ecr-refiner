@@ -81,7 +81,7 @@ export function ConfigBuild() {
             className="pl-0!"
             aria-label="Open reporting specification details modal"
           >
-            details
+            Details
           </Button>
           <RsgDetailsModal
             open={isRsgDetailsModalOpen}
