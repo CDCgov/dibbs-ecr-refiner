@@ -78,7 +78,7 @@ export function ConfigBuild() {
           <Button
             variant="tertiary"
             onClick={() => setIsRsgDetailsModalOpen(true)}
-            className="pl-0!"
+            className="p-0!"
             aria-label="Open reporting specification details modal"
           >
             Details
