@@ -26,6 +26,7 @@ export * from './dbCodeSystem';
 export * from './dbConfigurationCustomCode';
 export * from './dbConfigurationSectionProcessing';
 export * from './dbConfigurationStatus';
+export * from './dbNarrativeAction';
 export * from './dbSectionAction';
 export * from './dbSectionType';
 export * from './dbTotalConditionCodeCount';

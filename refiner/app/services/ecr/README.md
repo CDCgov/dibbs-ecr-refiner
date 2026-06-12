@@ -83,11 +83,14 @@ The user-facing labels for the configuration source and the runtime outcome live
 
 **Namespace standardization.** All modules use `hl7:` as the XPath prefix for `urn:hl7-org:v3`. The namespace map is defined once in `model.py` and imported everywhere. The CDA literature uses both `hl7:` and `cda:` interchangeably (per Keith Boone's _The CDA Book_, §4.2); having one convention across the codebase prevents silent bugs from mismatched prefix/map pairs.
 
+**Three-way narrative configuration.** The `narrative` setting on a section
+configuration is currently a three-way enum ("retain", "remove", "reconstruct"). The
+`SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED` enum value and its label are
+already in place; the work is in the matching engines and the configuration UI.
+
 ## Future work
 
 **Entry-level author participations.** The augmentation IG defines an Entry Author Participation template for stamping individual entries with what the tool did to them (retained, removed, nulled). This would give downstream consumers per-entry provenance to complement the per-section provenance footnotes. It's more invasive than header-level augmentation because it needs to happen during section processing, not after.
-
-**Three-way narrative configuration.** The `narrative` setting on a section configuration is currently a bool (retain or remove). A planned third value, `refine`, will reconstruct the narrative from the surviving entries after refinement. The `SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED` enum value and its label are already in place; the work is in the matching engines and the configuration UI.
 
 > [!IMPORTANT]
 > **March 2026 spec update.** The IG is removing `functionCode` from the header-level author and adding a value set binding to `softwareName` instead. The code has comments marking where this change applies. When adopted, the header author's `functionCode` block gets removed and `softwareName` gains `@code` and `@codeSystem` attributes from the Data Augmentation Tool value set.

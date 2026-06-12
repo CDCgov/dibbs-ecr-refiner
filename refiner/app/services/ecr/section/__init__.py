@@ -51,12 +51,6 @@ def process_section(
     interpret the result into a user-facing outcome. That interpretation
     lives in `refine._interpret_run_result`.
 
-    TODO: `include_narrative` is still a bool here. When the
-    configuration's narrative field migrates to a three-way enum
-    (`retain`/`remove`/`refine`), this parameter's type and
-    the downstream calls to the engines will need to update in
-    lockstep.
-
     Args:
         section: The section element being processed.
         codes_to_match: Flat set of condition codes for the generic
