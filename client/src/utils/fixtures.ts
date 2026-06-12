@@ -108,7 +108,7 @@ export const baseMockConfig: GetConfigurationResponse = {
     {
       name: 'Encounters Section',
       code: 'some code',
-      narrative: false,
+      narrative: 'retain',
       include: true,
       action: 'refine',
       versions: ['1.1'],
@@ -119,6 +119,7 @@ export const baseMockConfig: GetConfigurationResponse = {
   all_versions: mockVersions,
   version: 2,
   active_version: null,
+  rsg_codes: [],
   active_configuration_id: null,
   latest_version: 2,
   condition_canonical_url:
@@ -126,3 +127,19 @@ export const baseMockConfig: GetConfigurationResponse = {
   locked_by: null,
   is_locked: false,
 };
+
+export const mockMutate = (response: unknown) =>
+  vi.fn().mockImplementation(
+    (
+      _: { data: { condition_id: string } },
+      options: {
+        onSuccess?: (resp: unknown) => void;
+        onError?: (e: unknown) => void;
+      } = {}
+    ) => {
+      if (options.onSuccess) {
+        options.onSuccess({ data: response });
+      }
+      return Promise.resolve({ data: response });
+    }
+  );

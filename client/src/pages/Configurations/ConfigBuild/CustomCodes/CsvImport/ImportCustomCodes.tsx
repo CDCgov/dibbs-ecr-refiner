@@ -5,7 +5,6 @@ import {
   useConfirmUploadCustomCodesCsv,
   getGetConfigurationQueryKey,
 } from '../../../../../api/configurations/configurations';
-import { UploadCustomCodesPreviewItem } from '../../../../../api/schemas/uploadCustomCodesPreviewItem';
 import { useApiErrorFormatter } from '../../../../../hooks/useErrorFormatter';
 import { useSearch } from '../../../../../hooks/useSearch';
 import { useToast } from '../../../../../hooks/useToast';
@@ -15,7 +14,10 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
 import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
-import { IndexedCodeSystem } from '../../../../../api/schemas';
+import {
+  IndexedCodeSystem,
+  UploadCustomCodesPreviewItem,
+} from '../../../../../api/schemas';
 
 export const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example
@@ -148,7 +150,6 @@ export function ImportCustomCodes({
 
           const previewItems = res.data.preview_items;
           const codeSystems = res.data.code_systems;
-
           setCodeSystems(codeSystems);
           setPreviewItems(previewItems);
           setStep('preview');
@@ -223,7 +224,7 @@ export function ImportCustomCodes({
     );
   };
 
-  const handleDelete = (resetStep: boolean = false) => {
+  const handleDelete = (resetStep = false) => {
     exitPreviewStep(resetStep);
   };
 
@@ -277,6 +278,8 @@ export function ImportCustomCodes({
         return { item: i, matches: undefined };
       });
 
+  console.log(step);
+
   return (
     <>
       <div className="w-full space-y-6">
@@ -295,8 +298,9 @@ export function ImportCustomCodes({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv"
             hidden
+            accept=".csv"
+            aria-label="Bulk custom code upload file input"
             onChange={handleFileChange}
           />
         </>
@@ -466,7 +470,7 @@ export function ImportCustomCodes({
       <UndoModal
         isOpen={curOpenModal === 'undo'}
         onClose={() => setCurOpenModal('none')}
-        handleDelete={handleDelete}
+        handleDelete={() => handleDelete(true)}
       />
 
       {previewEditItem && codeSystems && (
