@@ -8,6 +8,7 @@ from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
+    DbNarrativeAction,
     DbSectionAction,
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
@@ -173,11 +174,11 @@ class DeleteSectionInput(SectionInputBase):
 
 class SectionUpdateInput(BaseModel):
     """
-    Request body for modifying a section.
+    Input model for updating a section's processing instructions.
     """
 
     include: bool | None = None
-    narrative: bool | None = None
+    narrative: DbNarrativeAction | None = None
     action: DbSectionAction | None = None
     name: str | None = None
     current_code: str

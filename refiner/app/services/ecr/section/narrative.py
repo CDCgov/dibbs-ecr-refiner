@@ -242,7 +242,7 @@ def append_section_provenance_footnote(
     _add_provenance_cell(row, provenance.display_name)
     _add_provenance_cell(row, "Yes" if provenance.include else "No")
     _add_provenance_cell(row, provenance.action)
-    _add_provenance_cell(row, "Yes" if provenance.narrative else "No")
+    _add_provenance_cell(row, "Yes" if provenance.narrative == "retain" else "No")
     _add_provenance_cell(
         row,
         f"v{provenance.config_version}"
