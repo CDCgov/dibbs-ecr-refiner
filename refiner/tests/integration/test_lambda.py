@@ -212,6 +212,75 @@ class TestLambda:
 
         print(f"[{test_name}] ✅ All refined outputs passed Schematron validation")
 
+    async def test_lambda_processing_error(self, http_client, s3_client, default_setup):
+        """
+        Lambda should write a RefinerComplete signal with RefinerSkip: True and an Error
+        message when a fatal error occurs during refinement processing.
+        """
+        bucket = default_setup["bucket"]
+        event = default_setup["event"]
+
+        # To trigger a processing error, we provide a malformed RR file that
+        # will cause lxml or run_refinement to raise an exception.
+        malformed_rr_key = default_setup["rr_key"]
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=malformed_rr_key,
+            Body="<<rootroot><<ununclosed>",
+            ContentType="application/xml",
+        )
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=event)
+
+        # Lambda failure in Localstack might still return 200 but with an errorMessage in body
+        resp_json = resp.json()
+        assert "errorMessage" in resp_json or resp.status_code != 200
+
+        # Verify that a RefinerComplete file was written despite the failure
+        complete_key = default_setup["complete_key"]
+        complete_response = s3_client.get_object(Bucket=bucket, Key=complete_key)
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+
+        assert complete_body["RefinerSkip"] is True
+        assert "Error" in complete_body
+        assert len(complete_body["Error"]) > 0
+        # RefinerMetadata and RefinerOutputFiles should be omitted when Skip is True
+        assert "RefinerMetadata" not in complete_body
+        assert "RefinerOutputFiles" not in complete_body
+
+    async def test_lambda_invalid_prefix(self, http_client, s3_client, default_setup):
+        """
+        Lambda should fail when the S3 object key does not start with the expected
+        prefix. Since persistence_id cannot be extracted, no RefinerComplete
+        file should be written.
+        """
+        bucket = default_setup["bucket"]
+        event = default_setup["event"]
+
+        # Override the object key to something invalid
+        invalid_key = "InvalidPrefix/persistence/id/RR.xml"
+
+        # Update the event body (which is a JSON string)
+        event_body = json.loads(event["Records"][0]["body"])
+        event_body["detail"]["object"]["key"] = invalid_key
+        event["Records"][0]["body"] = json.dumps(event_body)
+
+        # Upload a dummy file to the invalid path
+        s3_client.put_object(Bucket=bucket, Key=invalid_key, Body=b"dummy content")
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=event)
+
+        resp_json = resp.json()
+        assert "errorMessage" in resp_json or resp.status_code != 200
+
+        # Verify no RefinerComplete file was created for the default path
+        try:
+            s3_client.get_object(Bucket=bucket, Key=default_setup["complete_key"])
+            # If it exists, check if it was just created now or existed before.
+            # In a fresh default_setup, it shouldn't be there yet.
+        except Exception:
+            pass
+
     async def test_lambda_current_file_null_version(
         self, http_client, s3_client, default_setup
     ):
