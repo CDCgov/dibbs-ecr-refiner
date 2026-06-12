@@ -179,7 +179,12 @@ def lambda_handler(event, context) -> dict:
                     s3_object_key, REFINER_INPUT_PREFIX
                 )
                 logger.info(f"Extracted persistence_id: {persistence_id}")
+            except ValueError as e:
+                logger.error(f"Malformed S3 object key, skipping record: {str(e)}")
+                batch_item_failures.append({"itemIdentifier": record_id})
+                continue
 
+            try:
                 # S3 GET RR
                 logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
                 rr_content = get_s3_object_content(
@@ -240,21 +245,20 @@ def lambda_handler(event, context) -> dict:
             except Exception as e:
                 logger.error(f"Fatal error processing record: {str(e)}", exception=e)
 
-                # Attempt to write a skip file if we at least have a persistence_id
+                # Attempt to write a skip file
                 try:
-                    if persistence_id:
-                        complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
-                        error_payload: RefinerCompleteError = {
-                            "RefinerSkip": True,
-                            "Error": str(e),
-                        }
-                        s3_client.put_object(
-                            Bucket=s3_bucket_name,
-                            Key=complete_key,
-                            Body=json.dumps(error_payload, indent=2),
-                            ContentType="application/json",
-                        )
-                        logger.info(f"Wrote fatal error signal to {complete_key}")
+                    complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+                    error_payload: RefinerCompleteError = {
+                        "RefinerSkip": True,
+                        "Error": str(e),
+                    }
+                    s3_client.put_object(
+                        Bucket=s3_bucket_name,
+                        Key=complete_key,
+                        Body=json.dumps(error_payload, indent=2),
+                        ContentType="application/json",
+                    )
+                    logger.info(f"Wrote fatal error signal to {complete_key}")
                 except Exception as s3_err:
                     logger.error(
                         f"Failed to write error signal to S3: {str(s3_err)}",
