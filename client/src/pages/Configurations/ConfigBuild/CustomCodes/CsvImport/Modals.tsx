@@ -1,5 +1,7 @@
-import React from 'react';
-import { UploadCustomCodesPreviewItem } from '../../../../../api/schemas';
+import {
+  IndexedCodeSystem,
+  UploadCustomCodesPreviewItem,
+} from '../../../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
@@ -13,8 +15,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
-import { Spinner } from '@components/Spinner';
+import { useState, ChangeEvent } from 'react';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -82,52 +83,70 @@ export function UndoModal({ isOpen, onClose, handleDelete }: UndoModalProps) {
 }
 
 interface PreviewEditModalProps {
+  previewEditItem: UploadCustomCodesPreviewItem;
+  previewItems: UploadCustomCodesPreviewItem[] | null;
+  setPreviewItems: React.Dispatch<
+    React.SetStateAction<UploadCustomCodesPreviewItem[]>
+  >;
   isOpen: boolean;
   closePreviewEditModal: () => void;
-  previewEditForm: UploadCustomCodesPreviewItem;
-  setPreviewEditForm: React.Dispatch<
-    React.SetStateAction<UploadCustomCodesPreviewItem>
-  >;
-  isEditSaveDisabled: boolean;
-  handlePreviewEditSubmit: () => void;
-  previewItems: UploadCustomCodesPreviewItem[] | null;
-  previewEditIndex: number | null;
   setError: (err: string | null) => void;
   error: string | null;
-  handlePreviewEditChange: (
-    field: keyof UploadCustomCodesPreviewItem
-  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  codeSystems: IndexedCodeSystem;
 }
 
 export function PreviewEditModal({
+  previewEditItem,
+  previewItems,
+  setPreviewItems,
   isOpen,
   closePreviewEditModal,
-  previewEditForm,
-  setPreviewEditForm,
-  isEditSaveDisabled,
-  handlePreviewEditSubmit,
-  previewItems,
-  previewEditIndex,
   setError,
   error,
-  handlePreviewEditChange,
+  codeSystems,
 }: PreviewEditModalProps) {
-  const { data: codeSystems, isPending, isError } = useGetCodeSystems();
+  const [previewEditForm, setPreviewEditForm] = useState(previewEditItem);
 
-  if (isPending)
-    return (
-      <div className="flex w-full justify-center">
-        <Spinner />
-      </div>
+  const handlePreviewEditSubmit = (
+    payload: UploadCustomCodesPreviewItem | null
+  ) => {
+    if (payload === null) {
+      closePreviewEditModal();
+      return;
+    }
+    setPreviewItems((prev) =>
+      prev
+        ? prev.map((item) => (payload.id === item.id ? { ...payload } : item))
+        : prev
     );
+    closePreviewEditModal();
+  };
 
-  if (isError || !codeSystems) return 'Error!';
+  function handlePreviewEditChange<
+    K extends keyof UploadCustomCodesPreviewItem,
+  >(field: K, event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const value = event.target.value as UploadCustomCodesPreviewItem[K];
+    setPreviewEditForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  }
+
+  const isEditSaveDisabled =
+    error != null ||
+    !previewEditForm ||
+    !previewEditForm.code ||
+    !previewEditForm.name ||
+    !previewEditForm.system_key;
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
       <ModalHeader>
         <ModalTitle>
-          {previewEditForm.code ? `Edit ${previewEditForm.code}` : 'Edit code'}
+          {previewEditItem.code ? `Edit ${previewEditItem.code}` : 'Edit code'}
         </ModalTitle>
       </ModalHeader>
       <ModalBody>
@@ -137,13 +156,14 @@ export function PreviewEditModal({
             <TextInput
               type="text"
               value={previewEditForm.code}
-              onChange={handlePreviewEditChange('code')}
+              onChange={(e) => handlePreviewEditChange('code', e)}
               onBlur={() => {
                 const trimmedCode = previewEditForm.code.trim();
                 if (
                   previewItems?.some(
-                    (item, idx) =>
-                      item.code === trimmedCode && idx !== previewEditIndex
+                    (item) =>
+                      item.code === trimmedCode &&
+                      item.id !== previewEditForm.id
                   )
                 ) {
                   setError(`The code "${trimmedCode}" already exists.`);
@@ -165,9 +185,9 @@ export function PreviewEditModal({
             <Label>Code system</Label>
             <Select
               value={previewEditForm.system_key}
-              onChange={handlePreviewEditChange('system_key')}
+              onChange={(e) => handlePreviewEditChange('system_key', e)}
             >
-              {codeSystems.data.map((s) => (
+              {Object.values(codeSystems).map((s) => (
                 <option key={s.id} value={s.key}>
                   {s.display_name}
                 </option>
@@ -180,13 +200,13 @@ export function PreviewEditModal({
           <TextInput
             type="text"
             value={previewEditForm.name}
-            onChange={handlePreviewEditChange('name')}
+            onChange={(e) => handlePreviewEditChange('name', e)}
           />
         </Field>
       </ModalBody>
       <ModalFooter align="right">
         <Button
-          onClick={handlePreviewEditSubmit}
+          onClick={() => handlePreviewEditSubmit(previewEditForm)}
           disabled={isEditSaveDisabled}
           variant="primary"
         >

@@ -1,5 +1,5 @@
 from app.db.code_systems.db import (
-    CodeSystemIndex,
+    IndexedCodeSystem,
     get_all_code_systems_db,
 )
 from app.db.pool import AsyncDatabaseConnection
@@ -7,7 +7,7 @@ from app.db.pool import AsyncDatabaseConnection
 
 async def get_all_code_systems_by_key(
     db: AsyncDatabaseConnection,
-) -> CodeSystemIndex:
+) -> IndexedCodeSystem:
     """
     Helper method that returns a map of key to code system.
 
