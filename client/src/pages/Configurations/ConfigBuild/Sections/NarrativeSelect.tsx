@@ -1,6 +1,9 @@
 import { Select } from '@components/Select';
-import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useSectionUpdater } from './useSectionUpdater';
+import {
+  DbNarrativeAction,
+  DbConfigurationSectionProcessing,
+} from '../../../../api/schemas';
 
 // TODO: Add "Reconstruct" option once backend `narrative` field supports 3-value enum
 // (retain | remove | refine). Currently limited to boolean (true = retain, false = remove).
@@ -22,10 +25,10 @@ export function NarrativeSelect({
     <div className="flex-start flex">
       <Select
         disabled={disabled}
-        value={currentSection.narrative ? 'retain' : 'remove'}
+        value={currentSection.narrative}
         onChange={(e) => {
           updateSection(currentSection, {
-            narrative: e.target.value === 'retain',
+            narrative: e.target.value as DbNarrativeAction,
           });
         }}
         aria-label={`Narrative data handling for ${currentSection.name} section`}
