@@ -51,9 +51,9 @@ ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
 
 
-class RefinerCompleteFile(TypedDict):
+class RefinerCompleteSuccess(TypedDict):
     """
-    Represents the completion file written after all refinement is done.
+    Represents a successful completion file written after all refinement is done.
 
     Required by AIMS infrastructure.
     """
@@ -61,6 +61,20 @@ class RefinerCompleteFile(TypedDict):
     RefinerMetadata: RefinerMetadata
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
+
+
+class RefinerCompleteError(TypedDict):
+    """
+    Represents a fatal error completion file written despite of failure.
+
+    Required by AIMS infrastructure.
+    """
+
+    RefinerSkip: bool
+    Error: str
+
+
+RefinerCompleteFile = RefinerCompleteSuccess | RefinerCompleteError
 
 
 @dataclass
