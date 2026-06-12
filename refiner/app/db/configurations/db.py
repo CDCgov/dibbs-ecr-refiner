@@ -89,7 +89,7 @@ async def insert_custom_section_db(
         name,
         "refine",
         True,
-        False,
+        "remove",
         versions,
         "custom",
     )
@@ -1051,9 +1051,7 @@ async def update_configuration_section_db(
         (
             prev_section.narrative,
             section_update.narrative,
-            lambda old, new: (
-                f"narrative from '{_bool_label(old)}' to '{_bool_label(new)}'"
-            ),
+            lambda old, new: f"narrative from '{old}' to '{new}'",
         ),
     ]
 
