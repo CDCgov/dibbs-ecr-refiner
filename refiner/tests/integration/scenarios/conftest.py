@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Literal
 
 import pytest
 import pytest_asyncio
@@ -71,7 +70,7 @@ class SectionOverride:
 
     current_code: str
     include: bool | None = None
-    narrative: str | None = None #DbNarrativeAction; kept as str to avoid the import
+    narrative: str | None = None  # DbNarrativeAction; kept as str to avoid the import
     action: str | None = None  # DbSectionAction; kept as str to avoid the import
 
 
