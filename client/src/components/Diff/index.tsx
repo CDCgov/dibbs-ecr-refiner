@@ -149,7 +149,7 @@ export function Diff({
 function DiffViewWarning() {
   return (
     <Warning
-      heading={`Maximum uncompressed file size is ${FileInfoResponseValue.max_for_uncompressed_mb}MB`}
+      heading={`Maximum uncompressed file size is ${FileInfoResponseValue.max_for_diff_rendering_mb}MB`}
       message="This file is too large to view in-browser. Please download the results to compare them."
     />
   );

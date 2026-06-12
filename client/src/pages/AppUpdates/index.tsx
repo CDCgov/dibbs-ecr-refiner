@@ -42,7 +42,7 @@ export function AppUpdates() {
                 );
               })}
               {i !== releaseContentToRender.length - 1 && (
-                <hr className="bg-base-lighter h-0.5! border-none"></hr>
+                <hr className="bg-base-lighter h-0.5! border-none" />
               )}
             </div>
           );

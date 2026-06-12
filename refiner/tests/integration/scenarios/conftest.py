@@ -7,6 +7,7 @@ from fastapi import status
 from app.core.models.types import XMLFiles
 from app.db.configurations.model import DbConfigurationCustomCode
 from app.services.terminology import ProcessedConfiguration
+from tests.integration.scenarios.build_report import build_report
 
 from ...fixtures.loader import load_fixture_str
 from ..conftest import (
@@ -45,6 +46,20 @@ def update_snapshots(request: pytest.FixtureRequest) -> bool:
     """
 
     return bool(request.config.getoption("--update-snapshots"))
+
+
+# This hook runs automatically at the end of the test session
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """
+    Generate a new report at the end of the scenario run.
+
+    All scenarios must pass and the update snapshot command must be used.
+    """
+    if exitstatus != 0:
+        return
+    if not session.config.getoption("--update-snapshots", default=False):
+        return
+    build_report()
 
 
 # NOTE:
