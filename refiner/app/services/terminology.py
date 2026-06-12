@@ -243,7 +243,7 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
-    narrative: Literal["retain", "remove", "refine"]
+    narrative: DbNarrativeAction
     include: bool
 
 
