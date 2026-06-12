@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -79,6 +79,17 @@ CREATE TYPE public.event_type_enum AS ENUM (
 CREATE TYPE public.section_action AS ENUM (
     'refine',
     'retain'
+);
+
+
+--
+-- Name: section_narrative; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.section_narrative AS ENUM (
+    'retain',
+    'remove',
+    'reconstruct'
 );
 
 
@@ -237,11 +248,25 @@ CREATE TABLE public.configurations_sections (
     name text NOT NULL,
     action public.section_action NOT NULL,
     include boolean NOT NULL,
-    narrative boolean NOT NULL,
     versions text[] DEFAULT '{}'::text[] NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    section_type public.configurations_sections_type NOT NULL
+    section_type public.configurations_sections_type NOT NULL,
+    narrative public.section_narrative CONSTRAINT configurations_sections_narrative_new_not_null NOT NULL
+);
+
+
+--
+-- Name: custom_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.custom_codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    value text NOT NULL,
+    system_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -839,5 +864,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260520185510'),
     ('20260526153052'),
     ('20260602161536'),
+    ('20260603120000'),
     ('20260604134336'),
     ('20260608203714');
