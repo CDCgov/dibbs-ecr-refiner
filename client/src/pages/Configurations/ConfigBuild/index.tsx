@@ -34,7 +34,6 @@ import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
-import { InfoIcon } from '@components/Tooltip/InfoIcon';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
