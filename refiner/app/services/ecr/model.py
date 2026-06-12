@@ -429,7 +429,7 @@ class SectionProvenanceRecord:
         action:         The configured processing action: "refine" or "retain".
         narrative:      Whether the original narrative <text> was configured
                         to be preserved. Currently a three-way enum
-                        ("retain"/"remove"/"refine").
+                        ("retain"/"remove"/"reconstruct").
         config_version: The version number of the activated configuration used
                         for this refinement run. None if not available (e.g.,
                         legacy S3 configs that predate version tracking).

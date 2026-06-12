@@ -84,7 +84,7 @@ The user-facing labels for the configuration source and the runtime outcome live
 **Namespace standardization.** All modules use `hl7:` as the XPath prefix for `urn:hl7-org:v3`. The namespace map is defined once in `model.py` and imported everywhere. The CDA literature uses both `hl7:` and `cda:` interchangeably (per Keith Boone's _The CDA Book_, §4.2); having one convention across the codebase prevents silent bugs from mismatched prefix/map pairs.
 
 **Three-way narrative configuration.** The `narrative` setting on a section
-configuration is currently a three-way enum ("retain", "remove", "refine"). The
+configuration is currently a three-way enum ("retain", "remove", "reconstruct"). The
 `SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED` enum value and its label are
 already in place; the work is in the matching engines and the configuration UI.
 
