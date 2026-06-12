@@ -51,7 +51,7 @@ ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
 
 
-class RefinerCompleteFile(TypedDict):
+class RefinerCompleteFile(TypedDict, total=False):
     """
     Represents the completion file written after all refinement is done.
 
@@ -61,6 +61,7 @@ class RefinerCompleteFile(TypedDict):
     RefinerMetadata: RefinerMetadata
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
+    Error: str
 
 
 @dataclass

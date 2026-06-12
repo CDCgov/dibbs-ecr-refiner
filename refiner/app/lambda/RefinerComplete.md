@@ -20,9 +20,20 @@ Combinations marked `false` in `RefinerMetadata` will have no corresponding entr
 
 ## `RefinerSkip`
 
-A boolean indicating whether the refiner skipped processing entirely. When `false`, the refiner ran its normal processing loop (though individual jurisdiction/condition pairs may still have been skipped, as indicated by `RefinerMetadata`).
+A boolean indicating whether the refiner skipped processing entirely. When
+`true`, it signals that the refiner either skipped the eCR due to configuration
+OR encountered a fatal execution error. In either case, `RefinerMetadata` and
+`RefinerOutputFiles` are omitted.
 
-## Example
+## `Error`
+
+An optional string containing the diagnostic error message if the refiner
+encountered a fatal error. This field is only present when `RefinerSkip` is
+`true`.
+
+## Examples
+
+A successful refinement output.
 
 ```json
 {
@@ -43,5 +54,14 @@ A boolean indicating whether the refiner skipped processing entirely. When `fals
     "RefinerOutput/<persistence_id>/NY/COVID19/refined_eICR.xml",
     "RefinerOutput/<persistence_id>/NY/COVID19/refined_RR.xml"
   ]
+}
+```
+
+A failed refinement output.
+
+```json
+{
+  "RefinerSkip": true,
+  "Error": "Fatal error: setId missing from document"
 }
 ```
