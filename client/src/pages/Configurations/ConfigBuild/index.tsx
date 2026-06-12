@@ -444,7 +444,7 @@ const ConditionCodeSetButton = forwardRef<
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
-          {codeSetTotalCodes?.toLocaleString()}
+          {codeSetTotalCodes.toLocaleString()}
         </span>
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set
@@ -519,13 +519,13 @@ function DeleteCodeSetButton({
   }
 
   return index === 0 ? (
-    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+    <span className="text-gray-cool-50 mr-2 hidden italic group-hover:block">
       Default
     </span>
   ) : (
     <Button
       variant="unstyled"
-      className="text-gray-cool-40 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+      className="text-gray-cool-50 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
       disabled={disabled}
