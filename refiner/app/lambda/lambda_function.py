@@ -74,12 +74,6 @@ class RefinerCompleteError(TypedDict):
     Error: str
 
 
-# NOTE: Alias exists for type flexibility and documentation for what a
-# completion file can be in this system. Use the specific types for assignments
-# to keep our types safe.
-RefinerCompleteFile = RefinerCompleteSuccess | RefinerCompleteError
-
-
 @dataclass
 class RefinementState:
     """
