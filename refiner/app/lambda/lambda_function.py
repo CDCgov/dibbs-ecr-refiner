@@ -74,6 +74,9 @@ class RefinerCompleteError(TypedDict):
     Error: str
 
 
+# NOTE: Alias exists for type flexibility and documentation for what a
+# completion file can be in this system. Use the specific types for assignments
+# to keep our types safe.
 RefinerCompleteFile = RefinerCompleteSuccess | RefinerCompleteError
 
 
@@ -215,7 +218,7 @@ def lambda_handler(event, context) -> dict:
                 )
 
                 # Create RefinerComplete file
-                complete_file: RefinerCompleteFile = {
+                complete_file: RefinerCompleteSuccess = {
                     "RefinerMetadata": result.metadata,
                     "RefinerSkip": False,
                     "RefinerOutputFiles": result.output_file_keys,
@@ -246,7 +249,7 @@ def lambda_handler(event, context) -> dict:
                 try:
                     if persistence_id:
                         complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
-                        error_payload: RefinerCompleteFile = {
+                        error_payload: RefinerCompleteError = {
                             "RefinerSkip": True,
                             "Error": str(e),
                         }
