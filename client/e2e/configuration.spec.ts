@@ -14,6 +14,7 @@ test.describe('Configuration detail flow', () => {
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -25,6 +26,7 @@ test.describe('Configuration detail flow', () => {
       'Code system',
       'Display name',
     ]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Code set table can be filtered by code system', async ({
@@ -466,6 +468,7 @@ test.describe('Configuration detail flow', () => {
           level: 2,
         })
       ).toBeVisible();
+
       const downloadPath =
         await configurationPage.downloadCustomCodeCsvTemplate();
       await configurationPage.uploadCustomCodeCsv(downloadPath);
@@ -515,10 +518,13 @@ test.describe('Configuration detail flow', () => {
         page.getByText('Other Example', { exact: true })
       ).not.toBeVisible();
       await page.getByRole('searchbox', { name: 'Search codes' }).clear();
-      await expect(page.getByText(testCode)).toBeVisible();
 
       const rows = page.locator('table tbody tr');
       const firstRow = rows.first();
+      // first row should have the most recent updated values
+      await expect(firstRow.getByText(testCode)).toBeVisible();
+      await expect(firstRow.getByText('test code_name')).toBeVisible();
+      await expect(firstRow.getByText('CVX')).toBeVisible();
 
       expect(await rows.all()).toHaveLength(3);
       await firstRow.getByRole('button', { name: 'Delete' }).click();
