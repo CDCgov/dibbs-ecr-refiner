@@ -77,12 +77,12 @@ export function ConfigBuild() {
         <div className="flex items-center gap-2">
           <Title>{configuration.data.display_name}</Title>
           <Button
-            variant="unstyled"
+            variant="tertiary"
             onClick={() => setIsRsgDetailsModalOpen(true)}
-            className="hover:cursor-pointer"
+            className="pl-0!"
             aria-label="Open reporting specification details modal"
           >
-            <InfoIcon />
+            details
           </Button>
           <RsgDetailsModal
             open={isRsgDetailsModalOpen}
