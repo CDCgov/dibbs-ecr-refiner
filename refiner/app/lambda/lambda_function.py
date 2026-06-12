@@ -74,12 +74,6 @@ class RefinerCompleteError(TypedDict):
     Error: str
 
 
-# NOTE: Alias exists for type flexibility and documentation for what a
-# completion file can be in this system. Use the specific types for assignments
-# to keep our types safe.
-RefinerCompleteFile = RefinerCompleteSuccess | RefinerCompleteError
-
-
 @dataclass
 class RefinementState:
     """
@@ -152,6 +146,7 @@ def lambda_handler(event, context) -> dict:
     """
 
     try:
+        batch_item_failures = []
         logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
         s3_config_bucket_name = S3_BUCKET_CONFIG
 
@@ -265,10 +260,9 @@ def lambda_handler(event, context) -> dict:
                         f"Failed to write error signal to S3: {str(s3_err)}",
                         exception=s3_err,
                     )
+                batch_item_failures.append({"itemIdentifier": record_id})
 
-                raise e
-
-        return {"statusCode": 200, "message": "Refiner processed successfully"}
+        return {"batchItemFailures": batch_item_failures}
 
     except Exception as e:
         logger.error(f"Error processing: {str(e)}", exception=e)

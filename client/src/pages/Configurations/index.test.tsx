@@ -51,6 +51,7 @@ vi.mock('../../api/configurations/configurations', async () => {
             codes: [],
             code_systems: {},
           }, // not needed for these tests
+          rsg_codes: [],
           included_conditions: [
             { id: '1', display_name: 'Anaplasmosis', associated: true },
             {
