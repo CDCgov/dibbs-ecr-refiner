@@ -71,7 +71,7 @@ class SectionOverride:
 
     current_code: str
     include: bool | None = None
-    narrative: Literal["retain", "remove", "refine"] | None = None
+    narrative: str | None = None #DbNarrativeAction; kept as str to avoid the import
     action: str | None = None  # DbSectionAction; kept as str to avoid the import
 
 
