@@ -10,6 +10,7 @@ from app.services.terminology import CodeSystemSets, Coding
 
 from ..model import (
     HL7_XSI_NS,
+    DbNarrativeAction,
     EntryMatchRule,
     NamespaceMap,
     SectionRunResult,
@@ -17,7 +18,9 @@ from ..model import (
 )
 from ..narrative import (
     create_minimal_section,
+    reconstruct_narrative,
     remove_all_comments,
+    replace_narrative_with_reconstruction,
     replace_narrative_with_removal_notice,
 )
 from .utils import (
@@ -71,7 +74,7 @@ def process(
     code_system_sets: CodeSystemSets,
     section_specification: SectionSpecification,
     namespaces: NamespaceMap,
-    include_narrative: bool = True,
+    narrative: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using IG-driven entry match rules.
@@ -86,7 +89,7 @@ def process(
     4. Enriches displayName on all surviving code-bearing elements
     5. Injects per-entry match provenance comments above surviving
        entries — added after source comment cleanup so they survive
-    6. Handles narrative <text> based on `include_narrative`
+    6. Handles narrative <text> based on the `narrative` action
 
     No UUID swap needed — match rules only search within <entry>
     elements, so the section's own <code> is never at risk of matching.
@@ -142,18 +145,39 @@ def process(
             namespaces=namespaces,
         )
 
-        # STEP 6: handle narrative <text>
-        if not include_narrative:
-            replace_narrative_with_removal_notice(section, namespaces)
-            return SectionRunResult(
-                matches_found=True,
-                narrative_disposition="removed",
-            )
-
-        return SectionRunResult(
-            matches_found=True,
-            narrative_disposition="retained",
-        )
+        # STEP 6: handle narrative <text> reconstruction runs HERE,
+        # after STEP 4 enrichment, because it reads displayName off the
+        # surviving entries it rebuilds the table from
+        match narrative:
+            case "remove":
+                replace_narrative_with_removal_notice(section, namespaces)
+                return SectionRunResult(
+                    matches_found=True,
+                    narrative_disposition="removed",
+                )
+            case "reconstruct":
+                reconstructed = reconstruct_narrative(section)
+                if reconstructed is not None:
+                    replace_narrative_with_reconstruction(
+                        section, reconstructed, namespaces
+                    )
+                    return SectionRunResult(
+                        matches_found=True,
+                        narrative_disposition="reconstructed",
+                    )
+                # no registered reconstructor or nothing survived to
+                # rebuild--fall back to removal rather than leave the
+                # stale source narrative on a refined section
+                replace_narrative_with_removal_notice(section, namespaces)
+                return SectionRunResult(
+                    matches_found=True,
+                    narrative_disposition="removed",
+                )
+            case _:
+                return SectionRunResult(
+                    matches_found=True,
+                    narrative_disposition="retained",
+                )
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(

@@ -45,15 +45,15 @@ def _build_footnote_id(
     Build a document-unique xs:ID for a refiner provenance footnote.
 
     The ID is of the form
-    `ecr-refinement-{loinc}-{timestamp-digits}`, optionally with a
+    `ecr-refiner-{loinc}-{timestamp-digits}`, optionally with a
     `-{n}` suffix for the rare case where the same LOINC appears on
     multiple top-level sections in a single document. The timestamp
     digits are extracted from the augmentation author's <time> value
-    (HL7 V3 ``YYYYMMDDHHMMSS±ZZZZ`` format) by keeping the leading
-    run of digits — the timezone offset is stripped because ``+`` and
+    (HL7 V3 `YYYYMMDDHHMMSS±ZZZZ` format) by keeping the leading
+    run of digits — the timezone offset is stripped because `+` and
     the offset digits are not wanted in the ID.
 
-    xs:ID cannot start with a digit or hyphen, so the ``ecr-refinement-``
+    xs:ID cannot start with a digit or hyphen, so the `ecr-refiner-`
     prefix is load-bearing: it ensures the resulting string always
     satisfies the XML Name production.
 
@@ -64,7 +64,7 @@ def _build_footnote_id(
         occurrence_index: Zero-based disambiguator for the rare case
             where the same LOINC appears on multiple top-level
             sections. Zero (the normal case) produces no suffix;
-            nonzero values append ``-N``.
+            nonzero values append `-N`.
 
     Returns:
         A document-unique xs:ID-safe string.
@@ -72,7 +72,7 @@ def _build_footnote_id(
 
     match = re.match(r"^\d+", augmentation_timestamp)
     timestamp_digits = match.group(0) if match else ""
-    base = f"ecr-refinement-{loinc_code}-{timestamp_digits}"
+    base = f"ecr-refiner-{loinc_code}-{timestamp_digits}"
     return base if occurrence_index == 0 else f"{base}-{occurrence_index}"
 
 

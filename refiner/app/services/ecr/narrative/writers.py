@@ -29,6 +29,39 @@ _MESSAGE_MAP: Final[dict[str, str]] = {
 
 
 # NOTE:
+# NARRATIVE PLACEMENT
+# =============================================================================
+# every "swap the section's <text>" operation--removal notice, generic-path
+# restoration, reconstruction--must land the new element in the same place:
+# replacing the existing <text>, or, when absent, inserted per the CDA R2
+# xs:sequence (after <title>, else after <code>, else appended). one helper
+# owns that placement so all three writers stay consistent
+
+
+def _place_section_text(
+    section: _Element,
+    new_text: _Element,
+    namespaces: NamespaceMap,
+) -> None:
+    current_text = section.find("hl7:text", namespaces=namespaces)
+    if current_text is not None:
+        section.replace(current_text, new_text)
+        return
+
+    title_element = section.find("hl7:title", namespaces=namespaces)
+    if title_element is not None:
+        title_element.addnext(new_text)
+        return
+
+    code_element = section.find("hl7:code", namespaces=namespaces)
+    if code_element is not None:
+        code_element.addnext(new_text)
+        return
+
+    section.append(new_text)
+
+
+# NOTE:
 # NARRATIVE REMOVAL NOTICE
 # =============================================================================
 
@@ -58,23 +91,29 @@ def replace_narrative_with_removal_notice(
     paragraph = _sub_element(new_text, "paragraph")
     paragraph.text = REMOVE_NARRATIVE_MESSAGE
 
-    existing_text = section.find("hl7:text", namespaces=namespaces)
-    if existing_text is not None:
-        section.replace(existing_text, new_text)
-        return
+    _place_section_text(section, new_text, namespaces)
 
-    # no existing <text>; insert after <title> (or <code>) per xs:sequence
-    title_element = section.find("hl7:title", namespaces=namespaces)
-    if title_element is not None:
-        title_element.addnext(new_text)
-        return
 
-    code_element = section.find("hl7:code", namespaces=namespaces)
-    if code_element is not None:
-        code_element.addnext(new_text)
-        return
+# NOTE:
+# NARRATIVE RECONSTRUCTION SWAP
+# =============================================================================
 
-    section.append(new_text)
+
+def replace_narrative_with_reconstruction(
+    section: _Element,
+    reconstructed_text: _Element,
+    namespaces: NamespaceMap = HL7_NS,
+) -> None:
+    """
+    Swap in a reconstructed <text> built from the section's surviving entries.
+
+    The reconstructed element is produced (pure, detached) by
+    `reconstruction.reconstruct_narrative`; this writer only places it
+    into the section per the CDA R2 xs:sequence, mirroring the removal
+    and restoration swaps.
+    """
+
+    _place_section_text(section, reconstructed_text, namespaces)
 
 
 # NOTE:
@@ -100,22 +139,7 @@ def restore_narrative(
     per the CDA R2 xs:sequence.
     """
 
-    current_text = section.find("hl7:text", namespaces=namespaces)
-    if current_text is not None:
-        section.replace(current_text, original_text)
-        return
-
-    title_element = section.find("hl7:title", namespaces=namespaces)
-    if title_element is not None:
-        title_element.addnext(original_text)
-        return
-
-    code_element = section.find("hl7:code", namespaces=namespaces)
-    if code_element is not None:
-        code_element.addnext(original_text)
-        return
-
-    section.append(original_text)
+    _place_section_text(section, original_text, namespaces)
 
 
 # NOTE:

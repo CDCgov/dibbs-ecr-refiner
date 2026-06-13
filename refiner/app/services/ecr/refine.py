@@ -511,21 +511,20 @@ def refine_eicr(
                 outcome = SectionOutcome.RETAINED
 
         else:
-            # BRANCH 3: refine entries via the matching engines.
-            # process_section returns a SectionRunResult describing what
+            # BRANCH 3: refine entries via the matching engines:
+            # * process_section returns a SectionRunResult describing what
             # actually happened, which _interpret_run_result maps to a
             # user-facing outcome (including the no-match policy override)
-            # TODO: When narrative="refine" is implemented, this should trigger
-            # narrative reconstruction logic. For now, treat "refine" as "remove"
-            # to avoid keeping stale narrative when entries are being filtered.
-            include_narrative = section_rules.narrative == "retain"
+            # * the configured narrative action ("retain"/"remove"/
+            # "reconstruct") is threaded straight through to the engine,
+            # which owns the decision after pruning + enrichment
             run_result = process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,
                 namespaces=HL7_NS,
                 section_specification=section_specification,
                 code_system_sets=plan.code_system_sets,
-                include_narrative=include_narrative,
+                narrative=section_rules.narrative,
             )
             outcome = _interpret_run_result(run_result=run_result)
 
