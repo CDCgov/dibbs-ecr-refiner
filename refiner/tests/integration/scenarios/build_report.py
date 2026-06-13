@@ -189,13 +189,13 @@ CAPABILITY_COVERAGE: list[CapabilityRow] = [
         scenarios=["covid_results_reconstruction"],
         evidence=(
             "`covid_results_reconstruction` configures the Results section "
-            "(LOINC 30954-2) with `narrative=\"reconstruct\"`. After entry "
+            '(LOINC 30954-2) with `narrative="reconstruct"`. After entry '
             "refinement prunes the section to the surviving SARS-CoV-2 result, "
             "the engine rebuilds the section `<text>` from those entries rather "
             "than retaining the stale source narrative. The snapshot pins the "
             "reconstructed table: a machine-derived `<text>` carrying the result "
             "row (panel, test, result, interpretation, date) plus the "
-            "\"machine-derived, not clinician-attested\" provenance marker, and "
+            '"machine-derived, not clinician-attested" provenance marker, and '
             "the validation layer confirms it stays CDA R2 XSD- and "
             "schematron-valid. Reconstruction is only reachable on the refine "
             "path — a retained section never reconstructs — so a regression that "
