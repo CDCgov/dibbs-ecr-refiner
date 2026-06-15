@@ -250,14 +250,13 @@ class ProcessedConfigurationData(BaseModel):
     """
     ProcessedConfiguration data coming from an active.json S3 file.
 
-    Supports both the legacy format (flat codes only) and the enriched
-    format (with code_system_sets). The enriched format is written by
-    newer activation code.
+    active.json stores code data in code_system_sets. The runtime flat codes set
+    is derived from code_system_sets when building the ProcessedConfiguration.
     """
 
     sections: list[Section]
     included_condition_rsg_codes: set[str]
-    code_system_sets: dict[str, list[dict[str, str]]] | None = None
+    code_system_sets: dict[str, list[dict[str, str]]]
 
 
 @dataclass(frozen=True)
