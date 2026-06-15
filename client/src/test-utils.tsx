@@ -12,13 +12,9 @@ const createTestQueryClient = () =>
     },
   });
 
-export const TestQueryClientProvider = ({
-  children,
-}: {
-  children: ReactNode;
-}) => {
+export function TestQueryClientProvider({ children }: { children: ReactNode }) {
   const queryClient = createTestQueryClient();
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-};
+}

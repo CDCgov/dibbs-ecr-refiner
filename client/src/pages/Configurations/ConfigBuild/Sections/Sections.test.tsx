@@ -12,7 +12,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     action: 'refine',
     include: true,
     code: 'hist',
-    narrative: false,
+    narrative: 'remove',
     versions: ['1.1', '3.1'],
     section_type: 'standard',
   },
@@ -21,7 +21,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     action: 'refine',
     include: false,
     code: 'med',
-    narrative: false,
+    narrative: 'remove',
     versions: ['1.1', '3.1', '3.1.1'],
     section_type: 'standard',
   },
@@ -30,7 +30,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     action: 'retain',
     include: true,
     code: 'imm',
-    narrative: false,
+    narrative: 'remove',
     versions: ['3.1', '3.1.1'],
     section_type: 'standard',
   },
@@ -39,9 +39,22 @@ const sections: DbConfigurationSectionProcessing[] = [
     action: 'refine',
     include: true,
     code: 'mock-custom-section',
-    narrative: true,
+    narrative: 'retain',
     versions: [],
     section_type: 'custom',
+  },
+];
+
+const sectionsWithDisabled: DbConfigurationSectionProcessing[] = [
+  ...sections,
+  {
+    name: 'Disabled section',
+    action: 'retain',
+    include: true,
+    code: '83910-0',
+    narrative: 'retain',
+    versions: ['3.1'],
+    section_type: 'standard',
   },
 ];
 
@@ -57,7 +70,6 @@ describe('Configuration sections', () => {
       <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
-    // all table rows (including header)
     const rows = screen.getAllByRole('row');
     expect(rows).toHaveLength(5);
 
@@ -66,43 +78,89 @@ describe('Configuration sections', () => {
       return {
         checkbox: within(row).getByRole('checkbox'),
         nameCell: within(row).getAllByRole('cell')[1],
-        switches: within(row).queryAllByRole('switch'), // [0] = coded data, [1] = narrative data
+        codedDataSwitch: within(row).queryByRole('switch'),
+        narrativeSelect: within(row).queryByRole('combobox'),
       };
     };
 
-    // skip header
     const history = getRow(1);
     const med = getRow(2);
     const imm = getRow(3);
-    const narrative = getRow(4);
+    const custom = getRow(4);
 
-    // History
     expect(history.checkbox).toBeChecked();
     expect(history.nameCell).toHaveTextContent('History section');
-    expect(history.switches).toHaveLength(2);
-    expect(history.switches[0]).toBeChecked();
-    expect(history.switches[1]).not.toBeChecked();
+    expect(history.codedDataSwitch).toBeInTheDocument();
+    expect(history.codedDataSwitch).toBeChecked();
+    expect(history.narrativeSelect).toBeInTheDocument();
+    expect(history.narrativeSelect).toHaveValue('remove');
 
-    // Med
     expect(med.checkbox).not.toBeChecked();
     expect(med.nameCell).toHaveTextContent('Med section');
-    expect(med.switches).toHaveLength(0);
+    expect(med.codedDataSwitch).not.toBeInTheDocument();
+    expect(med.narrativeSelect).not.toBeInTheDocument();
 
-    // Immunizations
     expect(imm.checkbox).toBeChecked();
     expect(imm.nameCell).toHaveTextContent('Immunizations section');
-    expect(imm.switches).toHaveLength(2);
-    expect(imm.switches[0]).not.toBeChecked();
-    expect(imm.switches[1]).not.toBeChecked();
+    expect(imm.codedDataSwitch).toBeInTheDocument();
+    expect(imm.codedDataSwitch).not.toBeChecked();
+    expect(imm.narrativeSelect).toBeInTheDocument();
+    expect(imm.narrativeSelect).toHaveValue('remove');
 
-    // Custom section
-    expect(narrative.checkbox).toBeChecked();
-    expect(narrative.nameCell).toHaveTextContent(
+    expect(custom.checkbox).toBeChecked();
+    expect(custom.nameCell).toHaveTextContent(
       'Mock custom sectionCustommock-custom-sectionEdit|Delete'
     );
-    expect(narrative.switches).toHaveLength(2);
-    expect(narrative.switches[0]).toBeChecked();
-    expect(narrative.switches[1]).toBeChecked();
+    expect(custom.codedDataSwitch).toBeInTheDocument();
+    expect(custom.codedDataSwitch).toBeChecked();
+    expect(custom.narrativeSelect).toBeInTheDocument();
+    expect(custom.narrativeSelect).toHaveValue('retain');
+  });
+
+  it('should render narrative dropdown with correct options', () => {
+    renderWithClient(
+      <Sections configurationId={testId} disabled={false} sections={sections} />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBeGreaterThanOrEqual(1);
+
+    const firstSelect = selects[0];
+    const options = within(firstSelect).getAllByRole('option');
+    expect(options).toHaveLength(2);
+    expect(options[0]).toHaveTextContent('Keep original');
+    expect(options[0]).toHaveValue('retain');
+    expect(options[1]).toHaveTextContent('Remove');
+    expect(options[1]).toHaveValue('remove');
+  });
+
+  it('should blank out narrative controls for excluded rows', () => {
+    renderWithClient(
+      <Sections configurationId={testId} disabled={false} sections={sections} />
+    );
+
+    const rows = screen.getAllByRole('row');
+    const medRow = rows[2];
+
+    expect(within(medRow).queryByRole('switch')).not.toBeInTheDocument();
+    expect(within(medRow).queryByRole('combobox')).not.toBeInTheDocument();
+  });
+
+  it('should disable narrative dropdown for disabled section LOINC codes', () => {
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithDisabled}
+      />
+    );
+
+    const disabledSectionName = screen.getByText('Disabled section');
+    const row = disabledSectionName.closest('tr');
+    expect(row).not.toBeNull();
+    const select = row && within(row).queryByRole('combobox');
+    expect(select).toBeInTheDocument();
+    expect(select).toBeDisabled();
   });
 
   it('should allow custom section additions', async () => {

@@ -1,3 +1,4 @@
+import type { DbNarrativeAction } from './dbNarrativeAction';
 import type { DbSectionAction } from './dbSectionAction';
 import type { DbSectionType } from './dbSectionType';
 
@@ -11,7 +12,7 @@ import type { DbSectionType } from './dbSectionType';
  */
 export interface DbConfigurationSectionProcessing {
   include: boolean;
-  narrative: boolean;
+  narrative: DbNarrativeAction;
   action: DbSectionAction;
   name: string;
   code: string;

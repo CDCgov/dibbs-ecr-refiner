@@ -23,7 +23,7 @@ export function SpinnerWithMinimalRender({
   );
 
   return shouldShowSpinner ? (
-    <SpinnerWithMessage loadingMessage={loadingMessage}></SpinnerWithMessage>
+    <SpinnerWithMessage loadingMessage={loadingMessage} />
   ) : (
     renderWhenDone
   );

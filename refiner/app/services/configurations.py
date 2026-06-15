@@ -56,7 +56,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
-            narrative=True,
+            narrative="retain",
             include=True,
             action=(
                 "retain"

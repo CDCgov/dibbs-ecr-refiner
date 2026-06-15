@@ -17,7 +17,7 @@ import {
   useDisassociateConditionWithConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { GetConfigurationResponse } from '../../../api/schemas';
+import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
@@ -33,6 +33,7 @@ import { Icon } from '@trussworks/react-uswds';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -55,6 +56,8 @@ export function ConfigBuild() {
     isError,
   } = useGetConfiguration(id ?? '');
 
+  const [isRsgDetailsModalOpen, setIsRsgDetailsModalOpen] = useState(false);
+
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
@@ -70,7 +73,24 @@ export function ConfigBuild() {
   return (
     <>
       <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
+        <div className="flex items-center gap-2">
+          <Title>{configuration.data.display_name}</Title>
+          <Button
+            variant="tertiary"
+            onClick={() => setIsRsgDetailsModalOpen(true)}
+            className="p-0!"
+            aria-label="Open reporting specification details modal"
+          >
+            Details
+          </Button>
+          <RsgDetailsModal
+            open={isRsgDetailsModalOpen}
+            onClose={() => setIsRsgDetailsModalOpen(false)}
+            primaryConditionDisplayName={configuration.data.display_name}
+            rsgCodes={configuration.data.rsg_codes}
+          />
+        </div>
+
         <Status version={configuration.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
@@ -548,4 +568,57 @@ function OptionsListContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsList({ children }: { children: React.ReactNode }) {
   return <ul className="flex flex-col gap-2">{children}</ul>;
+}
+
+interface RsgDetailsModal {
+  open: boolean;
+  onClose: () => void;
+  rsgCodes: DbCode[];
+  primaryConditionDisplayName: string;
+}
+
+function RsgDetailsModal({
+  open,
+  onClose,
+  rsgCodes,
+  primaryConditionDisplayName,
+}: RsgDetailsModal) {
+  return (
+    <Modal
+      className="max-w-160!"
+      open={open}
+      onClose={onClose}
+      position="center"
+    >
+      <ModalHeader>
+        <ModalTitle>{primaryConditionDisplayName}</ModalTitle>
+        <p>
+          Applies to eCR documents reportable for the conditions below. Only one
+          output will be produced per condition group.
+        </p>
+      </ModalHeader>
+      <ModalBody>
+        <table>
+          <thead className="border-b-gray-cool-20 border-b">
+            <tr>
+              <th scope="col" className="w-[40%] px-2 py-3 font-bold">
+                SNOMED code
+              </th>
+              <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
+            </tr>
+          </thead>
+          <tbody className="divide-gray-cool-20 divide-y">
+            {rsgCodes.map((c) => {
+              return (
+                <tr key={c.value}>
+                  <td className="py-3 pl-2">{c.value}</td>
+                  <td className="py-3 pl-2">{c.name}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </ModalBody>
+    </Modal>
+  );
 }

@@ -325,7 +325,6 @@ class TestConfigurations:
     async def test_section_updates_success(
         self, setup, authed_client, get_condition_id, update_section_processing
     ):
-
         # helper function to get section
         def require_section_by_code(sections, code):
             section = next((s for s in sections if s["code"] == code), None)
@@ -352,7 +351,7 @@ class TestConfigurations:
         )
         expected_section_defaults = {
             "include": True,
-            "narrative": True,
+            "narrative": "retain",
             "action": "refine",
             "name": "Admission Diagnosis",
             "code": "46241-6",
@@ -368,7 +367,7 @@ class TestConfigurations:
             draft_id,
             current_code=admission_diagnosis_code,
             action="refine",
-            narrative=False,
+            narrative="remove",
         )
         assert update_response["section_updated_code"] == admission_diagnosis_code
 
@@ -380,7 +379,7 @@ class TestConfigurations:
         )
         expected_section_updates = {
             "include": True,
-            "narrative": False,
+            "narrative": "remove",
             "action": "refine",
             "name": "Admission Diagnosis",
             "code": "46241-6",
@@ -420,7 +419,6 @@ class TestConfigurations:
                 "action": "retain",
                 "current_code": nonexistent_code,
                 "include": False,
-                "narrative": False,
             },
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -437,7 +435,7 @@ class TestConfigurations:
                 "action": "remove",
                 "current_code": admission_diagnosis_code,
                 "include": False,
-                "narrative": False,
+                "narrative": "retain",
             },
         )
         # FastAPI shouldn't allow this to work
