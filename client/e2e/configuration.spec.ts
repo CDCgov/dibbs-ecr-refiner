@@ -582,41 +582,61 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await page.getByRole('button', { name: 'Sections' }).click();
   });
 
-  test('should manage "Reconstruct" option availability and state', async ({ page }) => {
+  test('should manage "Reconstruct" option availability and state', async ({
+    page,
+  }) => {
     // 1. Standard Section - 3 options
-    const standardRow = page.locator('tr').filter({ hasText: 'Admission Diagnosis' });
+    const standardRow = page
+      .locator('tr')
+      .filter({ hasText: 'Admission Diagnosis' });
     const standardSelect = standardRow.getByRole('combobox');
 
     const standardOptions = standardSelect.locator('option');
     await expect(standardOptions).toHaveCount(3);
-    await expect(standardOptions.filter({ hasText: 'Reconstruct' })).toBeAttached();
+    await expect(
+      standardOptions.filter({ hasText: 'Reconstruct' })
+    ).toBeAttached();
 
     // 2. Narrative-Only Section - 2 options
-    const narrativeOnlyRow = page.locator('tr').filter({ hasText: 'Chief Complaint' });
+    const narrativeOnlyRow = page
+      .locator('tr')
+      .filter({ hasText: 'Chief Complaint' });
     const narrativeOnlySelect = narrativeOnlyRow.getByRole('combobox');
     const narrativeOnlyOptions = narrativeOnlySelect.locator('option');
     await expect(narrativeOnlyOptions).toHaveCount(2);
-    await expect(narrativeOnlyOptions.filter({ hasText: 'Reconstruct' })).not.toBeAttached();
+    await expect(
+      narrativeOnlyOptions.filter({ hasText: 'Reconstruct' })
+    ).not.toBeAttached();
 
     // 3. Disabled when Coded Data is 'Keep original'
-    const sectionRow = page.locator('tr').filter({ hasText: 'Admission Diagnosis' });
+    const sectionRow = page
+      .locator('tr')
+      .filter({ hasText: 'Admission Diagnosis' });
     const codedDataSwitch = sectionRow.getByRole('switch');
 
     if (await codedDataSwitch.isChecked()) {
       await codedDataSwitch.click();
     }
 
-    const reconstructOption = sectionRow.getByRole('combobox').locator('option').filter({ hasText: 'Reconstruct' });
+    const reconstructOption = sectionRow
+      .getByRole('combobox')
+      .locator('option')
+      .filter({ hasText: 'Reconstruct' });
     await expect(reconstructOption).toBeDisabled();
 
     // 4. Enabled when Coded Data is 'Refine'
     await codedDataSwitch.click(); // Set to 'Refine' (ON)
-    const reconstructOptionEnabled = sectionRow.getByRole('combobox').locator('option').filter({ hasText: 'Reconstruct' });
+    const reconstructOptionEnabled = sectionRow
+      .getByRole('combobox')
+      .locator('option')
+      .filter({ hasText: 'Reconstruct' });
     await expect(reconstructOptionEnabled).toBeEnabled();
   });
 
   test('should handle the validation error lifecycle', async ({ page }) => {
-    const sectionRow = page.locator('tr').filter({ hasText: 'Admission Diagnosis' });
+    const sectionRow = page
+      .locator('tr')
+      .filter({ hasText: 'Admission Diagnosis' });
     const narrativeSelect = sectionRow.getByRole('combobox');
     const codedDataSwitch = sectionRow.getByRole('switch');
 
@@ -630,7 +650,9 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     }
     const errorAlert = sectionRow.getByRole('alert');
     await expect(errorAlert).toBeVisible();
-    await expect(errorAlert).toHaveText(/To reconstruct narrative, refine must be selected/);
+    await expect(errorAlert).toHaveText(
+      /To reconstruct narrative, refine must be selected/
+    );
 
     // 2. Dismiss via External Click
     await page.getByRole('heading', { level: 1 }).first().click();
@@ -646,7 +668,10 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(errorAlert).toBeVisible();
 
     // 4. Persistence via Internal Click
-    await page.locator('[data-error-trigger]').first().click({ position: { x: 2, y: 2 } });
+    await page
+      .locator('[data-error-trigger]')
+      .first()
+      .click({ position: { x: 2, y: 2 } });
     await expect(errorAlert).toBeVisible();
 
     // 5. Dismiss via Input Change

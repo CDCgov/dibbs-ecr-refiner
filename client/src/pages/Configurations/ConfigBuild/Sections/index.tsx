@@ -66,7 +66,9 @@ export function Sections({
       <section className="flex min-h-0 w-full flex-1 flex-col gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+            <h3 className="text-gray-cool-90 text-xl font-bold">
+              eICR Sections
+            </h3>
             {disabled ? null : (
               <Button
                 variant="tertiary"
