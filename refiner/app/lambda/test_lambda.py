@@ -231,9 +231,17 @@ def test_lambda_one_active(
 
     # Create activation for COVID
     covid_activation = {
-        "codes": ["101289-7"],
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "101289-7",
+                    "display": "SARS-CoV-2 RNA [Presence] in Throat by NAA with non-probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -357,9 +365,17 @@ def test_lambda_all_active(
     )
     # Create activation for COVID
     covid_activation = {
-        "codes": ["101289-7"],
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "101289-7",
+                    "display": "SARS-CoV-2 RNA [Presence] in Throat by NAA with non-probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -378,9 +394,17 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
-        "codes": ["100343-3"],
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "100343-3",
+                    "display": "Influenza virus A RNA [Presence] in Specimen by NAA with probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -398,9 +422,17 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
-        "codes": ["100343-3"],
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "100343-3",
+                    "display": "Influenza virus A RNA [Presence] in Specimen by NAA with probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
