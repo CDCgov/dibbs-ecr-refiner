@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 interface SectionErrorContextValue {
   errorSectionCode: string | null;
@@ -16,6 +16,20 @@ export function SectionErrorProvider({
   children: React.ReactNode;
 }) {
   const [errorSectionCode, setErrorSectionCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleGlobalClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // We check if the click was inside an element with [data-error-trigger]
+      // or any of its children.
+      if (!target.closest('[data-error-trigger]')) {
+        setErrorSectionCode(null);
+      }
+    };
+
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   return (
     <SectionErrorContext.Provider

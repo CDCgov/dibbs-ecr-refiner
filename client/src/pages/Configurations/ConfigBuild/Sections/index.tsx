@@ -402,7 +402,7 @@ function RefineSwitch({
           <span className="italic">{preserveLabelText}</span>
         )}
       </Label>
-      <div className="relative">
+      <div className="relative" data-error-trigger>
         <Switch
           disabled={disabled}
           checked={isRefineToggled}
