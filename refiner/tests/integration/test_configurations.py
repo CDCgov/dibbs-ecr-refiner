@@ -686,7 +686,16 @@ class TestConfigurations:
             1  # No other conditions were included
         )
 
-        assert len(activation_file_json["codes"]) == TOTAL_EXPECTED_CONDITION_CODE_COUNT
+        code_system_sets = activation_file_json["code_system_sets"]
+
+        activation_codes = {
+            coding["code"]
+            for codings in code_system_sets.values()
+            for coding in codings
+        }
+
+        assert len(activation_codes) == TOTAL_EXPECTED_CONDITION_CODE_COUNT
+        assert "codes" not in activation_file_json
         assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
         assert (
             len(activation_file_json["included_condition_rsg_codes"])
