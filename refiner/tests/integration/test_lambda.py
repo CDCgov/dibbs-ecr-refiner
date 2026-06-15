@@ -234,7 +234,11 @@ class TestLambda:
 
         # Lambda failure in Localstack might still return 200 but with an errorMessage in body
         resp_json = resp.json()
-        assert "errorMessage" in resp_json or resp.status_code != 200
+        assert (
+            "batchItemFailures" in resp_json
+            and len(resp_json["batchItemFailures"]) > 0
+            or resp.status_code != 200
+        )
 
         # Verify that a RefinerComplete file was written despite the failure
         complete_key = default_setup["complete_key"]
@@ -271,7 +275,11 @@ class TestLambda:
         resp = await http_client.post(LAMBDA_BASE_URL, json=event)
 
         resp_json = resp.json()
-        assert "errorMessage" in resp_json or resp.status_code != 200
+        assert (
+            "batchItemFailures" in resp_json
+            and len(resp_json["batchItemFailures"]) > 0
+            or resp.status_code != 200
+        )
 
         # Verify no RefinerComplete file was created for the default path
         try:
