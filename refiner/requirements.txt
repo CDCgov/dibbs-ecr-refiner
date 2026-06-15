@@ -1,4 +1,4 @@
-boto3==1.43.21
+boto3==1.43.26
 Authlib==1.7.2
 fastapi==0.136.3
 chardet==7.4.3
@@ -10,5 +10,5 @@ psycopg[binary]==3.3.4
 psycopg[pool]==3.3.4
 pydantic==2.13.4
 python-json-logger==4.1.0
-uvicorn==0.48.0
-python-multipart==0.0.30
+uvicorn==0.49.0
+python-multipart==0.0.32
