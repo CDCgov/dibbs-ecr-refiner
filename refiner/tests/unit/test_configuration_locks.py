@@ -131,7 +131,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        s3_urls=[],
+        s3_url=[],
     )
 
     monkeypatch.setattr(

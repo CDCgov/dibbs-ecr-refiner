@@ -816,7 +816,7 @@ class TestConfigurations:
                 activated_by_user_id=uuid4(),
                 canonical_url="https://mock.com",
                 jurisdiction_id="SDDH",
-                s3_urls=["s3://bucket/key"],
+                s3_url="s3://bucket/key",
                 db=db_pool,
             )
 
