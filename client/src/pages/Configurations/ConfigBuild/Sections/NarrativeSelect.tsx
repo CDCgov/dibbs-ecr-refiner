@@ -1,6 +1,7 @@
 import { Select } from '@components/Select';
 import { Field } from '@components/Field';
 import { useSectionUpdater } from './useSectionUpdater';
+import { useSectionError } from './SectionErrorContext';
 import {
   DbSectionAction,
   DbNarrativeAction,
@@ -21,7 +22,6 @@ interface NarrativeSelectProps {
   disabled: boolean;
   isNarrativeOnly: boolean;
   codedDataAction: DbSectionAction;
-  onClearError: () => void;
 }
 
 export function NarrativeSelect({
@@ -30,9 +30,9 @@ export function NarrativeSelect({
   disabled,
   isNarrativeOnly,
   codedDataAction,
-  onClearError,
 }: NarrativeSelectProps) {
   const updateSection = useSectionUpdater(configurationId);
+  const { clearError } = useSectionError();
 
   return (
     <Field className="flex items-center gap-3">
@@ -40,7 +40,7 @@ export function NarrativeSelect({
         disabled={disabled}
         value={currentSection.narrative}
         onChange={(e) => {
-          onClearError();
+          clearError();
           updateSection(currentSection, {
             narrative: e.target.value as DbNarrativeAction,
           });
