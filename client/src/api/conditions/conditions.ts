@@ -32,12 +32,12 @@ import type {
 
 /**
  * Fetches all available conditions from the database.
-
-Args:
-    db (AsyncDatabaseConnection): Database connection.
-
-Returns:
-    list[Condition]: List of all conditions.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[Condition]: List of all conditions.
  * @summary Get Conditions
  */
 export const getConditions = (
@@ -129,16 +129,16 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
 
 /**
  * Returns information about a given condition.
-
-Args:
-    condition_id (UUID): ID of the condition
-    db (AsyncDatabaseConnection): Database connection.
-
-Raises:
-    HTTPException: 404 if no condition is found
-
-Returns:
-    GetCondition: Info about the condition
+ *
+ * Args:
+ *     condition_id (UUID): ID of the condition
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if no condition is found
+ *
+ * Returns:
+ *     GetCondition: Info about the condition
  * @summary Get Condition
  */
 export const getCondition = (
