@@ -1,7 +1,7 @@
 import { Select } from '@components/Select';
 import { Field } from '@components/Field';
 import { useSectionUpdater } from './useSectionUpdater';
-import { useSectionError } from './SectionErrorContext';
+import { useSectionError } from './useSectionError';
 import {
   DbSectionAction,
   DbNarrativeAction,
