@@ -144,7 +144,8 @@ def test_lambda_inactive(
 
     # Run the Lambda
     response = lambda_handler(lambda_event, MockLambdaContext())
-    assert response["statusCode"] == 200
+    assert "batchItemFailures" in response
+    assert response["batchItemFailures"] == []
 
     # Collect names of all keys that exist after running the lambda
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
@@ -273,7 +274,8 @@ def test_lambda_one_active(
 
     # Run the Lambda
     response = lambda_handler(lambda_event, MockLambdaContext())
-    assert response["statusCode"] == 200
+    assert "batchItemFailures" in response
+    assert response["batchItemFailures"] == []
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
@@ -446,7 +448,8 @@ def test_lambda_all_active(
 
     # Run the Lambda
     response = lambda_handler(lambda_event, MockLambdaContext())
-    assert response["statusCode"] == 200
+    assert "batchItemFailures" in response
+    assert response["batchItemFailures"] == []
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
