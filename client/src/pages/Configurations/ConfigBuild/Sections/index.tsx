@@ -407,7 +407,7 @@ function RefineSwitch({
         />
       </Field>
       {showError && (
-        <p className="text-state-error-dark h-4 text-xs" role="alert">
+        <p className="text-state-error-dark text-xs whitespace-nowrap" role="alert">
           To reconstruct narrative, refine must be selected
         </p>
       )}
