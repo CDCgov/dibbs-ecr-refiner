@@ -118,6 +118,7 @@ test.describe('Configuration detail flow', () => {
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Amebiasis';
     await configurationsPage.createConfiguration(condition);
@@ -174,6 +175,7 @@ test.describe('Configuration detail flow', () => {
 
       await expect(expectedError).toBeVisible();
       await expect(updateButton).toBeDisabled();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       // change the text and the error should go away
       await page.getByLabel('Code #').fill(newCode);
@@ -584,11 +586,13 @@ test.describe('Sections Validation and Error Lifecycle', () => {
 
   test('should manage "Reconstruct" option availability and state', async ({
     page,
+    makeAxeBuilder,
   }) => {
     // 1. Standard Section - 3 options
     const standardRow = page
       .locator('tr')
       .filter({ hasText: 'Admission Diagnosis' });
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
     const standardSelect = standardRow.getByRole('combobox');
 
     const standardOptions = standardSelect.locator('option');
@@ -614,9 +618,8 @@ test.describe('Sections Validation and Error Lifecycle', () => {
       .filter({ hasText: 'Admission Diagnosis' });
     const codedDataSwitch = sectionRow.getByRole('switch');
 
-    if (await codedDataSwitch.isChecked()) {
-      await codedDataSwitch.click();
-    }
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
 
     const reconstructOption = sectionRow
       .getByRole('combobox')
@@ -633,7 +636,10 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(reconstructOptionEnabled).toBeEnabled();
   });
 
-  test('should handle the validation error lifecycle', async ({ page }) => {
+  test('should handle the validation error lifecycle', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sectionRow = page
       .locator('tr')
       .filter({ hasText: 'Admission Diagnosis' });
@@ -645,33 +651,30 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(narrativeSelect).toHaveValue('reconstruct');
 
     // 1. Trigger Error: Switch to 'Keep original'
-    if (await codedDataSwitch.isChecked()) {
-      await codedDataSwitch.click();
-    }
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
     const errorAlert = sectionRow.getByRole('alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toHaveText(
       /To reconstruct narrative, refine must be selected/
     );
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // 2. Dismiss via External Click
     await page.getByRole('heading', { level: 1 }).first().click();
     await expect(errorAlert).not.toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // 3. Re-trigger Error
-    if (await codedDataSwitch.isChecked()) {
-      await codedDataSwitch.click();
-    } else {
-      await codedDataSwitch.click();
-      await codedDataSwitch.click();
-    }
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
     await expect(errorAlert).toBeVisible();
 
     // 4. Persistence via Internal Click
     await page
       .locator('[data-error-trigger]')
       .first()
-      .click({ position: { x: 2, y: 2 } });
+      .click({ position: { x: 20, y: 20 } });
     await expect(errorAlert).toBeVisible();
 
     // 5. Dismiss via Input Change
