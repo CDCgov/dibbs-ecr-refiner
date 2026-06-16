@@ -11,7 +11,6 @@ import { FocusTrap } from 'focus-trap-react';
 import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
-import { Title } from '@components/Title';
 import { Button } from '@components/Button';
 
 type DrawerProps = {
@@ -91,7 +90,7 @@ export function Drawer({
                 <Icon.Close size={3} aria-label="X icon indicating closure" />
               </Button>
               <section className="p-4">
-                <Title>{title}</Title>
+                <h2>{title}</h2>
                 {subtitle ? (
                   <div className="m-0 py-4 text-gray-600">{subtitle}</div>
                 ) : null}
