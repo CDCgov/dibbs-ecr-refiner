@@ -369,6 +369,19 @@ class TestConfigurations:
             action="refine",
             narrative="remove",
         )
+
+        url = f"/api/v1/configurations/{draft_id}/sections"
+
+        # set to "retain" and exclude
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
+                "include": False,
+                "narrative": "retain",
+            },
+        )
         assert update_response["section_updated_code"] == admission_diagnosis_code
 
         # Get the updated admission diagnosis section
@@ -378,9 +391,9 @@ class TestConfigurations:
             response.json()["section_processing"], admission_diagnosis_code
         )
         expected_section_updates = {
-            "include": True,
-            "narrative": "remove",
-            "action": "refine",
+            "include": False,
+            "narrative": "retain",
+            "action": "retain",
             "name": "Admission Diagnosis",
             "code": "46241-6",
             "versions": ["3.1", "3.1.1"],
@@ -419,6 +432,7 @@ class TestConfigurations:
                 "action": "retain",
                 "current_code": nonexistent_code,
                 "include": False,
+                "narrative": "retain",
             },
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST

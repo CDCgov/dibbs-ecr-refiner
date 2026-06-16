@@ -58,6 +58,40 @@ const sectionsWithDisabled: DbConfigurationSectionProcessing[] = [
   },
 ];
 
+const sectionsWithNarrativeOnly: DbConfigurationSectionProcessing[] = [
+  ...sections,
+  {
+    name: 'Chief Complaint',
+    action: 'retain',
+    include: true,
+    code: '10154-3',
+    narrative: 'retain',
+    versions: ['1.1', '3.1'],
+    section_type: 'standard',
+  },
+];
+
+const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
+  {
+    name: 'Problems section',
+    action: 'refine',
+    include: true,
+    code: '11450-4',
+    narrative: 'reconstruct',
+    versions: ['1.1', '3.1'],
+    section_type: 'standard',
+  },
+  {
+    name: 'Medications section',
+    action: 'retain',
+    include: true,
+    code: '10160-0',
+    narrative: 'retain',
+    versions: ['1.1', '3.1'],
+    section_type: 'standard',
+  },
+];
+
 const testId = 'test-id';
 
 function renderWithClient(ui: React.ReactElement) {
@@ -127,11 +161,13 @@ describe('Configuration sections', () => {
 
     const firstSelect = selects[0];
     const options = within(firstSelect).getAllByRole('option');
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toHaveTextContent('Keep original');
     expect(options[0]).toHaveValue('retain');
-    expect(options[1]).toHaveTextContent('Remove');
-    expect(options[1]).toHaveValue('remove');
+    expect(options[1]).toHaveTextContent('Reconstruct');
+    expect(options[1]).toHaveValue('reconstruct');
+    expect(options[2]).toHaveTextContent('Exclude');
+    expect(options[2]).toHaveValue('remove');
   });
 
   it('should blank out narrative controls for excluded rows', () => {
@@ -229,5 +265,112 @@ describe('Configuration sections', () => {
     expect(
       within(row).getByRole('button', { name: /delete/i })
     ).toBeInTheDocument();
+  });
+
+  it('should not show Reconstruct option for narrative-only sections', () => {
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithNarrativeOnly}
+      />
+    );
+
+    const chiefComplaintName = screen.getByText('Chief Complaint');
+    const row = chiefComplaintName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Chief Complaint"');
+    }
+
+    const select = within(row).getByRole('combobox');
+    const options = within(select).getAllByRole('option');
+    expect(options).toHaveLength(2);
+    expect(options[0]).toHaveValue('retain');
+    expect(options[1]).toHaveValue('remove');
+  });
+
+  it('should disable Reconstruct option when coded data action is retain', () => {
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithReconstruct}
+      />
+    );
+
+    const medicationsName = screen.getByText('Medications section');
+    const row = medicationsName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Medications section"');
+    }
+
+    const select = within(row).getByRole('combobox');
+    const options = within(select).getAllByRole('option');
+    const reconstructOption = options.find(
+      (opt) => opt.getAttribute('value') === 'reconstruct'
+    );
+    expect(reconstructOption).toBeDefined();
+    expect(reconstructOption).toBeDisabled();
+  });
+
+  it('should enable Reconstruct option when coded data action is reconstruct', () => {
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithReconstruct}
+      />
+    );
+
+    const problemsName = screen.getByText('Problems section');
+    const row = problemsName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Problems section"');
+    }
+
+    const select = within(row).getByRole('combobox');
+    const options = within(select).getAllByRole('option');
+    const reconstructOption = options.find(
+      (opt) => opt.getAttribute('value') === 'reconstruct'
+    );
+    expect(reconstructOption).toBeDefined();
+    expect(reconstructOption).not.toBeDisabled();
+  });
+
+  it('should show error when trying to switch coded data to retain while narrative is reconstruct', async () => {
+    const user = userEvent.setup();
+
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithReconstruct}
+      />
+    );
+
+    const problemsName = screen.getByText('Problems section');
+    const row = problemsName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Problems section"');
+    }
+
+    const switchElement = within(row).getByRole('switch');
+    expect(switchElement).toBeChecked();
+
+    await user.click(switchElement);
+
+    const errorMessage = within(row).queryByRole('alert');
+    expect(errorMessage).toBeInTheDocument();
+    expect(errorMessage).toHaveTextContent(
+      /To reconstruct narrative, refine must be selected/
+    );
   });
 });

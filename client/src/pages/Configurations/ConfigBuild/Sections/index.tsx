@@ -18,6 +18,8 @@ import { Checkbox } from '@components/Checkbox';
 import { Switch } from './Switch';
 import { NarrativeSelect } from './NarrativeSelect';
 import { useSectionUpdater } from './useSectionUpdater';
+import { SectionErrorProvider } from './SectionErrorProvider';
+import { useSectionError } from './useSectionError';
 import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
@@ -61,134 +63,142 @@ export function Sections({
   };
 
   return (
-    <section className="flex min-h-0 w-full flex-1 flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
-          {disabled ? null : (
-            <Button
-              variant="tertiary"
-              onClick={() => {
-                setSelectedSection(null);
-                setIsOpen(true);
-              }}
-            >
-              Add custom section <span aria-hidden>+</span>
-            </Button>
-          )}
-          <CustomSectionModal
-            isOpen={isOpen}
-            setIsOpen={setIsOpen}
-            configurationId={configurationId}
-            initialSection={
-              selectedSection
-                ? {
-                    name: selectedSection.name,
-                    currentCode: selectedSection.code,
-                  }
-                : null
-            }
-            onClose={resetModal}
-          />
+    <SectionErrorProvider>
+      <section className="flex min-h-0 w-full flex-1 flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-gray-cool-90 text-xl font-bold">
+              eICR Sections
+            </h3>
+            {disabled ? null : (
+              <Button
+                variant="tertiary"
+                onClick={() => {
+                  setSelectedSection(null);
+                  setIsOpen(true);
+                }}
+              >
+                Add custom section <span aria-hidden>+</span>
+              </Button>
+            )}
+            <CustomSectionModal
+              isOpen={isOpen}
+              setIsOpen={setIsOpen}
+              configurationId={configurationId}
+              initialSection={
+                selectedSection
+                  ? {
+                      name: selectedSection.name,
+                      currentCode: selectedSection.code,
+                    }
+                  : null
+              }
+              onClose={resetModal}
+            />
+          </div>
+          <p className="italic">
+            Choose which sections of your eICR to include, as well as whether to
+            refine or retain each section.
+          </p>
         </div>
-        <p className="italic">
-          Choose which sections of your eICR to include, as well as whether to
-          refine or retain each section.
-        </p>
-      </div>
 
-      <div className="min-h-0 flex-1 overflow-y-scroll">
-        {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
-            whether a virtualized list is appropriate for large section counts.
-            */}
-        <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-10 bg-white">
-            <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-              <th scope="col" className="w-[10%] pt-3 pb-3">
-                Include
-              </th>
-              <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
-                Section name
-              </th>
-              <th scope="col" className="align-right w-[33%] pt-3 pb-3">
-                <div className="flex items-center justify-center gap-1">
-                  <span>Coded data</span>
-                  <Tooltip
-                    position="left"
-                    label="Keep all original coded data included in the section, or set to Refine to choose the data you want to retain."
-                  />
-                </div>
-              </th>
-              <th scope="col" className="w-[17%] pt-3 pb-3">
-                <div className="flex items-center justify-center gap-1">
-                  <span>Narrative data</span>
-                  <Tooltip
-                    position="left"
-                    label="Keep the original data included in the narrative block, reconstruct the data from refined coded data, or omit exclude the narrative block for this section."
-                  />
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
-            {sectionProcessing.map((section) => (
-              <tr key={section.code} className="text-gray-cool-60">
-                <td className="w-[10%]">
-                  <div className="flex justify-center p-8">
-                    <IncludeCheckbox
-                      configurationId={configurationId}
-                      currentSection={section}
-                      sections={sectionProcessing}
-                      disabled={disabled || isDisabledSection(section.code)}
+        <div className="min-h-0 flex-1 overflow-y-scroll">
+          {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
+              whether a virtualized list is appropriate for large section counts.
+              */}
+          <table className="w-full table-fixed">
+            <thead className="sticky top-0 z-10 bg-white">
+              <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
+                <th scope="col" className="w-[10%] pt-3 pb-3">
+                  Include
+                </th>
+                <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
+                  Section name
+                </th>
+                <th scope="col" className="align-right w-[33%] pt-3 pb-3">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>Coded data</span>
+                    <Tooltip
+                      position="left"
+                      label="Keep all original coded data included in the section, or set to Refine to choose the data you want to retain."
                     />
                   </div>
-                </td>
-                <td className="w-[40%]">
-                  <SectionName
-                    configurationId={configurationId}
-                    section={section}
-                    disabled={disabled}
-                    setSelectedSection={() => onSelectedSection(section)}
-                  />
-                </td>
-                <td className="w-[33%]">
-                  {section.include ? (
-                    <div className="flex justify-center">
-                      {isNarrativeSection(section.code) ? (
-                        <span
-                          className="text-gray-cool-50 text-center italic lg:text-right"
-                          aria-hidden
-                        >
-                          Not applicable for this section
-                        </span>
-                      ) : (
-                        <RefineSwitch
-                          configurationId={configurationId}
-                          currentSection={section}
-                          sections={sectionProcessing}
-                          disabled={disabled || isDisabledSection(section.code)}
-                        />
-                      )}
-                    </div>
-                  ) : null}
-                </td>
-                <td className="w-[17%]">
-                  {section.include ? (
-                    <div className="flex justify-center">
-                      <NarrativeSelect
+                </th>
+                <th scope="col" className="w-[17%] pt-3 pb-3">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>Narrative data</span>
+                    <Tooltip
+                      position="left"
+                      label="Keep the original data included in the narrative block, reconstruct the data from refined coded data, or omit exclude the narrative block for this section."
+                    />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-gray-cool-20 divide-y">
+              {sectionProcessing.map((section) => (
+                <tr key={section.code} className="text-gray-cool-60">
+                  <td className="w-[10%]">
+                    <div className="flex justify-center p-8">
+                      <IncludeCheckbox
                         configurationId={configurationId}
                         currentSection={section}
+                        sections={sectionProcessing}
                         disabled={disabled || isDisabledSection(section.code)}
                       />
                     </div>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+                  </td>
+                  <td className="w-[40%]">
+                    <SectionName
+                      configurationId={configurationId}
+                      section={section}
+                      disabled={disabled}
+                      setSelectedSection={() => onSelectedSection(section)}
+                    />
+                  </td>
+                  <td className="w-[33%]">
+                    {section.include ? (
+                      <div className="flex justify-center">
+                        {isNarrativeSection(section.code) ? (
+                          <span
+                            className="text-gray-cool-50 text-center italic lg:text-right"
+                            aria-hidden
+                          >
+                            Not applicable for this section
+                          </span>
+                        ) : (
+                          <RefineSwitch
+                            configurationId={configurationId}
+                            currentSection={section}
+                            sections={sectionProcessing}
+                            disabled={
+                              disabled || isDisabledSection(section.code)
+                            }
+                          />
+                        )}
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="w-[17%]">
+                    {section.include ? (
+                      <div className="flex justify-center">
+                        <NarrativeSelect
+                          configurationId={configurationId}
+                          currentSection={section}
+                          disabled={disabled || isDisabledSection(section.code)}
+                          isNarrativeOnly={isNarrativeSection(section.code)}
+                          codedDataAction={section.action}
+                        />
+                      </div>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </SectionErrorProvider>
   );
 }
 
@@ -328,6 +338,7 @@ function IncludeCheckbox({
   disabled,
 }: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
+  const { clearError } = useSectionError();
 
   return (
     <Checkbox
@@ -336,6 +347,7 @@ function IncludeCheckbox({
       checked={currentSection.include}
       disabled={disabled}
       onChange={(checked) => {
+        clearError();
         updateSection(currentSection, { include: checked });
       }}
     />
@@ -348,10 +360,25 @@ function RefineSwitch({
   disabled,
 }: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
+  const { clearError, setError, errorSectionCode } = useSectionError();
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine';
   const preserveLabelText = 'Keep original';
+
+  const handleSwitchChange = (checked: boolean) => {
+    // TODO: This validation should eventually be enforced by backend API as well
+    if (!checked && currentSection.narrative === 'reconstruct') {
+      setError(currentSection.code);
+      return;
+    }
+    clearError();
+    updateSection(currentSection, {
+      action: checked ? DbSectionAction.refine : DbSectionAction.retain,
+    });
+  };
+
+  const showError = errorSectionCode === currentSection.code;
 
   return (
     <Field className="flex -translate-x-4 flex-row items-center">
@@ -363,7 +390,7 @@ function RefineSwitch({
             : // "Keep original for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
-        className="mr-2 w-48 text-right"
+        className="mr-2 w-48 shrink-0 text-right"
       >
         {isRefineToggled ? (
           <span>{refineLabelText}</span>
@@ -371,15 +398,21 @@ function RefineSwitch({
           <span className="italic">{preserveLabelText}</span>
         )}
       </Label>
-      <Switch
-        disabled={disabled}
-        checked={isRefineToggled}
-        onChange={(checked) => {
-          updateSection(currentSection, {
-            action: checked ? DbSectionAction.refine : DbSectionAction.retain,
-          });
-        }}
-      />
+      <div className="relative" data-error-trigger>
+        <Switch
+          disabled={disabled}
+          checked={isRefineToggled}
+          onChange={handleSwitchChange}
+        />
+      </div>
+      {showError && (
+        <p
+          className="absolute top-full -left-7 mt-1 text-xs text-red-300"
+          role="alert"
+        >
+          To reconstruct narrative, refine must be selected
+        </p>
+      )}
     </Field>
   );
 }
