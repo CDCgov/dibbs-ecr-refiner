@@ -33,19 +33,19 @@ import type {
 
 /**
  * Returns a list of all events for a jurisdiction, ordered from newest to oldest.
-
-Args:
-    user (DbUser): The user making the request.
-    db (AsyncDatabaseConnection): Database connection.
-    logger (Logger): Standard logger.
-    page (int): page of events to return to the client.
-    canonical_url (str | None): An optional filter on the condition.
-
-Returns:
-    EventResponse: A bundle with
-        - Total page count
-        - The list of AuditEvents relevant for the (optional) filter
-        - The list of condition information with potentially filter-able data
+ *
+ * Args:
+ *     user (DbUser): The user making the request.
+ *     db (AsyncDatabaseConnection): Database connection.
+ *     logger (Logger): Standard logger.
+ *     page (int): page of events to return to the client.
+ *     canonical_url (str | None): An optional filter on the condition.
+ *
+ * Returns:
+ *     EventResponse: A bundle with
+ *         - Total page count
+ *         - The list of AuditEvents relevant for the (optional) filter
+ *         - The list of condition information with potentially filter-able data
  * @summary Get Events
  */
 export const getEvents = (
@@ -139,14 +139,14 @@ export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TErr
 
 /**
  * Returns a list of all custom code upload events associated with a parent event ID.
-
-Args:
-    event_id (UUID): The parent event
-    user (DbUser): The logged in user
-    db (AsyncDatabaseConnection): The database connection
-
-Raises:
-    HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
+ *
+ * Args:
+ *     event_id (UUID): The parent event
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
  * @summary Get Custom Code Upload Events
  */
 export const getCustomCodeUploadEvents = (
