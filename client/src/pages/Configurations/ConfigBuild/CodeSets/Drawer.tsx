@@ -75,8 +75,6 @@ export function Drawer({
             }
           )}
           role="dialog"
-          id="drawer-container"
-          aria-label="drawer-container"
           inert={!isOpen}
         >
           <div className="w-full overflow-y-scroll p-8">
