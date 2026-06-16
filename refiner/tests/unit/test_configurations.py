@@ -135,7 +135,7 @@ def mock_db_functions(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        s3_url=[],
+        s3_url="",
     )
 
     monkeypatch.setattr(
@@ -357,7 +357,7 @@ async def test_edit_custom_code_from_configuration(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        s3_url=[],
+        s3_url="",
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",

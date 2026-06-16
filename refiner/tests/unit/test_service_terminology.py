@@ -46,7 +46,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "last_activated_at": None,
         "last_activated_by": None,
         "created_by": uuid4(),
-        "s3_url": [],
+        "s3_url": "",
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)
