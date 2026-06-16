@@ -7,6 +7,7 @@ docker := require("docker")
 
 alias u := up
 alias d := down
+alias s := show
 
 [doc("Start only the project's core services with docker compose.")]
 [group('docker')]
@@ -28,4 +29,4 @@ show_tbl := 'table {{.Names}}\t{{.Ports}}\t{{.ID}}'
 [doc('Show running `dibbs-ecr-refiner` containers with helpful output')]
 [group('docker')]
 show:
-    {{ docker }} container ls --filter 'name=dibbs-ecr-refiner' --format "{{ show_tbl }}"
+    {{ docker }} container ls --filter 'name=refiner' --format "{{ show_tbl }}"
