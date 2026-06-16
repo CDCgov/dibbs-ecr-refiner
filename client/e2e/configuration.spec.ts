@@ -346,7 +346,7 @@ test.describe('Configuration detail flow', () => {
         const chiefComplaintText = 'Not applicable for this section';
         await expect(
           page
-            .locator('tr')
+            .getByRole('row')
             .filter({ hasText: 'Chief Complaint' })
             .getByText(chiefComplaintText)
         ).toBeVisible();
@@ -590,12 +590,12 @@ test.describe('Sections Validation and Error Lifecycle', () => {
   }) => {
     // 1. Standard Section - 3 options
     const standardRow = page
-      .locator('tr')
+      .getByRole('row')
       .filter({ hasText: 'Admission Diagnosis' });
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
     const standardSelect = standardRow.getByRole('combobox');
 
-    const standardOptions = standardSelect.locator('option');
+    const standardOptions = standardSelect.getByRole('option');
     await expect(standardOptions).toHaveCount(3);
     await expect(
       standardOptions.filter({ hasText: 'Reconstruct' })
@@ -603,10 +603,10 @@ test.describe('Sections Validation and Error Lifecycle', () => {
 
     // 2. Narrative-Only Section - 2 options
     const narrativeOnlyRow = page
-      .locator('tr')
+      .getByRole('row')
       .filter({ hasText: 'Chief Complaint' });
     const narrativeOnlySelect = narrativeOnlyRow.getByRole('combobox');
-    const narrativeOnlyOptions = narrativeOnlySelect.locator('option');
+    const narrativeOnlyOptions = narrativeOnlySelect.getByRole('option');
     await expect(narrativeOnlyOptions).toHaveCount(2);
     await expect(
       narrativeOnlyOptions.filter({ hasText: 'Reconstruct' })
@@ -614,7 +614,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
 
     // 3. Disabled when Coded Data is 'Keep original'
     const sectionRow = page
-      .locator('tr')
+      .getByRole('row')
       .filter({ hasText: 'Admission Diagnosis' });
     const codedDataSwitch = sectionRow.getByRole('switch');
 
@@ -623,7 +623,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
 
     const reconstructOption = sectionRow
       .getByRole('combobox')
-      .locator('option')
+      .getByRole('option')
       .filter({ hasText: 'Reconstruct' });
     await expect(reconstructOption).toBeDisabled();
 
@@ -631,7 +631,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await codedDataSwitch.click(); // Set to 'Refine' (ON)
     const reconstructOptionEnabled = sectionRow
       .getByRole('combobox')
-      .locator('option')
+      .getByRole('option')
       .filter({ hasText: 'Reconstruct' });
     await expect(reconstructOptionEnabled).toBeEnabled();
   });
@@ -641,7 +641,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     makeAxeBuilder,
   }) => {
     const sectionRow = page
-      .locator('tr')
+      .getByRole('row')
       .filter({ hasText: 'Admission Diagnosis' });
     const narrativeSelect = sectionRow.getByRole('combobox');
     const codedDataSwitch = sectionRow.getByRole('switch');
