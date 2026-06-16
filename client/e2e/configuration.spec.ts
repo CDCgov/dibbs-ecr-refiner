@@ -118,6 +118,7 @@ test.describe('Configuration detail flow', () => {
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Amebiasis';
     await configurationsPage.createConfiguration(condition);
@@ -174,6 +175,7 @@ test.describe('Configuration detail flow', () => {
 
       await expect(expectedError).toBeVisible();
       await expect(updateButton).toBeDisabled();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       // change the text and the error should go away
       await page.getByLabel('Code #').fill(newCode);
@@ -344,7 +346,7 @@ test.describe('Configuration detail flow', () => {
         const chiefComplaintText = 'Not applicable for this section';
         await expect(
           page
-            .locator('tr')
+            .getByRole('row')
             .filter({ hasText: 'Chief Complaint' })
             .getByText(chiefComplaintText)
         ).toBeVisible();
@@ -570,5 +572,113 @@ test.describe('Configuration detail flow', () => {
       await expect(page.getByText('Status: Version 2 active')).toBeVisible();
       await expect(page.getByText('Turn off current version')).toBeVisible();
     });
+  });
+});
+
+test.describe('Sections Validation and Error Lifecycle', () => {
+  test.beforeEach(async ({ page, configurationsPage }) => {
+    await deleteAllConfigurations();
+    await configurationsPage.goto();
+    const condition = 'COVID-19';
+    await configurationsPage.createConfiguration(condition);
+    await page.getByRole('button', { name: 'Sections' }).click();
+  });
+
+  test('should manage "Reconstruct" option availability and state', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    // 1. Standard Section - 3 options
+    const standardRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Admission Diagnosis' });
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+    const standardSelect = standardRow.getByRole('combobox');
+
+    const standardOptions = standardSelect.getByRole('option');
+    await expect(standardOptions).toHaveCount(3);
+    await expect(
+      standardOptions.filter({ hasText: 'Reconstruct' })
+    ).toBeAttached();
+
+    // 2. Narrative-Only Section - 2 options
+    const narrativeOnlyRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Chief Complaint' });
+    const narrativeOnlySelect = narrativeOnlyRow.getByRole('combobox');
+    const narrativeOnlyOptions = narrativeOnlySelect.getByRole('option');
+    await expect(narrativeOnlyOptions).toHaveCount(2);
+    await expect(
+      narrativeOnlyOptions.filter({ hasText: 'Reconstruct' })
+    ).not.toBeAttached();
+
+    // 3. Disabled when Coded Data is 'Keep original'
+    const sectionRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Admission Diagnosis' });
+    const codedDataSwitch = sectionRow.getByRole('switch');
+
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
+
+    const reconstructOption = sectionRow
+      .getByRole('combobox')
+      .getByRole('option')
+      .filter({ hasText: 'Reconstruct' });
+    await expect(reconstructOption).toBeDisabled();
+
+    // 4. Enabled when Coded Data is 'Refine'
+    await codedDataSwitch.click(); // Set to 'Refine' (ON)
+    const reconstructOptionEnabled = sectionRow
+      .getByRole('combobox')
+      .getByRole('option')
+      .filter({ hasText: 'Reconstruct' });
+    await expect(reconstructOptionEnabled).toBeEnabled();
+  });
+
+  test('should handle the validation error lifecycle', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const sectionRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Admission Diagnosis' });
+    const narrativeSelect = sectionRow.getByRole('combobox');
+    const codedDataSwitch = sectionRow.getByRole('switch');
+
+    // Setup: Set Narrative to 'Reconstruct'
+    await narrativeSelect.selectOption('reconstruct');
+    await expect(narrativeSelect).toHaveValue('reconstruct');
+
+    // 1. Trigger Error: Switch to 'Keep original'
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
+    const errorAlert = sectionRow.getByRole('alert');
+    await expect(errorAlert).toBeVisible();
+    await expect(errorAlert).toHaveText(
+      /To reconstruct narrative, refine must be selected/
+    );
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 2. Dismiss via External Click
+    await page.getByRole('heading', { level: 1 }).first().click();
+    await expect(errorAlert).not.toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 3. Re-trigger Error
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
+    await expect(errorAlert).toBeVisible();
+
+    // 4. Persistence via Internal Click
+    await page
+      .locator('[data-error-trigger]')
+      .first()
+      .click({ position: { x: 20, y: 20 } });
+    await expect(errorAlert).toBeVisible();
+
+    // 5. Dismiss via Input Change
+    await narrativeSelect.selectOption('retain');
+    await expect(errorAlert).not.toBeVisible();
   });
 });

@@ -257,8 +257,11 @@ class TestLambda:
         resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
         assert resp.status_code == 200
 
-        resp_json = resp.json()
-        error_message = resp_json["errorMessage"]
+        complete_response = s3_client.get_object(
+            Bucket=bucket, Key=default_setup["complete_key"]
+        )
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+        error_message = complete_body["Error"]
         assert (
             error_message
             == f"Activated configuration file could not be read at: configurations/SDDH/{COVID_CANONICAL_URL_UUID}/2/active.json"

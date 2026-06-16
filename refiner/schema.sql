@@ -271,20 +271,6 @@ CREATE TABLE public.custom_codes (
 
 
 --
--- Name: custom_codes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.custom_codes (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name text NOT NULL,
-    value text NOT NULL,
-    system_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
 -- Name: events; Type: TABLE; Schema: public; Owner: -
 --
 
