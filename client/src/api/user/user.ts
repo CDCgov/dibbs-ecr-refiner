@@ -30,14 +30,14 @@ import type {
 
 /**
  * Returns the current logged-in user's information.
-
-Reads user info from the session or token.
-
-Returns:
-    JSON object with user claims if authenticated.
-
-Raises:
-    HTTPException 401 if user not authenticated.
+ *
+ * Reads user info from the session or token.
+ *
+ * Returns:
+ *     JSON object with user claims if authenticated.
+ *
+ * Raises:
+ *     HTTPException 401 if user not authenticated.
  * @summary Get User
  */
 export const getUser = (
