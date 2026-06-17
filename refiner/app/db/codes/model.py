@@ -3,9 +3,9 @@ from uuid import UUID
 
 
 @dataclass(frozen=True)
-class DbCoding:
+class Coding:
     """
-    Minimal representation of a codeable concept from the DB, used for search on the configurations screen.
+    Code / display name minimal representation of a codeable concept.
     """
 
     code: str
@@ -13,7 +13,7 @@ class DbCoding:
 
 
 @dataclass(frozen=True)
-class DbCode(DbCoding):
+class DbCode(Coding):
     """
     DB model for code stored in the codes table.
     """

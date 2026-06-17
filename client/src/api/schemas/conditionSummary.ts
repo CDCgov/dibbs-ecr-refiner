@@ -1,4 +1,4 @@
-import type { DbCoding } from './dbCoding';
+import type { Coding } from './coding';
 
 /**
  * High-level information for a condition.
@@ -6,5 +6,5 @@ import type { DbCoding } from './dbCoding';
 export interface ConditionSummary {
   id: string;
   display_name: string;
-  rsg_codes: DbCoding[];
+  rsg_codes: Coding[];
 }

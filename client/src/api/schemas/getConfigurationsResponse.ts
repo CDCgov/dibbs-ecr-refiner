@@ -1,4 +1,4 @@
-import type { DbCoding } from './dbCoding';
+import type { Coding } from './coding';
 import type { DbConfigurationStatus } from './dbConfigurationStatus';
 
 /**
@@ -8,5 +8,5 @@ export interface GetConfigurationsResponse {
   id: string;
   name: string;
   status: DbConfigurationStatus;
-  rsg_codes: DbCoding[];
+  rsg_codes: Coding[];
 }

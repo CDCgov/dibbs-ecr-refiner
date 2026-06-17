@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_all_code_systems_db
-from app.db.codes.model import DbCoding
 from app.db.conditions.model import ConditionSummary, DbConditionsContextGrouper
 
 from ...db.conditions.db import (

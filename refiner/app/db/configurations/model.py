@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.db.codes.model import DbCoding
+from app.db.codes.model import Coding
 
 type DbSectionAction = Literal["retain", "refine"]
 
@@ -193,7 +193,7 @@ class DbConfigurationSummary:
     id: UUID
     name: str
     status: DbConfigurationStatus
-    primary_condition_rsg_codes: list[DbCoding]
+    primary_condition_rsg_codes: list[Coding]
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfigurationSummary":
@@ -205,7 +205,7 @@ class DbConfigurationSummary:
             name=row["configuration_name"],
             status=row["status"],
             primary_condition_rsg_codes=[
-                DbCoding(
+                Coding(
                     code=code["code"],
                     display=code["display"],
                 )

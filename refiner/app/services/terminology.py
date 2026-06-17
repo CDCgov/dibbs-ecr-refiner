@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field
 
-from app.db.codes.model import DbCoding
+from app.db.codes.model import Coding
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
@@ -37,7 +37,7 @@ def index_condition_code_list_by_system(
 
 
 @dataclass(frozen=True)
-class Coding(DbCoding):
+class Coding(Coding):
     """
     A code + display + system triple, representing a single coded concept.
 
