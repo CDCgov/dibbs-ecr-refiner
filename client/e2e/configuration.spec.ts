@@ -455,7 +455,26 @@ test.describe('Configuration detail flow', () => {
       await expect(page.getByText('Status: Version 1 active')).toBeVisible();
       await expect(page.getByText('Editing: Version 2')).toBeVisible();
     });
-
+    [
+      {
+        code: '12345',
+        system_display_name: 'Other',
+        display: 'Other Example',
+        system_key: 'other',
+      },
+      {
+        code: '6789',
+        system_display_name: 'ICD-10',
+        display: 'ICD-10 Example',
+        system_key: 'icd10',
+      },
+      {
+        code: '99999A',
+        system_display_name: 'LOINC',
+        display: 'LOINC Example',
+        system_key: 'loinc',
+      },
+    ];
     await test.step('Upload custom code CSV', async () => {
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
