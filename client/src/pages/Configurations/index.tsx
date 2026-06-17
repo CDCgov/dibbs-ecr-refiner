@@ -155,7 +155,7 @@ function AppUpdateBanner({
       console.error('Failed to update user notifications', error);
     }
   }
-  async function handleViewUpdates(e: React.MouseEvent<HTMLAnchorElement>) {
+  async function handleViewUpdates(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     await dismissNotification();
     void navigate('/app-updates');
@@ -177,7 +177,7 @@ function AppUpdateBanner({
           <Button
             variant="secondary"
             to="/app-updates"
-            onClick={() => handleViewUpdates}
+            onClick={(e) => handleViewUpdates(e)}
           >
             View updates
           </Button>
