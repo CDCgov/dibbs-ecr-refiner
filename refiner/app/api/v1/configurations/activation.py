@@ -140,8 +140,8 @@ async def activate_configuration(
             detail="Could not find primary condition associated with configuration.",
         )
 
-    # Write the config data to S3 and get the URLs back
-    s3_urls = await run_in_threadpool(
+    # Write the config data to S3 and get the URL back
+    s3_url = await run_in_threadpool(
         upload_configuration_payload, config_payload, config_metadata, logger
     )
 
@@ -151,7 +151,7 @@ async def activate_configuration(
         activated_by_user_id=user.id,
         canonical_url=primary_condition.canonical_url,
         jurisdiction_id=user.jurisdiction_id,
-        s3_urls=s3_urls,
+        s3_url=s3_url,
         db=db,
     )
 
@@ -174,10 +174,10 @@ async def activate_configuration(
         upload_condition_mapping_payload, condition_mapping_payload, jd, logger
     )
 
-    # Activation files have been written to S3 and the database record has been updated.
+    # Activation file has been written to S3 and the database record has been updated.
     # We can now make a new current.json file for the newly activated version.
     await run_in_threadpool(
-        upload_current_version_file, s3_urls, active_config.version, logger
+        upload_current_version_file, s3_url, active_config.version, logger
     )
 
     return ConfigurationStatusUpdateResponse(
@@ -242,8 +242,8 @@ async def deactivate_configuration(
         )
 
     # Try updating `current.json` first
-    s3_urls = config_to_deactivate.s3_urls
-    await run_in_threadpool(upload_current_version_file, s3_urls, None, logger)
+    s3_url = config_to_deactivate.s3_url
+    await run_in_threadpool(upload_current_version_file, s3_url, None, logger)
 
     deactivated_config = await deactivate_configuration_db(
         configuration_id=config_to_deactivate.id,

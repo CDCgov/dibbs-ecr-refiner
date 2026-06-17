@@ -211,7 +211,7 @@ CREATE TABLE public.configurations (
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
     created_by uuid NOT NULL,
-    s3_urls text[]
+    s3_url text
 );
 
 
@@ -852,4 +852,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260602161536'),
     ('20260603120000'),
     ('20260604134336'),
-    ('20260608203714');
+    ('20260608203714'),
+    ('20260615170607');

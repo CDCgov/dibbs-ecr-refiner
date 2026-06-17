@@ -46,7 +46,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "last_activated_at": None,
         "last_activated_by": None,
         "created_by": uuid4(),
-        "s3_urls": [],
+        "s3_url": "",
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)
@@ -75,7 +75,6 @@ class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(
         self,
     ):
-
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
@@ -94,7 +93,6 @@ class TestTerminologyService:
     async def test_processed_configuration_duplicate_codes(
         self,
     ):
-
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
