@@ -471,9 +471,6 @@ test.describe('Configuration detail flow', () => {
         })
       ).toBeVisible();
 
-      // errors if file is not a CSV
-      // displays errors per row if uploaded bad data
-
       const downloadPath =
         await configurationPage.downloadCustomCodeCsvTemplate();
       await configurationPage.uploadCustomCodeCsv(downloadPath);
