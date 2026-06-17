@@ -44,9 +44,17 @@ def minimal_processed_configuration() -> ProcessedConfiguration:
     """
     return ProcessedConfiguration.from_dict(
         {
-            "codes": ["101289-7"],
             "sections": [],
             "included_condition_rsg_codes": ["840539006"],
+            "code_system_sets": {
+                "loinc": [
+                    {
+                        "code": "101289-7",
+                        "display": "SARS-CoV-2 RNA [Presence] in Throat by NAA with non-probe detection",
+                        "system": "2.16.840.1.113883.6.1",
+                    }
+                ]
+            },
         }
     )
 

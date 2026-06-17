@@ -211,7 +211,7 @@ CREATE TABLE public.configurations (
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
     created_by uuid NOT NULL,
-    s3_urls text[]
+    s3_url text
 );
 
 
@@ -253,20 +253,6 @@ CREATE TABLE public.configurations_sections (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     section_type public.configurations_sections_type NOT NULL,
     narrative public.section_narrative CONSTRAINT configurations_sections_narrative_new_not_null NOT NULL
-);
-
-
---
--- Name: custom_codes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.custom_codes (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name text NOT NULL,
-    value text NOT NULL,
-    system_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -866,4 +852,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260602161536'),
     ('20260603120000'),
     ('20260604134336'),
-    ('20260608203714');
+    ('20260608203714'),
+    ('20260615170607');

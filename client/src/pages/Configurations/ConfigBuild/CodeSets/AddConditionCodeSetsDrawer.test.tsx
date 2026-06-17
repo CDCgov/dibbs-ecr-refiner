@@ -3,34 +3,6 @@ import { render, screen } from '@testing-library/react';
 import { AddConditionCodeSetsDrawer } from './AddConditionCodeSetsDrawer';
 import userEvent from '@testing-library/user-event';
 
-// Mocks for child components and hooks
-vi.mock('./Drawer', () => ({
-  Drawer: ({
-    children,
-    title,
-    onClose,
-    onSearch,
-  }: {
-    children: React.ReactNode;
-    title: string | React.ReactNode;
-    onClose: () => void;
-    onSearch: (filter: string) => void;
-  }) => (
-    <div>
-      <div data-testid="drawer-title">{title}</div>
-      <button data-testid="drawer-close" onClick={onClose}>
-        Close
-      </button>
-      <input
-        data-testid="search-input"
-        onChange={(e) => onSearch(e.target.value)}
-        aria-label="search"
-      />
-      {children}
-    </div>
-  ),
-}));
-
 vi.mock('./ConditionCodeSet', () => ({
   ConditionCodeSet: ({
     conditionName,
@@ -83,7 +55,12 @@ const mockConditions = [
   { id: '1', display_name: 'Asthma', associated: false },
   { id: '2', display_name: 'Diabetes', associated: true },
   { id: '3', display_name: 'Flu', associated: false },
-];
+].map((c) => ({
+  ...c,
+  canonical_url: '',
+  version: '',
+  reportable_condition_display_name: '',
+}));
 
 describe('AddConditionCodeSetsDrawer', () => {
   const defaultProps = {
@@ -92,6 +69,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     configurationId: 'my-config',
     conditions: mockConditions,
     reportable_condition_display_name: 'COVID-19',
+    disabled: false,
   };
 
   beforeEach(() => {
@@ -99,19 +77,8 @@ describe('AddConditionCodeSetsDrawer', () => {
   });
 
   it('renders drawer and condition names', () => {
-    render(
-      <AddConditionCodeSetsDrawer
-        disabled={false}
-        {...defaultProps}
-        conditions={mockConditions.map((condition) => ({
-          ...condition,
-          canonical_url: '',
-          version: '',
-          reportable_condition_display_name: '',
-        }))}
-      />
-    );
-    expect(screen.getByTestId('drawer-title').textContent).toMatch(
+    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
       /Add condition code sets/
     );
     mockConditions.forEach(({ display_name }) => {
@@ -121,77 +88,25 @@ describe('AddConditionCodeSetsDrawer', () => {
 
   it('triggers onClose when close button is clicked', async () => {
     const user = userEvent.setup();
-    render(
-      <AddConditionCodeSetsDrawer
-        disabled={false}
-        {...defaultProps}
-        conditions={mockConditions.map((condition) => ({
-          ...condition,
-          canonical_url: '',
-          version: '',
-          reportable_condition_display_name: '',
-        }))}
-      />
-    );
-    await user.click(screen.getByTestId('drawer-close'));
+    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    await user.click(screen.getByRole('button', { name: /close drawer/i }));
     expect(defaultProps.onClose).toHaveBeenCalledOnce();
   });
 
   it('filters conditions when searching', async () => {
     const user = userEvent.setup();
-    render(
-      <AddConditionCodeSetsDrawer
-        disabled={false}
-        {...defaultProps}
-        conditions={mockConditions.map((condition) => ({
-          ...condition,
-          canonical_url: '',
-          version: '',
-          reportable_condition_display_name: '',
-        }))}
-      />
-    );
-    const searchInput = screen.getByTestId('search-input');
-    await user.type(searchInput, 'Flu');
+    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    await user.type(screen.getByRole('searchbox'), 'Flu');
     expect(screen.getByText('Flu')).toBeInTheDocument();
     expect(screen.queryByText('Asthma')).not.toBeInTheDocument();
     expect(screen.queryByText('Diabetes')).not.toBeInTheDocument();
   });
 
-  it('shows highlight when search matches a condition', async () => {
+  it('returns only the expected condition matches when using the search box', async () => {
     const user = userEvent.setup();
-    render(
-      <AddConditionCodeSetsDrawer
-        disabled={false}
-        {...defaultProps}
-        conditions={mockConditions.map((condition) => ({
-          ...condition,
-          canonical_url: '',
-          version: '',
-          reportable_condition_display_name: '',
-        }))}
-      />
-    );
-    const searchInput = screen.getByTestId('search-input');
-    await user.type(searchInput, 'Asthma');
-    expect(await screen.findByText('Asthma')).toBeInTheDocument();
-  });
-
-  it('calls onAssociate/onDisassociate for condition actions', async () => {
-    const user = userEvent.setup();
-    render(
-      <AddConditionCodeSetsDrawer
-        disabled={false}
-        {...defaultProps}
-        conditions={mockConditions.map((condition) => ({
-          ...condition,
-          canonical_url: '',
-          version: '',
-          reportable_condition_display_name: '',
-        }))}
-      />
-    );
-    await user.click(await screen.findByText('Asthma'));
-    await user.click(await screen.findByText('Diabetes'));
+    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    await user.type(screen.getByRole('searchbox'), 'Asthma');
+    expect(screen.getByText('Asthma')).toBeInTheDocument();
+    expect(screen.queryByText('Diabetes')).not.toBeInTheDocument();
   });
 });

@@ -74,9 +74,6 @@ class RefinerCompleteError(TypedDict):
     Error: str
 
 
-RefinerCompleteFile = RefinerCompleteSuccess | RefinerCompleteError
-
-
 @dataclass
 class RefinementState:
     """
@@ -149,6 +146,7 @@ def lambda_handler(event, context) -> dict:
     """
 
     try:
+        batch_item_failures = []
         logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
         s3_config_bucket_name = S3_BUCKET_CONFIG
 
@@ -157,6 +155,8 @@ def lambda_handler(event, context) -> dict:
             record_id = record.get("messageId")
             logger.append_keys(record_id=record_id)
             logger.info(f"Processing record: {record_id}")
+
+            persistence_id = None
 
             # Initialize the S3 client
             region = record["awsRegion"]
@@ -173,68 +173,100 @@ def lambda_handler(event, context) -> dict:
 
             logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
 
-            # Extract persistence_id from the RR object key
-            persistence_id = extract_persistence_id(s3_object_key, REFINER_INPUT_PREFIX)
-            logger.info(f"Extracted persistence_id: {persistence_id}")
-
-            # S3 GET RR
-            logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
-            rr_content = get_s3_object_content(
-                s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
-            )
-            logger.info("Retrieved RR from s3")
-
-            # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
-            eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
-            logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
-
-            # S3 GET eICR
-            eicr_content = get_s3_object_content(
-                s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
-            )
-            logger.info("Retrieved eICR from s3")
-
-            # Create XMLFiles container
-            xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
-
-            # Process Refiner (eICR, RR) -> Refiner Output []
-            logger.info("Starting refinement process")
-            result = run_refinement(
-                input=RefinementInput(
-                    xml_files=xml_files,
-                    s3_client=s3_client,
-                    config_bucket_name=s3_config_bucket_name,
-                    output_bucket_name=s3_bucket_name,
-                    persistence_id=persistence_id,
+            try:
+                # Extract persistence_id from the RR object key
+                persistence_id = extract_persistence_id(
+                    s3_object_key, REFINER_INPUT_PREFIX
                 )
-            )
+                logger.info(f"Extracted persistence_id: {persistence_id}")
+            except ValueError as e:
+                logger.error(f"Malformed S3 object key, skipping record: {str(e)}")
+                batch_item_failures.append({"itemIdentifier": record_id})
+                continue
 
-            # Create RefinerComplete file
-            complete_file: RefinerCompleteFile = {
-                "RefinerMetadata": result.metadata,
-                "RefinerSkip": False,
-                "RefinerOutputFiles": result.output_file_keys,
-            }
+            try:
+                # S3 GET RR
+                logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
+                rr_content = get_s3_object_content(
+                    s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
+                )
+                logger.info("Retrieved RR from s3")
 
-            # Construct RefinerComplete path: RefinerComplete/<persistance_id>
-            complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+                # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
+                eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
+                logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
 
-            # PUT RefinerCompleteFile
-            logger.info(
-                f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
-            )
-            s3_client.put_object(
-                Bucket=s3_bucket_name,
-                Key=complete_key,
-                Body=json.dumps(complete_file, indent=2),
-                ContentType="application/json",
-            )
+                # S3 GET eICR
+                eicr_content = get_s3_object_content(
+                    s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
+                )
+                logger.info("Retrieved eICR from s3")
 
-            logger.info(
-                f"Successfully processed {len(result.output_file_keys)} refined outputs"
-            )
+                # Create XMLFiles container
+                xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
 
-        return {"statusCode": 200, "message": "Refiner processed successfully"}
+                # Process Refiner (eICR, RR) -> Refiner Output []
+                logger.info("Starting refinement process")
+                result = run_refinement(
+                    input=RefinementInput(
+                        xml_files=xml_files,
+                        s3_client=s3_client,
+                        config_bucket_name=s3_config_bucket_name,
+                        output_bucket_name=s3_bucket_name,
+                        persistence_id=persistence_id,
+                    )
+                )
+
+                # Create RefinerComplete file
+                complete_file: RefinerCompleteSuccess = {
+                    "RefinerMetadata": result.metadata,
+                    "RefinerSkip": False,
+                    "RefinerOutputFiles": result.output_file_keys,
+                }
+
+                # Construct RefinerComplete path: RefinerComplete/<persistance_id>
+                complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+
+                # PUT RefinerCompleteFile
+                logger.info(
+                    f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
+                )
+                s3_client.put_object(
+                    Bucket=s3_bucket_name,
+                    Key=complete_key,
+                    Body=json.dumps(complete_file, indent=2),
+                    ContentType="application/json",
+                )
+
+                logger.info(
+                    f"Successfully processed {len(result.output_file_keys)} refined outputs"
+                )
+
+            except Exception as e:
+                logger.error(f"Fatal error processing record: {str(e)}", exception=e)
+
+                # Attempt to write a skip file
+                try:
+                    complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+                    error_payload: RefinerCompleteError = {
+                        "RefinerSkip": True,
+                        "Error": str(e),
+                    }
+                    s3_client.put_object(
+                        Bucket=s3_bucket_name,
+                        Key=complete_key,
+                        Body=json.dumps(error_payload, indent=2),
+                        ContentType="application/json",
+                    )
+                    logger.info(f"Wrote fatal error signal to {complete_key}")
+                except Exception as s3_err:
+                    logger.error(
+                        f"Failed to write error signal to S3: {str(s3_err)}",
+                        exception=s3_err,
+                    )
+                batch_item_failures.append({"itemIdentifier": record_id})
+
+        return {"batchItemFailures": batch_item_failures}
 
     except Exception as e:
         logger.error(f"Error processing: {str(e)}", exception=e)

@@ -144,7 +144,7 @@ def mock_configuration(mock_user):
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        s3_urls=[],
+        s3_url="",
     )
 
 
