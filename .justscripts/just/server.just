@@ -8,10 +8,15 @@ alias tl := test-lambda
 alias ts := test-scenarios
 alias tu := test-unit
 alias ta := test-all
+alias f := fix
 alias l := lint
 alias c := check
+alias sl := seed-localstack
 alias i := install
+alias ia := install-all
 alias id := install-dev
+alias il := install-lambda
+alias ild := install-lambda-dev
 
 @_default:
     just --list server
