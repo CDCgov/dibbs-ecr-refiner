@@ -37,6 +37,7 @@ import { useSearch } from '../../hooks/useSearch';
 import { RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
+import { SECONDARY_BUTTON_STYLES } from '@components/Button/styles';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -178,7 +179,7 @@ function AppUpdateBanner({
           <Link
             to="/app-updates"
             onClick={handleViewUpdates}
-            className="font-public-sans bg-violet-warm-60 border-violet-warm-60 flex h-10 items-center justify-center rounded-sm px-5 text-center text-[1rem] leading-[1.4rem] font-bold text-white lining-nums proportional-nums no-underline"
+            className={SECONDARY_BUTTON_STYLES}
           >
             View updates
           </Link>
