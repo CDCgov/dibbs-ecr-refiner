@@ -13,7 +13,7 @@ import {
   NotificationKeys,
   UserResponse,
 } from '../../api/schemas';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { Spinner } from '@components/Spinner';
 import {
@@ -37,7 +37,6 @@ import { useSearch } from '../../hooks/useSearch';
 import { RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
-import { SECONDARY_BUTTON_STYLES } from '@components/Button/styles';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -175,14 +174,13 @@ function AppUpdateBanner({
               There are new updates to eCR Refiner.
             </span>
           </div>
-
-          <Link
+          <Button
+            variant="secondary"
             to="/app-updates"
-            onClick={handleViewUpdates}
-            className={SECONDARY_BUTTON_STYLES}
+            onClick={() => handleViewUpdates}
           >
             View updates
-          </Link>
+          </Button>
         </div>
 
         <Button
