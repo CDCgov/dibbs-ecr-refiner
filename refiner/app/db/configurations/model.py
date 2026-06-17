@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.db.codes.model import CodedConcept
-
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbNarrativeAction = Literal["retain", "remove", "reconstruct"]
@@ -193,7 +191,6 @@ class DbConfigurationSummary:
     id: UUID
     name: str
     status: DbConfigurationStatus
-
 
 
 @dataclass(frozen=True)

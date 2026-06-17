@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import CodeSystemIndex
-from app.db.codes.model import CodedConcept, DbCode
+from app.db.codes.model import DbCode
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
