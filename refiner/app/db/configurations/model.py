@@ -193,25 +193,7 @@ class DbConfigurationSummary:
     id: UUID
     name: str
     status: DbConfigurationStatus
-    primary_condition_rsg_codes: list[CodedConcept]
 
-    @classmethod
-    def from_db_row(cls, row: dict[str, Any]) -> "DbConfigurationSummary":
-        """
-        Creates a configuration summary from the SQL response.
-        """
-        return cls(
-            id=row["configuration_id"],
-            name=row["configuration_name"],
-            status=row["status"],
-            primary_condition_rsg_codes=[
-                CodedConcept(
-                    code=code["code"],
-                    display=code["display"],
-                )
-                for code in row["configuration_primary_rsg_codes"]
-            ],
-        )
 
 
 @dataclass(frozen=True)

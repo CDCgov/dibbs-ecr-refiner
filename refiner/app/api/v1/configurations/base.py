@@ -71,7 +71,6 @@ async def get_configurations(
             id=c.id,
             name=c.name,
             status=c.status,
-            rsg_codes=c.primary_condition_rsg_codes,
         )
         for c in summary_response
     ]

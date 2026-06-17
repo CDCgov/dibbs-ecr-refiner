@@ -27,7 +27,6 @@ class GetConfigurationsResponse:
     id: UUID
     name: str
     status: DbConfigurationStatus
-    rsg_codes: list[CodedConcept]
 
 
 class CreateConfigInput(BaseModel):
