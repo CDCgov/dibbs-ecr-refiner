@@ -91,20 +91,22 @@ const baseMockConfig: GetConfigurationResponse = {
   code_sets: mockCodeSets,
   rsg_codes: [
     {
-      name: 'Coronavirus infection (disorder)',
-      value: '186747009',
+      display: 'Coronavirus infection (disorder)',
+      code: '186747009',
       version: '6.0.0',
       system_id: MOCK_SNOMED_DB_ID,
     },
     {
-      name: 'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
-      value: '840539006',
+      display:
+        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
+      code: '840539006',
       version: '6.0.0',
       system_id: MOCK_SNOMED_DB_ID,
     },
     {
-      name: 'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
-      value: '1001411000124108',
+      display:
+        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
+      code: '1001411000124108',
       version: '6.0.0',
       system_id: MOCK_SNOMED_DB_ID,
     },
