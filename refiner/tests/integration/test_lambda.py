@@ -269,14 +269,9 @@ class TestLambda:
         resp = await http_client.post(LAMBDA_BASE_URL, json=event)
 
         resp_json = resp.json()
-        assert (
-            "batchItemFailures" in resp_json
-            and len(resp_json["batchItemFailures"]) > 0
-            or resp.status_code != 200
-        )
         assert "batchItemFailures" in resp_json
-        assert len(resp_json["batchItemFailures"]) > 0
-        assert resp.status_code == 200
+        assert len(resp_json["batchItemFailures"]) == 1
+        assert "itemIdentifier" in resp_json["batchItemFailures"][0]
 
         # Verify no RefinerComplete file was created for the default path
         with pytest.raises(ClientError) as exc_info:
