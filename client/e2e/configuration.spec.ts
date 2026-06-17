@@ -593,7 +593,6 @@ test.describe('Configuration detail flow', () => {
       await expect(page.getByText('Editing: Version 2')).toBeVisible();
     });
 
-<<<<<<< HEAD
     await test.step('Upload custom code CSV', async () => {
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -690,8 +689,6 @@ test.describe('Configuration detail flow', () => {
       await expect(savedCodeTableRows.getByText('LOINC Example')).toBeVisible();
     });
 
-=======
->>>>>>> 3e6bfda38c5ac80223d243b5f01cc02350abc4a0
     await test.step('Activate modified draft', async () => {
       await configurationPage.goToActivateTab();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
