@@ -1,4 +1,4 @@
-import type { Coding } from './coding';
+import type { CodedConcept } from './codedConcept';
 
 /**
  * High-level information for a condition.
@@ -6,5 +6,5 @@ import type { Coding } from './coding';
 export interface ConditionSummary {
   id: string;
   display_name: string;
-  rsg_codes: Coding[];
+  rsg_codes: CodedConcept[];
 }

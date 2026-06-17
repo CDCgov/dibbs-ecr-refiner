@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, TypedDict
 from uuid import UUID
 
-from app.db.codes.model import Coding
+from app.db.codes.model import CodedConcept
 
 
 @dataclass
@@ -208,7 +208,7 @@ class ConditionSummary:
 
     id: UUID
     display_name: str
-    rsg_codes: list[Coding]
+    rsg_codes: list[CodedConcept]
 
     @classmethod
     def from_db_row(cls, data: dict):
@@ -219,6 +219,7 @@ class ConditionSummary:
             id=data["id"],
             display_name=data["display_name"],
             rsg_codes=[
-                Coding(display=c["display"], code=c["code"]) for c in data["rsg_codes"]
+                CodedConcept(display=c["display"], code=c["code"])
+                for c in data["rsg_codes"]
             ],
         )

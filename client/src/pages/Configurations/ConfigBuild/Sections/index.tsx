@@ -369,20 +369,6 @@ function RefineSwitch({
     );
   }
 
-  if (isNarrativeOnly) {
-    return (
-      <Field className="flex -translate-x-4 flex-row items-center">
-        <Label
-          className="text-gray-cool-40 mr-2 w-72 text-right italic"
-          aria-hidden
-        >
-          Not applicable for this section
-        </Label>
-        <div className="w-12" />
-      </Field>
-    );
-  }
-
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine';
   const preserveLabelText = 'Keep original';

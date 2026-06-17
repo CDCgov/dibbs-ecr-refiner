@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field
 
-from app.db.codes.model import Coding
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
@@ -37,7 +36,7 @@ def index_condition_code_list_by_system(
 
 
 @dataclass(frozen=True)
-class Coding(Coding):
+class Coding:
     """
     A code + display + system triple, representing a single coded concept.
 
@@ -47,6 +46,8 @@ class Coding(Coding):
     and a human label for custom codes with "Other".
     """
 
+    code: str
+    display: str
     system_oid: str = ""
 
 
@@ -165,7 +166,9 @@ class CodeSystemSets:
                   Coding dicts as values.
         """
 
-        def _serialize_system(system_dict: dict[str, Coding]) -> list[dict[str, str]]:
+        def _serialize_system(
+            system_dict: dict[str, Coding],
+        ) -> list[dict[str, str]]:
             return [
                 {
                     "code": coding.code,

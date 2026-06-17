@@ -3,7 +3,7 @@ from uuid import UUID
 
 
 @dataclass(frozen=True)
-class Coding:
+class CodedConcept:
     """
     Code / display name minimal representation of a codeable concept.
     """
@@ -13,7 +13,7 @@ class Coding:
 
 
 @dataclass(frozen=True)
-class DbCode(Coding):
+class DbCode(CodedConcept):
     """
     DB model for code stored in the codes table.
     """
