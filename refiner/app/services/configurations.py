@@ -56,7 +56,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
-            narrative=True,
+            narrative="retain",
             include=True,
             action=(
                 "retain"
@@ -235,7 +235,9 @@ async def convert_config_to_storage_payload(
                 [
                     asdict(
                         Coding(
-                            code=c.code, display=c.display, system=system_metadata.oid
+                            code=c.code,
+                            display=c.display,
+                            system_oid=system_metadata.oid,
                         )
                     )
                     for c in code_list

@@ -21,8 +21,8 @@ import type {
 } from 'axios';
 
 import type {
+  ConditionSummary,
   GetConditionResponse,
-  GetConditionsResponse,
   HTTPValidationError
 } from '../schemas';
 
@@ -31,18 +31,18 @@ import type {
 
 
 /**
- * Fetches all available conditions from the database.
+ * Fetches a summary of all available conditions from the database.
 
 Args:
     db (AsyncDatabaseConnection): Database connection.
 
 Returns:
-    list[Condition]: List of all conditions.
+    list[ConditionSummary]: List of all conditions.
  * @summary Get Conditions
  */
 export const getConditions = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConditionsResponse[]>> => {
+ ): Promise<AxiosResponse<ConditionSummary[]>> => {
 
 
     return axios.default.get(

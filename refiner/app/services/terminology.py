@@ -4,9 +4,11 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field
 
+from app.db.codes.model import DbCoding
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
+from ..db.configurations.model import DbNarrativeAction
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -35,7 +37,7 @@ def index_condition_code_list_by_system(
 
 
 @dataclass(frozen=True)
-class Coding:
+class Coding(DbCoding):
     """
     A code + display + system triple, representing a single coded concept.
 
@@ -45,9 +47,7 @@ class Coding:
     and a human label for custom codes with "Other".
     """
 
-    code: str
-    display: str = ""
-    system: str = ""
+    system_oid: str = ""
 
 
 type Code = str
@@ -170,7 +170,7 @@ class CodeSystemSets:
                 {
                     "code": coding.code,
                     "display": coding.display,
-                    "system": coding.system,
+                    "system": coding.system_oid,
                 }
                 for coding in system_dict.values()
             ]
@@ -211,7 +211,7 @@ class CodeSystemSets:
                 item["code"]: Coding(
                     code=item["code"],
                     display=item.get("display", ""),
-                    system=item.get("system", ""),
+                    system_oid=item.get("system", ""),
                 )
                 for item in codings
             }
@@ -242,7 +242,7 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
-    narrative: bool
+    narrative: DbNarrativeAction
     include: bool
 
 
@@ -311,7 +311,9 @@ class ProcessedConfiguration:
             )
         else:
             # no system info available, put everything in 'other'
-            other_codings = {code: Coding(code=code) for code in validated.codes}
+            other_codings = {
+                code: Coding(code=code, display="") for code in validated.codes
+            }
             code_system_sets = CodeSystemSets(
                 system_to_code_maps={"other": other_codings}
             )

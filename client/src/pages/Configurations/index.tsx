@@ -1,24 +1,21 @@
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
-import { Search } from '@components/Search';
 import { ConfigurationsTable } from '@components/ConfigurationsTable';
 import {
   useCreateConfiguration,
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
-  GetConditionsResponse,
+  ConditionSummary,
   NotificationKeys,
   UserResponse,
 } from '../../api/schemas';
 import { Link, useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
-import { useSearch } from '../../hooks/useSearch';
 import { Spinner } from '@components/Spinner';
-import classNames from 'classnames';
 import {
   Modal,
   ModalBody,
@@ -36,6 +33,8 @@ import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
 import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
+import { useSearch } from '../../hooks/useSearch';
+import { RangeTuple } from 'fuse.js';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -62,20 +61,16 @@ interface ConfigurationsProps {
   refreshUser: () => void;
 }
 
+const MIN_CONFIG_SEARCH_TEXT_LENGTH = 3;
+
 export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
-  const configs = useMemo(() => response?.data ?? [], [response?.data]);
-
-  const { searchText, setSearchText, results } = useSearch(configs, {
-    keys: [{ name: 'name', weight: 1 }],
-  });
-
   const [isOpen, setIsOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
-  const hasMultipleConfigs = configs.length > 0;
+  const configs = response.data;
 
   return (
     <>
@@ -95,32 +90,13 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
             for each reportable condition
           </p>
         </div>
-        <div
-          className={classNames(
-            'flex flex-col gap-10 sm:flex-row sm:items-start',
-            {
-              'justify-between': hasMultipleConfigs,
-              'justify-end': !hasMultipleConfigs,
-            }
-          )}
-        >
-          {hasMultipleConfigs ? (
-            <Search
-              placeholder="Search configurations"
-              id="search-configurations"
-              name="search"
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-          ) : null}
-
+        <div className="flex flex-col justify-end gap-10 sm:flex-row sm:items-start">
           <Button className="m-0!" onClick={() => setIsOpen(true)}>
             Set up new configuration
           </Button>
           <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
         </div>
-        <ConfigurationsTable
-          data={searchText ? results.map((r) => r.item) : configs}
-        />
+        <ConfigurationsTable data={configs} />
       </section>
     </>
   );
@@ -175,7 +151,7 @@ function AppUpdateBanner({
           <Link
             to="/app-updates"
             onClick={handleViewUpdates}
-            className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+            className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-11 items-center justify-center rounded-sm border-2 bg-white px-5 text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
           >
             View updates
           </Link>
@@ -205,23 +181,31 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const { data: response, isPending, isError } = useGetConditions();
 
   const [selectedCondition, setSelectedCondition] =
-    useState<GetConditionsResponse | null>(null);
-  const [query, setQuery] = useState('');
+    useState<ConditionSummary | null>(null);
 
   const { mutate: createConfig } = useCreateConfiguration();
   const navigate = useNavigate();
   const formatError = useApiErrorFormatter();
 
   const conditions = response?.data || [];
-
-  const filteredConditions =
-    query === ''
-      ? conditions
-      : conditions.filter((condition) => {
-          return condition.display_name
-            .toLowerCase()
-            .includes(query.toLowerCase());
-        });
+  const { searchText, setSearchText, results } = useSearch(
+    conditions,
+    {
+      keys: [
+        { name: 'display_name' },
+        { name: 'rsg_codes.display' },
+        { name: 'rsg_codes.code' },
+      ],
+      threshold: 0.25,
+      distance: 500, // Broaden the distance so Fuse doesn't penalize long strings
+      includeMatches: true,
+      findAllMatches: true,
+    },
+    true
+  );
+  const searchTextLongEnough =
+    searchText.length > MIN_CONFIG_SEARCH_TEXT_LENGTH;
+  const hasSearchResultsToDisplay = searchTextLongEnough && results;
 
   function reset() {
     onClose();
@@ -229,7 +213,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={reset} position="top">
+    <Modal open={open} onClose={reset} position="center" maxWidth="xl">
       <ModalHeader>
         <ModalTitle>Set up new configuration</ModalTitle>
       </ModalHeader>
@@ -248,29 +232,109 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
             <Label>Select condition</Label>
             <Combobox
               value={selectedCondition}
-              virtual={{ options: filteredConditions }}
+              virtual={{
+                options: searchTextLongEnough
+                  ? results.map((r) => r.item)
+                  : conditions,
+              }}
               onChange={setSelectedCondition}
-              onClose={() => setQuery('')}
+              onClose={() => setSearchText('')}
             >
-              <ComboboxInput<GetConditionsResponse>
+              <ComboboxInput<ConditionSummary>
                 aria-label="Select condition"
                 displayValue={(condition) => condition?.display_name ?? ''}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) =>
+                  setSearchText(prepareSearchTextForFuse(event.target.value))
+                }
                 hasValue={!!selectedCondition}
                 onClear={() => {
                   setSelectedCondition(null);
-                  setQuery('');
+                  setSearchText('');
                 }}
               />
               <ComboboxOptions anchor="bottom">
                 {({ option: condition }) => (
                   <ComboboxOption key={condition.id} value={condition}>
-                    {condition.display_name}
+                    {hasSearchResultsToDisplay
+                      ? results
+                          .filter((r) => r.item.id === condition.id)
+                          .map(({ item, matches }) => {
+                            const conditionDisplayMatch = matches?.find(
+                              (m) => m.key === 'display_name'
+                            );
+                            const rsgMatches = matches?.filter(
+                              (m) =>
+                                m.key === 'rsg_codes.display' ||
+                                m.key === 'rsg_codes.code'
+                            );
+
+                            return (
+                              <div key={item.id}>
+                                <p className="pb-2 font-bold">
+                                  {conditionDisplayMatch
+                                    ? highlightMatches(
+                                        item.display_name,
+                                        conditionDisplayMatch?.indices
+                                      )
+                                    : item.display_name}
+                                </p>
+
+                                <div>
+                                  {rsgMatches?.map((r) => {
+                                    const matchedCode =
+                                      item.rsg_codes[r.refIndex as number];
+                                    const isDisplayMatch =
+                                      r.key === 'rsg_codes.display';
+                                    const isCodeMatch =
+                                      r.key === 'rsg_codes.code';
+                                    return (
+                                      <div className="flex justify-between">
+                                        <p className="flex-2 pb-1">
+                                          ⤷{' '}
+                                          {isDisplayMatch
+                                            ? highlightMatches(
+                                                matchedCode.display,
+                                                r?.indices
+                                              )
+                                            : matchedCode.display}
+                                        </p>
+                                        <p className="flex-1 text-right">
+                                          {isCodeMatch
+                                            ? highlightMatches(
+                                                matchedCode.code,
+                                                r?.indices
+                                              )
+                                            : matchedCode.code}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })
+                      : condition.display_name}
                   </ComboboxOption>
                 )}
               </ComboboxOptions>
             </Combobox>
           </Field>
+        )}
+
+        {selectedCondition && (
+          <div className="border-gray-cool-30! rounded-sm border px-4 py-2">
+            <p className="pb-1 font-bold">{selectedCondition.display_name}</p>
+            <div className="flex-col">
+              {selectedCondition.rsg_codes.map((c) => {
+                return (
+                  <div className="flex justify-between gap-1 not-last:pb-1">
+                    <div className="flex-2">{c.display}</div>
+                    <div className="flex-1 text-right">{c.code}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </ModalBody>
       <ModalFooter align="right">
@@ -307,4 +371,45 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
       </ModalFooter>
     </Modal>
   );
+}
+
+function prepareSearchTextForFuse(s: string) {
+  if (s.length < MIN_CONFIG_SEARCH_TEXT_LENGTH) {
+    return '';
+  }
+
+  const NUMERIC_ONLY_STRING = new RegExp(/^\d+/i);
+  if (NUMERIC_ONLY_STRING.test(s)) {
+    // on return exact prefix matches when search string is a code search (purely numeric)
+    return `^${s}`;
+  }
+  return s;
+}
+
+function highlightMatches(
+  text: string,
+  regions: readonly RangeTuple[] | undefined
+) {
+  if (!regions || !regions.length) return text;
+
+  const chunks = [];
+  let lastIndex = 0;
+
+  // Fuse.js returns sorted, non-overlapping [start, end] pairs
+  for (const [start, end] of regions) {
+    // Add any unmatched text before this region
+    if (start > lastIndex) {
+      chunks.push(text.slice(lastIndex, start));
+    }
+    // Wrap the matched range in a <mark> tag
+    chunks.push(<mark key={start}>{text.slice(start, end + 1)}</mark>);
+    lastIndex = end + 1;
+  }
+
+  // Add any remaining text after the last match
+  if (lastIndex < text.length) {
+    chunks.push(text.slice(lastIndex));
+  }
+
+  return chunks;
 }

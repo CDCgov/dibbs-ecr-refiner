@@ -14,6 +14,7 @@ test.describe('Configuration detail flow', () => {
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -25,6 +26,34 @@ test.describe('Configuration detail flow', () => {
       'Code system',
       'Display name',
     ]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+
+  test('Code set table can be filtered by code system', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToBuildTab();
+    await page.getByLabel('View TES code set information for Anotia').click();
+    const codeSystemSelect = page.getByRole('combobox', {
+      name: 'Code system',
+    });
+    await expect(codeSystemSelect).toHaveValue('all');
+    const tableRows = page.getByRole('row');
+    await expect(tableRows).toHaveCount(3); // including header
+
+    await codeSystemSelect.selectOption('ICD-10');
+    const rows = page.getByRole('row');
+    const rowCount = await rows.count();
+
+    for (let i = 1; i < rowCount; i++) {
+      // start at 1 to skip header row
+      const cell = rows.nth(i).getByRole('cell').nth(1); // 2nd column
+      await expect(cell).toHaveText('ICD-10');
+    }
   });
 
   test('Check code set status and individual grouper statuses', async ({
@@ -303,12 +332,12 @@ test.describe('Configuration detail flow', () => {
         const admissionMedicationsText = 'Admission Medications';
         await page
           .getByRole('switch', {
-            name: `Refine & optimize ${admissionMedicationsText}`,
+            name: `Refine ${admissionMedicationsText}`,
           })
           .click();
         await expect(
           page.getByRole('switch', {
-            name: `Preserve & retain all data for ${admissionMedicationsText}`,
+            name: `Keep original for ${admissionMedicationsText}`,
           })
         ).not.toBeChecked();
 
@@ -351,10 +380,10 @@ test.describe('Configuration detail flow', () => {
       await page.getByLabel('LOINC code').fill(customSectionCode);
       await page.getByRole('button', { name: 'Add section' }).click();
       await expect(
-        page.getByRole('switch', {
-          name: `Toggle to refine or retain the narrative block in the ${customSectionName} section`,
+        page.getByRole('combobox', {
+          name: `Narrative data handling for ${customSectionName} section`,
         })
-      ).not.toBeChecked();
+      ).toHaveValue('remove');
     });
 
     await test.step('Run inline test', async () => {
@@ -439,6 +468,7 @@ test.describe('Configuration detail flow', () => {
           level: 2,
         })
       ).toBeVisible();
+
       const downloadPath =
         await configurationPage.downloadCustomCodeCsvTemplate();
       await configurationPage.uploadCustomCodeCsv(downloadPath);
@@ -488,10 +518,13 @@ test.describe('Configuration detail flow', () => {
         page.getByText('Other Example', { exact: true })
       ).not.toBeVisible();
       await page.getByRole('searchbox', { name: 'Search codes' }).clear();
-      await expect(page.getByText(testCode)).toBeVisible();
 
       const rows = page.locator('table tbody tr');
       const firstRow = rows.first();
+      // first row should have the most recent updated values
+      await expect(firstRow.getByText(testCode)).toBeVisible();
+      await expect(firstRow.getByText('test code_name')).toBeVisible();
+      await expect(firstRow.getByText('CVX')).toBeVisible();
 
       expect(await rows.all()).toHaveLength(3);
       await firstRow.getByRole('button', { name: 'Delete' }).click();

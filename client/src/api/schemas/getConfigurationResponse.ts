@@ -1,4 +1,5 @@
 import type { CustomCodes } from './customCodes';
+import type { DbCode } from './dbCode';
 import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
 import type { DbConfigurationStatus } from './dbConfigurationStatus';
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
@@ -22,6 +23,7 @@ export interface GetConfigurationResponse {
   custom_codes: CustomCodes;
   section_processing: DbConfigurationSectionProcessing[];
   all_versions: GetConfigurationResponseVersion[];
+  rsg_codes: DbCode[];
   version: number;
   active_configuration_id: string | null;
   active_version: number | null;

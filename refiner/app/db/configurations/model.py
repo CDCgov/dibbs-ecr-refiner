@@ -3,7 +3,11 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+from app.db.codes.model import DbCoding
+
 type DbSectionAction = Literal["retain", "refine"]
+
+type DbNarrativeAction = Literal["retain", "remove", "reconstruct"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
@@ -60,7 +64,7 @@ class DbConfigurationSectionInstructions:
     """
 
     include: bool
-    narrative: bool
+    narrative: DbNarrativeAction
     action: DbSectionAction
 
 
@@ -189,6 +193,25 @@ class DbConfigurationSummary:
     id: UUID
     name: str
     status: DbConfigurationStatus
+    primary_condition_rsg_codes: list[DbCoding]
+
+    @classmethod
+    def from_db_row(cls, row: dict[str, Any]) -> "DbConfigurationSummary":
+        """
+        Creates a configuration summary from the SQL response.
+        """
+        return cls(
+            id=row["configuration_id"],
+            name=row["configuration_name"],
+            status=row["status"],
+            primary_condition_rsg_codes=[
+                DbCoding(
+                    code=code["code"],
+                    display=code["display"],
+                )
+                for code in row["configuration_primary_rsg_codes"]
+            ],
+        )
 
 
 @dataclass(frozen=True)
