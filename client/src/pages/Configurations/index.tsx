@@ -351,7 +351,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
         {selectedCondition && (
           <div className="border-gray-cool-30! rounded-sm border px-4 py-2">
             <p className="font-bold">{selectedCondition.display_name}</p>
-            <table>
+            <table className="w-full">
               <colgroup>
                 <col className="w-[65%]" />
                 <col className="w-[35%]" />
