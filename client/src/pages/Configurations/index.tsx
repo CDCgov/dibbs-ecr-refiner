@@ -368,7 +368,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                 <tbody>
                   {selectedCondition.rsg_codes.map((c) => {
                     return (
-                      <tr>
+                      <tr key={c.code}>
                         <td>{c.display}</td>
                         <td className="text-right align-top">{c.code}</td>
                       </tr>

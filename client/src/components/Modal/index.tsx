@@ -67,10 +67,13 @@ function Modal({
         <DialogBackdrop className="fixed inset-0 z-50 bg-black/60" />
 
         <div
-          className={classNames('fixed inset-0 z-50 flex justify-center p-4', {
-            'items-center': position === 'center',
-            'items-start': position === 'top',
-          })}
+          className={classNames(
+            'fixed inset-0 z-50 flex justify-center overflow-auto p-4',
+            {
+              'items-center': position === 'center',
+              'items-start': position === 'top',
+            }
+          )}
         >
           <DialogPanel
             className={classNames(
