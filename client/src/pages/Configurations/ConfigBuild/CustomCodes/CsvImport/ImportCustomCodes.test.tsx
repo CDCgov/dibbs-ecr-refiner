@@ -1,9 +1,4 @@
-import {
-  MatcherFunction,
-  render,
-  screen,
-  within,
-} from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { TestQueryClientProvider } from '../../../../../test-utils';
 import {
@@ -14,11 +9,6 @@ import { MOCK_CONFIG_ID } from '../../../../../utils/fixtures';
 import userEvent from '@testing-library/user-event';
 import { useUploadCustomCodesCsv } from '../../../../../api/configurations/configurations';
 import { Mock } from 'vitest';
-
-const UPLOAD_ERROR_CSV_CONTENT = `code_number,code_system,display_name
-12345,Othe,Other Example
-6789,ICD-10,ICD-10 Example
-99999A,LOINC,LOINC Example`;
 
 const mockUploadResponse = {
   message: 'Successfully uploaded custom codes.',
