@@ -143,7 +143,7 @@ class DbConfiguration:
     last_activated_at: datetime | None
     last_activated_by: UUID | None
     created_by: UUID
-    s3_urls: list[str]
+    s3_url: str
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
@@ -178,7 +178,7 @@ class DbConfiguration:
             last_activated_at=row["last_activated_at"],
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
-            s3_urls=row["s3_urls"],
+            s3_url=row["s3_url"],
         )
 
 
