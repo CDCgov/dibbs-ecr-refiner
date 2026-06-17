@@ -84,12 +84,6 @@ class RefinementState:
     jurisdiction/per-condition refinement traces, the AIMS-facing
     metadata dict, and the set of codes per jurisdiction that were
     NOT refined (used to drive remainder RR production).
-
-    TODO:
-    * skipped_condition_codes_by_jurisdiction holds information that
-      is also present on the per-condition RefinementTrace objects
-      (traces with refinement_outcome == "skipped")
-    * that means skipped codes are tracked in two places
     """
 
     output_files: set[str] = field(default_factory=set)

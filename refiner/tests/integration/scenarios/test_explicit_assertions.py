@@ -85,7 +85,6 @@ def _refine(scenario, config, *, configuration_version: int | None = None):  # n
         xml_files=load_scenario_xml_files(scenario),
         processed_configuration=config,
         jurisdiction_code=JURISDICTION,
-        rsg_code=scenario.rsg_code,
         canonical_url=scenario.canonical_url,
         configuration_version=(
             configuration_version
@@ -187,18 +186,18 @@ async def test_adding_unrelated_condition_codes_does_not_change_refinement(
         "this test."
     )
 
-    baseline = _refine(baseline_scenario, baseline_config)
-    plus = _refine(plus_scenario, plus_config)
+    baseline_results, baseline_metrics = _refine(baseline_scenario, baseline_config)
+    plus_results, plus_metrics = _refine(plus_scenario, plus_config)
 
     # load-bearing assertion (readable headline): identical size reduction
     assert (
-        plus.trace.eicr_size_reduction_percentage
-        == baseline.trace.eicr_size_reduction_percentage
+        plus_metrics.eicr_size_reduction_percentage
+        == baseline_metrics.eicr_size_reduction_percentage
     ), (
         f"Size reduction diverged: baseline="
-        f"{baseline.trace.eicr_size_reduction_percentage}%, "
+        f"{baseline_metrics.eicr_size_reduction_percentage}%, "
         f"covid_plus_unrelated_condition="
-        f"{plus.trace.eicr_size_reduction_percentage}%. Roll-up Issue #1 "
+        f"{plus_metrics.eicr_size_reduction_percentage}%. Roll-up Issue #1 "
         f"regression: adding codes for a condition absent from the eICR "
         f"({sorted(added)}) changed what was removed. The two must be equal."
     )
@@ -207,15 +206,15 @@ async def test_adding_unrelated_condition_codes_does_not_change_refinement(
     # * compares section/entry id roots, not raw bytes--the two scenarios carry
     # different configuration_version values, which legitimately differ in the
     # provenance footnotes but must not touch the clinical payload
-    assert _retained_entry_ids(plus.refined_eicr) == _retained_entry_ids(
-        baseline.refined_eicr
+    assert _retained_entry_ids(plus_results.refined_eicr) == _retained_entry_ids(
+        baseline_results.refined_eicr
     ), (
         "Different clinical entries retained between covid_baseline and "
         "covid_plus_unrelated_condition. Roll-up Issue #1 regression: adding "
         "codes for a condition absent from the eICR changed what survived."
     )
-    assert _retained_entry_ids(plus.refined_rr) == _retained_entry_ids(
-        baseline.refined_rr
+    assert _retained_entry_ids(plus_results.refined_rr) == _retained_entry_ids(
+        baseline_results.refined_rr
     ), (
         "Refined RR clinical entries diverged between the two scenarios; see the eICR assertion above."
     )
@@ -277,7 +276,7 @@ async def test_immunization_retained_via_cross_oid_custom_code_match(
         f"the data. Restore the fixture or remove this test."
     )
 
-    result = _refine(scenario, config)
+    result, _ = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained = refined_root.xpath(
         f".//hl7:section[hl7:code/@code='{IMMUNIZATIONS_LOINC}']"
@@ -346,7 +345,7 @@ async def test_custom_code_in_problem_entry_relationship_value_retains_entry(
         f"this test."
     )
 
-    result = _refine(scenario, config)
+    result, _ = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained_entries = refined_root.xpath(
         f".//hl7:section[hl7:code/@code='{PROBLEMS_LOINC}']"
@@ -403,8 +402,8 @@ async def test_substance_admin_custom_code_retains_one_more_medication_entry_eac
         "test."
     )
 
-    baseline = _refine(baseline_scenario, baseline_config)
-    substance = _refine(substance_scenario, substance_config)
+    baseline, _ = _refine(baseline_scenario, baseline_config)
+    substance, _ = _refine(substance_scenario, substance_config)
 
     base_root = etree.fromstring(baseline.refined_eicr.encode("utf-8"))
     sub_root = etree.fromstring(substance.refined_eicr.encode("utf-8"))
@@ -509,7 +508,7 @@ async def test_covid_baseline_does_not_retain_procedures_via_entry_relationship_
         f"entryRelationship-only guard. Fix the fixture or remove this test."
     )
 
-    result = _refine(scenario, config)
+    result, _ = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     assert _entry_count(refined_root, PROCEDURES_LOINC) == 0, (
         f"Refined Procedures section ({PROCEDURES_LOINC}) retained "
@@ -578,7 +577,7 @@ async def test_single_vital_sign_code_prunes_panel_to_matched_components(
         f"Restore the fixture/config or remove this test."
     )
 
-    result = _refine(scenario, config)
+    result, _ = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained = _vital_component_codes(refined_root)
 
@@ -635,7 +634,7 @@ async def test_multiple_vital_sign_codes_prune_panel_to_matched_components(
         f"Restore the fixture/config or remove this test."
     )
 
-    result = _refine(scenario, config)
+    result, _ = _refine(scenario, config)
     refined_root = etree.fromstring(result.refined_eicr.encode("utf-8"))
     retained = _vital_component_codes(refined_root)
 
@@ -683,7 +682,7 @@ async def test_configuration_version_is_rendered_into_section_provenance_footnot
     config, _ = await build_scenario_configuration(scenario)
 
     version = 42
-    result = _refine(scenario, config, configuration_version=version)
+    result, _ = _refine(scenario, config, configuration_version=version)
     root = etree.fromstring(result.refined_eicr.encode("utf-8"))
 
     rendered = set(

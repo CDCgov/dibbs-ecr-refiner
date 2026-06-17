@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Literal
 
 from lxml import etree
 
@@ -36,8 +35,6 @@ from .terminology import ProcessedConfiguration
 # * the if-and-only-if rule for the remainder is currently enforced
 #   inside produce_remainder_rr_for_jurisdiction as a None return
 #   rather than being expressed structurally
-# * RefinementTrace is dual-purpose: it carries both pipeline input
-#   and execution output
 
 # NOTE:
 # METRICS
@@ -108,61 +105,6 @@ def create_augmentation_run_from_xml_files(
         )
 
     return create_augmentation_run(eicr_root=eicr_root)
-
-
-# NOTE:
-# TRACE
-# =============================================================================
-
-
-@dataclass
-class RefinementTrace:
-    """
-    Tracks a single jurisdiction/condition refinement through the pipeline.
-
-    Populated progressively as the pipeline executes. Both the webapp
-    testing service and the lambda production service use this to get
-    structured visibility into what happened and why.
-
-    The caller creates the trace with the context it knows (jurisdiction,
-    RSG code, canonical URL) and passes it into the pipeline functions,
-    which fill in the execution details (outcome, size reduction,
-    errors).
-
-    Attributes:
-        jurisdiction_code: The jurisdiction being processed (e.g., "SDDH").
-        rsg_code: The RSG SNOMED code from the RR that triggered this
-            refinement (e.g., "840539006" for COVID-19).
-        canonical_url: The TES condition grouper's canonical_url
-            (e.g., "https://tes.tools.aimsplatform.org/api/fhir/
-            ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"). Set by
-            the caller after resolving the RSG → grouper mapping.
-            The trailing UUID is what seeds the deterministic
-            augmented-document identifiers; carrying the full URL
-            keeps this field name aligned with conditions.canonical_url
-            and configurations.condition_canonical_url in the database.
-        configuration_version: The version number of the configuration
-            used for refinement. Set by the caller after resolution.
-        configuration_resolved: Whether a valid ProcessedConfiguration
-            was successfully built for this jurisdiction/condition pair.
-        refinement_outcome: The final status of the refinement attempt.
-        skip_reason: If outcome is "skipped", why it was skipped
-            (e.g., "no_mapping", "no_active_configuration").
-        eicr_size_reduction_percentage: The percentage by which the
-            eICR was reduced during refinement.
-        error_detail: If outcome is "error", the error message.
-    """
-
-    jurisdiction_code: str
-    rsg_code: str
-    canonical_url: str | None = None
-    configuration_version: int | None = None
-    configuration_resolved: bool = False
-    refinement_outcome: Literal["refined", "skipped", "error"] = "skipped"
-    skip_reason: str | None = None
-    eicr_size_reduction_percentage: int | None = None
-    eicr_size_mib: float | None = None
-    error_detail: str | None = None
 
 
 # NOTE:

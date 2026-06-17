@@ -77,7 +77,7 @@ async def test_scenario_matches_snapshot(
         scenario
     )
 
-    result = refine_one(
+    result, _ = refine_one(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
         # augmentation is seeded by the jurisdiction the config was activated
@@ -87,7 +87,6 @@ async def test_scenario_matches_snapshot(
         # bypassing it lets us reuse arbitrary test data without standing up
         # matching fake jurisdictions
         jurisdiction_code=test_user_jurisdiction_id,
-        rsg_code=scenario.rsg_code,
         canonical_url=canonical_url,
         configuration_version=scenario.configuration_version,
     )
