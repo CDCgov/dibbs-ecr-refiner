@@ -103,6 +103,9 @@ export function Sections({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-scroll">
+          {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
+              whether a virtualized list is appropriate for large section counts.
+              */}
           <table className="w-full table-fixed">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
