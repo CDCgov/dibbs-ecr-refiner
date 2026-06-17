@@ -1,5 +1,4 @@
 import { Select } from '@components/Select';
-import { Field } from '@components/Field';
 import { useSectionUpdater } from './useSectionUpdater';
 import { useSectionError } from './useSectionError';
 import {
@@ -35,7 +34,7 @@ export function NarrativeSelect({
   const { clearError } = useSectionError();
 
   return (
-    <Field className="flex items-center gap-3">
+    <div className="flex-start flex">
       <Select
         disabled={disabled}
         value={currentSection.narrative}
@@ -56,6 +55,6 @@ export function NarrativeSelect({
         )}
         <option value="remove">Exclude</option>
       </Select>
-    </Field>
+    </div>
   );
 }

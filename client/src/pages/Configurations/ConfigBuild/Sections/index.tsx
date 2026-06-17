@@ -109,14 +109,14 @@ export function Sections({
           <table className="w-full table-fixed">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-                <th scope="col" className="w-[10%] pt-3 pb-3">
+                <th scope="col" className="w-20 py-3">
                   Include
                 </th>
-                <th scope="col" className="w-[40%] pt-3 pb-3 text-left">
+                <th scope="col" className="w-70 text-left">
                   Section name
                 </th>
-                <th scope="col" className="align-right w-[33%] pt-3 pb-3">
-                  <div className="flex items-center justify-center gap-1">
+                <th scope="col" className="w-60 pr-8">
+                  <div className="flex justify-end gap-1">
                     <span>Coded data</span>
                     <Tooltip
                       position="left"
@@ -124,8 +124,8 @@ export function Sections({
                     />
                   </div>
                 </th>
-                <th scope="col" className="w-[17%] pt-3 pb-3">
-                  <div className="flex items-center justify-center gap-1">
+                <th scope="col" className="w-40">
+                  <div className="flex gap-1">
                     <span>Narrative data</span>
                     <Tooltip
                       position="left"
@@ -138,7 +138,7 @@ export function Sections({
             <tbody className="divide-gray-cool-20 divide-y">
               {sectionProcessing.map((section) => (
                 <tr key={section.code} className="text-gray-cool-60">
-                  <td className="w-[10%]">
+                  <td>
                     <div className="flex justify-center p-8">
                       <IncludeCheckbox
                         configurationId={configurationId}
@@ -148,7 +148,7 @@ export function Sections({
                       />
                     </div>
                   </td>
-                  <td className="w-[40%]">
+                  <td>
                     <SectionName
                       configurationId={configurationId}
                       section={section}
@@ -156,12 +156,12 @@ export function Sections({
                       setSelectedSection={() => onSelectedSection(section)}
                     />
                   </td>
-                  <td className="w-[33%]">
+                  <td className="pr-8">
                     {section.include ? (
-                      <div className="flex justify-center">
+                      <div className="flex flex-row items-center justify-end">
                         {isNarrativeSection(section.code) ? (
                           <span
-                            className="text-gray-cool-50 text-center italic lg:text-right"
+                            className="text-gray-cool-50 whitespace-nowrap italic"
                             aria-hidden
                           >
                             Not applicable for this section
@@ -179,17 +179,15 @@ export function Sections({
                       </div>
                     ) : null}
                   </td>
-                  <td className="w-[17%]">
+                  <td>
                     {section.include ? (
-                      <div className="flex justify-center">
-                        <NarrativeSelect
-                          configurationId={configurationId}
-                          currentSection={section}
-                          disabled={disabled || isDisabledSection(section.code)}
-                          isNarrativeOnly={isNarrativeSection(section.code)}
-                          codedDataAction={section.action}
-                        />
-                      </div>
+                      <NarrativeSelect
+                        configurationId={configurationId}
+                        currentSection={section}
+                        disabled={disabled || isDisabledSection(section.code)}
+                        isNarrativeOnly={isNarrativeSection(section.code)}
+                        codedDataAction={section.action}
+                      />
                     ) : null}
                   </td>
                 </tr>
@@ -221,6 +219,7 @@ function SectionName({
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <span
+          title={section.name}
           className={classNames('truncate', {
             italic: !section.include,
             'font-bold': section.include,
@@ -231,7 +230,9 @@ function SectionName({
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       <div className="flex items-center gap-2">
-        <span className="truncate text-sm">{section.code}</span>
+        <span title={section.code} className="truncate text-sm">
+          {section.code}
+        </span>
         {isCustom && !disabled ? (
           <div className="flex items-center gap-1">
             <EditButton
@@ -262,7 +263,7 @@ function EditButton({ setSelectedSection, name }: EditButtonProps) {
   return (
     <Button
       aria-label={`Edit custom section ${name}`}
-      className="text-sm!"
+      className="p-0! text-sm!"
       variant="tertiary"
       onClick={setSelectedSection}
     >
@@ -316,7 +317,7 @@ function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
   return (
     <Button
       aria-label={`Delete custom section ${name}`}
-      className="text-sm!"
+      className="p-0! text-sm!"
       variant="tertiary"
       onClick={onClick}
     >
@@ -381,38 +382,37 @@ function RefineSwitch({
   const showError = errorSectionCode === currentSection.code;
 
   return (
-    <Field className="flex -translate-x-4 flex-row items-center">
-      <Label
-        aria-label={
-          isRefineToggled
-            ? // "Refine Admission Diagnosis section"
-              `${refineLabelText} ${currentSection.name} section`
-            : // "Keep original for Admission Diagnosis section"
-              `${preserveLabelText} for ${currentSection.name} section`
-        }
-        className="mr-2 w-48 shrink-0 text-right"
-      >
-        {isRefineToggled ? (
-          <span>{refineLabelText}</span>
-        ) : (
-          <span className="italic">{preserveLabelText}</span>
-        )}
-      </Label>
-      <div className="relative" data-error-trigger>
+    <div className="flex flex-col items-end gap-1" data-error-trigger>
+      <Field className="flex flex-row items-center justify-end">
+        <Label
+          aria-label={
+            isRefineToggled
+              ? // "Refine Admission Diagnosis section"
+                `${refineLabelText} ${currentSection.name} section`
+              : // "Keep original for Admission Diagnosis section"
+                `${preserveLabelText} for ${currentSection.name} section`
+          }
+        >
+          {isRefineToggled ? (
+            <span>{refineLabelText}</span>
+          ) : (
+            <span className="italic">{preserveLabelText}</span>
+          )}
+        </Label>
         <Switch
           disabled={disabled}
           checked={isRefineToggled}
           onChange={handleSwitchChange}
         />
-      </div>
+      </Field>
       {showError && (
         <p
-          className="absolute top-full -left-7 mt-1 text-xs text-red-300"
+          className="text-state-error-dark text-xs whitespace-nowrap"
           role="alert"
         >
           To reconstruct narrative, refine must be selected
         </p>
       )}
-    </Field>
+    </div>
   );
 }
