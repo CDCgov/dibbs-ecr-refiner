@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxOptions } from '.';
-import { GetConditionsResponse } from '../../api/schemas/getConditionsResponse';
+import { ConditionSummary } from '../../api/schemas';
 
-type Option = GetConditionsResponse;
+type Option = ConditionSummary;
 
 const options: Option[] = [
-  { id: '1', display_name: 'Influenza' },
-  { id: '2', display_name: 'COVID-19' },
-  { id: '3', display_name: 'Tuberculosis' },
+  { id: '1', rsg_codes: [], display_name: 'Influenza' },
+  { id: '2', rsg_codes: [], display_name: 'COVID-19' },
+  { id: '3', rsg_codes: [], display_name: 'Tuberculosis' },
 ];
 
 interface TestComboboxProps {
@@ -138,6 +138,7 @@ describe('Combobox', () => {
     expect(onSelect).toHaveBeenCalledWith({
       id: '2',
       display_name: 'COVID-19',
+      rsg_codes: [],
     });
   });
 
