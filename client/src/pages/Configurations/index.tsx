@@ -178,7 +178,7 @@ function AppUpdateBanner({
           <Link
             to="/app-updates"
             onClick={handleViewUpdates}
-            className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-11 items-center justify-center rounded-sm border-2 bg-white px-5 text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+            className="font-public-sans bg-violet-warm-60 border-violet-warm-60 flex h-10 items-center justify-center rounded-sm px-5 text-center text-[1rem] leading-[1.4rem] font-bold text-white lining-nums proportional-nums no-underline"
           >
             View updates
           </Link>
