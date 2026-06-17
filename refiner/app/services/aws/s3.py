@@ -47,13 +47,13 @@ s3_client = boto3.client("s3", **_build_s3_client_kwargs())
 
 
 def upload_current_version_file(
-    directory_keys: list[str], active_version: int | None, logger: Logger
+    directory_key: str, active_version: int | None, logger: Logger
 ) -> None:
     """
     Writes a new `current.json` file for all directories with new activation files.
 
     Args:
-        directory_keys (list[str]): A list of child RSG code directories in the form: s3://bucket/SDDH/12345
+        directory_key (str): Directory key to condition within a JD, ex: `configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64`
         active_version (int): The newly activated configuration version
         logger (Logger): The standard application logger
     """
@@ -62,23 +62,23 @@ def upload_current_version_file(
         if active_version is not None and active_version > 0
         else None
     }
-    for key in directory_keys:
-        s3_client.put_object(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME,
-            Key=f"{key}/current.json",
-            Body=json.dumps(data, indent=2).encode("utf-8"),
-            ContentType="application/json",
-        )
-        logger.info(
-            f"Updating current.json to version {active_version}: {key}/current.json"
-        )
+
+    s3_client.put_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=f"{directory_key}/current.json",
+        Body=json.dumps(data, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+    logger.info(
+        f"Updating current.json to version {active_version}: {directory_key}/current.json"
+    )
 
 
 def upload_configuration_payload(
     payload: ConfigurationStoragePayload,
     metadata: ConfigurationStorageMetadata,
     logger: Logger,
-) -> list[str]:
+) -> str:
     """
     Given a payload and metadata, writes this information to JSON files in S3.
 
@@ -88,19 +88,14 @@ def upload_configuration_payload(
         logger (Logger): The standard application logger.
 
     Returns:
-        list[str]: List of keys pointing to the child RSG SNOMED code directories
+        str: Key to the parent directory where the activation file lives
     """
-    s3_condition_code_paths = []
 
     payload_data = payload.to_dict()
     metadata_data = metadata.to_dict()
 
     canonical_url = metadata.canonical_url
     jurisdiction_id = metadata.jurisdiction_id
-
-    parent_directory = get_parent_directory_key(
-        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url
-    )
 
     # Write active.json
     active_key = get_active_file_key(
@@ -128,11 +123,12 @@ def upload_configuration_payload(
         ContentType="application/json",
     )
 
-    s3_condition_code_paths.append(parent_directory)
     logger.info(f"Writing file to: {active_key}")
     logger.info(f"Writing file to: {metadata_key}")
 
-    return s3_condition_code_paths
+    return get_parent_directory_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url
+    )
 
 
 def upload_condition_mapping_payload(

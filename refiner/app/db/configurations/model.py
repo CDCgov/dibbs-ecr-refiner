@@ -143,7 +143,7 @@ class DbConfiguration:
     last_activated_at: datetime | None
     last_activated_by: UUID | None
     created_by: UUID
-    s3_urls: list[str]
+    s3_url: str
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
@@ -178,7 +178,7 @@ class DbConfiguration:
             last_activated_at=row["last_activated_at"],
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
-            s3_urls=row["s3_urls"],
+            s3_url=row["s3_url"],
         )
 
 
@@ -198,16 +198,13 @@ class ConfigurationStoragePayload:
     """
     The model for a configuration that is being written to S3.
 
-    Contains both the flat codes set (for the generic fallback
-    matching path) and the enriched code_system_sets (for
-    section-aware matching with proper code system routing and
-    displayName enrichment).
+    Contains the enriched code_system_sets required for refinement,
+    along with section processing and included condition RSG codes.
     """
 
-    codes: set[str]
     sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
-    code_system_sets: dict[str, list[dict[str, str]]] | None = None
+    code_system_sets: dict[str, list[dict[str, str]]]
 
     def to_dict(self) -> dict:
         """
@@ -218,13 +215,10 @@ class ConfigurationStoragePayload:
         """
 
         result = {
-            "codes": sorted(self.codes),
+            "code_system_sets": self.code_system_sets,
             "sections": self.sections,
             "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
         }
-
-        if self.code_system_sets is not None:
-            result["code_system_sets"] = self.code_system_sets
 
         return result
 

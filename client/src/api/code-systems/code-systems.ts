@@ -30,9 +30,9 @@ import type {
 
 /**
  * Returns a list of supported code systems.
-
-Returns:
-    List of code system.
+ *
+ * Returns:
+ *     List of code system.
  * @summary Get Code Systems
  */
 export const getCodeSystems = (

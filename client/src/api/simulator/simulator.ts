@@ -38,18 +38,18 @@ import type {
 
 /**
  * Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
-
-Configurations are returned to the client.
-
-Args:
-    uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
-    simulator_zip_path (Path, optional): The path to the demo zip file.
-    user (DbUser, optional): The logged in user.
-    db (AsyncDatabaseConnection, optional): The database connection.
-    logger (Logger, optional): The app logger.
-
-Returns:
-    DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
+ *
+ * Configurations are returned to the client.
+ *
+ * Args:
+ *     uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
+ *     simulator_zip_path (Path, optional): The path to the demo zip file.
+ *     user (DbUser, optional): The logged in user.
+ *     db (AsyncDatabaseConnection, optional): The database connection.
+ *     logger (Logger, optional): The app logger.
+ *
+ * Returns:
+ *     DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
  * @summary Discover Configurations
  */
 export const discoverConfigurations = (
@@ -115,21 +115,21 @@ export const useDiscoverConfigurations = <TError = AxiosError<HTTPValidationErro
     }
     /**
  * Handles the simulator upload workflow for eICR refinement.
-
-Steps:
-1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in
-    refiner/assets/demo/mon-mothma-covid-influenza.zip).
-2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
-3. Call the service layer (`simulator`) to orchestrate the refinement workflow.
-4. For each unique reportable condition code found in the RR (and having a configuration),
-    build a refined XML document and collect metadata. The code used is the actual code
-    from the RR that triggered the match, not a canonical or database code.
-5. Package all refined and original files into a ZIP.
-6. Upload the ZIP to S3 and get a download URL.
-7. Construct and return the response model for the frontend, including per-condition
-    refinement results and a link to the ZIP of outputs.
-
-Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
+ *
+ * Steps:
+ * 1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in
+ *     refiner/assets/demo/mon-mothma-covid-influenza.zip).
+ * 2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
+ * 3. Call the service layer (`simulator`) to orchestrate the refinement workflow.
+ * 4. For each unique reportable condition code found in the RR (and having a configuration),
+ *     build a refined XML document and collect metadata. The code used is the actual code
+ *     from the RR that triggered the match, not a canonical or database code.
+ * 5. Package all refined and original files into a ZIP.
+ * 6. Upload the ZIP to S3 and get a download URL.
+ * 7. Construct and return the response model for the frontend, including per-condition
+ *     refinement results and a link to the ZIP of outputs.
+ *
+ * Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
  * @summary Simulator Upload
  */
 export const uploadEcr = (
@@ -196,9 +196,9 @@ export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
     }
     /**
  * Stream refined eCR zip from S3 by filename.
-
-The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
-server constructs the S3 object key based on the authenticated user.
+ *
+ * The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
+ * server constructs the S3 object key based on the authenticated user.
  * @summary Download Refined Ecr
  */
 export const downloadRefinedEcr = (
