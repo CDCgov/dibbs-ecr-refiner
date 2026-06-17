@@ -6,7 +6,7 @@ import {
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
   ConditionSummary,
@@ -35,6 +35,8 @@ import { Icon } from '@trussworks/react-uswds';
 import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
 import { useSearch } from '../../hooks/useSearch';
 import { RangeTuple } from 'fuse.js';
+import classNames from 'classnames';
+import { Search } from '@components/Search';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -65,12 +67,18 @@ const MIN_CONFIG_SEARCH_TEXT_LENGTH = 3;
 
 export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
+  const configs = useMemo(() => response?.data ?? [], [response?.data]);
+
+  const { searchText, setSearchText, results } = useSearch(configs, {
+    keys: [{ name: 'name', weight: 1 }],
+  });
+
   const [isOpen, setIsOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
-  const configs = response.data;
+  const hasMultipleConfigs = configs.length > 0;
 
   return (
     <>
@@ -90,13 +98,32 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
             for each reportable condition
           </p>
         </div>
-        <div className="flex flex-col justify-end gap-10 sm:flex-row sm:items-start">
+        <div
+          className={classNames(
+            'flex flex-col gap-10 sm:flex-row sm:items-start',
+            {
+              'justify-between': hasMultipleConfigs,
+              'justify-end': !hasMultipleConfigs,
+            }
+          )}
+        >
+          {hasMultipleConfigs ? (
+            <Search
+              placeholder="Search configurations"
+              id="search-configurations"
+              name="search"
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          ) : null}
+
           <Button className="m-0!" onClick={() => setIsOpen(true)}>
             Set up new configuration
           </Button>
           <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
         </div>
-        <ConfigurationsTable data={configs} />
+        <ConfigurationsTable
+          data={searchText ? results.map((r) => r.item) : configs}
+        />
       </section>
     </>
   );
@@ -323,17 +350,29 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
 
         {selectedCondition && (
           <div className="border-gray-cool-30! rounded-sm border px-4 py-2">
-            <p className="pb-1 font-bold">{selectedCondition.display_name}</p>
-            <div className="flex-col">
-              {selectedCondition.rsg_codes.map((c) => {
-                return (
-                  <div className="flex justify-between gap-1 not-last:pb-1">
-                    <div className="flex-2">{c.display}</div>
-                    <div className="flex-1 text-right">{c.code}</div>
-                  </div>
-                );
-              })}
-            </div>
+            <p className="font-bold">{selectedCondition.display_name}</p>
+            <table>
+              <colgroup>
+                <col className="w-[65%]" />
+                <col className="w-[35%]" />
+              </colgroup>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">Display name</th>
+                  <th scope="col">Code</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedCondition.rsg_codes.map((c) => {
+                  return (
+                    <tr className="not-last:pb-1">
+                      <td>{c.display}</td>
+                      <td className="text-right">{c.code}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </ModalBody>
