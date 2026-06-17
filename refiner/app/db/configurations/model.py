@@ -219,16 +219,13 @@ class ConfigurationStoragePayload:
     """
     The model for a configuration that is being written to S3.
 
-    Contains both the flat codes set (for the generic fallback
-    matching path) and the enriched code_system_sets (for
-    section-aware matching with proper code system routing and
-    displayName enrichment).
+    Contains the enriched code_system_sets required for refinement,
+    along with section processing and included condition RSG codes.
     """
 
-    codes: set[str]
     sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
-    code_system_sets: dict[str, list[dict[str, str]]] | None = None
+    code_system_sets: dict[str, list[dict[str, str]]]
 
     def to_dict(self) -> dict:
         """
@@ -239,13 +236,10 @@ class ConfigurationStoragePayload:
         """
 
         result = {
-            "codes": sorted(self.codes),
+            "code_system_sets": self.code_system_sets,
             "sections": self.sections,
             "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
         }
-
-        if self.code_system_sets is not None:
-            result["code_system_sets"] = self.code_system_sets
 
         return result
 
