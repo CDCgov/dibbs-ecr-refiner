@@ -158,13 +158,25 @@ export function Sections({
                   </td>
                   <td className="pr-8">
                     {section.include ? (
-                      <RefineSwitch
-                        configurationId={configurationId}
-                        currentSection={section}
-                        sections={sectionProcessing}
-                        disabled={disabled || isDisabledSection(section.code)}
-                        isNarrativeOnly={isNarrativeSection(section.code)}
-                      />
+                      <div className="flex flex-row items-center justify-end">
+                        {isNarrativeSection(section.code) ? (
+                          <span
+                            className="text-gray-cool-50 whitespace-nowrap italic"
+                            aria-hidden
+                          >
+                            Not applicable for this section
+                          </span>
+                        ) : (
+                          <RefineSwitch
+                            configurationId={configurationId}
+                            currentSection={section}
+                            sections={sectionProcessing}
+                            disabled={
+                              disabled || isDisabledSection(section.code)
+                            }
+                          />
+                        )}
+                      </div>
                     ) : null}
                   </td>
                   <td>
@@ -347,25 +359,9 @@ function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-  isNarrativeOnly,
-}: SelectionToggleProps & {
-  isNarrativeOnly: boolean;
-}) {
+}: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
   const { clearError, setError, errorSectionCode } = useSectionError();
-
-  if (isNarrativeOnly) {
-    return (
-      <Field className="flex flex-row items-center justify-end">
-        <Label
-          className="text-gray-cool-40 whitespace-nowrap italic"
-          aria-hidden
-        >
-          Not applicable for this section
-        </Label>
-      </Field>
-    );
-  }
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine';
