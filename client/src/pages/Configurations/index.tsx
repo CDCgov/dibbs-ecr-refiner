@@ -279,6 +279,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                   setSelectedCondition(null);
                   setSearchText('');
                 }}
+                placeholder="Start typing to search (3 characters minimum)"
               />
               <ComboboxOptions anchor="bottom">
                 {({ option: condition }) => (
@@ -317,14 +318,14 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                                       r.key === 'rsg_codes.code';
                                     return (
                                       <div className="flex justify-between">
-                                        <p className="flex-2 pb-1">
-                                          ⤷{' '}
+                                        <div>⤷</div>
+                                        <p className="ml-1 flex-2 pb-2">
                                           {isDisplayMatch
                                             ? highlightMatches(
                                                 matchedCode.display,
                                                 r?.indices
                                               )
-                                            : matchedCode.display}
+                                            : `${matchedCode.display}`}
                                         </p>
                                         <p className="flex-1 text-right">
                                           {isCodeMatch
@@ -350,30 +351,34 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
         )}
 
         {selectedCondition && (
-          <div className="border-gray-cool-30! rounded-sm border px-4 py-2">
-            <p className="font-bold">{selectedCondition.display_name}</p>
-            <table className="w-full">
-              <colgroup>
-                <col className="w-[65%]" />
-                <col className="w-[35%]" />
-              </colgroup>
-              <thead className="sr-only">
-                <tr>
-                  <th scope="col">Display name</th>
-                  <th scope="col">Code</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedCondition.rsg_codes.map((c) => {
-                  return (
-                    <tr className="not-last:pb-1">
-                      <td>{c.display}</td>
-                      <td className="text-right">{c.code}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div>
+            <p className="pb-2">Selected condition group</p>
+
+            <div className="border-gray-cool-30! rounded-sm border px-2 py-2">
+              <p className="font-bold">{selectedCondition.display_name}</p>
+              <table className="w-full border-separate border-spacing-y-0.5">
+                <colgroup>
+                  <col className="w-[65%]" />
+                  <col className="w-[35%]" />
+                </colgroup>
+                <thead className="sr-only">
+                  <tr>
+                    <th scope="col">Display name</th>
+                    <th scope="col">Code</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedCondition.rsg_codes.map((c) => {
+                    return (
+                      <tr>
+                        <td>{c.display}</td>
+                        <td className="text-right align-top">{c.code}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </ModalBody>
