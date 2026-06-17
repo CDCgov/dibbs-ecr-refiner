@@ -90,6 +90,7 @@ export function ImportCustomCodes({
       { name: 'name', weight: 0.4 },
     ],
     includeMatches: true,
+    threshold: 0.3,
   });
   useEffect(() => {
     onStepChange?.(step);

@@ -1,4 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import {
+  MatcherFunction,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { TestQueryClientProvider } from '../../../../../test-utils';
 import {
@@ -126,9 +131,11 @@ describe('Custom codes upload', () => {
     await user.upload(uploadCsvButton, file);
 
     uploadCsvButton.click();
+    const rowsUploaded = screen.getAllByRole('row');
+    expect(rowsUploaded.length).toBe(4); // 3 codes plus the header
   });
 
-  test.only('delete all resets to the first step', async () => {
+  test('delete all resets to the first step', async () => {
     await userEvent.click(screen.getByText('Undo & delete codes'));
 
     expect(
@@ -147,20 +154,81 @@ describe('Custom codes upload', () => {
     await userEvent.click(confirmDeleteButton);
     expect(confirmationCopy).not.toBeInTheDocument();
   });
-  test('delete row deletes a row');
-  test('filters appropriately when search string is supplied');
-  describe('edit modal', () => {
-    test('opens when clicking on the right element and closes when clicked');
-    test.each([
-      [1, 1, 2],
-      [1, 2, 3],
-      [2, 3, 5],
-    ])(
-      'changes on different combinations of system, name, and code value',
-      (a, b, expected) => {
-        expect(a + b).toBe(expected);
-      }
+
+  test('delete row successfully deletes a row', async () => {
+    const deleteRows = screen.getAllByRole('row');
+    checkOtherCode();
+    await userEvent.click(
+      await within(deleteRows[1]).findByRole('button', { name: 'Delete' })
     );
-    test('is disabled if code matches existing value');
+    expect(screen.getAllByRole('row').length).toBe(3); // now 2 codes plus the header
+    checkOtherCode({ exists: false });
+  });
+  test('filters appropriately when search string is supplied', async () => {
+    const searchInput = screen.getByPlaceholderText('Search codes');
+    checkOtherCode();
+    checkICD10Code();
+    checkLoincCode();
+    // by display
+    await userEvent.type(searchInput, 'Other Example');
+    checkOtherCode();
+    checkICD10Code({ exists: false });
+    checkLoincCode({ exists: false });
+
+    // by system
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, 'ICD-1');
+    checkICD10Code();
+    checkOtherCode({ exists: false });
+    checkLoincCode({ exists: false });
+
+    // by code
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, '99999A');
+    checkLoincCode();
+    checkICD10Code({ exists: false });
+    checkOtherCode({ exists: false });
   });
 });
+
+function checkOtherCode({ exists = true } = {}) {
+  const matcher = exists ? 'getByText' : 'queryByText';
+
+  const totalExpectation = (text: string) => {
+    const assertion = expect(screen[matcher](text));
+    return exists
+      ? assertion.toBeInTheDocument()
+      : assertion.not.toBeInTheDocument();
+  };
+
+  totalExpectation('12345');
+  totalExpectation('Other');
+}
+
+function checkICD10Code({ exists = true } = {}) {
+  const matcher = exists ? 'getByText' : 'queryByText';
+
+  const totalExpectation = (text: string) => {
+    const assertion = expect(screen[matcher](text));
+    return exists
+      ? assertion.toBeInTheDocument()
+      : assertion.not.toBeInTheDocument();
+  };
+
+  totalExpectation('6789');
+  totalExpectation('ICD-10');
+}
+
+function checkLoincCode({ exists = true } = {}) {
+  const matcher = exists ? 'getByText' : 'queryByText';
+
+  const totalExpectation = (text: string) => {
+    const assertion = expect(screen[matcher](text));
+    return exists
+      ? assertion.toBeInTheDocument()
+      : assertion.not.toBeInTheDocument();
+  };
+
+  totalExpectation('99999A');
+  totalExpectation('LOINC');
+}
