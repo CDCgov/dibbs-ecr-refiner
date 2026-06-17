@@ -278,8 +278,6 @@ export function ImportCustomCodes({
         return { item: i, matches: undefined };
       });
 
-  console.log(step);
-
   return (
     <>
       <div className="w-full space-y-6">
