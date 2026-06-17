@@ -4,76 +4,68 @@ alias help := _default
 @_default:
     just --list --list-submodules
 
-[group('alias')]
-[doc('Alias for `client`')]
+# Alias for `client`
+[group: 'alias']
 mod c './.justscripts/just/client.just'
 
-[group('alias')]
-[doc('Alias for `database`')]
+# Alias for `database`
+[group: 'alias']
 mod db './.justscripts/just/database.just'
 
-[group('alias')]
-[doc('Alias for `risk-assessments`')]
+# Alias for `risk-assessments`
+[group: 'alias']
 mod cve './.justscripts/just/risk-assessments.just'
 
-[group('alias')]
-[doc('Alias for `decisions`')]
+# Alias for `decisions`
+[group: 'alias']
 mod rfc './.justscripts/just/decisions.just'
 
-[group('alias')]
-[doc('Alias for `migrate`')]
+# Alias for `migrate`
+[group: 'alias']
 mod m './.justscripts/just/migrate.just'
 
-[group('alias')]
-[doc('Alias for `server`')]
+# Alias for `server`
+[group: 'alias']
 mod s './.justscripts/just/server.just'
 
-[group('alias')]
-[doc('Alias for `cloud`')]
+# Alias for `cloud`
+[group: 'alias']
 mod cd './.justscripts/just/cloud.just'
 
-[group('alias')]
-[doc('Alias for `dev`')]
+# Alias for `dev`
+[group: 'alias']
 mod d './.justscripts/just/dev.just'
 
-[group('alias')]
-[doc('Alias for `structurizr`')]
-mod s9r './.justscripts/just/structurizr.just'
-
-[group('sub-command')]
-[doc('Run commands against `client/` code')]
+# Run commands against `client/` code
+[group: 'sub-command']
 mod client './.justscripts/just/client.just'
 
-[group('sub-command')]
-[doc('Run dev-related docker compose commands')]
+# Run dev-related docker compose commands
+[group: 'sub-command']
 mod dev './.justscripts/just/dev.just'
 
-[group('sub-command')]
-[doc('Run database commands against `refiner/` code')]
+# Run database commands against `refiner/` code
+[group: 'sub-command']
 mod database './.justscripts/just/database.just'
 
-[group('sub-command')]
-[doc('Run migration commands')]
+# Run migration commands
+[group: 'sub-command']
 mod migrate './.justscripts/just/migrate.just'
 
-[group('sub-command')]
-[doc('Run server commands against `refiner/` code')]
+# Run server commands against `refiner/` code
+[group: 'sub-command']
 mod server './.justscripts/just/server.just'
 
-[group('sub-command')]
-[doc('Run commands against Azure')]
+# Run commands against Azure
+[group: 'sub-command']
 mod cloud './.justscripts/just/cloud.just'
 
-[group('sub-command')]
-[doc('Run Structurizr commands')]
-mod structurizr './.justscripts/just/structurizr.just'
-
-[group('sub-command')]
-[doc('Run risk assessments commands')]
+# Run risk assessments commands
+[group: 'sub-command']
 mod risk-assessments './.justscripts/just/risk-assessments.just'
 
-[group('sub-command')]
-[doc('Run decision records commands')]
+# Run decision records commands
+[group: 'sub-command']
 mod decisions './.justscripts/just/decisions.just'
 
 alias l := lint
