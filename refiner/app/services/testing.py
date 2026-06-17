@@ -25,7 +25,7 @@ from .ecr.model import (
 )
 from .pipeline import (
     AugmentationRun,
-    RefinementTrace,
+    ConditionInput,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     produce_remainder_rr_for_jurisdiction,
@@ -243,17 +243,15 @@ async def run_simulation(
             )
 
         rr_code_used = primary_condition.child_rsg_snomed_codes[0]
-        pipeline_trace = RefinementTrace(
-            jurisdiction_code=jurisdiction_id,
-            rsg_code=rr_code_used,
-            canonical_url=primary_condition.canonical_url,
-            configuration_version=configuration.version,
-        )
 
-        result = refine_for_condition(
+        result, metrics = refine_for_condition(
             xml_files=xml_files,
+            condition=ConditionInput(
+                jurisdiction_id=jurisdiction_id,
+                canonical_url=primary_condition.canonical_url,
+                configuration_version=configuration.version,
+            ),
             processed_configuration=processed_configuration,
-            trace=pipeline_trace,
             run=run,
         )
 
@@ -267,9 +265,7 @@ async def run_simulation(
                 ),
                 refined_eicr=result.refined_eicr,
                 refined_rr=result.refined_rr,
-                eicr_size_reduction_percentage=_require_eicr_size_reduction_or_raise(
-                    result.trace.eicr_size_reduction_percentage
-                ),
+                eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
             )
         )
 
@@ -281,7 +277,7 @@ async def run_simulation(
                 "configuration_found": configuration.name,
                 "total_conditions_used": len(configurations),
                 "configuration_settings": asdict(configuration),
-                "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
+                "eicr_size_reduction_percentage": metrics.eicr_size_reduction_percentage,
                 "outcome": "Refinement successful",
             },
         )
@@ -465,21 +461,18 @@ async def inline_testing(
     # we should wait to see how the testing service evolves with the routes
     matched_code = list(matched_codes)[0]
 
-    pipeline_trace = RefinementTrace(
-        jurisdiction_code=jurisdiction_id,
-        rsg_code=matched_code,
-        canonical_url=primary_condition.canonical_url,
-        configuration_version=configuration.version,
-    )
-
     # inline testing refines a single condition; refine_for_condition
     # requires an AugmentationRun, so build one for this refinement
     run = create_augmentation_run_from_xml_files(xml_files)
 
-    result = refine_for_condition(
+    result, metrics = refine_for_condition(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
-        trace=pipeline_trace,
+        condition=ConditionInput(
+            jurisdiction_id=jurisdiction_id,
+            canonical_url=primary_condition.canonical_url,
+            configuration_version=configuration.version,
+        ),
         run=run,
     )
 
@@ -491,9 +484,7 @@ async def inline_testing(
         ),
         refined_eicr=result.refined_eicr,
         refined_rr=result.refined_rr,
-        eicr_size_reduction_percentage=_require_eicr_size_reduction_or_raise(
-            result.trace.eicr_size_reduction_percentage
-        ),
+        eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
     )
 
     # log high level details of the refinement flow for this condition
@@ -501,7 +492,7 @@ async def inline_testing(
         logger=logger,
         configuration=configuration,
         matched_code=matched_code,
-        eicr_size_reduction_percentage=pipeline_trace.eicr_size_reduction_percentage,
+        eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
         primary_condition=primary_condition,
         outcome="Refinement successful",
     )

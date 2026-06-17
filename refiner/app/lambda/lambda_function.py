@@ -26,8 +26,9 @@ from app.services.ecr.model import JurisdictionReportableConditions, ReportableC
 from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
     AugmentationRun,
+    ConditionInput,
+    RefinementMetrics,
     RefinementResult,
-    RefinementTrace,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     produce_remainder_rr_for_jurisdiction,
@@ -96,7 +97,6 @@ class RefinementState:
     skipped_condition_codes_by_jurisdiction: dict[str, set[str]] = field(
         default_factory=lambda: defaultdict(set)
     )
-    traces: list[RefinementTrace] = field(default_factory=list)
 
 
 @dataclass
@@ -528,12 +528,6 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
         run=run,
     )
 
-    log_refinement_summary(
-        persistence_id=input.persistence_id,
-        output_files=state.output_files,
-        traces=state.traces,
-    )
-
     return RefinementOutput(
         output_file_keys=list(state.output_files), metadata=state.metadata
     )
@@ -588,10 +582,6 @@ def process_condition(
     Process a single reportable condition for a jurisdiction.
     """
     rsg_code = reportable_condition.code
-    trace = RefinementTrace(
-        jurisdiction_code=jurisdiction_code,
-        rsg_code=rsg_code,
-    )
 
     cg_metadata = rsg_cg_payload.mappings.get(rsg_code)
 
@@ -604,7 +594,6 @@ def process_condition(
             operation="skipped",
         )
         mark_condition_skipped(
-            trace=trace,
             jurisdiction_code=jurisdiction_code,
             condition_code=rsg_code,
             reason="rsg_not_in_mapping",
@@ -612,20 +601,16 @@ def process_condition(
         )
         return
 
-    trace.canonical_url = cg_metadata.canonical_url
-
-    processed_configuration = load_active_configuration(
+    active_configuration = load_active_configuration(
         s3_client=refiner_input.s3_client,
         config_bucket=refiner_input.config_bucket_name,
         jurisdiction_code=jurisdiction_code,
         cg_metadata=cg_metadata,
         rsg_metadata=reportable_condition,
-        trace=trace,
     )
 
-    if processed_configuration is None:
+    if active_configuration is None:
         mark_condition_skipped(
-            trace=trace,
             jurisdiction_code=jurisdiction_code,
             condition_code=rsg_code,
             reason="no_active_configuration",
@@ -633,21 +618,23 @@ def process_condition(
         )
         return
 
-    result = refine_for_condition(
+    result, metrics = refine_for_condition(
         xml_files=refiner_input.xml_files,
-        processed_configuration=processed_configuration,
-        trace=trace,
+        processed_configuration=active_configuration.configuration,
+        condition=ConditionInput(
+            canonical_url=cg_metadata.canonical_url,
+            jurisdiction_id=jurisdiction_code,
+            configuration_version=active_configuration.version,
+        ),
         run=run,
     )
-
-    state.traces.append(trace)
 
     write_refined_outputs(
         refiner_input=refiner_input,
         jurisdiction_code=jurisdiction_code,
         condition_grouper_name=cg_metadata.name,
         result=result,
-        trace=trace,
+        metrics=metrics,
         condition_code=rsg_code,
         state=state,
     )
@@ -693,13 +680,13 @@ def skip_all_conditions_for_missing_mapping(
     Mark every condition in a jurisdiction as skipped when the mapping file is missing.
     """
     for condition in jurisdiction_group.conditions:
-        trace = RefinementTrace(
+        logger.info(
+            "Mapping file not found for condition",
             jurisdiction_code=jurisdiction_code,
             rsg_code=condition.code,
             refinement_outcome="skipped",
-            skip_reason="no_mapping_file",
+            reason="no_mapping_file",
         )
-        state.traces.append(trace)
         state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(
             condition.code
         )
@@ -707,7 +694,6 @@ def skip_all_conditions_for_missing_mapping(
 
 
 def mark_condition_skipped(
-    trace: RefinementTrace,
     jurisdiction_code: str,
     condition_code: str,
     reason: str,
@@ -716,12 +702,22 @@ def mark_condition_skipped(
     """
     Helper to mark a condition as "skipped" during refinement.
     """
-    trace.refinement_outcome = "skipped"
-    trace.skip_reason = reason
+    logger.info(
+        "Refiner skipped condition.",
+        jurisdiction=jurisdiction_code,
+        condition_code=condition_code,
+        reason=reason,
+        operation="skipped",
+    )
 
-    state.traces.append(trace)
     state.metadata[jurisdiction_code][condition_code] = False
     state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(condition_code)
+
+
+@dataclass
+class ActiveConfiguration:
+    configuration: ProcessedConfiguration
+    version: int
 
 
 def load_active_configuration(
@@ -730,8 +726,7 @@ def load_active_configuration(
     jurisdiction_code: str,
     cg_metadata: ConditionMapValue,
     rsg_metadata: ReportableCondition,
-    trace: RefinementTrace,
-) -> ProcessedConfiguration | None:
+) -> ActiveConfiguration | None:
     """
     Attempts to find and load the active configuration.
     """
@@ -756,8 +751,6 @@ def load_active_configuration(
         )
         return None
 
-    trace.configuration_version = config_version_to_use
-
     serialized_configuration_key = get_active_file_key(
         jurisdiction_id=jurisdiction_code,
         canonical_url=cg_metadata.canonical_url,
@@ -780,7 +773,10 @@ def load_active_configuration(
         operation="activation_file_read",
     )
 
-    return ProcessedConfiguration.from_dict(serialized_configuration)
+    return ActiveConfiguration(
+        configuration=ProcessedConfiguration.from_dict(serialized_configuration),
+        version=config_version_to_use,
+    )
 
 
 def write_refined_outputs(
@@ -789,7 +785,7 @@ def write_refined_outputs(
     condition_code: str,
     condition_grouper_name: str,
     result: RefinementResult,
-    trace: RefinementTrace,
+    metrics: RefinementMetrics,
     state: RefinementState,
 ) -> None:
     """
@@ -824,7 +820,7 @@ def write_refined_outputs(
         "Condition refinement complete.",
         eicr_key=eicr_output_key,
         rr_key=rr_output_key,
-        eicr_size_reduction_percentage=trace.eicr_size_reduction_percentage,
+        eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
         jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
         operation="condition_refinement_complete",
@@ -908,32 +904,3 @@ def write_remainder_rrs(
             augmented_rr_doc_id=remainder.augmented_result.augmented_doc_id,
             operation="remainder_rr_written",
         )
-
-
-def log_refinement_summary(
-    persistence_id: str,
-    output_files: set[str],
-    traces: list[RefinementTrace],
-) -> None:
-    """
-    Log a final summary for the entire refinement run.
-    """
-    logger.info(
-        "Refinement complete.",
-        persistence_id=persistence_id,
-        output_file_urls=list(output_files),
-        traces=[
-            {
-                "jurisdiction": t.jurisdiction_code,
-                "rsg_code": t.rsg_code,
-                "canonical_url": t.canonical_url,
-                "outcome": t.refinement_outcome,
-                "skip_reason": t.skip_reason,
-                "config_version": t.configuration_version,
-                "eicr_size_reduction": t.eicr_size_reduction_percentage,
-                "eicr_size_mb": t.eicr_size_mib,
-            }
-            for t in traces
-        ],
-        operation="refinement_complete",
-    )
