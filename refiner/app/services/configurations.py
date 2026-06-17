@@ -206,7 +206,7 @@ async def convert_config_to_storage_payload(
                 Coding(
                     code=cc.code,
                     display=cc.name,
-                    system=cur_code_system.oid,
+                    system_oid=cur_code_system.oid,
                 )
             )
         )
