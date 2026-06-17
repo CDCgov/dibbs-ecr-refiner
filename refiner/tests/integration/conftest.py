@@ -2,6 +2,7 @@ import os
 import subprocess
 from dataclasses import asdict
 from pathlib import Path
+from typing import Literal
 from uuid import UUID
 
 import pytest
@@ -381,7 +382,7 @@ def base_url() -> str:
     return "http://0.0.0.0:8080/"
 
 
-def _restart_server(compose_path: str) -> None:
+def _restart_service(service: Literal["server", "lambda"], compose_path: str) -> None:
     """
     Restarts the Refiner server running in Docker.
 
@@ -392,7 +393,7 @@ def _restart_server(compose_path: str) -> None:
     We use subprocess because DockerCompose does not provide an API to restart a single container.
     """
     subprocess.run(
-        ["docker", "compose", "restart", "server"], cwd=compose_path, check=True
+        ["docker", "compose", "restart", service], cwd=compose_path, check=True
     )
 
 
@@ -421,7 +422,10 @@ def setup(request):
     refiner_service.start()
 
     print("⚙️ Restarting refiner server")
-    _restart_server(compose_path=path)
+    _restart_service(service="server", compose_path=path)
+
+    print("⚙️ Restarting refiner Lambda")
+    _restart_service(service="lambda", compose_path=path)
 
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
