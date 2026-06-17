@@ -648,11 +648,13 @@ test.describe('Configuration detail flow', () => {
       await page.getByLabel('Code #').fill(testCode);
       await page.getByLabel('Code system').selectOption('CVX');
       await page.getByLabel('Code name').fill('test code_name');
+      await page.getByRole('button', { name: 'Save changes' }).click();
+
+      await editButton.click();
       await expect(
         page.getByRole('heading', { name: `Edit ${testCode}`, level: 2 })
       ).toBeVisible();
-      await page.getByRole('button', { name: 'Save changes' }).click();
-
+      await page.getByLabel('Close this window').click();
       await expect(
         page.getByText('Other Example', { exact: true })
       ).not.toBeVisible();
