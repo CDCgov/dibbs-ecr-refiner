@@ -56,9 +56,9 @@ import type {
 
 /**
  * Returns a list of configurations based on the logged-in user.
-
-Returns:
-    List of configuration objects.
+ *
+ * Returns:
+ *     List of configuration objects.
  * @summary Get Configurations
  */
 export const getConfigurations = (
@@ -302,22 +302,22 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 
 /**
  * Associate a specified code set with the given configuration.
-
-Args:
-    configuration_id (UUID): ID of the configuration
-    body (AssociateCodesetInput): payload containing a condition_id
-    user (dict[str, Any], optional): User making the request
-    db (AsyncDatabaseConnection, optional): Database connection
-
-Raises:
-    HTTPException: 404 if configuration is not found in JD
-    HTTPException: 404 if configuration is not found
-    HTTPException: 409 if configuration is not a draft and therefore not editable
-    HTTPException: 500 if configuration cannot be updated
-
-Returns:
-    AssociateCodesetResponse: ID of updated configuration, the full list of included conditions,
-          and the condition_name
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration
+ *     body (AssociateCodesetInput): payload containing a condition_id
+ *     user (dict[str, Any], optional): User making the request
+ *     db (AsyncDatabaseConnection, optional): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration is not found in JD
+ *     HTTPException: 404 if configuration is not found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration cannot be updated
+ *
+ * Returns:
+ *     AssociateCodesetResponse: ID of updated configuration, the full list of included conditions,
+ *           and the condition_name
  * @summary Associate Condition Codeset With Configuration
  */
 export const associateConditionWithConfiguration = (
@@ -380,23 +380,23 @@ export const useAssociateConditionWithConfiguration = <TError = AxiosError<HTTPV
     }
     /**
  * Remove a specified code set from the given configuration.
-
-Args:
-    configuration_id (UUID): ID of the configuration
-    condition_id (UUID): ID of the condition to remove
-    user (DbUser): User making the request
-    db (AsyncDatabaseConnection): Database connection
-
-Raises:
-    HTTPException: 404 if configuration is not found in JD
-    HTTPException: 404 if condition is not found
-    HTTPException: 409 if trying to remove the main condition
-    HTTPException: 409 if configuration is not a draft and therefore not editable
-    HTTPException: 500 if configuration is cannot be updated
-
-Returns:
-    AssociateCodesetResponse: ID of updated configuration and the full list
-    of included conditions plus condition_name
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration
+ *     condition_id (UUID): ID of the condition to remove
+ *     user (DbUser): User making the request
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration is not found in JD
+ *     HTTPException: 404 if condition is not found
+ *     HTTPException: 409 if trying to remove the main condition
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration is cannot be updated
+ *
+ * Returns:
+ *     AssociateCodesetResponse: ID of updated configuration and the full list
+ *     of included conditions plus condition_name
  * @summary Remove Condition Codeset From Configuration
  */
 export const disassociateConditionWithConfiguration = (
@@ -458,20 +458,20 @@ export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HT
     }
     /**
  * Add a user-defined custom code to a configuration.
-
-Args:
-    configuration_id (UUID): The ID of the configuration to update.
-    body (AddCustomCodeInput): The custom code information provided by the user.
-    user (dict[str, Any]): The logged-in user.
-    db (AsyncDatabaseConnection): The database connection.
-
-Raises:
-    HTTPException: 404 if configuration isn't found
-    HTTPException: 409 if configuration is not a draft and therefore not editable
-    HTTPException: 500 if custom code can't be added
-
-Returns:
-    ConfigurationCustomCodeResponse: Updated configuration
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to update.
+ *     body (AddCustomCodeInput): The custom code information provided by the user.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration isn't found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if custom code can't be added
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: Updated configuration
  * @summary Add Custom Code
  */
 export const addCustomCodeToConfiguration = (
@@ -534,20 +534,20 @@ export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidati
     }
     /**
  * Modify a configuration's custom code based on system_key/code pair.
-
-Args:
-    configuration_id (UUID): The ID of the configuration to modify.
-    body (UpdateCustomCodeInput): User-provided object containing custom code info.
-    user (dict[str, Any]): The logged-in user.
-    db (AsyncDatabaseConnection): The database connection.
-    logger (Logger): The system logger.
-
-Raises:
-    HTTPException: 409 if configuration is not a draft and therefore not editable
-    HTTPException: 500 if the configuration can't be updated
-
-Returns:
-    ConfigurationCustomCodeResponse: The updated configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     body (UpdateCustomCodeInput): User-provided object containing custom code info.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *     logger (Logger): The system logger.
+ *
+ * Raises:
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if the configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration.
  * @summary Edit Custom Code
  */
 export const editCustomCodeFromConfiguration = (
@@ -610,12 +610,12 @@ export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValid
     }
     /**
  * Accepts a CSV payload in JSON body.
-
-Expected CSV headers:
-    code_number,code_system,display_name
-
-Returns:
-    UploadCustomCodesResponse
+ *
+ * Expected CSV headers:
+ *     code_number,code_system,display_name
+ *
+ * Returns:
+ *     UploadCustomCodesResponse
  * @summary Upload Custom Codes Csv
  */
 export const uploadCustomCodesCsv = (
@@ -740,23 +740,23 @@ export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidatio
     }
     /**
  * Delete a custom code from a configuration.
-
-Args:
-    configuration_id (UUID): The ID of the configuration to modify.
-    system_key (str): System of the custom code.
-    code (str): Code of the custom code.
-    user (dict[str, Any]): The logged-in user.
-    db (AsyncDatabaseConnection): The database connection.
-
-Raises:
-    HTTPException: 400 if system_key is not provided
-    HTTPException: 400 if code is not provided
-    HTTPException: 404 if configuration can't be found
-    HTTPException: 409 if configuration is not a draft and therefore not editable
-    HTTPException: 500 if configuration can't be updated
-
-Returns:
-    ConfigurationCustomCodeResponse: The updated configuration
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     system_key (str): System of the custom code.
+ *     code (str): Code of the custom code.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 400 if system_key is not provided
+ *     HTTPException: 400 if code is not provided
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration
  * @summary Delete Custom Code
  */
 export const deleteCustomCodeFromConfiguration = (
@@ -819,18 +819,18 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
     }
     /**
  * Determines whether a custom code update is valid or not.
-
-If the desired code is already associated with the configuration, then the update is
-invalid.
-
-Args:
-    configuration_id (UUID): The configuration ID
-    body (ValidateCustomCodeInput): Body including the code to validate
-    user (DbUser, optional): The logged in user
-    db (AsyncDatabaseConnection, optional): The database connection
-
-Returns:
-    bool: Returns True if the code name has not been used, otherwise returns False
+ *
+ * If the desired code is already associated with the configuration, then the update is
+ * invalid.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     body (ValidateCustomCodeInput): Body including the code to validate
+ *     user (DbUser, optional): The logged in user
+ *     db (AsyncDatabaseConnection, optional): The database connection
+ *
+ * Returns:
+ *     bool: Returns True if the code name has not been used, otherwise returns False
  * @summary Validate Custom Code
  */
 export const validateCustomCodeFromConfiguration = (
@@ -984,33 +984,33 @@ export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getC
 
 /**
  * Runs an inline test of a given configuration against an eICR/RR pair.
-
-This endpoint orchestrates the validation and refinement process by:
-1. Handling file input, either from a user upload or a default sample file.
-2. Calling the `inline_testing` service, which validates that the specified
-   configuration's condition is reportable in the provided file.
-3. Handling the service response:
-    - If validation fails, raises a 400 Bad Request with a specific error.
-    - If successful, proceeds with the returned refined document.
-4. Packaging the original eICR, RR, and the single refined eICR into a
-   new in-memory zip archive.
-5. Uploading the archive to S3 and generating a pre-signed download URL.
-6. Returning a `ConfigurationTestResponse` with the download URL and details
-   of the successful refinement.
-
-Args:
-    id: The ID of the configuration to test.
-    uploaded_file: An optional user-provided zip file with an eICR and RR.
-    create_output_zip: Dependency to create a zip archive in memory.
-    upload_zip: Dependency to upload the archive to S3.
-    user: The authenticated user making the request.
-    db: The database connection.
-    sample_zip_path: Path to the default sample zip file.
-    logger: The application logger.
-
-Returns:
-    A response object containing the original eICR, a URL to download the
-    zipped results, and details about the refined condition.
+ *
+ * This endpoint orchestrates the validation and refinement process by:
+ * 1. Handling file input, either from a user upload or a default sample file.
+ * 2. Calling the `inline_testing` service, which validates that the specified
+ *    configuration's condition is reportable in the provided file.
+ * 3. Handling the service response:
+ *     - If validation fails, raises a 400 Bad Request with a specific error.
+ *     - If successful, proceeds with the returned refined document.
+ * 4. Packaging the original eICR, RR, and the single refined eICR into a
+ *    new in-memory zip archive.
+ * 5. Uploading the archive to S3 and generating a pre-signed download URL.
+ * 6. Returning a `ConfigurationTestResponse` with the download URL and details
+ *    of the successful refinement.
+ *
+ * Args:
+ *     id: The ID of the configuration to test.
+ *     uploaded_file: An optional user-provided zip file with an eICR and RR.
+ *     create_output_zip: Dependency to create a zip archive in memory.
+ *     upload_zip: Dependency to upload the archive to S3.
+ *     user: The authenticated user making the request.
+ *     db: The database connection.
+ *     sample_zip_path: Path to the default sample zip file.
+ *     logger: The application logger.
+ *
+ * Returns:
+ *     A response object containing the original eICR, a URL to download the
+ *     zipped results, and details about the refined condition.
  * @summary Run Configuration Test
  */
 export const runInlineConfigurationTest = (
@@ -1077,12 +1077,12 @@ export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidation
     }
     /**
  * Create a new custom section for a given configuration ID.
-
-Args:
-    configuration_id (UUID): The ID of the configuration
-    section_input (CustomSectionInput): Desired properties of the section
-    user (DbUser): The logged-in user
-    db (AsyncDatabaseConnection): The database connection
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration
+ *     section_input (CustomSectionInput): Desired properties of the section
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
  * @summary Insert Custom Section
  */
 export const addCustomSection = (
@@ -1146,20 +1146,20 @@ export const useAddCustomSection = <TError = AxiosError<HTTPValidationError>,
     }
     /**
  * Delete a custom section.
-
-Args:
-    configuration_id (UUID): ID of the configuration with custom section to delete
-    section_input (DeleteCustomSectionInput): Custom section deletion input
-    user (DbUser): The logged in user
-    db (AsyncDatabaseConnection): The database connection
-
-Raises:
-    HTTPException: 404 if configuration isn't found
-    HTTPException: 409 if configuration isn't a draft
-    HTTPException: 404 if custom section code to delete isn't found
-
-Returns:
-    str: Deleted custom section code
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration with custom section to delete
+ *     section_input (DeleteCustomSectionInput): Custom section deletion input
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration isn't found
+ *     HTTPException: 409 if configuration isn't a draft
+ *     HTTPException: 404 if custom section code to delete isn't found
+ *
+ * Returns:
+ *     str: Deleted custom section code
  * @summary Delete Custom Section
  */
 export const deleteCustomSection = (
@@ -1222,21 +1222,21 @@ export const useDeleteCustomSection = <TError = AxiosError<HTTPValidationError>,
     }
     /**
  * Update a section entry for a configuration.
-
-Args:
-    configuration_id (UUID): ID of the configuration to update
-    section_input (SectionUpdateInput): Updated section info
-    user (DbUser): The logged-in user
-    db (AsyncDatabaseConnection): Database connection
-
-Raises:
-    HTTPException: 400 if the code is not valid, code is in use, or name is in use
-    HTTPException: 404 if configuration isn't found
-    HTTPException: 409 if configuration is not a draft and therefore not editable
-    HTTPException: 500 if section processing can't be updated
-
-Returns:
-    UpdateSectionProcessingResponse: The message to show the user
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     section_input (SectionUpdateInput): Updated section info
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 400 if the code is not valid, code is in use, or name is in use
+ *     HTTPException: 404 if configuration isn't found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if section processing can't be updated
+ *
+ * Returns:
+ *     UpdateSectionProcessingResponse: The message to show the user
  * @summary Update Section
  */
 export const updateSection = (
@@ -1299,20 +1299,20 @@ export const useUpdateSection = <TError = AxiosError<HTTPValidationError>,
     }
     /**
  * Activate the specified configuration.
-
-Args:
-    configuration_id (UUID): ID of the configuration to update
-    user (DbUser): The logged-in user
-    logger (Logger): The standard logger
-    db (AsyncDatabaseConnection): Database connection
-
-Raises:
-    HTTPException: 400 if configuration can't be activated because of its current state
-    HTTPException: 404 if configuration can't be found
-    HTTPException: 500 if configuration can't be activated by the server
-
-Returns:
-    ActivateConfigurationResponse: Metadata about the activated condition for confirmation
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 400 if configuration can't be activated because of its current state
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if configuration can't be activated by the server
+ *
+ * Returns:
+ *     ActivateConfigurationResponse: Metadata about the activated condition for confirmation
  * @summary Activate Configuration
  */
 export const activateConfiguration = (
@@ -1374,20 +1374,20 @@ export const useActivateConfiguration = <TError = AxiosError<HTTPValidationError
     }
     /**
  * Deactivate the specified configuration.
-
-Args:
-    configuration_id (UUID): ID of the configuration to update
-    user (DbUser): The logged-in user
-    logger (Logger): The standard application logger
-    db (AsyncDatabaseConnection): Database connection
-
-Raises:
-    HTTPException: 400 if configuration can't be deactivated because of its current state
-    HTTPException: 404 if configuration can't be found
-    HTTPException: 500 if configuration can't be deactivated by the server
-
-Returns:
-    ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard application logger
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 400 if configuration can't be deactivated because of its current state
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if configuration can't be deactivated by the server
+ *
+ * Returns:
+ *     ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
  * @summary Deactivate Configuration
  */
 export const deactivateConfiguration = (
@@ -1449,11 +1449,11 @@ export const useDeactivateConfiguration = <TError = AxiosError<HTTPValidationErr
     }
     /**
  * Release config lock if held by user.
-
-Args:
-    configuration_id (UUID): ID of the configuration to update
-    user (DbUser): The logged-in user
-    db (AsyncDatabaseConnection): Database connection
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
  * @summary Release Configuration Lock
  */
 export const releaseConfigurationLock = (

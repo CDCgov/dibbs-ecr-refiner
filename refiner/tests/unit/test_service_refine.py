@@ -83,7 +83,7 @@ def _make_db_configuration_v1_1(**kwargs) -> DbConfiguration:
         "last_activated_at": None,
         "last_activated_by": None,
         "created_by": "fake-config-id-v1-1",
-        "s3_urls": [],
+        "s3_url": [],
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)
@@ -133,7 +133,7 @@ def _make_db_configuration_v3_1_1(**kwargs) -> DbConfiguration:
         "last_activated_at": None,
         "last_activated_by": None,
         "created_by": "fake-config-id-v1-1",
-        "s3_urls": [],
+        "s3_url": "",
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)
