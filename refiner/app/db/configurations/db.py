@@ -1215,10 +1215,11 @@ async def get_configurations_summary_db(
     query = """
         WITH ranked AS (
             SELECT
-                c.id,
-                c.name,
+                c.id as configuration_id,
+                c.name as configuration_name,
                 c.status,
                 cond.canonical_url,
+                cond.id as primary_condition_id,
                 ROW_NUMBER() OVER (
                     PARTITION BY cond.canonical_url
                     ORDER BY
@@ -1234,18 +1235,36 @@ async def get_configurations_summary_db(
             JOIN conditions cond ON cond.id = cc.condition_id
             WHERE c.jurisdiction_id = %s
         )
-        SELECT id, name, status
+        SELECT
+            configuration_id,
+            configuration_name,
+            status,
+            primary_condition_id,
+            JSONB_AGG(JSONB_BUILD_OBJECT(
+                'code', codes.code,
+                'display', codes.display
+            )) AS configuration_primary_rsg_codes
         FROM ranked
+        JOIN conditions_rsg_codes rsg ON rsg.condition_id = primary_condition_id
+        JOIN codes ON codes.id = rsg.code_id
+
         WHERE rn = 1
-        ORDER BY LOWER(name)
+        GROUP BY
+            configuration_id,
+            configuration_name,
+            status,
+            primary_condition_id
+        ORDER BY LOWER(configuration_name)
+
+
     """
     params = (jurisdiction_id,)
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConfigurationSummary)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
-    return rows
+    return [DbConfigurationSummary.from_db_row(row=r) for r in rows]
 
 
 def _get_configurations_core_query() -> str:

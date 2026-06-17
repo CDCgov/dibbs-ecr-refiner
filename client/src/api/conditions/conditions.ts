@@ -21,8 +21,8 @@ import type {
 } from 'axios';
 
 import type {
+  ConditionSummary,
   GetConditionResponse,
-  GetConditionsResponse,
   HTTPValidationError
 } from '../schemas';
 
@@ -42,7 +42,7 @@ import type {
  */
 export const getConditions = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConditionsResponse[]>> => {
+ ): Promise<AxiosResponse<ConditionSummary[]>> => {
 
 
     return axios.default.get(

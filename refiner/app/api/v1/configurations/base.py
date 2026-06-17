@@ -62,12 +62,18 @@ async def get_configurations(
     Returns:
         List of configuration objects.
     """
+    summary_response = await get_configurations_summary_db(
+        jurisdiction_id=user.jurisdiction_id, db=db
+    )
 
     return [
-        GetConfigurationsResponse(id=c.id, name=c.name, status=c.status)
-        for c in await get_configurations_summary_db(
-            jurisdiction_id=user.jurisdiction_id, db=db
+        GetConfigurationsResponse(
+            id=c.id,
+            name=c.name,
+            status=c.status,
+            rsg_codes=c.primary_condition_rsg_codes,
         )
+        for c in summary_response
     ]
 
 

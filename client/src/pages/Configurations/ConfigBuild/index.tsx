@@ -610,9 +610,9 @@ function RsgDetailsModal({
           <tbody className="divide-gray-cool-20 divide-y">
             {rsgCodes.map((c) => {
               return (
-                <tr key={c.value}>
-                  <td className="py-3 pl-2">{c.value}</td>
-                  <td className="py-3 pl-2">{c.name}</td>
+                <tr key={c.code}>
+                  <td className="py-3 pl-2">{c.code}</td>
+                  <td className="py-3 pl-2">{c.display}</td>
                 </tr>
               );
             })}

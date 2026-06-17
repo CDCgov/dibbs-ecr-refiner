@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import CodeSystemIndex
-from app.db.codes.model import DbCode
+from app.db.codes.model import DbCode, DbCoding
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
@@ -27,6 +27,7 @@ class GetConfigurationsResponse:
     id: UUID
     name: str
     status: DbConfigurationStatus
+    rsg_codes: list[DbCoding]
 
 
 class CreateConfigInput(BaseModel):

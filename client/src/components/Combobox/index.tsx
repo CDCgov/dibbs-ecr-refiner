@@ -157,7 +157,9 @@ function ComboboxOption<T>({
       {...props}
     >
       {(bag) => (
-        <span>{typeof children === 'function' ? children(bag) : children}</span>
+        <span className="w-full">
+          {typeof children === 'function' ? children(bag) : children}
+        </span>
       )}
     </HeadlessOption>
   );

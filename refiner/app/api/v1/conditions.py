@@ -6,57 +6,41 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_all_code_systems_db
-from app.db.conditions.model import DbConditionsContextGrouper
+from app.db.codes.model import DbCoding
+from app.db.conditions.model import ConditionSummary, DbConditionsContextGrouper
 
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
+    get_conditions_with_rsg_codes_db,
     get_context_groupers_by_condition_id_db,
-    get_latest_conditions_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
 
 router = APIRouter(prefix="/conditions")
 
 
-@dataclass(frozen=True)
-class GetConditionsResponse:
-    """
-    Conditions response model.
-    """
-
-    id: UUID
-    display_name: str
-
-
 @router.get(
     "/",
-    response_model=list[GetConditionsResponse],
+    response_model=list[ConditionSummary],
     tags=["conditions"],
     operation_id="getConditions",
 )
 async def get_conditions(
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[GetConditionsResponse]:
+) -> list[ConditionSummary]:
     """
-    Fetches all available conditions from the database.
+    Fetches a summary of all available conditions from the database.
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        list[Condition]: List of all conditions.
+        list[ConditionSummary]: List of all conditions.
     """
 
-    conditions = await get_latest_conditions_db(db=db)
-    return [
-        GetConditionsResponse(
-            id=condition.id,
-            display_name=condition.display_name,
-        )
-        for condition in conditions
-    ]
+    return await get_conditions_with_rsg_codes_db(db=db)
 
 
 type CodeSetStatus = Literal["not expanded", "partially complete", "fully complete"]
