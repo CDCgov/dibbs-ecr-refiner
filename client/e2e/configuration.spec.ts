@@ -238,6 +238,143 @@ test.describe('Configuration detail flow', () => {
     });
   });
 
+  [
+    {
+      code: '12345_edit',
+      system_display_name: 'Other',
+      display: 'Other Example',
+      system_key: 'other',
+    },
+    {
+      system_display_name: 'LOINC',
+      code: '12345',
+      display: 'Other Example',
+      system_key: 'loinc',
+    },
+
+    {
+      display: 'Other Example_edit',
+      code: '12345',
+      system_display_name: 'Other',
+      system_key: 'other',
+    },
+  ].forEach((params) => {
+    test(`Upload custom code CSV with edit item ${Object.entries(params)[0].join(': ')}`, async ({
+      page,
+      configurationPage,
+      configurationsPage,
+      makeAxeBuilder,
+    }) => {
+      const { code, system_display_name, display, system_key } = params;
+      const condition = 'Melioidosis';
+      await configurationsPage.createConfiguration(condition);
+      await configurationPage.goToBuildTab();
+      await page.getByRole('button', { name: 'Custom codes' }).click();
+
+      await page.getByRole('button', { name: 'Custom codes' }).click();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+      await page.getByRole('button', { name: 'Import from CSV' }).click();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+      await expect(
+        page.getByRole('heading', {
+          name: 'Import from CSV',
+          exact: true,
+          level: 2,
+        })
+      ).toBeVisible();
+
+      const downloadPath =
+        await configurationPage.downloadCustomCodeCsvTemplate();
+      await configurationPage.uploadCustomCodeCsv(downloadPath);
+      const saveAllButton = page.getByRole('button', {
+        name: 'Confirm & save codes',
+      });
+      const deleteAllButton = page.getByRole('button', {
+        name: 'Undo & delete codes',
+      });
+
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+      await expect(saveAllButton).toBeVisible();
+      await expect(deleteAllButton).toBeVisible();
+
+      await expect(
+        page.getByText('Other Example', { exact: true })
+      ).toBeVisible();
+      const codeSearch = page.getByRole('searchbox', {
+        name: 'Search codes',
+      });
+      await codeSearch.fill('oth');
+      const editButton = page.getByRole('button', {
+        name: 'Edit',
+        exact: true,
+      });
+      const deleteButton = page.getByRole('button', {
+        name: 'Delete',
+        exact: true,
+      });
+      await expect(editButton).toBeVisible();
+      await expect(deleteButton).toBeVisible();
+
+      await editButton.click();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+      await expect(
+        page.getByRole('heading', { name: 'Edit 12345', level: 2 })
+      ).toBeVisible();
+      await page.getByLabel('Code #').fill(code);
+      await page.getByLabel('Code system').selectOption(system_key);
+      await page.getByLabel('Code name').fill(display);
+
+      await expect(
+        page.getByRole('heading', { name: `Edit 12345`, level: 2 })
+      ).toBeVisible();
+      await page.getByRole('button', { name: 'Save changes' }).click();
+
+      const rows = page.locator('table tbody tr');
+      const firstRow = rows.first();
+      // first row should have the most recent updated values
+      await expect(firstRow.getByText(code, { exact: true })).toBeVisible();
+      await expect(firstRow.getByText(display, { exact: true })).toBeVisible();
+      await expect(
+        firstRow.getByText(system_display_name, { exact: true })
+      ).toBeVisible();
+
+      await editButton.click();
+      await expect(
+        page.getByRole('heading', { name: `Edit ${code}`, level: 2 })
+      ).toBeVisible();
+      await page.getByLabel('Close this window').click();
+
+      await codeSearch.clear();
+
+      expect(await rows.all()).toHaveLength(3);
+      await firstRow.getByRole('button', { name: 'Delete' }).click();
+      await expect(page.getByText(code)).not.toBeVisible();
+      expect(await rows.all()).toHaveLength(2);
+
+      await page.getByRole('button', { name: 'Confirm & save codes' }).click();
+      await expect(
+        page.getByRole('heading', {
+          name: 'Confirm & save codes?',
+          exact: true,
+          level: 2,
+        })
+      ).toBeVisible();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+      await page.getByRole('button', { name: 'Yes, save codes' }).click();
+
+      const savedCodeTableRows = page.locator('table tbody tr');
+      await expect(
+        savedCodeTableRows.getByText('ICD-10 Example')
+      ).toBeVisible();
+      await expect(savedCodeTableRows.getByText('LOINC Example')).toBeVisible();
+    });
+  });
+
   test('Uploaded file for inline testing has no conditions matching selected configuration', async ({
     page,
     configurationsPage,
@@ -456,6 +593,7 @@ test.describe('Configuration detail flow', () => {
       await expect(page.getByText('Editing: Version 2')).toBeVisible();
     });
 
+<<<<<<< HEAD
     await test.step('Upload custom code CSV', async () => {
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -552,6 +690,8 @@ test.describe('Configuration detail flow', () => {
       await expect(savedCodeTableRows.getByText('LOINC Example')).toBeVisible();
     });
 
+=======
+>>>>>>> 3e6bfda38c5ac80223d243b5f01cc02350abc4a0
     await test.step('Activate modified draft', async () => {
       await configurationPage.goToActivateTab();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
