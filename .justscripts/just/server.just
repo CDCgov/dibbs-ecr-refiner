@@ -26,7 +26,7 @@ _venv:
 test *ARGS: _venv
     .venv/bin/pytest {{ ARGS }}
 
-[doc('Run unit tests')]
+[doc('Run Unit tests')]
 [group('test')]
 test-unit: _venv
     {{ if env("CI", "") != "" { ".venv/bin/pytest tests/unit" } else { ".venv/bin/pytest -vvv tests/unit" } }}
@@ -46,6 +46,8 @@ test-scenarios: _venv
 test-lambda: _venv
     {{ if env("CI", "") != "" { ".venv/bin/pytest app/lambda" } else { ".venv/bin/pytest -vvv app/lambda" } }}
 
+[doc('Run all tests')]
+[group('test')]
 test-all: _venv
     just server test-integration
     just server test-lambda
