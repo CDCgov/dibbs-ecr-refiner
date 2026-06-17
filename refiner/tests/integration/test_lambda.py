@@ -3,6 +3,7 @@ import json
 import httpx
 import pytest
 import pytest_asyncio
+from botocore.exceptions import ClientError
 from lxml import etree
 
 from tests.integration.conftest import assert_schematron_valid, validate_refined_xml
@@ -243,12 +244,7 @@ class TestLambda:
         complete_response = s3_client.get_object(Bucket=bucket, Key=complete_key)
         complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
 
-        assert complete_body["RefinerSkip"] is True
-        assert "Error" in complete_body
-        assert len(complete_body["Error"]) > 0
-        # RefinerMetadata and RefinerOutputFiles should be omitted when Skip is True
-        assert "RefinerMetadata" not in complete_body
-        assert "RefinerOutputFiles" not in complete_body
+        assert complete_body == {"RefinerSkip": True, "Error": "Failed to parse XML"}
 
     async def test_lambda_invalid_prefix(self, http_client, s3_client, default_setup):
         """
@@ -278,14 +274,14 @@ class TestLambda:
             and len(resp_json["batchItemFailures"]) > 0
             or resp.status_code != 200
         )
+        assert "batchItemFailures" in resp_json
+        assert len(resp_json["batchItemFailures"]) > 0
+        assert resp.status_code == 200
 
         # Verify no RefinerComplete file was created for the default path
-        try:
+        with pytest.raises(ClientError) as exc_info:
             s3_client.get_object(Bucket=bucket, Key=default_setup["complete_key"])
-            # If it exists, check if it was just created now or existed before.
-            # In a fresh default_setup, it shouldn't be there yet.
-        except Exception:
-            pass
+        assert exc_info.value.response["Error"]["Code"] == "NoSuchKey"
 
     async def test_lambda_current_file_null_version(
         self, http_client, s3_client, default_setup
