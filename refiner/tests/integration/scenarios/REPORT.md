@@ -4,7 +4,7 @@
 
 ```
 pytest tests/integration/scenarios/ --update-snapshots
-python tests/integration/scenarios/authoring/build_report.py
+python tests/integration/scenarios/build_report.py
 ```
 
 This report summarizes the behaviors pinned by the scenarios test suite at `tests/integration/scenarios/`. Each scenario refines a committed eICR/RR pair against a committed configuration JSON and asserts in two layers: validation (well-formedness, CDA R2 XSD, schematron) and snapshot comparison against committed expected files.
@@ -439,7 +439,7 @@ Total: 8 scenarios across 1 fixture.
 pytest tests/integration/scenarios/                                  # run all scenarios + smoke tests
 pytest tests/integration/scenarios/test_<fixture>.py -k <scenario>   # one scenario
 pytest tests/integration/scenarios/ --update-snapshots               # regenerate after intentional changes
-python tests/integration/scenarios/authoring/build_report.py        # regenerate this report
+python tests/integration/scenarios/build_report.py        # regenerate this report
 ```
 
 See [`tests/integration/scenarios/README.md`](./README.md) for adding fixtures, configurations, and scenarios.
