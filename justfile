@@ -4,8 +4,12 @@ alias help := _default
 @_default:
     just --list --list-submodules
 
-# Alias for `client`
-[group: 'alias']
+[group('alias')]
+[doc('Alias for `docker`')]
+mod dk './.justscripts/just/docker.just'
+
+[group('alias')]
+[doc('Alias for `client`')]
 mod c './.justscripts/just/client.just'
 
 # Alias for `database`
@@ -36,8 +40,16 @@ mod cd './.justscripts/just/cloud.just'
 [group: 'alias']
 mod d './.justscripts/just/dev.just'
 
-# Run commands against `client/` code
-[group: 'sub-command']
+[group('alias')]
+[doc('Alias for `structurizr`')]
+mod s9r './.justscripts/just/structurizr.just'
+
+[group('sub-command')]
+[doc('Run docker build commands')]
+mod docker './.justscripts/just/docker.just'
+
+[group('sub-command')]
+[doc('Run commands against `client/` code')]
 mod client './.justscripts/just/client.just'
 
 # Run dev-related docker compose commands
