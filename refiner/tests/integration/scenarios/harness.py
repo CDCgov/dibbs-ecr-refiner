@@ -5,7 +5,6 @@ from app.core.models.types import XMLFiles
 from app.services.ecr.augment import AugmentationRun
 from app.services.pipeline import (
     ConditionInput,
-    RefinementMetrics,
     RefinementResult,
     create_augmentation_run_from_xml_files,
     refine_for_condition,
@@ -67,7 +66,7 @@ def refine_one(
     jurisdiction_code: str = test_user_jurisdiction_id,
     configuration_version: int | None = None,
     run: AugmentationRun | None = None,
-) -> tuple[RefinementResult, RefinementMetrics]:
+) -> RefinementResult:
     """
     Run the production refinement path for a single (jurisdiction, condition) pair.
 

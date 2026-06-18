@@ -113,18 +113,23 @@ def create_augmentation_run_from_xml_files(
 
 
 @dataclass
-class RefinementResult:
+class RefinementDocuments:
     """
-    The output of refining a single eICR/RR pair against one configuration.
-
-    Contains the refined XML strings and the trace that documents how
-    the refinement was executed.
+    The refined XML output for the eICR/RR pair.
     """
 
-    augmented_eicr_result: AugmentedResult
-    augmented_rr_result: AugmentedResult
-    refined_eicr: str
-    refined_rr: str
+    eicr: str
+    rr: str
+
+
+@dataclass
+class RefinementMetricsEicr:
+    """
+    Metrics calculated during refinement related to the eICR document.
+    """
+
+    size_reduction_percentage: int
+    size_mib: float
 
 
 @dataclass
@@ -133,8 +138,33 @@ class RefinementMetrics:
     The metrics calculated during the refinement process.
     """
 
-    eicr_size_reduction_percentage: int
-    eicr_size_mib: float
+    eicr: RefinementMetricsEicr
+
+
+@dataclass
+class RefinementReport:
+    """
+    Data collected during refinement for reporting and logging purposes.
+    """
+
+    augmented_eicr_result: AugmentedResult
+    augmented_rr_result: AugmentedResult
+    canonical_url: str
+    configuration_version: int
+
+
+@dataclass
+class RefinementResult:
+    """
+    The output of refining a single eICR/RR pair against one configuration.
+
+    Contains the refined XML strings and the trace that documents how
+    the refinement was executed.
+    """
+
+    documents: RefinementDocuments
+    metrics: RefinementMetrics
+    report: RefinementReport
 
 
 # NOTE:
@@ -207,7 +237,7 @@ def refine_for_condition(
     processed_configuration: ProcessedConfiguration,
     condition: ConditionInput,
     run: AugmentationRun,
-) -> tuple[RefinementResult, RefinementMetrics]:
+) -> RefinementResult:
     """
     Execute the full refinement + augmentation pipeline for a single condition.
 
@@ -330,15 +360,21 @@ def refine_for_condition(
         # parallel computations that could drift
 
         return RefinementResult(
-            augmented_eicr_result=augmented_eicr_result,
-            augmented_rr_result=augmented_rr_result,
-            refined_eicr=refined_eicr,
-            refined_rr=refined_rr,
-        ), RefinementMetrics(
-            eicr_size_reduction_percentage=_get_size_reduction_percentage(
-                unrefined=xml_files.eicr, refined=refined_eicr
+            documents=RefinementDocuments(eicr=refined_eicr, rr=refined_rr),
+            metrics=RefinementMetrics(
+                eicr=RefinementMetricsEicr(
+                    size_reduction_percentage=_get_size_reduction_percentage(
+                        unrefined=xml_files.eicr, refined=refined_eicr
+                    ),
+                    size_mib=get_file_size_in_mib(file_content=refined_eicr),
+                )
             ),
-            eicr_size_mib=get_file_size_in_mib(file_content=refined_eicr),
+            report=RefinementReport(
+                augmented_eicr_result=augmented_eicr_result,
+                augmented_rr_result=augmented_rr_result,
+                canonical_url=condition.canonical_url,
+                configuration_version=condition.configuration_version,
+            ),
         )
 
     except Exception as e:

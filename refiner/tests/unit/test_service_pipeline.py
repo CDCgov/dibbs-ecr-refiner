@@ -137,7 +137,7 @@ class TestRefineForCondition:
         )
         run = create_augmentation_run_from_xml_files(sample_xml_files)
 
-        result, _ = refine_for_condition(
+        result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
             condition=condition,
@@ -145,10 +145,10 @@ class TestRefineForCondition:
         )
 
         assert isinstance(result, RefinementResult)
-        assert result.refined_eicr
-        assert result.refined_rr
-        assert len(result.refined_eicr) > 0
-        assert len(result.refined_rr) > 0
+        assert result.documents.eicr
+        assert result.documents.rr
+        assert len(result.documents.eicr) > 0
+        assert len(result.documents.rr) > 0
 
     def test_trace_records_success(
         self,
@@ -166,15 +166,15 @@ class TestRefineForCondition:
         )
         run = create_augmentation_run_from_xml_files(sample_xml_files)
 
-        _, metrics = refine_for_condition(
+        result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
             condition=condition,
             run=run,
         )
 
-        assert metrics.eicr_size_reduction_percentage is not None
-        assert metrics.eicr_size_mib is not None
+        assert result.metrics.eicr.size_reduction_percentage is not None
+        assert result.metrics.eicr.size_mib is not None
 
     def test_trace_records_error_on_failure(self, sample_xml_files: XMLFiles):
         """

@@ -27,7 +27,6 @@ from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
     AugmentationRun,
     ConditionInput,
-    RefinementMetrics,
     RefinementResult,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
@@ -612,7 +611,7 @@ def process_condition(
         )
         return
 
-    result, metrics = refine_for_condition(
+    result = refine_for_condition(
         xml_files=refiner_input.xml_files,
         processed_configuration=active_configuration.configuration,
         condition=ConditionInput(
@@ -628,7 +627,6 @@ def process_condition(
         jurisdiction_code=jurisdiction_code,
         condition_grouper_name=cg_metadata.name,
         result=result,
-        metrics=metrics,
         condition_code=rsg_code,
         state=state,
     )
@@ -779,7 +777,6 @@ def write_refined_outputs(
     condition_code: str,
     condition_grouper_name: str,
     result: RefinementResult,
-    metrics: RefinementMetrics,
     state: RefinementState,
 ) -> None:
     """
@@ -794,7 +791,7 @@ def write_refined_outputs(
     refiner_input.s3_client.put_object(
         Bucket=refiner_input.output_bucket_name,
         Key=eicr_output_key,
-        Body=result.refined_eicr.encode("utf-8"),
+        Body=result.documents.eicr.encode("utf-8"),
         ContentType="application/xml",
     )
 
@@ -804,7 +801,7 @@ def write_refined_outputs(
     refiner_input.s3_client.put_object(
         Bucket=refiner_input.output_bucket_name,
         Key=rr_output_key,
-        Body=result.refined_rr.encode("utf-8"),
+        Body=result.documents.rr.encode("utf-8"),
         ContentType="application/xml",
     )
 
@@ -814,7 +811,7 @@ def write_refined_outputs(
         "Condition refinement complete.",
         eicr_key=eicr_output_key,
         rr_key=rr_output_key,
-        eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
+        eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
         jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
         operation="condition_refinement_complete",

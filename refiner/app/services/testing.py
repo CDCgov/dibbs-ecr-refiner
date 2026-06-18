@@ -244,7 +244,7 @@ async def run_simulation(
 
         rr_code_used = primary_condition.child_rsg_snomed_codes[0]
 
-        result, metrics = refine_for_condition(
+        result = refine_for_condition(
             xml_files=xml_files,
             condition=ConditionInput(
                 jurisdiction_id=jurisdiction_id,
@@ -256,16 +256,18 @@ async def run_simulation(
         )
 
         if first_original_eicr_doc_id is None:
-            first_original_eicr_doc_id = result.augmented_eicr_result.original_doc_id
+            first_original_eicr_doc_id = (
+                result.report.augmented_eicr_result.original_doc_id
+            )
 
         refined_docs.append(
             RefinedDocument(
                 reportable_condition=ReportableCondition(
                     code=rr_code_used, display_name=configuration.name
                 ),
-                refined_eicr=result.refined_eicr,
-                refined_rr=result.refined_rr,
-                eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
+                refined_eicr=result.documents.eicr,
+                refined_rr=result.documents.rr,
+                eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
             )
         )
 
@@ -277,7 +279,7 @@ async def run_simulation(
                 "configuration_found": configuration.name,
                 "total_conditions_used": len(configurations),
                 "configuration_settings": asdict(configuration),
-                "eicr_size_reduction_percentage": metrics.eicr_size_reduction_percentage,
+                "eicr_size_reduction_percentage": result.metrics.eicr.size_reduction_percentage,
                 "outcome": "Refinement successful",
             },
         )
@@ -465,7 +467,7 @@ async def inline_testing(
     # requires an AugmentationRun, so build one for this refinement
     run = create_augmentation_run_from_xml_files(xml_files)
 
-    result, metrics = refine_for_condition(
+    result = refine_for_condition(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
         condition=ConditionInput(
@@ -482,9 +484,9 @@ async def inline_testing(
             code=matched_code,
             display_name=primary_condition.display_name,
         ),
-        refined_eicr=result.refined_eicr,
-        refined_rr=result.refined_rr,
-        eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
+        refined_eicr=result.documents.eicr,
+        refined_rr=result.documents.rr,
+        eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
     )
 
     # log high level details of the refinement flow for this condition
@@ -492,13 +494,13 @@ async def inline_testing(
         logger=logger,
         configuration=configuration,
         matched_code=matched_code,
-        eicr_size_reduction_percentage=metrics.eicr_size_reduction_percentage,
+        eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
         primary_condition=primary_condition,
         outcome="Refinement successful",
     )
 
     return InlineTestingResult(
-        original_eicr_doc_id=result.augmented_eicr_result.original_doc_id,
+        original_eicr_doc_id=result.report.augmented_eicr_result.original_doc_id,
         refined_document=refined_document,
         configuration_does_not_match_conditions=None,
     )
