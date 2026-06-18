@@ -354,7 +354,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
 
             <div className="border-gray-cool-30! rounded-sm border px-2 py-2">
               <p className="font-bold">{selectedCondition.display_name}</p>
-              <table className="w-full border-separate border-spacing-y-0.5">
+              <table className="w-full border-separate border-spacing-y-1">
                 <colgroup>
                   <col className="w-[65%]" />
                   <col className="w-[35%]" />
