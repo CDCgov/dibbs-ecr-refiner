@@ -3,10 +3,20 @@ set working-directory := '../../refiner'
 alias h := _default
 alias help := _default
 alias t := test
+alias ti := test-integration
+alias tl := test-lambda
+alias ts := test-scenarios
+alias tu := test-unit
+alias ta := test-all
+alias f := fix
 alias l := lint
 alias c := check
+alias sl := seed-localstack
 alias i := install
+alias ia := install-all
 alias id := install-dev
+alias il := install-lambda
+alias ild := install-lambda-dev
 
 @_default:
     just --list server
@@ -21,7 +31,7 @@ _venv:
 test *ARGS: _venv
     .venv/bin/pytest {{ ARGS }}
 
-[doc('Run unit tests')]
+[doc('Run Unit tests')]
 [group('test')]
 test-unit: _venv
     {{ if env("CI", "") != "" { ".venv/bin/pytest tests/unit" } else { ".venv/bin/pytest -vvv tests/unit" } }}
@@ -40,6 +50,14 @@ test-scenarios: _venv
 [group('test')]
 test-lambda: _venv
     {{ if env("CI", "") != "" { ".venv/bin/pytest app/lambda" } else { ".venv/bin/pytest -vvv app/lambda" } }}
+
+[doc('Run all tests')]
+[group('test')]
+test-all: _venv
+    just server test-integration
+    just server test-lambda
+    just server test-scenarios
+    just server test-unit
 
 [doc('Run Ruff checker, fix things, and formatter')]
 fix: _venv
