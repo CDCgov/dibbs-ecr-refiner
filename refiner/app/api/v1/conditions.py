@@ -20,15 +20,24 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 router = APIRouter(prefix="/conditions")
 
 
+@dataclass(frozen=True)
+class GetConditionSummaryResponse:
+    """
+    Condition summary response model.
+    """
+
+    conditions: list[ConditionSummary]
+
+
 @router.get(
     "/",
-    response_model=list[ConditionSummary],
+    response_model=GetConditionSummaryResponse,
     tags=["conditions"],
     operation_id="getConditions",
 )
 async def get_conditions(
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[ConditionSummary]:
+) -> GetConditionSummaryResponse:
     """
     Fetches a summary of all available conditions from the database.
 
@@ -36,10 +45,10 @@ async def get_conditions(
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        list[ConditionSummary]: List of all conditions.
+        GetConditionSummaryResponse: List of all condition summaries.
     """
-
-    return await get_conditions_with_rsg_codes_db(db=db)
+    summaries = await get_conditions_with_rsg_codes_db(db=db)
+    return GetConditionSummaryResponse(conditions=summaries)
 
 
 type CodeSetStatus = Literal["not expanded", "partially complete", "fully complete"]

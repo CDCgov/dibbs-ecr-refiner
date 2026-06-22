@@ -5,9 +5,15 @@ type Configuration = {
   name: string;
 };
 
+type CodedConcept = {
+  code: string;
+  display: string;
+};
+
 type Condition = {
   id: string;
   display_name: string;
+  rsg_codes: CodedConcept[];
 };
 
 type CustomCode = {
@@ -24,7 +30,7 @@ export class Api {
     const conditionsReq = await this.request.get('/api/v1/conditions/');
     expect(conditionsReq.ok()).toBeTruthy();
 
-    const json = await conditionsReq.json();
+    const json = (await conditionsReq.json()).conditions;
     expect(json).toContainEqual(
       expect.objectContaining({
         display_name: conditionName,

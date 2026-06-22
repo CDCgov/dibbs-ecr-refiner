@@ -9,6 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
+  CodedConcept,
   ConditionSummary,
   NotificationKeys,
   UserResponse,
@@ -34,7 +35,7 @@ import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
 import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
 import { useSearch } from '../../hooks/useSearch';
-import { RangeTuple } from 'fuse.js';
+import { FuseResult, FuseResultMatch, RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
 
@@ -204,14 +205,14 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const navigate = useNavigate();
   const formatError = useApiErrorFormatter();
 
-  const conditions = response?.data || [];
+  const conditions = response?.data.conditions || [];
   const { searchText, setSearchText, results } = useSearch(conditions, {
     keys: [
       { name: 'display_name' },
       { name: 'rsg_codes.display' },
       { name: 'rsg_codes.code' },
     ],
-    threshold: 0.25,
+    threshold: 0.3,
     distance: 500, // Broaden the distance so Fuse doesn't penalize long strings
     includeMatches: true,
     findAllMatches: true,
@@ -219,7 +220,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   });
   const searchTextLongEnough =
     searchText.length > MIN_CONFIG_SEARCH_TEXT_LENGTH;
-  const hasSearchResultsToDisplay = searchTextLongEnough && results;
+  const isSearching = searchTextLongEnough && results.length > 0;
 
   function reset() {
     onClose();
@@ -247,9 +248,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
             <Combobox
               value={selectedCondition}
               virtual={{
-                options: searchTextLongEnough
-                  ? results.map((r) => r.item)
-                  : conditions,
+                options: isSearching ? results.map((r) => r.item) : conditions,
               }}
               onChange={setSelectedCondition}
               onClose={() => setSearchText('')}
@@ -267,105 +266,27 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                 }}
                 placeholder="Start typing to search (3 characters minimum)"
               />
-              <ComboboxOptions anchor="bottom">
-                {({ option: condition }) => (
-                  <ComboboxOption key={condition.id} value={condition}>
-                    {hasSearchResultsToDisplay
-                      ? results
-                          .filter((r) => r.item.id === condition.id)
-                          .map(({ item, matches }) => {
-                            const conditionDisplayMatch = matches?.find(
-                              (m) => m.key === 'display_name'
-                            );
-                            const rsgMatches = matches?.filter(
-                              (m) =>
-                                m.key === 'rsg_codes.display' ||
-                                m.key === 'rsg_codes.code'
-                            );
-
-                            return (
-                              <div key={item.id}>
-                                <p className="pb-2 font-bold">
-                                  {conditionDisplayMatch
-                                    ? highlightMatches(
-                                        item.display_name,
-                                        conditionDisplayMatch?.indices
-                                      )
-                                    : item.display_name}
-                                </p>
-
-                                <div>
-                                  {rsgMatches?.map((r) => {
-                                    const matchedCode =
-                                      item.rsg_codes[r.refIndex as number];
-                                    const isDisplayMatch =
-                                      r.key === 'rsg_codes.display';
-                                    const isCodeMatch =
-                                      r.key === 'rsg_codes.code';
-                                    return (
-                                      <div className="flex justify-between">
-                                        <div>⤷</div>
-                                        <p className="ml-1 flex-2 pb-2">
-                                          {isDisplayMatch
-                                            ? highlightMatches(
-                                                matchedCode.display,
-                                                r?.indices
-                                              )
-                                            : `${matchedCode.display}`}
-                                        </p>
-                                        <p className="flex-1 text-right">
-                                          {isCodeMatch
-                                            ? highlightMatches(
-                                                matchedCode.code,
-                                                r?.indices
-                                              )
-                                            : matchedCode.code}
-                                        </p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })
-                      : condition.display_name}
-                  </ComboboxOption>
-                )}
+              <ComboboxOptions anchor="bottom" className="max-h-85!">
+                {({ option: condition }) => {
+                  const matchResult = results.find(
+                    (r) => r.item.id === condition.id
+                  );
+                  return (
+                    <ComboboxOption key={condition.id} value={condition}>
+                      <ConditionOption
+                        matchResult={matchResult}
+                        condition={condition}
+                      />
+                    </ComboboxOption>
+                  );
+                }}
               </ComboboxOptions>
             </Combobox>
           </Field>
         )}
 
         {selectedCondition && (
-          <div>
-            <p className="pb-2">Selected condition group</p>
-
-            <div className="border-gray-cool-30! rounded-sm border px-2 py-2">
-              <p className="font-bold">{selectedCondition.display_name}</p>
-              <table className="w-full border-separate border-spacing-y-1">
-                <colgroup>
-                  <col className="w-[65%]" />
-                  <col className="w-[35%]" />
-                </colgroup>
-                <thead className="sr-only">
-                  <tr>
-                    <th scope="col">Display name</th>
-                    <th scope="col">Code</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedCondition.rsg_codes.map((c) => {
-                    return (
-                      <tr key={c.code}>
-                        <td>{c.display}</td>
-                        <td className="text-right align-top">{c.code}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <SelectedConditionPanel selectedCondition={selectedCondition} />
         )}
       </ModalBody>
       <ModalFooter align="right">
@@ -401,6 +322,103 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
         </Button>
       </ModalFooter>
     </Modal>
+  );
+}
+
+type ConditionOptionProps = {
+  matchResult: FuseResult<ConditionSummary> | undefined;
+  condition: ConditionSummary;
+};
+
+function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
+  if (!matchResult) return condition.display_name;
+
+  const { item, matches } = matchResult;
+  const conditionDisplayMatch = matches?.find((r) => r.key === 'display_name');
+  const rsgMatches = matches?.filter(
+    (m) => m.key === 'rsg_codes.display' || m.key === 'rsg_codes.code'
+  );
+
+  return (
+    <div>
+      <p className="pb-2 font-bold">
+        {conditionDisplayMatch
+          ? highlightMatches(item.display_name, conditionDisplayMatch.indices)
+          : item.display_name}
+      </p>
+      <div>
+        {rsgMatches?.map((match, i) => (
+          <RsgMatchRow key={i} matchResult={match} rsgCodes={item.rsg_codes} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type RsgMatchRowProps = {
+  matchResult: FuseResultMatch;
+  rsgCodes: CodedConcept[];
+};
+function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
+  const matchedCode = rsgCodes[matchResult?.refIndex as number];
+  const isRsgDisplayMatch = matchResult.key === 'rsg_codes.display';
+  const isRsgCodeMatch = matchResult.key === 'rsg_codes.code';
+
+  return (
+    <div key={matchedCode.code}>
+      <div className="flex justify-between">
+        <div>⤷</div>
+        <p className="ml-1 flex-2 pb-2">
+          {isRsgDisplayMatch
+            ? highlightMatches(matchedCode.display, matchResult.indices)
+            : `${matchedCode.display}`}
+        </p>
+        <p className="flex-1 text-right">
+          {isRsgCodeMatch
+            ? highlightMatches(matchedCode.code, matchResult.indices)
+            : matchedCode.code}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+type SelectedConditionPanelProps = {
+  selectedCondition: ConditionSummary;
+};
+function SelectedConditionPanel({
+  selectedCondition,
+}: SelectedConditionPanelProps) {
+  return (
+    <div>
+      <p className="pb-2">Selected condition group</p>
+
+      <div className="border-gray-cool-30! rounded-sm border px-2 py-2">
+        <p className="font-bold">{selectedCondition.display_name}</p>
+        <table className="w-full border-separate border-spacing-y-1">
+          <colgroup>
+            <col className="w-[65%]" />
+            <col className="w-[35%]" />
+          </colgroup>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Display name</th>
+              <th scope="col">Code</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selectedCondition.rsg_codes.map((c) => {
+              return (
+                <tr key={c.code}>
+                  <td>{c.display}</td>
+                  <td className="text-right align-top">{c.code}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 

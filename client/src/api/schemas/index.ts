@@ -44,6 +44,7 @@ export * from './eventsResponse';
 export * from './fileInfoResponse';
 export * from './getConditionCode';
 export * from './getConditionResponse';
+export * from './getConditionSummaryResponse';
 export * from './getConfigurationResponse';
 export * from './getConfigurationResponseVersion';
 export * from './getConfigurationsResponse';
