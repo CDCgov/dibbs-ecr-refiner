@@ -394,8 +394,10 @@ function SelectedConditionPanel({
       <p className="pb-2">Selected condition group</p>
 
       <div className="border-gray-cool-30! rounded-sm border px-2 py-2">
-        <p className="font-bold">{selectedCondition.display_name}</p>
         <table className="w-full border-separate border-spacing-y-1">
+          <caption className="text-left font-bold">
+            {selectedCondition.display_name}
+          </caption>
           <colgroup>
             <col className="w-[65%]" />
             <col className="w-[35%]" />
