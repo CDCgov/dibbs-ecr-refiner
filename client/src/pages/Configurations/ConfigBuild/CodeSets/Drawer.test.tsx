@@ -2,29 +2,7 @@ import { describe, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Drawer } from './Drawer';
 import userEvent from '@testing-library/user-event';
-import { ClassAttributes, InputHTMLAttributes } from 'react';
-import { JSX } from 'react/jsx-runtime';
 
-// Mocking dependencies
-vi.mock('@trussworks/react-uswds', () => ({
-  Icon: { Close: () => <div>X</div> },
-  InputGroup: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  InputPrefix: ({ children }: { children: React.ReactNode }) => (
-    <span>{children}</span>
-  ),
-  TextInput: (
-    props: JSX.IntrinsicAttributes &
-      ClassAttributes<HTMLInputElement> &
-      InputHTMLAttributes<HTMLInputElement>
-  ) => <input {...props} />,
-}));
-vi.mock('focus-trap-react', () => ({
-  FocusTrap: ({ children }: any) => <div>{children}</div>,
-}));
-
-// Initial setup
 describe('Drawer Component', () => {
   it('should render correctly', () => {
     const { container } = render(
