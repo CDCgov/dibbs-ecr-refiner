@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxOptions } from '.';
-import { ConditionSummary } from '../../api/schemas';
+import { GetConditionsResponse } from '../../api/schemas';
 
-type Option = ConditionSummary;
+type Option = GetConditionsResponse;
 
 const options: Option[] = [
   { id: '1', rsg_codes: [], display_name: 'Influenza' },
