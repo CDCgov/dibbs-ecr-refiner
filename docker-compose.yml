@@ -87,7 +87,7 @@ services:
 
   # Run with `docker compose run --rm seed`
   seed:
-    image: python:3.14-slim
+    image: python:3.14.6-slim
     working_dir: /app
     command: >
       sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv &&
