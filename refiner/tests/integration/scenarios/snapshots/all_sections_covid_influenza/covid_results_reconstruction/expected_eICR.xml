@@ -431,7 +431,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -492,17 +492,6 @@
                   </representedOrganization>
                 </assignedAuthor>
               </author>
-            </observation>
-          </entry>
-          <!-- eCR Refiner matched: code[385857005] 'Artificial respiration' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
-          <entry typeCode="DRIV">
-            <observation classCode="OBS" moodCode="INT">
-              <templateId root="2.16.840.1.113883.10.20.22.4.44" extension="2014-06-09"/>
-              <templateId root="2.16.840.1.113883.10.20.15.2.3.43" extension="2021-01-01"/>
-              <id root="b52bee94-c34b-4e2c-8c15-5ad9d6def204"/>
-              <code code="385857005" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Ventilator care and adjustment (regime/therapy)" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13"/>
-              <statusCode code="active"/>
-              <effectiveTime value="20201108"/>
             </observation>
           </entry>
         </section>
@@ -652,7 +641,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -790,7 +779,7 @@
                     <td>Yes</td>
                     <td>retain</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Narrative-only section; narrative retained</td>
                   </tr>
@@ -844,7 +833,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found</td>
                   </tr>
@@ -904,7 +893,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -1175,7 +1164,7 @@
           <title>MEDICATIONS</title>
           <text>
             Narrative Text
-          <footnote ID="ecr-refiner-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <footnote ID="ecr-refiner-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v9</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <substanceAdministration classCode="SBADM" moodCode="EVN">
@@ -1229,7 +1218,7 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
           <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           <title>Admission Medications</title>
-          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v9</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1315,7 +1304,7 @@
             <translation code="42347-5" codeSystem="2.16.840.1.113883.6.1" displayName="Admission Diagnosis"/>
           </code>
           <title>HOSPITAL ADMISSION DIAGNOSIS</title>
-          <text>Appendicitis<footnote ID="ecr-refiner-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Appendicitis<footnote ID="ecr-refiner-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v9</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1388,7 +1377,7 @@
             <translation code="78375-3" displayName="Discharge Diagnosis" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           </code>
           <title>Discharge Diagnosis</title>
-          <text>Some text here<footnote ID="ecr-refiner-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refiner-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v9</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1489,7 +1478,7 @@
                     <td>Yes</td>
                     <td>retain</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Narrative-only section; narrative retained</td>
                   </tr>
@@ -1594,7 +1583,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -1664,7 +1653,7 @@
                     <td>Yes</td>
                     <td>retain</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Narrative-only section; narrative retained</td>
                   </tr>
@@ -1706,7 +1695,7 @@
                     <td>Yes</td>
                     <td>retain</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Narrative-only section; narrative retained</td>
                   </tr>
@@ -1726,167 +1715,26 @@
           <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Relevant diagnostic tests and/or laboratory data"/>
           <title>Results</title>
           <text>
-            <table>
+            <!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. -->
+            <table border="1">
               <thead>
                 <tr>
-                  <th>Results Panel</th>
-                  <th>Date(s)</th>
+                  <th>Panel</th>
+                  <th>Specimen</th>
+                  <th>Test</th>
+                  <th>Result</th>
+                  <th>Interpretation</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                <tr ID="id_7d5a02b0-67a4-11db-bd13-0800200c9a66_ref">
-                  <td>CBC W Auto Differential panel in Blood</td>
-                  <td>NOV 7, 2020 to NOV 7, 2020</td>
-                </tr>
                 <tr>
-                  <td colspan="20">
-                    <list styleCode="none">
-                      <item>
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Test</th>
-                              <th>Outcome</th>
-                              <th>Interpretation</th>
-                              <th>Date(s)</th>
-                              <th>Reference Range</th>
-                              <th>Reference Range Interpretation</th>
-                              <th>Reference Range Description</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr ID="id_7c0704bb-9c40-41b5-9c7d-26b2d59e234f_ref">
-                              <td>Hematocrit</td>
-                              <td>35.3 %</td>
-                              <td>Low</td>
-                              <td>NOV 7, 2020</td>
-                              <td>34.9 % to 44.5 %</td>
-                              <td>Low</td>
-                              <td>Low</td>
-                            </tr>
-                            <tr ID="id_7c0704bb-9c40-41b5-9c7d-26b2d59e234g_ref">
-                              <td>Lymphocytes [#/​volume] in Blood by Automated count</td>
-                              <td>5.2 10*3/uL</td>
-                              <td>High</td>
-                              <td>NOV 7, 2020</td>
-                              <td>1.0 10*3/uL to 4.8 10*3/uL</td>
-                              <td>Normal</td>
-                              <td/>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </item>
-                    </list>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table>
-              <thead>
-                <tr>
-                  <th>Results Panel</th>
-                  <th>Date(s)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr ID="id_a4307cb2-b3b4-4f42-be03-1d9077376f4a_ref">
-                  <td>Bordetella pertussis Ab<br/>[Units/volume] in Serum</td>
-                  <td>NOV 7, 2020 to NOV 7, 2020</td>
-                </tr>
-                <tr>
-                  <td colspan="20">
-                    <list styleCode="none">
-                      <item>
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Initial Case Report Trigger<br/>Code Result Observation </th>
-                              <th>Trigger Code</th>
-                              <th>Trigger Code codeSystem</th>
-                              <th>RCTC OID</th>
-                              <th>RCTC Version</th>
-                              <th>Outcome</th>
-                              <th>Interpretation</th>
-                              <th>Date(s)</th>
-                              <th>Reference Range</th>
-                              <th>Reference Range Interpretation</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr ID="id_bf9c0a26-4524-4395-b3ce-100450b9c9ad_ref">
-                              <td>Bordetella pertussis Ab<br/>[Units/volume] in Serum</td>
-                              <td>11585-7</td>
-                              <td>LOINC</td>
-                              <td>2.16.840.1.114222.4.11.7508</td>
-                              <td>19/05/2020</td>
-                              <td>100 [iU]/mL</td>
-                              <td>High</td>
-                              <td>NOV 7, 2020</td>
-                              <td> to 45 [iU]/mL</td>
-                              <td>Normal</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </item>
-                    </list>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table>
-              <thead>
-                <tr>
-                  <th>Results Panel</th>
-                  <th>Date(s)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr ID="id_a4307cb2-b3b4-4f42-be03-1d9077376f4b_ref">
-                  <td>Bordetella pertussis [Presence]<br/>in Throat by Organism specific culture</td>
-                  <td>NOV 7, 2020 to NOV 7, 2020</td>
-                </tr>
-                <tr>
-                  <td colspan="20">
-                    <list styleCode="none">
-                      <item>
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Initial Case Report Trigger Code Result Observation </th>
-                              <th>Trigger Code</th>
-                              <th>Trigger Code codeSystem</th>
-                              <th>RCTC OID</th>
-                              <th>RCTC Version</th>
-                              <th>Outcome</th>
-                              <th>Trigger Code</th>
-                              <th>Trigger Code codeSystem</th>
-                              <th>RCTC OID</th>
-                              <th>RCTC Version</th>
-                              <th>Interpretation</th>
-                              <th>Date(s)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr ID="id_bf9c0a26-4524-4395-b3ce-100450b9c9ac_ref">
-                              <td>Bordetella pertussis [Presence]<br/>in Throat by Organism
-                                specific culture</td>
-                              <td>548-8</td>
-                              <td>LOINC</td>
-                              <td>2.16.840.1.114222.4.11.7508</td>
-                              <td>19/05/2020</td>
-                              <td>Bordetella pertussis (organism)</td>
-                              <td>5247005</td>
-                              <td>SNOMED CT</td>
-                              <td>2.16.840.1.114222.4.11.7508</td>
-                              <td>19/05/2020</td>
-                              <td>Abnormal</td>
-                              <td>NOV 7, 2020</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </item>
-                    </list>
-                  </td>
+                  <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen</td>
+                  <td/>
+                  <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen</td>
+                  <td>Detected (qualifier value) (260373001)</td>
+                  <td>Abnormal (A)</td>
+                  <td>20201107</td>
                 </tr>
               </tbody>
             </table>
@@ -1913,10 +1761,10 @@
                     <td>Results Section</td>
                     <td>Yes</td>
                     <td>refine</td>
-                    <td>Yes</td>
-                    <td>v8</td>
+                    <td>No</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Refined; matches found</td>
+                    <td>Refined; narrative reconstructed</td>
                   </tr>
                 </tbody>
               </table>
@@ -1953,23 +1801,22 @@
       </component>
       <!-- Prcoedures Section (entries required) (V2) -->
       <component>
-        <section>
+        <section nullFlavor="NI">
           <templateId root="2.16.840.1.113883.10.20.22.2.7.1" extension="2014-06-09"/>
           <templateId root="2.16.840.1.113883.10.20.22.2.7.1"/>
           <code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Procedures"/>
           <title>Procedures</title>
           <text>
-            <table border="1" width="100%">
+            <table border="1">
+              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
               <thead>
                 <tr>
-                  <th>Procedure</th>
-                  <th>Date</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Colonic polypectomy</td>
-                  <td>November 15, 2020</td>
+                  <td>No clinical information matches the configured code sets for this condition.</td>
                 </tr>
               </tbody>
             </table>
@@ -1997,175 +1844,14 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Refined; matches found</td>
+                    <td>Refined; no matches found</td>
                   </tr>
                 </tbody>
               </table>
             </footnote>
           </text>
-          <!-- eCR Refiner matched: code[385857005] 'Artificial respiration' (any code system) Entry match fired for: rule 3 (T1) [hl7:code] -->
-          <entry>
-            <observation classCode="OBS" moodCode="EVN">
-              <templateId root="2.16.840.1.113883.10.20.22.4.13" extension="2014-06-09"/>
-              <templateId root="2.16.840.1.113883.10.20.15.2.3.46" extension="2021-01-01"/>
-              <id root="e535eb92-829f-45bb-8602-a49f59bb4e2c"/>
-              <code code="385857005" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Ventilator care and adjustment (regime/therapy)" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13"/>
-              <statusCode code="completed"/>
-              <effectiveTime value="20201115"/>
-              <priorityCode code="CR" codeSystem="2.16.840.1.113883.5.7" codeSystemName="ActPriority" displayName="Callback results"/>
-              <value xsi:type="CD" nullFlavor="NA"/>
-              <methodCode code="16310003" displayName="Diagnostic ultrasonography (procedure)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
-              <targetSiteCode code="416949008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Abdomen and pelvis"/>
-              <performer>
-                <assignedEntity>
-                  <id root="2.16.840.1.113883.19" extension="1234"/>
-                  <addr>
-                    <streetAddressLine>1001 Village Avenue</streetAddressLine>
-                    <city>Portland</city>
-                    <state>OR</state>
-                    <postalCode>99123</postalCode>
-                    <country>US</country>
-                  </addr>
-                  <telecom use="WP" value="tel: +1(555)-555-5000"/>
-                  <representedOrganization>
-                    <id root="2.16.840.1.113883.19.5"/>
-                    <name>Community Health and Hospitals</name>
-                    <telecom use="WP" value="tel:+1(555)-555-5000"/>
-                    <addr>
-                      <streetAddressLine>1001 Village Avenue</streetAddressLine>
-                      <city>Portland</city>
-                      <state>OR</state>
-                      <postalCode>99123</postalCode>
-                      <country>US</country>
-                    </addr>
-                  </representedOrganization>
-                </assignedEntity>
-              </performer>
-              <author>
-                <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
-                <time value="201308011235-0800"/>
-                <assignedAuthor>
-                  <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c"/>
-                  <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health                     Care Provider Taxonomy" displayName="Registered nurse"/>
-                  <assignedPerson>
-                    <name>
-                      <given>Nurse</given>
-                      <family>Nightingale</family>
-                      <suffix>RN</suffix>
-                    </name>
-                  </assignedPerson>
-                  <representedOrganization>
-                    <id root="2.16.840.1.113883.19.5"/>
-                    <name>Good Health Hospital</name>
-                  </representedOrganization>
-                </assignedAuthor>
-              </author>
-              <participant typeCode="LOC">
-                <participantRole classCode="SDLOC">
-                  <templateId root="2.16.840.1.113883.10.20.22.4.32"/>
-                  <code code="1160-1" codeSystem="2.16.840.1.113883.6.259" codeSystemName="HealthcareServiceLocation" displayName="Urgent Care Center"/>
-                  <addr>
-                    <streetAddressLine>17 Daws Rd.</streetAddressLine>
-                    <city>Blue Bell</city>
-                    <state>MA</state>
-                    <postalCode>02368</postalCode>
-                    <country>US</country>
-                  </addr>
-                  <telecom use="WP" value="tel:+1(555)555-5000"/>
-                  <playingEntity classCode="PLC">
-                    <name>Community Health and Hospitals</name>
-                  </playingEntity>
-                </participantRole>
-              </participant>
-              <entryRelationship typeCode="RSON">
-                <observation classCode="OBS" moodCode="EVN">
-                  <templateId root="2.16.840.1.113883.10.20.22.4.9" extension="2014-06-09"/>
-                  <id root="4adc1020-7b14-11db-9fe1-0800200c9a64"/>
-                  <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
-                  <text>
-                    <reference value="#reaction1"/>
-                  </text>
-                  <statusCode code="completed"/>
-                  <effectiveTime>
-                    <low value="200802260805-0800"/>
-                    <high value="200802281205-0800"/>
-                  </effectiveTime>
-                  <value xsi:type="CD" code="422587007" codeSystem="2.16.840.1.113883.6.96" displayName="Nausea"/>
-                </observation>
-              </entryRelationship>
-              <entryRelationship typeCode="COMP">
-                <substanceAdministration classCode="SBADM" moodCode="EVN">
-                  <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
-                  <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
-                  <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29"/>
-                  <statusCode code="completed"/>
-                  <effectiveTime xsi:type="PIVL_TS" operator="A" value="202011071159-0700"/>
-                  <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="ORAL"/>
-                  <doseQuantity value="1" unit="g"/>
-                  <consumable>
-                    <manufacturedProduct classCode="MANU">
-                      <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
-                      <templateId root="2.16.840.1.113883.10.20.15.2.3.36" extension="2019-04-01"/>
-                      <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
-                      <manufacturedMaterial>
-                        <code code="248656" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Azithromycin 500 MG Oral Tablet" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13"/>
-                      </manufacturedMaterial>
-                    </manufacturedProduct>
-                  </consumable>
-                  <author>
-                    <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
-                    <time value="201308011235-0800"/>
-                    <assignedAuthor>
-                      <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c"/>
-                      <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health                         Care Provider Taxonomy" displayName="Registered nurse"/>
-                      <assignedPerson>
-                        <name>
-                          <given>Nurse</given>
-                          <family>Nightingale</family>
-                          <suffix>RN</suffix>
-                        </name>
-                      </assignedPerson>
-                      <representedOrganization>
-                        <id root="2.16.840.1.113883.19.5"/>
-                        <name>Good Health Hospital</name>
-                      </representedOrganization>
-                    </assignedAuthor>
-                  </author>
-                  <entryRelationship typeCode="REFR">
-                    <supply classCode="SPLY" moodCode="EVN">
-                      <templateId root="2.16.840.1.113883.10.20.22.4.18" extension="2014-06-09"/>
-                      <id root="2.16.840.1.113883.19.5"/>
-                      <statusCode code="completed"/>
-                      <effectiveTime value="200802260805-0800"/>
-                      <product>
-                        <manufacturedProduct classCode="MANU">
-                          <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
-                          <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
-                          <manufacturedMaterial>
-                            <code code="248656" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Azithromycin 500 MG Oral Tablet" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13"/>
-                          </manufacturedMaterial>
-                        </manufacturedProduct>
-                      </product>
-                    </supply>
-                  </entryRelationship>
-                  <entryRelationship typeCode="CAUS">
-                    <observation classCode="OBS" moodCode="EVN">
-                      <templateId root="2.16.840.1.113883.10.20.15.2.3.37" extension="2019-04-01"/>
-                      <id root="ab1791b0-5c71-11db-b0de-0800200c9a55"/>
-                      <code code="67540-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Response to medication"/>
-                      <statusCode code="completed"/>
-                      <effectiveTime>
-                        <low value="20201101"/>
-                      </effectiveTime>
-                      <value code="268910001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Patient's condition improved (finding)" xsi:type="CD"/>
-                    </observation>
-                  </entryRelationship>
-                </substanceAdministration>
-              </entryRelationship>
-            </observation>
-          </entry>
         </section>
       </component>
       <!-- Immunizations Section (entries required)(V3) -->
@@ -2250,7 +1936,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2500,7 +2186,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2699,7 +2385,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2835,7 +2521,7 @@
                     <td>Yes</td>
                     <td>refine</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
                   </tr>
@@ -2960,7 +2646,7 @@
                     <td>Yes</td>
                     <td>retain</td>
                     <td>Yes</td>
-                    <td>v8</td>
+                    <td>v9</td>
                     <td>System rule — always retained</td>
                     <td>Retained as-is</td>
                   </tr>

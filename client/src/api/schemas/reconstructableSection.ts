@@ -2,7 +2,9 @@
 /**
  * These sections support the "reconstruct" narrative action.
  *
- * Currently, only Results is enabled; others are planned for future iterations. Make sure to update unit tests to ensure only certain sections are reconstructable.
+ * Currently, only Results is enabled; others are planned for future
+ * iterations. Make sure to update unit tests to ensure only certain sections
+ * are reconstructable.
  */
 export type ReconstructableSection = typeof ReconstructableSection[keyof typeof ReconstructableSection];
 

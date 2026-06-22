@@ -10,13 +10,16 @@ from app.services.terminology import CodeSystemSets
 
 from ..model import (
     HL7_NS,
+    DbNarrativeAction,
     NamespaceMap,
     SectionRunResult,
     SectionSpecification,
 )
-from .narrative import (
+from ..narrative import (
     create_minimal_section,
+    reconstruct_narrative,
     remove_all_comments,
+    replace_narrative_with_reconstruction,
     replace_narrative_with_removal_notice,
     restore_narrative,
 )
@@ -37,7 +40,7 @@ def process(
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
     code_system_sets: CodeSystemSets | None = None,
-    include_narrative: bool = True,
+    narrative: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using the generic matching logic.
@@ -56,8 +59,8 @@ def process(
     `<text>` elements before searching to prevent false matches.
     Both are saved as deep copies and restored after processing —
     `<code>` unconditionally in the finally block (to avoid
-    corrupting the tree on error), and `<text>` conditionally based
-    on `include_narrative`.
+    corrupting the tree on error), and `<text>` only when the
+    `narrative` action is "retain".
 
     Source document XML comments are stripped before matching begins.
     Match provenance comments (`eCR Refiner: generic match — ...`)
@@ -93,12 +96,12 @@ def process(
 
     # neutralize <text>: clear it so inline codes in the narrative
     # don't produce false matches
-    # if include_narrative is True, a deep copy is saved so the original
+    # only when narrative="retain" is a deep copy saved so the original
     # can be restored after processing
     text_element = section.find("./hl7:text", namespaces=namespaces)
     original_text = (
         deepcopy(text_element)
-        if text_element is not None and include_narrative
+        if text_element is not None and narrative == "retain"
         else None
     )
     if text_element is not None:
@@ -155,27 +158,43 @@ def process(
             if code_system_sets is not None:
                 enrich_surviving_entries(section, code_system_sets, namespaces)
 
-            # STEP 5: handle narrative <text>
-            if include_narrative and original_text is not None:
-                restore_narrative(section, original_text, namespaces)
-                return SectionRunResult(
-                    matches_found=True,
-                    narrative_disposition="retained",
-                )
-            elif not include_narrative:
-                replace_narrative_with_removal_notice(section, namespaces)
-                return SectionRunResult(
-                    matches_found=True,
-                    narrative_disposition="removed",
-                )
-
-            # include_narrative=True but original_text was None —
-            # the section had no <text> in the source. nothing to
-            # restore, but matches were still found.
-            return SectionRunResult(
-                matches_found=True,
-                narrative_disposition="retained",
-            )
+            # STEP 5: handle narrative <text> reconstruction runs HERE,
+            # after STEP 4 enrichment, because it reads displayName off
+            # the surviving entries it rebuilds the table from
+            match narrative:
+                case "remove":
+                    replace_narrative_with_removal_notice(section, namespaces)
+                    return SectionRunResult(
+                        matches_found=True,
+                        narrative_disposition="removed",
+                    )
+                case "reconstruct":
+                    reconstructed = reconstruct_narrative(section)
+                    if reconstructed is not None:
+                        replace_narrative_with_reconstruction(
+                            section, reconstructed, namespaces
+                        )
+                        return SectionRunResult(
+                            matches_found=True,
+                            narrative_disposition="reconstructed",
+                        )
+                    # no registered reconstructor or nothing survived;
+                    # fall back to removal rather than leave a stale
+                    # narrative on a refined section
+                    replace_narrative_with_removal_notice(section, namespaces)
+                    return SectionRunResult(
+                        matches_found=True,
+                        narrative_disposition="removed",
+                    )
+                case _:
+                    # "retain": restore the saved original when present;
+                    # a None original means the source had no <text>
+                    if original_text is not None:
+                        restore_narrative(section, original_text, namespaces)
+                    return SectionRunResult(
+                        matches_found=True,
+                        narrative_disposition="retained",
+                    )
 
         except etree.XPathEvalError as e:
             raise XMLParsingError(
