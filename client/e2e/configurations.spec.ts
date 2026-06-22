@@ -18,9 +18,43 @@ test.describe('Configurations screen', () => {
       })
     ).toBeVisible();
     await expect(page.getByRole('searchbox')).not.toBeVisible();
+    const setupConfigurationButton = page.getByRole('button', {
+      name: 'Set up new configuration',
+    });
+
+    await expect(setupConfigurationButton).toBeEnabled();
+
+    // test the setup comboxbox search
+    await setupConfigurationButton.click();
     await expect(
-      page.getByRole('button', { name: 'Set up new configuration' })
-    ).toBeEnabled();
+      page.getByRole('heading', { name: 'Set up new configuration' })
+    ).toBeVisible();
+    const conditionInput = page.getByLabel('Select condition');
+
+    await conditionInput.fill('COVID');
+    await expect(page.getByRole('option', { name: 'COVID-19' })).toBeVisible();
+    // by CG code
+    await conditionInput.clear();
+    await conditionInput.fill('1001411000124108');
+    await expect(page.getByRole('option', { name: 'COVID-19' })).toBeVisible();
+
+    // by CG display
+    await conditionInput.clear();
+    await conditionInput.fill(
+      'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)'
+    );
+    await expect(page.getByRole('option', { name: 'COVID-19' })).toBeVisible();
+    await page.getByRole('option', { name: 'COVID-19' }).click();
+
+    await expect(page.getByText('COVID-19')).toBeVisible();
+    await expect(page.getByText('1001411000124108')).toBeVisible();
+    await expect(
+      page.getByText(
+        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)'
+      )
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Close this window' }).click();
+
     await expect(page.locator('table tbody tr')).toHaveCount(1);
     await expect(page.getByRole('cell')).toHaveText(
       'No configurations available'

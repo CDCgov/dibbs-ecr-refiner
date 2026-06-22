@@ -117,13 +117,13 @@ def _build_rsg_codes(
             parent=parent, all_vs_map=valuesets_map
         ):
             if snomed_code := parse_snomed_from_url(child_vs.get("url", "")):
-                name = parse_child_rsg_details_from_use_context(
+                display = parse_child_rsg_details_from_use_context(
                     child_vs.get("useContext", "")
                 )
                 code_data = CodeRow(
-                    value=snomed_code,
+                    code=snomed_code,
                     version=cond_version,
-                    name=name,
+                    display=display,
                     system_id=snomed_db_id,
                 )
 
@@ -356,25 +356,25 @@ def _upsert_codes(
     code_upsert_query = """
         WITH upsert_code AS (
             INSERT INTO codes (
-                name,
-                value,
+                display,
+                code,
                 version,
                 system_id
             )
-            VALUES (
-                %(name)s,
-                %(value)s,
+            values (
+                %(display)s,
+                %(code)s,
                 %(version)s,
                 %(system_id)s
             )
-            ON CONFLICT (value, system_id, version)
+            ON CONFLICT (code, system_id, version)
             DO UPDATE SET
-                name = EXCLUDED.name,
-                value = EXCLUDED.value,
+                display = EXCLUDED.display,
+                code = EXCLUDED.code,
                 version = EXCLUDED.version
             WHERE
-                codes.name IS DISTINCT FROM EXCLUDED.name
-                OR codes.value IS DISTINCT FROM EXCLUDED.value
+                codes.display IS DISTINCT FROM EXCLUDED.display
+                OR codes.code IS DISTINCT FROM EXCLUDED.code
                 OR codes.version IS DISTINCT FROM EXCLUDED.version
             RETURNING id
         )
@@ -384,7 +384,7 @@ def _upsert_codes(
 
         SELECT id
         FROM codes
-        WHERE value = %(value)s
+        WHERE code = %(code)s
             AND system_id = %(system_id)s
             AND version = %(version)s
             AND NOT EXISTS (SELECT 1 FROM upsert_code)
@@ -395,8 +395,8 @@ def _upsert_codes(
     for code in data:
         for condition_index, code in code.items():
             params = {
-                "name": code.get("name"),
-                "value": code.get("value"),
+                "display": code.get("display"),
+                "code": code.get("code"),
                 "version": code.get("version"),
                 "system_id": code.get("system_id"),
             }
