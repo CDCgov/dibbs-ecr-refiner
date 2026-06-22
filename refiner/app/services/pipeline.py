@@ -222,7 +222,7 @@ class RefinementException(Exception):
 
 
 @dataclass
-class ConditionInput:
+class RefinementContext:
     """
     Information about the condition being processed for refinement.
     """
@@ -235,7 +235,7 @@ class ConditionInput:
 def refine_for_condition(
     xml_files: XMLFiles,
     processed_configuration: ProcessedConfiguration,
-    condition: ConditionInput,
+    context: RefinementContext,
     run: AugmentationRun,
 ) -> RefinementResult:
     """
@@ -276,7 +276,7 @@ def refine_for_condition(
             have the same fidelity regardless of source — codes organized
             by system with display names, section processing rules, and
             included RSG codes.
-        condition: Information about the condition being refined.
+        context: Required context needed for refinement.
         run: The session-scoped AugmentationRun. Built once by the
             caller via create_augmentation_run_from_xml_files and
             threaded through every pipeline call in the session so
@@ -308,22 +308,20 @@ def refine_for_condition(
         # (raises if the trailing segment isn't UUID-shaped), which is
         # exactly the type augment_eicr/augment_rr now require — the
         # type is the validator, no separate shape check needed
-        condition_grouper_uuid = extract_uuid_from_canonical_url(
-            condition.canonical_url
-        )
+        condition_grouper_uuid = extract_uuid_from_canonical_url(context.canonical_url)
 
         # plan -> refine -> augment -> output (eICR)
         eicr_plan = create_eicr_refinement_plan(
             processed_configuration=processed_configuration,
             eicr_root=eicr_root,
             augmentation_timestamp=run.augmentation_time,
-            config_version=condition.configuration_version,
+            config_version=context.configuration_version,
         )
         refine_eicr(eicr_root=eicr_root, plan=eicr_plan)
         augmented_eicr_result = augment_eicr(
             eicr_root,
             run,
-            jurisdiction_id=condition.jurisdiction_id,
+            jurisdiction_id=context.jurisdiction_id,
             condition_grouper_uuid=condition_grouper_uuid,
         )
         refined_eicr = etree.tostring(eicr_root, encoding="unicode")
@@ -336,7 +334,7 @@ def refine_for_condition(
         augmented_rr_result = augment_rr(
             rr_root,
             run,
-            jurisdiction_id=condition.jurisdiction_id,
+            jurisdiction_id=context.jurisdiction_id,
             scope=condition_grouper_uuid,
         )
         refined_rr = etree.tostring(rr_root, encoding="unicode")
@@ -372,8 +370,8 @@ def refine_for_condition(
             report=RefinementReport(
                 augmented_eicr_result=augmented_eicr_result,
                 augmented_rr_result=augmented_rr_result,
-                canonical_url=condition.canonical_url,
-                configuration_version=condition.configuration_version,
+                canonical_url=context.canonical_url,
+                configuration_version=context.configuration_version,
             ),
         )
 

@@ -26,7 +26,7 @@ from app.services.ecr.model import JurisdictionReportableConditions, ReportableC
 from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
     AugmentationRun,
-    ConditionInput,
+    RefinementContext,
     RefinementMetrics,
     RefinementReport,
     RefinementResult,
@@ -616,7 +616,7 @@ def process_condition(
     result = refine_for_condition(
         xml_files=refiner_input.xml_files,
         processed_configuration=active_configuration.configuration,
-        condition=ConditionInput(
+        context=RefinementContext(
             canonical_url=cg_metadata.canonical_url,
             jurisdiction_id=jurisdiction_code,
             configuration_version=active_configuration.version,

@@ -7,7 +7,7 @@ from app.core.models.types import XMLFiles
 from app.services.assets import get_asset_path
 from app.services.ecr.model import JurisdictionReportableConditions
 from app.services.pipeline import (
-    ConditionInput,
+    RefinementContext,
     RefinementException,
     RefinementResult,
     create_augmentation_run_from_xml_files,
@@ -130,7 +130,7 @@ class TestRefineForCondition:
         both a refined eICR and a refined RR.
         """
 
-        condition = ConditionInput(
+        context = RefinementContext(
             jurisdiction_id="SDDH",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
@@ -140,7 +140,7 @@ class TestRefineForCondition:
         result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
-            condition=condition,
+            context=context,
             run=run,
         )
 
@@ -159,7 +159,7 @@ class TestRefineForCondition:
         On successful refinement, the trace should be marked as refined
         with configuration_resolved=True and a size reduction percentage.
         """
-        condition = ConditionInput(
+        context = RefinementContext(
             jurisdiction_id="SDDH",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
@@ -169,7 +169,7 @@ class TestRefineForCondition:
         result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
-            condition=condition,
+            context=context,
             run=run,
         )
 
@@ -181,7 +181,7 @@ class TestRefineForCondition:
         If refinement raises an exception, the trace should capture the
         error before re-raising.
         """
-        condition = ConditionInput(
+        context = RefinementContext(
             jurisdiction_id="SDDH",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
@@ -200,7 +200,7 @@ class TestRefineForCondition:
                 refine_for_condition(
                     xml_files=sample_xml_files,
                     processed_configuration=MagicMock(),
-                    condition=condition,
+                    context=context,
                     run=run,
                 )
             assert exc_info.value.detail == "plan creation failed"

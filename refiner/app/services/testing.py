@@ -25,7 +25,7 @@ from .ecr.model import (
 )
 from .pipeline import (
     AugmentationRun,
-    ConditionInput,
+    RefinementContext,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     produce_remainder_rr_for_jurisdiction,
@@ -246,7 +246,7 @@ async def run_simulation(
 
         result = refine_for_condition(
             xml_files=xml_files,
-            condition=ConditionInput(
+            context=RefinementContext(
                 jurisdiction_id=jurisdiction_id,
                 canonical_url=primary_condition.canonical_url,
                 configuration_version=configuration.version,
@@ -470,7 +470,7 @@ async def inline_testing(
     result = refine_for_condition(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
-        condition=ConditionInput(
+        context=RefinementContext(
             jurisdiction_id=jurisdiction_id,
             canonical_url=primary_condition.canonical_url,
             configuration_version=configuration.version,
