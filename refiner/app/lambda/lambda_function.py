@@ -7,7 +7,7 @@
 import json
 import os
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, TypedDict
 
 import boto3
@@ -27,6 +27,8 @@ from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
     AugmentationRun,
     ConditionInput,
+    RefinementMetrics,
+    RefinementReport,
     RefinementResult,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
@@ -633,6 +635,29 @@ def process_condition(
 
     state.metadata[jurisdiction_code][rsg_code] = True
 
+    log_refinement_summary(
+        rsg_code=rsg_code,
+        jurisdiction_code=jurisdiction_code,
+        metrics=result.metrics,
+        report=result.report,
+    )
+
+
+def log_refinement_summary(
+    rsg_code: str,
+    jurisdiction_code: str,
+    metrics: RefinementMetrics,
+    report: RefinementReport,
+) -> None:
+    logger.info(
+        "Refinement complete.",
+        rsg_code=rsg_code,
+        jurisidiction_code=jurisdiction_code,
+        metrics=asdict(metrics),
+        report=asdict(report),
+        operation="log_condition_summary",
+    )
+
 
 def load_condition_mapping_for_jurisdiction(
     s3_client,
@@ -808,7 +833,7 @@ def write_refined_outputs(
     state.output_files.add(rr_output_key)
 
     logger.info(
-        "Condition refinement complete.",
+        "Writing refined output files.",
         eicr_key=eicr_output_key,
         rr_key=rr_output_key,
         eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
