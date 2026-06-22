@@ -204,7 +204,7 @@ async def convert_config_to_storage_payload(
                 Coding(
                     code=cc.code,
                     display=cc.name,
-                    system=cur_code_system.oid,
+                    system_oid=cur_code_system.oid,
                 )
             )
         )
@@ -232,7 +232,9 @@ async def convert_config_to_storage_payload(
                 [
                     asdict(
                         Coding(
-                            code=c.code, display=c.display, system=system_metadata.oid
+                            code=c.code,
+                            display=c.display,
+                            system_oid=system_metadata.oid,
                         )
                     )
                     for c in code_list
