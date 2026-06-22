@@ -27,7 +27,7 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
     response = await authed_client.get("/api/v1/conditions/")
 
     assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    data = response.json()["conditions"]
     assert isinstance(data, list)
     assert data[0]["id"] == str(fake_condition_summary.id)
     assert data[0]["display_name"] == fake_condition_summary.display_name
