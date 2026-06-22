@@ -1,8 +1,8 @@
-import { Link } from '@trussworks/react-uswds';
 import { Spinner } from '@components/Spinner';
 import { Title } from '@components/Title';
 import Markdown from 'react-markdown';
 import { useGetReleases } from '../../api/releases/releases';
+import { ExternalLink } from '@components/ExternalLink';
 
 export function AppUpdates() {
   const { data: releaseFetchResult, isPending, isError } = useGetReleases();
@@ -25,9 +25,7 @@ export function AppUpdates() {
                   year: 'numeric',
                 })}
               </h3>
-              <Link target="_blank" href={d.url}>
-                {d.name}
-              </Link>
+              <ExternalLink href={d.url}>{d.name}</ExternalLink>
               {d.release_notes.map((rn, i) => {
                 return (
                   <div key={rn.id} className="mt-2 pb-4 pl-5">
