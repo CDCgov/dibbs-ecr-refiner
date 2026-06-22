@@ -3,30 +3,25 @@ from uuid import uuid4
 import pytest
 from fastapi import status
 
+from app.db.codes.model import CodedConcept
 from app.db.conditions.db import GetConditionCode
-from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.conditions.model import ConditionSummary, DbCondition, DbConditionCoding
 
 
 @pytest.mark.asyncio
 async def test_get_latest_conditions(monkeypatch, authed_client):
-    fake_condition = DbCondition(
+    fake_condition_summary = ConditionSummary(
         id=uuid4(),
-        display_name="Hypertension",
-        canonical_url="http://url.com",
-        version="4.0.0",
-        child_rsg_snomed_codes=["11111"],
-        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
-        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
-        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
-        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
-        cvx_codes=[DbConditionCoding("124124", "Hypertension CVX")],
+        display_name="Hypospadias",
+        rsg_codes=[CodedConcept(display="Hypospadias (disorder)", code="416010008")],
     )
 
     async def fake_get_latest_conditions_db(db):
-        return [fake_condition]
+        return [fake_condition_summary]
 
     monkeypatch.setattr(
-        "app.api.v1.conditions.get_latest_conditions_db", fake_get_latest_conditions_db
+        "app.api.v1.conditions.get_conditions_with_rsg_codes_db",
+        fake_get_latest_conditions_db,
     )
 
     response = await authed_client.get("/api/v1/conditions/")
@@ -34,8 +29,8 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert isinstance(data, list)
-    assert data[0]["id"] == str(fake_condition.id)
-    assert data[0]["display_name"] == fake_condition.display_name
+    assert data[0]["id"] == str(fake_condition_summary.id)
+    assert data[0]["display_name"] == fake_condition_summary.display_name
     assert "associated" not in data[0]
 
 

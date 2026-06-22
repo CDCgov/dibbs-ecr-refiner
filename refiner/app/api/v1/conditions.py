@@ -6,14 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_all_code_systems_db
+from app.db.codes.model import CodedConcept
 from app.db.conditions.model import DbConditionsContextGrouper
 
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
+    get_conditions_with_rsg_codes_db,
     get_context_groupers_by_condition_id_db,
-    get_latest_conditions_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
 
@@ -28,6 +29,7 @@ class GetConditionsResponse:
 
     id: UUID
     display_name: str
+    rsg_codes: list[CodedConcept]
 
 
 @router.get(
@@ -40,22 +42,20 @@ async def get_conditions(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[GetConditionsResponse]:
     """
-    Fetches all available conditions from the database.
+    Fetches a summary of all available conditions from the database and returns them as a list.
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        list[Condition]: List of all conditions.
+        list[GetConditionsResponse]: List of all condition summaries.
     """
-
-    conditions = await get_latest_conditions_db(db=db)
+    summaries = await get_conditions_with_rsg_codes_db(db=db)
     return [
         GetConditionsResponse(
-            id=condition.id,
-            display_name=condition.display_name,
+            id=s.id, display_name=s.display_name, rsg_codes=s.rsg_codes
         )
-        for condition in conditions
+        for s in summaries
     ]
 
 

@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, Final
 from lxml import etree
 from lxml.etree import _Element
 
+from app.services.terminology import Coding
+
 if TYPE_CHECKING:
-    from app.services.terminology import CodeSystemSets, Coding
+    from app.services.terminology import CodeSystemSets
 
 
 from ..model import EntryMatchRule, NamespaceMap

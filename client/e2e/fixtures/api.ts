@@ -5,9 +5,15 @@ type Configuration = {
   name: string;
 };
 
+type CodedConcept = {
+  code: string;
+  display: string;
+};
+
 type Condition = {
   id: string;
   display_name: string;
+  rsg_codes: CodedConcept[];
 };
 
 type CustomCode = {
