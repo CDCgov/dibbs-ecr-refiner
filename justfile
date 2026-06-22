@@ -4,6 +4,10 @@ alias help := _default
 @_default:
     just --list --list-submodules
 
+# Alias for `docker`
+[group: 'alias']
+mod dk './.justscripts/just/docker.just'
+
 # Alias for `client`
 [group: 'alias']
 mod c './.justscripts/just/client.just'
@@ -35,6 +39,10 @@ mod cd './.justscripts/just/cloud.just'
 # Alias for `dev`
 [group: 'alias']
 mod d './.justscripts/just/dev.just'
+
+# Run docker build commands
+[group: 'sub-command']
+mod docker './.justscripts/just/docker.just'
 
 # Run commands against `client/` code
 [group: 'sub-command']
