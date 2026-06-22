@@ -655,7 +655,7 @@ def log_refinement_summary(
         jurisidiction_code=jurisdiction_code,
         metrics=asdict(metrics),
         report=asdict(report),
-        operation="log_condition_summary",
+        operation="log_summary",
     )
 
 
