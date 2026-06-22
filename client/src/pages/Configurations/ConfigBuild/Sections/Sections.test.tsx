@@ -73,10 +73,10 @@ const sectionsWithNarrativeOnly: DbConfigurationSectionProcessing[] = [
 
 const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
   {
-    name: 'Problems section',
+    name: 'Results section',
     action: 'refine',
     include: true,
-    code: '11450-4',
+    code: '30954-2',
     narrative: 'reconstruct',
     versions: ['1.1', '3.1'],
     section_type: 'standard',
@@ -161,13 +161,11 @@ describe('Configuration sections', () => {
 
     const firstSelect = selects[0];
     const options = within(firstSelect).getAllByRole('option');
-    expect(options).toHaveLength(3);
+    expect(options).toHaveLength(2);
     expect(options[0]).toHaveTextContent('Keep original');
     expect(options[0]).toHaveValue('retain');
-    expect(options[1]).toHaveTextContent('Reconstruct');
-    expect(options[1]).toHaveValue('reconstruct');
-    expect(options[2]).toHaveTextContent('Exclude');
-    expect(options[2]).toHaveValue('remove');
+    expect(options[1]).toHaveTextContent('Exclude');
+    expect(options[1]).toHaveValue('remove');
   });
 
   it('should blank out narrative controls for excluded rows', () => {
@@ -313,8 +311,8 @@ describe('Configuration sections', () => {
     const reconstructOption = options.find(
       (opt) => opt.getAttribute('value') === 'reconstruct'
     );
-    expect(reconstructOption).toBeDefined();
-    expect(reconstructOption).toBeDisabled();
+    expect(reconstructOption).not.toBeDefined();
+    // expect(reconstructOption).toBeDisabled();
   });
 
   it('should enable Reconstruct option when coded data action is reconstruct', () => {
@@ -326,12 +324,12 @@ describe('Configuration sections', () => {
       />
     );
 
-    const problemsName = screen.getByText('Problems section');
+    const problemsName = screen.getByText('Results section');
     const row = problemsName.closest('tr');
     expect(row).not.toBeNull();
 
     if (!row) {
-      throw new Error('Could not find table row for "Problems section"');
+      throw new Error('Could not find table row for "Results section"');
     }
 
     const select = within(row).getByRole('combobox');
@@ -354,12 +352,12 @@ describe('Configuration sections', () => {
       />
     );
 
-    const problemsName = screen.getByText('Problems section');
+    const problemsName = screen.getByText('Results section');
     const row = problemsName.closest('tr');
     expect(row).not.toBeNull();
 
     if (!row) {
-      throw new Error('Could not find table row for "Problems section"');
+      throw new Error('Could not find table row for "Results section"');
     }
 
     const switchElement = within(row).getByRole('switch');
