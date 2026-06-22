@@ -228,7 +228,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={reset} position="center" maxWidth="xl">
+    <Modal open={open} onClose={reset} position="top" maxWidth="xl">
       <ModalHeader>
         <ModalTitle>Set up new configuration</ModalTitle>
       </ModalHeader>
