@@ -34,6 +34,7 @@ import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
+import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -81,7 +82,7 @@ export function ConfigBuild() {
             className="p-0!"
             aria-label="Open reporting specification details modal"
           >
-            Details
+            <QuestionIcon />
           </Button>
           <RsgDetailsModal
             open={isRsgDetailsModalOpen}
