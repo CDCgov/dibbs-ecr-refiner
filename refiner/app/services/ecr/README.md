@@ -36,7 +36,7 @@ The pipeline creates an `AugmentationContext` for each document before any work 
 All of this is per the eICR Data Augmentation Header template (`urn:hl7ii:2.16.840.1.113883.10.20.15.2.1.3:2025-11-01`):
 
 - **`templateId`** — signals the document conforms to the augmentation header template
-- **`id`** — new UUID with `assigningAuthorityName="ecr-refinement"`
+- **`id`** — new UUID with `assigningAuthorityName="ecr-refiner"`
 - **`effectiveTime`** — timestamp of the augmentation operation (with timezone)
 - **`setId`** — new UUID (replaces original, or inserted if absent)
 - **`versionNumber`** — reset to 1
@@ -57,9 +57,9 @@ Refinement attaches an unanchored `<footnote>` to every section in the refined e
 
 The "what was configured" and "what actually happened" columns usually agree, but they can diverge. The most common divergence is the no-match case: a jurisdiction configures a section for refinement, the matching step finds nothing in the section that matches the configured codes, and the refiner stubs the section rather than preserving an orphaned narrative. The footnote makes that decision visible — a reviewer sees "Action: refine, Outcome: Refined; no matches found" in the same row and doesn't have to wonder why a refine-configured section came out empty.
 
-The footnote ID is built from the section's LOINC code and the augmentation timestamp (`ecr-refinement-{loinc}-{timestamp}`), so every footnote in a refinement run is structurally tied to the augmentation author's `<time>` value. A consumer can verify document integrity by checking that all footnote IDs in a document carry the same timestamp the augmentation header advertises.
+The footnote ID is built from the section's LOINC code and the augmentation timestamp (`ecr-refiner-{loinc}-{timestamp}`), so every footnote in a refinement run is structurally tied to the augmentation author's `<time>` value. A consumer can verify document integrity by checking that all footnote IDs in a document carry the same timestamp the augmentation header advertises.
 
-The user-facing labels for the configuration source and the runtime outcome live in `section/constants.py` as small dicts keyed by enum values. Editing the copy is one file change with no code touches.
+The user-facing labels for the configuration source and the runtime outcome live in `narrative/constants.py` as small dicts keyed by enum values. Editing the copy is one file change with no code touches.
 
 ## Supporting modules
 

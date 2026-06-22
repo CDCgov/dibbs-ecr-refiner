@@ -15,8 +15,8 @@ from app.services.ecr.model import (
     SectionProvenanceRecord,
     SectionSource,
 )
+from app.services.ecr.narrative.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
-from app.services.ecr.section.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
 from tests.unit.helpers.configuration import create_processed_config

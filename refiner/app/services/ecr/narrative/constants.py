@@ -33,18 +33,8 @@ PROVENANCE_LABEL: Final[str] = "eCR Refiner — Jurisdiction Configuration"
 # NOTE:
 # TABLE HEADERS
 # =============================================================================
-# column headers for the narrative tables the refiner writes. the clinical
-# data table headers describe the columns for the refined clinical content
-# table; the provenance table headers describe the columns for the
-# per-section provenance footnote table
-
-CLINICAL_DATA_TABLE_HEADERS: Final[list[str]] = [
-    "Display Text",
-    "Code",
-    "Code System",
-    "Is Trigger Code",
-    "Matching Condition Code",
-]
+# column headers for the per-section provenance footnote table the refiner
+# writes into every section's narrative
 
 PROVENANCE_TABLE_HEADERS: Final[list[str]] = [
     "Section (LOINC)",
