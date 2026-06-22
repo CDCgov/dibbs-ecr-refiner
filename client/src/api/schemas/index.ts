@@ -9,6 +9,7 @@ export * from './bodyRunInlineConfigurationTest';
 export * from './bodyUploadEcr';
 export * from './codeCategoryCompletenessStatus';
 export * from './codeCategoryStatus';
+export * from './codedConcept';
 export * from './codeSetStatus';
 export * from './codeSystemIndex';
 export * from './codeSystemKey';
