@@ -5,6 +5,7 @@ from logging import Logger
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.conditions.db import (
@@ -13,10 +14,14 @@ from app.db.conditions.db import (
 )
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.model import DbConfiguration
+from app.db.configurations.model import (
+    DbConfiguration,
+    DbConfigurationSectionProcessing,
+)
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import get_all_code_systems_by_key
+from app.services.file_io import ZipFileItem, ZipFilePackage
 from app.services.logger import get_logger
 
 router = APIRouter(prefix="/{configuration_id}/export")
@@ -52,17 +57,47 @@ async def get_configuration_export(
         included_conditions=config.included_conditions, db=db
     )
 
-    csv_bytes = await _build_config_csv(
+    codes_csv_content = await _build_config_csv(
         config=config, conditions=included_conditions, logger=logger, db=db
     )
+    sections_csv_content = _build_sections_csv(sections=config.section_processing)
 
-    filename = _build_export_filename(config_name=config.name)
+    # filename = _build_export_filename(config_name=config.name)
 
-    return Response(
-        content=csv_bytes,
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    zip_package = ZipFilePackage(name="config-export.zip")
+    zip_package.add(ZipFileItem(file_name="codes.csv", file_content=codes_csv_content))
+    zip_package.add(
+        ZipFileItem(file_name="sections.csv", file_content=sections_csv_content)
     )
+
+    return StreamingResponse(
+        content=zip_package.iter_chunks(),
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="test.zip"'},
+    )
+
+
+def _build_sections_csv(
+    sections: list[DbConfigurationSectionProcessing],
+) -> str:
+    """Build a CSV summarizing configuration section information."""
+    with StringIO() as csv_text:
+        writer = csv.writer(csv_text)
+        writer.writerow(
+            ["Section Name", "LOINC", "Include", "Coded Data", "Narrative Data"]
+        )
+
+        for section in sorted(sections, key=lambda r: r.name.lower()):
+            writer.writerow(
+                [
+                    section.name,
+                    section.code,
+                    "Yes" if section.include else "No",
+                    section.action,
+                    section.narrative,
+                ]
+            )
+        return csv_text.getvalue()
 
 
 async def _build_config_csv(
@@ -70,7 +105,7 @@ async def _build_config_csv(
     conditions: list[DbCondition],
     logger: Logger,
     db: AsyncDatabaseConnection,
-) -> bytes:
+) -> str:
     """Build the CSV export content for a configuration."""
 
     code_systems = await get_all_code_systems_by_key(db=db)
@@ -113,7 +148,7 @@ async def _build_config_csv(
                 ]
             )
 
-        return csv_text.getvalue().encode("utf-8")
+        return csv_text.getvalue()
 
 
 def _build_export_filename(config_name: str) -> str:

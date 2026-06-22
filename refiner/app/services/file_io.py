@@ -1,5 +1,7 @@
 import io
 import time
+import zipfile
+from collections.abc import Iterator
 from dataclasses import dataclass
 from io import BytesIO
 from zipfile import BadZipFile, ZipFile, ZipInfo
@@ -68,6 +70,16 @@ class ZipFilePackage:
             list[ZippedItem]: All items in the zip package.
         """
         return list(self._packaged_items)
+
+    def iter_chunks(self) -> Iterator[bytes]:
+        """
+        Yields the zip file contents as chunks. Useful for usage with a StreamingResponse.
+        """
+        buffer = BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for item in self._packaged_items:
+                zf.writestr(item.file_name, item.file_content)
+        yield buffer.getvalue()
 
 
 def parse_xml(xml_content: str | bytes) -> _Element:
