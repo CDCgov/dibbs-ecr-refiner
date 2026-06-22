@@ -4,6 +4,7 @@ import {
   DbSectionAction,
   DisabledSection,
   NarrativeOnlySection,
+  ReconstructableSection,
 } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -52,6 +53,10 @@ export function Sections({
   const narrativeOnlySections = Object.values(NarrativeOnlySection);
   const isNarrativeSection = (s: string): s is NarrativeOnlySection =>
     narrativeOnlySections.some((v) => (v as string) === s);
+
+  const reconstructableSections = Object.values(ReconstructableSection);
+  const isReconstructableSection = (s: string): s is ReconstructableSection =>
+    reconstructableSections.some((v) => (v as string) === s);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
     setSelectedSection(section);
@@ -186,6 +191,9 @@ export function Sections({
                         currentSection={section}
                         disabled={disabled || isDisabledSection(section.code)}
                         isNarrativeOnly={isNarrativeSection(section.code)}
+                        isReconstructable={isReconstructableSection(
+                          section.code
+                        )}
                         codedDataAction={section.action}
                       />
                     ) : null}
