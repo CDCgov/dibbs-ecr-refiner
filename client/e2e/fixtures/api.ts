@@ -30,7 +30,7 @@ export class Api {
     const conditionsReq = await this.request.get('/api/v1/conditions/');
     expect(conditionsReq.ok()).toBeTruthy();
 
-    const json = (await conditionsReq.json()).conditions;
+    const json = await conditionsReq.json();
     expect(json).toContainEqual(
       expect.objectContaining({
         display_name: conditionName,

@@ -73,22 +73,20 @@ vi.mock('../../api/conditions/conditions', async () => {
     ...actual,
     useGetConditions: vi.fn(() => ({
       data: {
-        data: {
-          conditions: [
-            {
-              id: '1',
-              display_name: 'Anaplasmosis',
-              rsg_codes: [
-                { display: 'Anaplasmosis (disorder)', code: '13906002' },
-              ],
-            },
-            {
-              id: 'exists-id',
-              display_name: 'already-created',
-              rsg_codes: [],
-            },
-          ],
-        },
+        data: [
+          {
+            id: '1',
+            display_name: 'Anaplasmosis',
+            rsg_codes: [
+              { display: 'Anaplasmosis (disorder)', code: '13906002' },
+            ],
+          },
+          {
+            id: 'exists-id',
+            display_name: 'already-created',
+            rsg_codes: [],
+          },
+        ],
       },
     })),
   };

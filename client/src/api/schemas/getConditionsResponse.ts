@@ -1,9 +1,9 @@
 import type { CodedConcept } from './codedConcept';
 
 /**
- * High-level information for a condition.
+ * Conditions response model.
  */
-export interface ConditionSummary {
+export interface GetConditionsResponse {
   id: string;
   display_name: string;
   rsg_codes: CodedConcept[];

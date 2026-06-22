@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
   CodedConcept,
-  ConditionSummary,
+  GetConditionsResponse,
   NotificationKeys,
   UserResponse,
 } from '../../api/schemas';
@@ -199,13 +199,13 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const { data: response, isPending, isError } = useGetConditions();
 
   const [selectedCondition, setSelectedCondition] =
-    useState<ConditionSummary | null>(null);
+    useState<GetConditionsResponse | null>(null);
 
   const { mutate: createConfig } = useCreateConfiguration();
   const navigate = useNavigate();
   const formatError = useApiErrorFormatter();
 
-  const conditions = response?.data.conditions || [];
+  const conditions = response?.data || [];
   const { searchText, setSearchText, results } = useSearch(conditions, {
     keys: [
       { name: 'display_name' },
@@ -253,7 +253,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               onChange={setSelectedCondition}
               onClose={() => setSearchText('')}
             >
-              <ComboboxInput<ConditionSummary>
+              <ComboboxInput<GetConditionsResponse>
                 aria-label="Select condition"
                 displayValue={(condition) => condition?.display_name ?? ''}
                 onChange={(event) =>
@@ -326,8 +326,8 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
 }
 
 type ConditionOptionProps = {
-  matchResult: FuseResult<ConditionSummary> | undefined;
-  condition: ConditionSummary;
+  matchResult: FuseResult<GetConditionsResponse> | undefined;
+  condition: GetConditionsResponse;
 };
 
 function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
@@ -384,7 +384,7 @@ function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
 }
 
 type SelectedConditionPanelProps = {
-  selectedCondition: ConditionSummary;
+  selectedCondition: GetConditionsResponse;
 };
 function SelectedConditionPanel({
   selectedCondition,
