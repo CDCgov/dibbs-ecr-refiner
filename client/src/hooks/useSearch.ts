@@ -1,19 +1,15 @@
 import { useMemo, useState } from 'react';
 import Fuse, { FuseResult, IFuseOptions } from 'fuse.js';
 
-export function useSearch<T>(
-  data: T[],
-  options?: IFuseOptions<T>,
-  useExtendedSearch = false
-) {
+export function useSearch<T>(data: T[], options?: IFuseOptions<T>) {
   const [searchText, setSearchText] = useState('');
 
   // Create Fuse instance only when data/options change
   const fuse = useMemo(() => {
-    const searchOptions = { ...options, useExtendedSearch: useExtendedSearch };
+    const searchOptions = { ...options };
 
     return new Fuse(data, searchOptions);
-  }, [data, options, useExtendedSearch]);
+  }, [data, options]);
 
   // Search results
   const results: FuseResult<T>[] = useMemo(() => {

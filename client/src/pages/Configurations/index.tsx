@@ -136,7 +136,6 @@ function AppUpdateBanner({
   isVisible: boolean;
   refreshUser: () => void;
 }) {
-  const navigate = useNavigate();
   const { mutateAsync } = useUpdateUserNotifications();
 
   if (!isVisible) {
@@ -155,14 +154,6 @@ function AppUpdateBanner({
       console.error('Failed to update user notifications', error);
     }
   }
-  async function handleViewUpdates(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    await dismissNotification();
-    void navigate('/app-updates');
-  }
-  async function handleDismiss() {
-    await dismissNotification();
-  }
 
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
@@ -177,7 +168,7 @@ function AppUpdateBanner({
           <Button
             variant="secondary"
             to="/app-updates"
-            onClick={(e) => handleViewUpdates(e)}
+            onClick={dismissNotification}
           >
             View updates
           </Button>
@@ -185,7 +176,7 @@ function AppUpdateBanner({
 
         <Button
           type="button"
-          onClick={handleDismiss}
+          onClick={dismissNotification}
           aria-label="Dismiss notification"
           variant="unstyled"
           className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
@@ -214,21 +205,18 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const formatError = useApiErrorFormatter();
 
   const conditions = response?.data || [];
-  const { searchText, setSearchText, results } = useSearch(
-    conditions,
-    {
-      keys: [
-        { name: 'display_name' },
-        { name: 'rsg_codes.display' },
-        { name: 'rsg_codes.code' },
-      ],
-      threshold: 0.25,
-      distance: 500, // Broaden the distance so Fuse doesn't penalize long strings
-      includeMatches: true,
-      findAllMatches: true,
-    },
-    true
-  );
+  const { searchText, setSearchText, results } = useSearch(conditions, {
+    keys: [
+      { name: 'display_name' },
+      { name: 'rsg_codes.display' },
+      { name: 'rsg_codes.code' },
+    ],
+    threshold: 0.25,
+    distance: 500, // Broaden the distance so Fuse doesn't penalize long strings
+    includeMatches: true,
+    findAllMatches: true,
+    useExtendedSearch: true,
+  });
   const searchTextLongEnough =
     searchText.length > MIN_CONFIG_SEARCH_TEXT_LENGTH;
   const hasSearchResultsToDisplay = searchTextLongEnough && results;
