@@ -4,6 +4,8 @@ from typing import Literal, NamedTuple
 from lxml import etree
 from lxml.etree import _Element
 
+from app.services.ecr.policy import ReconstructableSection
+
 from ..model import HL7_NS, HL7_XSI_NS
 from .elements import _make_element, _sub_element
 
@@ -303,7 +305,10 @@ def reconstruct_results(
 # TODO:
 # next we will need to add problems, immunizations, and medications
 SECTION_RECONSTRUCTORS: dict[str, SectionReconstructor] = {
-    "30954-2": reconstruct_results,  # Results
+    ReconstructableSection.RESULTS.value: reconstruct_results,
+    # ReconstructableSection.PROBLEM.value: reconstruct_results,
+    # ReconstructableSection.IMMUNIZATIONS.value: reconstruct_results,
+    # ReconstructableSection.MEDICATIONS_ADMINISTERED.value: reconstruct_results,
 }
 
 
