@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import UTC, datetime
 from io import StringIO
 from logging import Logger
 from typing import Literal
@@ -215,7 +215,7 @@ async def _build_config_csv(
 
 
 def _get_timestamp() -> str:
-    now = datetime.now()
+    now = datetime.now(UTC)
     timestamp = now.strftime("%m%d%y_%H_%M_%S")
     return timestamp
 
