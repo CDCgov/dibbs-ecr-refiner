@@ -312,7 +312,6 @@ describe('Configuration sections', () => {
       (opt) => opt.getAttribute('value') === 'reconstruct'
     );
     expect(reconstructOption).not.toBeDefined();
-    // expect(reconstructOption).toBeDisabled();
   });
 
   it('should enable Reconstruct option when coded data action is reconstruct', () => {

@@ -655,9 +655,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
 
     // Ensure the section is included so the narrative select is visible
     const includeCheckbox = sectionRow.getByRole('checkbox');
-    if (!(await includeCheckbox.isChecked())) {
-      await includeCheckbox.click();
-    }
+    await includeCheckbox.setChecked(true);
 
     const narrativeSelect = sectionRow.getByRole('combobox');
     const codedDataSwitch = sectionRow.getByRole('switch');
@@ -670,9 +668,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(codedDataSwitch).toBeChecked();
     await codedDataSwitch.click();
     const resultsCheckbox = sectionRow.getByRole('checkbox');
-    if (!(await resultsCheckbox.isChecked())) {
-      await resultsCheckbox.click();
-    }
+    await resultsCheckbox.setChecked(true);
     const errorAlert = sectionRow.getByRole('alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toHaveText(
@@ -691,7 +687,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(errorAlert).toBeVisible();
 
     // 4. Persistence via Internal Click
-    await sectionRow.getByRole('switch').click({ position: { x: 20, y: 20 } });
+    await sectionRow.getByRole('switch').setChecked(true);
     await expect(errorAlert).toBeVisible();
 
     // 5. Dismiss via Input Change
