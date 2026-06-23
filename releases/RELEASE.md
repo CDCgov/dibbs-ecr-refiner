@@ -51,7 +51,7 @@ This document will outline the process for releasing a new version of the eCR Re
    - If needed, do any manual testing in lower environments needed to instill confidence in the new version.
    - If needed, address the scanned vulnerabilities and create follow-up release candidates with fixes.
 
-## Promote the final image APHL
+## Promote the final image for APHL
 
 **MAKE SURE STEPS 3 AND 4 IN THE FIRST SECTION ARE COMPLETED BEFORE PROMOTION**
 
