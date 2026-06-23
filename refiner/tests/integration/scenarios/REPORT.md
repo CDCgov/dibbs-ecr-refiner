@@ -56,9 +56,24 @@ The concern has two halves.
 `covid_with_custom_codes` adds Heart Rate (LOINC 8867-4) as a single custom code. Combined with body temperature (LOINC 8310-5) -- a member of the COVID condition grouper, matched from the baseline configuration -- the snapshot pins panel pruning at a two-of-nine cardinality. `covid_with_multi_vital_sign_codes` adds three more vital sign codes (8867-4, 8480-6, 9279-1) and pins the four-of-nine case (those three plus body temperature). The surviving sub-components are the configured-and-present codes, not only the custom additions. If the bug returned, both snapshots would shift to retaining all nine sub-components.
 
 
+## Capability coverage
+
+Behaviors the suite pins that are product capabilities rather than entries on the Roll-up sheet. Each scenario reference links to its detail section below.
+
+| Capability | Status | Scenario(s) |
+|------------|--------|-------------|
+| Narrative reconstruction from surviving entries | **Direct** | [`covid_results_reconstruction`](#covid-results-reconstruction) |
+
+### Evidence per capability
+
+**Narrative reconstruction from surviving entries** (Direct)
+
+`covid_results_reconstruction` configures the Results section (LOINC 30954-2) with `narrative="reconstruct"`. After entry refinement prunes the section to the surviving SARS-CoV-2 result, the engine rebuilds the section `<text>` from those entries rather than retaining the stale source narrative. The snapshot pins the reconstructed table: a machine-derived `<text>` carrying the result row (panel, test, result, interpretation, date) plus the "machine-derived, not clinician-attested" provenance marker, and the validation layer confirms it stays CDA R2 XSD- and schematron-valid. Reconstruction is only reachable on the refine path — a retained section never reconstructs — so a regression that stopped rebuilding the narrative would surface here as the Results `<text>` reverting to the source narrative or a removal notice.
+
+
 ## Scenarios
 
-Total: 8 scenarios across 1 fixture.
+Total: 9 scenarios across 1 fixture.
 
 ### covid_baseline
 
@@ -153,6 +168,53 @@ Total: 8 scenarios across 1 fixture.
 | `83910-0` | Public health Note | 2 | refined or retained |
 
 **Pins Roll-up issues:** #1 (direct)
+
+### covid_results_reconstruction
+
+**Fixture:** `all_sections_covid_influenza`
+
+**Snapshot files:** [trace JSON](snapshots/all_sections_covid_influenza/covid_results_reconstruction/expected_trace.json) · [refined eICR](snapshots/all_sections_covid_influenza/covid_results_reconstruction/expected_eICR.xml) · [refined RR](snapshots/all_sections_covid_influenza/covid_results_reconstruction/expected_RR.xml)
+
+**Refinement summary**
+
+| Field | Value |
+|-------|-------|
+| Outcome | `refined` |
+| Configuration version | `9` |
+| Configuration resolved | `True` |
+| eICR size reduction | `55%` |
+| Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
+| Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
+| Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
+| Original eICR id | `2.16.840.1.113883.9.9.9.9.9` |
+| Original RR id | `329b9b59-c1be-4036-8984-42266155b321` |
+
+**Refined eICR — sections retained**
+
+| LOINC | Section | Entries | Disposition |
+|-------|---------|---------|-------------|
+| `18776-5` | Plan of Treatment | 1 | refined or retained |
+| `46240-8` | History of encounters | 1 | refined or retained |
+| `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `29549-3` | Medications Administered | 1 | refined or retained |
+| `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
+| `42346-7` | ? | 1 | refined or retained |
+| `46241-6` | Hospital Admission             Diagnosis | 1 | refined or retained |
+| `11535-2` | Hospital Discharge Diagnosis | 1 | refined or retained |
+| `10187-3` | REVIEW OF SYSTEMS | 0 | narrative-only |
+| `11450-4` | Problem List | 1 | refined or retained |
+| `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
+| `29299-5` | Reason for visit Narrative | 0 | narrative-only |
+| `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
+| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `11369-6` | Hx of Immunization | 1 | refined or retained |
+| `29762-2` | Social History | 1 | refined or retained |
+| `90767-5` | Pregnancy summary Document | 1 | refined or retained |
+| `8716-3` | Vital Signs | 1 | refined or retained |
+| `83910-0` | Public health Note | 2 | refined or retained |
+
+**Pins capabilities:** Narrative reconstruction from surviving entries (direct)
 
 ### covid_with_custom_codes
 

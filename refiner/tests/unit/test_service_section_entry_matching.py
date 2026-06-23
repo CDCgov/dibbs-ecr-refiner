@@ -230,9 +230,9 @@ def test_enrichment_populates_displayName(spec_v1_1) -> None:
     assert val.get("displayName") == "SNOMED 840539006 display"
 
 
-def test_narrative_retention_when_include_narrative_true(spec_v1_1) -> None:
+def test_narrative_retention_when_narrative_retain(spec_v1_1) -> None:
     """
-    include_narrative=True leaves the original <text> intact.
+    narrative="retain" leaves the original <text> intact.
     """
 
     section = _build_section(
@@ -259,16 +259,16 @@ def test_narrative_retention_when_include_narrative_true(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        include_narrative=True,
+        narrative="retain",
     )
     assert result.narrative_disposition == "retained"
     text = _find_one(section, "hl7:text")
     assert text is not None and "Original narrative" in (text.text or "")
 
 
-def test_narrative_removal_when_include_narrative_false(spec_v1_1) -> None:
+def test_narrative_removal_when_narrative_remove(spec_v1_1) -> None:
     """
-    include_narrative=False replaces the narrative with a removal notice.
+    narrative="remove" replaces the narrative with a removal notice.
     """
 
     section = _build_section(
@@ -295,8 +295,100 @@ def test_narrative_removal_when_include_narrative_false(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        include_narrative=False,
+        narrative="remove",
     )
+    assert result.narrative_disposition == "removed"
+    text = _find_one(section, "hl7:text")
+    assert text is not None
+    assert "Original narrative" not in etree.tostring(text, encoding="unicode")
+
+
+def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
+    """
+    narrative="reconstruct" on Results swaps the stale source narrative for
+    a machine-derived table built from the surviving result entries.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <code code="30954-2"/>
+            <text>Original narrative content here.</text>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <code displayName="CBC panel"/>
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"
+                                  displayName="Hemoglobin"/>
+                            <effectiveTime value="20240115"/>
+                            <value xsi:type="PQ" value="9.2" unit="g/dL"/>
+                            <interpretationCode code="L" displayName="Low"/>
+                        </observation>
+                    </component>
+                </organizer>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+        narrative="reconstruct",
+    )
+    assert result.matches_found is True
+    assert result.narrative_disposition == "reconstructed"
+
+    text = _find_one(section, "hl7:text")
+    assert text is not None
+    serialized = etree.tostring(text, encoding="unicode")
+    assert "Original narrative" not in serialized
+    assert "machine-derived" in serialized
+    assert "CBC panel" in serialized
+    body_rows = text.xpath(".//hl7:tbody/hl7:tr", namespaces=HL7_NS)
+    assert len(body_rows) == 1
+
+
+def test_narrative_reconstruct_without_reconstructor_falls_back_to_removal(
+    spec_v1_1,
+) -> None:
+    """
+    narrative="reconstruct" on a refinable section with no registered
+    reconstructor (Problems) removes the narrative rather than leaving the
+    stale source text in place.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="11450-4"/>
+            <text>Original narrative content here.</text>
+            <entry>
+                <act classCode="ACT" moodCode="EVN">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+                    <entryRelationship typeCode="SUBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                            <value code="840539006" codeSystem="2.16.840.1.113883.6.96"/>
+                        </observation>
+                    </entryRelationship>
+                </act>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
+        section_specification=spec_v1_1.sections["11450-4"],
+        namespaces=HL7_NS,
+        narrative="reconstruct",
+    )
+    assert result.matches_found is True
     assert result.narrative_disposition == "removed"
     text = _find_one(section, "hl7:text")
     assert text is not None

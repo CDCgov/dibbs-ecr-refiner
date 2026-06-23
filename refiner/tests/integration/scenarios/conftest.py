@@ -248,6 +248,20 @@ SCENARIOS: list[Scenario] = [
         configuration_version=8,
         custom_codes=(CustomCode("385857005", "snomed", "Artificial respiration"),),
     ),
+    Scenario(
+        name="covid_results_reconstruction",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=9,
+        section_overrides=(
+            SectionOverride(current_code="30954-2", narrative="reconstruct"),
+        ),
+    ),
 ]
 
 # name -> Scenario lookup for the explicit-assertion suite, which references
