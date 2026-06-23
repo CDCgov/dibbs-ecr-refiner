@@ -318,6 +318,52 @@ class TestConfigurationExportSectionsCsv:
                     f"Expected N/A for Narrative Data on excluded section, got {row['Narrative Data']!r}"
                 )
 
+    async def test_sections_csv_coded_data_column_values(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections CSV "Coded Data" column should only contain valid values for included sections.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        for row in reader:
+            if row["Include"] == "Yes":
+                assert row["Coded Data"] in {"Keep original", "Refine"}, (
+                    f"Unexpected Coded Data value: {row['Coded Data']!r}"
+                )
+
+    async def test_sections_csv_narrative_data_column_values(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections CSV "Narrative Data" column should only contain valid values for included sections.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        for row in reader:
+            if row["Include"] == "Yes":
+                assert row["Narrative Data"] in {
+                    "Keep original",
+                    "Exclude",
+                    "Reconstruct",
+                }, f"Unexpected Narrative Data value: {row['Narrative Data']!r}"
+
     async def test_sections_csv_body_is_non_empty(
         self, setup, authed_client, get_condition_id, create_config
     ):

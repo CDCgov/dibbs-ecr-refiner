@@ -144,6 +144,7 @@ def _get_coded_data_value(action: DbSectionAction, included: bool) -> str:
 
     if action == "retain":
         return "Keep original"
+
     if action == "refine":
         return "Refine"
 
@@ -156,11 +157,11 @@ def _get_narrative_data_value(narrative: DbNarrativeAction, included: bool) -> s
 
     if narrative == "retain":
         return "Keep original"
-    if narrative == "remove":
-        return "Remove"  # TODO: Should this be `Exclude` to match the UI?
-    # TODO: should there be a case for `reconstruct`?
 
-    return "N/A"
+    if narrative == "remove":
+        return "Exclude"
+
+    return "Reconstruct"
 
 
 async def _build_config_csv(
