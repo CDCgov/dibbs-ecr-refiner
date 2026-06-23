@@ -2,7 +2,7 @@
 
 _Updated 6/23/26_
 
-This document will outline the process for releasing a new version of the eCR Refiner web application and AWS Lambda function, along with roles and responsibilites of those involved in the release process.
+This document will outline the process for releasing a new version of the eCR Refiner web application and AWS Lambda function, along with roles and responsibilities of those involved in the release process.
 
 **Prerequisites:**
 
