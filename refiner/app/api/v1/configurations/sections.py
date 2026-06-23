@@ -28,6 +28,7 @@ from app.services.ecr.policy import (
     NARRATIVE_ONLY_SECTIONS,
     DisabledSection,
     NarrativeOnlySection,
+    ReconstructableSection,
 )
 
 router = APIRouter(prefix="/{configuration_id}/sections")
@@ -44,6 +45,7 @@ class UpdateSectionProcessingResponse:
     # Orval generates them as constant enums on the frontend
     disabled_section: list[DisabledSection]
     narrative_only_section: list[NarrativeOnlySection]
+    reconstructable_section: list[ReconstructableSection]
 
 
 @router.post(
@@ -206,6 +208,7 @@ async def update_section(
         section_updated_code=section_update.code,
         narrative_only_section=list(NarrativeOnlySection),
         disabled_section=list(DisabledSection),
+        reconstructable_section=list(ReconstructableSection),
     )
 
 
