@@ -87,6 +87,30 @@ class TestConfigurationExportZip:
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestConfigurationExportCodesCsv:
+    async def test_codes_csv_has_correct_headers(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Codes CSV should have the correct column headers.
+        """
+        condition_id = await get_condition_id("Amebiasis")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = _get_csv_from_zip(response.content, r"Code_Export")
+        reader = csv.DictReader(StringIO(content))
+        assert reader.fieldnames == [
+            "Code Type",
+            "Condition",
+            "Code System",
+            "Code",
+            "Display Name",
+        ]
+
     async def test_export_includes_all_codes_from_multiple_codesets(
         self,
         setup,
