@@ -15,16 +15,10 @@ import { CsvImportStep } from '../..';
 import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import {
+  DbCodeSystem,
   IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
-
-export const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
-12345,Other,Other Example
-6789,ICD-10,ICD-10 Example
-1111-1,LOINC,LOINC Example
-159285,SNOMED,SNOMED Example
-143,CVX,CVX Example`;
 
 type UploadCsvError = {
   response?: {
@@ -153,6 +147,7 @@ export function ImportCustomCodes({
 
           const previewItems = res.data.preview_items;
           const codeSystems = res.data.code_systems;
+
           setCodeSystems(codeSystems);
           setPreviewItems(previewItems);
           setStep('preview');
@@ -335,6 +330,7 @@ export function ImportCustomCodes({
             <UploadInstructions
               handleButtonClick={handleFileUpload}
               disabled={disabled}
+              codeSystems={codeSystems}
             />
             {error && <div className="text-sm text-red-600">{error}</div>}
           </div>
@@ -493,14 +489,21 @@ export function ImportCustomCodes({
 type UploadInstructionProps = {
   handleButtonClick: () => void;
   disabled: boolean;
+  codeSystems: IndexedCodeSystem | null;
 };
 
 function UploadInstructions({
   handleButtonClick,
   disabled,
+  codeSystems,
 }: UploadInstructionProps) {
+  const uploadTemplateCsvContent = codeSystems
+    ? buildCsvDownloadTemplate(Object.values(codeSystems))
+    : null;
+
   const downloadTemplate = () => {
-    const blob = new Blob([UPLOAD_TEMPLATE_CSV_CONTENT], {
+    if (!uploadTemplateCsvContent) return;
+    const blob = new Blob([uploadTemplateCsvContent], {
       type: 'text/csv;charset=utf-8;',
     });
     const url = URL.createObjectURL(blob);
@@ -524,9 +527,15 @@ function UploadInstructions({
           <p className="text-sm">
             Your spreadsheet must follow the format of this template.
           </p>
-          <Button variant="secondary" type="button" onClick={downloadTemplate}>
-            Download template
-          </Button>
+          {uploadTemplateCsvContent && (
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={downloadTemplate}
+            >
+              Download template
+            </Button>
+          )}
         </div>
       </div>
 
@@ -554,4 +563,21 @@ function UploadInstructions({
       </div>
     </>
   );
+}
+
+function buildCsvDownloadTemplate(systemsSupported: DbCodeSystem[]) {
+  const headers = 'code_number,code_system,display_name';
+
+  let content = headers;
+  systemsSupported.forEach((s) => {
+    const randomCode = Array.from({ length: 8 }, () =>
+      Math.floor(Math.random() * 10)
+    ).join('');
+
+    const currentRow =
+      randomCode + ',' + s.display_name + `${s.display_name} Example`;
+    content += currentRow + '\n';
+  });
+
+  return content;
 }
