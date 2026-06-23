@@ -4,8 +4,8 @@ from typing import Final
 from app.core.models.types import XMLFiles
 from app.services.ecr.augment import AugmentationRun
 from app.services.pipeline import (
+    RefinementContext,
     RefinementResult,
-    RefinementTrace,
     create_augmentation_run_from_xml_files,
     refine_for_condition,
 )
@@ -62,7 +62,6 @@ def make_fixed_run(xml_files: XMLFiles) -> AugmentationRun:
 def refine_one(
     xml_files: XMLFiles,
     processed_configuration: ProcessedConfiguration,
-    rsg_code: str,
     canonical_url: str,
     jurisdiction_code: str = test_user_jurisdiction_id,
     configuration_version: int | None = None,
@@ -107,9 +106,8 @@ def refine_one(
     if run is None:
         run = make_fixed_run(xml_files)
 
-    trace = RefinementTrace(
-        jurisdiction_code=jurisdiction_code,
-        rsg_code=rsg_code,
+    context = RefinementContext(
+        jurisdiction_id=jurisdiction_code,
         canonical_url=canonical_url,
         configuration_version=configuration_version,
     )
@@ -117,6 +115,6 @@ def refine_one(
     return refine_for_condition(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
-        trace=trace,
+        context=context,
         run=run,
     )

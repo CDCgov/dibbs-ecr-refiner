@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from app.services.pipeline import RefinementResult
+
 from ...unit.conftest import normalize_xml
 from .conftest import SCENARIOS, Scenario, load_scenario_xml_files
 from .harness import refine_one
@@ -28,19 +30,15 @@ def _snapshot_dir(scenario: Scenario) -> Path:
 # * sorted-key json serialization makes diffs trivial to read
 
 
-def _summary_from_result(result) -> dict:  # noqa: ANN001 - RefinementResult, avoid import cycle
+def _summary_from_result(result: RefinementResult) -> dict:  # noqa: ANN001 - RefinementResult, avoid import cycle
     return {
-        "refinement_outcome": result.trace.refinement_outcome,
-        "configuration_resolved": result.trace.configuration_resolved,
-        "configuration_version": result.trace.configuration_version,
-        "canonical_url": result.trace.canonical_url,
-        "skip_reason": result.trace.skip_reason,
-        "error_detail": result.trace.error_detail,
-        "eicr_size_reduction_percentage": result.trace.eicr_size_reduction_percentage,
-        "augmented_eicr_id": result.augmented_eicr_result.augmented_doc_id,
-        "augmented_rr_id": result.augmented_rr_result.augmented_doc_id,
-        "original_eicr_id": result.augmented_eicr_result.original_doc_id,
-        "original_rr_id": result.augmented_rr_result.original_doc_id,
+        "configuration_version": result.report.configuration_version,
+        "canonical_url": result.report.canonical_url,
+        "eicr_size_reduction_percentage": result.metrics.eicr.size_reduction_percentage,
+        "augmented_eicr_id": result.report.augmented_eicr_result.augmented_doc_id,
+        "augmented_rr_id": result.report.augmented_rr_result.augmented_doc_id,
+        "original_eicr_id": result.report.augmented_eicr_result.original_doc_id,
+        "original_rr_id": result.report.augmented_rr_result.original_doc_id,
     }
 
 
@@ -87,7 +85,6 @@ async def test_scenario_matches_snapshot(
         # bypassing it lets us reuse arbitrary test data without standing up
         # matching fake jurisdictions
         jurisdiction_code=test_user_jurisdiction_id,
-        rsg_code=scenario.rsg_code,
         canonical_url=canonical_url,
         configuration_version=scenario.configuration_version,
     )
@@ -96,12 +93,12 @@ async def test_scenario_matches_snapshot(
     # catch invalid refined output before either committing it as a
     # snapshot (update mode) or attempting to compare against a possibly
     # stale snapshot (compare mode)
-    validate_refined_document(result.refined_eicr, "eICR", scenario.name)
-    validate_refined_document(result.refined_rr, "RR", scenario.name)
+    validate_refined_document(result.documents.eicr, "eICR", scenario.name)
+    validate_refined_document(result.documents.rr, "RR", scenario.name)
 
     actual_summary = _summary_from_result(result)
-    actual_eicr = normalize_xml(result.refined_eicr)
-    actual_rr = normalize_xml(result.refined_rr)
+    actual_eicr = normalize_xml(result.documents.eicr)
+    actual_rr = normalize_xml(result.documents.rr)
 
     snapshot_dir = _snapshot_dir(scenario)
     trace_path = snapshot_dir / "expected_trace.json"

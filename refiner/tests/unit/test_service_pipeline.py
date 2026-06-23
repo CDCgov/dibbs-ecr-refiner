@@ -7,8 +7,9 @@ from app.core.models.types import XMLFiles
 from app.services.assets import get_asset_path
 from app.services.ecr.model import JurisdictionReportableConditions
 from app.services.pipeline import (
+    RefinementContext,
+    RefinementException,
     RefinementResult,
-    RefinementTrace,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     refine_for_condition,
@@ -128,9 +129,9 @@ class TestRefineForCondition:
         Given a valid ProcessedConfiguration, refinement should produce
         both a refined eICR and a refined RR.
         """
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
+
+        context = RefinementContext(
+            jurisdiction_id="SDDH",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
         )
@@ -139,15 +140,15 @@ class TestRefineForCondition:
         result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
-            trace=trace,
+            context=context,
             run=run,
         )
 
         assert isinstance(result, RefinementResult)
-        assert result.refined_eicr
-        assert result.refined_rr
-        assert len(result.refined_eicr) > 0
-        assert len(result.refined_rr) > 0
+        assert result.documents.eicr
+        assert result.documents.rr
+        assert len(result.documents.eicr) > 0
+        assert len(result.documents.rr) > 0
 
     def test_trace_records_success(
         self,
@@ -158,9 +159,8 @@ class TestRefineForCondition:
         On successful refinement, the trace should be marked as refined
         with configuration_resolved=True and a size reduction percentage.
         """
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
+        context = RefinementContext(
+            jurisdiction_id="SDDH",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
         )
@@ -169,24 +169,22 @@ class TestRefineForCondition:
         result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
-            trace=trace,
+            context=context,
             run=run,
         )
 
-        assert result.trace.configuration_resolved is True
-        assert result.trace.refinement_outcome == "refined"
-        assert result.trace.eicr_size_reduction_percentage is not None
-        assert result.trace.error_detail is None
+        assert result.metrics.eicr.size_reduction_percentage is not None
+        assert result.metrics.eicr.size_mib is not None
 
     def test_trace_records_error_on_failure(self, sample_xml_files: XMLFiles):
         """
         If refinement raises an exception, the trace should capture the
         error before re-raising.
         """
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
+        context = RefinementContext(
+            jurisdiction_id="SDDH",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            configuration_version=1,
         )
         run = create_augmentation_run_from_xml_files(sample_xml_files)
 
@@ -196,82 +194,13 @@ class TestRefineForCondition:
             "app.services.pipeline.create_eicr_refinement_plan",
             side_effect=Exception("plan creation failed"),
         ):
-            with pytest.raises(Exception, match="plan creation failed"):
+            with pytest.raises(
+                RefinementException, match="Refinement failed for given condition"
+            ) as exc_info:
                 refine_for_condition(
                     xml_files=sample_xml_files,
                     processed_configuration=MagicMock(),
-                    trace=trace,
+                    context=context,
                     run=run,
                 )
-
-        assert trace.refinement_outcome == "error"
-        assert trace.error_detail == "plan creation failed"
-        assert trace.configuration_resolved is True
-
-    def test_raises_when_trace_has_no_canonical_url(self, sample_xml_files: XMLFiles):
-        """
-        canonical_url participates in the deterministic identifier
-        derivation (via its trailing UUID). Refinement must not run
-        without it resolved on the trace; the pipeline raises a clear
-        ValueError rather than silently producing identifiers seeded
-        with "None".
-        """
-
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
-            # canonical_url intentionally omitted
-        )
-
-        with pytest.raises(ValueError, match="canonical_url"):
-            refine_for_condition(
-                xml_files=sample_xml_files,
-                processed_configuration=MagicMock(),
-                trace=trace,
-                run=MagicMock(),
-            )
-
-
-# =============================================================================
-# TRACE INITIALIZATION
-# =============================================================================
-
-
-class TestRefinementTrace:
-    """
-    Tests for the RefinementTrace dataclass defaults and behavior.
-    """
-
-    def test_default_values(self):
-        """
-        A newly created trace should have sensible defaults.
-        """
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
-        )
-
-        assert trace.jurisdiction_code == "SDDH"
-        assert trace.rsg_code == "840539006"
-        assert trace.canonical_url is None
-        assert trace.configuration_version is None
-        assert trace.configuration_resolved is False
-        assert trace.refinement_outcome == "skipped"
-        assert trace.skip_reason is None
-        assert trace.eicr_size_reduction_percentage is None
-        assert trace.error_detail is None
-
-    def test_skip_trace(self):
-        """
-        A trace for a skipped condition should capture the reason.
-        """
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
-            refinement_outcome="skipped",
-            skip_reason="no_active_configuration",
-        )
-
-        assert trace.refinement_outcome == "skipped"
-        assert trace.skip_reason == "no_active_configuration"
-        assert trace.configuration_resolved is False
+            assert exc_info.value.detail == "plan creation failed"
