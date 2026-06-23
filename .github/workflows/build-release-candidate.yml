@@ -32,6 +32,20 @@ jobs:
         with:
           ref: ${{ github.event.inputs.ref }}
 
+      - name: Print job arguments
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          REF="${{ github.event.inputs.ref }}"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+
+          echo "===== JOB INPUTS ====="
+          echo "version: $VERSION"
+          echo "ref: $REF"
+          echo "release_notes: $RELEASE_NOTES"
+          echo "dry_run: $DRY_RUN"
+          echo "=================================="
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -63,11 +77,6 @@ jobs:
             exit 1
           fi
 
-      - name: Make repo owner lowercase
-        id: repo
-        run: |
-          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
       - name: Check if stable tag already exists
         run: |
           VERSION="${{ github.event.inputs.version }}"
@@ -76,12 +85,17 @@ jobs:
             exit 1
           fi
 
+      - name: Make repo owner lowercase
+        id: repo
+        run: |
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Determine RC Docker image tags
         id: vars
         run: |
           VERSION="${{ github.event.inputs.version }}"
           RC="${{ github.event.inputs.rc }}"
-          TAG="${VERSION}-${RC}"
+          TAG="${VERSION}"
 
           ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
 
