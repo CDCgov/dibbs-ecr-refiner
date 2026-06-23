@@ -217,7 +217,7 @@ class TestRegressionLxmlPrettyPrintGotcha:
         ns = {"hl7": HL7}
         text_el = root.find(".//hl7:section/hl7:text", ns)
         footnote = etree.SubElement(
-            text_el, f"{{{HL7}}}footnote", ID="ecr-refinement-test"
+            text_el, f"{{{HL7}}}footnote", ID="ecr-refiner-test"
         )
         para = etree.SubElement(footnote, f"{{{HL7}}}paragraph")
         content = etree.SubElement(para, f"{{{HL7}}}content", styleCode="Bold")

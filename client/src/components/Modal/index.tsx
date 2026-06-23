@@ -57,7 +57,7 @@ function Modal({
   open,
   onClose,
   children,
-  position = 'center',
+  position = 'top',
   maxWidth = 'lg',
   className,
 }: ModalProps) {
@@ -68,7 +68,7 @@ function Modal({
 
         <div
           className={classNames(
-            'fixed inset-0 z-50 flex justify-center overflow-auto p-4',
+            'fixed inset-0 z-50 flex justify-center overflow-auto pt-15',
             {
               'items-center': position === 'center',
               'items-start': position === 'top',

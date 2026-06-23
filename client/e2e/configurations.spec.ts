@@ -44,9 +44,11 @@ test.describe('Configurations screen', () => {
       'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)'
     );
     await expect(page.getByRole('option', { name: 'COVID-19' })).toBeVisible();
-    await page.getByRole('option', { name: 'COVID-19' }).click();
-
-    await expect(page.getByText('COVID-19')).toBeVisible();
+    const covidOption = page.getByRole('option', { name: 'COVID-19' });
+    await covidOption.click();
+    await expect(covidOption).not.toBeVisible();
+    await expect(page.getByText('Selected condition group')).toBeVisible();
+    await expect(page.getByRole('table', { name: 'COVID-19' })).toBeVisible();
     await expect(page.getByText('1001411000124108')).toBeVisible();
     await expect(
       page.getByText(
