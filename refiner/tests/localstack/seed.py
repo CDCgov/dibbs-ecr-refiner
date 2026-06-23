@@ -74,7 +74,7 @@ def seed_localstack(s3_client):
     # But seed.py is a script. Let's assume the app is running.
 
     async def build_config():
-        async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+        async with httpx.AsyncClient(base_url="http://localhost:8080") as client:
             builder = ScenarioBuilder(client)
             return await builder.build_and_activate(
                 BASELINE_SCENARIO, jurisdiction_id="SDDH"
