@@ -33,7 +33,7 @@ jobs:
           ref: ${{ github.event.inputs.ref }}
           fetch-depth: 0
 
-      - name: Print job arguments
+      - name: Print workflow inputs
         run: |
           VERSION="${{ github.event.inputs.version }}"
           REF="${{ github.event.inputs.ref }}"
