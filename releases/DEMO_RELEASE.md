@@ -2,7 +2,7 @@
 
 We have a [GitHub action](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/trigger_demo_workflow.yaml) to deploy to our demo environment on demand whenever a new release is ready to go out. **Doing so will cause the demo site to temporarily go down / require a manual step to get it back up, so deploy using this method only when a few seconds of downtime is acceptable.**
 
-## Prerequiste permissions
+## Prerequisite permissions
 
 - Access/permissions to run actions in the Skylight infra repo.
 - Access to the Skylight Azure environment and the resources within the Refiner container instances / DIBBs app hub.
