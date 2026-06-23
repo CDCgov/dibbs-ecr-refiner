@@ -22,7 +22,9 @@ import {
 export const UPLOAD_TEMPLATE_CSV_CONTENT = `code_number,code_system,display_name
 12345,Other,Other Example
 6789,ICD-10,ICD-10 Example
-99999A,LOINC,LOINC Example`;
+1111-1,LOINC,LOINC Example
+159285,SNOMED,SNOMED Example
+143,CVX,CVX Example`;
 
 type UploadCsvError = {
   response?: {
