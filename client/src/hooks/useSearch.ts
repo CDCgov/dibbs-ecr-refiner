@@ -6,7 +6,9 @@ export function useSearch<T>(data: T[], options?: IFuseOptions<T>) {
 
   // Create Fuse instance only when data/options change
   const fuse = useMemo(() => {
-    return new Fuse(data, options);
+    const searchOptions = { ...options };
+
+    return new Fuse(data, searchOptions);
   }, [data, options]);
 
   // Search results

@@ -51,7 +51,7 @@ vi.mock('../../api/configurations/configurations', async () => {
             codes: [],
             code_systems: {},
           }, // not needed for these tests
-          rsg_codes: [],
+          rsg_codes: [{ display: 'Anaplasmosis (disorder)', code: '13906002' }],
           included_conditions: [
             { id: '1', display_name: 'Anaplasmosis', associated: true },
             {
@@ -74,8 +74,18 @@ vi.mock('../../api/conditions/conditions', async () => {
     useGetConditions: vi.fn(() => ({
       data: {
         data: [
-          { id: '1', display_name: 'Anaplasmosis' },
-          { id: 'exists-id', display_name: 'already-created' },
+          {
+            id: '1',
+            display_name: 'Anaplasmosis',
+            rsg_codes: [
+              { display: 'Anaplasmosis (disorder)', code: '13906002' },
+            ],
+          },
+          {
+            id: 'exists-id',
+            display_name: 'already-created',
+            rsg_codes: [],
+          },
         ],
       },
     })),
@@ -234,6 +244,8 @@ describe('Configurations Page', () => {
     // re-enter info
     await user.type(conditionInput, 'Anaplasmosis{enter}');
     expect(conditionInput).toHaveValue('Anaplasmosis');
+    expect(screen.getByText('Anaplasmosis (disorder)')).toBeVisible();
+    expect(screen.getByText('13906002')).toBeVisible();
 
     const addConditionButton = screen.getByRole('button', {
       name: 'Set up configuration',

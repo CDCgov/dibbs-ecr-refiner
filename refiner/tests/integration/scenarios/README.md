@@ -32,16 +32,16 @@ A snapshot change should ride with the change that caused it. If you alter a sce
 
 ## Regenerating the stakeholder report
 
-`REPORT.md` is an auto-generated summary of the suite intended for stakeholder review. It pulls from the committed snapshots and the roll-up coverage table inside `authoring/build_report.py`. Regenerate it whenever you update snapshots or change scenario coverage:
+`REPORT.md` is an auto-generated summary of the suite intended for stakeholder review. It pulls from the committed snapshots and the roll-up coverage table inside `build_report.py`. Regenerate it whenever you update snapshots or change scenario coverage:
 
 ```bash
 pytest tests/integration/scenarios/ --update-snapshots
-python tests/integration/scenarios/authoring/build_report.py
+python tests/integration/scenarios/build_report.py
 ```
 
 Commit both the regenerated snapshots and the regenerated `REPORT.md` together. A follow-up PR will add a CI step that runs `build_report.py` and fails with `git diff --exit-code` if the committed `REPORT.md` is out of date; until that lands, the discipline is on the developer.
 
-To update the roll-up coverage matrix shown in the report (e.g. after adding a scenario that closes a gap, or after Tim or another stakeholder shares additional concerns), edit the `ROLLUP_COVERAGE` list at the top of `authoring/build_report.py` and re-run the script.
+To update the coverage tables shown in the report, edit the data lists at the top of `build_report.py` and re-run the script: `ROLLUP_COVERAGE` for Tim's numbered Roll-up issues (e.g. after adding a scenario that closes a gap, or after a stakeholder shares additional concerns), and `CAPABILITY_COVERAGE` for product capabilities the suite pins that aren't Roll-up issues (e.g. narrative reconstruction). A scenario listed in either gets a back-reference in its detail section.
 
 ## How configurations are built
 
@@ -65,7 +65,7 @@ pytest tests/integration/scenarios/test_all_sections_covid_influenza.py \
 ```
 
 1. Inspect the snapshots; commit them.
-2. Run `python tests/integration/scenarios/authoring/build_report.py` to regenerate `REPORT.md`.
+2. Run `python tests/integration/scenarios/build_report.py` to regenerate `REPORT.md`.
 3. Commit `REPORT.md` alongside the new snapshots and the `conftest.py` change.
 
 There is no `awslocal s3 cp` step and no committed `active.json` — authoring is entirely in code via the recipe. If the condition's `display_name` doesn't resolve against the seeded TES data, `get_condition_id` fails diagnostically; query the `conditions` table to find the exact name.

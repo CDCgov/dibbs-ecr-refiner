@@ -135,8 +135,8 @@ SET default_table_access_method = heap;
 
 CREATE TABLE public.codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name text NOT NULL,
-    value text NOT NULL,
+    display text CONSTRAINT codes_name_not_null NOT NULL,
+    code text CONSTRAINT codes_value_not_null NOT NULL,
     version text NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -262,8 +262,8 @@ CREATE TABLE public.configurations_sections (
 
 CREATE TABLE public.custom_codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name text NOT NULL,
-    value text NOT NULL,
+    display text CONSTRAINT custom_codes_name_not_null NOT NULL,
+    code text CONSTRAINT custom_codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -372,7 +372,7 @@ ALTER TABLE ONLY public.codes
 --
 
 ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, value);
+    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, code);
 
 
 --
@@ -476,7 +476,7 @@ ALTER TABLE ONLY public.custom_codes
 --
 
 ALTER TABLE ONLY public.custom_codes
-    ADD CONSTRAINT custom_codes_system_id_value_key UNIQUE (system_id, value);
+    ADD CONSTRAINT custom_codes_system_id_value_key UNIQUE (system_id, code);
 
 
 --
@@ -853,4 +853,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260603120000'),
     ('20260604134336'),
     ('20260608203714'),
+    ('20260615135704'),
     ('20260615170607');

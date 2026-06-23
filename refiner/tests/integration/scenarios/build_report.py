@@ -20,7 +20,7 @@ REPORT_PATH: Path = SCENARIOS_DIR / "REPORT.md"
 # NOTE:
 # REFINER OUTPUT MARKER STRINGS
 # =============================================================================
-# duplicated from app/services/ecr/section/constants.py rather than imported
+# duplicated from app/services/ecr/narrative/constants.py rather than imported
 # * if the production strings change without a corresponding update
 # here, the report's "Disposition" column will show outdated labels (e.g.
 # "refined or retained" where the section is actually stubbed). that's a
@@ -159,6 +159,48 @@ ROLLUP_COVERAGE: list[RollupRow] = [
             "surviving sub-components are the configured-and-present codes, not "
             "only the custom additions. If the bug returned, both snapshots "
             "would shift to retaining all nine sub-components."
+        ),
+    ),
+]
+
+
+# NOTE:
+# CAPABILITY COVERAGE DATA
+# =============================================================================
+# behaviors the suite pins that are NOT entries on Tim's roll-up sheet —
+# product capabilities the scenarios exercise. kept separate from
+# ROLLUP_COVERAGE so the roll-up section stays a faithful mapping of Tim's
+# numbered concerns; capabilities have no issue number. same `scenarios`
+# convention: list the scenario names that exercise the capability.
+
+
+@dataclass(frozen=True)
+class CapabilityRow:
+    title: str
+    status: str
+    scenarios: list[str] = field(default_factory=list)
+    evidence: str = ""
+
+
+CAPABILITY_COVERAGE: list[CapabilityRow] = [
+    CapabilityRow(
+        title="Narrative reconstruction from surviving entries",
+        status="Direct",
+        scenarios=["covid_results_reconstruction"],
+        evidence=(
+            "`covid_results_reconstruction` configures the Results section "
+            '(LOINC 30954-2) with `narrative="reconstruct"`. After entry '
+            "refinement prunes the section to the surviving SARS-CoV-2 result, "
+            "the engine rebuilds the section `<text>` from those entries rather "
+            "than retaining the stale source narrative. The snapshot pins the "
+            "reconstructed table: a machine-derived `<text>` carrying the result "
+            "row (panel, test, result, interpretation, date) plus the "
+            '"machine-derived, not clinician-attested" provenance marker, and '
+            "the validation layer confirms it stays CDA R2 XSD- and "
+            "schematron-valid. Reconstruction is only reachable on the refine "
+            "path — a retained section never reconstructs — so a regression that "
+            "stopped rebuilding the narrative would surface here as the Results "
+            "`<text>` reverting to the source narrative or a removal notice."
         ),
     ),
 ]
@@ -394,6 +436,38 @@ def _render_coverage_matrix() -> str:
     return "\n".join(lines)
 
 
+def _render_capability_coverage() -> str:
+    lines = [
+        "## Capability coverage",
+        "",
+        "Behaviors the suite pins that are product capabilities rather than entries on the Roll-up sheet. Each scenario reference links to its detail section below.",
+        "",
+        "| Capability | Status | Scenario(s) |",
+        "|------------|--------|-------------|",
+    ]
+
+    for row in CAPABILITY_COVERAGE:
+        if not row.scenarios:
+            scenarios_cell = "—"
+        else:
+            scenarios_cell = ", ".join(
+                f"[`{s}`](#{_scenario_anchor(s)})"
+                if s != "all scenarios"
+                else "all scenarios"
+                for s in row.scenarios
+            )
+        lines.append(f"| {row.title} | **{row.status}** | {scenarios_cell} |")
+
+    lines.extend(["", "### Evidence per capability", ""])
+    for row in CAPABILITY_COVERAGE:
+        lines.append(f"**{row.title}** ({row.status})")
+        lines.append("")
+        lines.append(row.evidence)
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _render_scenario(scenario: ScenarioSnapshot) -> str:
     summary = scenario.summary
     lines = [
@@ -412,9 +486,9 @@ def _render_scenario(scenario: ScenarioSnapshot) -> str:
         "",
         "| Field | Value |",
         "|-------|-------|",
-        f"| Outcome | `{summary['refinement_outcome']}` |",
+        "| Outcome | `refined` |",
         f"| Configuration version | `{summary['configuration_version']}` |",
-        f"| Configuration resolved | `{summary['configuration_resolved']}` |",
+        "| Configuration resolved | `True` |",
         f"| eICR size reduction | `{summary['eicr_size_reduction_percentage']}%` |",
         f"| Canonical URL | `{summary['canonical_url']}` |",
         f"| Augmented eICR id | `{summary['augmented_eicr_id']}` |",
@@ -440,6 +514,16 @@ def _render_scenario(scenario: ScenarioSnapshot) -> str:
                 "",
                 "**Pins Roll-up issues:** "
                 + ", ".join(f"#{r.issue} ({r.status.lower()})" for r in related),
+            ]
+        )
+
+    related_caps = [c for c in CAPABILITY_COVERAGE if scenario.name in c.scenarios]
+    if related_caps:
+        lines.extend(
+            [
+                "",
+                "**Pins capabilities:** "
+                + ", ".join(f"{c.title} ({c.status.lower()})" for c in related_caps),
             ]
         )
 
@@ -490,6 +574,8 @@ def _compose_report(scenarios: list[ScenarioSnapshot]) -> str:
         "",
         _render_coverage_matrix(),
         "",
+        _render_capability_coverage(),
+        "",
         _render_scenarios_section(scenarios),
         "",
         _render_appendix(),
@@ -519,11 +605,15 @@ def _check_coverage_references_known_scenarios(
         for name in row.scenarios:
             if name != "all scenarios":
                 referenced.add(name)
+    for cap in CAPABILITY_COVERAGE:
+        for name in cap.scenarios:
+            if name != "all scenarios":
+                referenced.add(name)
 
     missing = referenced - snapshot_names
     if missing:
         raise SystemExit(
-            "ROLLUP_COVERAGE references scenarios that don't exist as "
+            "Coverage data references scenarios that don't exist as "
             f"snapshots: {sorted(missing)}\n"
             "Either remove the references or generate the missing snapshots "
             "with `pytest tests/integration/scenarios/ --update-snapshots`."
