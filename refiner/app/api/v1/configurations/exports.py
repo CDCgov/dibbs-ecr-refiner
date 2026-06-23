@@ -18,6 +18,8 @@ from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
+    DbNarrativeAction,
+    DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -125,11 +127,40 @@ def _build_sections_csv(
                     section.name,
                     section.code,
                     "Yes" if section.include else "No",
-                    section.action,
-                    section.narrative,
+                    _get_coded_data_value(
+                        action=section.action, included=section.include
+                    ),
+                    _get_narrative_data_value(
+                        narrative=section.narrative, included=section.include
+                    ),
                 ]
             )
         return csv_text.getvalue()
+
+
+def _get_coded_data_value(action: DbSectionAction, included: bool) -> str:
+    if not included:
+        return "N/A"
+
+    if action == "retain":
+        return "Keep original"
+    if action == "refine":
+        return "Refine"
+
+    return "N/A"
+
+
+def _get_narrative_data_value(narrative: DbNarrativeAction, included: bool) -> str:
+    if not included:
+        return "N/A"
+
+    if narrative == "retain":
+        return "Keep original"
+    if narrative == "remove":
+        return "Remove"  # TODO: Should this be `Exclude` to match the UI?
+    # TODO: should there be a case for `reconstruct`?
+
+    return "N/A"
 
 
 async def _build_config_csv(
