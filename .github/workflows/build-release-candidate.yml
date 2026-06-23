@@ -176,7 +176,7 @@ jobs:
 
       - name: Create draft GitHub release notes
         if: ${{ github.event.inputs.release_notes == 'true' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.vars.outputs.version_tag }}
           name: Release ${{ github.event.inputs.version }}

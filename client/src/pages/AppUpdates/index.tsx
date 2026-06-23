@@ -21,6 +21,7 @@ export function AppUpdates() {
             <div key={d.id} className="bg-white px-4 py-4">
               <h3 className="mb-1 text-base font-bold text-black!">
                 {dateInfo.toLocaleDateString('en-US', {
+                  day: '2-digit',
                   month: 'long',
                   year: 'numeric',
                 })}
