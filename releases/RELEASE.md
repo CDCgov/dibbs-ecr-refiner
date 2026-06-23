@@ -19,7 +19,7 @@ This document will outline the process for releasing a new version of the eCR Re
    2. `version` = Semantic version to use in MAJOR.MINOR.POINT format (example: `1.4.0`). Bump the versioning according to the below heuristics:
       - Bump POINT if there's ever a patch of security issues in a live image or a need to mitigate a scan on the same bundle of features
       - Bump MINOR if there are feature releases that need to be made (get product sign off)
-      - Bump MAJOR if there are fundamental app changes larger than sequential feature updates (get product sign off)
+      - Bump MAJOR if there are breaking architectural changes or large, non-incremental changes (get product sign off)
    3. `dry_run` = `false` (feel free to try using `true` first if you'd like to run a test without creating anything)
 2. The job will push the new RC images to ECR and GHCR, which are ready to be deployed and tested. These images can be found at:
    - [refiner](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Frefiner)
