@@ -428,6 +428,34 @@ class TestConfigurationExportSectionsCsv:
         row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Narrative Data"] == "Exclude"
 
+    async def test_sections_csv_retain_narrative_shows_keep_original(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
+    ):
+        """
+        A section with narrative=retain should show "Keep original" in the Narrative Data column.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        config_id = config["id"]
+
+        section_loinc = "10160-0"
+
+        await update_section_processing(
+            config_id=config_id, current_code=section_loinc, narrative="retain"
+        )
+
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
+        assert response.status_code == status.HTTP_200_OK
+
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+        row = row = _get_section_row(content=content, loinc=section_loinc)
+        assert row["Narrative Data"] == "Keep original"
+
     async def test_sections_csv_excluded_section_shows_no_and_na(
         self,
         setup,
