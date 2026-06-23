@@ -27,8 +27,6 @@ from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
     AugmentationRun,
     RefinementContext,
-    RefinementMetrics,
-    RefinementReport,
     RefinementResult,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
@@ -635,26 +633,12 @@ def process_condition(
 
     state.metadata[jurisdiction_code][rsg_code] = True
 
-    log_refinement_summary(
-        rsg_code=rsg_code,
-        jurisdiction_code=jurisdiction_code,
-        metrics=result.metrics,
-        report=result.report,
-    )
-
-
-def log_refinement_summary(
-    rsg_code: str,
-    jurisdiction_code: str,
-    metrics: RefinementMetrics,
-    report: RefinementReport,
-) -> None:
     logger.info(
-        "Refinement complete.",
+        "Refinement complete for condition.",
         rsg_code=rsg_code,
         jurisidiction_code=jurisdiction_code,
-        metrics=asdict(metrics),
-        report=asdict(report),
+        metrics=asdict(result.metrics),
+        report=asdict(result.report),
         operation="log_summary",
     )
 
