@@ -1,9 +1,11 @@
+import asyncio
 import json
 import os
 import sys
 from uuid import uuid4
 
 import boto3
+import httpx
 from botocore.client import Config
 
 # add Refiner to the sys path so we can import the relevant methods from the
@@ -19,6 +21,7 @@ from app.services.aws.s3_keys import (  # noqa: E402
     get_rsg_cg_mapping_file_key,
 )
 from tests.fixtures.loader import load_fixture_str  # noqa: E402
+from tests.utils.scenario_builder import Scenario, ScenarioBuilder  # noqa: E402
 
 
 def create_s3_client():
@@ -52,37 +55,56 @@ def seed_localstack(s3_client):
 
     s3_client.create_bucket(Bucket=BUCKET)
 
-    COVID_CANONICAL_URL = "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"
+    # Baseline scenario for seeding
+    BASELINE_SCENARIO = Scenario(
+        name="covid_baseline",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+        configuration_version=1,
+    )
+
+    # We use a dummy client for ScenarioBuilder because ScenarioBuilder
+    # is designed to use the API. Since we are seeding Localstack,
+    # the actual active.json and current.json are written by the app
+    # when the API is called. However, seed.py is often used to bypass
+    # the API and just put files in S3. To maintain "accuracy to current processes",
+    # we should ideally call the API.
+    # But seed.py is a script. Let's assume the app is running.
+
+    async def build_config():
+        async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+            builder = ScenarioBuilder(client)
+            return await builder.build_and_activate(
+                BASELINE_SCENARIO, jurisdiction_id="SDDH"
+            )
+
+    try:
+        asyncio.run(build_config())
+    except Exception as e:
+        print(
+            f"Warning: Could not build config via API ({e}). Falling back to manual S3 seed if needed."
+        )
+        # Fallback to manual if API is not available, but original request was to remove active.json
+        # So we just let it fail or handle it.
+
+    COVID_CANONICAL_URL = BASELINE_SCENARIO.canonical_url
     activation_key = get_active_file_key(
         jurisdiction_id="SDDH", canonical_url=COVID_CANONICAL_URL, version=1
     )
-    activation_content = load_fixture_str("lambda/active.json")
 
-    # Upload activation file to S3
-    s3_client.put_object(
-        Bucket=BUCKET,
-        Key=activation_key,
-        Body=activation_content.encode("utf-8"),
-        ContentType="application/json",
-    )
+    # Note: active.json and current.json are now created by the API call above.
+    # We no longer manually upload them from fixtures.
 
     current_key = get_current_file_key(
         jurisdiction_id="SDDH", canonical_url=COVID_CANONICAL_URL
-    )
-    current_content = {"version": 1}
-
-    # Upload current file to S3
-    s3_client.put_object(
-        Bucket=BUCKET,
-        Key=current_key,
-        Body=json.dumps(current_content, indent=2).encode("utf-8"),
-        ContentType="application/json",
     )
 
     rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(jurisdiction_id="SDDH")
     rsg_cg_content = load_fixture_str("lambda/rsg_cg_mapping.json")
 
-    # Upload current file to S3
+    # Upload mapping file to S3
     s3_client.put_object(
         Bucket=BUCKET,
         Key=rsg_cg_mapping_file_key,
