@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Literal
 
 from lxml import etree
 
 from app.services.conditions.parsing import extract_uuid_from_canonical_url
 
-from ..core.exceptions import XMLValidationError
+from ..core.exceptions import RefinementException, XMLValidationError
 from ..core.models.types import XMLFiles
 from .ecr.augment import (
     REMAINDER_SCOPE,
@@ -36,8 +35,6 @@ from .terminology import ProcessedConfiguration
 # * the if-and-only-if rule for the remainder is currently enforced
 #   inside produce_remainder_rr_for_jurisdiction as a None return
 #   rather than being expressed structurally
-# * RefinementTrace is dual-purpose: it carries both pipeline input
-#   and execution output
 
 # NOTE:
 # METRICS
@@ -111,63 +108,49 @@ def create_augmentation_run_from_xml_files(
 
 
 # NOTE:
-# TRACE
+# RESULTS
 # =============================================================================
 
 
 @dataclass
-class RefinementTrace:
+class RefinementDocuments:
     """
-    Tracks a single jurisdiction/condition refinement through the pipeline.
-
-    Populated progressively as the pipeline executes. Both the webapp
-    testing service and the lambda production service use this to get
-    structured visibility into what happened and why.
-
-    The caller creates the trace with the context it knows (jurisdiction,
-    RSG code, canonical URL) and passes it into the pipeline functions,
-    which fill in the execution details (outcome, size reduction,
-    errors).
-
-    Attributes:
-        jurisdiction_code: The jurisdiction being processed (e.g., "SDDH").
-        rsg_code: The RSG SNOMED code from the RR that triggered this
-            refinement (e.g., "840539006" for COVID-19).
-        canonical_url: The TES condition grouper's canonical_url
-            (e.g., "https://tes.tools.aimsplatform.org/api/fhir/
-            ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"). Set by
-            the caller after resolving the RSG → grouper mapping.
-            The trailing UUID is what seeds the deterministic
-            augmented-document identifiers; carrying the full URL
-            keeps this field name aligned with conditions.canonical_url
-            and configurations.condition_canonical_url in the database.
-        configuration_version: The version number of the configuration
-            used for refinement. Set by the caller after resolution.
-        configuration_resolved: Whether a valid ProcessedConfiguration
-            was successfully built for this jurisdiction/condition pair.
-        refinement_outcome: The final status of the refinement attempt.
-        skip_reason: If outcome is "skipped", why it was skipped
-            (e.g., "no_mapping", "no_active_configuration").
-        eicr_size_reduction_percentage: The percentage by which the
-            eICR was reduced during refinement.
-        error_detail: If outcome is "error", the error message.
+    The refined XML output for the eICR/RR pair.
     """
 
-    jurisdiction_code: str
-    rsg_code: str
-    canonical_url: str | None = None
-    configuration_version: int | None = None
-    configuration_resolved: bool = False
-    refinement_outcome: Literal["refined", "skipped", "error"] = "skipped"
-    skip_reason: str | None = None
-    eicr_size_reduction_percentage: int | None = None
-    eicr_size_mib: float | None = None
-    error_detail: str | None = None
+    eicr: str
+    rr: str
 
 
-# NOTE:
-# RESULTS
-# =============================================================================
+@dataclass
+class RefinementMetricsEicr:
+    """
+    Metrics calculated during refinement related to the eICR document.
+    """
+
+    size_reduction_percentage: int
+    size_mib: float
+
+
+@dataclass
+class RefinementMetrics:
+    """
+    The metrics calculated during the refinement process.
+    """
+
+    eicr: RefinementMetricsEicr
+
+
+@dataclass
+class RefinementReport:
+    """
+    Data collected during refinement for reporting and logging purposes.
+    """
+
+    augmented_eicr_result: AugmentedResult
+    augmented_rr_result: AugmentedResult
+    canonical_url: str
+    configuration_version: int
 
 
 @dataclass
@@ -179,11 +162,9 @@ class RefinementResult:
     the refinement was executed.
     """
 
-    augmented_eicr_result: AugmentedResult
-    augmented_rr_result: AugmentedResult
-    refined_eicr: str
-    refined_rr: str
-    trace: RefinementTrace
+    documents: RefinementDocuments
+    metrics: RefinementMetrics
+    report: RefinementReport
 
 
 # NOTE:
@@ -223,12 +204,21 @@ def discover_reportable_conditions(
 # NOTE:
 # STAGE 2: REFINEMENT EXECUTION
 # =============================================================================
+@dataclass
+class RefinementContext:
+    """
+    Information about the condition being processed for refinement.
+    """
+
+    canonical_url: str
+    jurisdiction_id: str
+    configuration_version: int
 
 
 def refine_for_condition(
     xml_files: XMLFiles,
     processed_configuration: ProcessedConfiguration,
-    trace: RefinementTrace,
+    context: RefinementContext,
     run: AugmentationRun,
 ) -> RefinementResult:
     """
@@ -269,11 +259,7 @@ def refine_for_condition(
             have the same fidelity regardless of source — codes organized
             by system with display names, section processing rules, and
             included RSG codes.
-        trace: A pre-populated trace with jurisdiction and condition
-            context. This function fills in the execution details. The
-            trace's canonical_url must be set before calling — its
-            UUID suffix participates in the deterministic identifier
-            derivation.
+        context: Required context needed for refinement.
         run: The session-scoped AugmentationRun. Built once by the
             caller via create_augmentation_run_from_xml_files and
             threaded through every pipeline call in the session so
@@ -290,20 +276,6 @@ def refine_for_condition(
             a valid UUID.
     """
 
-    trace.configuration_resolved = True
-
-    # * canonical_url participates in the deterministic ID derivation
-    # via its trailing uuid; it must be resolved before refinement
-    # begins
-    # * callers (testing.py, lambda_function.py) set this when
-    # they resolve the RSG -> grouper mapping before calling
-    if trace.canonical_url is None:
-        raise ValueError(
-            "Cannot run refine_for_condition without a resolved "
-            "canonical_url on the trace. Caller must set this field "
-            "after resolving the RSG → grouper mapping."
-        )
-
     try:
         # * parse both documents up front so refinement and augmentation
         # can mutate the same trees
@@ -319,20 +291,20 @@ def refine_for_condition(
         # (raises if the trailing segment isn't UUID-shaped), which is
         # exactly the type augment_eicr/augment_rr now require — the
         # type is the validator, no separate shape check needed
-        condition_grouper_uuid = extract_uuid_from_canonical_url(trace.canonical_url)
+        condition_grouper_uuid = extract_uuid_from_canonical_url(context.canonical_url)
 
         # plan -> refine -> augment -> output (eICR)
         eicr_plan = create_eicr_refinement_plan(
             processed_configuration=processed_configuration,
             eicr_root=eicr_root,
             augmentation_timestamp=run.augmentation_time,
-            config_version=trace.configuration_version,
+            config_version=context.configuration_version,
         )
         refine_eicr(eicr_root=eicr_root, plan=eicr_plan)
         augmented_eicr_result = augment_eicr(
             eicr_root,
             run,
-            jurisdiction_id=trace.jurisdiction_code,
+            jurisdiction_id=context.jurisdiction_id,
             condition_grouper_uuid=condition_grouper_uuid,
         )
         refined_eicr = etree.tostring(eicr_root, encoding="unicode")
@@ -345,12 +317,10 @@ def refine_for_condition(
         augmented_rr_result = augment_rr(
             rr_root,
             run,
-            jurisdiction_id=trace.jurisdiction_code,
+            jurisdiction_id=context.jurisdiction_id,
             scope=condition_grouper_uuid,
         )
         refined_rr = etree.tostring(rr_root, encoding="unicode")
-
-        trace.refinement_outcome = "refined"
 
         # * pretty-print at the pipeline boundary so every consumer of
         # RefinementResult receives display-ready output
@@ -369,23 +339,29 @@ def refine_for_condition(
         # * one calculation, computed here, propagated through the
         # result so testing.py and lambda_function.py do not maintain
         # parallel computations that could drift
-        trace.eicr_size_reduction_percentage = _get_size_reduction_percentage(
-            unrefined=xml_files.eicr, refined=refined_eicr
-        )
-        trace.eicr_size_mib = get_file_size_in_mib(file_content=refined_eicr)
 
         return RefinementResult(
-            augmented_eicr_result=augmented_eicr_result,
-            augmented_rr_result=augmented_rr_result,
-            refined_eicr=refined_eicr,
-            refined_rr=refined_rr,
-            trace=trace,
+            documents=RefinementDocuments(eicr=refined_eicr, rr=refined_rr),
+            metrics=RefinementMetrics(
+                eicr=RefinementMetricsEicr(
+                    size_reduction_percentage=_get_size_reduction_percentage(
+                        unrefined=xml_files.eicr, refined=refined_eicr
+                    ),
+                    size_mib=get_file_size_in_mib(file_content=refined_eicr),
+                )
+            ),
+            report=RefinementReport(
+                augmented_eicr_result=augmented_eicr_result,
+                augmented_rr_result=augmented_rr_result,
+                canonical_url=context.canonical_url,
+                configuration_version=context.configuration_version,
+            ),
         )
 
     except Exception as e:
-        trace.refinement_outcome = "error"
-        trace.error_detail = str(e)
-        raise
+        raise RefinementException(
+            message="Refinement failed for given condition", detail=str(e)
+        )
 
 
 # NOTE:
