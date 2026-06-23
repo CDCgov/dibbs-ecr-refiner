@@ -275,13 +275,24 @@ class TestConfigurationExportSectionsCsv:
         assert names == sorted(names, key=str.lower)
 
     async def test_sections_csv_include_column_values(
-        self, setup, authed_client, get_condition_id, create_config
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
     ):
         """
         Sections CSV "Include" column should only contain "Yes" or "No".
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
+
+        # Exclude a section
+        await update_section_processing(
+            config_id=config["id"], current_code="10160-0", include=False
+        )
+
         response = await authed_client.get(
             f"/api/v1/configurations/{config['id']}/export"
         )
@@ -308,7 +319,9 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
-        await update_section_processing(config_id, "10160-0", action="refine")
+        await update_section_processing(
+            config_id=config_id, current_code="10160-0", action="refine"
+        )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
@@ -327,13 +340,15 @@ class TestConfigurationExportSectionsCsv:
         update_section_processing,
     ):
         """
-        A section with action=retain should show "Keep original" in the Coded Data column.
+        A section with action set to `retain` should show "Keep original" in the Coded Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
         config_id = config["id"]
 
-        await update_section_processing(config_id, "10160-0", action="retain")
+        await update_section_processing(
+            config_id=config_id, current_code="10160-0", action="retain"
+        )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
@@ -352,14 +367,14 @@ class TestConfigurationExportSectionsCsv:
         update_section_processing,
     ):
         """
-        A section with narrative=reconstruct should show "Reconstruct" in the Narrative Data column.
+        A section with narrative set to `reconstruct` should show "Reconstruct" in the Narrative Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
         config_id = config["id"]
 
         await update_section_processing(
-            config_id, "10160-0", action="refine", narrative="reconstruct"
+            config_id=config_id, current_code="10160-0", narrative="reconstruct"
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
@@ -385,7 +400,9 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
-        await update_section_processing(config_id, "10160-0", narrative="remove")
+        await update_section_processing(
+            config_id=config_id, current_code="10160-0", narrative="remove"
+        )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
@@ -404,13 +421,15 @@ class TestConfigurationExportSectionsCsv:
         update_section_processing,
     ):
         """
-        A section with include=False should show "No" and "N/A" for coded and narrative data.
+        A section with include set to `False` should show "No" and "N/A" for coded and narrative data.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
         config_id = config["id"]
 
-        await update_section_processing(config_id, "10160-0", include=False)
+        await update_section_processing(
+            config_id=config_id, current_code="10160-0", include=False
+        )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
