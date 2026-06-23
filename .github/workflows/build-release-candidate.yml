@@ -9,9 +9,6 @@ on:
       version:
         description: "Release version (e.g. 1.4.0)"
         required: true
-      rc:
-        description: "RC number (e.g. rc.1)"
-        required: true
       release_notes:
         description: "Create release notes?"
         type: boolean
@@ -34,6 +31,21 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.ref }}
+          fetch-depth: 0
+
+      - name: Print workflow inputs
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          REF="${{ github.event.inputs.ref }}"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+
+          echo "===== JOB INPUTS ====="
+          echo "version: $VERSION"
+          echo "ref: $REF"
+          echo "release_notes: $RELEASE_NOTES"
+          echo "dry_run: $DRY_RUN"
+          echo "=================================="
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -66,10 +78,11 @@ jobs:
             exit 1
           fi
 
-      - name: Validate RC format
+      - name: Check if stable tag already exists
         run: |
-          if [[ ! "${{ github.event.inputs.rc }}" =~ ^rc\.[0-9]+$ ]]; then
-            echo "RC must be in format rc.N (e.g. rc.1)"
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse --verify "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "Error: Tag $VERSION already exists"
             exit 1
           fi
 
@@ -83,7 +96,7 @@ jobs:
         run: |
           VERSION="${{ github.event.inputs.version }}"
           RC="${{ github.event.inputs.rc }}"
-          TAG="${VERSION}-${RC}"
+          TAG="${VERSION}"
 
           ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
 
@@ -163,7 +176,7 @@ jobs:
 
       - name: Create draft GitHub release notes
         if: ${{ github.event.inputs.release_notes == 'true' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.vars.outputs.version_tag }}
           name: Release ${{ github.event.inputs.version }}
