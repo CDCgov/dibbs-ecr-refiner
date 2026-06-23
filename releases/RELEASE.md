@@ -59,7 +59,7 @@ Once you have gotten the OK from APHL that the release candidate has passed vali
 
 1. Follow the instructions in [DEMO_RELEASE.md](./DEMO_RELEASE.md) to deploy the same image to the demo environment.
 
-1. Navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases)and hit "Publish release" to make the release notes live.
+1. Navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases) and hit "Publish release" to make the release notes live.
    ![Screenshot of publishing release](./publish_release.png)
 
 1. Communicate to APHL that the final release is ready for them to promote up to prod, along with the version number. They should be able to pull the newly tagged image and promote it up to the prod environment.
