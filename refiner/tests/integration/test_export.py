@@ -206,7 +206,7 @@ class TestConfigurationExport:
                     f"Expected blank Condition for custom code, got {row['Condition']!r}"
                 )
 
-    async def test_export_csv_body_is_non_empty(
+    async def test_export_codes_csv_body_is_non_empty(
         self, setup, authed_client, get_condition_id, create_config
     ):
         """
@@ -220,5 +220,109 @@ class TestConfigurationExport:
 
         assert response.status_code == status.HTTP_200_OK
         content = get_csv_from_zip(response.content, r"Code_Export")
+        lines = [line for line in content.splitlines() if line.strip()]
+        assert len(lines) >= 1, "Expected at least a CSV header row in the response"
+
+    async def test_sections_csv_has_correct_headers(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections CSV should have the correct column headers.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        assert reader.fieldnames == [
+            "Section Name",
+            "LOINC",
+            "Include",
+            "Coded Data",
+            "Narrative Data",
+        ]
+
+    async def test_sections_csv_is_sorted_alphabetically(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections CSV should be sorted alphabetically by section name.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        names = [row["Section Name"] for row in reader]
+        assert names == sorted(names, key=str.lower)
+
+    async def test_sections_csv_include_column_values(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections CSV "Include" column should only contain "Yes" or "No".
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        include_values = {row["Include"] for row in reader}
+        assert include_values <= {"Yes", "No"}
+
+    async def test_sections_csv_excluded_sections_have_na_coded_and_narrative(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections with Include=No should have N/A for Coded Data and Narrative Data.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        for row in reader:
+            if row["Include"] == "No":
+                assert row["Coded Data"] == "N/A", (
+                    f"Expected N/A for Coded Data on excluded section, got {row['Coded Data']!r}"
+                )
+                assert row["Narrative Data"] == "N/A", (
+                    f"Expected N/A for Narrative Data on excluded section, got {row['Narrative Data']!r}"
+                )
+
+    async def test_sections_csv_body_is_non_empty(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Sections CSV should contain at least a header row.
+        """
+        condition_id = await get_condition_id("Cholera")
+        config = await create_config(condition_id)
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        content = get_csv_from_zip(response.content, r"Section_Export")
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) >= 1, "Expected at least a CSV header row in the response"
