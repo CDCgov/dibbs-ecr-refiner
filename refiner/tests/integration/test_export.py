@@ -22,7 +22,7 @@ def get_csv_from_zip(content: bytes, filename_pattern: str) -> str:
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-class TestConfigurationExport:
+class TestConfigurationExportZip:
     async def test_export_returns_404_for_unknown_id(self, setup, authed_client):
         """
         Endpoint must return 404 for a config ID that does not exist.
@@ -35,7 +35,7 @@ class TestConfigurationExport:
         self, setup, authed_client, get_condition_id, create_config
     ):
         """
-        Zip should be returned in correct form when given a valid config.
+        Zip should be returned with correct content type and content-disposition.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
@@ -71,6 +71,10 @@ class TestConfigurationExport:
             assert any(re.search(r"Code_Export.+\.csv", n) for n in names)
             assert any(re.search(r"Section_Export.+\.csv", n) for n in names)
 
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+class TestConfigurationExportCodesCsv:
     async def test_export_includes_all_codes_from_multiple_codesets(
         self,
         setup,
@@ -223,6 +227,10 @@ class TestConfigurationExport:
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) >= 1, "Expected at least a CSV header row in the response"
 
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+class TestConfigurationExportSectionsCsv:
     async def test_sections_csv_has_correct_headers(
         self, setup, authed_client, get_condition_id, create_config
     ):
