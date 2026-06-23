@@ -4,7 +4,7 @@ from lxml import etree
 
 from app.services.conditions.parsing import extract_uuid_from_canonical_url
 
-from ..core.exceptions import XMLValidationError
+from ..core.exceptions import RefinementException, XMLValidationError
 from ..core.models.types import XMLFiles
 from .ecr.augment import (
     REMAINDER_SCOPE,
@@ -204,23 +204,6 @@ def discover_reportable_conditions(
 # NOTE:
 # STAGE 2: REFINEMENT EXECUTION
 # =============================================================================
-class RefinementException(Exception):
-    """
-    Exception raised during a failed refinement run.
-    """
-
-    def __init__(self, message: str, detail: str):
-        """
-        RefinementException constructor.
-
-        Args:
-            message (str): High-level error message
-            detail (str): Additional detail describing the issue encountered
-        """
-        super().__init__(message)
-        self.detail = detail
-
-
 @dataclass
 class RefinementContext:
     """
