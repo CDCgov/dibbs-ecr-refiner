@@ -1,7 +1,8 @@
 import csv
-from datetime import UTC, datetime
+from datetime import datetime
 from io import StringIO
 from logging import Logger
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -62,18 +63,49 @@ async def get_configuration_export(
     )
     sections_csv_content = _build_sections_csv(sections=config.section_processing)
 
-    # filename = _build_export_filename(config_name=config.name)
+    timestamp = _get_timestamp()
 
-    zip_package = ZipFilePackage(name="config-export.zip")
-    zip_package.add(ZipFileItem(file_name="codes.csv", file_content=codes_csv_content))
+    zip_package = ZipFilePackage(
+        name=_build_export_filename(
+            filename="Configuration_Export",
+            type="zip",
+            config_name=config.name,
+            config_version=config.version,
+            timestamp=timestamp,
+        )
+    )
+
     zip_package.add(
-        ZipFileItem(file_name="sections.csv", file_content=sections_csv_content)
+        ZipFileItem(
+            file_name=_build_export_filename(
+                filename="Code_Export",
+                type="csv",
+                config_name=config.name,
+                config_version=config.version,
+                timestamp=timestamp,
+            ),
+            file_content=codes_csv_content,
+        )
+    )
+    zip_package.add(
+        ZipFileItem(
+            file_name=_build_export_filename(
+                filename="Section_Export",
+                type="csv",
+                config_name=config.name,
+                config_version=config.version,
+                timestamp=timestamp,
+            ),
+            file_content=sections_csv_content,
+        )
     )
 
     return StreamingResponse(
         content=zip_package.iter_chunks(),
         media_type="application/zip",
-        headers={"Content-Disposition": 'attachment; filename="test.zip"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{zip_package.get_name()}"'
+        },
     )
 
 
@@ -151,8 +183,19 @@ async def _build_config_csv(
         return csv_text.getvalue()
 
 
-def _build_export_filename(config_name: str) -> str:
+def _get_timestamp() -> str:
+    now = datetime.now()
+    timestamp = now.strftime("%m%d%y_%H_%M_%S")
+    return timestamp
+
+
+def _build_export_filename(
+    filename: str,
+    type: Literal["csv", "zip"],
+    config_name: str,
+    config_version: int,
+    timestamp: str,
+) -> str:
     """Build a timestamped filename for a configuration export."""
-    safe_name = config_name.replace(" ", "_")
-    timestamp = datetime.now(UTC).strftime("%m%d%y_%H_%M_%S")
-    return f"{safe_name}_Code_Export_{timestamp}.csv"
+    condition_grouper = config_name.replace(" ", "_")
+    return f"{condition_grouper}_v{config_version}_{filename}_{timestamp}.{type}"
