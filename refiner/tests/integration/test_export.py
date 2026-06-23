@@ -11,13 +11,25 @@ from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
 
 
-def get_csv_from_zip(content: bytes, filename_pattern: str) -> str:
-    """Extract a CSV file from a zip response by filename pattern."""
+def _get_csv_from_zip(content: bytes, filename_pattern: str) -> str:
+    """
+    Helper to extract a CSV file from a zip response by filename pattern.
+    """
     with zipfile.ZipFile(BytesIO(content)) as zf:
         for name in zf.namelist():
             if re.search(filename_pattern, name):
                 return zf.read(name).decode("utf-8")
     raise FileNotFoundError(f"No file matching {filename_pattern!r} found in zip")
+
+
+def _get_section_row(content: str, loinc: str) -> dict:
+    """
+    Helper to get a section row's content by LOINC code.
+    """
+    reader = csv.DictReader(StringIO(content))
+    row = next((r for r in reader if r["LOINC"] == loinc), None)
+    assert row is not None, f"No row found for LOINC {loinc!r}"
+    return row
 
 
 @pytest.mark.integration
@@ -105,7 +117,7 @@ class TestConfigurationExportCodesCsv:
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Code_Export")
+        content = _get_csv_from_zip(response.content, r"Code_Export")
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) == expected_code_rows + 1  # header + codes
 
@@ -130,7 +142,7 @@ class TestConfigurationExportCodesCsv:
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Code_Export")
+        content = _get_csv_from_zip(response.content, r"Code_Export")
         reader = csv.DictReader(StringIO(content))
         conditions_in_csv = {row["Condition"] for row in reader if row["Condition"]}
 
@@ -164,7 +176,7 @@ class TestConfigurationExportCodesCsv:
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Code_Export")
+        content = _get_csv_from_zip(response.content, r"Code_Export")
         reader = csv.DictReader(StringIO(content))
         code_systems_in_csv = {
             row["Code System"] for row in reader if row["Code System"]
@@ -202,7 +214,7 @@ class TestConfigurationExportCodesCsv:
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Code_Export")
+        content = _get_csv_from_zip(response.content, r"Code_Export")
         reader = csv.DictReader(StringIO(content))
         for row in reader:
             if row["Code Type"] == "Custom code":
@@ -223,7 +235,7 @@ class TestConfigurationExportCodesCsv:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        content = get_csv_from_zip(response.content, r"Code_Export")
+        content = _get_csv_from_zip(response.content, r"Code_Export")
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) >= 1, "Expected at least a CSV header row in the response"
 
@@ -245,7 +257,7 @@ class TestConfigurationExportSectionsCsv:
 
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
         reader = csv.DictReader(StringIO(content))
         assert reader.fieldnames == [
             "Section Name",
@@ -269,7 +281,7 @@ class TestConfigurationExportSectionsCsv:
 
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
         reader = csv.DictReader(StringIO(content))
         names = [row["Section Name"] for row in reader]
         assert names == sorted(names, key=str.lower)
@@ -299,7 +311,7 @@ class TestConfigurationExportSectionsCsv:
 
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
         reader = csv.DictReader(StringIO(content))
         include_values = {row["Include"] for row in reader}
         assert include_values <= {"Yes", "No"}
@@ -319,16 +331,17 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        section_loinc = "10160-0"
+
         await update_section_processing(
-            config_id=config_id, current_code="10160-0", action="refine"
+            config_id=config_id, current_code=section_loinc, action="refine"
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
-        reader = csv.DictReader(StringIO(content))
-        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+        row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Coded Data"] == "Refine"
 
     async def test_sections_csv_retain_action_shows_keep_original(
@@ -346,16 +359,17 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        section_loinc = "10160-0"
+
         await update_section_processing(
-            config_id=config_id, current_code="10160-0", action="retain"
+            config_id=config_id, current_code=section_loinc, action="retain"
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
-        reader = csv.DictReader(StringIO(content))
-        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+        row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Coded Data"] == "Keep original"
 
     async def test_sections_csv_reconstruct_narrative_shows_reconstruct(
@@ -373,16 +387,17 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        section_loinc = "10160-0"
+
         await update_section_processing(
-            config_id=config_id, current_code="10160-0", narrative="reconstruct"
+            config_id=config_id, current_code=section_loinc, narrative="reconstruct"
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
-        reader = csv.DictReader(StringIO(content))
-        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+        row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Narrative Data"] == "Reconstruct"
 
     async def test_sections_csv_remove_narrative_shows_exclude(
@@ -400,16 +415,17 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        section_loinc = "10160-0"
+
         await update_section_processing(
-            config_id=config_id, current_code="10160-0", narrative="remove"
+            config_id=config_id, current_code=section_loinc, narrative="remove"
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
-        reader = csv.DictReader(StringIO(content))
-        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+        row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Narrative Data"] == "Exclude"
 
     async def test_sections_csv_excluded_section_shows_no_and_na(
@@ -427,16 +443,17 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        section_loinc = "10160-0"
+
         await update_section_processing(
-            config_id=config_id, current_code="10160-0", include=False
+            config_id=config_id, current_code=section_loinc, include=False
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
-        content = get_csv_from_zip(response.content, r"Section_Export")
-        reader = csv.DictReader(StringIO(content))
-        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+        row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Include"] == "No"
         assert row["Coded Data"] == "N/A"
         assert row["Narrative Data"] == "N/A"
@@ -454,6 +471,6 @@ class TestConfigurationExportSectionsCsv:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        content = get_csv_from_zip(response.content, r"Section_Export")
+        content = _get_csv_from_zip(response.content, r"Section_Export")
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) >= 1, "Expected at least a CSV header row in the response"
