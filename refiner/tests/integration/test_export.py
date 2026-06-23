@@ -293,76 +293,134 @@ class TestConfigurationExportSectionsCsv:
         include_values = {row["Include"] for row in reader}
         assert include_values <= {"Yes", "No"}
 
-    async def test_sections_csv_excluded_sections_have_na_coded_and_narrative(
-        self, setup, authed_client, get_condition_id, create_config
+    async def test_sections_csv_refine_action_shows_refine(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
     ):
         """
-        Sections with Include=No should have N/A for Coded Data and Narrative Data.
+        A section with action=refine should show "Refine" in the Coded Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
-        response = await authed_client.get(
-            f"/api/v1/configurations/{config['id']}/export"
-        )
+        config_id = config["id"]
 
+        await update_section_processing(config_id, "10160-0", action="refine")
+
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
         content = get_csv_from_zip(response.content, r"Section_Export")
         reader = csv.DictReader(StringIO(content))
-        for row in reader:
-            if row["Include"] == "No":
-                assert row["Coded Data"] == "N/A", (
-                    f"Expected N/A for Coded Data on excluded section, got {row['Coded Data']!r}"
-                )
-                assert row["Narrative Data"] == "N/A", (
-                    f"Expected N/A for Narrative Data on excluded section, got {row['Narrative Data']!r}"
-                )
+        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        assert row["Coded Data"] == "Refine"
 
-    async def test_sections_csv_coded_data_column_values(
-        self, setup, authed_client, get_condition_id, create_config
+    async def test_sections_csv_retain_action_shows_keep_original(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
     ):
         """
-        Sections CSV "Coded Data" column should only contain valid values for included sections.
+        A section with action=retain should show "Keep original" in the Coded Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
-        response = await authed_client.get(
-            f"/api/v1/configurations/{config['id']}/export"
-        )
+        config_id = config["id"]
 
+        await update_section_processing(config_id, "10160-0", action="retain")
+
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
         content = get_csv_from_zip(response.content, r"Section_Export")
         reader = csv.DictReader(StringIO(content))
-        for row in reader:
-            if row["Include"] == "Yes":
-                assert row["Coded Data"] in {"Keep original", "Refine"}, (
-                    f"Unexpected Coded Data value: {row['Coded Data']!r}"
-                )
+        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        assert row["Coded Data"] == "Keep original"
 
-    async def test_sections_csv_narrative_data_column_values(
-        self, setup, authed_client, get_condition_id, create_config
+    async def test_sections_csv_reconstruct_narrative_shows_reconstruct(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
     ):
         """
-        Sections CSV "Narrative Data" column should only contain valid values for included sections.
+        A section with narrative=reconstruct should show "Reconstruct" in the Narrative Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
-        response = await authed_client.get(
-            f"/api/v1/configurations/{config['id']}/export"
+        config_id = config["id"]
+
+        await update_section_processing(
+            config_id, "10160-0", action="refine", narrative="reconstruct"
         )
 
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
         assert response.status_code == status.HTTP_200_OK
 
         content = get_csv_from_zip(response.content, r"Section_Export")
         reader = csv.DictReader(StringIO(content))
-        for row in reader:
-            if row["Include"] == "Yes":
-                assert row["Narrative Data"] in {
-                    "Keep original",
-                    "Exclude",
-                    "Reconstruct",
-                }, f"Unexpected Narrative Data value: {row['Narrative Data']!r}"
+        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        assert row["Narrative Data"] == "Reconstruct"
+
+    async def test_sections_csv_remove_narrative_shows_exclude(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
+    ):
+        """
+        A section with narrative=remove should show "Exclude" in the Narrative Data column.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        config_id = config["id"]
+
+        await update_section_processing(config_id, "10160-0", narrative="remove")
+
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        assert row["Narrative Data"] == "Exclude"
+
+    async def test_sections_csv_excluded_section_shows_no_and_na(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        update_section_processing,
+    ):
+        """
+        A section with include=False should show "No" and "N/A" for coded and narrative data.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        config_id = config["id"]
+
+        await update_section_processing(config_id, "10160-0", include=False)
+
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
+        assert response.status_code == status.HTTP_200_OK
+
+        content = get_csv_from_zip(response.content, r"Section_Export")
+        reader = csv.DictReader(StringIO(content))
+        row = next(r for r in reader if r["LOINC"] == "10160-0")
+        assert row["Include"] == "No"
+        assert row["Coded Data"] == "N/A"
+        assert row["Narrative Data"] == "N/A"
 
     async def test_sections_csv_body_is_non_empty(
         self, setup, authed_client, get_condition_id, create_config
