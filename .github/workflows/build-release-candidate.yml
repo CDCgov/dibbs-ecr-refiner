@@ -9,9 +9,6 @@ on:
       version:
         description: "Release version (e.g. 1.4.0)"
         required: true
-      rc:
-        description: "RC number (e.g. rc.1)"
-        required: true
       release_notes:
         description: "Create release notes?"
         type: boolean
@@ -66,17 +63,18 @@ jobs:
             exit 1
           fi
 
-      - name: Validate RC format
-        run: |
-          if [[ ! "${{ github.event.inputs.rc }}" =~ ^rc\.[0-9]+$ ]]; then
-            echo "RC must be in format rc.N (e.g. rc.1)"
-            exit 1
-          fi
-
       - name: Make repo owner lowercase
         id: repo
         run: |
           echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Check if stable tag already exists
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Error: Tag $VERSION already exists"
+            exit 1
+          fi
 
       - name: Determine RC Docker image tags
         id: vars
