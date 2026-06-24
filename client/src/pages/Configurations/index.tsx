@@ -38,6 +38,7 @@ import { useSearch } from '../../hooks/useSearch';
 import { FuseResult, FuseResultMatch, RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
+import { InfoIcon } from '@components/Icons/InfoIcon';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -161,7 +162,7 @@ function AppUpdateBanner({
       <div className="mx-auto flex max-w-7xl items-center">
         <div className="flex flex-1 items-center justify-center gap-4">
           <div className="flex items-center gap-2">
-            <Icon.Info size={3} aria-hidden className="text-blue-40v" />
+            <InfoIcon className="fill-blue-40v" />
             <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
               There are new updates to eCR Refiner.
             </span>
