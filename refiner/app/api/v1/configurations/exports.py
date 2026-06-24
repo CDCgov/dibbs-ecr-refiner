@@ -24,6 +24,7 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import get_all_code_systems_by_key
+from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
 from app.services.file_io import ZipFileItem, ZipFilePackage
 from app.services.logger import get_logger
 
@@ -129,7 +130,9 @@ def _build_sections_csv(
                     section.code,
                     "Yes" if section.include else "No",
                     _get_coded_data_value(
-                        action=section.action, included=section.include
+                        loinc=section.code,
+                        action=section.action,
+                        included=section.include,
                     ),
                     _get_narrative_data_value(
                         narrative=section.narrative, included=section.include
@@ -139,8 +142,11 @@ def _build_sections_csv(
         return csv_text.getvalue()
 
 
-def _get_coded_data_value(action: DbSectionAction, included: bool) -> str:
+def _get_coded_data_value(loinc: str, action: DbSectionAction, included: bool) -> str:
     if not included:
+        return "N/A"
+
+    if loinc in NARRATIVE_ONLY_SECTIONS:
         return "N/A"
 
     if action == "retain":

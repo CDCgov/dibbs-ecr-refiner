@@ -9,6 +9,7 @@ from fastapi import status
 from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
+from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
 
 
 def _get_csv_from_zip(content: bytes, filename_pattern: str) -> str:
@@ -349,7 +350,7 @@ class TestConfigurationExportSectionsCsv:
         update_section_processing,
     ):
         """
-        A section with action=refine should show "Refine" in the Coded Data column.
+        A section with action set to `refine` should show "Refine" in the Coded Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
@@ -433,7 +434,7 @@ class TestConfigurationExportSectionsCsv:
         update_section_processing,
     ):
         """
-        A section with narrative=remove should show "Exclude" in the Narrative Data column.
+        A section with narrative set to `remove` should show "Exclude" in the Narrative Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
@@ -461,7 +462,7 @@ class TestConfigurationExportSectionsCsv:
         update_section_processing,
     ):
         """
-        A section with narrative=retain should show "Keep original" in the Narrative Data column.
+        A section with narrative set to `retain` should show "Keep original" in the Narrative Data column.
         """
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
@@ -509,6 +510,25 @@ class TestConfigurationExportSectionsCsv:
         assert row["Include"] == "No"
         assert row["Coded Data"] == "N/A"
         assert row["Narrative Data"] == "N/A"
+
+    async def test_sections_csv_coded_data_na_for_narrative_only(
+        self, authed_client, setup, get_condition_id, create_config
+    ):
+        """
+        Narrative only sections should always show "N/A" for Coded Data.
+        """
+        condition_id = await get_condition_id("Colorado tick fever")
+        config = await create_config(condition_id)
+        config_id = config["id"]
+
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
+        assert response.status_code == status.HTTP_200_OK
+
+        content = _get_csv_from_zip(response.content, r"Section_Export")
+
+        for loinc in NARRATIVE_ONLY_SECTIONS:
+            row = _get_section_row(content=content, loinc=loinc)
+            assert row["Coded Data"] == "N/A"
 
     async def test_sections_csv_body_is_non_empty(
         self, setup, authed_client, get_condition_id, create_config
