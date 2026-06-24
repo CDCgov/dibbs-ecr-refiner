@@ -71,7 +71,7 @@ async def get_configuration_export(
     zip_package = ZipFilePackage(
         name=_build_export_filename(
             filename="Configuration_Export",
-            type="zip",
+            extension="zip",
             config_name=config.name,
             config_version=config.version,
             timestamp=timestamp,
@@ -82,7 +82,7 @@ async def get_configuration_export(
         ZipFileItem(
             file_name=_build_export_filename(
                 filename="Code_Export",
-                type="csv",
+                extension="csv",
                 config_name=config.name,
                 config_version=config.version,
                 timestamp=timestamp,
@@ -95,7 +95,7 @@ async def get_configuration_export(
         ZipFileItem(
             file_name=_build_export_filename(
                 filename="Section_Export",
-                type="csv",
+                extension="csv",
                 config_name=config.name,
                 config_version=config.version,
                 timestamp=timestamp,
@@ -230,11 +230,11 @@ def _get_timestamp() -> str:
 
 def _build_export_filename(
     filename: str,
-    type: Literal["csv", "zip"],
+    extension: Literal["csv", "zip"],
     config_name: str,
     config_version: int,
     timestamp: str,
 ) -> str:
     """Build a timestamped filename for a configuration export."""
     condition_grouper = config_name.replace(" ", "_")
-    return f"{condition_grouper}_v{config_version}_{filename}_{timestamp}.{type}"
+    return f"{condition_grouper}_v{config_version}_{filename}_{timestamp}.{extension}"
