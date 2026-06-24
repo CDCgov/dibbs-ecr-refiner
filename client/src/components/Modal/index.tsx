@@ -4,9 +4,9 @@ import {
   DialogPanel,
   DialogTitle,
 } from '@headlessui/react';
-import { Icon } from '@trussworks/react-uswds';
 import { createContext, useContext } from 'react';
 import classNames from 'classnames';
+import { CloseIcon } from '@components/Icons/CloseIcon';
 
 type ModalContextValue = {
   onClose: () => void;
@@ -99,11 +99,7 @@ function ModalCloseButton() {
       onClick={onClose}
       className="absolute top-4 right-4 rounded hover:cursor-pointer"
     >
-      <Icon.Close
-        className="text-gray-500 hover:text-gray-900"
-        size={4}
-        aria-hidden
-      />
+      <CloseIcon className="fill-gray-500 hover:fill-gray-900" />
     </button>
   );
 }

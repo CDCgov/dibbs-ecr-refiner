@@ -32,13 +32,13 @@ import {
 } from '@components/Combobox';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
-import { Icon } from '@trussworks/react-uswds';
 import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
 import { useSearch } from '../../hooks/useSearch';
 import { FuseResult, FuseResultMatch, RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
 import { InfoIcon } from '@components/Icons/InfoIcon';
+import { CloseIcon } from '@components/Icons/CloseIcon';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -183,7 +183,7 @@ function AppUpdateBanner({
           variant="unstyled"
           className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
         >
-          <Icon.Close size={3} aria-hidden className="text-blue-500" />
+          <CloseIcon size={24} className="fill-blue-500" />
         </Button>
       </div>
     </div>
