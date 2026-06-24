@@ -1,82 +1,15 @@
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { TestQueryClientProvider } from '../../../../../test-utils';
+import { ImportCustomCodes } from './ImportCustomCodes';
 import {
-  ImportCustomCodes,
-  UPLOAD_TEMPLATE_CSV_CONTENT,
-} from './ImportCustomCodes';
-import { MOCK_CONFIG_ID } from '../../../../../utils/fixtures';
+  MOCK_CONFIG_ID,
+  mockCodeSystems,
+  mockIndexedSystem,
+} from '../../../../../utils/fixtures';
 import userEvent from '@testing-library/user-event';
 import { useUploadCustomCodesCsv } from '../../../../../api/configurations/configurations';
 import { Mock } from 'vitest';
-
-const mockUploadResponse = {
-  message: 'Successfully uploaded custom codes.',
-
-  preview_items: [
-    {
-      id: '15b8c6b9-d524-4519-9783-a2590494348a',
-      code: '12345',
-      system_key: 'other',
-      name: 'Other Example',
-      row: 2,
-    },
-    {
-      id: 'e395f9f7-7c77-47ae-9e7e-2f61e9eaba98',
-      code: '6789',
-      system_key: 'icd10',
-      name: 'ICD-10 Example',
-      row: 3,
-    },
-    {
-      id: 'c4f39082-7a57-45cd-98d8-adc3bd034568',
-      code: '99999A',
-      system_key: 'loinc',
-      name: 'LOINC Example',
-      row: 4,
-    },
-  ],
-  codes_processed: 3,
-  total_custom_codes_in_configuration: 3,
-  code_systems: {
-    snomed: {
-      id: '5675054c-9546-4132-b804-cf86dc564ec5',
-      key: 'snomed',
-      display_name: 'SNOMED',
-      oid: '2.16.840.1.113883.6.96',
-    },
-    loinc: {
-      id: '0456a390-8fe8-4d89-9f6e-7bdf940a6ffe',
-      key: 'loinc',
-      display_name: 'LOINC',
-      oid: '2.16.840.1.113883.6.1',
-    },
-    icd10: {
-      id: 'd4ec2af7-0274-4ee5-b565-e6285d60dc84',
-      key: 'icd10',
-      display_name: 'ICD-10',
-      oid: '2.16.840.1.113883.6.90',
-    },
-    rxnorm: {
-      id: '69e1b668-1d40-4f30-8b9e-918484bca3bb',
-      key: 'rxnorm',
-      display_name: 'RxNorm',
-      oid: '2.16.840.1.113883.6.88',
-    },
-    cvx: {
-      id: '97eb3665-311d-4535-8570-67fc51914f9f',
-      key: 'cvx',
-      display_name: 'CVX',
-      oid: '2.16.840.1.113883.12.292',
-    },
-    other: {
-      id: '0f151a1a-fd89-40da-a267-e8dd1831b095',
-      key: 'other',
-      display_name: 'Other',
-      oid: 'Other',
-    },
-  },
-};
 
 vi.mock('../../../../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
@@ -85,6 +18,41 @@ vi.mock('../../../../../api/configurations/configurations', async () => {
   return {
     ...actual,
     useUploadCustomCodesCsv: vi.fn(),
+  };
+});
+
+vi.mock('../../../../../api/code-systems/code-systems', async () => {
+  const actual = await vi.importActual(
+    '../../../../../api/code-systems/code-systems'
+  );
+  return {
+    ...actual,
+    useGetCodeSystems: vi.fn(() => ({
+      data: {
+        data: mockCodeSystems,
+      },
+    })),
+  };
+});
+
+const MOCK_LOINC_CODE = '52747';
+const MOCK_CVX_CODE = '23779';
+const MOCK_OTHER_CODE_SUFFIX = '1534';
+const MOCK_OTHER_CODE = MOCK_CVX_CODE + MOCK_OTHER_CODE_SUFFIX; // used to test prefix matching
+
+const MOCK_UPLOAD_CSV = `code,code_system,display_name
+15613,snomed,SNOMED Example
+${MOCK_LOINC_CODE},loinc,LOINC Example
+287972,icd10,ICD-10 Example
+5128,rxnorm,RxNorm Example
+${MOCK_CVX_CODE},cvx,CVX Example
+${MOCK_OTHER_CODE},other,Other Example`;
+
+vi.mock('./utils', () => {
+  return {
+    buildCsvDownloadTemplate: vi.fn(() => {
+      return MOCK_UPLOAD_CSV;
+    }),
   };
 });
 
@@ -114,7 +82,7 @@ describe('Custom codes upload', () => {
     );
     expect(uploadCsvButton).toBeInTheDocument();
 
-    const file = new File([UPLOAD_TEMPLATE_CSV_CONTENT], 'test.csv', {
+    const file = new File([MOCK_UPLOAD_CSV], 'test.csv', {
       type: 'text/csv',
     });
 
@@ -122,7 +90,7 @@ describe('Custom codes upload', () => {
 
     uploadCsvButton.click();
     const rowsUploaded = screen.getAllByRole('row');
-    expect(rowsUploaded.length).toBe(4); // 3 codes plus the header
+    expect(rowsUploaded.length).toBe(mockCodeSystems.length + 1); // one per system plus the header
   });
 
   test('delete all resets to the first step', async () => {
@@ -151,65 +119,90 @@ describe('Custom codes upload', () => {
     await userEvent.click(
       await within(deleteRows[1]).findByRole('button', { name: 'Delete' })
     );
-    expect(screen.getAllByRole('row').length).toBe(3); // now 2 codes plus the header
-    checkOtherCode({ exists: false });
+    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length);
+    checkOtherCode();
   });
+
   test('filters appropriately when search string is supplied', async () => {
     const searchInput = screen.getByPlaceholderText('Search codes');
     checkOtherCode();
-    checkICD10Code();
+    checkIcd10Code();
     checkLoincCode();
+    checkSnomedCode();
+    checkCvxCode();
+
     // by display
-    await userEvent.type(searchInput, 'Other Example');
-    checkOtherCode();
-    checkICD10Code({ exists: false });
-    checkLoincCode({ exists: false });
+    await userEvent.type(searchInput, 'SNOMED Example');
+    checkSnomedCode();
+    checkOtherCode(false);
+    checkIcd10Code(false);
+    checkLoincCode(false);
+    checkCvxCode(false);
 
     // by system
     await userEvent.clear(searchInput);
     await userEvent.type(searchInput, 'ICD-1');
-    checkICD10Code();
-    checkOtherCode({ exists: false });
-    checkLoincCode({ exists: false });
+    checkIcd10Code();
+    checkOtherCode(false);
+    checkLoincCode(false);
+    checkSnomedCode(false);
+    checkCvxCode(false);
 
     // by code
     await userEvent.clear(searchInput);
-    await userEvent.type(searchInput, '99999A');
+    await userEvent.type(searchInput, MOCK_LOINC_CODE);
     checkLoincCode();
-    checkICD10Code({ exists: false });
-    checkOtherCode({ exists: false });
+    checkOtherCode(false);
+    checkIcd10Code(false);
+    checkSnomedCode(false);
+    checkCvxCode(false);
+
+    // make sure codes with matching prefixes get appropriately filtered
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, MOCK_CVX_CODE);
+    expect(screen.getAllByText(MOCK_CVX_CODE).length).toBe(2);
+    checkLoincCode(false);
+    checkSnomedCode(false);
+    checkIcd10Code(false);
+
+    await userEvent.type(searchInput, MOCK_OTHER_CODE_SUFFIX);
+    checkOtherCode();
+    checkCvxCode(false);
+    checkLoincCode(false);
+    checkSnomedCode(false);
+    checkIcd10Code(false);
   });
 });
 
-function checkOtherCode({ exists = true } = {}) {
-  const matcher = exists ? 'getByText' : 'queryByText';
-
-  const totalExpectation = (text: string) => {
-    const assertion = expect(screen[matcher](text));
-    return exists
-      ? assertion.toBeInTheDocument()
-      : assertion.not.toBeInTheDocument();
-  };
-
-  totalExpectation('12345');
-  totalExpectation('Other');
+function checkLoincCode(exists = true) {
+  checkCode('LOINC', exists);
 }
 
-function checkICD10Code({ exists = true } = {}) {
-  const matcher = exists ? 'getByText' : 'queryByText';
-
-  const totalExpectation = (text: string) => {
-    const assertion = expect(screen[matcher](text));
-    return exists
-      ? assertion.toBeInTheDocument()
-      : assertion.not.toBeInTheDocument();
-  };
-
-  totalExpectation('6789');
-  totalExpectation('ICD-10');
+function checkSnomedCode(exists = true) {
+  checkCode('SNOMED', exists);
 }
 
-function checkLoincCode({ exists = true } = {}) {
+function checkCvxCode(exists = true) {
+  checkCode('CVX', exists);
+}
+
+function checkIcd10Code(exists = true) {
+  checkCode('ICD-10', exists);
+}
+
+function checkOtherCode(exists = true) {
+  checkCode('Other', exists);
+}
+
+function checkCode(codeSystemName: string, exists = true) {
+  const codeSystem = mockCodeSystems.find(
+    (s) => s.display_name === codeSystemName
+  );
+
+  const mockCode = mockPreviewItems.find(
+    (i) => i.system_key === codeSystem?.key
+  )?.code as string;
+
   const matcher = exists ? 'getByText' : 'queryByText';
 
   const totalExpectation = (text: string) => {
@@ -219,6 +212,44 @@ function checkLoincCode({ exists = true } = {}) {
       : assertion.not.toBeInTheDocument();
   };
 
-  totalExpectation('99999A');
-  totalExpectation('LOINC');
+  totalExpectation(mockCode);
+  totalExpectation(codeSystemName);
+}
+
+const uploadLines = csvToDict(MOCK_UPLOAD_CSV);
+
+const mockPreviewItems = uploadLines.map((row, i) => {
+  return {
+    id: crypto.randomUUID(),
+    code: row['code'],
+    system_key: row['code_system'],
+    name: row['display_name'],
+    row: i,
+  };
+});
+
+const mockUploadResponse = {
+  message: 'Successfully uploaded custom codes.',
+  preview_items: mockPreviewItems,
+  codes_processed: mockPreviewItems.length,
+  total_custom_codes_in_configuration: mockPreviewItems.length,
+  code_systems: mockIndexedSystem,
+};
+
+function csvToDict(csv: string) {
+  const lines = csv.trim().split('\n');
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const indexedValues: Record<string, string>[] = [];
+
+  lines.slice(1).forEach((line) => {
+    const rowObject: Record<string, string> = {};
+    const values = line.split(',');
+
+    headers.forEach((_, j) => {
+      rowObject[headers[j]] = values[j];
+    });
+    indexedValues.push(rowObject);
+  });
+
+  return indexedValues;
 }

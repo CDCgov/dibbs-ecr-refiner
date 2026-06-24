@@ -19,7 +19,6 @@ import {
   mockCodeSets,
   mockCodeSystems,
 } from '../../../utils/fixtures';
-import { UPLOAD_TEMPLATE_CSV_CONTENT } from './CustomCodes/CsvImport/ImportCustomCodes';
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({
@@ -718,7 +717,8 @@ describe('Config builder page', () => {
     const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
 
     const text = await blobArg.text();
-    expect(text).toBe(UPLOAD_TEMPLATE_CSV_CONTENT);
+    // one row for each code system systems plus header
+    expect(text.trim().split('\n').length).toBe(mockCodeSystems.length + 1);
 
     // cleanup
     createObjectUrlSpy.mockRestore();

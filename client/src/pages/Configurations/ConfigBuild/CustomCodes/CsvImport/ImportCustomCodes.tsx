@@ -15,11 +15,11 @@ import { CsvImportStep } from '../..';
 import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import {
-  DbCodeSystem,
   IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
+import { buildCsvDownloadTemplate } from './utils';
 
 type UploadCsvError = {
   response?: {
@@ -427,6 +427,7 @@ export function ImportCustomCodes({
                     <td className="px-2 py-1">
                       {/* code systems should always be rendered at this point, 
                       but do a check / a fallback to make Typescript happy */}
+
                       {codeSystems
                         ? codeSystems[item.system_key].display_name
                         : item.system_key.toUpperCase()}
@@ -565,22 +566,4 @@ function UploadInstructions({
       </div>
     </>
   );
-}
-
-function buildCsvDownloadTemplate(systemsSupported: DbCodeSystem[]) {
-  const headers = 'code_number,code_system,display_name';
-
-  let content = headers + '\n';
-  systemsSupported.forEach((s) => {
-    const randomLengthAtLeastThree = 3 + Math.floor(Math.random() * 10);
-    const randomCode = Array.from({ length: randomLengthAtLeastThree }, () =>
-      Math.floor(Math.random() * 10)
-    ).join('');
-
-    const currentRow =
-      randomCode + ',' + s.display_name + ',' + `${s.display_name} Example`;
-    content += currentRow + '\n';
-  });
-
-  return content;
 }

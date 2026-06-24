@@ -186,11 +186,11 @@ def _create_csv_reader(
 
 
 def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
-    required_columns = {"code_number", "code_system", "display_name"}
+    required_columns = {"code", "code_system", "display_name"}
     if not required_columns.issubset(set(csv_reader.fieldnames or [])):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSV must contain headers: code_number,code_system,display_name",
+            detail="CSV must contain headers: code,code_system,display_name",
         )
 
 
@@ -231,7 +231,7 @@ def _get_row_code_system(
 def _validate_csv_upload_row(
     row: dict, supported_systems: IndexedCodeSystem
 ) -> tuple[str, DbCodeSystem, str] | list[str]:
-    code = (row.get("code_number") or "").strip()
+    code = (row.get("code") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
     name = (row.get("display_name") or "").strip()
 
@@ -239,7 +239,7 @@ def _validate_csv_upload_row(
     row_system = None
 
     if not code:
-        row_errors.append("Missing code_number")
+        row_errors.append("Missing code")
     if not name:
         row_errors.append("Missing display_name")
     if not code_system_raw:
@@ -300,7 +300,7 @@ async def upload_custom_codes_csv(
     Accepts a CSV payload in JSON body.
 
     Expected CSV headers:
-        code_number,code_system,display_name
+        code,code_system,display_name
 
     Returns:
         UploadCustomCodesResponse

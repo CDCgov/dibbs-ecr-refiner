@@ -1,8 +1,9 @@
-import { CodeSystemsReponse } from '../api/schemas/codeSystemsReponse';
+import { DbCodeSystem } from '../api/schemas';
 import { DbConfigurationCustomCode } from '../api/schemas/dbConfigurationCustomCode';
 import { DbTotalConditionCodeCount } from '../api/schemas/dbTotalConditionCodeCount';
 import { GetConfigurationResponse } from '../api/schemas/getConfigurationResponse';
 import { GetConfigurationResponseVersion } from '../api/schemas/getConfigurationResponseVersion';
+import { IndexedCodeSystem } from '../api/schemas/indexedCodeSystem';
 
 export const MOCK_CONFIG_ID = 'd8cf3930-a7c2-4761-9ba9-ce72ff9191c8';
 export const MOCK_CONFIG_DRAFT_ID = '2d88054b-dd06-42de-8ae5-5a537889f4f8';
@@ -40,7 +41,7 @@ const mockVersions: GetConfigurationResponseVersion[] = [
   },
 ];
 
-export const mockCodeSystems: CodeSystemsReponse[] = [
+export const mockCodeSystems: DbCodeSystem[] = [
   {
     id: '157a00b0-62e6-48c8-b822-475c5d855f3f',
     key: 'snomed',
@@ -78,6 +79,14 @@ export const mockCodeSystems: CodeSystemsReponse[] = [
     display_name: 'Other',
   },
 ];
+
+export const mockIndexedSystem: IndexedCodeSystem = mockCodeSystems.reduce(
+  (acc: Record<string, DbCodeSystem>, curCodeSystem) => {
+    acc[curCodeSystem.key] = curCodeSystem;
+    return acc;
+  },
+  {}
+);
 
 export const mockCodeSets: DbTotalConditionCodeCount[] = [
   { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
