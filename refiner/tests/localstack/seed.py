@@ -2,11 +2,15 @@ import asyncio
 import json
 import os
 import sys
+import time
 from uuid import uuid4
 
 import boto3
 import httpx
 from botocore.client import Config
+
+# Session info
+TEST_SESSION_TOKEN = "test-token"
 
 # add Refiner to the sys path so we can import the relevant methods from the
 # internal modules when running the script
@@ -73,8 +77,25 @@ def seed_localstack(s3_client):
     # we should ideally call the API.
     # But seed.py is a script. Let's assume the app is running.
 
+    async def wait_for_server(url: str, timeout: int = 30):
+        start_time = time.time()
+        async with httpx.AsyncClient() as client:
+            while time.time() - start_time < timeout:
+                try:
+                    resp = await client.get(f"{url}/api/healthcheck")
+                    if resp.status_code == 200:
+                        return
+                except httpx.RequestError:
+                    pass
+                await asyncio.sleep(1)
+        raise RuntimeError(
+            f"Server at {url} did not become healthy within {timeout} seconds"
+        )
+
     async def build_config():
-        async with httpx.AsyncClient(base_url="http://localhost:8080") as client:
+        await wait_for_server("http://localhost:8080")
+        async with httpx.AsyncClient(base_url="http://localhost:8080/api/v1") as client:
+            client.cookies.set("refiner-session", TEST_SESSION_TOKEN)
             builder = ScenarioBuilder(client)
             return await builder.build_and_activate(
                 BASELINE_SCENARIO, jurisdiction_id="SDDH"
@@ -83,11 +104,8 @@ def seed_localstack(s3_client):
     try:
         asyncio.run(build_config())
     except Exception as e:
-        print(
-            f"Warning: Could not build config via API ({e}). Falling back to manual S3 seed if needed."
-        )
-        # Fallback to manual if API is not available, but original request was to remove active.json
-        # So we just let it fail or handle it.
+        print(f"Error seeding Localstack: {e}")
+        sys.exit(1)
 
     COVID_CANONICAL_URL = BASELINE_SCENARIO.canonical_url
     activation_key = get_active_file_key(

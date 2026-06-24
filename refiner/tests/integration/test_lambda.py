@@ -95,10 +95,27 @@ class TestLambda:
 
         # --- File existence assertions ---
 
+        # First, verify the RefinerComplete manifest to get diagnostics if files are missing
+        complete_response = s3_client.get_object(
+            Bucket=bucket, Key=default_setup["complete_key"]
+        )
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+
+        assert not complete_body.get("RefinerSkip"), (
+            "Lambda skipped refinement processing"
+        )
+        assert "Error" not in complete_body, (
+            f"Lambda encountered an error: {complete_body.get('Error')}"
+        )
+
         # Assert refined RR was created
         expected_refined_covid_rr_key = (
             f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_RR.xml"
         )
+        assert expected_refined_covid_rr_key in complete_body["RefinerOutputFiles"], (
+            f"Refined RR output key {expected_refined_covid_rr_key} not found in manifest"
+        )
+
         rr_response = s3_client.get_object(
             Bucket=bucket, Key=expected_refined_covid_rr_key
         )
@@ -108,6 +125,10 @@ class TestLambda:
         expected_unrefined_rr_key = (
             f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/unrefined_rr/refined_RR.xml"
         )
+        assert expected_unrefined_rr_key in complete_body["RefinerOutputFiles"], (
+            f"Unrefined RR output key {expected_unrefined_rr_key} not found in manifest"
+        )
+
         unrefined_rr_response = s3_client.get_object(
             Bucket=bucket, Key=expected_unrefined_rr_key
         )
@@ -117,6 +138,10 @@ class TestLambda:
         expected_refined_covid_eicr_key = (
             f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_eICR.xml"
         )
+        assert expected_refined_covid_eicr_key in complete_body["RefinerOutputFiles"], (
+            f"Refined eICR output key {expected_refined_covid_eicr_key} not found in manifest"
+        )
+
         eicr_covid_response = s3_client.get_object(
             Bucket=bucket, Key=expected_refined_covid_eicr_key
         )
@@ -124,10 +149,7 @@ class TestLambda:
 
         # --- RefinerComplete assertions ---
 
-        complete_response = s3_client.get_object(
-            Bucket=bucket, Key=default_setup["complete_key"]
-        )
-        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+        # COVID was refined and the flu was not
 
         # COVID was refined and the flu was not
         expected_refiner_metadata = {

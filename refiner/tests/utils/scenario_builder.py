@@ -51,35 +51,64 @@ class ScenarioBuilder:
     def __init__(self, api_client: Any):
         self.client = api_client
 
+    def _validate_response(self, response):
+        """
+        Validates that the response was successful.
+        """
+        response.raise_for_status()
+
     async def build_and_activate(self, scenario: Scenario, jurisdiction_id: str):
         """
         Builds the configuration via the API and activates it.
         """
         # 1. Get condition ID
-        resp = await self.client.get(f"/conditions?name={scenario.condition_name}")
-        condition_id = resp.json()[0]["id"]
+        resp = await self.client.get("/conditions/")
+        self._validate_response(resp)
+        conditions = resp.json()
+
+        condition = next(
+            (c for c in conditions if c["display_name"] == scenario.condition_name),
+            None,
+        )
+        if not condition:
+            raise ValueError(
+                f"Condition '{scenario.condition_name}' not found in database"
+            )
+
+        condition_id = condition["id"]
 
         # 2. Create config
         resp = await self.client.post(
-            "/configurations", json={"condition_id": condition_id}
+            "/configurations/", json={"condition_id": condition_id}
         )
+        self._validate_response(resp)
         config_id = resp.json()["id"]
 
         # 3. Associate conditions
         for cond_name in scenario.associated_conditions:
-            resp = await self.client.get(f"/conditions?name={cond_name}")
-            assoc_id = resp.json()[0]["id"]
-            await self.client.post(
-                f"/configurations/{config_id}/associations",
+            resp = await self.client.get("/conditions")
+            self._validate_response(resp)
+            conditions = resp.json()
+            condition = next(
+                (c for c in conditions if c["display_name"] == cond_name),
+                None,
+            )
+            if not condition:
+                raise ValueError(f"Condition '{cond_name}' not found in database")
+            assoc_id = condition["id"]
+            resp = await self.client.put(
+                f"/configurations/{config_id}/code-sets",
                 json={"condition_id": assoc_id},
             )
+            self._validate_response(resp)
 
         # 4. Add custom codes
         for cc in scenario.custom_codes:
-            await self.client.post(
+            resp = await self.client.post(
                 f"/configurations/{config_id}/custom-codes",
                 json={"code": cc.code, "system": cc.system, "name": cc.name},
             )
+            self._validate_response(resp)
 
         # 5. Update section processing
         for ov in scenario.section_overrides:
@@ -90,11 +119,13 @@ class ScenarioBuilder:
                 payload["narrative"] = ov.narrative
             if ov.action is not None:
                 payload["action"] = ov.action
-            await self.client.patch(
+            resp = await self.client.patch(
                 f"/configurations/{config_id}/sections", json=payload
             )
+            self._validate_response(resp)
 
         # 6. Activate
-        await self.client.post(f"/configurations/{config_id}/activate")
+        resp = await self.client.patch(f"/configurations/{config_id}/activate")
+        self._validate_response(resp)
 
         return config_id
