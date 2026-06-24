@@ -198,7 +198,7 @@ describe('Custom codes upload', () => {
         await within(editRows[1]).findByRole('button', { name: 'Edit' })
       );
     });
-    test('opens when clicked', async () => {
+    test('opens when clicked', () => {
       expect(screen.getByText(`Edit ${MOCK_SNOMED_CODE}`)).toBeInTheDocument();
     });
 

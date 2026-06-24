@@ -20,6 +20,7 @@ import {
 } from '../../../../../api/schemas';
 import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
 import { buildCsvDownloadTemplate } from './utils';
+import { FuseResult } from 'fuse.js';
 
 type UploadCsvError = {
   response?: {
@@ -244,7 +245,7 @@ export function ImportCustomCodes({
   };
 
   const handleBack = () => {
-    if (uploading) {
+    if (isUploading || isUploadPending) {
       setIsUploading(false);
       return;
     }
@@ -269,12 +270,10 @@ export function ImportCustomCodes({
     setPreviewEditItem(null);
   };
 
-  const uploading = isUploading || isUploadPending;
-
   const previewDisplayItems = searchText
     ? previewSearchResults
     : previewItems.map((i) => {
-        return { item: i, matches: undefined };
+        return { item: i, matches: [], refIndex: -1 };
       });
 
   return (
@@ -301,7 +300,7 @@ export function ImportCustomCodes({
             onChange={handleFileChange}
           />
         </>
-        {uploading ? (
+        {isUploading || isUploadPending ? (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
             <div className="mb-4 flex justify-center">
               <img
@@ -419,39 +418,15 @@ export function ImportCustomCodes({
               </thead>
 
               <tbody>
-                {previewDisplayItems.map(({ item, matches }) => (
-                  <tr key={item.id} className="border-y border-blue-50">
-                    <td className="px-2 py-1">
-                      {highlightMatches(item.code, matches, 'code')}
-                    </td>
-                    <td className="px-2 py-1">
-                      {/* code systems should always be rendered at this point, 
-                      but do a check / a fallback to make Typescript happy */}
-
-                      {codeSystems
-                        ? codeSystems[item.system_key].display_name
-                        : item.system_key.toUpperCase()}
-                    </td>
-                    <td className="px-2 py-1">
-                      {highlightMatches(item.name, matches, 'name')}
-                    </td>
-                    <td className="px-2 py-1 text-right text-sm">
-                      <Button
-                        variant="tertiary"
-                        onClick={() => openPreviewEditModal(item.id)}
-                      >
-                        Edit
-                      </Button>
-                      <span className="px-2 text-gray-400">&nbsp;</span>
-                      <Button
-                        variant="tertiary"
-                        onClick={() => handleRowDelete(item)}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {codeSystems &&
+                  previewDisplayItems.map((previewItem) => (
+                    <PreviewRow
+                      previewItem={previewItem}
+                      codeSystems={codeSystems}
+                      openPreviewEditModal={openPreviewEditModal}
+                      handleRowDelete={handleRowDelete}
+                    />
+                  ))}
               </tbody>
             </table>
 
@@ -485,6 +460,44 @@ export function ImportCustomCodes({
         />
       )}
     </>
+  );
+}
+type PreviewRowProps = {
+  previewItem: FuseResult<UploadCustomCodesPreviewItem>;
+  codeSystems: IndexedCodeSystem;
+  openPreviewEditModal: (itemId: string) => void;
+  handleRowDelete: (itemToDelete: UploadCustomCodesPreviewItem) => void;
+};
+function PreviewRow({
+  previewItem,
+  codeSystems,
+  openPreviewEditModal,
+  handleRowDelete,
+}: PreviewRowProps) {
+  const { item, matches } = previewItem;
+
+  return (
+    <tr key={item.id} className="border-y border-blue-50">
+      <td className="px-2 py-1">
+        {highlightMatches(item.code, matches, 'code')}
+      </td>
+      <td className="px-2 py-1">{codeSystems[item.system_key].display_name}</td>
+      <td className="px-2 py-1">
+        {highlightMatches(item.name, matches, 'name')}
+      </td>
+      <td className="px-2 py-1 text-right text-sm">
+        <Button
+          variant="tertiary"
+          onClick={() => openPreviewEditModal(item.id)}
+        >
+          Edit
+        </Button>
+        <span className="px-2 text-gray-400">&nbsp;</span>
+        <Button variant="tertiary" onClick={() => handleRowDelete(item)}>
+          Delete
+        </Button>
+      </td>
+    </tr>
   );
 }
 
