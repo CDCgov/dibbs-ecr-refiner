@@ -150,8 +150,6 @@ class TestLambda:
         # --- RefinerComplete assertions ---
 
         # COVID was refined and the flu was not
-
-        # COVID was refined and the flu was not
         expected_refiner_metadata = {
             "SDDH": {
                 COVID_CODE: True,
