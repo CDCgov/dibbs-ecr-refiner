@@ -9,6 +9,7 @@ from fastapi import status
 from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
+from app.services.configurations import get_default_sections
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
 
 
@@ -530,11 +531,11 @@ class TestConfigurationExportSectionsCsv:
             row = _get_section_row(content=content, loinc=loinc)
             assert row["Coded Data"] == "N/A"
 
-    async def test_sections_csv_body_is_non_empty(
+    async def test_sections_csv_has_all_sections(
         self, setup, authed_client, get_condition_id, create_config
     ):
         """
-        Sections CSV should contain at least a header row.
+        Sections CSV should contain a row for each section available.
         """
         condition_id = await get_condition_id("Cholera")
         config = await create_config(condition_id)
@@ -545,4 +546,7 @@ class TestConfigurationExportSectionsCsv:
         assert response.status_code == status.HTTP_200_OK
         content = _get_csv_from_zip(response.content, r"Section_Export")
         lines = [line for line in content.splitlines() if line.strip()]
-        assert len(lines) >= 1, "Expected at least a CSV header row in the response"
+        expected_lines = len(get_default_sections()) + 1  # adding the heading
+        assert len(lines) == expected_lines, (
+            "Expected a row in the CSV for each section"
+        )
