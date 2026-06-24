@@ -1,8 +1,8 @@
 # eCR Refiner Release Process
 
-_Updated 4/1/26_
+_Updated 6/23/26_
 
-This document will outline the process for releasing a new version of the eCR Refiner web application and AWS Lambda function, along with roles and responsibilites of those involved in the release process.
+This document will outline the process for releasing a new version of the eCR Refiner web application and AWS Lambda function, along with roles and responsibilities of those involved in the release process.
 
 **Prerequisites:**
 
@@ -16,16 +16,18 @@ This document will outline the process for releasing a new version of the eCR Re
 
 1. Run the [release candidate builder job](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/build-release-candidate.yml) using the following inputs:
    1. `ref` = `main`
-   2. `version` = Semantic version to use (example: `1.4.0`)
-   3. `rc` = the RC number (example: `rc.1`, note the `.` between `rc` and the number)
-   4. `dry_run` = `false` (feel free to try using `true` first if you'd like to run a test without creating anything)
+   2. `version` = Semantic version to use in MAJOR.MINOR.POINT format (example: `1.4.0`). Bump the versioning according to the below heuristics:
+      - Bump POINT if there's ever a patch of security issues in a live image or a need to mitigate a scan on the same bundle of features
+      - Bump MINOR if there are feature releases that need to be made (get product sign off)
+      - Bump MAJOR if there are breaking architectural changes or large, non-incremental changes (get product sign off)
+   3. `dry_run` = `false` (feel free to try using `true` first if you'd like to run a test without creating anything)
 2. The job will push the new RC images to ECR and GHCR, which are ready to be deployed and tested. These images can be found at:
    - [refiner](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Frefiner)
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
 
 3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). If you've enabled "create release notes" in the previous step, find the created release notes from the job. If needed, you can also make the release notes manually by clicking "draft release notes" and following the below steps.
-   1. Title the release notes with "Release < RELEASE NUMBER >" without the `rc` suffix (ie Release 0.0.11) since the notes will only get published after the release is ready for publishing.
+   1. Double check the title of the release notes matches "Release < RELEASE NUMBER >".
       ![Screenshot of default values](./release_details.png)
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
       ![Screenshot of generate release notes button](./generate_release_notes.png)
@@ -46,19 +48,18 @@ This document will outline the process for releasing a new version of the eCR Re
    - Check the deploy: Once the deployments to lower environments gets kicked off, check that deployed image makes it to [the APHL dev environment](https://refiner.dev.sandbox2.aimsplatform.org/) with the correct version number and the packages have the correct image tagged latest.
      ![Screenshot of version section of the footer on the dev site](./version_code_dev.png)
 
+   - If needed, do any manual testing in lower environments needed to instill confidence in the new version.
    - If needed, address the scanned vulnerabilities and create follow-up release candidates with fixes.
 
-## Promote the final image APHL
+## Promote the final image for APHL
 
 **MAKE SURE STEPS 3 AND 4 IN THE FIRST SECTION ARE COMPLETED BEFORE PROMOTION**
 
-1. Build and push the images to GHCR and ECR using the [release candidate promotion job](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/promote-release-candidate.yml)
-   1. Make sure the `rc_version` is the release candidate tag (e.g., `1.4.0-rc.1`)
-   2. Make sure the `version` is the same as the release candidate tag without `-rc.x` at the end (e.g., `1.4.0`)
-   3. Leave `dry_run` unchecked
-   4. After completion, check that the images were successfully pushed to both GHCR and ECR (see job logs)
-1. Navigate to the releases page and find the created release notes for the final image, as well as the draft notes created in the initial steps. Copy over the content from the draft, and once the content is moved over, delete that draft.
-1. Once you're done, hit "Publish release"
+Once you have gotten the OK from APHL that the release candidate has passed validation,
+
+1. Follow the instructions in [DEMO_RELEASE.md](./DEMO_RELEASE.md) to deploy the same image to the demo environment.
+
+1. Navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases) and hit "Publish release" to make the release notes live.
    ![Screenshot of publishing release](./publish_release.png)
 
 1. Communicate to APHL that the final release is ready for them to promote up to prod, along with the version number. They should be able to pull the newly tagged image and promote it up to the prod environment.
