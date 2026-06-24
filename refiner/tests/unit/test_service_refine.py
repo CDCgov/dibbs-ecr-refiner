@@ -15,8 +15,8 @@ from app.services.ecr.model import (
     SectionProvenanceRecord,
     SectionSource,
 )
+from app.services.ecr.narrative.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
-from app.services.ecr.section.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
 from tests.unit.helpers.configuration import create_processed_config
@@ -83,7 +83,7 @@ def _make_db_configuration_v1_1(**kwargs) -> DbConfiguration:
         "last_activated_at": None,
         "last_activated_by": None,
         "created_by": "fake-config-id-v1-1",
-        "s3_urls": [],
+        "s3_url": [],
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)
@@ -133,7 +133,7 @@ def _make_db_configuration_v3_1_1(**kwargs) -> DbConfiguration:
         "last_activated_at": None,
         "last_activated_by": None,
         "created_by": "fake-config-id-v1-1",
-        "s3_urls": [],
+        "s3_url": "",
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)
@@ -194,7 +194,7 @@ def _make_plan(
         code_system_sets=processed_config.code_system_sets,
         section_instructions={
             code: DbConfigurationSectionInstructions(
-                action=action, include=True, narrative=False
+                action=action, include=True, narrative="remove"
             )
             for code, action in sections.items()
         },
@@ -243,7 +243,7 @@ class TestRefiningService:
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
                 "29762-2": DbConfigurationSectionInstructions(
-                    action="retain", include=True, narrative=True
+                    action="retain", include=True, narrative="retain"
                 )
             },
             section_provenance={},
@@ -277,7 +277,7 @@ class TestRefiningService:
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
                 "11450-4": DbConfigurationSectionInstructions(
-                    action="refine", include=True, narrative=False
+                    action="refine", include=True, narrative="remove"
                 )
             },
             section_provenance={},
@@ -309,7 +309,7 @@ class TestRefiningService:
             code_system_sets=processed_config.code_system_sets,
             section_instructions={
                 "30954-2": DbConfigurationSectionInstructions(
-                    action="refine", include=True, narrative=False
+                    action="refine", include=True, narrative="remove"
                 )
             },
             section_provenance={},
@@ -347,7 +347,7 @@ class TestRefiningService:
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
                 "29299-5": DbConfigurationSectionInstructions(
-                    action="refine", include=True, narrative=True
+                    action="refine", include=True, narrative="retain"
                 )
             },
             section_provenance={
@@ -356,7 +356,7 @@ class TestRefiningService:
                     display_name="Reason for Visit",
                     include=True,
                     action="refine",
-                    narrative=True,
+                    narrative="retain",
                     config_version=1,
                     source=SectionSource.CONFIGURED,
                 )
@@ -388,7 +388,7 @@ class TestRefiningService:
         """
         Tests narrative removal on a narrative-only section.
 
-        With narrative=False, the section's <text> should be replaced
+        With narrative="remove", the section's <text> should be replaced
         with the removal notice and the rendered provenance footnote
         should carry the NARRATIVE_ONLY_REMOVED outcome — distinct from
         the configured RETAINED_NARRATIVE_REMOVED because the section
@@ -402,7 +402,7 @@ class TestRefiningService:
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
                 "29299-5": DbConfigurationSectionInstructions(
-                    action="retain", include=True, narrative=False
+                    action="retain", include=True, narrative="remove"
                 )
             },
             section_provenance={
@@ -411,7 +411,7 @@ class TestRefiningService:
                     display_name="Reason for Visit",
                     include=True,
                     action="retain",
-                    narrative=False,
+                    narrative="remove",
                     config_version=1,
                     source=SectionSource.CONFIGURED,
                 )

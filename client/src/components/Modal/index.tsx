@@ -22,11 +22,14 @@ function useModalContext() {
   return ctx;
 }
 
+type WidthSettings = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
   position?: 'center' | 'top';
+  maxWidth?: WidthSettings;
   className?: string;
 }
 /**
@@ -54,7 +57,8 @@ function Modal({
   open,
   onClose,
   children,
-  position = 'center',
+  position = 'top',
+  maxWidth = 'lg',
   className,
 }: ModalProps) {
   return (
@@ -63,14 +67,17 @@ function Modal({
         <DialogBackdrop className="fixed inset-0 z-50 bg-black/60" />
 
         <div
-          className={classNames('fixed inset-0 z-50 flex justify-center p-4', {
-            'items-center': position === 'center',
-            'items-start': position === 'top',
-          })}
+          className={classNames(
+            'fixed inset-0 z-50 flex justify-center overflow-auto pt-15',
+            {
+              'items-center': position === 'center',
+              'items-start': position === 'top',
+            }
+          )}
         >
           <DialogPanel
             className={classNames(
-              'border-base-lighter relative z-60 w-full max-w-lg rounded-sm border bg-white p-6 shadow-lg',
+              `border-base-lighter relative z-60 w-full max-w-${maxWidth} rounded-sm border bg-white p-6 shadow-lg`,
               className
             )}
           >
@@ -104,20 +111,16 @@ function ModalCloseButton() {
 interface ModalSectionProps {
   children: React.ReactNode;
   className?: string;
+  maxWidth?: WidthSettings;
 }
 
 function ModalHeader({ children }: ModalSectionProps) {
   return <div className="mx-auto mt-6 w-full pr-10 pb-6 pl-6">{children}</div>;
 }
 
-function ModalTitle({ children, className }: ModalSectionProps) {
+function ModalTitle({ children }: ModalSectionProps) {
   return (
-    <DialogTitle
-      className={classNames(
-        'font-merriweather text-gray-90 text-3xl font-bold',
-        className
-      )}
-    >
+    <DialogTitle className="font-public-sans text-gray-90 text-3xl font-bold">
       {children}
     </DialogTitle>
   );
@@ -141,9 +144,9 @@ function ModalFooter({
   align = 'left',
 }: ModalFooterProps) {
   return (
-    <div className={classNames('py-4', className)}>
+    <div className={className}>
       <div
-        className={classNames('mx-auto flex w-full max-w-md gap-3 px-6', {
+        className={classNames(`flex w-full gap-3 px-6`, {
           'justify-start': align === 'left',
           'justify-end': align === 'right',
           'justify-center': align === 'center',

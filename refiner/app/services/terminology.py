@@ -2,11 +2,13 @@ from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
+from app.db.codes.model import CodedConcept
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
+from ..db.configurations.model import DbNarrativeAction
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -35,7 +37,7 @@ def index_condition_code_list_by_system(
 
 
 @dataclass(frozen=True)
-class Coding:
+class Coding(CodedConcept):
     """
     A code + display + system triple, representing a single coded concept.
 
@@ -45,9 +47,7 @@ class Coding:
     and a human label for custom codes with "Other".
     """
 
-    code: str
-    display: str = ""
-    system: str = ""
+    system_oid: str = ""
 
 
 type Code = str
@@ -165,12 +165,14 @@ class CodeSystemSets:
                   Coding dicts as values.
         """
 
-        def _serialize_system(system_dict: dict[str, Coding]) -> list[dict[str, str]]:
+        def _serialize_system(
+            system_dict: dict[str, Coding],
+        ) -> list[dict[str, str]]:
             return [
                 {
                     "code": coding.code,
                     "display": coding.display,
-                    "system": coding.system,
+                    "system": coding.system_oid,
                 }
                 for coding in system_dict.values()
             ]
@@ -211,7 +213,7 @@ class CodeSystemSets:
                 item["code"]: Coding(
                     code=item["code"],
                     display=item.get("display", ""),
-                    system=item.get("system", ""),
+                    system_oid=item.get("system", ""),
                 )
                 for item in codings
             }
@@ -242,7 +244,7 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
-    narrative: bool
+    narrative: DbNarrativeAction
     include: bool
 
 
@@ -250,15 +252,13 @@ class ProcessedConfigurationData(BaseModel):
     """
     ProcessedConfiguration data coming from an active.json S3 file.
 
-    Supports both the legacy format (flat codes only) and the enriched
-    format (with code_system_sets). The enriched format is written by
-    newer activation code.
+    active.json stores code data in code_system_sets. The runtime flat codes set
+    is derived from code_system_sets when building the ProcessedConfiguration.
     """
 
-    codes: set[str] = Field(min_length=1)
     sections: list[Section]
     included_condition_rsg_codes: set[str]
-    code_system_sets: dict[str, list[dict[str, str]]] | None = None
+    code_system_sets: dict[str, list[dict[str, str]]]
 
 
 @dataclass(frozen=True)
@@ -266,11 +266,12 @@ class ProcessedConfiguration:
     """
     Represents the processed set of codes from a configuration, ready for refinement.
 
-    This model supports both the existing flat-code matching path and the new
-    code-system-aware matching path:
+    This model supports both flat-code matching and code-system-aware matching:
 
-    - codes: Flat set of all code strings (used when no specific entry matching rules are in place)
-    - code_system_sets: Structured per-system lookup (fed to new section-aware path)
+       - codes: Flat set of all code strings, derived from code_system_sets at read time
+         and used for fallback matching when no specific entry matching rules are in place.
+       - code_system_sets: Structured per-system lookup used by the section-aware matching path.
+
 
     Both fields are populated from the same source data. When the IG does not prescribe strict **SHALL**
     entry matching rules then we can fall back to using `codes`, whereas sections that have strict **SHALL**
@@ -287,12 +288,8 @@ class ProcessedConfiguration:
         """
         Creates a ProcessedConfiguration from a validated dictionary.
 
-        Supports both the enriched format (with code_system_sets) and the
-        simple code search (flat codes only). When code_system_sets is present
-        in the data, codes are routed to the correct per-system dictionaries
-        with display names, enabling section-aware matching and displayName
-        enrichment. When absent, all codes are placed in the 'other' bucket
-        as a fallback.
+        code_system_sets is required in active.json. The runtime flat codes set
+        is derived from all coding objects across all code systems.
 
         Args:
             data (dict): Input dictionary with required data.
@@ -303,21 +300,19 @@ class ProcessedConfiguration:
 
         validated = ProcessedConfigurationData.model_validate(data)
 
-        if validated.code_system_sets is not None:
-            # enriched format: deserialize the per-system code structure
-            code_system_sets = CodeSystemSets.from_dict(
-                coding_by_code_system=validated.code_system_sets,
-                oid_to_system_map=OID_TO_SYSTEM_KEY_MAP,
-            )
-        else:
-            # no system info available, put everything in 'other'
-            other_codings = {code: Coding(code=code) for code in validated.codes}
-            code_system_sets = CodeSystemSets(
-                system_to_code_maps={"other": other_codings}
-            )
+        code_system_sets = CodeSystemSets.from_dict(
+            coding_by_code_system=validated.code_system_sets,
+            oid_to_system_map=OID_TO_SYSTEM_KEY_MAP,
+        )
+
+        codes = {
+            coding["code"]
+            for coding_list in validated.code_system_sets.values()
+            for coding in coding_list
+        }
 
         return cls(
-            codes=validated.codes,
+            codes=codes,
             code_system_sets=code_system_sets,
             section_processing=[s.model_dump() for s in validated.sections],
             included_condition_rsg_codes=validated.included_condition_rsg_codes,

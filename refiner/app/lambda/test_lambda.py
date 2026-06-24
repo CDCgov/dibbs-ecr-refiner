@@ -144,7 +144,8 @@ def test_lambda_inactive(
 
     # Run the Lambda
     response = lambda_handler(lambda_event, MockLambdaContext())
-    assert response["statusCode"] == 200
+    assert "batchItemFailures" in response
+    assert response["batchItemFailures"] == []
 
     # Collect names of all keys that exist after running the lambda
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
@@ -231,9 +232,17 @@ def test_lambda_one_active(
 
     # Create activation for COVID
     covid_activation = {
-        "codes": ["101289-7"],
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "101289-7",
+                    "display": "SARS-CoV-2 RNA [Presence] in Throat by NAA with non-probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -273,7 +282,8 @@ def test_lambda_one_active(
 
     # Run the Lambda
     response = lambda_handler(lambda_event, MockLambdaContext())
-    assert response["statusCode"] == 200
+    assert "batchItemFailures" in response
+    assert response["batchItemFailures"] == []
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
@@ -357,9 +367,17 @@ def test_lambda_all_active(
     )
     # Create activation for COVID
     covid_activation = {
-        "codes": ["101289-7"],
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "101289-7",
+                    "display": "SARS-CoV-2 RNA [Presence] in Throat by NAA with non-probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -378,9 +396,17 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
-        "codes": ["100343-3"],
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "100343-3",
+                    "display": "Influenza virus A RNA [Presence] in Specimen by NAA with probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -398,9 +424,17 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
-        "codes": ["100343-3"],
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
+        "code_system_sets": {
+            "loinc": [
+                {
+                    "code": "100343-3",
+                    "display": "Influenza virus A RNA [Presence] in Specimen by NAA with probe detection",
+                    "system": "2.16.840.1.113883.6.1",
+                }
+            ]
+        },
     }
     s3_client.put_object(
         Bucket=config_bucket,
@@ -446,7 +480,8 @@ def test_lambda_all_active(
 
     # Run the Lambda
     response = lambda_handler(lambda_event, MockLambdaContext())
-    assert response["statusCode"] == 200
+    assert "batchItemFailures" in response
+    assert response["batchItemFailures"] == []
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)

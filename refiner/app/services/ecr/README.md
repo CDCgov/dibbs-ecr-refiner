@@ -36,7 +36,7 @@ The pipeline creates an `AugmentationContext` for each document before any work 
 All of this is per the eICR Data Augmentation Header template (`urn:hl7ii:2.16.840.1.113883.10.20.15.2.1.3:2025-11-01`):
 
 - **`templateId`** — signals the document conforms to the augmentation header template
-- **`id`** — new UUID with `assigningAuthorityName="ecr-refinement"`
+- **`id`** — new UUID with `assigningAuthorityName="ecr-refiner"`
 - **`effectiveTime`** — timestamp of the augmentation operation (with timezone)
 - **`setId`** — new UUID (replaces original, or inserted if absent)
 - **`versionNumber`** — reset to 1
@@ -57,9 +57,9 @@ Refinement attaches an unanchored `<footnote>` to every section in the refined e
 
 The "what was configured" and "what actually happened" columns usually agree, but they can diverge. The most common divergence is the no-match case: a jurisdiction configures a section for refinement, the matching step finds nothing in the section that matches the configured codes, and the refiner stubs the section rather than preserving an orphaned narrative. The footnote makes that decision visible — a reviewer sees "Action: refine, Outcome: Refined; no matches found" in the same row and doesn't have to wonder why a refine-configured section came out empty.
 
-The footnote ID is built from the section's LOINC code and the augmentation timestamp (`ecr-refinement-{loinc}-{timestamp}`), so every footnote in a refinement run is structurally tied to the augmentation author's `<time>` value. A consumer can verify document integrity by checking that all footnote IDs in a document carry the same timestamp the augmentation header advertises.
+The footnote ID is built from the section's LOINC code and the augmentation timestamp (`ecr-refiner-{loinc}-{timestamp}`), so every footnote in a refinement run is structurally tied to the augmentation author's `<time>` value. A consumer can verify document integrity by checking that all footnote IDs in a document carry the same timestamp the augmentation header advertises.
 
-The user-facing labels for the configuration source and the runtime outcome live in `section/constants.py` as small dicts keyed by enum values. Editing the copy is one file change with no code touches.
+The user-facing labels for the configuration source and the runtime outcome live in `narrative/constants.py` as small dicts keyed by enum values. Editing the copy is one file change with no code touches.
 
 ## Supporting modules
 
@@ -83,11 +83,14 @@ The user-facing labels for the configuration source and the runtime outcome live
 
 **Namespace standardization.** All modules use `hl7:` as the XPath prefix for `urn:hl7-org:v3`. The namespace map is defined once in `model.py` and imported everywhere. The CDA literature uses both `hl7:` and `cda:` interchangeably (per Keith Boone's _The CDA Book_, §4.2); having one convention across the codebase prevents silent bugs from mismatched prefix/map pairs.
 
+**Three-way narrative configuration.** The `narrative` setting on a section
+configuration is currently a three-way enum ("retain", "remove", "reconstruct"). The
+`SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED` enum value and its label are
+already in place; the work is in the matching engines and the configuration UI.
+
 ## Future work
 
 **Entry-level author participations.** The augmentation IG defines an Entry Author Participation template for stamping individual entries with what the tool did to them (retained, removed, nulled). This would give downstream consumers per-entry provenance to complement the per-section provenance footnotes. It's more invasive than header-level augmentation because it needs to happen during section processing, not after.
-
-**Three-way narrative configuration.** The `narrative` setting on a section configuration is currently a bool (retain or remove). A planned third value, `refine`, will reconstruct the narrative from the surviving entries after refinement. The `SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED` enum value and its label are already in place; the work is in the matching engines and the configuration UI.
 
 > [!IMPORTANT]
 > **March 2026 spec update.** The IG is removing `functionCode` from the header-level author and adding a value set binding to `softwareName` instead. The code has comments marking where this change applies. When adopted, the header author's `functionCode` block gets removed and `softwareName` gains `@code` and `@codeSystem` attributes from the Data Augmentation Tool value set.

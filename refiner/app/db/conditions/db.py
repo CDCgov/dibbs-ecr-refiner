@@ -8,7 +8,12 @@ from psycopg.rows import class_row, dict_row
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
-from .model import DbCondition, DbConditionBase, DbConditionsContextGrouper
+from .model import (
+    ConditionSummary,
+    DbCondition,
+    DbConditionBase,
+    DbConditionsContextGrouper,
+)
 
 
 async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
@@ -505,6 +510,7 @@ async def get_context_groupers_by_condition_id_db(
             category,
             canonical_url,
             code_count,
+            completeness,
             created_at,
             updated_at
         FROM conditions_context_groupers
@@ -518,3 +524,35 @@ async def get_context_groupers_by_condition_id_db(
             await cur.execute(query, params)
             rows = await cur.fetchall()
             return rows
+
+
+async def get_conditions_with_rsg_codes_db(
+    db: AsyncDatabaseConnection,
+) -> list[ConditionSummary]:
+    """
+    Function to fetch all conditions with joins into codes to grab the associated condition RSGs.
+
+    Only grabs the conditions corresponding to the latest TES version.
+    """
+    query = """
+        SELECT
+            c.id,
+            c.display_name,
+            JSONB_AGG(JSONB_BUILD_OBJECT('display', codes.display, 'code', codes.code)) as rsg_codes
+        FROM conditions as c
+        LEFT JOIN conditions_rsg_codes as rsg ON rsg.condition_id = c.id
+        LEFT JOIN codes ON codes.id = rsg.code_id
+        WHERE c.version = %s
+        GROUP BY
+            c.id,
+            c.display_name
+        ORDER BY LOWER(c.display_name);
+    """
+    version = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
+    params = (version,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return [ConditionSummary.from_db_row(r) for r in rows]

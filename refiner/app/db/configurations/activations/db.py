@@ -20,7 +20,7 @@ async def _activate_configuration_db(
     configuration_id: UUID,
     activated_by_user_id: UUID,
     jurisdiction_id: str,
-    s3_urls: list[str],
+    s3_url: str,
     *,
     cur: AsyncCursor[CursorType],
 ) -> UUID | None:
@@ -28,7 +28,7 @@ async def _activate_configuration_db(
             UPDATE configurations
             SET
                 status = 'active',
-                s3_urls = %s,
+                s3_url = %s,
                 last_activated_by = %s
             WHERE id = %s
                 RETURNING
@@ -36,7 +36,7 @@ async def _activate_configuration_db(
         """
 
     params = (
-        s3_urls,
+        s3_url,
         activated_by_user_id,
         configuration_id,
     )
@@ -72,7 +72,7 @@ async def _deactivate_configuration_db(
             UPDATE configurations
             SET
                 status = 'inactive',
-                s3_urls = NULL
+                s3_url = NULL
             WHERE id = %s
             AND status = 'active'
             RETURNING
@@ -116,7 +116,7 @@ async def activate_configuration_db(
     activated_by_user_id: UUID,
     canonical_url: str,
     jurisdiction_id: str,
-    s3_urls: list[str],
+    s3_url: str,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -143,7 +143,7 @@ async def activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
                     jurisdiction_id=jurisdiction_id,
-                    s3_urls=s3_urls,
+                    s3_url=s3_url,
                     cur=cur,
                 )
             else:
@@ -163,7 +163,7 @@ async def activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
                     jurisdiction_id=jurisdiction_id,
-                    s3_urls=s3_urls,
+                    s3_url=s3_url,
                     cur=cur,
                 )
     if not activated_config_id:

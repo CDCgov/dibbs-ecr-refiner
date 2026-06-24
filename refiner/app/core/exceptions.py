@@ -221,3 +221,20 @@ class DatabaseDataError(DatabaseError):
     """
 
     pass
+
+
+class RefinementException(Exception):
+    """
+    Exception raised during a failed refinement run.
+    """
+
+    def __init__(self, message: str, detail: str):
+        """
+        RefinementException constructor.
+
+        Args:
+            message (str): High-level error message
+            detail (str): Additional detail describing the issue encountered
+        """
+        super().__init__(message)
+        self.detail = detail

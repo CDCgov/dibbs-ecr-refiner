@@ -37,7 +37,7 @@ function SearchIcon() {
       focusable="false"
       className="usa-icon"
     >
-      <use href={`${SearchSvg}#search`}></use>
+      <use href={`${SearchSvg}#search`} />
     </svg>
   );
 }

@@ -4,10 +4,12 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import CodeSystemIndex
+from app.db.codes.model import DbCode
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
+    DbNarrativeAction,
     DbSectionAction,
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
@@ -95,6 +97,7 @@ class GetConfigurationResponse:
     custom_codes: CustomCodes
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
+    rsg_codes: list[DbCode]
     version: int
     active_configuration_id: UUID | None
     active_version: int | None
@@ -173,11 +176,11 @@ class DeleteSectionInput(SectionInputBase):
 
 class SectionUpdateInput(BaseModel):
     """
-    Request body for modifying a section.
+    Input model for updating a section's processing instructions.
     """
 
     include: bool | None = None
-    narrative: bool | None = None
+    narrative: DbNarrativeAction | None = None
     action: DbSectionAction | None = None
     name: str | None = None
     current_code: str

@@ -7,7 +7,7 @@
 import json
 import os
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, TypedDict
 
 import boto3
@@ -26,8 +26,8 @@ from app.services.ecr.model import JurisdictionReportableConditions, ReportableC
 from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
     AugmentationRun,
+    RefinementContext,
     RefinementResult,
-    RefinementTrace,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     produce_remainder_rr_for_jurisdiction,
@@ -51,9 +51,9 @@ ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
 
 
-class RefinerCompleteFile(TypedDict):
+class RefinerCompleteSuccess(TypedDict):
     """
-    Represents the completion file written after all refinement is done.
+    Represents a successful completion file written after all refinement is done.
 
     Required by AIMS infrastructure.
     """
@@ -61,6 +61,17 @@ class RefinerCompleteFile(TypedDict):
     RefinerMetadata: RefinerMetadata
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
+
+
+class RefinerCompleteError(TypedDict):
+    """
+    Represents a fatal error completion file written despite of failure.
+
+    Required by AIMS infrastructure.
+    """
+
+    RefinerSkip: bool
+    Error: str
 
 
 @dataclass
@@ -72,12 +83,6 @@ class RefinementState:
     jurisdiction/per-condition refinement traces, the AIMS-facing
     metadata dict, and the set of codes per jurisdiction that were
     NOT refined (used to drive remainder RR production).
-
-    TODO:
-    * skipped_condition_codes_by_jurisdiction holds information that
-      is also present on the per-condition RefinementTrace objects
-      (traces with refinement_outcome == "skipped")
-    * that means skipped codes are tracked in two places
     """
 
     output_files: set[str] = field(default_factory=set)
@@ -85,7 +90,6 @@ class RefinementState:
     skipped_condition_codes_by_jurisdiction: dict[str, set[str]] = field(
         default_factory=lambda: defaultdict(set)
     )
-    traces: list[RefinementTrace] = field(default_factory=list)
 
 
 @dataclass
@@ -135,6 +139,7 @@ def lambda_handler(event, context) -> dict:
     """
 
     try:
+        batch_item_failures = []
         logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
         s3_config_bucket_name = S3_BUCKET_CONFIG
 
@@ -143,6 +148,8 @@ def lambda_handler(event, context) -> dict:
             record_id = record.get("messageId")
             logger.append_keys(record_id=record_id)
             logger.info(f"Processing record: {record_id}")
+
+            persistence_id = None
 
             # Initialize the S3 client
             region = record["awsRegion"]
@@ -159,68 +166,100 @@ def lambda_handler(event, context) -> dict:
 
             logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
 
-            # Extract persistence_id from the RR object key
-            persistence_id = extract_persistence_id(s3_object_key, REFINER_INPUT_PREFIX)
-            logger.info(f"Extracted persistence_id: {persistence_id}")
-
-            # S3 GET RR
-            logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
-            rr_content = get_s3_object_content(
-                s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
-            )
-            logger.info("Retrieved RR from s3")
-
-            # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
-            eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
-            logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
-
-            # S3 GET eICR
-            eicr_content = get_s3_object_content(
-                s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
-            )
-            logger.info("Retrieved eICR from s3")
-
-            # Create XMLFiles container
-            xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
-
-            # Process Refiner (eICR, RR) -> Refiner Output []
-            logger.info("Starting refinement process")
-            result = run_refinement(
-                input=RefinementInput(
-                    xml_files=xml_files,
-                    s3_client=s3_client,
-                    config_bucket_name=s3_config_bucket_name,
-                    output_bucket_name=s3_bucket_name,
-                    persistence_id=persistence_id,
+            try:
+                # Extract persistence_id from the RR object key
+                persistence_id = extract_persistence_id(
+                    s3_object_key, REFINER_INPUT_PREFIX
                 )
-            )
+                logger.info(f"Extracted persistence_id: {persistence_id}")
+            except ValueError as e:
+                logger.error(f"Malformed S3 object key, skipping record: {str(e)}")
+                batch_item_failures.append({"itemIdentifier": record_id})
+                continue
 
-            # Create RefinerComplete file
-            complete_file: RefinerCompleteFile = {
-                "RefinerMetadata": result.metadata,
-                "RefinerSkip": False,
-                "RefinerOutputFiles": result.output_file_keys,
-            }
+            try:
+                # S3 GET RR
+                logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
+                rr_content = get_s3_object_content(
+                    s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
+                )
+                logger.info("Retrieved RR from s3")
 
-            # Construct RefinerComplete path: RefinerComplete/<persistance_id>
-            complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+                # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
+                eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
+                logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
 
-            # PUT RefinerCompleteFile
-            logger.info(
-                f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
-            )
-            s3_client.put_object(
-                Bucket=s3_bucket_name,
-                Key=complete_key,
-                Body=json.dumps(complete_file, indent=2),
-                ContentType="application/json",
-            )
+                # S3 GET eICR
+                eicr_content = get_s3_object_content(
+                    s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
+                )
+                logger.info("Retrieved eICR from s3")
 
-            logger.info(
-                f"Successfully processed {len(result.output_file_keys)} refined outputs"
-            )
+                # Create XMLFiles container
+                xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
 
-        return {"statusCode": 200, "message": "Refiner processed successfully"}
+                # Process Refiner (eICR, RR) -> Refiner Output []
+                logger.info("Starting refinement process")
+                result = run_refinement(
+                    input=RefinementInput(
+                        xml_files=xml_files,
+                        s3_client=s3_client,
+                        config_bucket_name=s3_config_bucket_name,
+                        output_bucket_name=s3_bucket_name,
+                        persistence_id=persistence_id,
+                    )
+                )
+
+                # Create RefinerComplete file
+                complete_file: RefinerCompleteSuccess = {
+                    "RefinerMetadata": result.metadata,
+                    "RefinerSkip": False,
+                    "RefinerOutputFiles": result.output_file_keys,
+                }
+
+                # Construct RefinerComplete path: RefinerComplete/<persistance_id>
+                complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+
+                # PUT RefinerCompleteFile
+                logger.info(
+                    f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
+                )
+                s3_client.put_object(
+                    Bucket=s3_bucket_name,
+                    Key=complete_key,
+                    Body=json.dumps(complete_file, indent=2),
+                    ContentType="application/json",
+                )
+
+                logger.info(
+                    f"Successfully processed {len(result.output_file_keys)} refined outputs"
+                )
+
+            except Exception as e:
+                logger.error(f"Fatal error processing record: {str(e)}", exception=e)
+
+                # Attempt to write a skip file
+                try:
+                    complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+                    error_payload: RefinerCompleteError = {
+                        "RefinerSkip": True,
+                        "Error": str(e),
+                    }
+                    s3_client.put_object(
+                        Bucket=s3_bucket_name,
+                        Key=complete_key,
+                        Body=json.dumps(error_payload, indent=2),
+                        ContentType="application/json",
+                    )
+                    logger.info(f"Wrote fatal error signal to {complete_key}")
+                except Exception as s3_err:
+                    logger.error(
+                        f"Failed to write error signal to S3: {str(s3_err)}",
+                        exception=s3_err,
+                    )
+                batch_item_failures.append({"itemIdentifier": record_id})
+
+        return {"batchItemFailures": batch_item_failures}
 
     except Exception as e:
         logger.error(f"Error processing: {str(e)}", exception=e)
@@ -482,12 +521,6 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
         run=run,
     )
 
-    log_refinement_summary(
-        persistence_id=input.persistence_id,
-        output_files=state.output_files,
-        traces=state.traces,
-    )
-
     return RefinementOutput(
         output_file_keys=list(state.output_files), metadata=state.metadata
     )
@@ -542,10 +575,6 @@ def process_condition(
     Process a single reportable condition for a jurisdiction.
     """
     rsg_code = reportable_condition.code
-    trace = RefinementTrace(
-        jurisdiction_code=jurisdiction_code,
-        rsg_code=rsg_code,
-    )
 
     cg_metadata = rsg_cg_payload.mappings.get(rsg_code)
 
@@ -558,7 +587,6 @@ def process_condition(
             operation="skipped",
         )
         mark_condition_skipped(
-            trace=trace,
             jurisdiction_code=jurisdiction_code,
             condition_code=rsg_code,
             reason="rsg_not_in_mapping",
@@ -566,20 +594,16 @@ def process_condition(
         )
         return
 
-    trace.canonical_url = cg_metadata.canonical_url
-
-    processed_configuration = load_active_configuration(
+    active_configuration = load_active_configuration(
         s3_client=refiner_input.s3_client,
         config_bucket=refiner_input.config_bucket_name,
         jurisdiction_code=jurisdiction_code,
         cg_metadata=cg_metadata,
         rsg_metadata=reportable_condition,
-        trace=trace,
     )
 
-    if processed_configuration is None:
+    if active_configuration is None:
         mark_condition_skipped(
-            trace=trace,
             jurisdiction_code=jurisdiction_code,
             condition_code=rsg_code,
             reason="no_active_configuration",
@@ -589,24 +613,34 @@ def process_condition(
 
     result = refine_for_condition(
         xml_files=refiner_input.xml_files,
-        processed_configuration=processed_configuration,
-        trace=trace,
+        processed_configuration=active_configuration.configuration,
+        context=RefinementContext(
+            canonical_url=cg_metadata.canonical_url,
+            jurisdiction_id=jurisdiction_code,
+            configuration_version=active_configuration.version,
+        ),
         run=run,
     )
-
-    state.traces.append(trace)
 
     write_refined_outputs(
         refiner_input=refiner_input,
         jurisdiction_code=jurisdiction_code,
         condition_grouper_name=cg_metadata.name,
         result=result,
-        trace=trace,
         condition_code=rsg_code,
         state=state,
     )
 
     state.metadata[jurisdiction_code][rsg_code] = True
+
+    logger.info(
+        "Refinement complete for condition.",
+        rsg_code=rsg_code,
+        jurisidiction_code=jurisdiction_code,
+        metrics=asdict(result.metrics),
+        report=asdict(result.report),
+        operation="log_summary",
+    )
 
 
 def load_condition_mapping_for_jurisdiction(
@@ -647,13 +681,13 @@ def skip_all_conditions_for_missing_mapping(
     Mark every condition in a jurisdiction as skipped when the mapping file is missing.
     """
     for condition in jurisdiction_group.conditions:
-        trace = RefinementTrace(
+        logger.info(
+            "Mapping file not found for condition",
             jurisdiction_code=jurisdiction_code,
             rsg_code=condition.code,
             refinement_outcome="skipped",
-            skip_reason="no_mapping_file",
+            reason="no_mapping_file",
         )
-        state.traces.append(trace)
         state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(
             condition.code
         )
@@ -661,7 +695,6 @@ def skip_all_conditions_for_missing_mapping(
 
 
 def mark_condition_skipped(
-    trace: RefinementTrace,
     jurisdiction_code: str,
     condition_code: str,
     reason: str,
@@ -670,12 +703,22 @@ def mark_condition_skipped(
     """
     Helper to mark a condition as "skipped" during refinement.
     """
-    trace.refinement_outcome = "skipped"
-    trace.skip_reason = reason
+    logger.info(
+        "Refiner skipped condition.",
+        jurisdiction=jurisdiction_code,
+        condition_code=condition_code,
+        reason=reason,
+        operation="skipped",
+    )
 
-    state.traces.append(trace)
     state.metadata[jurisdiction_code][condition_code] = False
     state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(condition_code)
+
+
+@dataclass
+class ActiveConfiguration:
+    configuration: ProcessedConfiguration
+    version: int
 
 
 def load_active_configuration(
@@ -684,8 +727,7 @@ def load_active_configuration(
     jurisdiction_code: str,
     cg_metadata: ConditionMapValue,
     rsg_metadata: ReportableCondition,
-    trace: RefinementTrace,
-) -> ProcessedConfiguration | None:
+) -> ActiveConfiguration | None:
     """
     Attempts to find and load the active configuration.
     """
@@ -710,8 +752,6 @@ def load_active_configuration(
         )
         return None
 
-    trace.configuration_version = config_version_to_use
-
     serialized_configuration_key = get_active_file_key(
         jurisdiction_id=jurisdiction_code,
         canonical_url=cg_metadata.canonical_url,
@@ -734,7 +774,10 @@ def load_active_configuration(
         operation="activation_file_read",
     )
 
-    return ProcessedConfiguration.from_dict(serialized_configuration)
+    return ActiveConfiguration(
+        configuration=ProcessedConfiguration.from_dict(serialized_configuration),
+        version=config_version_to_use,
+    )
 
 
 def write_refined_outputs(
@@ -743,7 +786,6 @@ def write_refined_outputs(
     condition_code: str,
     condition_grouper_name: str,
     result: RefinementResult,
-    trace: RefinementTrace,
     state: RefinementState,
 ) -> None:
     """
@@ -758,7 +800,7 @@ def write_refined_outputs(
     refiner_input.s3_client.put_object(
         Bucket=refiner_input.output_bucket_name,
         Key=eicr_output_key,
-        Body=result.refined_eicr.encode("utf-8"),
+        Body=result.documents.eicr.encode("utf-8"),
         ContentType="application/xml",
     )
 
@@ -768,17 +810,17 @@ def write_refined_outputs(
     refiner_input.s3_client.put_object(
         Bucket=refiner_input.output_bucket_name,
         Key=rr_output_key,
-        Body=result.refined_rr.encode("utf-8"),
+        Body=result.documents.rr.encode("utf-8"),
         ContentType="application/xml",
     )
 
     state.output_files.add(rr_output_key)
 
     logger.info(
-        "Condition refinement complete.",
+        "Writing refined output files.",
         eicr_key=eicr_output_key,
         rr_key=rr_output_key,
-        eicr_size_reduction_percentage=trace.eicr_size_reduction_percentage,
+        eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
         jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
         operation="condition_refinement_complete",
@@ -862,32 +904,3 @@ def write_remainder_rrs(
             augmented_rr_doc_id=remainder.augmented_result.augmented_doc_id,
             operation="remainder_rr_written",
         )
-
-
-def log_refinement_summary(
-    persistence_id: str,
-    output_files: set[str],
-    traces: list[RefinementTrace],
-) -> None:
-    """
-    Log a final summary for the entire refinement run.
-    """
-    logger.info(
-        "Refinement complete.",
-        persistence_id=persistence_id,
-        output_file_urls=list(output_files),
-        traces=[
-            {
-                "jurisdiction": t.jurisdiction_code,
-                "rsg_code": t.rsg_code,
-                "canonical_url": t.canonical_url,
-                "outcome": t.refinement_outcome,
-                "skip_reason": t.skip_reason,
-                "config_version": t.configuration_version,
-                "eicr_size_reduction": t.eicr_size_reduction_percentage,
-                "eicr_size_mb": t.eicr_size_mib,
-            }
-            for t in traces
-        ],
-        operation="refinement_complete",
-    )

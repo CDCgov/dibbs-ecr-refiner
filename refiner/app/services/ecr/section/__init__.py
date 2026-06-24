@@ -1,15 +1,16 @@
-"""
-section module __init__ file
-"""
-
 from lxml.etree import _Element
 
 from app.services.terminology import CodeSystemSets
 
-from ..model import NamespaceMap, SectionRunResult, SectionSpecification
+from ..model import (
+    DbNarrativeAction,
+    NamespaceMap,
+    SectionRunResult,
+    SectionSpecification,
+)
+from ..narrative import append_section_provenance_footnote, create_minimal_section
 from . import entry_matching as _entry_matching
 from . import generic_matching as _generic_matching
-from .narrative import append_section_provenance_footnote, create_minimal_section
 from .traversal import get_section_by_code, get_section_loinc_codes
 
 # NOTE:
@@ -23,7 +24,7 @@ def process_section(
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
     code_system_sets: CodeSystemSets | None,
-    include_narrative: bool = True,
+    narrative: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Dispatch a section to the right matching engine.
@@ -51,12 +52,6 @@ def process_section(
     interpret the result into a user-facing outcome. That interpretation
     lives in `refine._interpret_run_result`.
 
-    TODO: `include_narrative` is still a bool here. When the
-    configuration's narrative field migrates to a three-way enum
-    (`retain`/`remove`/`refine`), this parameter's type and
-    the downstream calls to the engines will need to update in
-    lockstep.
-
     Args:
         section: The section element being processed.
         codes_to_match: Flat set of condition codes for the generic
@@ -68,11 +63,13 @@ def process_section(
         code_system_sets: Structured per-system code lookup used by
             the section-aware engine and for displayName enrichment
             in the generic engine.
-        include_narrative: Whether to keep the original section
-            narrative. When False, narrative is replaced with a
-            removal notice. Ignored when matches are zero; the
-            engine stubs the section regardless per the no-match
-            policy override.
+        narrative: What to do with the section's narrative <text>:
+            "retain" keeps the original, "remove" replaces it with a
+            removal notice, "reconstruct" rebuilds it from the
+            surviving entries (falling back to removal when the
+            section has no registered reconstructor or nothing
+            survived). Ignored when matches are zero; the engine stubs
+            the section regardless per the no-match policy override.
 
     Returns:
         SectionRunResult describing what the engine did. Consumed
@@ -89,7 +86,7 @@ def process_section(
             code_system_sets=code_system_sets,
             section_specification=section_specification,
             namespaces=namespaces,
-            include_narrative=include_narrative,
+            narrative=narrative,
         )
 
     return _generic_matching.process(
@@ -98,7 +95,7 @@ def process_section(
         namespaces=namespaces,
         section_specification=section_specification,
         code_system_sets=code_system_sets,
-        include_narrative=include_narrative,
+        narrative=narrative,
     )
 
 

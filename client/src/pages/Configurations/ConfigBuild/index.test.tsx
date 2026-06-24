@@ -80,7 +80,7 @@ const mockVersions: GetConfigurationResponseVersion[] = [
     last_activated_by: 'mock-user-2',
   },
 ];
-
+const MOCK_SNOMED_DB_ID = '37a4a3f9-6148-41aa-bf45-f1aed2d4caa9';
 const baseMockConfig: GetConfigurationResponse = {
   id: 'config-id',
   condition_id: 'covid-19',
@@ -89,6 +89,28 @@ const baseMockConfig: GetConfigurationResponse = {
   display_name: 'COVID-19',
   status: 'draft',
   code_sets: mockCodeSets,
+  rsg_codes: [
+    {
+      display: 'Coronavirus infection (disorder)',
+      code: '186747009',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+    {
+      display:
+        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
+      code: '840539006',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+    {
+      display:
+        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
+      code: '1001411000124108',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+  ],
   custom_codes: {
     codes: mockCustomCodes,
     code_systems: {
@@ -98,13 +120,19 @@ const baseMockConfig: GetConfigurationResponse = {
         display_name: 'ICD-10',
         oid: '2.16.840.1.113883.6.90',
       },
+      snomed: {
+        key: 'snomed',
+        id: MOCK_SNOMED_DB_ID,
+        display_name: 'SNOMED',
+        oid: '2.16.840.1.113883.6.96',
+      },
     },
   },
   section_processing: [
     {
       name: 'Encounters Section',
       code: 'some code',
-      narrative: false,
+      narrative: 'remove',
       include: true,
       action: 'refine',
       versions: ['1.1'],

@@ -17,6 +17,7 @@ from app.services.ecr.model import (
     SectionRunResult,
     SectionSource,
 )
+from app.services.ecr.narrative import replace_narrative_with_removal_notice
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.section import (
     append_section_provenance_footnote,
@@ -25,7 +26,6 @@ from app.services.ecr.section import (
     get_section_loinc_codes,
     process_section,
 )
-from app.services.ecr.section.narrative import replace_narrative_with_removal_notice
 from app.services.ecr.specification import detect_eicr_version, load_spec
 from app.services.format import remove_element
 from app.services.terminology import ProcessedConfiguration
@@ -40,16 +40,16 @@ from app.services.terminology import ProcessedConfiguration
 #   - if the action is "retain" we should keep (retain) the narrative as-is
 # * DEFAULT_SECTION_INSTRUCTIONS
 #   - we should match how it shows up in the UI where narrative is set
-#     to 'false' and refine is set to 'true'
+#     to 'remove' and refine is set to 'refine'
 SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
-    narrative=True,
+    narrative="retain",
     action="retain",
 )
 
 DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
-    narrative=False,
+    narrative="remove",
     action="refine",
 )
 
@@ -486,7 +486,7 @@ def refine_eicr(
             # RETAINED_NARRATIVE_REMOVED below because this branch
             # reflects the spec's structural reality, not a
             # configuration choice the jurisdiction made.
-            if not section_rules.narrative:
+            if section_rules.narrative == "remove":
                 replace_narrative_with_removal_notice(
                     section=section, namespaces=HL7_NS
                 )
@@ -498,11 +498,11 @@ def refine_eicr(
             # BRANCH 2b: refinable section, jurisdiction chose to retain
             # it. honor the narrative setting.
             #
-            # the narrative=False case used to be a silent no-op (the
+            # the narrative="remove" case used to be a silent no-op (the
             # old `retain` branch was a literal `pass`); it now
             # correctly replaces the narrative with the removal notice
             # while leaving the entries untouched.
-            if not section_rules.narrative:
+            if section_rules.narrative == "remove":
                 replace_narrative_with_removal_notice(
                     section=section, namespaces=HL7_NS
                 )
@@ -511,17 +511,20 @@ def refine_eicr(
                 outcome = SectionOutcome.RETAINED
 
         else:
-            # BRANCH 3: refine entries via the matching engines.
-            # process_section returns a SectionRunResult describing what
+            # BRANCH 3: refine entries via the matching engines:
+            # * process_section returns a SectionRunResult describing what
             # actually happened, which _interpret_run_result maps to a
             # user-facing outcome (including the no-match policy override)
+            # * the configured narrative action ("retain"/"remove"/
+            # "reconstruct") is threaded straight through to the engine,
+            # which owns the decision after pruning + enrichment
             run_result = process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,
                 namespaces=HL7_NS,
                 section_specification=section_specification,
                 code_system_sets=plan.code_system_sets,
-                include_narrative=section_rules.narrative,
+                narrative=section_rules.narrative,
             )
             outcome = _interpret_run_result(run_result=run_result)
 
