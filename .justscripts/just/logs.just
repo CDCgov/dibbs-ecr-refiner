@@ -22,10 +22,12 @@ kpi-extract:
 [doc('Run arbitrary queries on `LOG_FILE` using `angle-grinder`')]
 [group('logs')]
 run query:
-    AG_BIN=$(command -v agrind || command -v angle-grinder) \
-    if [ -z "$AG_BIN" ]; then echo "agrind not found"; exit 1; fi \
+    #!/usr/bin/env bash
+    export AG_QUERY='{{ query }}'
+    AG_BIN=$(command -v agrind || command -v angle-grinder)
+    if [ -z "$AG_BIN" ]; then echo "agrind not found"; exit 1; fi
     if [[ "$AG_BIN" =~ agrind$ ]]; then \
-        $AG_BIN --file {{ LOG_FILE }} "{{ query }}"; \
+        $AG_BIN --file {{ LOG_FILE }} "$AG_QUERY"; \
     else \
-        $AG_BIN -- -f {{ LOG_FILE }} "{{ query }}"; \
+        $AG_BIN -- -f {{ LOG_FILE }} "$AG_QUERY"; \
     fi
