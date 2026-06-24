@@ -2,7 +2,6 @@ import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 import { NavigationBar } from '../NavigationBar';
-import { Icon } from '@trussworks/react-uswds';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ExternalLink } from '../ExternalLink';
 
@@ -42,7 +41,7 @@ export function Header({ displayName }: HeaderProps) {
           aria-label="Open settings menu"
           className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none"
         >
-          <Icon.Person size={3} aria-hidden />
+          <PersonIcon />
           {displayName}
         </MenuButton>
         <MenuItems
@@ -141,5 +140,20 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function PersonIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+    >
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
   );
 }
