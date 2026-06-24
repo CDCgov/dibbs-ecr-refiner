@@ -7,6 +7,7 @@ from fastapi import status
 from app.core.models.types import XMLFiles
 from app.db.configurations.model import DbConfigurationCustomCode
 from app.services.terminology import ProcessedConfiguration
+from tests.integration.scenarios.build_report import build_report
 
 from ...fixtures.loader import load_fixture_str
 from ..conftest import (
@@ -47,6 +48,20 @@ def update_snapshots(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--update-snapshots"))
 
 
+# This hook runs automatically at the end of the test session
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """
+    Generate a new report at the end of the scenario run.
+
+    All scenarios must pass and the update snapshot command must be used.
+    """
+    if exitstatus != 0:
+        return
+    if not session.config.getoption("--update-snapshots", default=False):
+        return
+    build_report()
+
+
 # NOTE:
 # SCENARIO MODEL
 # =============================================================================
@@ -64,13 +79,13 @@ class SectionOverride:
 
     Only the fields set here are changed; anything left None keeps the
     section's seeded default. "Exclude a section" is include=False; "refine but
-    drop the prose" is narrative=False; narrative-only sections are forced to
+    drop the prose" is narrative="remove""; narrative-only sections are forced to
     action="retain" by the API regardless of what is passed.
     """
 
     current_code: str
     include: bool | None = None
-    narrative: bool | None = None
+    narrative: str | None = None  # DbNarrativeAction; kept as str to avoid the import
     action: str | None = None  # DbSectionAction; kept as str to avoid the import
 
 
@@ -177,7 +192,7 @@ SCENARIOS: list[Scenario] = [
             SectionOverride(current_code="10154-3", include=False),
             SectionOverride(current_code="10164-2", include=False),
             SectionOverride(current_code="29299-5", include=False),
-            SectionOverride(current_code="30954-2", narrative=False),
+            SectionOverride(current_code="30954-2", narrative="remove"),
             SectionOverride(current_code="29762-2", action="retain"),
         ),
     ),
@@ -232,6 +247,20 @@ SCENARIOS: list[Scenario] = [
         ),
         configuration_version=8,
         custom_codes=(CustomCode("385857005", "snomed", "Artificial respiration"),),
+    ),
+    Scenario(
+        name="covid_results_reconstruction",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=9,
+        section_overrides=(
+            SectionOverride(current_code="30954-2", narrative="reconstruct"),
+        ),
     ),
 ]
 

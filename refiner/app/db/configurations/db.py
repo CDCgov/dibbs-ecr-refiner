@@ -89,7 +89,7 @@ async def insert_custom_section_db(
         name,
         "refine",
         True,
-        False,
+        "remove",
         versions,
         "custom",
     )
@@ -1051,9 +1051,7 @@ async def update_configuration_section_db(
         (
             prev_section.narrative,
             section_update.narrative,
-            lambda old, new: (
-                f"narrative from '{_bool_label(old)}' to '{_bool_label(new)}'"
-            ),
+            lambda old, new: f"narrative from '{old}' to '{new}'",
         ),
     ]
 
@@ -1267,7 +1265,7 @@ def _get_configurations_core_query() -> str:
         c.last_activated_at,
         c.last_activated_by,
         c.created_by,
-        c.s3_urls
+        c.s3_url
     FROM configurations c
     JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
     LEFT JOIN LATERAL (

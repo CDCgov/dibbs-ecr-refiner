@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Any, TypedDict
 from uuid import UUID
 
+from app.db.codes.model import CodedConcept
+
 
 @dataclass
 class DbConditionsContextGrouper:
@@ -16,6 +18,7 @@ class DbConditionsContextGrouper:
     category: str
     canonical_url: str
     code_count: int
+    completeness: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -195,3 +198,28 @@ class ConditionMappingPayload:
             }
             for rsg, value in self.mappings.items()
         }
+
+
+@dataclass(frozen=True)
+class ConditionSummary:
+    """
+    High-level information for a condition.
+    """
+
+    id: UUID
+    display_name: str
+    rsg_codes: list[CodedConcept]
+
+    @classmethod
+    def from_db_row(cls, data: dict):
+        """
+        Creates an object from a read from the DB.
+        """
+        return cls(
+            id=data["id"],
+            display_name=data["display_name"],
+            rsg_codes=[
+                CodedConcept(display=c["display"], code=c["code"])
+                for c in data["rsg_codes"]
+            ],
+        )

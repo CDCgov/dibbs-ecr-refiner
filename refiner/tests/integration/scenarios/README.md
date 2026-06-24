@@ -32,16 +32,16 @@ A snapshot change should ride with the change that caused it. If you alter a sce
 
 ## Regenerating the stakeholder report
 
-`REPORT.md` is an auto-generated summary of the suite intended for stakeholder review. It pulls from the committed snapshots and the roll-up coverage table inside `authoring/build_report.py`. Regenerate it whenever you update snapshots or change scenario coverage:
+`REPORT.md` is an auto-generated summary of the suite intended for stakeholder review. It pulls from the committed snapshots and the roll-up coverage table inside `build_report.py`. Regenerate it whenever you update snapshots or change scenario coverage:
 
 ```bash
 pytest tests/integration/scenarios/ --update-snapshots
-python tests/integration/scenarios/authoring/build_report.py
+python tests/integration/scenarios/build_report.py
 ```
 
 Commit both the regenerated snapshots and the regenerated `REPORT.md` together. A follow-up PR will add a CI step that runs `build_report.py` and fails with `git diff --exit-code` if the committed `REPORT.md` is out of date; until that lands, the discipline is on the developer.
 
-To update the roll-up coverage matrix shown in the report (e.g. after adding a scenario that closes a gap, or after Tim or another stakeholder shares additional concerns), edit the `ROLLUP_COVERAGE` list at the top of `authoring/build_report.py` and re-run the script.
+To update the coverage tables shown in the report, edit the data lists at the top of `build_report.py` and re-run the script: `ROLLUP_COVERAGE` for Tim's numbered Roll-up issues (e.g. after adding a scenario that closes a gap, or after a stakeholder shares additional concerns), and `CAPABILITY_COVERAGE` for product capabilities the suite pins that aren't Roll-up issues (e.g. narrative reconstruction). A scenario listed in either gets a back-reference in its detail section.
 
 ## How configurations are built
 
@@ -65,7 +65,7 @@ pytest tests/integration/scenarios/test_all_sections_covid_influenza.py \
 ```
 
 1. Inspect the snapshots; commit them.
-2. Run `python tests/integration/scenarios/authoring/build_report.py` to regenerate `REPORT.md`.
+2. Run `python tests/integration/scenarios/build_report.py` to regenerate `REPORT.md`.
 3. Commit `REPORT.md` alongside the new snapshots and the `conftest.py` change.
 
 There is no `awslocal s3 cp` step and no committed `active.json` — authoring is entirely in code via the recipe. If the condition's `display_name` doesn't resolve against the seeded TES data, `get_condition_id` fails diagnostically; query the `conditions` table to find the exact name.
@@ -111,7 +111,7 @@ The suite was designed to catch regressions in entry-matching behavior, especial
 - **Procedures retained via custom procedure codes.** `covid_with_custom_codes` adds ECMO (SNOMED `233573008`) and `covid_with_procedure_only_code` adds Ventilator care (SNOMED `385857005`) as custom codes. Both snapshots show the matching procedure surviving whole.
 - **Vital sign sub-component pruning.** `covid_with_custom_codes` adds Heart Rate (LOINC `8867-4`) as a single custom code; combined with body temperature (LOINC `8310-5`, a COVID condition-grouper member matched from the baseline configuration), the snapshot pins panel pruning at the two-of-nine cardinality. `covid_with_multi_vital_sign_codes` adds three more (`8867-4`, `8480-6`, `9279-1`) and pins the four-of-nine case. The surviving sub-components are the configured-and-present codes, not only the custom additions.
 - **Adding unrelated code sets does not remove relevant data.** `covid_plus_unrelated_condition` associates Agricultural Chemicals (Fertilizer) Poisoning (the condition Tim cited) with the COVID configuration. Its size reduction matches `covid_baseline`, confirming that adding orthogonal codes neither adds matches nor removes COVID-relevant content. A regression would manifest as the size reduction climbing above the baseline's. The explicit assertion `test_adding_unrelated_condition_codes_does_not_change_refinement` pins this as a direct equality on size reduction and retained clinical entries.
-- **Section processing variations.** `covid_with_section_overrides` exercises the section-processing dimensions: excluding sections (`include=False`), refining a section while dropping its narrative (`narrative=False`), and forcing `retain`, across both narrative-only and entry-based sections. The snapshot pins the resulting dispositions in the refined output.
+- **Section processing variations.** `covid_with_section_overrides` exercises the section-processing dimensions: excluding sections (`include=False`), refining a section while dropping its narrative (`narrative="remove"`), and forcing `retain`, across both narrative-only and entry-based sections. The snapshot pins the resulting dispositions in the refined output.
 - **No-match section stubbing.** Several sections of the fixture have no codes that match the COVID grouper (Procedures under baseline, Immunizations under baseline, etc.). `covid_baseline` pins the "stub the section when nothing matches" policy.
 - **CDA conformance through refinement.** Every refined eICR and RR is validated against CDA R2 XSD and schematron on every test run. Refactors that produce malformed output (e.g. a regression in removed-narrative handling that breaks schema) fail loudly here rather than at downstream consumers.
 

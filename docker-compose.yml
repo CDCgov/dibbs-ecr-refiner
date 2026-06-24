@@ -34,6 +34,12 @@ services:
       - REFINER_COMPLETE_PREFIX=RefinerComplete/
     depends_on:
       - localstack
+    volumes:
+      - ./refiner/app/lambda:/var/task/app/lambda
+      - ./refiner/app/core:/var/task/app/core
+      - ./refiner/app/services:/var/task/app/services
+      - ./refiner/app/db:/var/task/app/db
+      - ./refiner/assets:/var/task/assets
 
   db:
     image: postgres:alpine
@@ -85,7 +91,7 @@ services:
     working_dir: /app
     command: >
       sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv &&
-             python refiner/scripts/seeding/seed_db.py"
+             python refiner/scripts/seeding/load_static_data.py"
     profiles: ["seed"]
     depends_on:
       - db

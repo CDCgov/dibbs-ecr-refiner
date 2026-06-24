@@ -407,7 +407,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-18776-5-20260101000000">
+            <footnote ID="ecr-refiner-18776-5-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -628,7 +628,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-46240-8-20260101000000">
+            <footnote ID="ecr-refiner-46240-8-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -766,7 +766,7 @@
               not reported<br/> Paroxysms Of Coughing REPORTED starting on 2020/11/04<br/>
               Post-tussive vomiting not reported<br/>
             </paragraph>
-            <footnote ID="ecr-refinement-10164-2-20260101000000">
+            <footnote ID="ecr-refiner-10164-2-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -820,7 +820,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-11348-0-20260101000000">
+            <footnote ID="ecr-refiner-11348-0-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -880,7 +880,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-29549-3-20260101000000">
+            <footnote ID="ecr-refiner-29549-3-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -1175,7 +1175,7 @@
           <title>MEDICATIONS</title>
           <text>
             Narrative Text
-          <footnote ID="ecr-refinement-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <footnote ID="ecr-refiner-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <substanceAdministration classCode="SBADM" moodCode="EVN">
@@ -1229,7 +1229,7 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
           <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           <title>Admission Medications</title>
-          <text>Some text here<footnote ID="ecr-refinement-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1315,7 +1315,7 @@
             <translation code="42347-5" codeSystem="2.16.840.1.113883.6.1" displayName="Admission Diagnosis"/>
           </code>
           <title>HOSPITAL ADMISSION DIAGNOSIS</title>
-          <text>Appendicitis<footnote ID="ecr-refinement-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Appendicitis<footnote ID="ecr-refiner-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1388,7 +1388,7 @@
             <translation code="78375-3" displayName="Discharge Diagnosis" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           </code>
           <title>Discharge Diagnosis</title>
-          <text>Some text here<footnote ID="ecr-refinement-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refiner-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v8</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1465,7 +1465,7 @@
               For weakness and shortness of breath. One episode of melena. No recent
               headaches. Positive for osteoarthritis in hips, knees and hands.
             </paragraph>
-            <footnote ID="ecr-refinement-10187-3-20260101000000">
+            <footnote ID="ecr-refiner-10187-3-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -1570,7 +1570,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-11450-4-20260101000000">
+            <footnote ID="ecr-refiner-11450-4-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -1640,7 +1640,7 @@
           <title>Chief Complaint</title>
           <text>
             <paragraph>Chief Complaint (the patient's own description): Headache and rash</paragraph>
-            <footnote ID="ecr-refinement-10154-3-20260101000000">
+            <footnote ID="ecr-refiner-10154-3-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -1682,7 +1682,7 @@
           <title>Reason for Visit</title>
           <text>
             <paragraph>Reason for Visit (as documented by provider): Headache, rash, and fever</paragraph>
-            <footnote ID="ecr-refinement-29299-5-20260101000000">
+            <footnote ID="ecr-refiner-29299-5-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -1890,7 +1890,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-30954-2-20260101000000">
+            <footnote ID="ecr-refiner-30954-2-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -1973,7 +1973,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-47519-4-20260101000000">
+            <footnote ID="ecr-refiner-47519-4-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -2226,7 +2226,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-11369-6-20260101000000">
+            <footnote ID="ecr-refiner-11369-6-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -2476,7 +2476,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-29762-2-20260101000000">
+            <footnote ID="ecr-refiner-29762-2-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -2675,7 +2675,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-90767-5-20260101000000">
+            <footnote ID="ecr-refiner-90767-5-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -2811,7 +2811,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-8716-3-20260101000000">
+            <footnote ID="ecr-refiner-8716-3-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>
@@ -2936,7 +2936,7 @@
                 </tr>
               </tbody>
             </table>
-            <footnote ID="ecr-refinement-83910-0-20260101000000">
+            <footnote ID="ecr-refiner-83910-0-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
               </paragraph>

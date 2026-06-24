@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -61,12 +62,17 @@ async def get_configurations(
     Returns:
         List of configuration objects.
     """
+    summary_response = await get_configurations_summary_db(
+        jurisdiction_id=user.jurisdiction_id, db=db
+    )
 
     return [
-        GetConfigurationsResponse(id=c.id, name=c.name, status=c.status)
-        for c in await get_configurations_summary_db(
-            jurisdiction_id=user.jurisdiction_id, db=db
+        GetConfigurationsResponse(
+            id=c.id,
+            name=c.name,
+            status=c.status,
         )
+        for c in summary_response
     ]
 
 
@@ -231,7 +237,8 @@ async def get_configuration(
 
     # fetch all conditions from the db based on the primary condition's version
     all_conditions = await get_conditions_by_version_db(
-        db=db, version=primary_condition.version
+        version=primary_condition.version,
+        db=db,
     )
 
     latest_config = await get_latest_config_db(
@@ -282,6 +289,10 @@ async def get_configuration(
         code_systems=code_systems,
     )
 
+    rsg_codes = await get_rsg_codes_by_condition_id_db(
+        condition_id=primary_condition.id,
+        db=db,
+    )
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
@@ -297,6 +308,7 @@ async def get_configuration(
             [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.name.lower(),
         ),
+        rsg_codes=rsg_codes,
         all_versions=all_versions,
         version=config.version,
         active_version=active_version,

@@ -3,6 +3,7 @@ import json
 import httpx
 import pytest
 import pytest_asyncio
+from botocore.exceptions import ClientError
 from lxml import etree
 
 from tests.integration.conftest import assert_schematron_valid, validate_refined_xml
@@ -212,6 +213,71 @@ class TestLambda:
 
         print(f"[{test_name}] ✅ All refined outputs passed Schematron validation")
 
+    async def test_lambda_processing_error(self, http_client, s3_client, default_setup):
+        """
+        Lambda should write a RefinerComplete signal with RefinerSkip: True and an Error
+        message when a fatal error occurs during refinement processing.
+        """
+        bucket = default_setup["bucket"]
+        event = default_setup["event"]
+
+        # To trigger a processing error, we provide a malformed RR file that
+        # will cause lxml or run_refinement to raise an exception.
+        malformed_rr_key = default_setup["rr_key"]
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=malformed_rr_key,
+            Body="<<rootroot><<ununclosed>",
+            ContentType="application/xml",
+        )
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=event)
+
+        # Lambda failure in Localstack might still return 200 but with an errorMessage in body
+        resp_json = resp.json()
+        assert "batchItemFailures" in resp_json
+        assert len(resp_json["batchItemFailures"]) == 1
+        assert "itemIdentifier" in resp_json["batchItemFailures"][0]
+
+        # Verify that a RefinerComplete file was written despite the failure
+        complete_key = default_setup["complete_key"]
+        complete_response = s3_client.get_object(Bucket=bucket, Key=complete_key)
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+
+        assert complete_body == {"RefinerSkip": True, "Error": "Failed to parse XML"}
+
+    async def test_lambda_invalid_prefix(self, http_client, s3_client, default_setup):
+        """
+        Lambda should fail when the S3 object key does not start with the expected
+        prefix. Since persistence_id cannot be extracted, no RefinerComplete
+        file should be written.
+        """
+        bucket = default_setup["bucket"]
+        event = default_setup["event"]
+
+        # Override the object key to something invalid
+        invalid_key = "InvalidPrefix/persistence/id/RR.xml"
+
+        # Update the event body (which is a JSON string)
+        event_body = json.loads(event["Records"][0]["body"])
+        event_body["detail"]["object"]["key"] = invalid_key
+        event["Records"][0]["body"] = json.dumps(event_body)
+
+        # Upload a dummy file to the invalid path
+        s3_client.put_object(Bucket=bucket, Key=invalid_key, Body=b"dummy content")
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=event)
+
+        resp_json = resp.json()
+        assert "batchItemFailures" in resp_json
+        assert len(resp_json["batchItemFailures"]) == 1
+        assert "itemIdentifier" in resp_json["batchItemFailures"][0]
+
+        # Verify no RefinerComplete file was created for the default path
+        with pytest.raises(ClientError) as exc_info:
+            s3_client.get_object(Bucket=bucket, Key=default_setup["complete_key"])
+        assert exc_info.value.response["Error"]["Code"] == "NoSuchKey"
+
     async def test_lambda_current_file_null_version(
         self, http_client, s3_client, default_setup
     ):
@@ -257,8 +323,11 @@ class TestLambda:
         resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
         assert resp.status_code == 200
 
-        resp_json = resp.json()
-        error_message = resp_json["errorMessage"]
+        complete_response = s3_client.get_object(
+            Bucket=bucket, Key=default_setup["complete_key"]
+        )
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+        error_message = complete_body["Error"]
         assert (
             error_message
             == f"Activated configuration file could not be read at: configurations/SDDH/{COVID_CANONICAL_URL_UUID}/2/active.json"

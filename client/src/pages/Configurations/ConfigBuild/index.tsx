@@ -17,21 +17,24 @@ import {
   useDisassociateConditionWithConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { GetConfigurationResponse } from '../../../api/schemas';
-import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
+import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
+import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
-import { ConfigLockBanner } from './ConfigLockBanner';
+import { ConfigLockBanner } from './Lock/ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
-import { ImportCustomCodes } from './CustomCodes/ImportCustomCodes';
+import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Icon } from '@trussworks/react-uswds';
-import { ConditionCodeTable, CustomCodesDetail } from './CustomCodes/index';
+import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
+import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
+import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -54,6 +57,8 @@ export function ConfigBuild() {
     isError,
   } = useGetConfiguration(id ?? '');
 
+  const [isRsgDetailsModalOpen, setIsRsgDetailsModalOpen] = useState(false);
+
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
@@ -69,7 +74,24 @@ export function ConfigBuild() {
   return (
     <>
       <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
+        <div className="flex items-center gap-2">
+          <Title>{configuration.data.display_name}</Title>
+          <Button
+            variant="tertiary"
+            onClick={() => setIsRsgDetailsModalOpen(true)}
+            className="p-0!"
+            aria-label="Open reporting specification details modal"
+          >
+            <QuestionIcon />
+          </Button>
+          <RsgDetailsModal
+            open={isRsgDetailsModalOpen}
+            onClose={() => setIsRsgDetailsModalOpen(false)}
+            primaryConditionDisplayName={configuration.data.display_name}
+            rsgCodes={configuration.data.rsg_codes}
+          />
+        </div>
+
         <Status version={configuration.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
@@ -423,7 +445,7 @@ const ConditionCodeSetButton = forwardRef<
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
-          {codeSetTotalCodes?.toLocaleString()}
+          {codeSetTotalCodes.toLocaleString()}
         </span>
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set
@@ -498,13 +520,13 @@ function DeleteCodeSetButton({
   }
 
   return index === 0 ? (
-    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+    <span className="text-gray-cool-50 mr-2 hidden italic group-hover:block">
       Default
     </span>
   ) : (
     <Button
       variant="unstyled"
-      className="text-gray-cool-40 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+      className="text-gray-cool-50 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
       disabled={disabled}
@@ -547,4 +569,57 @@ function OptionsListContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsList({ children }: { children: React.ReactNode }) {
   return <ul className="flex flex-col gap-2">{children}</ul>;
+}
+
+interface RsgDetailsModal {
+  open: boolean;
+  onClose: () => void;
+  rsgCodes: DbCode[];
+  primaryConditionDisplayName: string;
+}
+
+function RsgDetailsModal({
+  open,
+  onClose,
+  rsgCodes,
+  primaryConditionDisplayName,
+}: RsgDetailsModal) {
+  return (
+    <Modal
+      className="max-w-160!"
+      open={open}
+      onClose={onClose}
+      position="center"
+    >
+      <ModalHeader>
+        <ModalTitle>{primaryConditionDisplayName}</ModalTitle>
+        <p>
+          Applies to eCR documents reportable for the conditions below. Only one
+          output will be produced per condition group.
+        </p>
+      </ModalHeader>
+      <ModalBody>
+        <table>
+          <thead className="border-b-gray-cool-20 border-b">
+            <tr>
+              <th scope="col" className="w-[40%] px-2 py-3 font-bold">
+                SNOMED code
+              </th>
+              <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
+            </tr>
+          </thead>
+          <tbody className="divide-gray-cool-20 divide-y">
+            {rsgCodes.map((c) => {
+              return (
+                <tr key={c.code}>
+                  <td className="py-3 pl-2">{c.code}</td>
+                  <td className="py-3 pl-2">{c.display}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </ModalBody>
+    </Modal>
+  );
 }

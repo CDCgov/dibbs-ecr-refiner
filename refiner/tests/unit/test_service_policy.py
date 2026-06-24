@@ -1,5 +1,6 @@
 from app.services.ecr.policy import (
     NARRATIVE_ONLY_SECTIONS,
+    RECONSTRUCTABLE_SECTIONS,
     SECTION_PROCESSING_SKIP,
     NarrativeOnlySection,
 )
@@ -42,3 +43,13 @@ class TestNarrativeOnlySectionSync:
                     f"Spec section {loinc_code} ({spec_entry.display_name}) "
                     f"has has_match_rules=False but is not in NarrativeOnlySection"
                 )
+
+
+class TestReconstructableSections:
+    def test_active_reconstructable_sections(self):
+        """
+        Ensure only the intended LOINCs are active for reconstruction.
+        TODO: Update this list when more LOINCs are uncommented in policy.py
+        """
+        expected = ["30954-2"]
+        assert RECONSTRUCTABLE_SECTIONS == expected

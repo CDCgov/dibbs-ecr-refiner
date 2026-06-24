@@ -1,6 +1,5 @@
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
-import { Search } from '@components/Search';
 import { ConfigurationsTable } from '@components/ConfigurationsTable';
 import {
   useCreateConfiguration,
@@ -10,15 +9,14 @@ import { useToast } from '../../hooks/useToast';
 import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
+  CodedConcept,
   GetConditionsResponse,
   NotificationKeys,
   UserResponse,
 } from '../../api/schemas';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
-import { useSearch } from '../../hooks/useSearch';
 import { Spinner } from '@components/Spinner';
-import classNames from 'classnames';
 import {
   Modal,
   ModalBody,
@@ -36,6 +34,10 @@ import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
 import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
+import { useSearch } from '../../hooks/useSearch';
+import { FuseResult, FuseResultMatch, RangeTuple } from 'fuse.js';
+import classNames from 'classnames';
+import { Search } from '@components/Search';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -61,6 +63,8 @@ interface ConfigurationsProps {
   user: UserResponse;
   refreshUser: () => void;
 }
+
+const MIN_CONFIG_SEARCH_TEXT_LENGTH = 3;
 
 export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
@@ -133,7 +137,6 @@ function AppUpdateBanner({
   isVisible: boolean;
   refreshUser: () => void;
 }) {
-  const navigate = useNavigate();
   const { mutateAsync } = useUpdateUserNotifications();
 
   if (!isVisible) {
@@ -152,14 +155,6 @@ function AppUpdateBanner({
       console.error('Failed to update user notifications', error);
     }
   }
-  async function handleViewUpdates(e: React.MouseEvent<HTMLAnchorElement>) {
-    e.preventDefault();
-    await dismissNotification();
-    void navigate('/app-updates');
-  }
-  async function handleDismiss() {
-    await dismissNotification();
-  }
 
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
@@ -171,19 +166,18 @@ function AppUpdateBanner({
               There are new updates to eCR Refiner.
             </span>
           </div>
-
-          <Link
+          <Button
+            variant="secondary"
             to="/app-updates"
-            onClick={handleViewUpdates}
-            className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+            onClick={dismissNotification}
           >
             View updates
-          </Link>
+          </Button>
         </div>
 
         <Button
           type="button"
-          onClick={handleDismiss}
+          onClick={dismissNotification}
           aria-label="Dismiss notification"
           variant="unstyled"
           className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
@@ -206,22 +200,27 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
 
   const [selectedCondition, setSelectedCondition] =
     useState<GetConditionsResponse | null>(null);
-  const [query, setQuery] = useState('');
 
   const { mutate: createConfig } = useCreateConfiguration();
   const navigate = useNavigate();
   const formatError = useApiErrorFormatter();
 
   const conditions = response?.data || [];
-
-  const filteredConditions =
-    query === ''
-      ? conditions
-      : conditions.filter((condition) => {
-          return condition.display_name
-            .toLowerCase()
-            .includes(query.toLowerCase());
-        });
+  const { searchText, setSearchText, results } = useSearch(conditions, {
+    keys: [
+      { name: 'display_name' },
+      { name: 'rsg_codes.display' },
+      { name: 'rsg_codes.code' },
+    ],
+    threshold: 0.3,
+    distance: 500, // Broaden the distance so Fuse doesn't penalize long strings
+    includeMatches: true,
+    findAllMatches: true,
+    useExtendedSearch: true,
+  });
+  const searchTextLongEnough =
+    searchText.length > MIN_CONFIG_SEARCH_TEXT_LENGTH;
+  const isSearching = searchTextLongEnough && results.length > 0;
 
   function reset() {
     onClose();
@@ -229,7 +228,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={reset} position="top">
+    <Modal open={open} onClose={reset} position="top" maxWidth="xl">
       <ModalHeader>
         <ModalTitle>Set up new configuration</ModalTitle>
       </ModalHeader>
@@ -248,29 +247,46 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
             <Label>Select condition</Label>
             <Combobox
               value={selectedCondition}
-              virtual={{ options: filteredConditions }}
+              virtual={{
+                options: isSearching ? results.map((r) => r.item) : conditions,
+              }}
               onChange={setSelectedCondition}
-              onClose={() => setQuery('')}
+              onClose={() => setSearchText('')}
             >
               <ComboboxInput<GetConditionsResponse>
                 aria-label="Select condition"
                 displayValue={(condition) => condition?.display_name ?? ''}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) =>
+                  setSearchText(prepareSearchTextForFuse(event.target.value))
+                }
                 hasValue={!!selectedCondition}
                 onClear={() => {
                   setSelectedCondition(null);
-                  setQuery('');
+                  setSearchText('');
                 }}
+                placeholder="Start typing to search (3 characters minimum)"
               />
-              <ComboboxOptions anchor="bottom">
-                {({ option: condition }) => (
-                  <ComboboxOption key={condition.id} value={condition}>
-                    {condition.display_name}
-                  </ComboboxOption>
-                )}
+              <ComboboxOptions anchor="bottom" className="max-h-85!">
+                {({ option: condition }) => {
+                  const matchResult = results.find(
+                    (r) => r.item.id === condition.id
+                  );
+                  return (
+                    <ComboboxOption key={condition.id} value={condition}>
+                      <ConditionOption
+                        matchResult={matchResult}
+                        condition={condition}
+                      />
+                    </ComboboxOption>
+                  );
+                }}
               </ComboboxOptions>
             </Combobox>
           </Field>
+        )}
+
+        {selectedCondition && (
+          <SelectedConditionPanel selectedCondition={selectedCondition} />
         )}
       </ModalBody>
       <ModalFooter align="right">
@@ -307,4 +323,144 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
       </ModalFooter>
     </Modal>
   );
+}
+
+type ConditionOptionProps = {
+  matchResult: FuseResult<GetConditionsResponse> | undefined;
+  condition: GetConditionsResponse;
+};
+
+function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
+  if (!matchResult) return condition.display_name;
+
+  const { item, matches } = matchResult;
+  const conditionDisplayMatch = matches?.find((r) => r.key === 'display_name');
+  const rsgMatches = matches?.filter(
+    (m) => m.key === 'rsg_codes.display' || m.key === 'rsg_codes.code'
+  );
+
+  return (
+    <div>
+      <p className="pb-2 font-bold">
+        {conditionDisplayMatch
+          ? highlightMatches(item.display_name, conditionDisplayMatch.indices)
+          : item.display_name}
+      </p>
+      <div>
+        {rsgMatches?.map((match, i) => (
+          <RsgMatchRow key={i} matchResult={match} rsgCodes={item.rsg_codes} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type RsgMatchRowProps = {
+  matchResult: FuseResultMatch;
+  rsgCodes: CodedConcept[];
+};
+function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
+  const matchedCode = rsgCodes[matchResult?.refIndex as number];
+  const isRsgDisplayMatch = matchResult.key === 'rsg_codes.display';
+  const isRsgCodeMatch = matchResult.key === 'rsg_codes.code';
+
+  return (
+    <div key={matchedCode.code}>
+      <div className="flex justify-between">
+        <div>⤷</div>
+        <p className="ml-1 flex-2 pb-2">
+          {isRsgDisplayMatch
+            ? highlightMatches(matchedCode.display, matchResult.indices)
+            : `${matchedCode.display}`}
+        </p>
+        <p className="flex-1 text-right">
+          {isRsgCodeMatch
+            ? highlightMatches(matchedCode.code, matchResult.indices)
+            : matchedCode.code}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+type SelectedConditionPanelProps = {
+  selectedCondition: GetConditionsResponse;
+};
+function SelectedConditionPanel({
+  selectedCondition,
+}: SelectedConditionPanelProps) {
+  return (
+    <div>
+      <p className="pb-2">Selected condition group</p>
+
+      <div className="border-gray-cool-30! rounded-sm border px-2 py-2">
+        <table className="w-full border-separate border-spacing-y-1">
+          <caption className="text-left font-bold">
+            {selectedCondition.display_name}
+          </caption>
+          <colgroup>
+            <col className="w-[65%]" />
+            <col className="w-[35%]" />
+          </colgroup>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Display name</th>
+              <th scope="col">Code</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selectedCondition.rsg_codes.map((c) => {
+              return (
+                <tr key={c.code}>
+                  <td>{c.display}</td>
+                  <td className="text-right align-top">{c.code}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function prepareSearchTextForFuse(s: string) {
+  if (s.length < MIN_CONFIG_SEARCH_TEXT_LENGTH) {
+    return '';
+  }
+
+  const NUMERIC_ONLY_STRING = new RegExp(/^\d+/i);
+  if (NUMERIC_ONLY_STRING.test(s)) {
+    // on return exact prefix matches when search string is a code search (purely numeric)
+    return `^${s}`;
+  }
+  return s;
+}
+
+function highlightMatches(
+  text: string,
+  regions: readonly RangeTuple[] | undefined
+) {
+  if (!regions || !regions.length) return text;
+
+  const chunks = [];
+  let lastIndex = 0;
+
+  // Fuse.js returns sorted, non-overlapping [start, end] pairs
+  for (const [start, end] of regions) {
+    // Add any unmatched text before this region
+    if (start > lastIndex) {
+      chunks.push(text.slice(lastIndex, start));
+    }
+    // Wrap the matched range in a <mark> tag
+    chunks.push(<mark key={start}>{text.slice(start, end + 1)}</mark>);
+    lastIndex = end + 1;
+  }
+
+  // Add any remaining text after the last match
+  if (lastIndex < text.length) {
+    chunks.push(text.slice(lastIndex));
+  }
+
+  return chunks;
 }
