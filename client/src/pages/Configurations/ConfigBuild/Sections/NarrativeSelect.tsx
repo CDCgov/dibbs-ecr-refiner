@@ -20,6 +20,7 @@ interface NarrativeSelectProps {
   currentSection: DbConfigurationSectionProcessing;
   disabled: boolean;
   isNarrativeOnly: boolean;
+  isReconstructable: boolean;
   codedDataAction: DbSectionAction;
 }
 
@@ -28,6 +29,7 @@ export function NarrativeSelect({
   currentSection,
   disabled,
   isNarrativeOnly,
+  isReconstructable,
   codedDataAction,
 }: NarrativeSelectProps) {
   const updateSection = useSectionUpdater(configurationId);
@@ -48,7 +50,7 @@ export function NarrativeSelect({
         className="min-w-38"
       >
         <option value="retain">Keep original</option>
-        {!isNarrativeOnly && (
+        {!isNarrativeOnly && isReconstructable && (
           <option value="reconstruct" disabled={codedDataAction === 'retain'}>
             Reconstruct
           </option>
