@@ -433,7 +433,7 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
-    await user.type(screen.getByLabelText('Code #'), '123456');
+    await user.type(screen.getByLabelText('Code'), '123456');
     await user.tab(); // triggers onBlur
 
     expect(
@@ -491,7 +491,7 @@ describe('Config builder page', () => {
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
 
-    await user.type(screen.getByLabelText('Code #'), '12345');
+    await user.type(screen.getByLabelText('Code'), '12345');
     await user.selectOptions(screen.getByLabelText('Code system'), 'SNOMED');
     await user.type(screen.getByLabelText('Code name'), 'Test code name');
 
@@ -545,11 +545,11 @@ describe('Config builder page', () => {
     ).toBeInTheDocument();
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
-    expect(screen.getByLabelText('Code #')).toHaveValue('custom-code1');
+    expect(screen.getByLabelText('Code')).toHaveValue('custom-code1');
     expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
     expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
-    await user.type(screen.getByLabelText('Code #'), '12345');
+    await user.type(screen.getByLabelText('Code'), '12345');
 
     expect(
       screen.getByText('Update', { selector: 'button' })

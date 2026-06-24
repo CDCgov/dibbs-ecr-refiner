@@ -36,12 +36,14 @@ vi.mock('../../../../../api/code-systems/code-systems', async () => {
 });
 
 const MOCK_LOINC_CODE = '52747';
+const MOCK_SNOMED_CODE = '15613';
 const MOCK_CVX_CODE = '23779';
+
 const MOCK_OTHER_CODE_SUFFIX = '1534';
 const MOCK_OTHER_CODE = MOCK_CVX_CODE + MOCK_OTHER_CODE_SUFFIX; // used to test prefix matching
 
 const MOCK_UPLOAD_CSV = `code,code_system,display_name
-15613,snomed,SNOMED Example
+${MOCK_SNOMED_CODE},snomed,SNOMED Example
 ${MOCK_LOINC_CODE},loinc,LOINC Example
 287972,icd10,ICD-10 Example
 5128,rxnorm,RxNorm Example
@@ -115,12 +117,22 @@ describe('Custom codes upload', () => {
 
   test('delete row successfully deletes a row', async () => {
     const deleteRows = screen.getAllByRole('row');
+    checkSnomedCode();
     checkOtherCode();
+    checkIcd10Code();
+    checkLoincCode();
+    checkCvxCode();
+
     await userEvent.click(
       await within(deleteRows[1]).findByRole('button', { name: 'Delete' })
     );
     expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length);
+
+    checkSnomedCode(false); // first row is the SNOMED row
     checkOtherCode();
+    checkIcd10Code();
+    checkLoincCode();
+    checkCvxCode();
   });
 
   test('filters appropriately when search string is supplied', async () => {
@@ -171,6 +183,42 @@ describe('Custom codes upload', () => {
     checkLoincCode(false);
     checkSnomedCode(false);
     checkIcd10Code(false);
+  });
+
+  describe('edit modal', () => {
+    beforeEach(async () => {
+      const editRows = screen.getAllByRole('row');
+      checkSnomedCode();
+      checkOtherCode();
+      checkIcd10Code();
+      checkLoincCode();
+      checkCvxCode();
+
+      await userEvent.click(
+        await within(editRows[1]).findByRole('button', { name: 'Edit' })
+      );
+    });
+    test('opens when clicked', async () => {
+      expect(screen.getByText(`Edit ${MOCK_SNOMED_CODE}`)).toBeInTheDocument();
+    });
+
+    test('disables save state when any one of the three required fields is missing', async () => {
+      const saveButton = screen.getByRole('button', { name: 'Save changes' });
+      expect(saveButton).toBeEnabled();
+
+      const code = screen.getByLabelText('Code');
+      await userEvent.clear(code);
+      expect(saveButton).toBeDisabled();
+
+      await userEvent.type(code, '13535135');
+      const codeName = screen.getByLabelText('Code name');
+
+      await userEvent.clear(codeName);
+      expect(saveButton).toBeDisabled();
+
+      await userEvent.type(codeName, 'SNOMED Example');
+      expect(saveButton).toBeEnabled();
+    });
   });
 });
 
