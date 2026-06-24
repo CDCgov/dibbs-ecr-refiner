@@ -19,6 +19,7 @@ import {
   IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
+import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
 
 type UploadCsvError = {
   response?: {
@@ -495,13 +496,14 @@ type UploadInstructionProps = {
 function UploadInstructions({
   handleButtonClick,
   disabled,
-  codeSystems,
 }: UploadInstructionProps) {
-  const uploadTemplateCsvContent = codeSystems
-    ? buildCsvDownloadTemplate(Object.values(codeSystems))
-    : null;
+  const { data: codeSystems } = useGetCodeSystems();
 
   const downloadTemplate = () => {
+    const uploadTemplateCsvContent = codeSystems?.data
+      ? buildCsvDownloadTemplate(Object.values(codeSystems.data))
+      : null;
+
     if (!uploadTemplateCsvContent) return;
     const blob = new Blob([uploadTemplateCsvContent], {
       type: 'text/csv;charset=utf-8;',
@@ -527,15 +529,15 @@ function UploadInstructions({
           <p className="text-sm">
             Your spreadsheet must follow the format of this template.
           </p>
-          {uploadTemplateCsvContent && (
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={downloadTemplate}
-            >
-              Download template
-            </Button>
-          )}
+
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={downloadTemplate}
+            disabled={!codeSystems}
+          >
+            Download template
+          </Button>
         </div>
       </div>
 
@@ -568,14 +570,15 @@ function UploadInstructions({
 function buildCsvDownloadTemplate(systemsSupported: DbCodeSystem[]) {
   const headers = 'code_number,code_system,display_name';
 
-  let content = headers;
+  let content = headers + '\n';
   systemsSupported.forEach((s) => {
-    const randomCode = Array.from({ length: 8 }, () =>
+    const randomLengthAtLeastThree = 3 + Math.floor(Math.random() * 10);
+    const randomCode = Array.from({ length: randomLengthAtLeastThree }, () =>
       Math.floor(Math.random() * 10)
     ).join('');
 
     const currentRow =
-      randomCode + ',' + s.display_name + `${s.display_name} Example`;
+      randomCode + ',' + s.display_name + ',' + `${s.display_name} Example`;
     content += currentRow + '\n';
   });
 
