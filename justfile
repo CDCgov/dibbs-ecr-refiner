@@ -40,6 +40,14 @@ mod cd './.justscripts/just/cloud.just'
 [group: 'alias']
 mod d './.justscripts/just/dev.just'
 
+# Log analysis
+[group: 'alias']
+mod lg './.justscripts/just/logs.just'
+
+# Run log analysis commands
+[group: 'sub-command']
+mod logs './.justscripts/just/logs.just'
+
 # Run docker build commands
 [group: 'sub-command']
 mod docker './.justscripts/just/docker.just'
