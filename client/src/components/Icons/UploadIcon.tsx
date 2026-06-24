@@ -1,0 +1,30 @@
+interface IconProps {
+  size?: number;
+  color?: string;
+  className?: string;
+}
+
+export function UploadIcon({
+  size = 68,
+  color = '#ADCFDC',
+  className,
+}: IconProps) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 54 68"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M33.6668 0.666016H7.00016C3.3335 0.666016 0.36683 3.66602 0.36683 7.33268L0.333496 60.666C0.333496 64.3327 3.30016 67.3327 6.96683 67.3327H47.0002C50.6668 67.3327 53.6668 64.3327 53.6668 60.666V20.666L33.6668 0.666016ZM47.0002 60.666H7.00016V7.33268H30.3335V23.9993H47.0002V60.666ZM13.6668 44.0327L18.3668 48.7327L23.6668 43.466V57.3327H30.3335V43.466L35.6335 48.766L40.3335 44.0327L27.0335 30.666L13.6668 44.0327Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
