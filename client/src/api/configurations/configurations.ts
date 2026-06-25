@@ -612,7 +612,7 @@ export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValid
  * Accepts a CSV payload in JSON body.
  *
  * Expected CSV headers:
- *     code_number,code_system,display_name
+ *     code,code_system,display_name
  *
  * Returns:
  *     UploadCustomCodesResponse

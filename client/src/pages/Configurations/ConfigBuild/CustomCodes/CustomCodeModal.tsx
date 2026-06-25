@@ -198,7 +198,7 @@ function CustomCodeForm({
   return (
     <>
       <Field>
-        <Label>Code #</Label>
+        <Label>Code</Label>
         <TextInput
           type="text"
           value={code}
