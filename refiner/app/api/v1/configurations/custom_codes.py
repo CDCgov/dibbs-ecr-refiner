@@ -224,8 +224,13 @@ async def upload_custom_codes_csv(
     decoded = body.csv_text
     csv_reader = csv.DictReader(io.StringIO(decoded))
 
-    required_columns = {"code", "code_system", "display_name"}
-    if not required_columns.issubset(set(csv_reader.fieldnames or [])):
+    headers = set(csv_reader.fieldnames or [])
+    base_required = {"code_system", "display_name"}
+
+    has_base = base_required.issubset(headers)
+    # maintain backwards compatibility with old template that used "code_number" as the column header
+    has_code_variant = "code" in headers or "code_number" in headers
+    if not (has_base and has_code_variant):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CSV must contain headers: code,code_system,display_name",
@@ -239,7 +244,7 @@ async def upload_custom_codes_csv(
     allowed_systems_str = ", ".join(systems_by_key.keys())
     systems_by_name = {s.display_name: s for s in systems_by_key.values()}
     for row_number, row in enumerate(csv_reader, start=2):
-        code = (row.get("code") or "").strip()
+        code = (row.get("code") or row.get("code_number") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
         name = (row.get("display_name") or "").strip()
         row_errors = []
