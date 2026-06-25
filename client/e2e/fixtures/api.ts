@@ -88,7 +88,6 @@ export class Api {
         },
       }
     );
-    console.log(await uploadCsvReq.text());
 
     expect(uploadCsvReq.ok()).toBeTruthy();
     const json = await uploadCsvReq.json();
