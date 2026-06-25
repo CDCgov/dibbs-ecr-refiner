@@ -77,7 +77,7 @@ export class Api {
     const payload = [];
     let row = 2;
     for (const c of codes) {
-      payload.push({ ...c, row });
+      payload.push({ id: crypto.randomUUID(), ...c, row });
       row++;
     }
     const uploadCsvReq = await this.request.post(
@@ -88,6 +88,8 @@ export class Api {
         },
       }
     );
+    console.log(await uploadCsvReq.text());
+
     expect(uploadCsvReq.ok()).toBeTruthy();
     const json = await uploadCsvReq.json();
     expect(json).toEqual(
