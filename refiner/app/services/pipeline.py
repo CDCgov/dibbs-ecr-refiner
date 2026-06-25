@@ -322,6 +322,11 @@ def refine_for_condition(
         )
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
+        eicr_size_reduction_percentage = _get_size_reduction_percentage(
+            unrefined=xml_files.eicr, refined=refined_eicr
+        )
+        eicr_refined_size = get_file_size_in_mib(file_content=refined_eicr)
+
         # * pretty-print at the pipeline boundary so every consumer of
         # RefinementResult receives display-ready output
         # * lxml's pretty_print=True alone does NOT indent subtrees
@@ -344,10 +349,8 @@ def refine_for_condition(
             documents=RefinementDocuments(eicr=refined_eicr, rr=refined_rr),
             metrics=RefinementMetrics(
                 eicr=RefinementMetricsEicr(
-                    size_reduction_percentage=_get_size_reduction_percentage(
-                        unrefined=xml_files.eicr, refined=refined_eicr
-                    ),
-                    size_mib=get_file_size_in_mib(file_content=refined_eicr),
+                    size_reduction_percentage=eicr_size_reduction_percentage,
+                    size_mib=eicr_refined_size,
                 )
             ),
             report=RefinementReport(
