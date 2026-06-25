@@ -186,8 +186,13 @@ def _create_csv_reader(
 
 
 def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
-    required_columns = {"code", "code_system", "display_name"}
-    if not required_columns.issubset(set(csv_reader.fieldnames or [])):
+    headers = set(csv_reader.fieldnames or [])
+    base_required = {"code_system", "display_name"}
+
+    has_base = base_required.issubset(headers)
+    has_code_variant = "code" in headers or "code_number" in headers
+
+    if not (has_base and has_code_variant):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CSV must contain headers: code,code_system,display_name",
