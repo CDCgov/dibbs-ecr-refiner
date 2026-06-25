@@ -22,7 +22,11 @@ from app.services.code_systems import (
     get_all_code_systems_by_key,
     get_allowed_code_system_keys,
 )
-from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
+from app.services.ecr.policy import (
+    NARRATIVE_ONLY_SECTIONS,
+    SECTION_PROCESSING_SKIP,
+    normalize_section_narrative,
+)
 from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
@@ -76,6 +80,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
 def clone_section_processing_instructions(
     clone_from: list[DbConfigurationSectionProcessing],
     clone_to: list[DbConfigurationSectionProcessing],
+    logger: Logger | None = None,
 ) -> list[DbConfigurationSectionProcessing]:
     """
     Clones section processing instruction info from one list of sections into another.
@@ -83,9 +88,20 @@ def clone_section_processing_instructions(
     Handles narrative-only sections specially: ensures they always have action="retain"
     regardless of what was cloned, since they cannot be refined (no entry match rules).
 
+    Stale (action, narrative) combinations on the source — e.g. from
+    configurations persisted before the API validators landed — are
+    coerced to a safe baseline via
+    `ecr.policy.normalize_section_narrative`, with each coercion
+    logged. Clone is a system-initiated operation (runs during
+    activation/clone of a draft), so we prefer coerce-and-log over
+    raising to avoid blocking unrelated work.
+
     Args:
         clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info from.
         clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info into.
+        logger (Logger | None): Logger used to emit a warning per
+            coercion. None silences the messages but still applies
+            normalization.
 
     Returns:
         list[DbConfigurationSectionProcessing]: The new list of sections.
@@ -113,12 +129,26 @@ def clone_section_processing_instructions(
         else:
             new_action = action_map.get(section.code, section.action)
 
+        new_narrative = narrative_map.get(section.code, section.narrative)
+
+        # normalize before persisting — stale combos from older
+        # configurations get coerced to a safe baseline instead of
+        # propagating into a fresh draft
+        coerced_action, coerced_narrative, notes = normalize_section_narrative(
+            code=section.code,
+            action=new_action,
+            narrative=new_narrative,
+        )
+        if notes and logger is not None:
+            for note in notes:
+                logger.warning("clone_section_processing_instructions: %s", note)
+
         standard_updates.append(
             replace(
                 section,
-                action=new_action,
+                action=coerced_action,
                 include=include_map.get(section.code, section.include),
-                narrative=narrative_map.get(section.code, section.narrative),
+                narrative=coerced_narrative,
             )
         )
 
