@@ -263,24 +263,23 @@ test.describe('Configuration detail flow', () => {
     ).toBeVisible();
   });
 
+  const condition = 'COVID-19';
+
+  const customCodeName = 'my-custom code!';
+  const customCodeSystem = 'snomed';
+  const customCode = '123-! #-$$$';
+
+  const customSectionName = 'My custom section!';
+  const customSectionCode = 'custom section code';
+
+  const additionalCodeSetName = 'Agricultural Chemicals (Fertilizer) Poisoning';
+
   test('User successfully builds and activates a configuration', async ({
     page,
     makeAxeBuilder,
     configurationsPage,
     configurationPage,
   }) => {
-    const condition = 'COVID-19';
-
-    const customCodeName = 'my-custom code!';
-    const customCodeSystem = 'snomed';
-    const customCode = '123-! #-$$$';
-
-    const customSectionName = 'My custom section!';
-    const customSectionCode = 'custom section code';
-
-    const additionalCodeSetName =
-      'Agricultural Chemicals (Fertilizer) Poisoning';
-
     await expect(
       page.getByRole('heading', {
         name: 'Configurations',
@@ -438,6 +437,27 @@ test.describe('Configuration detail flow', () => {
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
     });
+  });
+
+  test('User drafts and activates a new configuration', async ({
+    page,
+    makeAxeBuilder,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    await test.step('Create and activate configuration', async () => {
+      await configurationsPage.createConfiguration(condition);
+      await expect(
+        page.getByRole('heading', { name: condition, level: 1 })
+      ).toBeVisible();
+      await configurationPage.goToActivateTab();
+      await configurationPage.activateConfiguration();
+      await expect(
+        page.getByRole('button', { name: 'Turn off current version' })
+      ).toBeVisible();
+
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+    });
 
     await test.step('Draft new configuration version', async () => {
       await configurationPage.goToBuildTab();
@@ -470,6 +490,39 @@ test.describe('Configuration detail flow', () => {
           level: 2,
         })
       ).toBeVisible();
+
+      const csvWithBadHeaders = `cod,code_system,display_name
+      6789,ICD-10,ICD-10 Example
+      `;
+
+      await page.locator('input[type="file"]').setInputFiles({
+        name: 'invoice.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from(csvWithBadHeaders),
+      });
+
+      expect(
+        page.getByText(
+          'CSV must contain headers: code,code_system,display_name'
+        )
+      );
+
+      const csvWithBadSystem = `cod,code_system,display_name
+      6789,ICD-1,ICD-10 Example
+      `;
+
+      await page.locator('input[type="file"]').setInputFiles({
+        name: 'invoice.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from(csvWithBadSystem),
+      });
+
+      expect(
+        page.getByText(
+          'Invalid system_key: ICD-1. [code_system] must be one of',
+          { exact: false }
+        )
+      );
 
       const downloadPath =
         await configurationPage.downloadCustomCodeCsvTemplate();
@@ -505,13 +558,16 @@ test.describe('Configuration detail flow', () => {
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       await expect(
-        page.getByRole('heading', { name: 'Edit 12345', level: 2 })
+        page.getByRole('heading', { name: `Edit 1431534`, level: 2 })
       ).toBeVisible();
       const testCode = 'test code ~';
       await page.getByLabel('Code', { exact: true }).fill(testCode);
       await page.getByLabel('Code system').selectOption('CVX');
       await page.getByLabel('Code name').fill('test code_name');
       await page.getByRole('button', { name: 'Save changes' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search codes' })
+        .fill('test code_name');
 
       await editButton.click();
       await expect(
@@ -524,16 +580,19 @@ test.describe('Configuration detail flow', () => {
       await page.getByRole('searchbox', { name: 'Search codes' }).clear();
 
       const rows = page.locator('table tbody tr');
+      await page.getByRole('searchbox', { name: 'Search codes' }).fill('test');
+
       const firstRow = rows.first();
       // first row should have the most recent updated values
       await expect(firstRow.getByText(testCode)).toBeVisible();
       await expect(firstRow.getByText('test code_name')).toBeVisible();
       await expect(firstRow.getByText('CVX')).toBeVisible();
 
-      expect(await rows.all()).toHaveLength(3);
       await firstRow.getByRole('button', { name: 'Delete' }).click();
       await expect(page.getByText(testCode)).not.toBeVisible();
-      expect(await rows.all()).toHaveLength(2);
+      await page.getByRole('searchbox', { name: 'Search codes' }).clear();
+
+      expect(await rows.all()).toHaveLength(5); // 6 code systems minus one
 
       await page.getByRole('button', { name: 'Confirm & save codes' }).click();
       await expect(
