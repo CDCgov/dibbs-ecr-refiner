@@ -24,7 +24,7 @@ from .ecr.refine import (
     refine_rr,
 )
 from .ecr.reportability import get_reportable_conditions_by_jurisdiction
-from .format import format_xml_document_for_display
+from .format import format_xml_document_for_display, minify_xml
 from .terminology import ProcessedConfiguration
 
 # TODO:
@@ -330,14 +330,19 @@ def refine_for_condition(
         # result so testing.py and lambda_function.py do not maintain
         # parallel computations that could drift
 
+        minified_refined_eicr = minify_xml(text=refined_eicr)
+        minified_refined_rr = minify_xml(text=refined_rr)
+
         return RefinementResult(
-            documents=RefinementDocuments(eicr=refined_eicr, rr=refined_rr),
+            documents=RefinementDocuments(
+                eicr=minified_refined_eicr, rr=minified_refined_rr
+            ),
             metrics=RefinementMetrics(
                 eicr=RefinementMetricsEicr(
                     size_reduction_percentage=_get_size_reduction_percentage(
-                        unrefined=xml_files.eicr, refined=refined_eicr
+                        unrefined=xml_files.eicr, refined=minified_refined_eicr
                     ),
-                    size_mib=get_file_size_in_mib(file_content=refined_eicr),
+                    size_mib=get_file_size_in_mib(file_content=minified_refined_eicr),
                 )
             ),
             report=RefinementReport(

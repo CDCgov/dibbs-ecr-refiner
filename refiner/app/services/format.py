@@ -9,6 +9,21 @@ from lxml.etree import _Element
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
 
+def minify_xml(text: str) -> str:
+    """
+    Produces a compact version of an XML file on a single line.
+
+    Args:
+        text (str): Original XML as a string
+
+    Returns:
+        str: The minified XML string
+    """
+    parser = etree.XMLParser(remove_blank_text=True)
+    root = etree.fromstring(text.encode(), parser)
+    return etree.tostring(root, encoding="unicode")
+
+
 def format_xml_document_for_display(text: str) -> str:
     """
     Pretty-print an XML document for display.
