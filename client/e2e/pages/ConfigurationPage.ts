@@ -88,7 +88,8 @@ export class ConfigurationPage {
     await this.page
       .getByRole('button', { name: `Edit custom code ${currentCodeName}` })
       .click();
-    if (newCode) await this.page.getByLabel('Code').fill(newCode);
+    if (newCode)
+      await this.page.getByLabel('Code', { exact: true }).fill(newCode);
     if (newCodeSystem)
       await this.page.getByLabel('Code system').selectOption(newCodeSystem);
     if (newCodeName) await this.page.getByLabel('Code name').fill(newCodeName);

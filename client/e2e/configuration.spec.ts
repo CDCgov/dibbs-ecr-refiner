@@ -178,7 +178,7 @@ test.describe('Configuration detail flow', () => {
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       // change the text and the error should go away
-      await page.getByLabel('Code').fill(newCode);
+      await page.getByLabel('Code', { exact: true }).fill(newCode);
       await page.getByLabel('Code name').click();
       await expect(expectedError).not.toBeVisible();
       await expect(updateButton).toBeEnabled();
