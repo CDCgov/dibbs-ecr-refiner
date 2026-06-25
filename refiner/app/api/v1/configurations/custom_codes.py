@@ -231,7 +231,8 @@ def _get_row_code_system(
 def _validate_csv_upload_row(
     row: dict, supported_systems: IndexedCodeSystem
 ) -> tuple[str, DbCodeSystem, str] | list[str]:
-    code = (row.get("code") or "").strip()
+    # maintain backwards compatibility with old template that used "code_number" as the column header
+    code = (row.get("code") or row.get("code_number") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
     name = (row.get("display_name") or "").strip()
 
