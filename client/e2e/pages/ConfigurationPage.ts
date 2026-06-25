@@ -71,7 +71,7 @@ export class ConfigurationPage {
     await this.page
       .getByRole('button', { name: 'Add new custom code' })
       .click();
-    await this.page.getByLabel('Code').fill(code);
+    await this.page.getByLabel('Code', { exact: true }).fill(code);
     await this.page.getByLabel('Code system').selectOption(codeSystem);
     await this.page.getByLabel('Code name').fill(codeName);
     await this.page.getByRole('button', { name: 'Add custom code' }).click();
