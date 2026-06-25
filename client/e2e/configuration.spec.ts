@@ -217,14 +217,14 @@ test.describe('Configuration detail flow', () => {
       const addButton = page.getByRole('button', { name: 'Add custom code' });
 
       // fill in form
-      await page.getByLabel('Code').fill(customCode2.code);
+      await page.getByLabel('Code', { exact: true }).fill(customCode2.code);
       await page.getByLabel('Code system').selectOption(customCode2.system);
       await page.getByLabel('Code name').fill(customCode2.name);
 
       await expect(expectedError).toBeVisible();
       await expect(addButton).not.toBeEnabled();
 
-      await page.getByLabel('Code').fill(newCode);
+      await page.getByLabel('Code', { exact: true }).fill(newCode);
       await page.getByLabel('Code system').selectOption(newSystem);
       await page.getByLabel('Code name').click();
       await expect(expectedError).not.toBeVisible();
@@ -508,7 +508,7 @@ test.describe('Configuration detail flow', () => {
         page.getByRole('heading', { name: 'Edit 12345', level: 2 })
       ).toBeVisible();
       const testCode = 'test code ~';
-      await page.getByLabel('Code').fill(testCode);
+      await page.getByLabel('Code', { exact: true }).fill(testCode);
       await page.getByLabel('Code system').selectOption('CVX');
       await page.getByLabel('Code name').fill('test code_name');
       await page.getByRole('button', { name: 'Save changes' }).click();
