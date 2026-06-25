@@ -2,7 +2,7 @@ import csv
 import io
 from dataclasses import dataclass
 from logging import Logger
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
-    CodeSystemIndex,
+    IndexedCodeSystem,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -170,8 +170,8 @@ class UploadCustomCodesResponse(BaseModel):
 class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
-    preview: list[UploadCustomCodesPreviewItem]
-    code_systems: CodeSystemIndex
+    preview_items: list[UploadCustomCodesPreviewItem]
+    code_systems: IndexedCodeSystem
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
 
@@ -193,7 +193,7 @@ async def upload_custom_codes_csv(
     Accepts a CSV payload in JSON body.
 
     Expected CSV headers:
-        code_number,code_system,display_name
+        code,code_system,display_name
 
     Returns:
         UploadCustomCodesResponse
@@ -224,11 +224,11 @@ async def upload_custom_codes_csv(
     decoded = body.csv_text
     csv_reader = csv.DictReader(io.StringIO(decoded))
 
-    required_columns = {"code_number", "code_system", "display_name"}
+    required_columns = {"code", "code_system", "display_name"}
     if not required_columns.issubset(set(csv_reader.fieldnames or [])):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSV must contain headers: code_number,code_system,display_name",
+            detail="CSV must contain headers: code,code_system,display_name",
         )
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
@@ -239,12 +239,12 @@ async def upload_custom_codes_csv(
     allowed_systems_str = ", ".join(systems_by_key.keys())
     systems_by_name = {s.display_name: s for s in systems_by_key.values()}
     for row_number, row in enumerate(csv_reader, start=2):
-        code = (row.get("code_number") or "").strip()
+        code = (row.get("code") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
         name = (row.get("display_name") or "").strip()
         row_errors = []
         if not code:
-            row_errors.append("Missing code_number")
+            row_errors.append("Missing code")
         if not code_system_raw:
             row_errors.append("Missing code_system")
         if not name:
@@ -278,9 +278,9 @@ async def upload_custom_codes_csv(
         if sanitized_system:
             preview_items.append(
                 UploadCustomCodesPreviewItem(
+                    id=uuid4(),
                     code=code,
                     system_key=sanitized_system.key,
-                    system_display_name=sanitized_system.display_name,
                     name=name,
                     row=row_number,
                 )
@@ -297,7 +297,7 @@ async def upload_custom_codes_csv(
             detail={"errors": [{"row": 0, "error": "No valid rows"}]},
         )
     return UploadCustomCodesPreviewResponse(
-        preview=preview_items,
+        preview_items=preview_items,
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),

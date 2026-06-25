@@ -19,6 +19,7 @@ import {
   useUploadCustomCodesCsv,
   useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
+import { CSV_DOWNLOAD_TEMPLATE } from './CustomCodes/CsvImport/utils';
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({
@@ -580,7 +581,7 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
-    await user.type(screen.getByLabelText('Code #'), '123456');
+    await user.type(screen.getByLabelText('Code'), '123456');
     await user.tab(); // triggers onBlur
 
     expect(
@@ -638,7 +639,7 @@ describe('Config builder page', () => {
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
 
-    await user.type(screen.getByLabelText('Code #'), '12345');
+    await user.type(screen.getByLabelText('Code'), '12345');
     await user.selectOptions(screen.getByLabelText('Code system'), 'SNOMED');
     await user.type(screen.getByLabelText('Code name'), 'Test code name');
 
@@ -692,11 +693,11 @@ describe('Config builder page', () => {
     ).toBeInTheDocument();
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
-    expect(screen.getByLabelText('Code #')).toHaveValue('custom-code1');
+    expect(screen.getByLabelText('Code')).toHaveValue('custom-code1');
     expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
     expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
-    await user.type(screen.getByLabelText('Code #'), '12345');
+    await user.type(screen.getByLabelText('Code'), '12345');
 
     expect(
       screen.getByText('Update', { selector: 'button' })
@@ -795,7 +796,7 @@ describe('Config builder page', () => {
       screen.getByText('Upload CSV', { selector: 'button' })
     ).toBeInTheDocument();
 
-    const csv = `code_number,code_system,display_name
+    const csv = `code,code_system,display_name
 12345,LOINC,TEST 1
 6789,LOINC,TEST 2
 `;
@@ -820,9 +821,7 @@ describe('Config builder page', () => {
       },
     });
 
-    expect(vars.data.csv_text).toContain(
-      'code_number,code_system,display_name'
-    );
+    expect(vars.data.csv_text).toContain('code,code_system,display_name');
     expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
 
     // was: assert <h3>Custom codes</h3>
@@ -863,12 +862,7 @@ describe('Config builder page', () => {
     const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
 
     const text = await blobArg.text();
-    expect(text).toBe(
-      `code_number,code_system,display_name
-12345,Other,Other Example
-6789,ICD-10,ICD-10 Example
-99999A,LOINC,LOINC Example`
-    );
+    expect(text).toBe(CSV_DOWNLOAD_TEMPLATE);
 
     // cleanup
     createObjectUrlSpy.mockRestore();

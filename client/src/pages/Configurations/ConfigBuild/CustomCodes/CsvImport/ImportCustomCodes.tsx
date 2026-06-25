@@ -17,11 +17,12 @@ import { CsvImportStep } from '../..';
 import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import { DbCodeSystem } from '../../../../../api/schemas';
+import { CSV_DOWNLOAD_TEMPLATE } from './utils';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
+  id: crypto.randomUUID(),
   code: '',
   system_key: 'other',
-  system_display_name: 'Other',
   name: '',
 };
 
@@ -186,14 +187,14 @@ export function ImportCustomCodes({
       },
       {
         onSuccess: (res) => {
-          const preview = res.data.preview ?? [];
+          const preview_items = res.data.preview_items ?? [];
           const previewCodeSystems = res.data.code_systems ?? {};
 
-          if (preview.length === 0) {
+          if (preview_items.length === 0) {
             setError('The CSV file did not produce any valid rows.');
             return;
           }
-          setPreviewItems(preview);
+          setPreviewItems(preview_items);
           setPreviewCodeSystems(previewCodeSystems);
           setStep('preview');
           setApiErrors(null);
@@ -232,12 +233,9 @@ export function ImportCustomCodes({
   };
 
   const handleDownloadTemplate = () => {
-    const csv = `code_number,code_system,display_name
-12345,Other,Other Example
-6789,ICD-10,ICD-10 Example
-99999A,LOINC,LOINC Example`;
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([CSV_DOWNLOAD_TEMPLATE], {
+      type: 'text/csv;charset=utf-8;',
+    });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
@@ -384,6 +382,7 @@ export function ImportCustomCodes({
       ],
       includeMatches: true,
       minMatchCharLength: 2,
+      threshold: 0.3,
     }),
     []
   );
@@ -437,6 +436,7 @@ export function ImportCustomCodes({
             accept=".csv"
             hidden
             onChange={handleFileChange}
+            aria-label="Bulk custom code upload file input"
           />
         </>
         {uploading ? (
