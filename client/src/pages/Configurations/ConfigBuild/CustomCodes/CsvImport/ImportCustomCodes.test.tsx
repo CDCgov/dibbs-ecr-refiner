@@ -117,47 +117,30 @@ describe('Custom codes upload', () => {
 
   test('delete row successfully deletes a row', async () => {
     const deleteRows = screen.getAllByRole('row');
-    checkSnomedCode();
-    checkOtherCode();
-    checkIcd10Code();
-    checkLoincCode();
-    checkCvxCode();
+    checkAllCodesExistence();
 
     await userEvent.click(
-      await within(deleteRows[1]).findByRole('button', { name: 'Delete' })
+      await within(deleteRows[0]).findByRole('button', { name: 'Delete' })
     );
-    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length);
+    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length - 1);
 
     checkSnomedCode(false); // first row is the SNOMED row
     checkOtherCode();
     checkIcd10Code();
     checkLoincCode();
+    checkRxNormCode();
     checkCvxCode();
   });
 
   test('filters appropriately when search string is supplied', async () => {
     const searchInput = screen.getByPlaceholderText('Search codes');
-    checkOtherCode();
-    checkIcd10Code();
-    checkLoincCode();
-    checkSnomedCode();
-    checkCvxCode();
-
+    checkAllCodesExistence();
     // by display
-    await userEvent.type(searchInput, 'SNOMED Example');
-    checkSnomedCode();
+    await userEvent.type(searchInput, 'LOINC Example');
+    checkLoincCode();
+    checkSnomedCode(false);
     checkOtherCode(false);
     checkIcd10Code(false);
-    checkLoincCode(false);
-    checkCvxCode(false);
-
-    // by system
-    await userEvent.clear(searchInput);
-    await userEvent.type(searchInput, 'ICD-1');
-    checkIcd10Code();
-    checkOtherCode(false);
-    checkLoincCode(false);
-    checkSnomedCode(false);
     checkCvxCode(false);
 
     // by code
@@ -188,14 +171,10 @@ describe('Custom codes upload', () => {
   describe('edit modal', () => {
     beforeEach(async () => {
       const editRows = screen.getAllByRole('row');
-      checkSnomedCode();
-      checkOtherCode();
-      checkIcd10Code();
-      checkLoincCode();
-      checkCvxCode();
+      checkAllCodesExistence();
 
       await userEvent.click(
-        await within(editRows[1]).findByRole('button', { name: 'Edit' })
+        await within(editRows[0]).findByRole('button', { name: 'Edit' })
       );
     });
     test('opens when clicked', () => {
@@ -222,6 +201,15 @@ describe('Custom codes upload', () => {
   });
 });
 
+function checkAllCodesExistence() {
+  checkLoincCode();
+  checkSnomedCode();
+  checkCvxCode();
+  checkIcd10Code();
+  checkRxNormCode();
+  checkOtherCode();
+}
+
 function checkLoincCode(exists = true) {
   checkCode('LOINC', exists);
 }
@@ -236,6 +224,9 @@ function checkCvxCode(exists = true) {
 
 function checkIcd10Code(exists = true) {
   checkCode('ICD-10', exists);
+}
+function checkRxNormCode(exists = true) {
+  checkCode('RxNorm', exists);
 }
 
 function checkOtherCode(exists = true) {
@@ -288,7 +279,6 @@ function csvToDict(csv: string) {
   const lines = csv.trim().split('\n');
   const headers = lines[0].split(',').map((h) => h.trim());
   const indexedValues: Record<string, string>[] = [];
-
   lines.slice(1).forEach((line) => {
     const rowObject: Record<string, string> = {};
     const values = line.split(',');

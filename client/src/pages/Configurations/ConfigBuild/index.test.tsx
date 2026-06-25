@@ -649,7 +649,7 @@ describe('Config builder page', () => {
       screen.getByText('Upload CSV', { selector: 'button' })
     ).toBeInTheDocument();
 
-    const csv = `code_number,code_system,display_name
+    const csv = `code,code_system,display_name
 12345,LOINC,TEST 1
 6789,LOINC,TEST 2
 `;
@@ -674,9 +674,7 @@ describe('Config builder page', () => {
       },
     });
 
-    expect(vars.data.csv_text).toContain(
-      'code_number,code_system,display_name'
-    );
+    expect(vars.data.csv_text).toContain('code,code_system,display_name');
     expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
 
     // was: assert <h3>Custom codes</h3>
