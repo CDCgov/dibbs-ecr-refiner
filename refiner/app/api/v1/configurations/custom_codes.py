@@ -190,6 +190,7 @@ def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
     base_required = {"code_system", "display_name"}
 
     has_base = base_required.issubset(headers)
+    # maintain backwards compatibility with old template that used "code_number" as the column header
     has_code_variant = "code" in headers or "code_number" in headers
 
     if not (has_base and has_code_variant):
