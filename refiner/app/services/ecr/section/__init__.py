@@ -68,8 +68,8 @@ def process_section(
             removal notice, "reconstruct" rebuilds it from the
             surviving entries (falling back to removal when the
             section has no registered reconstructor or nothing
-            survived). Ignored when matches are zero; the engine stubs
-            the section regardless per the no-match policy override.
+            survived), "keep_on_match" keeps the original when matches
+            are found and removes it otherwise.
 
     Returns:
         SectionRunResult describing what the engine did. Consumed

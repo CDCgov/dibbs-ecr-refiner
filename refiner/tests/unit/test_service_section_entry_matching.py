@@ -353,13 +353,15 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
     assert len(body_rows) == 1
 
 
-def test_narrative_reconstruct_without_reconstructor_falls_back_to_removal(
+def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
     spec_v1_1,
 ) -> None:
     """
     narrative="reconstruct" on a refinable section with no registered
-    reconstructor (Problems) removes the narrative rather than leaving the
-    stale source text in place.
+    reconstructor (Problems) falls back to retaining the original
+    narrative rather than swapping in a removal notice. The intent is
+    that the original narrative is more informative to a reviewer than
+    the removal placeholder when reconstruction can't be produced.
     """
 
     section = _build_section(
@@ -389,10 +391,10 @@ def test_narrative_reconstruct_without_reconstructor_falls_back_to_removal(
         narrative="reconstruct",
     )
     assert result.matches_found is True
-    assert result.narrative_disposition == "removed"
+    assert result.narrative_disposition == "reconstruct_fallback_retained"
     text = _find_one(section, "hl7:text")
     assert text is not None
-    assert "Original narrative" not in etree.tostring(text, encoding="unicode")
+    assert "Original narrative" in etree.tostring(text, encoding="unicode")
 
 
 # NOTE:
