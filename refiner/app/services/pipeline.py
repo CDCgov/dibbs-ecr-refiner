@@ -322,21 +322,6 @@ def refine_for_condition(
         )
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
-        eicr_size_reduction_percentage = _get_size_reduction_percentage(
-            unrefined=xml_files.eicr, refined=refined_eicr
-        )
-        eicr_refined_size = get_file_size_in_mib(file_content=refined_eicr)
-
-        # * pretty-print at the pipeline boundary so every consumer of
-        # RefinementResult receives display-ready output
-        # * lxml's pretty_print=True alone does NOT indent subtrees
-        # added via SubElement after a parse without remove_blank_text
-        # (the section provenance footnotes are the visible symptom);
-        # the formatter does a remove_blank_text reparse + pretty_print
-        # to produce uniformly indented output
-        refined_eicr = format_xml_document_for_display(refined_eicr)
-        refined_rr = format_xml_document_for_display(refined_rr)
-
         # * size metrics are computed against the formatted refined
         # output so the percentage matches what the user actually
         # observes when comparing their upload to what gets written
@@ -349,8 +334,10 @@ def refine_for_condition(
             documents=RefinementDocuments(eicr=refined_eicr, rr=refined_rr),
             metrics=RefinementMetrics(
                 eicr=RefinementMetricsEicr(
-                    size_reduction_percentage=eicr_size_reduction_percentage,
-                    size_mib=eicr_refined_size,
+                    size_reduction_percentage=_get_size_reduction_percentage(
+                        unrefined=xml_files.eicr, refined=refined_eicr
+                    ),
+                    size_mib=get_file_size_in_mib(file_content=refined_eicr),
                 )
             ),
             report=RefinementReport(
