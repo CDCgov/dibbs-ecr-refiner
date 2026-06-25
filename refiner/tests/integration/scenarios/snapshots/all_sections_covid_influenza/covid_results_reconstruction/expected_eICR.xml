@@ -31,14 +31,14 @@
       <id extension="123453" root="2.16.840.1.113883.19.5"/>
       <!--SSN-->
       <id extension="444-22-2222" root="2.16.840.1.113883.4.1"/>
-      <!-- For greatest utility to public health, a patient's address 
-        should be a home address if available (PostalAddressUse = 'H' or 'HP'); 
-        would also request a second address, preferably a work address, 
-        (PostalAddressUse='WP') if available. 
+      <!-- For greatest utility to public health, a patient's address
+        should be a home address if available (PostalAddressUse = 'H' or 'HP');
+        would also request a second address, preferably a work address,
+        (PostalAddressUse='WP') if available.
 
-        If the patient is homeless, complete as much address information 
-        as possible (city, zip, county, etc.) and use the 
-        Characteristics of Home Environment template in the 
+        If the patient is homeless, complete as much address information
+        as possible (city, zip, county, etc.) and use the
+        Characteristics of Home Environment template in the
         Social History Section to indicate that the patient is homeless. -->
       <addr use="H">
         <streetAddressLine>2222 Home Street</streetAddressLine>
@@ -49,7 +49,7 @@
         <!-- usablePeriod is an optional element
                      If present and high is missing, this indicates a current addres
                      If present and high is present, this indicates this address is historical
-                     If present, low indicates the starting period for this address 
+                     If present, low indicates the starting period for this address
                      The following example indicates a current address-->
         <useablePeriod xsi:type="IVL_TS">
           <low value="200007200845"/>
@@ -115,7 +115,7 @@
     </patientRole>
   </recordTarget>
   <!-- author -->
-  <!-- Where a trigger occurs outside of an encounter the author/assignedAuthor/authorPerson and 
+  <!-- Where a trigger occurs outside of an encounter the author/assignedAuthor/authorPerson and
        author/assignedAuthor/representedOrganization will represent the Provider and Facility for
   reporting purposes. -->
   <author>
@@ -258,11 +258,11 @@
     <encompassingEncounter>
       <!-- Encounter iD-->
       <id extension="9937012" root="2.16.840.1.113883.19"/>
-      <!-- Where a trigger occurs outside of an encounter use 
-              code="PHC2237" | 
-              codeSystem="2.16.840.1.114222.4.5.274" | 
-              codeSystemName="PHIN VS (CDC Local Coding System)" 
-              (External Historical Encounter) 
+      <!-- Where a trigger occurs outside of an encounter use
+              code="PHC2237" |
+              codeSystem="2.16.840.1.114222.4.5.274" |
+              codeSystemName="PHIN VS (CDC Local Coding System)"
+              (External Historical Encounter)
            and set effectiveTime/low/@nullFlavor="NA" and omit responsibleParty and location. -->
       <!-- Encounter Type -->
       <code code="AMB" codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActEncounterCode" displayName="Ambulatory"/>
@@ -796,19 +796,7 @@
           <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="11348-0" displayName="HISTORY OF PAST ILLNESS"/>
           <title>PAST MEDICAL HISTORY</title>
           <text>
-            <table border="1">
-              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
-              <thead>
-                <tr>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>No clinical information matches the configured code sets for this condition.</td>
-                </tr>
-              </tbody>
-            </table>
+            <paragraph>Past medical history text</paragraph>
             <footnote ID="ecr-refiner-11348-0-20260101000000">
               <paragraph>
                 <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
@@ -835,7 +823,7 @@
                     <td>Yes</td>
                     <td>v9</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Refined; no matches found</td>
+                    <td>Refined; no matches found, narrative retained</td>
                   </tr>
                 </tbody>
               </table>
@@ -1807,16 +1795,17 @@
           <code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Procedures"/>
           <title>Procedures</title>
           <text>
-            <table border="1">
-              <caption>Output from CDC eCR Refiner application by request of jurisdiction.</caption>
+            <table border="1" width="100%">
               <thead>
                 <tr>
-                  <th>Status</th>
+                  <th>Procedure</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>No clinical information matches the configured code sets for this condition.</td>
+                  <td>Colonic polypectomy</td>
+                  <td>November 15, 2020</td>
                 </tr>
               </tbody>
             </table>
@@ -1846,7 +1835,7 @@
                     <td>Yes</td>
                     <td>v9</td>
                     <td>Configured by jurisdiction</td>
-                    <td>Refined; no matches found</td>
+                    <td>Refined; no matches found, narrative retained</td>
                   </tr>
                 </tbody>
               </table>
