@@ -479,7 +479,7 @@ class TestConfigurationExportSectionsCsv:
         assert response.status_code == status.HTTP_200_OK
 
         content = _get_csv_from_zip(response.content, r"Section_Export")
-        row = row = _get_section_row(content=content, loinc=section_loinc)
+        row = _get_section_row(content=content, loinc=section_loinc)
         assert row["Narrative Data"] == "Keep original"
 
     async def test_sections_csv_excluded_section_shows_no_and_na(
