@@ -126,7 +126,8 @@ export function Footer() {
         </div>
         <div className="flex max-w-3/5 flex-col gap-2 lg:items-end">
           <p className="text-white">
-            For feedback, recommendations, or questions, please reach out to the{' '}
+            To report issues, request support, or submit feedback or questions,
+            please reach out via the{' '}
             <ExternalLink
               className="link-dark-bg font-bold hover:underline"
               href="https://aphlinformatics.atlassian.net/servicedesk/customer/portal/23/group/75&sa=D&source=docs&ust=1774202313083225&usg=AOvVaw2YRGisxYOIbeiR156Pek2p"
