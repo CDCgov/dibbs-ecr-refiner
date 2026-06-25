@@ -453,7 +453,77 @@ class TestConfigurations:
             },
         )
         # FastAPI shouldn't allow this to work
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        # narrative='keep_on_match' requires action='refine'
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "keep_on_match",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "keep_on_match" in response.json()["detail"]
+        assert "refine" in response.json()["detail"]
+
+        # narrative='reconstruct' requires action='refine'
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "reconstruct",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "reconstruct" in response.json()["detail"]
+
+        # narrative='reconstruct' on a refinable but non-reconstructable
+        # section (admission diagnosis) is rejected
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "reconstruct",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "reconstruct" in response.json()["detail"]
+        assert admission_diagnosis_code in response.json()["detail"]
+
+        # DisabledSection (system-skipped) updates are rejected
+        # regardless of payload — those codes are not configurable
+        emergency_outbreak_code = "83910-0"
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": emergency_outbreak_code,
+                "include": True,
+                "narrative": "retain",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert emergency_outbreak_code in response.json()["detail"]
+        assert "system-skipped" in response.json()["detail"]
+
+        # FastAPI rejects unknown narrative values via the Literal type
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "bogus",
+            },
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     @pytest.mark.parametrize(
         "new_code, new_system_key, new_name",
