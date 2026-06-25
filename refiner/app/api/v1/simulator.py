@@ -1,6 +1,7 @@
 import io
 import re
 from collections.abc import Awaitable, Callable
+from dataclasses import replace
 from logging import Logger
 from pathlib import Path
 from uuid import UUID
@@ -293,10 +294,14 @@ async def simulator_upload(
             detail="Server error occurred. Please check your file and try again.",
         )
 
+    formatted_documents = _format_refined_docs(
+        refined_documents=test_results.refined_documents
+    )
+
     # Get the refined condition info and file packages
     conditions, zip_file_items = await _build_refined_conditions(
         original_xml_files=original_xml_files,
-        refined_documents=test_results.refined_documents,
+        refined_documents=formatted_documents,
         logger=logger,
     )
 
@@ -329,7 +334,9 @@ async def simulator_upload(
         zip_package.add(
             ZipFileItem(
                 file_name="CDA_RR_unrefined_rr.xml",
-                file_content=test_results.remainder_rr,
+                file_content=format_xml_document_for_display_or_raise(
+                    test_results.remainder_rr
+                ),
             )
         )
 
@@ -351,6 +358,19 @@ async def simulator_upload(
         refined_download_key=output_file_name if s3_key else "",
         file_info_response=FileInfoResponse(),
     )
+
+
+def _format_refined_docs(
+    refined_documents: list[RefinedDocument],
+) -> list[RefinedDocument]:
+    return [
+        replace(
+            doc,
+            refined_eicr=format_xml_document_for_display_or_raise(doc.refined_eicr),
+            refined_rr=format_xml_document_for_display_or_raise(doc.refined_rr),
+        )
+        for doc in refined_documents
+    ]
 
 
 @router.get(
