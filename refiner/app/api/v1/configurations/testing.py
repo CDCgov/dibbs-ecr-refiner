@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    format_refined_document_or_raise,
     get_validated_file,
     get_validated_xml_files,
     validate_path_or_raise,
@@ -175,7 +176,9 @@ async def run_configuration_test(
             detail="An unexpected error occurred during the refinement process.",
         )
 
-    condition = refined_document.reportable_condition
+    formatted_document = format_refined_document_or_raise(doc=refined_document)
+
+    condition = formatted_document.reportable_condition
 
     # List of files to bundle into the zip
     zip_package = ZipFilePackage(name=f"{test_results.original_eicr_doc_id}.zip")
@@ -194,20 +197,20 @@ async def run_configuration_test(
     zip_package.add(
         ZipFileItem(
             file_name=refined_file_names.eicr_xml_file_name,
-            file_content=refined_document.refined_eicr,
+            file_content=formatted_document.refined_eicr,
         )
     )
 
     zip_package.add(
         ZipFileItem(
             file_name=refined_file_names.rr_xml_file_name,
-            file_content=refined_document.refined_rr,
+            file_content=formatted_document.refined_rr,
         )
     )
 
     html_file = create_refined_eicr_html_file(
         condition=condition,
-        refined_eicr=refined_document.refined_eicr,
+        refined_eicr=formatted_document.refined_eicr,
         file_name=refined_file_names.eicr_html_file_name,
         logger=logger,
     )

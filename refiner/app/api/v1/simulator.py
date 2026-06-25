@@ -1,7 +1,6 @@
 import io
 import re
 from collections.abc import Awaitable, Callable
-from dataclasses import replace
 from logging import Logger
 from pathlib import Path
 from uuid import UUID
@@ -13,6 +12,7 @@ from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    format_refined_documents_or_raise,
     format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
@@ -294,8 +294,8 @@ async def simulator_upload(
             detail="Server error occurred. Please check your file and try again.",
         )
 
-    formatted_documents = _format_refined_docs(
-        refined_documents=test_results.refined_documents
+    formatted_documents = format_refined_documents_or_raise(
+        docs=test_results.refined_documents
     )
 
     # Get the refined condition info and file packages
@@ -358,19 +358,6 @@ async def simulator_upload(
         refined_download_key=output_file_name if s3_key else "",
         file_info_response=FileInfoResponse(),
     )
-
-
-def _format_refined_docs(
-    refined_documents: list[RefinedDocument],
-) -> list[RefinedDocument]:
-    return [
-        replace(
-            doc,
-            refined_eicr=format_xml_document_for_display_or_raise(doc.refined_eicr),
-            refined_rr=format_xml_document_for_display_or_raise(doc.refined_rr),
-        )
-        for doc in refined_documents
-    ]
 
 
 @router.get(
