@@ -413,10 +413,13 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
-        section_loinc = "10160-0"
+        section_loinc = "30954-2"
 
         await update_section_processing(
-            config_id=config_id, current_code=section_loinc, narrative="reconstruct"
+            config_id=config_id,
+            current_code=section_loinc,
+            narrative="reconstruct",
+            action="refine",
         )
 
         response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
