@@ -51,5 +51,5 @@ class TestReconstructableSections:
         Ensure only the intended LOINCs are active for reconstruction.
         TODO: Update this list when more LOINCs are uncommented in policy.py
         """
-        expected = ["30954-2"]
+        expected = ["30954-2", "11450-4", "11369-6", "29549-3"]
         assert RECONSTRUCTABLE_SECTIONS == expected
