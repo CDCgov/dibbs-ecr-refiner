@@ -280,6 +280,7 @@ test.describe('Configuration detail flow', () => {
     configurationsPage,
     configurationPage,
   }) => {
+    test.setTimeout(120000);
     await expect(
       page.getByRole('heading', {
         name: 'Configurations',
@@ -437,27 +438,6 @@ test.describe('Configuration detail flow', () => {
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
     });
-  });
-
-  test('User drafts and activates a new configuration', async ({
-    page,
-    makeAxeBuilder,
-    configurationsPage,
-    configurationPage,
-  }) => {
-    await test.step('Create and activate configuration', async () => {
-      await configurationsPage.createConfiguration(condition);
-      await expect(
-        page.getByRole('heading', { name: condition, level: 1 })
-      ).toBeVisible();
-      await configurationPage.goToActivateTab();
-      await configurationPage.activateConfiguration();
-      await expect(
-        page.getByRole('button', { name: 'Turn off current version' })
-      ).toBeVisible();
-
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
-    });
 
     await test.step('Draft new configuration version', async () => {
       await configurationPage.goToBuildTab();
@@ -496,33 +476,35 @@ test.describe('Configuration detail flow', () => {
       `;
 
       await page.locator('input[type="file"]').setInputFiles({
-        name: 'invoice.txt',
-        mimeType: 'text/plain',
+        name: 'bad_headers.csv',
+        mimeType: 'text/csv',
         buffer: Buffer.from(csvWithBadHeaders),
       });
 
-      expect(
-        page.getByText(
-          'CSV must contain headers: code,code_system,display_name'
-        )
-      );
+      await expect(
+        page.getByRole('alert').filter({
+          hasText: /^CSV must contain headers: code,code_system,display_name$/,
+        })
+      ).toBeVisible();
 
-      const csvWithBadSystem = `cod,code_system,display_name
-      6789,ICD-1,ICD-10 Example
-      `;
+      const csvWithBadSystem = `code,code_system,display_name
+      6789,ICD-1,ICD-10 Example`;
 
       await page.locator('input[type="file"]').setInputFiles({
-        name: 'invoice.txt',
-        mimeType: 'text/plain',
+        name: 'bad_system.csv',
+        mimeType: 'text/csv',
         buffer: Buffer.from(csvWithBadSystem),
       });
 
-      expect(
+      await expect(page.getByText('Row 2', { exact: false })).toBeVisible();
+      await expect(
         page.getByText(
           'Invalid system_key: ICD-1. [code_system] must be one of',
           { exact: false }
         )
-      );
+      ).toBeVisible();
+      await page.getByRole('button', { name: '← Back' }).click();
+      await page.getByRole('button', { name: 'Import from CSV' }).click();
 
       const downloadPath =
         await configurationPage.downloadCustomCodeCsvTemplate();
@@ -573,7 +555,7 @@ test.describe('Configuration detail flow', () => {
       await expect(
         page.getByRole('heading', { name: `Edit ${testCode}`, level: 2 })
       ).toBeVisible();
-      await page.getByLabel('Close this window').click();
+      await page.getByRole('button', { name: 'Close this window' }).click();
       await expect(
         page.getByText('Other Example', { exact: true })
       ).not.toBeVisible();

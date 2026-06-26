@@ -467,7 +467,11 @@ export function ImportCustomCodes({
         ) : step === 'intro' ? (
           <div className="w-full max-w-xl space-y-6">
             {renderCsvInstructions()}
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && (
+              <div role="alert" className="text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </div>
         ) : step === 'error' ? (
           <div className="flex flex-col gap-6">
@@ -483,7 +487,11 @@ export function ImportCustomCodes({
               Re-upload CSV
             </Button>
             <div className="mb-2">
-              {error && <p className="text-sm text-red-700">{error}</p>}
+              {error && (
+                <p role="alert" className="text-sm text-red-700">
+                  {error}
+                </p>
+              )}
             </div>
             {apiErrors && apiErrors.length > 0 ? (
               <>
@@ -542,10 +550,7 @@ export function ImportCustomCodes({
             <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
               <tbody>
                 {previewRows.map(({ item, matches }) => (
-                  <tr
-                    key={`${item.code}-${item.system_key}-${item.previewIndex ?? item.row}`}
-                    className="border-y border-blue-50"
-                  >
+                  <tr key={item.id} className="border-y border-blue-50">
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
@@ -591,7 +596,11 @@ export function ImportCustomCodes({
               </tbody>
             </table>
 
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && (
+              <div role="alert" className="text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </div>
         ) : null}
       </div>
