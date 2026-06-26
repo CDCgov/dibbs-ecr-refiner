@@ -1,4 +1,3 @@
-import { Icon } from '@trussworks/react-uswds';
 import { Footer, Header } from '@components/Layout';
 import { Button } from '@components/Button';
 
@@ -15,10 +14,7 @@ export function SessionRedirect({
       <main>
         <div className="flex h-screen items-center justify-center bg-gray-200">
           <div className="mx-auto flex max-w-160 flex-col items-center">
-            <Icon.Home
-              aria-label="Home icon indicating a need to return to homepage to login again"
-              className="text-gray-cool-50 h-30! w-30!"
-            />
+            <HomeIcon />
             <h1 className="text-center">
               Your session has ended. <br />
               Please log back in to access the app.
@@ -31,5 +27,20 @@ export function SessionRedirect({
       </main>
       {displayHeaderAndFooter && <Footer />}
     </div>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="120"
+      height="120"
+      viewBox="0 0 24 24"
+      className="fill-gray-cool-50"
+    >
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+    </svg>
   );
 }

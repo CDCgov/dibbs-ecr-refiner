@@ -14,9 +14,9 @@ import { highlightMatches } from '../../../../../utils';
 import { ConfirmModal, UndoModal, PreviewEditModal } from './Modals';
 import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
-import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import { DbCodeSystem } from '../../../../../api/schemas';
+import { UploadIcon } from '@components/Icons/UploadIcon';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
@@ -442,12 +442,7 @@ export function ImportCustomCodes({
         {uploading ? (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
             <div className="mb-4 flex justify-center">
-              <img
-                src={UploadSvg}
-                alt=""
-                className="h-17 w-13.5"
-                aria-hidden="true"
-              />
+              <UploadIcon />
             </div>
 
             <h3 className="mb-4 text-lg font-semibold">CSV uploading...</h3>

@@ -1,6 +1,5 @@
 import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 import { useIsMutating } from '@tanstack/react-query';
-import { Icon } from '@trussworks/react-uswds';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -61,10 +60,7 @@ export function ConfigurationTitleBar({
                   isLoading={numSavingActions > 0}
                   renderWhenDone={
                     <div className="flex items-center">
-                      <Icon.Check
-                        role="presentation"
-                        className="text-state-success h-6! w-6!"
-                      />
+                      <CheckIcon />
                       Saved
                     </div>
                   }
@@ -76,5 +72,20 @@ export function ConfigurationTitleBar({
         {CONFIGURATION_TITLE_CONTENTS[step].subtitle}
       </div>
     </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      className="fill-state-success"
+    >
+      <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+    </svg>
   );
 }
