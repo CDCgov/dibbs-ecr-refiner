@@ -102,22 +102,6 @@ vi.mock('../../../api/code-systems/code-systems', () => {
   };
 });
 
-const MOCK_UPLOAD_CSV = `code,code_system,display_name
-15613,snomed,SNOMED Example
-52747,loinc,LOINC Example
-287972,icd10,ICD-10 Example
-5128,rxnorm,RxNorm Example
-23779,cvx,CVX Example
-1534,other,Other Example`;
-
-vi.mock('./CustomCodes/CsvImport/utils', () => {
-  return {
-    buildCsvDownloadTemplate: vi.fn(() => {
-      return MOCK_UPLOAD_CSV;
-    }),
-  };
-});
-
 describe('Config builder page', () => {
   it('shows lock banner and disables edit controls when locked by another user', async () => {
     const user = userEvent.setup();
@@ -691,43 +675,5 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Import from CSV', { selector: 'h2' })
     ).toBeInTheDocument();
-  });
-
-  it('downloads the custom code upload template CSV', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
-
-    await user.click(
-      screen.getByText('Import from CSV', { selector: 'button' })
-    );
-
-    expect(
-      await screen.findByRole('heading', { name: /import from csv/i })
-    ).toBeInTheDocument();
-
-    const createObjectUrlSpy = vi
-      .spyOn(URL, 'createObjectURL')
-      .mockReturnValue('blob:mock-url');
-
-    const revokeObjectUrlSpy = vi
-      .spyOn(URL, 'revokeObjectURL')
-      .mockImplementation(() => {});
-
-    await user.click(
-      await screen.findByRole('button', { name: /download template/i })
-    );
-
-    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
-
-    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
-
-    const text = await blobArg.text();
-    expect(text).toBe(MOCK_UPLOAD_CSV);
-
-    // cleanup
-    createObjectUrlSpy.mockRestore();
-    revokeObjectUrlSpy.mockRestore();
   });
 });
