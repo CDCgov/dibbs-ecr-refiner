@@ -1,3 +1,4 @@
+import re
 from typing import Final
 
 import pytest
@@ -697,4 +698,38 @@ async def test_configuration_version_is_rendered_into_section_provenance_footnot
         f"update the Scenario docstring in conftest.py and the scenarios "
         f"README, which would then be wrong to describe configuration_version's "
         f"relationship to the XML."
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_reconstruction_reference_pointers_have_no_surrounding_whitespace(
+    setup,
+    build_scenario_configuration,
+) -> None:
+    """
+    the minted entry->narrative <reference> is a mixed-content
+    element and must serialize without surrounding whitespace (Boone, The CDA
+    Book, ch. 6).
+
+    Asserts the RAW product bytes (the eICR the pipeline emits to S3 / the
+    webapp), not the committed snapshot -- the snapshot is re-pretty-printed by
+    normalize_xml for stable diffing, which legitimately re-indents these
+    pointers. The product itself must carry the compact form.
+    """
+
+    scenario = SCENARIOS_BY_NAME["immunizations_reconstruction"]
+    config, _ = await build_scenario_configuration(scenario)
+    eicr = _refine(scenario, config).documents.eicr
+
+    compact = re.findall(
+        r'<text><reference value="#ecr-refiner-11369-6-[^"]*"/></text>', eicr
+    )
+    assert compact, (
+        "expected compact reconstruction reference pointers in the raw refined "
+        "eICR; found none (did the post-format compaction run?)"
+    )
+    # no refiner-minted reference survives in the indented mixed-content form
+    assert re.search(r'<text>\s+<reference value="#ecr-refiner-', eicr) is None, (
+        "a reconstruction reference serialized with surrounding whitespace"
     )
