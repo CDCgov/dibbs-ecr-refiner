@@ -21,7 +21,7 @@ import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems'
 import { buildCsvDownloadTemplate } from './utils';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
-  id: crypto.randomUUID(),
+  id: '',
   code: '',
   system_key: 'other',
   name: '',
