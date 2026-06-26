@@ -23,19 +23,27 @@ export function Toast({
   headingLevel = 'h4',
 }: ToastProps) {
   return (
-    <Alert
-      className="w-full"
-      type={variant}
-      heading={
-        heading ? (
-          <span className="usa-alert__heading text-lg font-bold">
-            {heading}
-          </span>
-        ) : null
-      }
-      headingLevel={heading ? headingLevel : 'h4'}
-    >
-      {body}
-    </Alert>
+    <div className="flex flex-col">
+      <div className="w-full mt-4 px-5">
+        <h4 className='text-lg font-bold ml-10'>{heading}</h4>
+        <p className='ml-10'>
+          {body}
+        </p>
+      </div>
+      <Alert
+        className="w-full"
+        type={variant}
+        heading={
+          heading ? (
+            <span className="usa-alert__heading text-lg font-bold">
+              {heading}
+            </span>
+          ) : null
+        }
+        headingLevel={heading ? headingLevel : 'h4'}
+      >
+        {body}
+      </Alert>
+    </div>
   );
 }
