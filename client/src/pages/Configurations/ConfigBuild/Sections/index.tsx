@@ -428,12 +428,15 @@ function RefineSwitch({
           onChange={handleSwitchChange}
         />
       </Field>
+      {/* TODO: Awaiting Design/PRD feedback on exact error messages per narrative type */}
       {showError && (
         <p
           className="text-state-error-dark text-xs whitespace-nowrap"
           role="alert"
         >
-          To reconstruct narrative, refine must be selected
+          {currentSection.narrative === 'reconstruct'
+            ? 'To reconstruct narrative, refine must be selected'
+            : 'To have narrative keep on match, refine must be selected'}
         </p>
       )}
     </div>
