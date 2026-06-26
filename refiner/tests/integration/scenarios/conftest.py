@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 import pytest
 import pytest_asyncio
 from fastapi import status
@@ -10,6 +8,7 @@ from app.services.terminology import ProcessedConfiguration
 from tests.integration.scenarios.build_report import build_report
 
 from ...fixtures.loader import load_fixture_str
+from ...utils.scenario_builder import CustomCode, Scenario, SectionOverride
 from ..conftest import (
     assert_schematron_valid,
     assert_xsd_valid,
@@ -70,66 +69,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 # suite build their configurations from these recipes through the live api
 # (see build_scenario_configuration), so there is a single authoring path and
 # no committed active.json to drift
-
-
-@dataclass(frozen=True)
-class SectionOverride:
-    """
-    One section-processing change applied via update_section_processing.
-
-    Only the fields set here are changed; anything left None keeps the
-    section's seeded default. "Exclude a section" is include=False; "refine but
-    drop the prose" is narrative="remove""; narrative-only sections are forced to
-    action="retain" by the API regardless of what is passed.
-    """
-
-    current_code: str
-    include: bool | None = None
-    narrative: str | None = None  # DbNarrativeAction; kept as str to avoid the import
-    action: str | None = None  # DbSectionAction; kept as str to avoid the import
-
-
-@dataclass(frozen=True)
-class CustomCode:
-    """
-    One custom code added via add_custom_code.
-    """
-
-    code: str
-    system: str
-    name: str
-
-
-@dataclass(frozen=True)
-class Scenario:
-    """
-    One refinement scenario: the condition to configure for plus the
-    customizations layered on top of the default configuration.
-
-    name: parametrize id and snapshot subdirectory name.
-    fixture_dir: directory under tests/fixtures/ holding eICR.xml / RR.xml.
-    condition_name: the condition display_name the config is created for.
-    rsg_code: the reportable SNOMED code recorded on the trace for
-        observability; does NOT drive refinement.
-    canonical_url: the TES condition grouper canonical_url. Asserted against
-        the seeded condition at build time (drift guard) and threaded into the
-        augmentation seed.
-    configuration_version: arbitrary per-scenario discriminator. Recorded on
-        the trace AND rendered into each section's provenance footnote, so it
-        affects the refined XML.
-    custom_codes / section_overrides / associated_conditions: the recipe
-        applied to the default configuration before activation.
-    """
-
-    name: str
-    fixture_dir: str
-    condition_name: str
-    rsg_code: str
-    canonical_url: str
-    configuration_version: int
-    custom_codes: tuple[CustomCode, ...] = ()
-    section_overrides: tuple[SectionOverride, ...] = ()
-    associated_conditions: tuple[str, ...] = ()
 
 
 SCENARIOS: list[Scenario] = [

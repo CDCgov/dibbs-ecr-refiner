@@ -29,7 +29,6 @@ import { ConfigLockBanner } from './Lock/ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
-import { Icon } from '@trussworks/react-uswds';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
@@ -531,11 +530,7 @@ function DeleteCodeSetButton({
       onClick={() => handleDisassociateCondition(conditionId)}
       disabled={disabled}
     >
-      <Icon.Delete
-        className={disabled ? 'text-gray-cool-40' : 'fill-red-700!'}
-        size={3}
-        aria-hidden
-      />
+      <DeleteIcon />
     </Button>
   );
 }
@@ -621,5 +616,20 @@ function RsgDetailsModal({
         </table>
       </ModalBody>
     </Modal>
+  );
+}
+
+function DeleteIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      className="fill-red-700"
+    >
+      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+    </svg>
   );
 }
