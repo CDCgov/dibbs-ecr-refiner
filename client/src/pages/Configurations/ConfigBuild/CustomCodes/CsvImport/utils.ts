@@ -5,13 +5,10 @@ export function buildCsvDownloadTemplate(systemsSupported: DbCodeSystem[]) {
 
   let content = headers + '\n';
   systemsSupported.forEach((s) => {
-    const randomLengthAtLeastThree = 3 + Math.floor(Math.random() * 10);
-    const randomCode = Array.from({ length: randomLengthAtLeastThree }, () =>
-      Math.floor(Math.random() * 10)
-    ).join('');
+    const exampleCode = `1111111-${s.key}`;
 
     const currentRow =
-      randomCode + ',' + s.key + ',' + `${s.display_name} Example`;
+      exampleCode + ',' + s.display_name + ',' + `${s.display_name} Example`;
     content += currentRow + '\n';
   });
 

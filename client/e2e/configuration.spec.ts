@@ -541,7 +541,7 @@ test.describe('Configuration detail flow', () => {
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       await expect(
-        page.getByRole('heading', { name: `Edit 1431534`, level: 2 })
+        page.getByRole('heading', { name: `Edit 1111111-other`, level: 2 })
       ).toBeVisible();
       const testCode = 'test code ~';
       await page.getByLabel('Code', { exact: true }).fill(testCode);
