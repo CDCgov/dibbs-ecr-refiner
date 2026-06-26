@@ -13,6 +13,7 @@ from .ecr.augment import (
     augment_eicr,
     augment_rr,
     create_augmentation_run,
+    update_rr_eicr_external_document_reference,
 )
 from .ecr.model import JurisdictionReportableConditions, RRRefinementPlan
 from .ecr.refine import (
@@ -320,6 +321,14 @@ def refine_for_condition(
             jurisdiction_id=context.jurisdiction_id,
             scope=condition_grouper_uuid,
         )
+
+        # cross-link the pair: the refined RR's eICR external socument
+        # reference must identify the refined eICR it accompanies (read
+        # off eicr_root, which augment_eicr has already stamped), not
+        # the original eICR it inherited. per-condition pair only; the
+        # remainder RR has no paired refined eICR
+        update_rr_eicr_external_document_reference(rr_root, eicr_root)
+
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
         # * pretty-print at the pipeline boundary so every consumer of
