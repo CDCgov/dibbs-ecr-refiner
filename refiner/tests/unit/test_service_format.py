@@ -147,7 +147,7 @@ class TestFormatXmlDocumentForDisplayOrRaise:
     def test_raises_422_for_invalid_xml(self):
         with pytest.raises(HTTPException) as exc_info:
             format_xml_document_for_display_or_raise("<unclosed>")
-        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         assert "Invalid XML" in exc_info.value.detail
 
     def test_preserves_comments_through_wrapper(self):
