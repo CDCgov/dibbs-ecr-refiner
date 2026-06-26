@@ -68,7 +68,7 @@ async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
     </MemoryRouter>
   );
 
-  const fileInput = screen.getByLabelText('Bulk custom code upload file input');
+  const fileInput = screen.getByTestId('bulk-upload-file-input');
   const file = new File([MOCK_UPLOAD_CSV], 'test.csv', {
     type: 'text/csv',
   });

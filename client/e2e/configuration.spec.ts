@@ -263,17 +263,6 @@ test.describe('Configuration detail flow', () => {
     ).toBeVisible();
   });
 
-  const condition = 'COVID-19';
-
-  const customCodeName = 'my-custom code!';
-  const customCodeSystem = 'snomed';
-  const customCode = '123-! #-$$$';
-
-  const customSectionName = 'My custom section!';
-  const customSectionCode = 'custom section code';
-
-  const additionalCodeSetName = 'Agricultural Chemicals (Fertilizer) Poisoning';
-
   test('User successfully builds and activates a configuration', async ({
     page,
     makeAxeBuilder,
@@ -281,6 +270,18 @@ test.describe('Configuration detail flow', () => {
     configurationPage,
   }) => {
     test.setTimeout(120000);
+    const condition = 'COVID-19';
+
+    const customCodeName = 'my-custom code!';
+    const customCodeSystem = 'snomed';
+    const customCode = '123-! #-$$$';
+
+    const customSectionName = 'My custom section!';
+    const customSectionCode = 'custom section code';
+
+    const additionalCodeSetName =
+      'Agricultural Chemicals (Fertilizer) Poisoning';
+
     await expect(
       page.getByRole('heading', {
         name: 'Configurations',

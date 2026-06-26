@@ -445,7 +445,9 @@ export function ImportCustomCodes({
             accept=".csv"
             hidden
             onChange={handleFileChange}
-            aria-label="Bulk custom code upload file input"
+            // defined as a test ID since the input element is hidden and we
+            // needed a hatch to grab it via the frontend unit tests
+            data-testid="bulk-upload-file-input"
           />
         </>
         {uploading ? (
