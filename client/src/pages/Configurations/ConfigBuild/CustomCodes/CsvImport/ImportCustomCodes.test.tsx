@@ -204,7 +204,7 @@ describe('Custom codes upload', () => {
       expect(saveButton).toBeDisabled();
 
       await user.type(code, '13535135');
-      const codeName = screen.getByLabelText('Code name');
+      const codeName = screen.getByLabelText('Display name');
 
       await user.clear(codeName);
       expect(saveButton).toBeDisabled();

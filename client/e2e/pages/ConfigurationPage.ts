@@ -73,7 +73,7 @@ export class ConfigurationPage {
       .click();
     await this.page.getByLabel('Code', { exact: true }).fill(code);
     await this.page.getByLabel('Code system').selectOption(codeSystem);
-    await this.page.getByLabel('Code name').fill(codeName);
+    await this.page.getByLabel('Display nameame').fill(codeName);
     await this.page.getByRole('button', { name: 'Add custom code' }).click();
   }
 
@@ -92,7 +92,8 @@ export class ConfigurationPage {
       await this.page.getByLabel('Code', { exact: true }).fill(newCode);
     if (newCodeSystem)
       await this.page.getByLabel('Code system').selectOption(newCodeSystem);
-    if (newCodeName) await this.page.getByLabel('Code name').fill(newCodeName);
+    if (newCodeName)
+      await this.page.getByLabel('Display name').fill(newCodeName);
   }
 
   async deleteCustomCode(codeName: string) {

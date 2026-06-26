@@ -487,7 +487,7 @@ describe('Config builder page', () => {
 
     await user.type(screen.getByLabelText('Code'), '12345');
     await user.selectOptions(screen.getByLabelText('Code system'), 'SNOMED');
-    await user.type(screen.getByLabelText('Code name'), 'Test code name');
+    await user.type(screen.getByLabelText('Display name'), 'Test Display name');
 
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
@@ -540,7 +540,9 @@ describe('Config builder page', () => {
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
     expect(screen.getByLabelText('Code')).toHaveValue('custom-code1');
-    expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
+    expect(screen.getByLabelText('Display name')).toHaveValue(
+      'test-custom-code1'
+    );
     expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
     await user.type(screen.getByLabelText('Code'), '12345');

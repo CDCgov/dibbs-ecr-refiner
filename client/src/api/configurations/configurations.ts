@@ -830,7 +830,7 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
  *     db (AsyncDatabaseConnection, optional): The database connection
  *
  * Returns:
- *     bool: Returns True if the code name has not been used, otherwise returns False
+ *     bool: Returns True if the code  has not been used, otherwise returns False
  * @summary Validate Custom Code
  */
 export const validateCustomCodeFromConfiguration = (

@@ -225,12 +225,14 @@ async def upload_custom_codes_csv(
     csv_reader = csv.DictReader(io.StringIO(decoded))
 
     headers = set(csv_reader.fieldnames or [])
-    base_required = {"code_system", "display_name"}
 
-    has_base = base_required.issubset(headers)
-    # maintain backwards compatibility with old template that used "code_number" as the column header
+    has_system = "code_system" in headers
+
+    # maintain backwards compatibility with old templates that used "code_number" as the column header
     has_code_variant = "code" in headers or "code_number" in headers
-    if not (has_base and has_code_variant):
+    has_name_variant = "display_name" in headers or "code_name" in headers
+
+    if not (has_system and has_code_variant and has_name_variant):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CSV must contain headers: code,code_system,display_name",
@@ -643,7 +645,7 @@ async def validate_custom_code(
         db (AsyncDatabaseConnection, optional): The database connection
 
     Returns:
-        bool: Returns True if the code name has not been used, otherwise returns False
+        bool: Returns True if the code  has not been used, otherwise returns False
     """
 
     current_code = body.current_code

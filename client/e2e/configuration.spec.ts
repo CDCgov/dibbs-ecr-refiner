@@ -166,7 +166,7 @@ test.describe('Configuration detail flow', () => {
       });
 
       // try navigating away from the input and we'll see the error
-      await page.getByLabel('Code name').click();
+      await page.getByLabel('Display name').click();
 
       const expectedError = page.getByText(
         `The code "${customCode2.code}" already exists.`
@@ -179,7 +179,7 @@ test.describe('Configuration detail flow', () => {
 
       // change the text and the error should go away
       await page.getByLabel('Code', { exact: true }).fill(newCode);
-      await page.getByLabel('Code name').click();
+      await page.getByLabel('Display name').click();
       await expect(expectedError).not.toBeVisible();
       await expect(updateButton).toBeEnabled();
 
@@ -219,14 +219,14 @@ test.describe('Configuration detail flow', () => {
       // fill in form
       await page.getByLabel('Code', { exact: true }).fill(customCode2.code);
       await page.getByLabel('Code system').selectOption(customCode2.system);
-      await page.getByLabel('Code name').fill(customCode2.name);
+      await page.getByLabel('Display name').fill(customCode2.name);
 
       await expect(expectedError).toBeVisible();
       await expect(addButton).not.toBeEnabled();
 
       await page.getByLabel('Code', { exact: true }).fill(newCode);
       await page.getByLabel('Code system').selectOption(newSystem);
-      await page.getByLabel('Code name').click();
+      await page.getByLabel('Display name').click();
       await expect(expectedError).not.toBeVisible();
       await expect(addButton).toBeEnabled();
       await addButton.click();
@@ -546,11 +546,11 @@ test.describe('Configuration detail flow', () => {
       const testCode = 'test code ~';
       await page.getByLabel('Code', { exact: true }).fill(testCode);
       await page.getByLabel('Code system').selectOption('CVX');
-      await page.getByLabel('Code name').fill('test code_name');
+      await page.getByLabel('Display name').fill('test display_name');
       await page.getByRole('button', { name: 'Save changes' }).click();
       await page
         .getByRole('searchbox', { name: 'Search codes' })
-        .fill('test code_name');
+        .fill('test display_name');
 
       await editButton.click();
       await expect(
@@ -568,7 +568,7 @@ test.describe('Configuration detail flow', () => {
       const firstRow = rows.first();
       // first row should have the most recent updated values
       await expect(firstRow.getByText(testCode)).toBeVisible();
-      await expect(firstRow.getByText('test code_name')).toBeVisible();
+      await expect(firstRow.getByText('test display_name')).toBeVisible();
       await expect(firstRow.getByText('CVX')).toBeVisible();
 
       await firstRow.getByRole('button', { name: 'Delete' }).click();
