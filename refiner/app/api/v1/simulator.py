@@ -126,7 +126,7 @@ async def _build_refined_conditions(
                 refined_eicr=content_for_frontend.refined_eicr,
                 render_diff=content_for_frontend.render_diff,
                 stats=[
-                    f"eICR file size reduced by {refined_document.eicr_size_reduction_percentage}%",
+                    f"eICR file size reduced by {refined_document.eicr_size_reduction_percentage}% (unformatted)",
                 ],
             )
         )
