@@ -25,6 +25,8 @@ import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Tooltip } from '@components/Tooltip';
+import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
+import { KeepOnMatchModal } from './KeepOnMatchModal';
 
 interface SectionsProps {
   configurationId: string;
@@ -40,6 +42,7 @@ export function Sections({
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
   //   - disabled_sections: sections that are always retained by the refiner regardless of
@@ -100,6 +103,7 @@ export function Sections({
               }
               onClose={resetModal}
             />
+            <KeepOnMatchModal isOpen={isInfoOpen} setIsOpen={setIsInfoOpen} />
           </div>
           <p className="italic">
             Choose which sections of your eICR to include, as well as whether to
@@ -132,10 +136,17 @@ export function Sections({
                 <th scope="col" className="w-40">
                   <div className="flex gap-1">
                     <span>Narrative data</span>
-                    <Tooltip
-                      position="left"
-                      label="Keep the original data included in the narrative block, reconstruct the data from refined coded data, or omit exclude the narrative block for this section."
-                    />
+                    <Button
+                      variant="unstyled"
+                      type="button"
+                      onClick={() => setIsInfoOpen(true)}
+                      className="inline-flex cursor-pointer rounded-sm focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+                    >
+                      <span aria-hidden>
+                        <QuestionIcon />
+                      </span>
+                      <span className="sr-only">More information</span>
+                    </Button>
                   </div>
                 </th>
               </tr>
@@ -377,7 +388,11 @@ function RefineSwitch({
 
   const handleSwitchChange = (checked: boolean) => {
     // TODO: This validation should eventually be enforced by backend API as well
-    if (!checked && currentSection.narrative === 'reconstruct') {
+    if (
+      !checked &&
+      (currentSection.narrative === 'reconstruct' ||
+        currentSection.narrative === 'keep_on_match')
+    ) {
       setError(currentSection.code);
       return;
     }
