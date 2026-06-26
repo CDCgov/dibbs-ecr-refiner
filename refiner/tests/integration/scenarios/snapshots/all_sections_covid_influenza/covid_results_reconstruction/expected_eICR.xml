@@ -649,7 +649,7 @@
               </table>
             </footnote>
           </text>
-          <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
+          <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry typeCode="DRIV">
             <encounter classCode="ENC" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.49"/>
@@ -1305,7 +1305,7 @@
           </code>
           <title>HOSPITAL ADMISSION DIAGNOSIS</title>
           <text>Appendicitis<footnote ID="ecr-refiner-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v9</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
-          <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
+          <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.34" extension="2015-08-01"/>
@@ -1378,7 +1378,7 @@
           </code>
           <title>Discharge Diagnosis</title>
           <text>Some text here<footnote ID="ecr-refiner-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v9</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
-          <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
+          <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.33" extension="2015-08-01"/>
@@ -1591,7 +1591,7 @@
               </table>
             </footnote>
           </text>
-          <!-- eCR Refiner matched: value[1119303003] 'Post-acute COVID-19 (disorder)' (SNOMED) Entry match fired for: rule 1 (T1) [hl7:value] -->
+          <!-- eCR Refiner matched: value[1119303003] 'Post-acute COVID-19 (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry typeCode="DRIV">
             <act classCode="ACT" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
@@ -1720,21 +1720,35 @@
               <thead>
                 <tr>
                   <th>Panel</th>
+                  <th>Date(s)</th>
                   <th>Specimen</th>
-                  <th>Test</th>
-                  <th>Result</th>
-                  <th>Interpretation</th>
-                  <th>Date</th>
+                  <th>Target Site</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen</td>
+                  <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen (LOINC 105066-5)</td>
+                  <td>2020-11-07</td>
                   <td/>
-                  <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen</td>
-                  <td>Detected (qualifier value) (260373001)</td>
-                  <td>Abnormal (A)</td>
-                  <td>20201107</td>
+                  <td/>
+                </tr>
+              </tbody>
+            </table>
+            <table border="1">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>Outcome</th>
+                  <th>Interpretation</th>
+                  <th>Date(s)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="ecr-refiner-30954-2-20260101000000-row1">
+                  <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen (LOINC 105066-5)</td>
+                  <td>Detected (qualifier value) (SNOMED CT 260373001)</td>
+                  <td>Abnormal</td>
+                  <td>2020-11-07</td>
                 </tr>
               </tbody>
             </table>
@@ -1789,6 +1803,9 @@
                   <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01"/>
                   <id root="7c0704bb-9c40-41b5-9c7d-26b2d59e234f"/>
                   <code code="105066-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen"/>
+                  <text>
+                    <reference value="#ecr-refiner-30954-2-20260101000000-row1"/>
+                  </text>
                   <statusCode code="completed"/>
                   <effectiveTime value="20201107"/>
                   <value code="260373001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Detected (qualifier value)" xsi:type="CD"/>
