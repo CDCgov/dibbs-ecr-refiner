@@ -19,7 +19,6 @@ import {
   useUploadCustomCodesCsv,
   useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
-import { CSV_DOWNLOAD_TEMPLATE } from './CustomCodes/CsvImport/utils';
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({
@@ -253,6 +252,22 @@ vi.mock('../../../api/code-systems/code-systems', () => {
         data: mockCodeSystems,
       },
     })),
+  };
+});
+
+const MOCK_UPLOAD_CSV = `code,code_system,display_name
+15613,snomed,SNOMED Example
+52747,loinc,LOINC Example
+287972,icd10,ICD-10 Example
+5128,rxnorm,RxNorm Example
+23779,cvx,CVX Example
+1534,other,Other Example`;
+
+vi.mock('./CustomCodes/CsvImport/utils', () => {
+  return {
+    buildCsvDownloadTemplate: vi.fn(() => {
+      return MOCK_UPLOAD_CSV;
+    }),
   };
 });
 
@@ -862,7 +877,7 @@ describe('Config builder page', () => {
     const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
 
     const text = await blobArg.text();
-    expect(text).toBe(CSV_DOWNLOAD_TEMPLATE);
+    expect(text).toBe(MOCK_UPLOAD_CSV);
 
     // cleanup
     createObjectUrlSpy.mockRestore();

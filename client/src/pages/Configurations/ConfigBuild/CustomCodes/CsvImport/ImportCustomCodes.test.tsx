@@ -11,13 +11,6 @@ import userEvent from '@testing-library/user-event';
 import { useUploadCustomCodesCsv } from '../../../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 import {
-  CSV_DOWNLOAD_TEMPLATE,
-  EXAMPLE_CVX_CODE,
-  EXAMPLE_LOINC_CODE,
-  EXAMPLE_OTHER_CODE_SUFFIX,
-  EXAMPLE_SNOMED_CODE,
-} from './utils';
-import {
   UploadCustomCodesPreviewItem,
   UploadCustomCodesPreviewResponse,
 } from '../../../../../api/schemas';
@@ -46,6 +39,29 @@ vi.mock('../../../../../api/code-systems/code-systems', async () => {
   };
 });
 
+const MOCK_LOINC_CODE = '52747';
+const MOCK_SNOMED_CODE = '15613';
+const MOCK_CVX_CODE = '23779';
+
+const MOCK_OTHER_CODE_SUFFIX = '1534';
+const MOCK_OTHER_CODE = MOCK_CVX_CODE + MOCK_OTHER_CODE_SUFFIX; // used to test prefix matching
+
+const MOCK_UPLOAD_CSV = `code,code_system,display_name
+${MOCK_SNOMED_CODE},snomed,SNOMED Example
+${MOCK_LOINC_CODE},loinc,LOINC Example
+287972,icd10,ICD-10 Example
+5128,rxnorm,RxNorm Example
+${MOCK_CVX_CODE},cvx,CVX Example
+${MOCK_OTHER_CODE},other,Other Example`;
+
+vi.mock('./utils', () => {
+  return {
+    buildCsvDownloadTemplate: vi.fn(() => {
+      return MOCK_UPLOAD_CSV;
+    }),
+  };
+});
+
 async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
   render(
     <MemoryRouter initialEntries={[`/configurations/${MOCK_CONFIG_ID}/build`]}>
@@ -56,7 +72,7 @@ async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
   );
 
   const fileInput = screen.getByLabelText('Bulk custom code upload file input');
-  const file = new File([CSV_DOWNLOAD_TEMPLATE], 'test.csv', {
+  const file = new File([MOCK_UPLOAD_CSV], 'test.csv', {
     type: 'text/csv',
   });
 
@@ -124,22 +140,24 @@ describe('Custom codes upload', () => {
     checkLoincCode();
     checkSnomedCode(false);
     checkOtherCode(false);
+    checkRxNormCode(false);
     checkIcd10Code(false);
     checkCvxCode(false);
 
     // by code
     await userEvent.clear(searchInput);
-    await userEvent.type(searchInput, EXAMPLE_LOINC_CODE);
+    await userEvent.type(searchInput, MOCK_LOINC_CODE);
     checkLoincCode();
     checkOtherCode(false);
     checkIcd10Code(false);
+    checkRxNormCode(false);
     checkSnomedCode(false);
     checkCvxCode(false);
 
     // make sure codes with matching prefixes get appropriately filtered
     await userEvent.clear(searchInput);
-    await userEvent.type(searchInput, EXAMPLE_CVX_CODE);
-    expect(screen.getAllByText(EXAMPLE_CVX_CODE).length).toBe(2);
+    await userEvent.type(searchInput, MOCK_CVX_CODE);
+    expect(screen.getAllByText(MOCK_CVX_CODE).length).toBe(2);
 
     expect(screen.getByText('Other Example')).toBeInTheDocument();
     expect(screen.getByText('CVX Example')).toBeInTheDocument();
@@ -147,10 +165,11 @@ describe('Custom codes upload', () => {
     checkSnomedCode(false);
     checkIcd10Code(false);
 
-    await userEvent.type(searchInput, EXAMPLE_OTHER_CODE_SUFFIX);
+    await userEvent.type(searchInput, MOCK_OTHER_CODE_SUFFIX);
     checkOtherCode();
     checkCvxCode(false);
     checkLoincCode(false);
+    checkRxNormCode(false);
     checkSnomedCode(false);
     checkIcd10Code(false);
   });
@@ -167,9 +186,7 @@ describe('Custom codes upload', () => {
         await within(editRows[0]).findByRole('button', { name: 'Edit' })
       );
 
-      expect(
-        screen.getByText(`Edit ${EXAMPLE_SNOMED_CODE}`)
-      ).toBeInTheDocument();
+      expect(screen.getByText(`Edit ${MOCK_SNOMED_CODE}`)).toBeInTheDocument();
     });
 
     test('disables save state when any one of the three required fields is missing', async () => {
@@ -233,8 +250,13 @@ function checkOtherCode(exists = true) {
 }
 
 function checkCode(codeSystemName: string, exists = true) {
-  const mockCode = mockPreviewItems.find((i) => i.system_key === codeSystemName)
-    ?.code as string;
+  const codeSystem = mockCodeSystems.find(
+    (s) => s.display_name === codeSystemName
+  );
+
+  const mockCode = mockPreviewItems.find(
+    (i) => i.system_key === codeSystem?.key
+  )?.code as string;
 
   const matcher = exists ? 'getByText' : 'queryByText';
 
@@ -249,7 +271,7 @@ function checkCode(codeSystemName: string, exists = true) {
   totalExpectation(`${codeSystemName} Example`);
 }
 
-const uploadLines = csvToDict(CSV_DOWNLOAD_TEMPLATE);
+const uploadLines = csvToDict(MOCK_UPLOAD_CSV);
 const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
   (row, i) => {
     return {

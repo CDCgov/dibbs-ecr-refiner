@@ -17,7 +17,8 @@ import { CsvImportStep } from '../..';
 import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import { DbCodeSystem } from '../../../../../api/schemas';
-import { CSV_DOWNLOAD_TEMPLATE } from './utils';
+import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
+import { buildCsvDownloadTemplate } from './utils';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   id: crypto.randomUUID(),
@@ -78,6 +79,8 @@ export function ImportCustomCodes({
     useUploadCustomCodesCsv();
   const { mutate: confirmCsvMutation, isPending: isConfirming } =
     useConfirmUploadCustomCodesCsv();
+
+  const { data: codeSystems } = useGetCodeSystems();
 
   useEffect(() => {
     onStepChange?.(step);
@@ -233,7 +236,13 @@ export function ImportCustomCodes({
   };
 
   const handleDownloadTemplate = () => {
-    const blob = new Blob([CSV_DOWNLOAD_TEMPLATE], {
+    if (!codeSystems?.data) return;
+
+    const uploadTemplateCsvContent = buildCsvDownloadTemplate(
+      Object.values(codeSystems.data)
+    );
+
+    const blob = new Blob([uploadTemplateCsvContent], {
       type: 'text/csv;charset=utf-8;',
     });
     const url = URL.createObjectURL(blob);
