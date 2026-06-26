@@ -727,6 +727,8 @@ test.describe('Sections Validation and Error Lifecycle', () => {
       narrativeOnlyOptions.filter({ hasText: 'Keep on match' })
     ).toBeAttached();
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     // 2. Enabled when Coded Data is 'Refine' (Results row)
     const sectionRow = reconstructableRow;
     const codedDataSwitch = sectionRow.getByRole('switch');
@@ -736,6 +738,8 @@ test.describe('Sections Validation and Error Lifecycle', () => {
       .getByRole('option')
       .filter({ hasText: 'Keep on match' });
     await expect(keepOnMatchOption).toBeEnabled();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // 3. Disabled when Coded Data is 'Keep original'
     await codedDataSwitch.click();
