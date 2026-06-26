@@ -1,8 +1,6 @@
-interface InfoIconProps {
-  size?: number;
-  className?: string;
-}
-export function InfoIcon({ size = 24, className }: InfoIconProps) {
+import { IconProps } from './types';
+
+export function InfoIcon({ size = 24, className }: IconProps) {
   return (
     <svg
       aria-hidden

@@ -1,9 +1,6 @@
-interface CloseIconProps {
-  size?: number;
-  className?: string;
-}
+import { IconProps } from './types';
 
-export function CloseIcon({ size = 32, className }: CloseIconProps) {
+export function CloseIcon({ size = 32, className }: IconProps) {
   return (
     <svg
       aria-hidden
