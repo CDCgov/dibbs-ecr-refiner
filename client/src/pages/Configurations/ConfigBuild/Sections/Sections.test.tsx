@@ -92,6 +92,27 @@ const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
   },
 ];
 
+const sectionsWithKeepOnMatch: DbConfigurationSectionProcessing[] = [
+  {
+    name: 'Results section',
+    action: 'refine',
+    include: true,
+    code: '30954-2',
+    narrative: 'keep_on_match',
+    versions: ['1.1', '3.1'],
+    section_type: 'standard',
+  },
+  {
+    name: 'Immunizations section',
+    action: 'retain',
+    include: true,
+    code: 'imm',
+    narrative: 'keep_on_match',
+    versions: ['3.1', '3.1.1'],
+    section_type: 'standard',
+  },
+];
+
 const testId = 'test-id';
 
 function renderWithClient(ui: React.ReactElement) {
@@ -161,11 +182,13 @@ describe('Configuration sections', () => {
 
     const firstSelect = selects[0];
     const options = within(firstSelect).getAllByRole('option');
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toHaveTextContent('Keep original');
     expect(options[0]).toHaveValue('retain');
-    expect(options[1]).toHaveTextContent('Exclude');
-    expect(options[1]).toHaveValue('remove');
+    expect(options[1]).toHaveTextContent('Keep on match');
+    expect(options[1]).toHaveValue('keep_on_match');
+    expect(options[2]).toHaveTextContent('Exclude');
+    expect(options[2]).toHaveValue('remove');
   });
 
   it('should blank out narrative controls for excluded rows', () => {
@@ -284,9 +307,11 @@ describe('Configuration sections', () => {
 
     const select = within(row).getByRole('combobox');
     const options = within(select).getAllByRole('option');
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toHaveValue('retain');
-    expect(options[1]).toHaveValue('remove');
+    expect(options[1]).toHaveValue('keep_on_match');
+    expect(options[1]).toBeDisabled();
+    expect(options[2]).toHaveValue('remove');
   });
 
   it('should disable Reconstruct option when coded data action is retain', () => {
@@ -369,5 +394,103 @@ describe('Configuration sections', () => {
     expect(errorMessage).toHaveTextContent(
       /To reconstruct narrative, refine must be selected/
     );
+  });
+
+  it('should enable Keep on match option when coded data action is refine', () => {
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithKeepOnMatch}
+      />
+    );
+
+    const problemsName = screen.getByText('Results section');
+    const row = problemsName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Results section"');
+    }
+
+    const select = within(row).getByRole('combobox');
+    const options = within(select).getAllByRole('option');
+    const keepOnMatchOption = options.find(
+      (opt) => opt.getAttribute('value') === 'keep_on_match'
+    );
+    expect(keepOnMatchOption).toBeDefined();
+    expect(keepOnMatchOption).not.toBeDisabled();
+  });
+
+  it('should disable Keep on match option when coded data action is retain', () => {
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithKeepOnMatch}
+      />
+    );
+
+    const immName = screen.getByText('Immunizations section');
+    const row = immName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Immunizations section"');
+    }
+
+    const select = within(row).getByRole('combobox');
+    const options = within(select).getAllByRole('option');
+    const keepOnMatchOption = options.find(
+      (opt) => opt.getAttribute('value') === 'keep_on_match'
+    );
+    expect(keepOnMatchOption).toBeDefined();
+    expect(keepOnMatchOption).toBeDisabled();
+  });
+
+  it('should show error when trying to switch coded data to retain while narrative is keep_on_match', async () => {
+    const user = userEvent.setup();
+
+    renderWithClient(
+      <Sections
+        configurationId={testId}
+        disabled={false}
+        sections={sectionsWithKeepOnMatch}
+      />
+    );
+
+    const problemsName = screen.getByText('Results section');
+    const row = problemsName.closest('tr');
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Results section"');
+    }
+
+    const switchElement = within(row).getByRole('switch');
+    expect(switchElement).toBeChecked();
+
+    await user.click(switchElement);
+
+    const errorMessage = within(row).queryByRole('alert');
+    expect(errorMessage).toBeInTheDocument();
+    expect(errorMessage).toHaveTextContent(
+      /To reconstruct narrative, refine must be selected/
+    );
+  });
+
+  it('should open info modal when clicking ? icon', async () => {
+    const user = userEvent.setup();
+
+    renderWithClient(
+      <Sections configurationId={testId} disabled={false} sections={sections} />
+    );
+
+    const infoButtons = screen.getAllByText('More information');
+    await user.click(infoButtons[1]);
+
+    expect(
+      screen.getByText('Narrative data', { selector: 'h2' })
+    ).toBeInTheDocument();
   });
 });
