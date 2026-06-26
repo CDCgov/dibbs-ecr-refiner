@@ -16,7 +16,7 @@ on:
       dry_run:
         description: "If true, skip creating git tag and pushing Docker images"
         type: boolean
-        default: true # TODO: change to `false` once validated
+        default: true
 
 jobs:
   rc-release:
@@ -130,7 +130,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create and push RC Git tag
-        if: ${{ github.event.inputs.dry_run == 'false' }}
+        if: ${{ !inputs.dry_run }}
         run: |
           GIT_TAG="${{ steps.vars.outputs.version_tag }}"
           if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
@@ -145,7 +145,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.app
-          push: ${{ github.event.inputs.dry_run == 'false' }}
+          push: ${{ !inputs.dry_run }}
           tags: ${{ steps.vars.outputs.app_tags }}
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
@@ -158,7 +158,7 @@ jobs:
           context: .
           provenance: false
           file: Dockerfile.lambda
-          push: ${{ github.event.inputs.dry_run == 'false' }}
+          push: ${{ !inputs.dry_run }}
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
           build-args: |
@@ -169,13 +169,13 @@ jobs:
         with:
           context: .
           file: Dockerfile.ops
-          push: ${{ github.event.inputs.dry_run == 'false' }}
+          push: ${{ !inputs.dry_run }}
           tags: ${{ steps.vars.outputs.ops_tags }}
           build-args: |
             VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Create draft GitHub release notes
-        if: ${{ github.event.inputs.release_notes == 'true' }}
+        if: inputs.release_notes
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.vars.outputs.version_tag }}
