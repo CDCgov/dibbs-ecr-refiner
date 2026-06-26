@@ -88,7 +88,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `1` |
 | Configuration resolved | `True` |
-| eICR size reduction | `71%` |
+| eICR size reduction | `56%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -135,7 +135,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `5` |
 | Configuration resolved | `True` |
-| eICR size reduction | `71%` |
+| eICR size reduction | `56%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -182,7 +182,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `9` |
 | Configuration resolved | `True` |
-| eICR size reduction | `72%` |
+| eICR size reduction | `58%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -229,7 +229,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `3` |
 | Configuration resolved | `True` |
-| eICR size reduction | `62%` |
+| eICR size reduction | `42%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -276,7 +276,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `7` |
 | Configuration resolved | `True` |
-| eICR size reduction | `69%` |
+| eICR size reduction | `54%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -323,7 +323,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `8` |
 | Configuration resolved | `True` |
-| eICR size reduction | `68%` |
+| eICR size reduction | `53%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -370,7 +370,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `4` |
 | Configuration resolved | `True` |
-| eICR size reduction | `64%` |
+| eICR size reduction | `48%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -415,7 +415,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `6` |
 | Configuration resolved | `True` |
-| eICR size reduction | `67%` |
+| eICR size reduction | `51%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -462,7 +462,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `2` |
 | Configuration resolved | `True` |
-| eICR size reduction | `69%` |
+| eICR size reduction | `53%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1` |
 | Augmented eICR id | `48c0d1c3-88a9-5604-8258-95023edd319a` |
 | Augmented RR id | `545424f5-c84a-5e39-bc4a-436e79344df2` |
