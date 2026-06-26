@@ -15,6 +15,7 @@ from .ecr.augment import (
     create_augmentation_run,
 )
 from .ecr.model import JurisdictionReportableConditions, RRRefinementPlan
+from .ecr.narrative import compact_reconstruction_references
 from .ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
@@ -331,6 +332,11 @@ def refine_for_condition(
         # to produce uniformly indented output
         refined_eicr = format_xml_document_for_display(refined_eicr)
         refined_rr = format_xml_document_for_display(refined_rr)
+
+        # * pretty-printing indents the minted entry→narrative reference
+        # pointers into mixed content with stray whitespace; restore the
+        # compact <text><reference/></text> form (only the eICR carries them)
+        refined_eicr = compact_reconstruction_references(refined_eicr)
 
         # * size metrics are computed against the formatted refined
         # output so the percentage matches what the user actually
