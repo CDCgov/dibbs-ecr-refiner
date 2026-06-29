@@ -7,7 +7,7 @@ RUN git clone https://github.com/amacneil/dbmate.git /dbmate
 
 WORKDIR /dbmate
 
-RUN go get -u && go mod tidy && go build -o /usr/local/bin/dbmate .
+RUN go get -u && go mod tidy && CGO_ENABLED=0 go build -o /usr/local/bin/dbmate .
 # Install system deps
 FROM python:3.14-alpine AS system-builder
 
