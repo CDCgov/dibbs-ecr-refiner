@@ -1,5 +1,6 @@
 import uuid
 
+import pytest
 from lxml import etree
 
 from app.services.ecr.augment import (
@@ -13,6 +14,7 @@ from app.services.ecr.augment import (
     augment_eicr,
     augment_rr,
     create_augmentation_run,
+    update_rr_eicr_external_document_reference,
 )
 from app.services.ecr.model import HL7_NS
 
@@ -533,6 +535,161 @@ def test_augment_rr_relatedDocument_carries_setId_and_version_when_input_has_the
             f"parentDocument should carry versionNumber for scope={scope!r}"
         )
         assert parent_version.get("value") == original_version_value
+
+
+# NOTE:
+# RR ↔ eICR CROSS-LINKAGE TESTS
+# =============================================================================
+#
+# the refined RR's eICR External Document Reference must identify the
+# refined eICR it is emitted alongside, using the identifiers that eICR
+# actually carries — not the original eICR's inherited identity.
+
+
+def _find_rr_eicr_reference(rr_root: etree.Element) -> etree.Element:
+    """
+    Return the eICR External Document Reference externalDocument from an RR.
+    """
+
+    references = rr_root.xpath(
+        ".//hl7:act[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.9']]"
+        "//hl7:externalDocument[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.10']]",
+        namespaces=HL7_NS,
+    )
+    assert references, "fixture RR should contain an eICR External Document Reference"
+    return references[0]
+
+
+def _augment_eicr_for_pair(eicr_root: etree.Element) -> None:
+    """
+    Stamp the refined-eICR identifiers onto eicr_root, as the pipeline does
+    before cross-linking.
+    """
+
+    augment_eicr(
+        eicr_root,
+        _make_run(),
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
+
+
+def test_rr_eicr_reference_matches_paired_refined_eicr(
+    eicr_root_v1_1: etree.Element,
+    rr_root_v1_1: etree.Element,
+):
+    """
+    For a per-condition pair, the reference's id/setId/versionNumber
+    equal the paired refined eICR's ClinicalDocument id/setId/version,
+    and id/setId carry assigningAuthorityName="ecr-refiner".
+    """
+
+    _augment_eicr_for_pair(eicr_root_v1_1)
+
+    eicr_id_root = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+    eicr_setid_root = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
+    eicr_version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS).get("value")
+
+    update_rr_eicr_external_document_reference(rr_root_v1_1, eicr_root_v1_1)
+
+    reference = _find_rr_eicr_reference(rr_root_v1_1)
+
+    ref_id = reference.find("hl7:id", HL7_NS)
+    assert ref_id.get("root") == eicr_id_root
+    assert ref_id.get("assigningAuthorityName") == "ecr-refiner"
+
+    ref_setid = reference.find("hl7:setId", HL7_NS)
+    assert ref_setid.get("root") == eicr_setid_root
+    assert ref_setid.get("assigningAuthorityName") == "ecr-refiner"
+
+    ref_version = reference.find("hl7:versionNumber", HL7_NS)
+    assert ref_version.get("value") == eicr_version
+
+
+def test_rr_eicr_reference_code_is_unchanged(
+    eicr_root_v1_1: etree.Element,
+    rr_root_v1_1: etree.Element,
+):
+    """
+    The <code> (55751-2 / LOINC) identifies the referenced document as
+    an eICR and must survive the rewrite untouched (CONF:3315-199).
+    """
+
+    _augment_eicr_for_pair(eicr_root_v1_1)
+    update_rr_eicr_external_document_reference(rr_root_v1_1, eicr_root_v1_1)
+
+    code = _find_rr_eicr_reference(rr_root_v1_1).find("hl7:code", HL7_NS)
+    assert code.get("code") == "55751-2"
+    assert code.get("codeSystem") == "2.16.840.1.113883.6.1"
+
+
+def test_rr_eicr_reference_leaves_no_residual_original_identity(
+    eicr_root_v3_1_1: etree.Element,
+    rr_root_v3_1_1: etree.Element,
+):
+    """
+    No part of the rewritten reference retains the original eICR's id or
+    setId. The v3.1.1 fixture's reference id/setId carry an @extension;
+    the refined-eICR identifiers are root-only, so the rewrite must drop
+    the inherited extension entirely (id/setId replaced wholesale).
+    """
+
+    reference_before = _find_rr_eicr_reference(rr_root_v3_1_1)
+    original_id_extension = reference_before.find("hl7:id", HL7_NS).get("extension")
+    original_setid_extension = reference_before.find("hl7:setId", HL7_NS).get(
+        "extension"
+    )
+    assert original_id_extension or original_setid_extension, (
+        "fixture precondition: the original reference should carry an "
+        "@extension so the residual-drop assertion is meaningful"
+    )
+
+    _augment_eicr_for_pair(eicr_root_v3_1_1)
+    update_rr_eicr_external_document_reference(rr_root_v3_1_1, eicr_root_v3_1_1)
+
+    reference = _find_rr_eicr_reference(rr_root_v3_1_1)
+    assert reference.find("hl7:id", HL7_NS).get("extension") is None
+    assert reference.find("hl7:setId", HL7_NS).get("extension") is None
+
+
+def test_rr_eicr_reference_is_idempotent(
+    eicr_root_v1_1: etree.Element,
+    rr_root_v1_1: etree.Element,
+):
+    """
+    Re-running the cross-link on an already-linked RR produces identical
+    reference values — the function reads the emitted eICR identity back,
+    it does not re-derive or compound.
+    """
+
+    _augment_eicr_for_pair(eicr_root_v1_1)
+
+    update_rr_eicr_external_document_reference(rr_root_v1_1, eicr_root_v1_1)
+    first = etree.tostring(_find_rr_eicr_reference(rr_root_v1_1))
+
+    update_rr_eicr_external_document_reference(rr_root_v1_1, eicr_root_v1_1)
+    second = etree.tostring(_find_rr_eicr_reference(rr_root_v1_1))
+
+    assert first == second
+
+
+def test_rr_eicr_reference_raises_when_reference_absent(
+    eicr_root_v1_1: etree.Element,
+    rr_root_v1_1: etree.Element,
+):
+    """
+    A conformant RR has the reference 1..1; its absence is a malformed
+    RR and should surface, not pass silently.
+    """
+
+    reference = _find_rr_eicr_reference(rr_root_v1_1)
+    external_document_parent = reference.getparent()
+    external_document_parent.remove(reference)
+
+    _augment_eicr_for_pair(eicr_root_v1_1)
+
+    with pytest.raises(ValueError, match="eICR External Document Reference"):
+        update_rr_eicr_external_document_reference(rr_root_v1_1, eicr_root_v1_1)
 
 
 # NOTE:

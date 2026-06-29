@@ -36,6 +36,21 @@ import type {
 
 
 
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === 'queryKey') continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
+
 /**
  * Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
  *
@@ -66,6 +81,7 @@ if(bodyDiscoverConfigurations?.uploaded_file !== undefined && bodyDiscoverConfig
       formData,options
     );
   }
+
 
 
 
@@ -147,6 +163,7 @@ if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== 
       formData,options
     );
   }
+
 
 
 
@@ -280,7 +297,7 @@ export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof download
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return { ...query, queryKey: queryOptions.queryKey };
+  return withQueryKey(query, queryOptions.queryKey);
 }
 
 
