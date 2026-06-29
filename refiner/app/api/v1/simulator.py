@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    format_refined_documents_or_raise,
     format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
@@ -125,7 +126,7 @@ async def _build_refined_conditions(
                 refined_eicr=content_for_frontend.refined_eicr,
                 render_diff=content_for_frontend.render_diff,
                 stats=[
-                    f"eICR file size reduced by {refined_document.eicr_size_reduction_percentage}%",
+                    f"eICR file size reduced by {refined_document.eicr_size_reduction_percentage}% (unformatted)",
                 ],
             )
         )
@@ -293,10 +294,14 @@ async def simulator_upload(
             detail="Server error occurred. Please check your file and try again.",
         )
 
+    formatted_documents = format_refined_documents_or_raise(
+        docs=test_results.refined_documents
+    )
+
     # Get the refined condition info and file packages
     conditions, zip_file_items = await _build_refined_conditions(
         original_xml_files=original_xml_files,
-        refined_documents=test_results.refined_documents,
+        refined_documents=formatted_documents,
         logger=logger,
     )
 
@@ -329,7 +334,9 @@ async def simulator_upload(
         zip_package.add(
             ZipFileItem(
                 file_name="CDA_RR_unrefined_rr.xml",
-                file_content=test_results.remainder_rr,
+                file_content=format_xml_document_for_display_or_raise(
+                    test_results.remainder_rr
+                ),
             )
         )
 
