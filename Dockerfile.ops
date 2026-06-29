@@ -1,3 +1,14 @@
+# Build dbmate from source with updated Go version
+FROM golang:1.26.4 AS dbmate-builder
+
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/amacneil/dbmate.git /dbmate
+
+WORKDIR /dbmate
+
+RUN go get -u && go mod tidy && go build -o /usr/local/bin/dbmate .
+
 # Install Python dependencies
 FROM python:3.14-slim
 
@@ -16,8 +27,8 @@ RUN apt-get update && apt-get install -y \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dbmate binary from dbmate base image
-COPY --from=ghcr.io/amacneil/dbmate:main /usr/local/bin/dbmate /usr/local/bin/dbmate
+# Copy dbmate binary built from source
+COPY --from=dbmate-builder /usr/local/bin/dbmate /usr/local/bin/dbmate
 
 WORKDIR /app
 
