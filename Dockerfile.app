@@ -17,9 +17,28 @@ ENV VITE_APP_VERSION=$VERSION
 COPY ./client ./
 RUN npm run build
 
+# Install system deps
+FROM python:3.14-alpine AS system-builder
+
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    musl-dev \
+    libxml2-dev \
+    libxslt-dev
+
+# build the lxml wheel
+WORKDIR /app
+RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
+
 
 # Runtime image
 FROM python:3.14-alpine
+
+# install runtime C libs
+RUN apk add --no-cache \
+    libxml2 \
+    libxslt
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
@@ -29,15 +48,12 @@ ENV VERSION=$VERSION
 
 WORKDIR /code
 
-# Install build dependencies for C extension packages
-RUN apk add --no-cache \
-    gcc \
-    musl-dev \
-    libxml2-dev \
-    libxslt-dev \
-    libffi-dev
-
 RUN python -m pip install --upgrade pip
+
+# copy & install wheel from builder
+COPY --from=system-builder /app/wheels /wheels
+RUN pip install --no-cache-dir /wheels/*
+
 
 COPY ./refiner/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
