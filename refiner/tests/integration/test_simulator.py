@@ -6,6 +6,8 @@ from zipfile import ZipFile
 import pytest
 from fastapi import status
 
+from app.services.format import format_xml_document_for_display
+
 api_route_base = "/api/v1/simulator"
 
 
@@ -204,6 +206,18 @@ async def test_shadow_rr_is_produced(
     with ZipFile(BytesIO(zip_bytes), "r") as zf:
         names = zf.namelist()
         assert set(names) == set(expected_file_names)
+
+        formatted_file_names = {
+            "CDA_eICR_COVID19.xml",
+            "CDA_RR_COVID19.xml",
+            "CDA_RR_unrefined_rr.xml",
+        }
+
+        for name in formatted_file_names:
+            content = zf.read(name).decode("utf-8")
+            assert content == format_xml_document_for_display(content), (
+                f"{name} is not correctly formatted"
+            )
 
 
 @pytest.mark.asyncio

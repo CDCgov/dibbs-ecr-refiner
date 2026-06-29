@@ -322,20 +322,6 @@ def refine_for_condition(
         )
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
-        # * pretty-print at the pipeline boundary so every consumer of
-        # RefinementResult receives display-ready output
-        # * lxml's pretty_print=True alone does NOT indent subtrees
-        # added via SubElement after a parse without remove_blank_text
-        # (the section provenance footnotes are the visible symptom);
-        # the formatter does a remove_blank_text reparse + pretty_print
-        # to produce uniformly indented output
-        refined_eicr = format_xml_document_for_display(refined_eicr)
-        refined_rr = format_xml_document_for_display(refined_rr)
-
-        # * size metrics are computed against the formatted refined
-        # output so the percentage matches what the user actually
-        # observes when comparing their upload to what gets written
-        # to S3 (lambda) or packaged in the demo zip (webapp)
         # * one calculation, computed here, propagated through the
         # result so testing.py and lambda_function.py do not maintain
         # parallel computations that could drift
