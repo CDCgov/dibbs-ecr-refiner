@@ -19,7 +19,7 @@ RUN npm run build
 
 
 # Runtime image
-FROM python:3.14-slim
+FROM python:3.14-alpine
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
@@ -28,6 +28,14 @@ ARG VERSION="0.0.0"
 ENV VERSION=$VERSION
 
 WORKDIR /code
+
+# Install build dependencies for C extension packages
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libxml2-dev \
+    libxslt-dev \
+    libffi-dev
 
 RUN python -m pip install --upgrade pip
 
