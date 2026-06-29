@@ -1,5 +1,5 @@
 # Install Python dependencies
-FROM python:3.14-slim
+FROM python:3.14-alpine
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
@@ -15,6 +15,14 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     bash \
     && rm -rf /var/lib/apt/lists/*
+
+# Install build dependencies for C extension packages
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libxml2-dev \
+    libxslt-dev \
+    libffi-dev
 
 # Copy dbmate binary from dbmate base image
 COPY --from=ghcr.io/amacneil/dbmate:main /usr/local/bin/dbmate /usr/local/bin/dbmate
