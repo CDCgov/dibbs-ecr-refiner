@@ -2,7 +2,7 @@ import uuid
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from lxml import etree
@@ -34,6 +34,13 @@ REFINER_TOOL_DISPLAY: Final[str] = "eCR Refiner"
 
 # document source label -> from data augmentation document source value set (Vol 2 Table 3)
 ORIGINAL_DOCUMENT_SOURCE: Final[str] = "original-document"
+
+# template identifiers for locating the eICR external document reference
+# inside the refined RR:
+#   * received eICR information act (RR IG STU 1.1 Vol 2 §3.13)
+#   * eICR external document reference it contains (Vol 2 §3.8.1)
+RECEIVED_EICR_INFO_ACT_TEMPLATE_ROOT: Final[str] = "2.16.840.1.113883.10.20.15.2.3.9"
+EICR_EXTERNAL_DOC_REF_TEMPLATE_ROOT: Final[str] = "2.16.840.1.113883.10.20.15.2.3.10"
 
 
 # NOTE:
@@ -521,6 +528,132 @@ def augment_rr(
     _add_related_document(rr_root, original)
 
     return augmented_result
+
+
+# NOTE:
+# PUBLIC API — RR ↔ eICR CROSS-LINKAGE
+# =============================================================================
+
+
+def update_rr_eicr_external_document_reference(
+    rr_root: _Element,
+    refined_eicr_root: _Element,
+) -> None:
+    """
+    Point a refined pair's RR eICR External Document Reference at the refined eICR.
+
+    In a per-condition refined pair the RR carries an eICR External
+    Document Reference (RR IG STU 1.1 Vol 2 §3.8.1, template
+    ...15.2.3.10) inside the Received eICR Information act
+    (...15.2.3.9), within the Electronic Initial Case Report Section.
+    That reference identifies the eICR the RR responds to. The eICR a
+    consumer actually receives in the pair is the *refined* eICR, so
+    the reference must describe that document.
+
+    The id, setId, and versionNumber are read straight off
+    `refined_eicr_root` — the document as it will actually be emitted —
+    rather than re-derived. That makes the two documents cross-link
+    exactly and the operation idempotent: re-running on the same input
+    reads the same already-stamped values back. Per the eCR Data
+    Augmentation IG v5 Vol 1 §2.1.7, the reference's id and setId carry
+    assigningAuthorityName="ecr-refiner"; versionNumber mirrors the
+    refined eICR's value. The <code> (55751-2 LOINC) is left untouched.
+
+    The id and setId elements are replaced wholesale rather than
+    patched, so no residual original-eICR attributes (e.g. an inherited
+    @extension) survive.
+
+    Must run after augment_eicr has stamped the refined identifiers onto
+    `refined_eicr_root`. Mutates `rr_root` in place.
+
+    NOT for the remainder RR: it has no paired refined eICR, so what its
+    reference should identify is a separate, undecided question (see the
+    ticket's scoping note). This function is only called on per-condition
+    pair RRs.
+
+    Raises:
+        ValueError: If the RR lacks the eICR External Document Reference
+            (it is 1..1 SHALL in a conformant RR), or if the refined
+            eICR is missing id/setId/versionNumber (augment_eicr
+            guarantees all three).
+    """
+
+    external_document = _find_eicr_external_document_reference(rr_root)
+
+    # read the refined eICR's emitted identity off the tree itself
+    eicr_id_root = _get_attribute_value(
+        _find_required(refined_eicr_root, "hl7:id"), "root"
+    )
+    eicr_setid_root = _get_attribute_value(
+        _find_required(refined_eicr_root, "hl7:setId"), "root"
+    )
+    eicr_version_value = _get_attribute_value(
+        _find_required(refined_eicr_root, "hl7:versionNumber"), "value"
+    )
+
+    # id — 1..1 SHALL on the reference (CONF:3315-433); always present
+    new_id = _make_element(
+        "id",
+        root=eicr_id_root,
+        assigningAuthorityName=REFINER_TOOL_CODE,
+    )
+    _replace_preserving_tail(
+        external_document, _find_required(external_document, "hl7:id"), new_id
+    )
+
+    # setId — 1..1 SHALL (CONF:3315-737); replace, or insert before
+    # versionNumber to keep the content model's id → code → setId →
+    # versionNumber order
+    new_set_id = _make_element(
+        "setId",
+        root=eicr_setid_root,
+        assigningAuthorityName=REFINER_TOOL_CODE,
+    )
+    old_set_id = external_document.find("hl7:setId", HL7_NS)
+    if old_set_id is not None:
+        _replace_preserving_tail(external_document, old_set_id, new_set_id)
+    else:
+        _insert_before_first_found(external_document, new_set_id, ["hl7:versionNumber"])
+
+    # versionNumber — 1..1 SHALL (CONF:3315-738); replace, or append as
+    # the last element in the content model
+    new_version = _make_element("versionNumber", value=eicr_version_value)
+    old_version = external_document.find("hl7:versionNumber", HL7_NS)
+    if old_version is not None:
+        _replace_preserving_tail(external_document, old_version, new_version)
+    else:
+        external_document.append(new_version)
+
+
+def _find_eicr_external_document_reference(rr_root: _Element) -> _Element:
+    """
+    Locate the single eICR External Document Reference in an RR.
+
+    Scoped to the externalDocument carrying the eICR External Document
+    Reference templateId (...15.2.3.10) within a Received eICR
+    Information act (...15.2.3.9), so it cannot match an unrelated
+    externalDocument elsewhere in the RR body.
+    """
+
+    references = cast(
+        list[_Element],
+        rr_root.xpath(
+            f".//hl7:act[hl7:templateId[@root='{RECEIVED_EICR_INFO_ACT_TEMPLATE_ROOT}']]"
+            f"//hl7:externalDocument[hl7:templateId[@root='{EICR_EXTERNAL_DOC_REF_TEMPLATE_ROOT}']]",
+            namespaces=HL7_NS,
+        ),
+    )
+
+    if not references:
+        raise ValueError(
+            "RR is missing the eICR External Document Reference "
+            f"(externalDocument with templateId "
+            f"{EICR_EXTERNAL_DOC_REF_TEMPLATE_ROOT} inside a Received "
+            f"eICR Information act). Required 1..1 by RR IG STU 1.1 "
+            f"Vol 2 §3.8.1."
+        )
+
+    return references[0]
 
 
 # NOTE:
