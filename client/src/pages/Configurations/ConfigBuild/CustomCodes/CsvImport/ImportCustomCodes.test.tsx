@@ -9,6 +9,7 @@ import {
   DbCodeSystem,
   IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
+  UploadCustomCodesPreviewResponse,
 } from '../../../../../api/schemas';
 import { mockCodeSystems } from '../../fixtures';
 
@@ -213,12 +214,12 @@ describe('Custom codes upload', () => {
 });
 
 function checkAllCodesExistence() {
-  checkLoincCode();
   checkSnomedCode();
-  checkCvxCode();
-  checkIcd10Code();
-  checkRxNormCode();
   checkOtherCode();
+  checkIcd10Code();
+  checkLoincCode();
+  checkLoincCode();
+  checkCvxCode();
 }
 
 function checkLoincCode(exists = true) {
@@ -305,8 +306,8 @@ const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
     };
   }
 );
-const mockUploadResponse = {
-  message: 'Successfully uploaded custom codes.',
+
+const mockUploadResponse: UploadCustomCodesPreviewResponse = {
   preview_items: mockPreviewItems,
   codes_processed: mockPreviewItems.length,
   total_custom_codes_in_configuration: mockPreviewItems.length,
