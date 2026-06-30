@@ -228,7 +228,7 @@ async def upload_custom_codes_csv(
 
     has_system = "code_system" in headers
 
-    # maintain backwards compatibility with old templates that used "code_number" as the column header
+    # maintain backwards compatibility with old templates that used "code_number" and "display_name" as the column header
     has_code_variant = "code" in headers or "code_number" in headers
     has_name_variant = "display_name" in headers or "code_name" in headers
 
