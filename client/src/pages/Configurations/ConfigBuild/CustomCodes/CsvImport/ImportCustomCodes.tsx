@@ -428,6 +428,7 @@ export function ImportCustomCodes({
                       codeSystems={codeSystems}
                       openPreviewEditModal={openPreviewEditModal}
                       handleRowDelete={handleRowDelete}
+                      key={previewItem.item.id}
                     />
                   ))}
               </tbody>
@@ -484,7 +485,7 @@ function PreviewRow({
   const { item, matches } = previewItem;
 
   return (
-    <tr key={item.id} className="border-y border-blue-50">
+    <tr className="border-y border-blue-50">
       <td className="px-2 py-1">
         {highlightMatches(item.code, matches, 'code')}
       </td>
