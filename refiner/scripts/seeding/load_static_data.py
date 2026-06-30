@@ -104,7 +104,7 @@ def _upsert_tes_data(
     versions: set[str],
 ) -> dict[str, UUID]:
     """
-    Upserts TES rows based on distinct versions found in processed conditions.
+    Upserts TES rows based on distinct versions.
 
     Returns a mapping of version -> tes_id.
     """
@@ -179,14 +179,16 @@ def _build_rsg_codes(
 def _build_processed_conditions(
     condition_groupers: list[VsDict],
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
+    version_to_tes_id: dict[str, UUID],
 ) -> list[ProcessedCondition]:
     results: list[ProcessedCondition] = []
 
     for parent in condition_groupers:
         data = ConditionData(parent, valuesets_map)
+        version = data.payload["version"]
         results.append(
             {
-                "condition": data.payload,
+                "condition": {**data.payload, "tes_id": version_to_tes_id[version]},
                 "context_groupers": data.context_grouper_payloads,
             }
         )
@@ -198,7 +200,6 @@ def _build_processed_conditions(
 def _upsert_conditions_and_groupers(
     cursor: Cursor,
     processed: list[ProcessedCondition],
-    version_to_tes_id: dict[str, UUID],
 ) -> ConditionToCodeRelationshipIndex:
     """
     Upserts condition rows and their associated context grouper rows.
@@ -320,14 +321,7 @@ def _upsert_conditions_and_groupers(
 
     for item in processed:
         cond = item["condition"]
-        cond_version = cond["version"]
-        cursor.execute(
-            condition_upsert_query,
-            {
-                **cond,
-                "tes_id": version_to_tes_id[cond_version],
-            },
-        )
+        cursor.execute(condition_upsert_query, cond)
         condition_response = cursor.fetchone()
 
         if condition_response is None or not condition_response[0]:
@@ -574,21 +568,23 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
 
     condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
+    distinct_versions = {vs.get("version", "") for vs in condition_groupers}
+    version_to_tes_id = _upsert_tes_data(cursor=cursor, versions=distinct_versions)
+
     processed = _build_processed_conditions(
         condition_groupers=condition_groupers,
         valuesets_map=all_valuesets_map,
+        version_to_tes_id=version_to_tes_id,
     )
 
     if not processed:
         logger.info("⚠️  No conditions found to upsert.")
         return
 
-    distinct_versions = {item["condition"]["version"] for item in processed}
-    version_to_tes_id = _upsert_tes_data(cursor=cursor, versions=distinct_versions)
-
     logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
     condition_to_code_relationships = _upsert_conditions_and_groupers(
-        cursor=cursor, processed=processed, version_to_tes_id=version_to_tes_id
+        cursor=cursor,
+        processed=processed,
     )
 
     # # seed codes, eventually this will replace the entirety
