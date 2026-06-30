@@ -18,11 +18,14 @@ interface ToastProps {
 export function Toast({ variant, heading, body }: ToastProps) {
   return (
     <div
-      className={classNames('flex w-full flex-col gap-2 border-l-8 p-5', {
-        'bg-state-success-lighter border-l-state-success':
-          variant === 'success',
-        'bg-state-error-lighter border-l-state-error': variant === 'error',
-      })}
+      className={classNames(
+        'font-public-sans flex w-full flex-col gap-2 border-l-8 p-5 leading-[1.6rem]',
+        {
+          'bg-state-success-lighter border-l-state-success':
+            variant === 'success',
+          'bg-state-error-lighter border-l-state-error': variant === 'error',
+        }
+      )}
     >
       <div className="flex gap-1">
         {variant === 'success' ? <CircleCheckIcon /> : <ExclamationPointIcon />}
