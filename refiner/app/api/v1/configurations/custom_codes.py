@@ -645,7 +645,7 @@ async def validate_custom_code(
         db (AsyncDatabaseConnection, optional): The database connection
 
     Returns:
-        bool: Returns True if the code  has not been used, otherwise returns False
+        bool: Returns True if the code has not been used, otherwise returns False
     """
 
     current_code = body.current_code
