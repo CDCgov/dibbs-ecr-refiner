@@ -42,6 +42,7 @@ export const updateUserNotifications = (
 
 
 
+
 export const getUpdateUserNotificationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext> => {
