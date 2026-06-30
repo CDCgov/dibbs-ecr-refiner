@@ -1,5 +1,4 @@
 import { MenuButton, MenuItems, MenuItem, Menu } from '@headlessui/react';
-import { Icon } from '@trussworks/react-uswds';
 import { Link } from 'react-router';
 import {
   GetConfigurationResponseVersion,
@@ -31,7 +30,7 @@ export function VersionMenu({
               {status === 'draft' ? 'Editing' : 'Viewing'}: Version{' '}
               {currentVersion}
             </span>
-            <Icon.ArrowDropDown aria-hidden />
+            <ArrowDropDownIcon />
           </div>
         </MenuButton>
         <MenuItems className="absolute mt-1 ml-4 flex max-h-100 flex-col overflow-y-auto rounded-lg bg-white px-4 py-2 shadow-lg">
@@ -123,5 +122,20 @@ function MenuItemDetail({
     <span className={className}>
       Draft created {date}, {time} by {created_by}
     </span>
+  );
+}
+
+function ArrowDropDownIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      className="inline-block"
+    >
+      <path d="m7 10 5 5 5-5z" />
+    </svg>
   );
 }

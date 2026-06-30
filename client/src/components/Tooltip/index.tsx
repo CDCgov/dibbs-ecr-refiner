@@ -2,7 +2,6 @@
 // snapshot tests
 import { useState, useRef, useId } from 'react';
 import { Portal, Transition } from '@headlessui/react';
-import { InfoIcon } from './InfoIcon';
 import classNames from 'classnames';
 
 type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -97,9 +96,7 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
         onBlur={hide}
         className="inline-flex cursor-default rounded-sm focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
       >
-        <span aria-hidden>
-          <InfoIcon />
-        </span>
+        <InfoIcon />
         <span className="sr-only">More information</span>
       </button>
 
@@ -131,5 +128,24 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
         </Transition>
       </Portal>
     </span>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      className="fill-blue-cool-50"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M9.16675 5.83366H10.8334V7.50033H9.16675V5.83366ZM9.16675 9.16699H10.8334V14.167H9.16675V9.16699ZM10.0001 1.66699C5.40008 1.66699 1.66675 5.40033 1.66675 10.0003C1.66675 14.6003 5.40008 18.3337 10.0001 18.3337C14.6001 18.3337 18.3334 14.6003 18.3334 10.0003C18.3334 5.40033 14.6001 1.66699 10.0001 1.66699ZM10.0001 16.667C6.32508 16.667 3.33341 13.6753 3.33341 10.0003C3.33341 6.32533 6.32508 3.33366 10.0001 3.33366C13.6751 3.33366 16.6667 6.32533 16.6667 10.0003C16.6667 13.6753 13.6751 16.667 10.0001 16.667Z"
+      />
+    </svg>
   );
 }

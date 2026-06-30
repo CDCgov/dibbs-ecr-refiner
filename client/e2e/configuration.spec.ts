@@ -395,7 +395,11 @@ test.describe('Configuration detail flow', () => {
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       await configurationPage.uploadInlineTestEcrFile();
-      await expect(page.getByText('eICR file size reduced by')).toBeVisible();
+      await expect(
+        page.getByText(/eICR file size reduced by \d+% \(unformatted\)/, {
+          exact: true,
+        })
+      ).toBeVisible();
       await expect(
         page.getByRole('button', { name: 'Download results' })
       ).toBeVisible();
