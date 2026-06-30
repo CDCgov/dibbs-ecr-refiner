@@ -101,7 +101,7 @@ type ConditionIndexedCodeRow = dict[ConditionUniqueIndex, CodeRow]
 
 def _upsert_tes_data(
     cursor: Cursor,
-    processed: list[ProcessedCondition],
+    versions: set[str],
 ) -> dict[str, UUID]:
     """
     Upserts TES rows based on distinct versions found in processed conditions.
@@ -128,11 +128,9 @@ def _upsert_tes_data(
         LIMIT 1
     """
 
-    distinct_versions = {item["condition"]["version"] for item in processed}
-
     version_to_tes_id: dict[str, UUID] = {}
 
-    for version in distinct_versions:
+    for version in versions:
         cursor.execute(tes_upsert_query, {"version": version})
         result = cursor.fetchone()
 
@@ -585,7 +583,8 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
         logger.info("⚠️  No conditions found to upsert.")
         return
 
-    version_to_tes_id = _upsert_tes_data(cursor=cursor, processed=processed)
+    distinct_versions = {item["condition"]["version"] for item in processed}
+    version_to_tes_id = _upsert_tes_data(cursor=cursor, versions=distinct_versions)
 
     logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
     condition_to_code_relationships = _upsert_conditions_and_groupers(
