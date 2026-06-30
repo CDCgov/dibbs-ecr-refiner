@@ -30,7 +30,9 @@ export function Toast({ variant, heading, body }: ToastProps) {
       <div className="flex gap-1">
         {variant === 'success' ? <CircleCheckIcon /> : <ExclamationPointIcon />}
         {heading ? (
-          <h4 className="ml-2 text-2xl font-bold text-black">{heading}</h4>
+          <h4 className="ml-2 text-[1.38rem] font-bold text-black">
+            {heading}
+          </h4>
         ) : null}
       </div>
       <p className="ml-11 leading-[1.6rem] text-black">{body}</p>
