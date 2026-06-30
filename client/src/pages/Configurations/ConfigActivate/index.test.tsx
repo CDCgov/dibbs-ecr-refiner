@@ -2,12 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigActivate } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
-import { DbTotalConditionCodeCount } from '../../../api/schemas';
-
-// Mock all API requests.
-const mockCodeSets: DbTotalConditionCodeCount[] = [
-  { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
-];
+import { mockCodeSets } from '../ConfigBuild/fixtures';
 
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {

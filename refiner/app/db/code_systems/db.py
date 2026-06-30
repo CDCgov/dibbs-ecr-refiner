@@ -19,7 +19,7 @@ class DbCodeSystem:
     oid: str
 
 
-type CodeSystemIndex = dict[CodeSystemKey, DbCodeSystem]
+type IndexedCodeSystem = dict[CodeSystemKey, DbCodeSystem]
 
 
 async def get_all_code_systems_db(
