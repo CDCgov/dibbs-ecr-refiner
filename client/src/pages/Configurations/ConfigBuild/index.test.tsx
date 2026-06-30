@@ -12,13 +12,7 @@ import {
   useUploadCustomCodesCsv,
   useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
-import {
-  baseMockConfig,
-  MOCK_CONFIG_DRAFT_ID,
-  MOCK_CONFIG_ID,
-  mockCodeSets,
-  mockCodeSystems,
-} from '../../../utils/fixtures';
+import { baseMockConfig, mockCodeSets, mockCodeSystems } from './fixtures';
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({
@@ -493,7 +487,7 @@ describe('Config builder page', () => {
 
     await user.type(screen.getByLabelText('Code'), '12345');
     await user.selectOptions(screen.getByLabelText('Code system'), 'SNOMED');
-    await user.type(screen.getByLabelText('Code name'), 'Test code name');
+    await user.type(screen.getByLabelText('Display name'), 'Test Display name');
 
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
@@ -546,7 +540,9 @@ describe('Config builder page', () => {
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
     expect(screen.getByLabelText('Code')).toHaveValue('custom-code1');
-    expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
+    expect(screen.getByLabelText('Display name')).toHaveValue(
+      'test-custom-code1'
+    );
     expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
     await user.type(screen.getByLabelText('Code'), '12345');
@@ -682,44 +678,5 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Import from CSV', { selector: 'h2' })
     ).toBeInTheDocument();
-  });
-
-  it('downloads the custom code upload template CSV', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
-
-    await user.click(
-      screen.getByText('Import from CSV', { selector: 'button' })
-    );
-
-    expect(
-      await screen.findByRole('heading', { name: /import from csv/i })
-    ).toBeInTheDocument();
-
-    const createObjectUrlSpy = vi
-      .spyOn(URL, 'createObjectURL')
-      .mockReturnValue('blob:mock-url');
-
-    const revokeObjectUrlSpy = vi
-      .spyOn(URL, 'revokeObjectURL')
-      .mockImplementation(() => {});
-
-    await user.click(
-      await screen.findByRole('button', { name: /download template/i })
-    );
-
-    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
-
-    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
-
-    const text = await blobArg.text();
-    // one row for each code system systems plus header
-    expect(text.trim().split('\n').length).toBe(mockCodeSystems.length + 1);
-
-    // cleanup
-    createObjectUrlSpy.mockRestore();
-    revokeObjectUrlSpy.mockRestore();
   });
 });

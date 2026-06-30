@@ -2,14 +2,15 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { TestQueryClientProvider } from '../../../../../test-utils';
 import { ImportCustomCodes } from './ImportCustomCodes';
-import {
-  MOCK_CONFIG_ID,
-  mockCodeSystems,
-  mockIndexedSystem,
-} from '../../../../../utils/fixtures';
 import userEvent from '@testing-library/user-event';
 import { useUploadCustomCodesCsv } from '../../../../../api/configurations/configurations';
 import { Mock } from 'vitest';
+import {
+  DbCodeSystem,
+  IndexedCodeSystem,
+  UploadCustomCodesPreviewItem,
+} from '../../../../../api/schemas';
+import { mockCodeSystems } from '../../fixtures';
 
 vi.mock('../../../../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
@@ -58,45 +59,36 @@ vi.mock('./utils', () => {
   };
 });
 
-describe('Custom codes upload', () => {
-  const user = userEvent.setup();
+async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
+  render(
+    <MemoryRouter initialEntries={[`/configurations/${MOCK_CONFIG_ID}/build`]}>
+      <TestQueryClientProvider>
+        <ImportCustomCodes configurationId={MOCK_CONFIG_ID} />
+      </TestQueryClientProvider>
+    </MemoryRouter>
+  );
 
-  beforeEach(async () => {
-    (useUploadCustomCodesCsv as unknown as Mock).mockReturnValue({
-      mutate: vi.fn((variables, options) => {
-        if (options?.onSuccess) options.onSuccess({ data: mockUploadResponse });
-        if (options?.onSettled) options.onSettled({}, null, variables);
-      }),
-    });
-
-    render(
-      <MemoryRouter
-        initialEntries={[`/configurations/${MOCK_CONFIG_ID}/build`]}
-      >
-        <TestQueryClientProvider>
-          <ImportCustomCodes configurationId={MOCK_CONFIG_ID} />
-        </TestQueryClientProvider>
-      </MemoryRouter>
-    );
-    expect(await screen.findByText('Import from CSV')).toBeInTheDocument();
-    const uploadCsvButton = screen.getByLabelText(
-      'Bulk custom code upload file input'
-    );
-    expect(uploadCsvButton).toBeInTheDocument();
-
-    const file = new File([MOCK_UPLOAD_CSV], 'test.csv', {
-      type: 'text/csv',
-    });
-
-    await user.upload(uploadCsvButton, file);
-
-    uploadCsvButton.click();
-    const rowsUploaded = screen.getAllByRole('row');
-    expect(rowsUploaded.length).toBe(mockCodeSystems.length + 1); // one per system plus the header
+  const fileInput = screen.getByTestId('bulk-upload-file-input');
+  const file = new File([MOCK_UPLOAD_CSV], 'test.csv', {
+    type: 'text/csv',
   });
 
+  await user.upload(fileInput, file);
+}
+beforeEach(() => {
+  (useUploadCustomCodesCsv as unknown as Mock).mockReturnValue({
+    mutate: vi.fn((variables, options) => {
+      if (options?.onSuccess) options.onSuccess({ data: mockUploadResponse });
+      if (options?.onSettled) options.onSettled({}, null, variables);
+    }),
+  });
+});
+
+describe('Custom codes upload', () => {
   test('delete all resets to the first step', async () => {
-    await userEvent.click(screen.getByText('Undo & delete codes'));
+    const user = userEvent.setup();
+    await renderAndUploadCsv(user);
+    await user.click(screen.getByText('Undo & delete codes'));
 
     expect(
       screen.getByRole('heading', { name: 'Undo & delete codes' })
@@ -116,6 +108,8 @@ describe('Custom codes upload', () => {
   });
 
   test('delete row successfully deletes a row', async () => {
+    const user = userEvent.setup();
+    await renderAndUploadCsv(user);
     const deleteRows = screen.getAllByRole('row');
     checkAllCodesExistence();
 
@@ -133,6 +127,9 @@ describe('Custom codes upload', () => {
   });
 
   test('filters appropriately when search string is supplied', async () => {
+    const user = userEvent.setup();
+    await renderAndUploadCsv(user);
+
     const searchInput = screen.getByPlaceholderText('Search codes');
     checkAllCodesExistence();
     // by display
@@ -140,6 +137,7 @@ describe('Custom codes upload', () => {
     checkLoincCode();
     checkSnomedCode(false);
     checkOtherCode(false);
+    checkRxNormCode(false);
     checkIcd10Code(false);
     checkCvxCode(false);
 
@@ -149,6 +147,7 @@ describe('Custom codes upload', () => {
     checkLoincCode();
     checkOtherCode(false);
     checkIcd10Code(false);
+    checkRxNormCode(false);
     checkSnomedCode(false);
     checkCvxCode(false);
 
@@ -156,6 +155,9 @@ describe('Custom codes upload', () => {
     await userEvent.clear(searchInput);
     await userEvent.type(searchInput, MOCK_CVX_CODE);
     expect(screen.getAllByText(MOCK_CVX_CODE).length).toBe(2);
+
+    expect(screen.getByText('Other Example')).toBeInTheDocument();
+    expect(screen.getByText('CVX Example')).toBeInTheDocument();
     checkLoincCode(false);
     checkSnomedCode(false);
     checkIcd10Code(false);
@@ -164,16 +166,20 @@ describe('Custom codes upload', () => {
     checkOtherCode();
     checkCvxCode(false);
     checkLoincCode(false);
+    checkRxNormCode(false);
     checkSnomedCode(false);
     checkIcd10Code(false);
   });
 
   describe('edit modal', () => {
-    beforeEach(async () => {
+    test('opens when clicked', async () => {
+      const user = userEvent.setup();
+      await renderAndUploadCsv(user);
+
       const editRows = screen.getAllByRole('row');
       checkAllCodesExistence();
 
-      await userEvent.click(
+      await user.click(
         await within(editRows[0]).findByRole('button', { name: 'Edit' })
       );
     });
@@ -182,20 +188,28 @@ describe('Custom codes upload', () => {
     });
 
     test('disables save state when any one of the three required fields is missing', async () => {
+      const user = userEvent.setup();
+      await renderAndUploadCsv(user);
+      const editRows = screen.getAllByRole('row');
+
+      await user.click(
+        await within(editRows[0]).findByRole('button', { name: 'Edit' })
+      );
+
       const saveButton = screen.getByRole('button', { name: 'Save changes' });
       expect(saveButton).toBeEnabled();
 
       const code = screen.getByLabelText('Code');
-      await userEvent.clear(code);
+      await user.clear(code);
       expect(saveButton).toBeDisabled();
 
-      await userEvent.type(code, '13535135');
-      const codeName = screen.getByLabelText('Code name');
+      await user.type(code, '13535135');
+      const codeName = screen.getByLabelText('Display name');
 
-      await userEvent.clear(codeName);
+      await user.clear(codeName);
       expect(saveButton).toBeDisabled();
 
-      await userEvent.type(codeName, 'SNOMED Example');
+      await user.type(codeName, 'SNOMED Example');
       expect(saveButton).toBeEnabled();
     });
   });
@@ -255,25 +269,13 @@ function checkCode(codeSystemName: string, exists = true) {
   totalExpectation(codeSystemName);
 }
 
-const uploadLines = csvToDict(MOCK_UPLOAD_CSV);
-
-const mockPreviewItems = uploadLines.map((row, i) => {
-  return {
-    id: crypto.randomUUID(),
-    code: row['code'],
-    system_key: row['code_system'],
-    name: row['display_name'],
-    row: i,
-  };
-});
-
-const mockUploadResponse = {
-  message: 'Successfully uploaded custom codes.',
-  preview_items: mockPreviewItems,
-  codes_processed: mockPreviewItems.length,
-  total_custom_codes_in_configuration: mockPreviewItems.length,
-  code_systems: mockIndexedSystem,
-};
+const mockIndexedSystem: IndexedCodeSystem = mockCodeSystems.reduce(
+  (acc: IndexedCodeSystem, cur: DbCodeSystem) => {
+    acc[cur.key] = cur;
+    return acc;
+  },
+  {}
+);
 
 function csvToDict(csv: string) {
   const lines = csv.trim().split('\n');
@@ -291,3 +293,25 @@ function csvToDict(csv: string) {
 
   return indexedValues;
 }
+
+export const MOCK_CONFIG_ID = 'd8cf3930-a7c2-4761-9ba9-ce72ff9191c8';
+
+const uploadLines = csvToDict(MOCK_UPLOAD_CSV);
+const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
+  (row, i) => {
+    return {
+      id: crypto.randomUUID(),
+      code: row['code'],
+      system_key: row['code_system'],
+      name: row['display_name'],
+      row: i,
+    };
+  }
+);
+const mockUploadResponse = {
+  message: 'Successfully uploaded custom codes.',
+  preview_items: mockPreviewItems,
+  codes_processed: mockPreviewItems.length,
+  total_custom_codes_in_configuration: mockPreviewItems.length,
+  code_systems: mockIndexedSystem,
+};

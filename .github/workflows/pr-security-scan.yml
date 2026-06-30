@@ -59,7 +59,7 @@ jobs:
           format: "sarif"
           output: "trivy-${{ matrix.image.name }}-results.sarif"
           severity: ${{ env.TRIVY_SEVERITY }}
-          ignore-unfixed: true
+          ignore-unfixed: false
           timeout: "10m"
 
       - name: Run Trivy vulnerability scanner (JSON for PR comment)
@@ -69,7 +69,7 @@ jobs:
           format: "json"
           output: "trivy-${{ matrix.image.name }}-results.json"
           severity: ${{ env.TRIVY_SEVERITY }}
-          ignore-unfixed: true
+          ignore-unfixed: false
           timeout: "10m"
 
       - name: Display Trivy results as table

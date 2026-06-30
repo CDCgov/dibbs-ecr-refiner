@@ -1,12 +1,12 @@
 import { Button } from '@components/Button';
 import { Container, Content } from './Layout';
-import UploadSvg from '../../assets/upload.svg';
 import { ChangeEvent, useRef } from 'react';
 import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
 import { ExternalLink } from '@components/ExternalLink';
 import { Warning } from '@components/Diff/Warning';
 import { FileInfoResponseValue } from '../../api/schemas/fileInfoResponse';
+import { UploadIcon } from '@components/Icons/UploadIcon';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -46,7 +46,7 @@ export function RunSimulation({
       <div className="flex flex-col gap-6 xl:flex-row">
         <Container className="flex-1" color="white">
           <Content className="flex items-center gap-6">
-            <img className="px-3 py-1" src={UploadSvg} alt="" />
+            <UploadIcon />
             <div className="flex flex-col items-center gap-10">
               <p className="flex flex-col items-center gap-2 text-black">
                 <span className="font-bold">

@@ -70,7 +70,7 @@ export function CustomCodesDetail({
           <tr>
             <th>Custom code</th>
             <th>Custom code system</th>
-            <th>Custom code name</th>
+            <th>Custom Display name</th>
             <th>Modify the custom code</th>
           </tr>
         </thead>

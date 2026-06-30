@@ -486,7 +486,7 @@ class TestConfigurations:
 
         config_id = config["id"]
         initial_code = "VERY-FAKE-CODE-00000"
-        initial_code_name = "Mock code"
+        initial_display_name = "Mock code"
         initial_system = await get_code_system_by_key_db(key="loinc", db=db_pool)
         assert initial_system
         await add_custom_code(
@@ -494,14 +494,14 @@ class TestConfigurations:
             DbConfigurationCustomCode(
                 code=initial_code,
                 system_key=initial_system.key,
-                name=initial_code_name,
+                name=initial_display_name,
             ),
         )
 
         edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
             system_key=initial_system.key,
             code=initial_code,
-            name=initial_code_name,
+            name=initial_display_name,
             new_code=new_code,
             new_name=new_name,
             new_system_key=new_system_key,
@@ -523,7 +523,7 @@ class TestConfigurations:
         if new_name:
             assert edited_custom_code["name"] == new_name
         else:
-            assert edited_custom_code["name"] == initial_code_name
+            assert edited_custom_code["name"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,

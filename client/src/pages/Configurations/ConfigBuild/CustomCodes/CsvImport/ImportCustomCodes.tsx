@@ -12,7 +12,6 @@ import { highlightMatches } from '../../../../../utils';
 import { ConfirmModal, UndoModal, PreviewEditModal } from './Modals';
 import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
-import UploadSvg from '../../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 import {
   IndexedCodeSystem,
