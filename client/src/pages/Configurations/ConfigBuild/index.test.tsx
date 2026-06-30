@@ -12,7 +12,16 @@ import {
   useUploadCustomCodesCsv,
   useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
-import { baseMockConfig, mockCodeSets, mockCodeSystems } from './fixtures';
+import {
+  MOCK_CONFIG_DRAFT_ID,
+  mockCodeSets,
+  mockCodeSystems,
+  mockCustomCodes,
+} from './fixtures';
+import {
+  GetConfigurationResponse,
+  GetConfigurationResponseVersion,
+} from '../../../api/schemas';
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({
@@ -164,7 +173,7 @@ describe('Config builder page', () => {
   function renderPage() {
     return render(
       <MemoryRouter
-        initialEntries={[`/configurations/${MOCK_CONFIG_ID}/build`]}
+        initialEntries={[`/configurations/${MOCK_CONFIG_DRAFT_ID}/build`]}
       >
         <TestQueryClientProvider>
           <Routes>
@@ -680,3 +689,100 @@ describe('Config builder page', () => {
     ).toBeInTheDocument();
   });
 });
+
+const MOCK_SNOMED_DB_ID = '37a4a3f9-6148-41aa-bf45-f1aed2d4caa9';
+
+const mockVersions: GetConfigurationResponseVersion[] = [
+  {
+    id: 'config-id',
+    version: 2,
+    status: 'draft',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    created_at: '2025-12-18 18:01:40.660826+00',
+    last_activated_at: '',
+    created_by: 'mock-user-1',
+    last_activated_by: null,
+  },
+  {
+    id: 'prev-id',
+    version: 1,
+    status: 'active',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    created_at: '2025-12-09 18:01:40.660826+00',
+    last_activated_at: '2025-12-09 9:01:40.660826+00',
+    created_by: 'mock-user-1',
+    last_activated_by: 'mock-user-2',
+  },
+];
+
+const baseMockConfig: GetConfigurationResponse = {
+  id: MOCK_CONFIG_DRAFT_ID,
+  condition_id: 'covid-19',
+  draft_id: 'config-id',
+  is_draft: true,
+  display_name: 'COVID-19',
+  status: 'draft',
+  code_sets: mockCodeSets,
+  rsg_codes: [
+    {
+      display: 'Coronavirus infection (disorder)',
+      code: '186747009',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+    {
+      display:
+        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
+      code: '840539006',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+    {
+      display:
+        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
+      code: '1001411000124108',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+  ],
+  custom_codes: {
+    codes: mockCustomCodes,
+    code_systems: {
+      icd10: {
+        key: 'icd10',
+        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
+        display_name: 'ICD-10',
+        oid: '2.16.840.1.113883.6.90',
+      },
+      snomed: {
+        key: 'snomed',
+        id: MOCK_SNOMED_DB_ID,
+        display_name: 'SNOMED',
+        oid: '2.16.840.1.113883.6.96',
+      },
+    },
+  },
+  section_processing: [
+    {
+      name: 'Encounters Section',
+      code: 'some code',
+      narrative: 'remove',
+      include: true,
+      action: 'refine',
+      versions: ['1.1'],
+      section_type: 'standard',
+    },
+  ],
+  included_conditions: [],
+  all_versions: mockVersions,
+  version: 2,
+  active_version: null,
+  active_configuration_id: null,
+  latest_version: 2,
+  condition_canonical_url:
+    'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  locked_by: null,
+  is_locked: false,
+};

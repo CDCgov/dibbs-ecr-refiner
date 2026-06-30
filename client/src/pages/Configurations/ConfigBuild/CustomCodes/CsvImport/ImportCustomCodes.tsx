@@ -20,6 +20,7 @@ import {
 import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
 import { buildCsvDownloadTemplate } from './utils';
 import { FuseResult } from 'fuse.js';
+import { UploadIcon } from '@components/Icons/UploadIcon';
 
 type UploadCsvError = {
   response?: {
@@ -295,19 +296,14 @@ export function ImportCustomCodes({
             type="file"
             hidden
             accept=".csv"
-            aria-label="Bulk custom code upload file input"
+            data-testid="bulk-upload-file-input"
             onChange={handleFileChange}
           />
         </>
         {isUploading || isUploadPending ? (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
             <div className="mb-4 flex justify-center">
-              <img
-                src={UploadSvg}
-                alt=""
-                className="h-17 w-13.5"
-                aria-hidden="true"
-              />
+              <UploadIcon />
             </div>
 
             <h3 className="mb-4 text-lg font-semibold">CSV uploading...</h3>

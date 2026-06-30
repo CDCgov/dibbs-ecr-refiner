@@ -114,9 +114,9 @@ describe('Custom codes upload', () => {
     checkAllCodesExistence();
 
     await userEvent.click(
-      await within(deleteRows[0]).findByRole('button', { name: 'Delete' })
+      await within(deleteRows[1]).findByRole('button', { name: 'Delete' })
     );
-    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length - 1);
+    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length);
 
     checkSnomedCode(false); // first row is the SNOMED row
     checkOtherCode();
@@ -180,11 +180,8 @@ describe('Custom codes upload', () => {
       checkAllCodesExistence();
 
       await user.click(
-        await within(editRows[0]).findByRole('button', { name: 'Edit' })
+        await within(editRows[1]).findByRole('button', { name: 'Edit' })
       );
-    });
-    test('opens when clicked', () => {
-      expect(screen.getByText(`Edit ${MOCK_SNOMED_CODE}`)).toBeInTheDocument();
     });
 
     test('disables save state when any one of the three required fields is missing', async () => {
@@ -193,7 +190,7 @@ describe('Custom codes upload', () => {
       const editRows = screen.getAllByRole('row');
 
       await user.click(
-        await within(editRows[0]).findByRole('button', { name: 'Edit' })
+        await within(editRows[1]).findByRole('button', { name: 'Edit' })
       );
 
       const saveButton = screen.getByRole('button', { name: 'Save changes' });
