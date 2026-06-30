@@ -133,7 +133,7 @@ export function PreviewEditModal({
       <ModalBody>
         <div>
           <Field>
-            <Label>Code #</Label>
+            <Label>Code</Label>
             <TextInput
               type="text"
               value={previewEditForm.code}
@@ -176,7 +176,7 @@ export function PreviewEditModal({
           </Field>
         </SelectContainer>
         <Field>
-          <Label>Code name</Label>
+          <Label>Display name</Label>
           <TextInput
             type="text"
             value={previewEditForm.name}

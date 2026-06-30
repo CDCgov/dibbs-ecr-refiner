@@ -75,10 +75,8 @@ export class Api {
 
   async uploadCustomCodeCsv(configId: string, codes: CustomCode[]) {
     const payload = [];
-    let row = 2;
     for (const c of codes) {
-      payload.push({ ...c, row });
-      row++;
+      payload.push({ ...c });
     }
     const uploadCsvReq = await this.request.post(
       `/api/v1/configurations/${configId}/custom-codes/confirm`,
@@ -88,6 +86,7 @@ export class Api {
         },
       }
     );
+
     expect(uploadCsvReq.ok()).toBeTruthy();
     const json = await uploadCsvReq.json();
     expect(json).toEqual(
