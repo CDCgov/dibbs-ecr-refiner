@@ -1,5 +1,6 @@
 import {
   IndexedCodeSystem,
+  UploadCustomCodesInput,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 
@@ -122,12 +123,12 @@ export function PreviewEditModal({
     closePreviewEditModal();
   };
 
-  function handlePreviewEditChange<
-    K extends keyof UploadCustomCodesPreviewItem,
-  >(field: K, event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const value = event.target.value as UploadCustomCodesPreviewItem[K];
+  function handlePreviewEditChange<K extends keyof UploadCustomCodesInput>(
+    field: K,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) {
+    const value = event.target.value as UploadCustomCodesInput[K];
     setPreviewEditForm((prev) => {
-      if (!prev) return prev;
       return {
         ...prev,
         [field]: value,

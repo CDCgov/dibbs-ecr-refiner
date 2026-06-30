@@ -196,7 +196,7 @@ def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
     if not (has_system and has_code_variant and has_name_variant):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSV must contain headers: code,code_system,display_name",
+            detail="CSV must contain headers: code, code_system, display_name",
         )
 
 

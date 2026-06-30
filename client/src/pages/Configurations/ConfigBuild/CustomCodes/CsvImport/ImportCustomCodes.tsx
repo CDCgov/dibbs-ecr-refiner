@@ -327,7 +327,11 @@ export function ImportCustomCodes({
               disabled={disabled}
               codeSystems={codeSystems}
             />
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && (
+              <div role="alert" className="text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </div>
         ) : step === 'error' ? (
           <div className="flex flex-col gap-6">
@@ -343,7 +347,11 @@ export function ImportCustomCodes({
               Re-upload CSV
             </Button>
             <div className="mb-2">
-              {error && <p className="text-sm text-red-700">{error}</p>}
+              {error && (
+                <p role="alert" className="text-sm text-red-700">
+                  {error}
+                </p>
+              )}
             </div>
             {uploadRowErrors && uploadRowErrors.length > 0 ? (
               <>
@@ -425,7 +433,11 @@ export function ImportCustomCodes({
               </tbody>
             </table>
 
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && (
+              <div role="alert" className="text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </div>
         ) : null}
       </div>
