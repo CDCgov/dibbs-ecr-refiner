@@ -9,8 +9,10 @@ CREATE TABLE tes (
 );
 
 -- populate tes with the distinct versions from conditions
-INSERT INTO tes (version)
-SELECT DISTINCT version FROM conditions;
+INSERT INTO tes (version, created_at, updated_at)
+SELECT version, MIN(created_at), MIN(created_at) -- use condition insert values
+FROM conditions
+GROUP BY version;
 
 -- add tes_id foreign key to conditions
 ALTER TABLE conditions
