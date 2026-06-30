@@ -19,7 +19,7 @@ export function Toast({ variant, heading, body }: ToastProps) {
   return (
     <div
       className={classNames(
-        'font-public-sans flex w-full flex-col gap-2 border-l-8 p-5 leading-[1.6rem]',
+        'font-public-sans flex w-full flex-col gap-2 border-l-8 p-5',
         {
           'bg-state-success-lighter border-l-state-success':
             variant === 'success',
@@ -33,7 +33,7 @@ export function Toast({ variant, heading, body }: ToastProps) {
           <h4 className="ml-2 text-2xl font-bold text-black">{heading}</h4>
         ) : null}
       </div>
-      <p className="ml-11 text-black">{body}</p>
+      <p className="ml-11 leading-[1.6rem] text-black">{body}</p>
     </div>
   );
 }
