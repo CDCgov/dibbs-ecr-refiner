@@ -26,7 +26,14 @@ WHERE t.version = c.version;
 ALTER TABLE conditions
     ALTER COLUMN tes_id SET NOT NULL;
 
+-- automatically update updated_at on tes when a row changes
+CREATE TRIGGER update_tes_updated_at
+BEFORE UPDATE ON tes
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
 -- migrate:down
 
+DROP TRIGGER IF EXISTS update_tes_updated_at ON tes;
 ALTER TABLE conditions DROP COLUMN tes_id;
 DROP TABLE tes;

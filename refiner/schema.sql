@@ -703,6 +703,13 @@ CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EAC
 
 
 --
+-- Name: tes update_tes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_tes_updated_at BEFORE UPDATE ON public.tes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: users update_users_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
