@@ -502,7 +502,12 @@ test.describe('Configuration detail flow', () => {
 
       await expect(page.getByText('Row 2', { exact: false })).toBeVisible();
       await expect(
-        page.getByText('Invalid system: ICD-1.', { exact: false })
+        page.getByText(
+          'Invalid system: ICD-1. [code_system] must be one of [SNOMED, LOINC, ICD-10, RxNorm, CVX, Other]',
+          {
+            exact: false,
+          }
+        )
       ).toBeVisible();
       await page.getByRole('button', { name: '← Back' }).click();
       await page.getByRole('button', { name: 'Import from CSV' }).click();
