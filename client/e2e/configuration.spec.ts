@@ -269,7 +269,6 @@ test.describe('Configuration detail flow', () => {
     configurationsPage,
     configurationPage,
   }) => {
-    test.setTimeout(120000);
     const condition = 'COVID-19';
 
     const customCodeName = 'my-custom code!';

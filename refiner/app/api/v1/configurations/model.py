@@ -214,7 +214,15 @@ class UploadCustomCodesCsvInput(BaseModel):
     filename: str | None = None
 
 
-class UploadCustomCodesPreviewItem(BaseModel):
+class UploadCustomCodesInput(BaseModel):
+    """Validated CSV row ready for confirmation."""
+
+    code: str
+    system_key: str
+    name: str
+
+
+class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
     """Validated CSV row ready for confirmation."""
 
     id: UUID
@@ -227,4 +235,4 @@ class UploadCustomCodesPreviewItem(BaseModel):
 class ConfirmUploadCustomCodesInput(BaseModel):
     """Payload used to confirm a previously validated CSV import."""
 
-    custom_codes: list[UploadCustomCodesPreviewItem]
+    custom_codes: list[UploadCustomCodesInput]
