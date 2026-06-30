@@ -19,7 +19,7 @@ export function Toast({ variant, heading, body }: ToastProps) {
   return (
     <div
       className={classNames(
-        'font-public-sans flex w-full flex-col gap-2 border-l-8 p-5',
+        'font-public-sans flex w-full flex-col gap-2 border-l-8 p-4',
         {
           'bg-state-success-lighter border-l-state-success':
             variant === 'success',
