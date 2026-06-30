@@ -8,10 +8,10 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { FocusTrap } from 'focus-trap-react';
-import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
 import { Button } from '@components/Button';
+import { CloseIcon } from '@components/Icons/CloseIcon';
 
 type DrawerProps = {
   title: string | React.ReactNode;
@@ -85,7 +85,7 @@ export function Drawer({
                 onClick={handleClose}
                 aria-label="Close drawer"
               >
-                <Icon.Close size={3} aria-label="X icon indicating closure" />
+                <CloseIcon size={24} />
               </Button>
               <section className="p-4">
                 <h2>{title}</h2>

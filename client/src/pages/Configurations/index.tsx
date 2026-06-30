@@ -32,12 +32,13 @@ import {
 } from '@components/Combobox';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
-import { Icon } from '@trussworks/react-uswds';
 import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
 import { useSearch } from '../../hooks/useSearch';
 import { FuseResult, FuseResultMatch, RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
+import { InfoIcon } from '@components/Icons/InfoIcon';
+import { CloseIcon } from '@components/Icons/CloseIcon';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -161,7 +162,7 @@ function AppUpdateBanner({
       <div className="mx-auto flex max-w-7xl items-center">
         <div className="flex flex-1 items-center justify-center gap-4">
           <div className="flex items-center gap-2">
-            <Icon.Info size={3} aria-hidden className="text-blue-40v" />
+            <InfoIcon className="fill-blue-40v" />
             <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
               There are new updates to eCR Refiner.
             </span>
@@ -182,7 +183,7 @@ function AppUpdateBanner({
           variant="unstyled"
           className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
         >
-          <Icon.Close size={3} aria-hidden className="text-blue-500" />
+          <CloseIcon size={24} className="fill-blue-500" />
         </Button>
       </div>
     </div>
