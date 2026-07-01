@@ -430,7 +430,7 @@ async def get_included_conditions_db(
     """
 
     query = """
-        SELECT *, t.version
+        SELECT c.*, t.version
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
