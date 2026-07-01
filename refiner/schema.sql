@@ -388,6 +388,14 @@ ALTER TABLE ONLY public.codes
 
 
 --
+-- Name: conditions conditions_canonical_url_tes_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions
+    ADD CONSTRAINT conditions_canonical_url_tes_id_key UNIQUE (canonical_url, tes_id);
+
+
+--
 -- Name: conditions_context_groupers conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
