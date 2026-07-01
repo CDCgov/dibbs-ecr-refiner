@@ -73,7 +73,7 @@ def process(
     code_system_sets: CodeSystemSets,
     section_specification: SectionSpecification,
     namespaces: NamespaceMap,
-    narrative: DbNarrativeAction = "retain",
+    narrative_action: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using IG-driven entry match rules.
@@ -148,7 +148,7 @@ def process(
                 remove_element(entry)
             section.attrib["nullFlavor"] = "NI"
 
-            if narrative == "remove" or narrative == "keep_on_match":
+            if narrative_action == "remove" or narrative_action == "keep_on_match":
                 # "keep_on_match" is also a negative branch: no matches
                 # → narrative removed
                 replace_narrative_with_removal_notice(section, namespaces)
@@ -157,7 +157,7 @@ def process(
                     narrative_disposition="removed",
                 )
 
-            if narrative == "reconstruct":
+            if narrative_action == "reconstruct":
                 # NOTE: reconstruct + no matches falls back to
                 # retaining the original narrative rather than
                 # swapping in a removal notice. assumption: when the
@@ -193,7 +193,7 @@ def process(
         # STEP 6: handle narrative <text> reconstruction runs HERE,
         # after STEP 4 enrichment, because it reads displayName off the
         # surviving entries it rebuilds the table from
-        match narrative:
+        match narrative_action:
             case "remove":
                 replace_narrative_with_removal_notice(section, namespaces)
                 return SectionRunResult(

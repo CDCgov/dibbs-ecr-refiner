@@ -39,7 +39,7 @@ def process(
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
     code_system_sets: CodeSystemSets | None = None,
-    narrative: DbNarrativeAction = "retain",
+    narrative_action: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using the generic matching logic.
@@ -109,7 +109,7 @@ def process(
     text_element = section.find("./hl7:text", namespaces=namespaces)
     original_text = (
         deepcopy(text_element)
-        if text_element is not None and narrative in PRESERVE_NARRATIVE_ACTIONS
+        if text_element is not None and narrative_action in PRESERVE_NARRATIVE_ACTIONS
         else None
     )
     if text_element is not None:
@@ -154,7 +154,7 @@ def process(
                 remove_element(entry)
             section.attrib["nullFlavor"] = "NI"
 
-            if narrative == "remove" or narrative == "keep_on_match":
+            if narrative_action == "remove" or narrative_action == "keep_on_match":
                 # "keep_on_match" is the negative branch on no-match
                 replace_narrative_with_removal_notice(section, namespaces)
                 return SectionRunResult(
@@ -162,7 +162,7 @@ def process(
                     narrative_disposition="removed",
                 )
 
-            if narrative == "reconstruct":
+            if narrative_action == "reconstruct":
                 # NOTE: reconstruct + no matches falls back to
                 # retaining the original narrative rather than
                 # swapping in a removal notice. assumption: when the
@@ -199,7 +199,7 @@ def process(
             # STEP 5: handle narrative <text> reconstruction runs HERE,
             # after STEP 4 enrichment, because it reads displayName off
             # the surviving entries it rebuilds the table from
-            match narrative:
+            match narrative_action:
                 case "remove":
                     replace_narrative_with_removal_notice(section, namespaces)
                     return SectionRunResult(
