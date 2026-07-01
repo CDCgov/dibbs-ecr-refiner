@@ -94,6 +94,7 @@ interface PreviewEditModalProps {
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
   error: UploadError | null;
   codeSystems: IndexedCodeSystem;
+  isOpen: boolean;
 }
 
 export function PreviewEditModal({
@@ -104,6 +105,7 @@ export function PreviewEditModal({
   setError,
   error,
   codeSystems,
+  isOpen,
 }: PreviewEditModalProps) {
   const [previewEditForm, setPreviewEditForm] = useState(previewEditItem);
 
@@ -143,11 +145,9 @@ export function PreviewEditModal({
     !previewEditForm.system_key;
 
   return (
-    <Modal open={true} onClose={closePreviewEditModal}>
+    <Modal open={isOpen} onClose={closePreviewEditModal}>
       <ModalHeader>
-        <ModalTitle>
-          {previewEditItem?.code ? `Edit ${previewEditItem.code}` : 'Edit code'}
-        </ModalTitle>
+        <ModalTitle>{`Edit ${previewEditItem.code}`}</ModalTitle>
       </ModalHeader>
       <ModalBody>
         <div>
@@ -155,15 +155,15 @@ export function PreviewEditModal({
             <Label>Code</Label>
             <TextInput
               type="text"
-              value={previewEditForm?.code}
+              value={previewEditForm.code}
               onChange={(e) => handlePreviewEditChange('code', e)}
               onBlur={() => {
-                const trimmedCode = previewEditForm?.code.trim();
+                const trimmedCode = previewEditForm.code.trim();
                 if (
                   previewItems?.some(
                     (item) =>
                       item.code === trimmedCode &&
-                      item.id !== previewEditForm?.id
+                      item.id !== previewEditForm.id
                   )
                 ) {
                   setError({

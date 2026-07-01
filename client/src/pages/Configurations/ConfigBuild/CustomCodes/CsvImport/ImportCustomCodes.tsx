@@ -431,18 +431,17 @@ function PreviewEditTable({
   setError,
   exitPreviewStep,
 }: PreviewEditTableProps) {
-  const [previewEditItem, setPreviewEditItem] =
+  const [itemBeingEdited, setItemBeingEdited] =
     useState<UploadCustomCodesPreviewItem | null>(null);
   const showToast = useToast();
 
   const openPreviewEditModal = (editIndex: string) => {
     const target = previewDisplayItems.find((i) => i.item.id === editIndex);
-    if (!target) return;
-    setPreviewEditItem({ ...target.item });
+    if (target) setItemBeingEdited({ ...target.item });
   };
 
   const closePreviewEditModal = () => {
-    setPreviewEditItem(null);
+    setItemBeingEdited(null);
   };
 
   const handleRowDelete = (itemToDelete: UploadCustomCodesPreviewItem) => {
@@ -458,6 +457,8 @@ function PreviewEditTable({
       body: itemToDelete.code,
     });
   };
+
+  const isPreviewEditModalOpen = itemBeingEdited !== null;
 
   return (
     <>
@@ -484,14 +485,15 @@ function PreviewEditTable({
             ))}
         </tbody>
       </table>
-      {codeSystems && previewEditItem && (
+      {codeSystems && itemBeingEdited && (
         <PreviewEditModal
-          previewEditItem={previewEditItem}
+          previewEditItem={itemBeingEdited}
           setPreviewItems={setPreviewItems}
           closePreviewEditModal={closePreviewEditModal}
           previewItems={previewDisplayItems.map((i) => i.item)}
           setError={setError}
           error={error}
+          isOpen={isPreviewEditModalOpen}
           codeSystems={codeSystems}
         />
       )}
