@@ -17,6 +17,7 @@ from app.services.configurations import (
     clone_section_processing_instructions,
     get_default_sections,
 )
+from app.services.logger import get_logger
 
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
@@ -342,6 +343,7 @@ async def insert_configuration_db(
                     sections_to_insert=clone_section_processing_instructions(
                         clone_from=config_to_clone.section_processing,
                         clone_to=get_default_sections(),
+                        logger=get_logger(),
                     ),
                     cursor=cur,
                 )

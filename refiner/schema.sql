@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -89,7 +89,8 @@ CREATE TYPE public.section_action AS ENUM (
 CREATE TYPE public.section_narrative AS ENUM (
     'retain',
     'remove',
-    'reconstruct'
+    'reconstruct',
+    'keep_on_match'
 );
 
 
@@ -899,4 +900,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260608203714'),
     ('20260615135704'),
     ('20260615170607'),
+    ('20260625153644'),
+    ('20260625154206'),
     ('20260630173611');
