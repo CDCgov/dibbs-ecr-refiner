@@ -22,11 +22,11 @@ const arrowClasses: Record<TooltipPosition, string> = {
 
 const BOUNDING_GAP = 8;
 
-type PositionConfig = {
+interface PositionConfig {
   top: (r: DOMRect) => number;
   left: (r: DOMRect) => number;
   transform: string;
-};
+}
 
 const POSITION_MAPPING: Record<TooltipPosition, PositionConfig> = {
   top: {
