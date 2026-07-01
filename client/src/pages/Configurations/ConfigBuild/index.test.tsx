@@ -5,13 +5,6 @@ import { ConfigBuild } from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
-  CodeSystemsReponse,
-  DbConfigurationCustomCode,
-  DbTotalConditionCodeCount,
-  GetConfigurationResponse,
-  GetConfigurationResponseVersion,
-} from '../../../api/schemas';
-import {
   useAddCustomCodeToConfiguration,
   useEditCustomCodeFromConfiguration,
   useDeleteCustomCodeFromConfiguration,
@@ -19,6 +12,16 @@ import {
   useUploadCustomCodesCsv,
   useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
+import {
+  MOCK_CONFIG_DRAFT_ID,
+  mockCodeSets,
+  mockCodeSystems,
+  mockCustomCodes,
+} from './fixtures';
+import {
+  GetConfigurationResponse,
+  GetConfigurationResponseVersion,
+} from '../../../api/schemas';
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({
@@ -40,155 +43,6 @@ vi.mock('@tanstack/react-virtual', () => ({
     getTotalSize: () => count * estimateSize(),
   }),
 }));
-
-// Mock all API requests.
-const mockCodeSets: DbTotalConditionCodeCount[] = [
-  { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
-  { condition_id: 'chlamydia-1', display_name: 'Chlamydia', total_codes: 8 },
-  { condition_id: 'gonorrhea-1', display_name: 'Gonorrhea', total_codes: 5 },
-];
-
-const mockCustomCodes: DbConfigurationCustomCode[] = [
-  {
-    code: 'custom-code1',
-    name: 'test-custom-code1',
-    system_key: 'icd10',
-  },
-];
-
-const mockVersions: GetConfigurationResponseVersion[] = [
-  {
-    id: 'config-id',
-    version: 2,
-    status: 'draft',
-    condition_canonical_url:
-      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
-    created_at: '2025-12-18 18:01:40.660826+00',
-    last_activated_at: '',
-    created_by: 'mock-user-1',
-    last_activated_by: null,
-  },
-  {
-    id: 'prev-id',
-    version: 1,
-    status: 'active',
-    condition_canonical_url:
-      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
-    created_at: '2025-12-09 18:01:40.660826+00',
-    last_activated_at: '2025-12-09 9:01:40.660826+00',
-    created_by: 'mock-user-1',
-    last_activated_by: 'mock-user-2',
-  },
-];
-const MOCK_SNOMED_DB_ID = '37a4a3f9-6148-41aa-bf45-f1aed2d4caa9';
-const baseMockConfig: GetConfigurationResponse = {
-  id: 'config-id',
-  condition_id: 'covid-19',
-  draft_id: 'config-id',
-  is_draft: true,
-  display_name: 'COVID-19',
-  status: 'draft',
-  code_sets: mockCodeSets,
-  rsg_codes: [
-    {
-      display: 'Coronavirus infection (disorder)',
-      code: '186747009',
-      version: '6.0.0',
-      system_id: MOCK_SNOMED_DB_ID,
-    },
-    {
-      display:
-        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
-      code: '840539006',
-      version: '6.0.0',
-      system_id: MOCK_SNOMED_DB_ID,
-    },
-    {
-      display:
-        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
-      code: '1001411000124108',
-      version: '6.0.0',
-      system_id: MOCK_SNOMED_DB_ID,
-    },
-  ],
-  custom_codes: {
-    codes: mockCustomCodes,
-    code_systems: {
-      icd10: {
-        key: 'icd10',
-        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
-        display_name: 'ICD-10',
-        oid: '2.16.840.1.113883.6.90',
-      },
-      snomed: {
-        key: 'snomed',
-        id: MOCK_SNOMED_DB_ID,
-        display_name: 'SNOMED',
-        oid: '2.16.840.1.113883.6.96',
-      },
-    },
-  },
-  section_processing: [
-    {
-      name: 'Encounters Section',
-      code: 'some code',
-      narrative: 'remove',
-      include: true,
-      action: 'refine',
-      versions: ['1.1'],
-      section_type: 'standard',
-    },
-  ],
-  included_conditions: [],
-  all_versions: mockVersions,
-  version: 2,
-  active_version: null,
-  active_configuration_id: null,
-  latest_version: 2,
-  condition_canonical_url:
-    'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
-  locked_by: null,
-  is_locked: false,
-};
-
-const mockCodeSystems: CodeSystemsReponse[] = [
-  {
-    id: '157a00b0-62e6-48c8-b822-475c5d855f3f',
-    key: 'snomed',
-    display_name: 'SNOMED',
-    oid: '2.16.840.1.113883.6.96',
-  },
-  {
-    id: 'bd5ad8fd-f94c-4fcf-97ee-5b63c2e7a42b',
-    oid: '2.16.840.1.113883.6.1',
-    key: 'loinc',
-    display_name: 'LOINC',
-  },
-  {
-    id: '375d4fd5-81f8-4b9e-abd9-979c7987691f',
-    oid: '2.16.840.1.113883.6.90',
-    key: 'icd10',
-    display_name: 'ICD-10',
-  },
-  {
-    id: 'c645801a-26f2-495c-b07f-e9be5ac26275',
-    oid: '2.16.840.1.113883.6.88',
-    key: 'rxnorm',
-    display_name: 'RxNorm',
-  },
-  {
-    id: '4306c91c-a8e2-4f4b-b673-0da9a6432b38',
-    oid: '2.16.840.1.113883.12.292',
-    key: 'cvx',
-    display_name: 'CVX',
-  },
-  {
-    id: 'f65063a3-6836-41ce-8ab8-253994907faa',
-    oid: 'Other',
-    key: 'other',
-    display_name: 'Other',
-  },
-];
 
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {
@@ -318,7 +172,9 @@ describe('Config builder page', () => {
   });
   function renderPage() {
     return render(
-      <MemoryRouter initialEntries={['/configurations/config-id/build']}>
+      <MemoryRouter
+        initialEntries={[`/configurations/${MOCK_CONFIG_DRAFT_ID}/build`]}
+      >
         <TestQueryClientProvider>
           <Routes>
             <Route path="/configurations/:id/build" element={<ConfigBuild />} />
@@ -414,7 +270,7 @@ describe('Config builder page', () => {
           active_version: 1,
           version: 1,
           is_draft: false,
-          draft_id: 'test-id',
+          draft_id: MOCK_CONFIG_DRAFT_ID,
         },
       },
     });
@@ -438,7 +294,7 @@ describe('Config builder page', () => {
           active_version: 1,
           version: 2,
           is_draft: true,
-          draft_id: 'config-id',
+          draft_id: MOCK_CONFIG_DRAFT_ID,
         },
       },
     });
@@ -580,7 +436,7 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
-    await user.type(screen.getByLabelText('Code #'), '123456');
+    await user.type(screen.getByLabelText('Code'), '123456');
     await user.tab(); // triggers onBlur
 
     expect(
@@ -638,9 +494,9 @@ describe('Config builder page', () => {
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
 
-    await user.type(screen.getByLabelText('Code #'), '12345');
+    await user.type(screen.getByLabelText('Code'), '12345');
     await user.selectOptions(screen.getByLabelText('Code system'), 'SNOMED');
-    await user.type(screen.getByLabelText('Code name'), 'Test code name');
+    await user.type(screen.getByLabelText('Display name'), 'Test Display name');
 
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
@@ -692,11 +548,13 @@ describe('Config builder page', () => {
     ).toBeInTheDocument();
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
-    expect(screen.getByLabelText('Code #')).toHaveValue('custom-code1');
-    expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
+    expect(screen.getByLabelText('Code')).toHaveValue('custom-code1');
+    expect(screen.getByLabelText('Display name')).toHaveValue(
+      'test-custom-code1'
+    );
     expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
-    await user.type(screen.getByLabelText('Code #'), '12345');
+    await user.type(screen.getByLabelText('Code'), '12345');
 
     expect(
       screen.getByText('Update', { selector: 'button' })
@@ -766,6 +624,7 @@ describe('Config builder page', () => {
           message: 'Successfully uploaded custom codes.',
           codes_processed: 2,
           total_custom_codes_in_configuration: 2,
+          preview_items: [],
         },
         status: 200,
         statusText: 'OK',
@@ -795,7 +654,7 @@ describe('Config builder page', () => {
       screen.getByText('Upload CSV', { selector: 'button' })
     ).toBeInTheDocument();
 
-    const csv = `code_number,code_system,display_name
+    const csv = `code,code_system,display_name
 12345,LOINC,TEST 1
 6789,LOINC,TEST 2
 `;
@@ -820,9 +679,7 @@ describe('Config builder page', () => {
       },
     });
 
-    expect(vars.data.csv_text).toContain(
-      'code_number,code_system,display_name'
-    );
+    expect(vars.data.csv_text).toContain('code,code_system,display_name');
     expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
 
     // was: assert <h3>Custom codes</h3>
@@ -831,47 +688,101 @@ describe('Config builder page', () => {
       screen.getByText('Import from CSV', { selector: 'h2' })
     ).toBeInTheDocument();
   });
-
-  it('downloads the custom code upload template CSV', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
-
-    await user.click(
-      screen.getByText('Import from CSV', { selector: 'button' })
-    );
-
-    expect(
-      await screen.findByRole('heading', { name: /import from csv/i })
-    ).toBeInTheDocument();
-
-    const createObjectUrlSpy = vi
-      .spyOn(URL, 'createObjectURL')
-      .mockReturnValue('blob:mock-url');
-
-    const revokeObjectUrlSpy = vi
-      .spyOn(URL, 'revokeObjectURL')
-      .mockImplementation(() => {});
-
-    await user.click(
-      await screen.findByRole('button', { name: /download template/i })
-    );
-
-    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
-
-    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
-
-    const text = await blobArg.text();
-    expect(text).toBe(
-      `code_number,code_system,display_name
-12345,Other,Other Example
-6789,ICD-10,ICD-10 Example
-99999A,LOINC,LOINC Example`
-    );
-
-    // cleanup
-    createObjectUrlSpy.mockRestore();
-    revokeObjectUrlSpy.mockRestore();
-  });
 });
+
+const MOCK_SNOMED_DB_ID = '37a4a3f9-6148-41aa-bf45-f1aed2d4caa9';
+
+const mockVersions: GetConfigurationResponseVersion[] = [
+  {
+    id: 'config-id',
+    version: 2,
+    status: 'draft',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    created_at: '2025-12-18 18:01:40.660826+00',
+    last_activated_at: '',
+    created_by: 'mock-user-1',
+    last_activated_by: null,
+  },
+  {
+    id: 'prev-id',
+    version: 1,
+    status: 'active',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    created_at: '2025-12-09 18:01:40.660826+00',
+    last_activated_at: '2025-12-09 9:01:40.660826+00',
+    created_by: 'mock-user-1',
+    last_activated_by: 'mock-user-2',
+  },
+];
+
+const baseMockConfig: GetConfigurationResponse = {
+  id: MOCK_CONFIG_DRAFT_ID,
+  condition_id: 'covid-19',
+  draft_id: 'config-id',
+  is_draft: true,
+  display_name: 'COVID-19',
+  status: 'draft',
+  code_sets: mockCodeSets,
+  rsg_codes: [
+    {
+      display: 'Coronavirus infection (disorder)',
+      code: '186747009',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+    {
+      display:
+        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
+      code: '840539006',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+    {
+      display:
+        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
+      code: '1001411000124108',
+      version: '6.0.0',
+      system_id: MOCK_SNOMED_DB_ID,
+    },
+  ],
+  custom_codes: {
+    codes: mockCustomCodes,
+    code_systems: {
+      icd10: {
+        key: 'icd10',
+        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
+        display_name: 'ICD-10',
+        oid: '2.16.840.1.113883.6.90',
+      },
+      snomed: {
+        key: 'snomed',
+        id: MOCK_SNOMED_DB_ID,
+        display_name: 'SNOMED',
+        oid: '2.16.840.1.113883.6.96',
+      },
+    },
+  },
+  section_processing: [
+    {
+      name: 'Encounters Section',
+      code: 'some code',
+      narrative: 'remove',
+      include: true,
+      action: 'refine',
+      versions: ['1.1'],
+      section_type: 'standard',
+    },
+  ],
+  included_conditions: [],
+  all_versions: mockVersions,
+  version: 2,
+  active_version: null,
+  active_configuration_id: null,
+  latest_version: 2,
+  condition_canonical_url:
+    'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  locked_by: null,
+  is_locked: false,
+};

@@ -2,31 +2,14 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigTest } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
-import {
-  Condition,
-  DbConfigurationCustomCode,
-  DbTotalConditionCodeCount,
-  HTTPValidationError,
-} from '../../../api/schemas';
+import { Condition, HTTPValidationError } from '../../../api/schemas';
 import userEvent, { UserEvent } from '@testing-library/user-event';
 import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 import { AxiosError } from 'axios';
+import { mockCustomCodes, mockCodeSets } from '../ConfigBuild/fixtures';
 
 // Mock all API requests.
-const mockCodeSets: DbTotalConditionCodeCount[] = [
-  { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
-  { condition_id: 'chlamydia-1', display_name: 'Chlamydia', total_codes: 8 },
-  { condition_id: 'gonorrhea-1', display_name: 'Gonorrhea', total_codes: 5 },
-];
-
-const mockCustomCodes: DbConfigurationCustomCode[] = [
-  {
-    code: 'custom-code1',
-    name: 'test-custom-code1',
-    system_key: 'icd-10',
-  },
-];
 
 const mockMatchedCondition: Condition = {
   code: '840539006',

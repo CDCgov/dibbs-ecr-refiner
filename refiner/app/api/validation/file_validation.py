@@ -1,3 +1,4 @@
+from dataclasses import replace
 from logging import Logger
 from pathlib import Path
 from typing import Literal, get_args
@@ -13,6 +14,7 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.services import file_io
+from app.services.ecr.model import RefinedDocument
 from app.services.format import format_xml_document_for_display
 from app.services.sample_file import create_sample_zip_file
 
@@ -30,6 +32,44 @@ DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
 UNCOMPRESSED_MAX_BYTES = UNCOMPRESSED_MAX_MB * MEGABYTES
 
 
+def format_refined_document_or_raise(doc: RefinedDocument) -> RefinedDocument:
+    """
+    Formats the `refined_eicr` and `refined_rr` of a single RefinedDocument.
+
+    Args:
+        doc (RefinedDocument): A RefinedDocument
+
+    Returns:
+        RefinedDocument: A RefinedDocument with formatted `refined_eicr` and `refined_rr`
+
+    Raises:
+        422 if `refined_eicr` or `refined_rr` are not valid XML documents
+    """
+    return replace(
+        doc,
+        refined_eicr=format_xml_document_for_display_or_raise(doc.refined_eicr),
+        refined_rr=format_xml_document_for_display_or_raise(doc.refined_rr),
+    )
+
+
+def format_refined_documents_or_raise(
+    docs: list[RefinedDocument],
+) -> list[RefinedDocument]:
+    """
+    Given a list of RefinedDocument objects, formats their `refined_eicr` and `refined_rr` data.
+
+    Args:
+        docs (list[RefinedDocument]): List of RefinedDocuments
+
+    Returns:
+        list[RefinedDocument]: List of RefinedDocuments with formatted `refined_eicr` and `refined_rr`
+
+    Raises:
+        422 if `refined_eicr` or `refined_rr` are not valid XML documents
+    """
+    return [format_refined_document_or_raise(doc) for doc in docs]
+
+
 def format_xml_document_for_display_or_raise(text: str) -> str:
     """
     Formats XML for display purposes. Raises a 422 if the input is not valid XML.
@@ -38,7 +78,7 @@ def format_xml_document_for_display_or_raise(text: str) -> str:
         return format_xml_document_for_display(text)
     except etree.XMLSyntaxError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Invalid XML: {e.msg} (line {e.lineno}, column {e.offset})",
         )
 
