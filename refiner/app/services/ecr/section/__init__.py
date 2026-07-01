@@ -86,7 +86,7 @@ def process_section(
             code_system_sets=code_system_sets,
             section_specification=section_specification,
             namespaces=namespaces,
-            narrative=narrative,
+            narrative_action=narrative,
         )
 
     return _generic_matching.process(
@@ -95,7 +95,7 @@ def process_section(
         namespaces=namespaces,
         section_specification=section_specification,
         code_system_sets=code_system_sets,
-        narrative=narrative,
+        narrative_action=narrative,
     )
 
 

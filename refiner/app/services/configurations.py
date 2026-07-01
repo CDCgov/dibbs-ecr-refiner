@@ -136,8 +136,8 @@ def clone_section_processing_instructions(
         # propagating into a fresh draft
         coerced_action, coerced_narrative, notes = normalize_section_narrative(
             code=section.code,
-            action=new_action,
-            narrative=new_narrative,
+            section_action=new_action,
+            narrative_action=new_narrative,
         )
         if notes and logger is not None:
             for note in notes:
