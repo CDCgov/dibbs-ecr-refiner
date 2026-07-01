@@ -8,9 +8,9 @@ import { createContext, useContext } from 'react';
 import classNames from 'classnames';
 import { CloseIcon } from '@components/Icons/CloseIcon';
 
-type ModalContextValue = {
+interface ModalContextValue {
   onClose: () => void;
-};
+}
 
 const ModalContext = createContext<ModalContextValue | null>(null);
 

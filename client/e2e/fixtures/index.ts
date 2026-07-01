@@ -11,14 +11,14 @@ import { SimulatorPage } from '../pages/SimulatorPage';
 import { Api } from './api';
 import { ActivityLogPage } from '../pages/ActivityLogPage';
 
-type Fixtures = {
+interface Fixtures {
   configurationPage: ConfigurationPage;
   configurationsPage: ConfigurationsPage;
   simulatorPage: SimulatorPage;
   activityLogPage: ActivityLogPage;
   makeAxeBuilder: () => AxeBuilder;
   api: Api;
-};
+}
 
 const extendedTest = baseTest.extend<Fixtures>({
   makeAxeBuilder: async ({ page }, use) => {

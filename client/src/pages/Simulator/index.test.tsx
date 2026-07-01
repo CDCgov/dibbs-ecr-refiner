@@ -58,9 +58,9 @@ const renderView = () =>
     </MemoryRouter>
   );
 
-type MutationParam = {
+interface MutationParam {
   onError?: (error: Error) => void;
-};
+}
 
 describe('Simulate testing', () => {
   describe('Simulate testing - errors during config discovery', () => {
