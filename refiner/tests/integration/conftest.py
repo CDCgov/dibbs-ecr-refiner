@@ -241,9 +241,10 @@ async def get_condition_by_id(db_pool):
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
                     """
-                    SELECT *
-                    FROM conditions
-                    WHERE id = %s
+                    SELECT c.*, t.version
+                    FROM conditions c
+                    JOIN tes t ON t.id = c.tes_id
+                    WHERE c.id = %s
                     """,
                     (id,),
                 )
@@ -267,10 +268,11 @@ async def get_condition_id(db_pool):
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
                     """
-                    SELECT id
-                    FROM conditions
-                    WHERE display_name = %s
-                    AND version = %s
+                    SELECT c.id
+                    FROM conditions c
+                    JOIN tes t ON t.id = c.tes_id
+                    WHERE c.display_name = %s
+                    AND t.version = %s
                     """,
                     (name, version),
                 )
