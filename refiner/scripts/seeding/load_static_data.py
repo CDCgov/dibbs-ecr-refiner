@@ -99,6 +99,50 @@ type ConditionToCodeRelationshipIndex = dict[
 type ConditionIndexedCodeRow = dict[ConditionUniqueIndex, CodeRow]
 
 
+def _upsert_tes_data(
+    cursor: Cursor,
+    versions: set[str],
+) -> dict[str, UUID]:
+    """
+    Upserts TES rows based on distinct versions.
+
+    Returns a mapping of version -> tes_id.
+    """
+    logger.info("⏳ Upserting TES records...")
+
+    tes_upsert_query = """
+        WITH upsert_tes AS (
+            INSERT INTO tes (version)
+            VALUES (%(version)s)
+            ON CONFLICT (version) DO NOTHING
+            RETURNING id
+        )
+        SELECT id FROM upsert_tes
+
+        UNION ALL
+
+        SELECT id FROM tes
+        WHERE version = %(version)s
+            AND NOT EXISTS (SELECT 1 FROM upsert_tes)
+
+        LIMIT 1
+    """
+
+    version_to_tes_id: dict[str, UUID] = {}
+
+    for version in versions:
+        cursor.execute(tes_upsert_query, {"version": version})
+        result = cursor.fetchone()
+
+        if result is None or not result[0]:
+            raise ValueError(f"TES upsert for version {version!r} did not return ID")
+
+        version_to_tes_id[version] = result[0]
+
+    logger.info(f"🛠️  Total TES rows upserted: {len(version_to_tes_id)}")
+    return version_to_tes_id
+
+
 def _build_rsg_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
@@ -135,14 +179,16 @@ def _build_rsg_codes(
 def _build_processed_conditions(
     condition_groupers: list[VsDict],
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
+    version_to_tes_id: dict[str, UUID],
 ) -> list[ProcessedCondition]:
     results: list[ProcessedCondition] = []
 
     for parent in condition_groupers:
         data = ConditionData(parent, valuesets_map)
+        version = data.payload["version"]
         results.append(
             {
-                "condition": data.payload,
+                "condition": {**data.payload, "tes_id": version_to_tes_id[version]},
                 "context_groupers": data.context_grouper_payloads,
             }
         )
@@ -173,6 +219,7 @@ def _upsert_conditions_and_groupers(
             INSERT INTO conditions (
                 canonical_url,
                 version,
+                tes_id,
                 display_name,
                 child_rsg_snomed_codes,
                 loinc_codes,
@@ -187,6 +234,7 @@ def _upsert_conditions_and_groupers(
             VALUES (
                 %(canonical_url)s,
                 %(version)s,
+                %(tes_id)s,
                 %(display_name)s,
                 %(child_rsg_snomed_codes)s,
                 %(loinc_codes)s,
@@ -201,6 +249,7 @@ def _upsert_conditions_and_groupers(
             ON CONFLICT (canonical_url, version)
             DO UPDATE SET
                 display_name = EXCLUDED.display_name,
+                tes_id = EXCLUDED.tes_id,
                 child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
                 loinc_codes = EXCLUDED.loinc_codes,
                 snomed_codes = EXCLUDED.snomed_codes,
@@ -212,6 +261,7 @@ def _upsert_conditions_and_groupers(
                 coverage_level_date = EXCLUDED.coverage_level_date
             WHERE
                 conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
+                OR conditions.tes_id IS DISTINCT FROM EXCLUDED.tes_id
                 OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
                 OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
                 OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
@@ -518,9 +568,13 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
 
     condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
+    distinct_versions = {vs.get("version", "") for vs in condition_groupers}
+    version_to_tes_id = _upsert_tes_data(cursor=cursor, versions=distinct_versions)
+
     processed = _build_processed_conditions(
         condition_groupers=condition_groupers,
         valuesets_map=all_valuesets_map,
+        version_to_tes_id=version_to_tes_id,
     )
 
     if not processed:
@@ -529,7 +583,8 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
 
     logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
     condition_to_code_relationships = _upsert_conditions_and_groupers(
-        cursor=cursor, processed=processed
+        cursor=cursor,
+        processed=processed,
     )
 
     # # seed codes, eventually this will replace the entirety
@@ -541,6 +596,7 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
         condition_groupers=condition_groupers,
     )
     logger.info(f"⬆️  Total RSG codes to upsert: {len(rsg_codes)}")
+
     condition_to_code_relationships = _upsert_codes(
         cursor=cursor,
         data=rsg_codes,

@@ -30,6 +30,21 @@ import type {
 
 
 
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === 'queryKey') continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
+
 /**
  * Fetches a summary of all available conditions from the database and returns them as a list.
  *
@@ -119,7 +134,7 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return { ...query, queryKey: queryOptions.queryKey };
+  return withQueryKey(query, queryOptions.queryKey);
 }
 
 
@@ -220,7 +235,7 @@ export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return { ...query, queryKey: queryOptions.queryKey };
+  return withQueryKey(query, queryOptions.queryKey);
 }
 
 

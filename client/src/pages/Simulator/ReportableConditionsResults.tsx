@@ -1,6 +1,5 @@
 import classNames from 'classnames';
 import { Button } from '@components/Button';
-import { WarningIcon } from '@components/WarningIcon';
 import { DiscoveredConfigurationSet } from '../../api/schemas';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
@@ -84,7 +83,7 @@ export function ReportableConditionsResults({
       <Container>
         <ConditionsContainer>
           <div className="flex items-center gap-4">
-            <WarningIcon aria-label="Warning" size={3} />
+            <WarningIcon />
             <p className="text-state-error-dark">
               No conditions reportable to your jurisdiction were found in the
               RR.
@@ -247,7 +246,7 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-4">
-        <WarningIcon aria-label="Warning" size={3} />
+        <WarningIcon />
         <p className="text-state-error-dark">
           The following detected conditions have not been configured and will
           not produce a refined eICR in the output.
@@ -259,5 +258,20 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      className="fill-state-error shrink-0"
+    >
+      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+    </svg>
   );
 }

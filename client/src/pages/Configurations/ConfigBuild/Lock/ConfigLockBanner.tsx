@@ -1,4 +1,4 @@
-import { Icon } from '@trussworks/react-uswds';
+import { InfoIcon } from '@components/Icons/InfoIcon';
 import classNames from 'classnames';
 
 interface ConfigLockBannerProps {
@@ -23,11 +23,7 @@ export function ConfigLockBanner({
       )}
     >
       <div className="flex items-center gap-2">
-        <Icon.Info
-          aria-hidden
-          className="fill-state-warning-darker! shrink-0"
-          size={3}
-        />
+        <InfoIcon className="fill-state-warning-darker shrink-0" />
         <p className="text-state-warning-darker">
           <strong>View only:</strong> [
           <span className="font-bold">{lockedByName}</span>/
