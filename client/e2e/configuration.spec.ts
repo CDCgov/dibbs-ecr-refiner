@@ -487,7 +487,7 @@ test.describe('Configuration detail flow', () => {
 
       await expect(
         page.getByRole('alert').filter({
-          hasText: /^CSV must contain headers: code,code_system,display_name$/,
+          hasText: /^CSV must contain headers: code, code_system, display_name/,
         })
       ).toBeVisible();
 
@@ -503,8 +503,7 @@ test.describe('Configuration detail flow', () => {
       await expect(page.getByText('Row 2', { exact: false })).toBeVisible();
       await expect(
         page.getByText(
-          'Invalid system_key: ICD-1. [code_system] must be one of',
-          { exact: false }
+          'Invalid system: ICD-1. [code_system] must be one of [SNOMED, LOINC, ICD-10, RxNorm, CVX, Other]'
         )
       ).toBeVisible();
       await page.getByRole('button', { name: '← Back' }).click();

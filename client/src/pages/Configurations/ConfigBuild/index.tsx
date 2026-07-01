@@ -142,9 +142,9 @@ export function ConfigBuild() {
   );
 }
 
-type ExportBuilderProps = {
+interface ExportBuilderProps {
   id: string;
-};
+}
 
 export function Export({ id }: ExportBuilderProps) {
   return (
@@ -535,10 +535,10 @@ function DeleteCodeSetButton({
   );
 }
 
-type OptionsLabelsProps = {
+interface OptionsLabelsProps {
   children: React.ReactNode;
   htmlFor?: string;
-};
+}
 
 function OptionsLabel({ children, htmlFor }: OptionsLabelsProps) {
   const styles = '!text-gray-600 text-base font-bold';

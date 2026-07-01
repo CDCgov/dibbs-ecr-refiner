@@ -45,12 +45,12 @@ function DashboardIcon({ isActive }: IconProps) {
   );
 }
 
-type DiffToggleProps = {
+interface DiffToggleProps {
   setShowDiffOnly: React.Dispatch<React.SetStateAction<boolean>>;
   showDiffOnly: boolean;
   splitView: boolean;
   setSplitView: React.Dispatch<React.SetStateAction<boolean>>;
-};
+}
 export function DiffToggleOptions({
   setShowDiffOnly,
   showDiffOnly,
