@@ -39,7 +39,10 @@ interface ImportCustomCodesProps {
   onStepChange?: (step: CsvImportStep) => void;
 }
 
-interface PreviewError { row: number; error: string }
+interface PreviewError {
+  row: number;
+  error: string;
+}
 
 type SearchPreviewItem = UploadCustomCodesPreviewItem & {
   previewIndex: number;
