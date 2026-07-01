@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import CodeSystemIndex
+from app.db.code_systems.db import IndexedCodeSystem
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
@@ -76,7 +76,7 @@ class CustomCodes:
     """
 
     codes: list[DbConfigurationCustomCode]
-    code_systems: CodeSystemIndex
+    code_systems: IndexedCodeSystem
 
 
 @dataclass(frozen=True)
@@ -214,12 +214,20 @@ class UploadCustomCodesCsvInput(BaseModel):
     filename: str | None = None
 
 
-class UploadCustomCodesPreviewItem(BaseModel):
+class UploadCustomCodesInput(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
     system_key: str
-    system_display_name: str
+    name: str
+
+
+class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
+    """Validated CSV row ready for confirmation."""
+
+    id: UUID
+    code: str
+    system_key: str
     name: str
     row: int | None = None
 
@@ -227,4 +235,4 @@ class UploadCustomCodesPreviewItem(BaseModel):
 class ConfirmUploadCustomCodesInput(BaseModel):
     """Payload used to confirm a previously validated CSV import."""
 
-    custom_codes: list[UploadCustomCodesPreviewItem]
+    custom_codes: list[UploadCustomCodesInput]
