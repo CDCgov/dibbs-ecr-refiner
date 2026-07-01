@@ -90,7 +90,7 @@ class TestPolicyPredicates:
 class TestNormalizeSectionNarrative:
     def test_valid_combo_is_passthrough(self):
         action, narrative, notes = normalize_section_narrative(
-            code="11450-4", action="refine", narrative="remove"
+            code="11450-4", section_action="refine", narrative_action="remove"
         )
         assert action == "refine"
         assert narrative == "remove"
@@ -99,8 +99,8 @@ class TestNormalizeSectionNarrative:
     def test_narrative_only_action_coerced_to_retain(self):
         action, _narrative, notes = normalize_section_narrative(
             code="29299-5",  # Reason for Visit (narrative-only)
-            action="refine",
-            narrative="retain",
+            section_action="refine",
+            narrative_action="retain",
         )
         assert action == "retain"
         assert any("narrative-only" in n for n in notes)
@@ -108,15 +108,15 @@ class TestNormalizeSectionNarrative:
     def test_disabled_section_action_coerced_to_retain(self):
         action, _narrative, notes = normalize_section_narrative(
             code="83910-0",  # Emergency Outbreak (disabled)
-            action="refine",
-            narrative="retain",
+            section_action="refine",
+            narrative_action="retain",
         )
         assert action == "retain"
         assert any("system-skipped" in n for n in notes)
 
     def test_narrative_requires_refine_coerces_to_retain(self):
         action, narrative, notes = normalize_section_narrative(
-            code="11450-4", action="retain", narrative="keep_on_match"
+            code="11450-4", section_action="retain", narrative_action="keep_on_match"
         )
         assert action == "retain"
         assert narrative == "retain"
@@ -125,8 +125,8 @@ class TestNormalizeSectionNarrative:
     def test_reconstruct_on_non_reconstructable_coerces_to_retain(self):
         action, narrative, notes = normalize_section_narrative(
             code="11450-4",  # not in ReconstructableSection
-            action="refine",
-            narrative="reconstruct",
+            section_action="refine",
+            narrative_action="reconstruct",
         )
         assert action == "refine"
         assert narrative == "retain"
@@ -135,8 +135,8 @@ class TestNormalizeSectionNarrative:
     def test_reconstruct_on_results_is_valid(self):
         action, narrative, notes = normalize_section_narrative(
             code="30954-2",  # Results
-            action="refine",
-            narrative="reconstruct",
+            section_action="refine",
+            narrative_action="reconstruct",
         )
         assert action == "refine"
         assert narrative == "reconstruct"
@@ -146,10 +146,10 @@ class TestNormalizeSectionNarrative:
         """Normalizing already-coerced output should be a no-op."""
 
         action1, narrative1, _notes1 = normalize_section_narrative(
-            code="29299-5", action="refine", narrative="keep_on_match"
+            code="29299-5", section_action="refine", narrative_action="keep_on_match"
         )
         action2, narrative2, notes2 = normalize_section_narrative(
-            code="29299-5", action=action1, narrative=narrative1
+            code="29299-5", section_action=action1, narrative_action=narrative1
         )
         assert action1 == action2
         assert narrative1 == narrative2
