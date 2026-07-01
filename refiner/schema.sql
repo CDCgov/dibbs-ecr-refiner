@@ -151,7 +151,6 @@ CREATE TABLE public.codes (
 CREATE TABLE public.conditions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     canonical_url text NOT NULL,
-    version text NOT NULL,
     display_name text,
     child_rsg_snomed_codes text[],
     loinc_codes jsonb,
@@ -386,14 +385,6 @@ ALTER TABLE ONLY public.codes
 
 ALTER TABLE ONLY public.codes
     ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, code);
-
-
---
--- Name: conditions conditions_canonical_url_version_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions
-    ADD CONSTRAINT conditions_canonical_url_version_key UNIQUE (canonical_url, version);
 
 
 --
@@ -899,4 +890,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260608203714'),
     ('20260615135704'),
     ('20260615170607'),
-    ('20260630173611');
+    ('20260630173611'),
+    ('20260701151910');
