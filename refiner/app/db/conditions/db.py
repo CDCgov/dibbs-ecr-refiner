@@ -24,7 +24,7 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
     query = """
         SELECT
             DISTINCT(version)
-        FROM conditions
+        FROM tes
         ORDER BY version
     """
     async with db.get_connection() as conn:
