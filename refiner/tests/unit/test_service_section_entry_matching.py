@@ -259,7 +259,7 @@ def test_narrative_retention_when_narrative_retain(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        narrative="retain",
+        narrative_action="retain",
     )
     assert result.narrative_disposition == "retained"
     text = _find_one(section, "hl7:text")
@@ -295,7 +295,7 @@ def test_narrative_removal_when_narrative_remove(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        narrative="remove",
+        narrative_action="remove",
     )
     assert result.narrative_disposition == "removed"
     text = _find_one(section, "hl7:text")
@@ -338,7 +338,7 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
         section_specification=spec_v1_1.sections["30954-2"],
         namespaces=HL7_NS,
-        narrative="reconstruct",
+        narrative_action="reconstruct",
     )
     assert result.matches_found is True
     assert result.narrative_disposition == "reconstructed"
@@ -388,7 +388,7 @@ def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        narrative="reconstruct",
+        narrative_action="reconstruct",
     )
     assert result.matches_found is True
     assert result.narrative_disposition == "reconstruct_fallback_retained"
