@@ -40,6 +40,10 @@ case "$COMMAND" in
         echo "Importing static data"
         exec python3 ./scripts/seeding/load_static_data.py
         ;;
+    regenerate-active-configs)
+        echo "Regenerating active configuration files"
+        exec python3 ./scripts/migrations/regenerate_active_configs.py "$@"
+        ;;
     python|python3)
         echo "Running Python script: $*"
         exec python3 "$@"

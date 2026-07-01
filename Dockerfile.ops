@@ -23,7 +23,8 @@ WORKDIR /app
 
 # Python files
 COPY ./refiner/scripts-requirements.txt ./
-RUN pip install --no-cache-dir -r scripts-requirements.txt
+COPY ./refiner/requirements.txt ./
+RUN pip install --no-cache-dir -r scripts-requirements.txt -r requirements.txt
 
 # Copy migration files
 COPY ./refiner/migrations ./migrations
@@ -31,6 +32,11 @@ COPY ./refiner/migrations ./migrations
 # Copy TES update files
 COPY ./refiner/scripts/seeding ./scripts/seeding
 COPY ./refiner/scripts/data/source-tes-groupers ./scripts/data/source-tes-groupers
+
+# Copy active configuration regeneration script
+COPY ./refiner/scripts/migrations ./scripts/migrations
+
+COPY ./refiner/app ./app
 
 # Copy entrypoint script
 COPY ./ops/entrypoint.sh ./entrypoint.sh
