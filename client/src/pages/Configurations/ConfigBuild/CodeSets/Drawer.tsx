@@ -13,7 +13,7 @@ import { Search } from '@components/Search';
 import { Button } from '@components/Button';
 import { CloseIcon } from '@components/Icons/CloseIcon';
 
-type DrawerProps = {
+interface DrawerProps {
   title: string | React.ReactNode;
   subtitle?: string | React.ReactNode;
   searchPlaceholder: string;
@@ -22,7 +22,7 @@ type DrawerProps = {
   onClose: () => void;
   onSearch?: (filter: string) => void;
   drawerWidth?: '35%' | '60%';
-};
+}
 
 /**
  * Drawer component used as a sidebar overlay for displaying grouped content.
