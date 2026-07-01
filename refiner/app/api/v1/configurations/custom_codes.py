@@ -187,13 +187,9 @@ def _create_csv_reader(
 
 def _validate_required_columns_or_raise(csv_reader: csv.DictReader[str]):
     headers = set(csv_reader.fieldnames or [])
+    required_headers = {"code_system", "code", "display_name"}
 
-    has_system = "code_system" in (headers)
-    # maintain backwards compatibility with old template that used "code_number" as the column header
-    has_code_variant = "code" in headers or "code_number" in headers
-    has_name_variant = "display_name" in headers or "code_name" in headers
-
-    if not (has_system and has_code_variant and has_name_variant):
+    if not headers.issubset(required_headers):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CSV must contain headers: code, code_system, display_name",
@@ -237,10 +233,9 @@ def _get_row_code_system(
 def _validate_csv_upload_row(
     row: dict, supported_systems: IndexedCodeSystem
 ) -> tuple[str, DbCodeSystem, str] | list[str]:
-    # maintain backwards compatibility with old template that used "code_number" as the column header
-    code = (row.get("code") or row.get("code_number") or "").strip()
+    code = (row.get("code") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
-    name = (row.get("display_name") or row.get("code_name") or "").strip()
+    name = (row.get("display_name") or "").strip()
 
     row_errors = []
     row_system = None
