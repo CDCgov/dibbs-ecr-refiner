@@ -27,10 +27,10 @@ const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   name: '',
 };
 
-type PreviewRow = {
+interface PreviewRow {
   item: SearchPreviewItem;
   matches?: readonly FuseResultMatch[];
-};
+}
 
 interface ImportCustomCodesProps {
   configurationId: string;
@@ -39,7 +39,10 @@ interface ImportCustomCodesProps {
   onStepChange?: (step: CsvImportStep) => void;
 }
 
-type PreviewError = { row: number; error: string };
+interface PreviewError {
+  row: number;
+  error: string;
+}
 
 type SearchPreviewItem = UploadCustomCodesPreviewItem & {
   previewIndex: number;
@@ -149,7 +152,7 @@ export function ImportCustomCodes({
     }
   };
 
-  type UploadCsvError = {
+  interface UploadCsvError {
     response?: {
       data?: {
         detail?: {
@@ -160,7 +163,7 @@ export function ImportCustomCodes({
         };
       };
     };
-  };
+  }
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>

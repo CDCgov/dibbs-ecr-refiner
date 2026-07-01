@@ -1,27 +1,27 @@
 import { APIRequestContext, expect } from '@playwright/test';
 
-type Configuration = {
+interface Configuration {
   id: string;
   name: string;
-};
+}
 
-type CodedConcept = {
+interface CodedConcept {
   code: string;
   display: string;
-};
+}
 
-type Condition = {
+interface Condition {
   id: string;
   display_name: string;
   rsg_codes: CodedConcept[];
-};
+}
 
-type CustomCode = {
+interface CustomCode {
   code: string;
   system_key: string;
   system_display_name: string;
   name: string;
-};
+}
 
 export class Api {
   constructor(private request: APIRequestContext) {}

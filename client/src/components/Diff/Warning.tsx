@@ -1,7 +1,7 @@
-type WarningProps = {
+interface WarningProps {
   heading: string;
   message: string;
-};
+}
 
 export function Warning({ heading, message }: WarningProps) {
   return (
