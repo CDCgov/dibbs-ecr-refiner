@@ -1,6 +1,6 @@
 from app.services.ecr.policy import (
+    NARRATIVE_ACTION_REQUIRES_REFINE,
     NARRATIVE_ONLY_SECTIONS,
-    NARRATIVE_REQUIRES_REFINE,
     RECONSTRUCTABLE_SECTIONS,
     SECTION_PROCESSING_SKIP,
     NarrativeOnlySection,
@@ -82,7 +82,9 @@ class TestPolicyPredicates:
         assert narrative_requires_refine("remove") is False
 
     def test_narrative_requires_refine_contents(self):
-        assert NARRATIVE_REQUIRES_REFINE == frozenset({"reconstruct", "keep_on_match"})
+        assert NARRATIVE_ACTION_REQUIRES_REFINE == frozenset(
+            {"reconstruct", "keep_on_match"}
+        )
 
 
 class TestNormalizeSectionNarrative:

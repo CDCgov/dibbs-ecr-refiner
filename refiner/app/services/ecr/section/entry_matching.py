@@ -149,7 +149,7 @@ def process(
             section.attrib["nullFlavor"] = "NI"
 
             if narrative == "remove" or narrative == "keep_on_match":
-                # "keep_on_match" is the negative branch: no matches
+                # "keep_on_match" is also a negative branch: no matches
                 # → narrative removed
                 replace_narrative_with_removal_notice(section, namespaces)
                 return SectionRunResult(
