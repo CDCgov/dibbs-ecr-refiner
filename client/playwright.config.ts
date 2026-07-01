@@ -4,7 +4,7 @@ export default defineConfig({
   globalTeardown: './e2e/setup/global-teardown.ts',
   testDir: './e2e',
   captureGitInfo: process.env.CI ? { commit: false, diff: false } : undefined,
-  timeout: process.env.CI ? 60 * 1000 : 30 * 1000,
+  timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,
   },

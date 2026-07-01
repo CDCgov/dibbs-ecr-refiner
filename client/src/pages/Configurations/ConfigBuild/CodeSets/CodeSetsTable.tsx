@@ -256,13 +256,13 @@ function Header({ children }: { children: React.ReactNode }) {
   );
 }
 
-type CodeSystemSelectionProps = {
+interface CodeSystemSelectionProps {
   selectedCodeSystem: string;
   handleCodeSystemSelect: (
     event: React.ChangeEvent<HTMLSelectElement, Element>
   ) => void;
   codeSystems: CodeSystemsReponse[];
-};
+}
 
 function CodeSystemSelection({
   selectedCodeSystem,

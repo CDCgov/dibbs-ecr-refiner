@@ -326,10 +326,10 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   );
 }
 
-type ConditionOptionProps = {
+interface ConditionOptionProps {
   matchResult: FuseResult<GetConditionsResponse> | undefined;
   condition: GetConditionsResponse;
-};
+}
 
 function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
   if (!matchResult) return condition.display_name;
@@ -356,10 +356,10 @@ function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
   );
 }
 
-type RsgMatchRowProps = {
+interface RsgMatchRowProps {
   matchResult: FuseResultMatch;
   rsgCodes: CodedConcept[];
-};
+}
 function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
   const matchedCode = rsgCodes[matchResult?.refIndex as number];
   const isRsgDisplayMatch = matchResult.key === 'rsg_codes.display';
@@ -384,9 +384,9 @@ function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
   );
 }
 
-type SelectedConditionPanelProps = {
+interface SelectedConditionPanelProps {
   selectedCondition: GetConditionsResponse;
-};
+}
 function SelectedConditionPanel({
   selectedCondition,
 }: SelectedConditionPanelProps) {
