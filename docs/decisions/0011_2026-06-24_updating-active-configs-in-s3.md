@@ -26,6 +26,8 @@ The solution should:
 - Keep the current Lambda lookup flow based on `current.json` and the configuration version.
 - Give the team visibility when a migration is missed or an incompatible file is found.
 - Be reusable when the `active.json` format changes again in the future.
+- Avoid unnecessary S3 writes when the current `active.json` schema has already been applied.
+- Account for the application, Lambda, and ops containers running concurrently during deployment.
 
 ## Considered Options
 
@@ -81,6 +83,29 @@ if data.get("schema_version") != CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION:
     raise IncompatibleActiveConfigurationError(...)
 ```
 
+The current schema version should be defined as a shared constant in code:
+
+```py
+CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION = 2
+```
+
+This constant should be used by both the payload generation code and Lambda validation so that the supported version is defined in one place.
+
+### Track the applied schema version
+
+To avoid rewriting every active configuration during each deployment, Postgres should track the most recently applied active payload schema version.
+
+Before starting the regeneration, the ops container should compare the successfully applied schema version in Postgres with `CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION`. If they match, the migration can log that no work is required and exit without rewriting the S3 files.
+
+The tracking record should include the schema version, migration status, start and completion times, and success and failure counts. Suggested statuses are:
+
+* `IN_PROGRESS`
+* `COMPLETE`
+* `PARTIAL_FAILURE`
+* `FAILED`
+
+Only a migration marked `COMPLETE` should be treated as successfully applying the schema version.
+
 ### Reuse the existing activation functions
 
 The activation endpoint already uses the functions needed to rebuild the S3 artifacts:
@@ -103,6 +128,16 @@ upload_current_version_file()
 
 The configuration is already active, so the migration should not change its status, activation history, configuration version, condition mapping, or `current.json`.
 
+### Deployment race condition
+
+The application, Lambda, and ops containers may be deployed or started at approximately the same time. The implementation should not rely on the ops migration finishing before the new Lambda code begins processing messages.
+
+The migration will create a temporary maintenance-lock object in the configuration S3 bucket before updating active files. Lambda will check for this lock before processing each SQS record. If the lock is active, Lambda will return the record through `batchItemFailures` without writing a fatal `RefinerComplete` file.
+
+The SQS visibility timeout and retry behavior will act as a buffer during the migration. Messages received while the lock is active will return to the queue and be retried after the migration finishes.
+
+There is still a small race where a Lambda invocation may check for the lock immediately before it is created. The ops migration should therefore wait for existing Lambda executions to drain before overwriting any active files.
+
 ### Migration flow
 
 ```text
@@ -112,14 +147,28 @@ Database migrations run
     ↓
 TES data is loaded
     ↓
+Compare the applied schema version in Postgres with
+CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
+    ↓
+If they match, log that no migration is required and exit
+    ↓
+Record the migration as IN_PROGRESS
+    ↓
+Create the S3 maintenance lock
+    ↓
+Wait for existing Lambda executions to drain
+    ↓
 Query active configurations from Postgres
     ↓
 Rebuild each active.json using current code
     ↓
 Overwrite the existing active.json in S3
     ↓
-Application starts
+Record the final migration status
+    ↓
+Remove the maintenance lock after a successful migration
 ```
+
 
 For each active configuration, the migration should:
 
@@ -127,7 +176,7 @@ For each active configuration, the migration should:
 2. Build the current payload with `convert_config_to_storage_payload()`.
 3. Build the metadata with `get_config_payload_metadata()`.
 4. Upload the files with `upload_configuration_payload()`.
-5. Log whether the rebuild succeeded or failed.
+5. Log whether the rebuild succeeded or failed. A failure for one configuration should not prevent the migration from attempting the remaining active configurations.
 
 The regenerated payload should be written to the same S3 key:
 
@@ -152,6 +201,16 @@ The migration should log:
 - migration success or failure
 
 Lambda should log similar information when it finds a missing, invalid, or incompatible active file, including the expected and actual schema versions.
+
+If an individual configuration fails to rebuild, the migration should log a critical error for that configuration and continue processing the remaining configurations.
+
+After all configurations have been attempted:
+
+* Mark the migration `COMPLETE` if all configurations succeeded.
+* Mark it `PARTIAL_FAILURE` if only some configurations succeeded.
+* Mark it `FAILED` if the migration could not run successfully.
+
+A `PARTIAL_FAILURE` should trigger an alert for manual intervention. The maintenance lock should remain in place after a partial or complete failure so Lambda does not resume processing while incompatible configurations may still exist.
 
 This gives the team visibility if a migration is missed or fails in production.
 
@@ -200,6 +259,14 @@ Add an ops command that queries active configurations and regenerates their exis
 
 Run the active payload migration after database migrations and TES data loading are complete.
 
+#### `feat: track active payload migrations`
+
+Add a Postgres table that records the target schema version, migration status, timestamps, success count, and failure count.
+
+#### `feat: add active configuration maintenance lock`
+
+Add an S3 maintenance lock that is created by the ops migration and checked by Lambda before processing each SQS record.
+
 #### `chore: add ops permissions for configuration storage`
 
 Give the ops container the permissions required to read and overwrite active configuration artifacts in S3.
@@ -208,6 +275,19 @@ Give the ops container the permissions required to read and overwrite active con
 
 Verify that regeneration updates the S3 payload without changing the configuration version, status, activation history, condition mapping, or `current.json`.
 
+#### `test: detect active payload schema changes`
+
+Add an integration test that generates an active payload using `convert_config_to_storage_payload()` and compares the serialized result against an approved fixture, snapshot, or JSON Schema.
+
+The test should fail when the serialized shape changes unexpectedly. For an intentional schema change, the developer should:
+
+1. Review the serialization diff.
+2. Increment `CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION`.
+3. Update the approved fixture or schema.
+4. Confirm that the migration and Lambda validation support the new version.
+
+The fixture should not update automatically. The payload change and schema-version increase should be reviewed together in the pull request.
+
 #### `docs: document active payload migrations`
 
 Document the difference between configuration versions and active payload schema versions and describe the process for future schema changes.
@@ -215,7 +295,5 @@ Document the difference between configuration versions and active payload schema
 ### Open Questions and Next Steps
 
 - Enumerate possible race conditions when the ops migration runs while Lambda is processing eCRs.
-- Confirm whether the ops container can read and write Postgres.
-- Confirm whether the ops container can read and write S3 configuration artifacts.
 - Review the deployment ordering between the ops container, application container, and Lambda.
 - Read the ADR guidance in `CONTRIBUTING` and update formatting or required fields if needed.
