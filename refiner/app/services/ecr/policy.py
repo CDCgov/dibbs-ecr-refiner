@@ -139,18 +139,18 @@ def is_reconstructable_section(code: str) -> bool:
     return code in RECONSTRUCTABLE_SECTIONS
 
 
-def narrative_requires_refine(narrative: DbNarrativeAction) -> bool:
+def narrative_requires_refine(narrative_action: DbNarrativeAction) -> bool:
     """
     Return True if the narrative setting only makes sense with action="refine".
     """
 
-    return narrative in NARRATIVE_ACTION_REQUIRES_REFINE
+    return narrative_action in NARRATIVE_ACTION_REQUIRES_REFINE
 
 
 def normalize_section_narrative(
     code: str,
-    action: DbSectionAction,
-    narrative: DbNarrativeAction,
+    section_action: DbSectionAction,
+    narrative_action: DbNarrativeAction,
 ) -> tuple[DbSectionAction, DbNarrativeAction, list[str]]:
     """
     Coerce an `(action, narrative)` pair into a valid combination.
@@ -183,8 +183,8 @@ def normalize_section_narrative(
     """
 
     notes: list[str] = []
-    coerced_action: DbSectionAction = action
-    coerced_narrative: DbNarrativeAction = narrative
+    coerced_action: DbSectionAction = section_action
+    coerced_narrative_action: DbNarrativeAction = narrative_action
 
     # rule 1 + 2: action-forcing for narrative-only and disabled sections
     if is_narrative_only_section(code) and coerced_action != "retain":
@@ -202,19 +202,24 @@ def normalize_section_narrative(
         coerced_action = "retain"
 
     # rule 3: narrative values that require action="refine"
-    if narrative_requires_refine(coerced_narrative) and coerced_action != "refine":
+    if (
+        narrative_requires_refine(coerced_narrative_action)
+        and coerced_action != "refine"
+    ):
         notes.append(
-            f"narrative '{coerced_narrative}' requires action='refine' for "
+            f"narrative '{coerced_narrative_action}' requires action='refine' for "
             f"section '{code}'; coerced narrative to 'retain'"
         )
-        coerced_narrative = "retain"
+        coerced_narrative_action = "retain"
 
     # rule 4: reconstruct only on reconstructable sections
-    if coerced_narrative == "reconstruct" and not is_reconstructable_section(code):
+    if coerced_narrative_action == "reconstruct" and not is_reconstructable_section(
+        code
+    ):
         notes.append(
             f"section '{code}' does not support narrative reconstruction; "
             f"coerced narrative to 'retain'"
         )
-        coerced_narrative = "retain"
+        coerced_narrative_action = "retain"
 
-    return coerced_action, coerced_narrative, notes
+    return coerced_action, coerced_narrative_action, notes
