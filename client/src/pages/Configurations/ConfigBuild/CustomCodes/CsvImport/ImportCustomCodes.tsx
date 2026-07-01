@@ -16,12 +16,14 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
 import { Search } from '@components/Search';
 import { DbCodeSystem } from '../../../../../api/schemas';
+import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
+import { buildCsvDownloadTemplate } from './utils';
 import { UploadIcon } from '@components/Icons/UploadIcon';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
+  id: '',
   code: '',
   system_key: 'other',
-  system_display_name: 'Other',
   name: '',
 };
 
@@ -77,6 +79,8 @@ export function ImportCustomCodes({
     useUploadCustomCodesCsv();
   const { mutate: confirmCsvMutation, isPending: isConfirming } =
     useConfirmUploadCustomCodesCsv();
+
+  const { data: codeSystems } = useGetCodeSystems();
 
   useEffect(() => {
     onStepChange?.(step);
@@ -186,14 +190,14 @@ export function ImportCustomCodes({
       },
       {
         onSuccess: (res) => {
-          const preview = res.data.preview ?? [];
+          const preview_items = res.data.preview_items ?? [];
           const previewCodeSystems = res.data.code_systems ?? {};
 
-          if (preview.length === 0) {
+          if (preview_items.length === 0) {
             setError('The CSV file did not produce any valid rows.');
             return;
           }
-          setPreviewItems(preview);
+          setPreviewItems(preview_items);
           setPreviewCodeSystems(previewCodeSystems);
           setStep('preview');
           setApiErrors(null);
@@ -232,12 +236,15 @@ export function ImportCustomCodes({
   };
 
   const handleDownloadTemplate = () => {
-    const csv = `code_number,code_system,display_name
-12345,Other,Other Example
-6789,ICD-10,ICD-10 Example
-99999A,LOINC,LOINC Example`;
+    if (!codeSystems?.data) return;
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const uploadTemplateCsvContent = buildCsvDownloadTemplate(
+      Object.values(codeSystems.data)
+    );
+
+    const blob = new Blob([uploadTemplateCsvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
@@ -384,6 +391,7 @@ export function ImportCustomCodes({
       ],
       includeMatches: true,
       minMatchCharLength: 2,
+      threshold: 0.3,
     }),
     []
   );
@@ -437,6 +445,9 @@ export function ImportCustomCodes({
             accept=".csv"
             hidden
             onChange={handleFileChange}
+            // defined as a test ID since the input element is hidden and we
+            // needed a hatch to grab it via the frontend unit tests
+            data-testid="bulk-upload-file-input"
           />
         </>
         {uploading ? (
@@ -462,7 +473,11 @@ export function ImportCustomCodes({
         ) : step === 'intro' ? (
           <div className="w-full max-w-xl space-y-6">
             {renderCsvInstructions()}
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && (
+              <div role="alert" className="text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </div>
         ) : step === 'error' ? (
           <div className="flex flex-col gap-6">
@@ -478,7 +493,11 @@ export function ImportCustomCodes({
               Re-upload CSV
             </Button>
             <div className="mb-2">
-              {error && <p className="text-sm text-red-700">{error}</p>}
+              {error && (
+                <p role="alert" className="text-sm text-red-700">
+                  {error}
+                </p>
+              )}
             </div>
             {apiErrors && apiErrors.length > 0 ? (
               <>
@@ -537,10 +556,7 @@ export function ImportCustomCodes({
             <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
               <tbody>
                 {previewRows.map(({ item, matches }) => (
-                  <tr
-                    key={`${item.code}-${item.system_key}-${item.previewIndex ?? item.row}`}
-                    className="border-y border-blue-50"
-                  >
+                  <tr key={item.id} className="border-y border-blue-50">
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
@@ -586,7 +602,11 @@ export function ImportCustomCodes({
               </tbody>
             </table>
 
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && (
+              <div role="alert" className="text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </div>
         ) : null}
       </div>
