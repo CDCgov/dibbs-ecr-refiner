@@ -106,6 +106,11 @@ describe('Custom codes upload', () => {
     expect(confirmDeleteButton).toBeInTheDocument();
     await userEvent.click(confirmDeleteButton);
     expect(confirmationCopy).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Your spreadsheet must follow the format of this template.'
+      )
+    ).toBeInTheDocument();
   });
 
   test('delete row successfully deletes a row', async () => {
@@ -125,6 +130,27 @@ describe('Custom codes upload', () => {
     checkLoincCode();
     checkRxNormCode();
     checkCvxCode();
+  });
+
+  test('successive row deletes reset to the instruction step', async () => {
+    const user = userEvent.setup();
+    await renderAndUploadCsv(user);
+    checkAllCodesExistence();
+
+    for (let i = mockCodeSystems.length; i > 0; i--) {
+      const remainingRows = screen.getAllByRole('row');
+      expect(remainingRows.length).toBe(i + 1); // all remaining rows including the header
+
+      await userEvent.click(
+        await within(remainingRows[1]).findByRole('button', { name: 'Delete' })
+      );
+    }
+
+    expect(
+      screen.getByText(
+        'Your spreadsheet must follow the format of this template.'
+      )
+    ).toBeInTheDocument();
   });
 
   test('filters appropriately when search string is supplied', async () => {

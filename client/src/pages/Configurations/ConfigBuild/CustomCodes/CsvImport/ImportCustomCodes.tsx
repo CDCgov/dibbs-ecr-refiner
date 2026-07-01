@@ -41,7 +41,7 @@ export type UploadError = {
   rowErrors?: RowError[];
 };
 
-type OpenModalState = 'confirm' | 'undo' | 'none' ;
+type OpenModalState = 'confirm' | 'undo' | 'none';
 
 interface ImportCustomCodesProps {
   configurationId: string;
@@ -381,7 +381,7 @@ export function ImportCustomCodes({
               previewDisplayItems={previewDisplayItems}
               setPreviewItems={setPreviewItems}
               codeSystems={codeSystems}
-              exitPreviewStep={exitPreviewStep}
+              exitPreviewStep={() => setStep('intro')}
               error={error}
               setError={setError}
             />
@@ -416,17 +416,17 @@ interface PreviewEditTableProps {
     React.SetStateAction<UploadCustomCodesPreviewItem[]>
   >;
   codeSystems: IndexedCodeSystem | null;
-  exitPreviewStep: (resetStep: boolean) => void;
   error: UploadError | null;
+  exitPreviewStep: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
 }
 function PreviewEditTable({
   previewDisplayItems,
   setPreviewItems,
   codeSystems,
-  exitPreviewStep,
   error,
   setError,
+  exitPreviewStep,
 }: PreviewEditTableProps) {
   const [previewEditItem, setPreviewEditItem] =
     useState<UploadCustomCodesPreviewItem | null>(null);
@@ -443,15 +443,13 @@ function PreviewEditTable({
   };
 
   const handleRowDelete = (itemToDelete: UploadCustomCodesPreviewItem) => {
-    const updated =
-      previewDisplayItems?.filter(
-        (itemToCheck) => itemToCheck.item.id !== itemToDelete.id
-      ) ?? [];
-    if (updated.length === 0) {
-      exitPreviewStep(true);
-    } else {
-      setPreviewItems(updated.map((i) => i.item));
-    }
+    setPreviewItems((prev) => {
+      const updated = prev.filter((i) => i.id !== itemToDelete.id);
+      if (updated.length === 0) {
+        exitPreviewStep();
+      }
+      return updated;
+    });
     showToast({
       heading: 'Row deleted',
       body: itemToDelete.code,
