@@ -22,7 +22,7 @@ import { buildCsvDownloadTemplate } from './utils';
 import { FuseResult } from 'fuse.js';
 import { UploadIcon } from '@components/Icons/UploadIcon';
 
-type UploadCsvError = {
+interface UploadCsvError {
   response?: {
     data?: {
       detail?: {
@@ -33,13 +33,16 @@ type UploadCsvError = {
       };
     };
   };
-};
+}
 
-type RowError = { row: number; error: string };
-export type UploadError = {
+interface RowError {
+  row: number;
+  error: string;
+}
+export interface UploadError {
   message: string;
   rowErrors?: RowError[];
-};
+}
 
 type OpenModalState = 'confirm' | 'undo' | 'none';
 
@@ -535,11 +538,11 @@ function PreviewRow({
   );
 }
 
-type UploadInstructionProps = {
+interface UploadInstructionProps {
   handleButtonClick: () => void;
   disabled: boolean;
   codeSystems: IndexedCodeSystem | null;
-};
+}
 
 function UploadInstructions({
   handleButtonClick,

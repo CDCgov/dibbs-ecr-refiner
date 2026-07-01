@@ -1,11 +1,11 @@
 import { Page, expect } from '@playwright/test';
 
-type ActivityLogRow = {
+interface ActivityLogRow {
   name: string;
   condition: string;
   action: string;
   date: string;
-};
+}
 
 export class ActivityLogPage {
   constructor(private page: Page) {}
