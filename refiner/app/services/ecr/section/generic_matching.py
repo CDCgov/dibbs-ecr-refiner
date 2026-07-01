@@ -105,11 +105,11 @@ def process(
     # "retain", "keep_on_match" (resolves to retain when matches are
     # found), or "reconstruct" (falls back to retain when the engine
     # cannot rebuild)
+    PRESERVE_NARRATIVE_ACTIONS = set("retain", "keep_on_match", "reconstruct")
     text_element = section.find("./hl7:text", namespaces=namespaces)
     original_text = (
         deepcopy(text_element)
-        if text_element is not None
-        and narrative in ("retain", "keep_on_match", "reconstruct")
+        if text_element is not None and narrative in PRESERVE_NARRATIVE_ACTIONS
         else None
     )
     if text_element is not None:

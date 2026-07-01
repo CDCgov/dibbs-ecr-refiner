@@ -114,7 +114,7 @@ RECONSTRUCTABLE_SECTIONS = [section.value for section in ReconstructableSection]
 # "reconstruct" rebuilds <text> from refined entries; "keep_on_match"
 # decides narrative disposition based on the matching outcome. neither
 # has meaning on a retained (untouched) section.
-NARRATIVE_REQUIRES_REFINE: frozenset[DbNarrativeAction] = frozenset(
+NARRATIVE_ACTION_REQUIRES_REFINE: frozenset[DbNarrativeAction] = frozenset(
     {"reconstruct", "keep_on_match"}
 )
 
@@ -144,7 +144,7 @@ def narrative_requires_refine(narrative: DbNarrativeAction) -> bool:
     Return True if the narrative setting only makes sense with action="refine".
     """
 
-    return narrative in NARRATIVE_REQUIRES_REFINE
+    return narrative in NARRATIVE_ACTION_REQUIRES_REFINE
 
 
 def normalize_section_narrative(
@@ -167,7 +167,7 @@ def normalize_section_narrative(
       2. Disabled sections must have action="retain" (they are always
          system-skipped at refinement; storing anything else is
          misleading).
-      3. `narrative in NARRATIVE_REQUIRES_REFINE` requires
+      3. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires
          action="refine". When action is not "refine" after the
          earlier coercions, narrative is downgraded to "retain".
       4. `narrative == "reconstruct"` is only valid on
