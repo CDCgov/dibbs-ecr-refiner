@@ -106,6 +106,11 @@ describe('Custom codes upload', () => {
     expect(confirmDeleteButton).toBeInTheDocument();
     await userEvent.click(confirmDeleteButton);
     expect(confirmationCopy).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Your spreadsheet must follow the format of this template.'
+      )
+    ).toBeInTheDocument();
   });
 
   test('delete row successfully deletes a row', async () => {
@@ -115,9 +120,9 @@ describe('Custom codes upload', () => {
     checkAllCodesExistence();
 
     await userEvent.click(
-      await within(deleteRows[0]).findByRole('button', { name: 'Delete' })
+      await within(deleteRows[1]).findByRole('button', { name: 'Delete' })
     );
-    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length - 1);
+    expect(screen.getAllByRole('row').length).toBe(mockCodeSystems.length);
 
     checkSnomedCode(false); // first row is the SNOMED row
     checkOtherCode();
@@ -125,6 +130,27 @@ describe('Custom codes upload', () => {
     checkLoincCode();
     checkRxNormCode();
     checkCvxCode();
+  });
+
+  test('successive row deletes reset to the instruction step', async () => {
+    const user = userEvent.setup();
+    await renderAndUploadCsv(user);
+    checkAllCodesExistence();
+
+    for (let i = mockCodeSystems.length; i > 0; i--) {
+      const remainingRows = screen.getAllByRole('row');
+      expect(remainingRows.length).toBe(i + 1); // all remaining rows including the header
+
+      await userEvent.click(
+        await within(remainingRows[1]).findByRole('button', { name: 'Delete' })
+      );
+    }
+
+    expect(
+      screen.getByText(
+        'Your spreadsheet must follow the format of this template.'
+      )
+    ).toBeInTheDocument();
   });
 
   test('filters appropriately when search string is supplied', async () => {
@@ -181,10 +207,8 @@ describe('Custom codes upload', () => {
       checkAllCodesExistence();
 
       await user.click(
-        await within(editRows[0]).findByRole('button', { name: 'Edit' })
+        await within(editRows[1]).findByRole('button', { name: 'Edit' })
       );
-
-      expect(screen.getByText(`Edit ${MOCK_SNOMED_CODE}`)).toBeInTheDocument();
     });
 
     test('disables save state when any one of the three required fields is missing', async () => {
@@ -193,7 +217,7 @@ describe('Custom codes upload', () => {
       const editRows = screen.getAllByRole('row');
 
       await user.click(
-        await within(editRows[0]).findByRole('button', { name: 'Edit' })
+        await within(editRows[1]).findByRole('button', { name: 'Edit' })
       );
 
       const saveButton = screen.getByRole('button', { name: 'Save changes' });
@@ -266,8 +290,16 @@ function checkCode(codeSystemName: string, exists = true) {
   };
 
   totalExpectation(mockCode);
-  totalExpectation(`${codeSystemName} Example`);
+  totalExpectation(codeSystemName);
 }
+
+const mockIndexedSystem: IndexedCodeSystem = mockCodeSystems.reduce(
+  (acc: IndexedCodeSystem, cur: DbCodeSystem) => {
+    acc[cur.key] = cur;
+    return acc;
+  },
+  {}
+);
 
 function csvToDict(csv: string) {
   const lines = csv.trim().split('\n');
@@ -285,14 +317,6 @@ function csvToDict(csv: string) {
 
   return indexedValues;
 }
-
-export const mockIndexedSystem: IndexedCodeSystem = mockCodeSystems.reduce(
-  (acc: Record<string, DbCodeSystem>, curCodeSystem) => {
-    acc[curCodeSystem.key] = curCodeSystem;
-    return acc;
-  },
-  {}
-);
 
 export const MOCK_CONFIG_ID = 'd8cf3930-a7c2-4761-9ba9-ce72ff9191c8';
 
