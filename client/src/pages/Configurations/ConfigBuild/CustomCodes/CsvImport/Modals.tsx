@@ -17,6 +17,7 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { useState, ChangeEvent } from 'react';
+import { UploadError } from './ImportCustomCodes';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -89,10 +90,9 @@ interface PreviewEditModalProps {
   setPreviewItems: React.Dispatch<
     React.SetStateAction<UploadCustomCodesPreviewItem[]>
   >;
-  isOpen: boolean;
   closePreviewEditModal: () => void;
-  setError: (err: string | null) => void;
-  error: string | null;
+  setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
+  error: UploadError | null;
   codeSystems: IndexedCodeSystem;
 }
 
@@ -100,7 +100,6 @@ export function PreviewEditModal({
   previewEditItem,
   previewItems,
   setPreviewItems,
-  isOpen,
   closePreviewEditModal,
   setError,
   error,
@@ -111,7 +110,7 @@ export function PreviewEditModal({
   const handlePreviewEditSubmit = (
     payload: UploadCustomCodesPreviewItem | null
   ) => {
-    if (payload === null) {
+    if (!payload) {
       closePreviewEditModal();
       return;
     }
@@ -144,10 +143,10 @@ export function PreviewEditModal({
     !previewEditForm.system_key;
 
   return (
-    <Modal open={isOpen} onClose={closePreviewEditModal}>
+    <Modal open={true} onClose={closePreviewEditModal}>
       <ModalHeader>
         <ModalTitle>
-          {previewEditItem.code ? `Edit ${previewEditItem.code}` : 'Edit code'}
+          {previewEditItem?.code ? `Edit ${previewEditItem.code}` : 'Edit code'}
         </ModalTitle>
       </ModalHeader>
       <ModalBody>
@@ -156,18 +155,20 @@ export function PreviewEditModal({
             <Label>Code</Label>
             <TextInput
               type="text"
-              value={previewEditForm.code}
+              value={previewEditForm?.code}
               onChange={(e) => handlePreviewEditChange('code', e)}
               onBlur={() => {
-                const trimmedCode = previewEditForm.code.trim();
+                const trimmedCode = previewEditForm?.code.trim();
                 if (
                   previewItems?.some(
                     (item) =>
                       item.code === trimmedCode &&
-                      item.id !== previewEditForm.id
+                      item.id !== previewEditForm?.id
                   )
                 ) {
-                  setError(`The code "${trimmedCode}" already exists.`);
+                  setError({
+                    message: `The code "${trimmedCode}" already exists.`,
+                  });
                 } else {
                   setPreviewEditForm((prev) => ({
                     ...prev,
@@ -179,7 +180,9 @@ export function PreviewEditModal({
               autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- focus first input on modal open for keyboard/screen reader users
             />
           </Field>
-          {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
+          {error && (
+            <p className="mb-1 text-sm text-red-600">{error.message}</p>
+          )}
         </div>
         <SelectContainer>
           <Field>

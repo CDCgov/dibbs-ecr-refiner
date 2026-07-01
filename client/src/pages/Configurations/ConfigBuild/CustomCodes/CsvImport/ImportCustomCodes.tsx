@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   useUploadCustomCodesCsv,
   useConfirmUploadCustomCodesCsv,
@@ -36,15 +36,19 @@ type UploadCsvError = {
 };
 
 type RowError = { row: number; error: string };
+export type UploadError = {
+  message: string;
+  rowErrors?: RowError[];
+};
 
-type OpenModalType = 'confirm' | 'undo' | 'preview' | 'none';
+type OpenModalState = 'confirm' | 'undo' | 'none' ;
 
-type ImportCustomCodesProps = {
+interface ImportCustomCodesProps {
   configurationId: string;
   disabled?: boolean;
   onSuccess?: () => void;
   onStepChange?: (step: CsvImportStep) => void;
-};
+}
 export function ImportCustomCodes({
   configurationId,
   disabled = false,
@@ -63,20 +67,14 @@ export function ImportCustomCodes({
   const [previewItems, setPreviewItems] = useState<
     UploadCustomCodesPreviewItem[]
   >([]);
-  const [previewEditItem, setPreviewEditItem] =
-    useState<UploadCustomCodesPreviewItem | null>(null);
   const [codeSystems, setCodeSystems] = useState<IndexedCodeSystem | null>(
     null
   );
 
-  const [error, setError] = useState<string | null>(null);
-  const [uploadRowErrors, setUploadRowErrors] = useState<RowError[] | null>(
-    null
-  );
-
+  const [error, setError] = useState<UploadError | null>(null);
   const [step, setStep] = useState<CsvImportStep>('intro');
+  const [curOpenModal, setCurOpenModal] = useState<OpenModalState>('none');
   const [isUploading, setIsUploading] = useState(false);
-  const [curOpenModal, setCurOpenModal] = useState<OpenModalType>('none');
 
   const {
     searchText,
@@ -100,7 +98,6 @@ export function ImportCustomCodes({
 
   const exitPreviewStep = (resetStep: boolean) => {
     setPreviewItems([]);
-    setUploadRowErrors(null);
     setError(null);
     onSuccess?.();
     if (resetStep) {
@@ -119,18 +116,16 @@ export function ImportCustomCodes({
   ) => {
     const file = event.target.files?.[0];
     if (!file) {
-      setError('Please upload a file.');
+      setError({ message: 'Please upload a file.' });
       return;
     }
 
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Please upload a valid CSV file.');
-      setUploadRowErrors(null);
+      setError({ message: 'Please upload a valid CSV file.' });
       return;
     }
 
     setError(null);
-    setUploadRowErrors(null);
     setIsUploading(true);
 
     const csvText = await file.text();
@@ -145,7 +140,7 @@ export function ImportCustomCodes({
       },
       {
         onSuccess: (res) => {
-          setUploadRowErrors(null);
+          setError(null);
 
           const previewItems = res.data.preview_items;
           const codeSystems = res.data.code_systems;
@@ -160,8 +155,7 @@ export function ImportCustomCodes({
 
           if (!parsedErrors) {
             const message = formatApiError(err);
-            setError(message);
-            setUploadRowErrors(null);
+            setError({ message: message });
             showToast({
               variant: 'error',
               heading: 'Error uploading CSV',
@@ -174,7 +168,7 @@ export function ImportCustomCodes({
             row: Number(row),
             error: String(error),
           }));
-          setUploadRowErrors(parsed);
+          setError({ message: 'Error importing CSV', rowErrors: parsed });
           setStep('error');
           showToast({
             variant: 'error',
@@ -228,22 +222,6 @@ export function ImportCustomCodes({
     exitPreviewStep(resetStep);
   };
 
-  const handleRowDelete = (itemToDelete: UploadCustomCodesPreviewItem) => {
-    const updated =
-      previewItems?.filter(
-        (itemToCheck) => itemToCheck.id !== itemToDelete.id
-      ) ?? [];
-    if (updated.length === 0) {
-      exitPreviewStep(true);
-    } else {
-      setPreviewItems(updated);
-    }
-    showToast({
-      heading: 'Row deleted',
-      body: itemToDelete.code,
-    });
-  };
-
   const handleBack = () => {
     if (isUploading || isUploadPending) {
       setIsUploading(false);
@@ -256,18 +234,6 @@ export function ImportCustomCodes({
     }
 
     onSuccess?.();
-  };
-
-  const openPreviewEditModal = (editIndex: string) => {
-    const target = previewItems.find((i) => i.id === editIndex);
-    if (!target) return;
-    setPreviewEditItem({ ...target });
-    setCurOpenModal('preview');
-  };
-
-  const closePreviewEditModal = () => {
-    setCurOpenModal('none');
-    setPreviewEditItem(null);
   };
 
   const previewDisplayItems = searchText
@@ -329,7 +295,7 @@ export function ImportCustomCodes({
             />
             {error && (
               <div role="alert" className="text-sm text-red-600">
-                {error}
+                {error.message}
               </div>
             )}
           </div>
@@ -349,16 +315,16 @@ export function ImportCustomCodes({
             <div className="mb-2">
               {error && (
                 <p role="alert" className="text-sm text-red-700">
-                  {error}
+                  {error.message}
                 </p>
               )}
             </div>
-            {uploadRowErrors && uploadRowErrors.length > 0 ? (
+            {error?.rowErrors && error?.rowErrors.length > 0 ? (
               <>
                 <hr className="border-gray-cool-20" />
                 <table className="w-full border-spacing-y-2 text-left text-sm">
                   <tbody>
-                    {uploadRowErrors.map(({ row, error }) => (
+                    {error.rowErrors.map(({ row, error }) => (
                       <tr key={`${row}-${error}`} className="h-6 text-red-700">
                         <td className="w-20 px-3 py-3 font-bold">
                           Row {row > 0 ? row : '—'}
@@ -410,33 +376,19 @@ export function ImportCustomCodes({
                 />
               </div>
             </div>
-            <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
-              <thead className="sr-only">
-                <tr>
-                  <th>Custom code</th>
-                  <th>Custom code system</th>
-                  <th>Custom code name</th>
-                  <th>Modify the custom code</th>
-                </tr>
-              </thead>
 
-              <tbody>
-                {codeSystems &&
-                  previewDisplayItems.map((previewItem) => (
-                    <PreviewRow
-                      previewItem={previewItem}
-                      codeSystems={codeSystems}
-                      openPreviewEditModal={openPreviewEditModal}
-                      handleRowDelete={handleRowDelete}
-                      key={previewItem.item.id}
-                    />
-                  ))}
-              </tbody>
-            </table>
+            <PreviewEditTable
+              previewDisplayItems={previewDisplayItems}
+              setPreviewItems={setPreviewItems}
+              codeSystems={codeSystems}
+              exitPreviewStep={exitPreviewStep}
+              error={error}
+              setError={setError}
+            />
 
             {error && (
               <div role="alert" className="text-sm text-red-600">
-                {error}
+                {error.message}
               </div>
             )}
           </div>
@@ -454,14 +406,89 @@ export function ImportCustomCodes({
         onClose={() => setCurOpenModal('none')}
         handleDelete={() => handleDelete(true)}
       />
+    </>
+  );
+}
 
-      {previewEditItem && codeSystems && (
+interface PreviewEditTableProps {
+  previewDisplayItems: FuseResult<UploadCustomCodesPreviewItem>[];
+  setPreviewItems: React.Dispatch<
+    React.SetStateAction<UploadCustomCodesPreviewItem[]>
+  >;
+  codeSystems: IndexedCodeSystem | null;
+  exitPreviewStep: (resetStep: boolean) => void;
+  error: UploadError | null;
+  setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
+}
+function PreviewEditTable({
+  previewDisplayItems,
+  setPreviewItems,
+  codeSystems,
+  exitPreviewStep,
+  error,
+  setError,
+}: PreviewEditTableProps) {
+  const [previewEditItem, setPreviewEditItem] =
+    useState<UploadCustomCodesPreviewItem | null>(null);
+  const showToast = useToast();
+
+  const openPreviewEditModal = (editIndex: string) => {
+    const target = previewDisplayItems.find((i) => i.item.id === editIndex);
+    if (!target) return;
+    setPreviewEditItem({ ...target.item });
+  };
+
+  const closePreviewEditModal = () => {
+    setPreviewEditItem(null);
+  };
+
+  const handleRowDelete = (itemToDelete: UploadCustomCodesPreviewItem) => {
+    const updated =
+      previewDisplayItems?.filter(
+        (itemToCheck) => itemToCheck.item.id !== itemToDelete.id
+      ) ?? [];
+    if (updated.length === 0) {
+      exitPreviewStep(true);
+    } else {
+      setPreviewItems(updated.map((i) => i.item));
+    }
+    showToast({
+      heading: 'Row deleted',
+      body: itemToDelete.code,
+    });
+  };
+
+  return (
+    <>
+      <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
+        <thead className="sr-only">
+          <tr>
+            <th>Custom code</th>
+            <th>Custom code system</th>
+            <th>Custom code name</th>
+            <th>Modify the custom code</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {codeSystems &&
+            previewDisplayItems.map((previewItem) => (
+              <PreviewRow
+                previewItem={previewItem}
+                codeSystems={codeSystems}
+                openPreviewEditModal={openPreviewEditModal}
+                handleRowDelete={handleRowDelete}
+                key={previewItem.item.id}
+              />
+            ))}
+        </tbody>
+      </table>
+      {codeSystems && previewEditItem && (
         <PreviewEditModal
           previewEditItem={previewEditItem}
           setPreviewItems={setPreviewItems}
-          isOpen={curOpenModal === 'preview'}
           closePreviewEditModal={closePreviewEditModal}
-          previewItems={previewItems}
+          previewItems={previewDisplayItems.map((i) => i.item)}
           setError={setError}
           error={error}
           codeSystems={codeSystems}
@@ -470,12 +497,13 @@ export function ImportCustomCodes({
     </>
   );
 }
-type PreviewRowProps = {
+
+interface PreviewRowProps {
   previewItem: FuseResult<UploadCustomCodesPreviewItem>;
   codeSystems: IndexedCodeSystem;
   openPreviewEditModal: (itemId: string) => void;
   handleRowDelete: (itemToDelete: UploadCustomCodesPreviewItem) => void;
-};
+}
 function PreviewRow({
   previewItem,
   codeSystems,
