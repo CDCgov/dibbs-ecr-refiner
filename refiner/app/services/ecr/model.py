@@ -326,11 +326,10 @@ class SectionOutcome(StrEnum):
 
     Distinct from the configured action and narrative settings, which
     describe what the jurisdiction asked for. Most outcomes confirm the
-    configuration; one (REFINED_NO_MATCHES_STUBBED) reflects a refiner
-    policy override that fires when filtering removes everything from
-    a section configured for refinement.
+    configuration; the no-match variants below describe what was done
+    with the section when matching produced nothing.
 
-    The nine outcomes cover the full configuration space (current and
+    The ten outcomes cover the full configuration space (current and
     future):
 
         REMOVED_BY_CONFIG:
@@ -363,9 +362,10 @@ class SectionOutcome(StrEnum):
             RETAINED_NARRATIVE_REMOVED for the same reason as above.
 
         REFINED_WITH_MATCHES:
-            include=True, action="refine", narrative="retain". Entries
-            filtered to those matching the configuration, original
-            narrative preserved for context.
+            include=True, action="refine", narrative="retain" (or
+            "keep_on_match" with matches). Entries filtered to those
+            matching the configuration, original narrative preserved
+            for context.
 
         REFINED_NARRATIVE_REMOVED:
             include=True, action="refine", narrative="remove". Entries
@@ -377,16 +377,38 @@ class SectionOutcome(StrEnum):
             entries. Not yet reachable — depends on narrative
             reconstruction work landing.
 
-        REFINED_NO_MATCHES_STUBBED:
-            include=True, action="refine", any narrative setting. The
-            policy override: when filtering finds nothing, the section
-            is stubbed regardless of narrative configuration. Applies
-            uniformly to all three "refine" variants.
+        REFINED_RECONSTRUCT_FALLBACK_RETAINED:
+            include=True, action="refine", narrative="reconstruct".
+            The jurisdiction asked for narrative reconstruction but
+            the engine couldn't produce one — either no entries
+            survived to rebuild from (no-match) or the section has
+            no registered reconstructor and the matched-path
+            fallback fired. Rather than discard the most informative
+            state available, the engine keeps the original narrative
+            in place. Distinct from the plain RETAINED / REFINED_*
+            outcomes so the provenance footnote can tell a reviewer
+            "you asked for reconstruct; we couldn't, so we kept the
+            original."
 
-    The combination (action="retain", narrative="refine") is invalid
-    because narrative reconstruction requires refined entries to build
-    from; the configuration UI prevents it and there is no corresponding
-    outcome.
+        REFINED_NO_MATCHES_NARRATIVE_RETAINED:
+            include=True, action="refine", narrative="retain" (or
+            "keep_on_match" without matches → narrative removed; see
+            sibling outcome). Matching produced nothing, but the
+            jurisdiction asked us to keep the original narrative —
+            entries are pruned, narrative is preserved.
+
+        REFINED_NO_MATCHES_NARRATIVE_REMOVED:
+            include=True, action="refine", narrative in
+            ("remove" / "keep_on_match"). Matching produced nothing;
+            entries are pruned and the narrative is replaced with
+            the removal notice. For "keep_on_match" this is the
+            negative branch: no matches → narrative removed.
+
+    The combination (action="retain", narrative in ("reconstruct",
+    "keep_on_match")) is invalid because both require refined entries
+    to be meaningful; the API layer rejects it (see
+    `_raise_if_invalid_narrative_action_combo` in
+    `api/v1/configurations/sections.py`).
     """
 
     REMOVED_BY_CONFIG = "removed_by_config"
@@ -397,7 +419,9 @@ class SectionOutcome(StrEnum):
     REFINED_WITH_MATCHES = "refined_with_matches"
     REFINED_NARRATIVE_REMOVED = "refined_narrative_removed"
     REFINED_NARRATIVE_RECONSTRUCTED = "refined_narrative_reconstructed"
-    REFINED_NO_MATCHES_STUBBED = "refined_no_matches_stubbed"
+    REFINED_RECONSTRUCT_FALLBACK_RETAINED = "refined_reconstruct_fallback_retained"
+    REFINED_NO_MATCHES_NARRATIVE_RETAINED = "refined_no_matches_narrative_retained"
+    REFINED_NO_MATCHES_NARRATIVE_REMOVED = "refined_no_matches_narrative_removed"
 
 
 @dataclass(frozen=True)
@@ -437,11 +461,13 @@ class SectionProvenanceRecord:
                         configured by the jurisdiction, held by a system rule,
                         or unconfigured (fell back to retain).
         outcome:        What the refiner actually did to this section at
-                        runtime. Distinct from the configured action because
-                        of the no-match policy override. Set during
-                        refine_eicr after section processing completes;
-                        defaults to a sentinel that should never appear in a
-                        rendered footnote.
+                        runtime. Distinct from the configured action
+                        because no-match handling can diverge from the
+                        configured narrative setting (notably for
+                        "keep_on_match"). Set during refine_eicr after
+                        section processing completes; defaults to a
+                        sentinel that should never appear in a rendered
+                        footnote.
     """
 
     loinc_code: str
@@ -553,15 +579,27 @@ class SectionRunResult:
 
     Attributes:
         matches_found: True if the matching step found at least one
-            entry to keep. False if the section ended up stubbed
-            because filtering removed everything.
+            entry to keep. False when filtering removed everything;
+            the engine still resolves the narrative according to the
+            configured setting (notably "keep_on_match", which removes
+            the narrative on the no-match branch).
         narrative_disposition: What the engine did with the section's
-            <text> element when matches were found. Meaningless when
-            matches_found is False — the engine stubs the entire
-            section and the consumer in refine.py short-circuits before
-            reading this field. Defaulted to "retained" in the no-match
-            case as a placeholder.
+            <text> element.
+
+              - "retained":      original narrative left in place
+              - "removed":       narrative replaced with the removal notice
+              - "reconstructed": narrative rebuilt from surviving entries
+              - "reconstruct_fallback_retained": the jurisdiction asked
+                for reconstruction but the engine couldn't run it (no
+                entries to build from, or no registered reconstructor),
+                so the original narrative was kept instead — see
+                SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED.
+
+            The orchestrator uses this together with `matches_found`
+            to choose the user-facing `SectionOutcome`.
     """
 
     matches_found: bool
-    narrative_disposition: Literal["retained", "removed", "reconstructed"]
+    narrative_disposition: Literal[
+        "retained", "removed", "reconstructed", "reconstruct_fallback_retained"
+    ]

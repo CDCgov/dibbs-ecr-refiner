@@ -17,7 +17,6 @@ from ..model import (
     SectionSpecification,
 )
 from ..narrative import (
-    create_minimal_section,
     reconstruct_narrative,
     remove_all_comments,
     replace_narrative_with_reconstruction,
@@ -75,7 +74,7 @@ def process(
     section_specification: SectionSpecification,
     namespaces: NamespaceMap,
     augmentation_timestamp: str = "",
-    narrative: DbNarrativeAction = "retain",
+    narrative_action: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using IG-driven entry match rules.
@@ -95,20 +94,28 @@ def process(
     No UUID swap needed — match rules only search within <entry>
     elements, so the section's own <code> is never at risk of matching.
 
-    If no entries match, the section is reduced to a minimal stub
-    via `create_minimal_section` (the no-match policy override) and
-    the function returns a `SectionRunResult` with
-    `matches_found=False`. The orchestrator translates this into
-    `SectionOutcome.REFINED_NO_MATCHES_STUBBED` regardless of the
-    narrative configuration — see `refine._interpret_run_result`.
+    If no entries match, all <entry> children are pruned and the
+    section's <text> is handled per the `narrative` setting:
+
+      - "retain"           → narrative left intact
+      - "remove"           → narrative replaced with the removal notice
+      - "reconstruct"      → falls back to RETAIN the original narrative
+                             (nothing to rebuild from). NOTE: this
+                             honors the user's preference for the most
+                             informative state available rather than
+                             swapping in a removal notice.
+      - "keep_on_match"    → narrative replaced with the removal notice
+                             (no matches means the negative branch)
+
+    The orchestrator maps the resulting `SectionRunResult` to
+    `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
+    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or
+    `REFINED_RECONSTRUCT_FALLBACK_RETAINED` — see
+    `refine._interpret_run_result`.
 
     Returns:
         SectionRunResult reporting whether matches were found and
-        what the engine did with the narrative. The
-        `narrative_disposition` field is meaningful only when
-        `matches_found=True`; when no matches are found, the engine
-        stubs the entire section and the orchestrator short-circuits
-        before reading the narrative disposition.
+        what the engine did with the narrative.
     """
 
     try:
@@ -126,7 +133,45 @@ def process(
         )
 
         if not matches:
-            create_minimal_section(section=section, removal_reason="no_match")
+            # no entries matched: prune them all and resolve the
+            # narrative according to the configured setting. the
+            # previous hard-coded `create_minimal_section` call (which
+            # also overwrote the narrative with a stub table) has been
+            # replaced by narrative-driven behavior so that
+            # jurisdictions can choose to keep the original narrative
+            # even when the coded entries don't survive filtering.
+            #
+            # nullFlavor="NI" is still applied at the section level so
+            # the document satisfies CDA schematron rules that require
+            # `SHALL contain at least one entry` for refinable sections.
+            # the narrative remains the source of clinical information.
+            for entry in section.findall("hl7:entry", namespaces):
+                remove_element(entry)
+            section.attrib["nullFlavor"] = "NI"
+
+            if narrative_action == "remove" or narrative_action == "keep_on_match":
+                # "keep_on_match" is also a negative branch: no matches
+                # → narrative removed
+                replace_narrative_with_removal_notice(section, namespaces)
+                return SectionRunResult(
+                    matches_found=False,
+                    narrative_disposition="removed",
+                )
+
+            if narrative_action == "reconstruct":
+                # NOTE: reconstruct + no matches falls back to
+                # retaining the original narrative rather than
+                # swapping in a removal notice. assumption: when the
+                # jurisdiction asked for reconstruction and we can't
+                # produce one, the original narrative is the most
+                # informative state available — strictly more useful
+                # to a reviewer than the removal notice.
+                return SectionRunResult(
+                    matches_found=False,
+                    narrative_disposition="reconstruct_fallback_retained",
+                )
+
+            # "retain": leave the original narrative in place
             return SectionRunResult(
                 matches_found=False,
                 narrative_disposition="retained",
@@ -149,7 +194,7 @@ def process(
         # STEP 6: handle narrative <text> reconstruction runs HERE,
         # after STEP 4 enrichment, because it reads displayName off the
         # surviving entries it rebuilds the table from
-        match narrative:
+        match narrative_action:
             case "remove":
                 replace_narrative_with_removal_notice(section, namespaces)
                 return SectionRunResult(
@@ -168,15 +213,21 @@ def process(
                         matches_found=True,
                         narrative_disposition="reconstructed",
                     )
-                # no registered reconstructor or nothing survived to
-                # rebuild--fall back to removal rather than leave the
-                # stale source narrative on a refined section
-                replace_narrative_with_removal_notice(section, namespaces)
+                # NOTE: no registered reconstructor (or nothing
+                # survived to rebuild) — fall back to RETAIN the
+                # original narrative rather than swap in a removal
+                # notice. assumption: when the jurisdiction asked
+                # for reconstruction and we can't run it, the
+                # original narrative is more informative to a
+                # reviewer than the removal placeholder, even though
+                # it may reference entries that were pruned.
                 return SectionRunResult(
                     matches_found=True,
-                    narrative_disposition="removed",
+                    narrative_disposition="reconstruct_fallback_retained",
                 )
             case _:
+                # "retain" or "keep_on_match" (matches found):
+                # leave the original narrative in place
                 return SectionRunResult(
                     matches_found=True,
                     narrative_disposition="retained",

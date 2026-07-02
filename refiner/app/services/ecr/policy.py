@@ -14,6 +14,8 @@ the IG doesn't tell us to skip it — we decided to.
 
 from enum import StrEnum
 
+from app.db.configurations.model import DbNarrativeAction, DbSectionAction
+
 # NOTE:
 # SECTIONS ALWAYS RETAINED REGARDLESS OF JURISDICTION CONFIGURATION
 # =============================================================================
@@ -96,3 +98,128 @@ class ReconstructableSection(StrEnum):
 
 
 RECONSTRUCTABLE_SECTIONS = [section.value for section in ReconstructableSection]
+
+
+# NOTE:
+# SECTION POLICY PREDICATES AND NORMALIZATION
+# =============================================================================
+# Predicates and a single normalizer used by both the API validators
+# (which reject invalid combos up front) and the clone-path / future
+# data-backfill paths (which coerce invalid combos to a safe baseline).
+# Keeping the rules in one place ensures the API and the clone/migration
+# paths never drift.
+
+
+# narrative values that only make sense when the coded action is "refine".
+# "reconstruct" rebuilds <text> from refined entries; "keep_on_match"
+# decides narrative disposition based on the matching outcome. neither
+# has meaning on a retained (untouched) section.
+NARRATIVE_ACTION_REQUIRES_REFINE: frozenset[DbNarrativeAction] = frozenset(
+    {"reconstruct", "keep_on_match"}
+)
+
+
+def is_disabled_section(code: str) -> bool:
+    """Return True if the LOINC code identifies a system-skipped section."""
+
+    return code in SECTION_PROCESSING_SKIP
+
+
+def is_narrative_only_section(code: str) -> bool:
+    """Return True if the LOINC code identifies a narrative-only section."""
+
+    return code in NARRATIVE_ONLY_SECTIONS
+
+
+def is_reconstructable_section(code: str) -> bool:
+    """
+    Return True if the LOINC code has a registered narrative reconstructor.
+    """
+
+    return code in RECONSTRUCTABLE_SECTIONS
+
+
+def narrative_requires_refine(narrative_action: DbNarrativeAction) -> bool:
+    """
+    Return True if the narrative setting only makes sense with action="refine".
+    """
+
+    return narrative_action in NARRATIVE_ACTION_REQUIRES_REFINE
+
+
+def normalize_section_narrative(
+    code: str,
+    section_action: DbSectionAction,
+    narrative_action: DbNarrativeAction,
+) -> tuple[DbSectionAction, DbNarrativeAction, list[str]]:
+    """
+    Coerce an `(action, narrative)` pair into a valid combination.
+
+    Used by non-user-initiated paths (the clone path during config
+    activation, and one-shot data backfill migrations) that cannot
+    raise on a stale invalid combo without disrupting unrelated work.
+    User-initiated paths (the PATCH section endpoint) raise via the
+    sibling validators in `api/v1/configurations/sections.py` instead.
+
+    Rules applied in order:
+
+      1. Narrative-only sections must have action="retain".
+      2. Disabled sections must have action="retain" (they are always
+         system-skipped at refinement; storing anything else is
+         misleading).
+      3. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires
+         action="refine". When action is not "refine" after the
+         earlier coercions, narrative is downgraded to "retain".
+      4. `narrative == "reconstruct"` is only valid on
+         `ReconstructableSection` codes. Otherwise narrative is
+         downgraded to "retain".
+
+    Returns:
+        Tuple of `(coerced_action, coerced_narrative, notes)`. `notes`
+        is a list of human-readable strings describing each coercion
+        applied — empty when the input was already valid. Callers
+        should log non-empty notes so jurisdictions can audit what
+        the system fixed up.
+    """
+
+    notes: list[str] = []
+    coerced_action: DbSectionAction = section_action
+    coerced_narrative_action: DbNarrativeAction = narrative_action
+
+    # rule 1 + 2: action-forcing for narrative-only and disabled sections
+    if is_narrative_only_section(code) and coerced_action != "retain":
+        notes.append(
+            f"section '{code}' is narrative-only; coerced action "
+            f"'{coerced_action}' to 'retain'"
+        )
+        coerced_action = "retain"
+
+    if is_disabled_section(code) and coerced_action != "retain":
+        notes.append(
+            f"section '{code}' is system-skipped; coerced action "
+            f"'{coerced_action}' to 'retain'"
+        )
+        coerced_action = "retain"
+
+    # rule 3: narrative values that require action="refine"
+    if (
+        narrative_requires_refine(coerced_narrative_action)
+        and coerced_action != "refine"
+    ):
+        notes.append(
+            f"narrative '{coerced_narrative_action}' requires action='refine' for "
+            f"section '{code}'; coerced narrative to 'retain'"
+        )
+        coerced_narrative_action = "retain"
+
+    # rule 4: reconstruct only on reconstructable sections
+    if coerced_narrative_action == "reconstruct" and not is_reconstructable_section(
+        code
+    ):
+        notes.append(
+            f"section '{code}' does not support narrative reconstruction; "
+            f"coerced narrative to 'retain'"
+        )
+        coerced_narrative_action = "retain"
+
+    return coerced_action, coerced_narrative_action, notes

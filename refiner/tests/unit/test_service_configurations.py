@@ -336,3 +336,107 @@ class TestBuildSectionUpdateNormalization:
             f"Refinable standard section should keep 'refine' action, got '{result.action}'"
         )
         assert result.section_type == "standard"
+
+
+class TestCloneSectionNarrativeNormalization:
+    """
+    Clone path coerces stale (action, narrative) combinations to a
+    safe baseline rather than propagating them into a fresh draft.
+    Mirrors the API validators in
+    `api/v1/configurations/sections.py`.
+    """
+
+    def _make_section(
+        self,
+        code: str,
+        action: str,
+        narrative: str,
+        section_type: str = "standard",
+    ) -> DbConfigurationSectionProcessing:
+        return DbConfigurationSectionProcessing(
+            code=code,
+            name=f"Section {code}",
+            action=action,  # type: ignore[arg-type]
+            include=True,
+            narrative=narrative,  # type: ignore[arg-type]
+            versions=["1.1"],
+            section_type=section_type,  # type: ignore[arg-type]
+        )
+
+    def test_clone_coerces_keep_on_match_on_retain_to_retain(self, caplog):
+        """
+        Stale narrative='keep_on_match' on a retain section gets
+        coerced to 'retain' and emits a warning.
+        """
+
+        code = "11450-4"
+        clone_from = [self._make_section(code, "retain", "keep_on_match")]
+        clone_to = [self._make_section(code, "retain", "retain")]
+
+        import logging
+
+        caplog.set_level(logging.WARNING)
+        result = clone_section_processing_instructions(
+            clone_from=clone_from,
+            clone_to=clone_to,
+            logger=logging.getLogger("refiner"),
+        )
+
+        assert len(result) == 1
+        assert result[0].narrative == "retain"
+        assert any("keep_on_match" in rec.message for rec in caplog.records), (
+            "expected a coercion warning mentioning 'keep_on_match'"
+        )
+
+    def test_clone_coerces_reconstruct_on_non_reconstructable_to_retain(self, caplog):
+        """
+        Stale narrative='reconstruct' on a non-reconstructable section
+        (29762-2 Social History) gets coerced to 'retain'.
+        """
+
+        code = "29762-2"
+        clone_from = [self._make_section(code, "refine", "reconstruct")]
+        clone_to = [self._make_section(code, "refine", "retain")]
+
+        import logging
+
+        caplog.set_level(logging.WARNING)
+        result = clone_section_processing_instructions(
+            clone_from=clone_from,
+            clone_to=clone_to,
+            logger=logging.getLogger("refiner"),
+        )
+
+        assert len(result) == 1
+        assert result[0].narrative == "retain"
+        assert any("reconstruct" in rec.message for rec in caplog.records)
+
+    def test_clone_preserves_valid_reconstruct_on_results(self):
+        """
+        narrative='reconstruct' + action='refine' on Results (30954-2)
+        is valid and passes through normalization untouched.
+        """
+
+        code = "30954-2"
+        clone_from = [self._make_section(code, "refine", "reconstruct")]
+        clone_to = [self._make_section(code, "refine", "retain")]
+
+        result = clone_section_processing_instructions(clone_from, clone_to)
+
+        assert len(result) == 1
+        assert result[0].action == "refine"
+        assert result[0].narrative == "reconstruct"
+
+    def test_clone_without_logger_still_normalizes(self):
+        """
+        Logger is optional. Coercion still runs even when no logger is
+        provided.
+        """
+
+        code = "11450-4"
+        clone_from = [self._make_section(code, "retain", "reconstruct")]
+        clone_to = [self._make_section(code, "retain", "retain")]
+
+        result = clone_section_processing_instructions(clone_from, clone_to)
+
+        assert result[0].narrative == "retain"

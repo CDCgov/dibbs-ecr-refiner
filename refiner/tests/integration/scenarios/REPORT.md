@@ -102,7 +102,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -113,7 +113,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -149,7 +149,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -160,7 +160,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -196,7 +196,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -207,7 +207,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -243,7 +243,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 2 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -290,7 +290,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -301,7 +301,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -337,7 +337,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 2 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -384,7 +384,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | removed by configuration |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -395,7 +395,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | removed by configuration |
 | `29299-5` | Reason for visit Narrative | 0 | removed by configuration |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined; narrative removed |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 22 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -429,7 +429,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 2 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 2 | refined or retained |
 | `42346-7` | ? | 2 | refined or retained |
@@ -440,7 +440,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -523,7 +523,7 @@ Total: 12 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -534,7 +534,7 @@ Total: 12 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |

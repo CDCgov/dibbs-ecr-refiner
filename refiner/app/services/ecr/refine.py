@@ -333,27 +333,33 @@ def _interpret_run_result(
     """
     Map a refinement engine's run result to a user-facing SectionOutcome.
 
-    Most of this function is mechanical: the engine's narrative
-    disposition determines the outcome name. The one exception is the
-    no-match override on the first branch — that's a refiner *policy*
-    decision, not a configuration translation.
+    This function is purely mechanical: the engine's narrative
+    disposition (and whether matches were found) determines the
+    outcome name. No policy decisions live here — the prior
+    hard-coded "stub when nothing matches" override has been removed
+    in favor of narrative-driven behavior owned by the matching
+    engines, configured per-section by the jurisdiction (notably the
+    "keep_on_match" setting).
 
-    The no-match override: when a section is configured for refinement
-    (action="refine") but the matching engine finds no entries that
-    match the configured codes, the section is stubbed regardless of
-    the narrative configuration. This applies uniformly to all three
-    refine variants (narrative retained, removed, or reconstructed).
-    The justification is that preserving an empty section with an
-    orphaned narrative would mislead reviewers — better to surface
-    the empty result clearly than to imply there was content here.
+    Mapping:
 
-    If this policy ever needs to vary (per-section overrides,
-    thresholds, conditional stubbing based on document context, etc.),
-    the right place for that logic is ecr/policy.py — that's where
-    refiner-behavior decisions live, separate from the IG-derived
-    specification and the structural matching engines. For now, the
-    policy is a single condition in this function and adding
-    indirection would obscure rather than clarify it.
+        matches found:
+            "retained"                       → REFINED_WITH_MATCHES
+            "removed"                        → REFINED_NARRATIVE_REMOVED
+            "reconstructed"                  → REFINED_NARRATIVE_RECONSTRUCTED
+            "reconstruct_fallback_retained"  → REFINED_RECONSTRUCT_FALLBACK_RETAINED
+
+        no matches:
+            "retained"                       → REFINED_NO_MATCHES_NARRATIVE_RETAINED
+            "removed"                        → REFINED_NO_MATCHES_NARRATIVE_REMOVED
+            "reconstruct_fallback_retained"  → REFINED_RECONSTRUCT_FALLBACK_RETAINED
+            "reconstructed"                  → (engines never produce
+                                                this on no-match)
+
+    The reconstruct-fallback disposition collapses to one outcome
+    label regardless of whether matches were found — the relevant
+    fact for a reviewer is "you asked for reconstruct, we couldn't,
+    we kept the original."
 
     Contract: this function is only ever called for sections that
     actually went through the refinement engine (i.e., the section has
@@ -370,11 +376,16 @@ def _interpret_run_result(
         The SectionOutcome describing what happened to this section.
     """
 
-    # policy override: no matches always produces a stub, regardless
-    # of what the narrative configuration said. see the docstring
-    # above for the rationale.
+    # reconstruct fallback collapses to a single outcome regardless
+    # of match status: the engine attempted reconstruction, couldn't
+    # complete it, and kept the original narrative
+    if run_result.narrative_disposition == "reconstruct_fallback_retained":
+        return SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED
+
     if not run_result.matches_found:
-        return SectionOutcome.REFINED_NO_MATCHES_STUBBED
+        if run_result.narrative_disposition == "retained":
+            return SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED
+        return SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
 
     # matches were found; outcome reflects what happened to the narrative
     if run_result.narrative_disposition == "removed":
@@ -514,10 +525,11 @@ def refine_eicr(
             # BRANCH 3: refine entries via the matching engines:
             # * process_section returns a SectionRunResult describing what
             # actually happened, which _interpret_run_result maps to a
-            # user-facing outcome (including the no-match policy override)
+            # user-facing outcome
             # * the configured narrative action ("retain"/"remove"/
-            # "reconstruct") is threaded straight through to the engine,
-            # which owns the decision after pruning + enrichment
+            # "reconstruct"/"keep_on_match") is threaded straight through
+            # to the engine, which owns the decision after pruning +
+            # enrichment
             run_result = process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,

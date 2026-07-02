@@ -18,6 +18,8 @@ from app.db.configurations.db import (
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
+    DbNarrativeAction,
+    DbSectionAction,
     DbSectionType,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -29,6 +31,9 @@ from app.services.ecr.policy import (
     DisabledSection,
     NarrativeOnlySection,
     ReconstructableSection,
+    is_disabled_section,
+    is_reconstructable_section,
+    narrative_requires_refine,
 )
 
 router = APIRouter(prefix="/{configuration_id}/sections")
@@ -152,7 +157,13 @@ async def update_section(
         db (AsyncDatabaseConnection): Database connection
 
     Raises:
-        HTTPException: 400 if the code is not valid, code is in use, or name is in use
+        HTTPException: 400 if the code is not valid, code is in use,
+            name is in use, the section is system-skipped
+            (`DisabledSection`) and therefore not configurable, the
+            narrative/action combination is unsupported (e.g.
+            narrative="reconstruct" or "keep_on_match" with
+            action="retain"), or narrative "reconstruct" targets a
+            section without a registered reconstructor
         HTTPException: 404 if configuration isn't found
         HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if section processing can't be updated
@@ -172,6 +183,8 @@ async def update_section(
         sections=config.section_processing,
     )
 
+    _raise_if_section_not_configurable(code=prev_section.code)
+
     _raise_if_invalid_section_update(
         existing_section=prev_section,
         all_sections=config.section_processing,
@@ -182,6 +195,16 @@ async def update_section(
     section_update = _build_section_update(
         prev_section=prev_section,
         section_input=section_input,
+    )
+
+    _raise_if_invalid_narrative_action_combo(
+        narrative=section_update.narrative,
+        action=section_update.action,
+    )
+
+    _raise_if_reconstruct_unsupported(
+        narrative=section_update.narrative,
+        code=section_update.code,
     )
 
     try:
@@ -287,6 +310,110 @@ def _raise_if_invalid_section_update(
         desired_name=desired_name,
         desired_code=desired_code,
     )
+
+
+# Predicates and shared rules live in `ecr.policy` so the API
+# validators, the clone path, and any future data backfill apply the
+# same rules without drift. See `narrative_requires_refine`,
+# `is_disabled_section`, and `is_reconstructable_section`.
+
+
+def _raise_if_section_not_configurable(code: str) -> None:
+    """
+    Reject updates targeting a system-skipped section.
+
+    `DisabledSection` LOINC codes are always retained intact at
+    refinement time (see `SECTION_PROCESSING_SKIP`). Persisting any
+    jurisdiction-supplied include/action/narrative for them is
+    misleading — the engine ignores those values. Rejecting up front
+    keeps the configuration honest.
+
+    Args:
+        code: The section's LOINC code.
+
+    Raises:
+        HTTPException: 400 when `code` is in `DisabledSection`.
+    """
+
+    if is_disabled_section(code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(f"Section '{code}' is system-skipped and cannot be configured."),
+        )
+
+
+def _raise_if_invalid_narrative_action_combo(
+    narrative: DbNarrativeAction,
+    action: DbSectionAction,
+) -> None:
+    """
+    Reject narrative/action combinations the refiner cannot execute.
+
+    The UI prevents these combinations at authoring time, but the API
+    must also enforce them so direct callers (or a stale client) can't
+    persist a section the refinement engine has no semantics for.
+
+    Invalid pairings:
+        narrative="reconstruct", action="retain"
+            Reconstruction rebuilds <text> from refined entries; with
+            action="retain" there are no refined entries to build from.
+
+        narrative="keep_on_match", action="retain"
+            "Keep on match" decides narrative disposition from the
+            matching outcome; with action="retain" matching never runs.
+
+    Args:
+        narrative: The configured narrative action.
+        action: The configured coded-data action.
+
+    Raises:
+        HTTPException: 400 when the combination is invalid.
+    """
+
+    if narrative_requires_refine(narrative) and action != "refine":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Narrative '{narrative}' requires coded data action 'refine'; "
+                f"got action '{action}'."
+            ),
+        )
+
+
+def _raise_if_reconstruct_unsupported(
+    narrative: DbNarrativeAction,
+    code: str,
+) -> None:
+    """
+    Reject narrative="reconstruct" on sections without a reconstructor.
+
+    Narrative reconstruction rebuilds <text> from refined entries via
+    a section-specific reconstructor registered in
+    `ecr/narrative/reconstruction.py`. Currently only Results
+    (30954-2) has one; other LOINC codes would silently fall back at
+    runtime to retaining the original narrative. Up-front rejection
+    keeps configurations honest — a jurisdiction can't save a setting
+    whose declared intent the engine can't honor.
+
+    Args:
+        narrative: The configured narrative action.
+        code: The section's LOINC code.
+
+    Raises:
+        HTTPException: 400 when narrative="reconstruct" targets a
+            section that isn't in ReconstructableSection.
+    """
+
+    if narrative == "reconstruct" and not is_reconstructable_section(code):
+        # NOTE: detail mirrors the existing combo-validator pattern
+        # (human-readable sentence). if clients later need the list
+        # of supported codes for UX (e.g., to surface them in an
+        # error message), include `RECONSTRUCTABLE_SECTIONS` in the
+        # detail string here.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(f"Narrative 'reconstruct' is not supported for section '{code}'."),
+        )
 
 
 def _value_or_default[T](new_value: T | None, old_value: T) -> T:
