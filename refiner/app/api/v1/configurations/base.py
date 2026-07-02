@@ -217,8 +217,20 @@ async def get_serialized_configuration(
             detail="Configuration must be active.",
         )
 
+    primary_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+
+    if not primary_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Condition with ID {config.condition_id} could not be found or does not exist.",
+        )
+
     serialized_files = await run_in_threadpool(
-        get_serialized_files, config.s3_url, config.version, logger
+        get_serialized_files,
+        user.jurisdiction_id,
+        primary_condition.canonical_url,
+        config.version,
+        logger,
     )
 
     return serialized_files

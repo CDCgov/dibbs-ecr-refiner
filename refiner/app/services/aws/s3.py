@@ -22,6 +22,7 @@ from app.db.users.model import DbUser
 from ...core.config import ENVIRONMENT
 from .s3_keys import (
     get_active_file_key,
+    get_current_file_key,
     get_metadata_file_key,
     get_parent_directory_key,
     get_rsg_cg_mapping_file_key,
@@ -69,22 +70,29 @@ class SerializedFiles:
 
 
 def get_serialized_files(
-    directory_key: str, version: int, logger: Logger
+    jurisdiction_id: str, canonical_url: str, version: int, logger: Logger
 ) -> SerializedFiles:
     """
     Fetches the serialized files for a given configuration from S3.
 
     Args:
-        directory_key (str): The directory key
-        version (int): The active version
+        jurisdiction_id (str): The jurisdiction ID
+        canonical_url (str): Canonical URL of the configuration's primary condition
+        version (int): The active configuration version
         logger (Logger): The standard logger
 
     Returns:
         SerializedFiles: The content of the configuration's serialized files
     """
-    active_key = f"{directory_key}/{version}/active.json"
-    metadata_key = f"{directory_key}/{version}/metadata.json"
-    current_key = f"{directory_key}/current.json"
+    active_key = get_active_file_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url, version=version
+    )
+    metadata_key = get_metadata_file_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url, version=version
+    )
+    current_key = get_current_file_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url
+    )
 
     logger.info(
         "Fetching serialized configuration file data from S3",
