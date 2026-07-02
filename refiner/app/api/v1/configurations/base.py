@@ -3,8 +3,10 @@ from logging import Logger
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
+from app.core.config import ENVIRONMENT
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
@@ -26,6 +28,7 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
 from app.db.users.model import DbUser
+from app.services.aws.s3 import SerializedFiles, get_serialized_files
 from app.services.code_systems import get_all_code_systems_by_key
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
@@ -162,6 +165,63 @@ async def create_configuration(
         )
 
     return CreateConfigurationResponse(id=config.id, name=config.name)
+
+
+@router.get(
+    "/{configuration_id}/serialized",
+    response_model=SerializedFiles,
+    tags=["configurations"],
+    operation_id="getSerializedConfiguration",
+)
+async def get_serialized_configuration(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
+) -> SerializedFiles:
+    """
+    Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
+
+    Args:
+        configuration_id (UUID): The active configuration ID
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
+        logger (Logger): The standard app logger
+
+    Raises:
+        HTTPException: 404 if configuration cannot be found in the user's jurisdiction
+        HTTPException: 400 if the configuration's status is not `active`
+
+    Returns:
+        Response: The serialized configuration file content
+    """
+
+    if ENVIRONMENT["ENV"] != "local":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is only available locally.",
+        )
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    if config.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configuration must be active.",
+        )
+
+    serialized_files = await run_in_threadpool(
+        get_serialized_files, config.s3_url, config.version, logger
+    )
+
+    return serialized_files
 
 
 @router.get(
