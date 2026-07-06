@@ -1,19 +1,5 @@
-# Install system deps
-FROM python:3.14-alpine AS system-builder
-
-RUN apk add --no-cache \
-    gcc \
-    g++ \
-    musl-dev \
-    libxml2-dev \
-    libxslt-dev
-
-# build the lxml wheel
-WORKDIR /app
-RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
-
 # Install Python dependencies
-FROM python:3.14-alpine
+FROM python:3.14-slim
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
@@ -25,30 +11,20 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
-RUN apk update && apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     ca-certificates \
     bash \
     && rm -rf /var/lib/apt/lists/*
-
-# install runtime C libs
-RUN apk add --no-cache \
-    libxml2 \
-    libxslt
 
 # Copy dbmate binary from dbmate base image
 COPY --from=ghcr.io/amacneil/dbmate:main /usr/local/bin/dbmate /usr/local/bin/dbmate
 
 WORKDIR /app
 
-RUN python -m pip install --upgrade pip
-
-# copy & install wheel from builder
-COPY --from=system-builder /app/wheels /wheels
-RUN pip install --no-cache-dir /wheels/*
-
 # Python files
 COPY ./refiner/scripts-requirements.txt ./
-RUN pip install --no-cache-dir -r scripts-requirements.txt
+COPY ./refiner/requirements.txt ./
+RUN pip install --no-cache-dir -r scripts-requirements.txt -r requirements.txt
 
 # Copy migration files
 COPY ./refiner/migrations ./migrations
@@ -56,6 +32,11 @@ COPY ./refiner/migrations ./migrations
 # Copy TES update files
 COPY ./refiner/scripts/seeding ./scripts/seeding
 COPY ./refiner/scripts/data/source-tes-groupers ./scripts/data/source-tes-groupers
+
+# Copy active configuration regeneration script
+COPY ./refiner/scripts/migrations ./scripts/migrations
+
+COPY ./refiner/app ./app
 
 # Copy entrypoint script
 COPY ./ops/entrypoint.sh ./entrypoint.sh

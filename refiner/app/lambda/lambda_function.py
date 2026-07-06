@@ -8,6 +8,7 @@ import json
 import os
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from typing import Any, TypedDict
 
 import boto3
@@ -46,6 +47,8 @@ REFINER_COMPLETE_PREFIX = get_env_variable("REFINER_COMPLETE_PREFIX")
 S3_BUCKET_CONFIG = get_env_variable("S3_BUCKET_CONFIG")
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
+MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
+
 JurisdictionCode = str
 ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
@@ -72,6 +75,10 @@ class RefinerCompleteError(TypedDict):
 
     RefinerSkip: bool
     Error: str
+
+
+class MaintenanceModeError(Exception):
+    """Raised when active configuration maintenance is in progress."""
 
 
 @dataclass
@@ -178,6 +185,24 @@ def lambda_handler(event, context) -> dict:
                 continue
 
             try:
+                maintenance_lock = read_active_configuration_maintenance_lock(
+                    s3_client=s3_client,
+                    bucket=s3_config_bucket_name,
+                )
+
+                if maintenance_lock is not None:
+                    logger.warning(
+                        "Active configuration maintenance is in progress.",
+                        operation="active_configuration_maintenance",
+                        lock_key=MAINTENANCE_LOCK_KEY,
+                        migration=maintenance_lock.get("migration"),
+                        started_at=maintenance_lock.get("started_at"),
+                        expires_at=maintenance_lock.get("expires_at"),
+                        persistence_id=persistence_id,
+                    )
+                    raise MaintenanceModeError(
+                        "Active configuration maintenance is in progress."
+                    )
                 # S3 GET RR
                 logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
                 rr_content = get_s3_object_content(
@@ -235,6 +260,18 @@ def lambda_handler(event, context) -> dict:
                     f"Successfully processed {len(result.output_file_keys)} refined outputs"
                 )
 
+            except MaintenanceModeError as e:
+                # Do not write RefinerComplete for maintenance mode.
+                # Returning the record as a batch failure allows SQS to retry it
+                # after the queue visibility timeout.
+                logger.warning(
+                    "Deferring record because active configuration maintenance is in progress.",
+                    operation="active_configuration_maintenance",
+                    persistence_id=persistence_id,
+                    error=str(e),
+                )
+                batch_item_failures.append({"itemIdentifier": record_id})
+
             except Exception as e:
                 logger.error(f"Fatal error processing record: {str(e)}", exception=e)
 
@@ -269,6 +306,67 @@ def lambda_handler(event, context) -> dict:
 ###############################################
 # Helper functions
 ###############################################
+
+
+def read_active_configuration_maintenance_lock(
+    s3_client,
+    bucket: str,
+) -> dict | None:
+    """
+    Return the active maintenance lock, or None when no active lock exists.
+
+    An expired lock is treated as inactive. A malformed lock raises an error so
+    refinement fails closed instead of running during an uncertain migration.
+
+    Args:
+        s3_client: Boto3 S3 client.
+        bucket: Configuration bucket name.
+
+    Returns:
+        dict | None: Lock contents when maintenance is active, otherwise None.
+    """
+
+    try:
+        response = s3_client.get_object(
+            Bucket=bucket,
+            Key=MAINTENANCE_LOCK_KEY,
+        )
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code")
+
+        if error_code in {"404", "NoSuchKey", "NotFound"}:
+            return None
+
+        raise
+
+    lock = parse_s3_content_to_dict(response["Body"].read().decode("utf-8"))
+
+    expires_at_value = lock.get("expires_at")
+    if not isinstance(expires_at_value, str):
+        raise ValueError(
+            f"Maintenance lock at {MAINTENANCE_LOCK_KEY} is missing expires_at."
+        )
+
+    try:
+        expires_at = datetime.fromisoformat(expires_at_value)
+    except ValueError as e:
+        raise ValueError(
+            f"Maintenance lock at {MAINTENANCE_LOCK_KEY} has an invalid expires_at."
+        ) from e
+
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+
+    if expires_at <= datetime.now(UTC):
+        logger.warning(
+            "Ignoring expired active configuration maintenance lock.",
+            operation="active_configuration_maintenance",
+            lock_key=MAINTENANCE_LOCK_KEY,
+            expires_at=expires_at_value,
+        )
+        return None
+
+    return lock
 
 
 def extract_persistence_id(object_key: str, input_prefix: str) -> str:
