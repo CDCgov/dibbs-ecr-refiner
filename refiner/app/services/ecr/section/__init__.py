@@ -24,6 +24,7 @@ def process_section(
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
     code_system_sets: CodeSystemSets | None,
+    augmentation_timestamp: str = "",
     narrative: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
@@ -63,13 +64,16 @@ def process_section(
         code_system_sets: Structured per-system code lookup used by
             the section-aware engine and for displayName enrichment
             in the generic engine.
+        augmentation_timestamp: The refinement run's HL7 V3 time value,
+            threaded to narrative reconstruction so minted row IDs share
+            the run stamp used by the section's provenance footnote.
         narrative: What to do with the section's narrative <text>:
             "retain" keeps the original, "remove" replaces it with a
             removal notice, "reconstruct" rebuilds it from the
             surviving entries (falling back to removal when the
             section has no registered reconstructor or nothing
-            survived). Ignored when matches are zero; the engine stubs
-            the section regardless per the no-match policy override.
+            survived), "keep_on_match" keeps the original when matches
+            are found and removes it otherwise.
 
     Returns:
         SectionRunResult describing what the engine did. Consumed
@@ -86,7 +90,8 @@ def process_section(
             code_system_sets=code_system_sets,
             section_specification=section_specification,
             namespaces=namespaces,
-            narrative=narrative,
+            augmentation_timestamp=augmentation_timestamp,
+            narrative_action=narrative,
         )
 
     return _generic_matching.process(
@@ -94,8 +99,9 @@ def process_section(
         codes_to_match=codes_to_match,
         namespaces=namespaces,
         section_specification=section_specification,
+        augmentation_timestamp=augmentation_timestamp,
         code_system_sets=code_system_sets,
-        narrative=narrative,
+        narrative_action=narrative,
     )
 
 

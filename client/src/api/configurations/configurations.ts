@@ -54,6 +54,21 @@ import type {
 
 
 
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === 'queryKey') continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
+
 /**
  * Returns a list of configurations based on the logged-in user.
  *
@@ -140,7 +155,7 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return { ...query, queryKey: queryOptions.queryKey };
+  return withQueryKey(query, queryOptions.queryKey);
 }
 
 
@@ -162,6 +177,7 @@ export const createConfiguration = (
       createConfigInput,options
     );
   }
+
 
 
 
@@ -292,7 +308,7 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return { ...query, queryKey: queryOptions.queryKey };
+  return withQueryKey(query, queryOptions.queryKey);
 }
 
 
@@ -331,6 +347,7 @@ export const associateConditionWithConfiguration = (
       associateCodesetInput,options
     );
   }
+
 
 
 
@@ -412,6 +429,7 @@ export const disassociateConditionWithConfiguration = (
 
 
 
+
 export const getDisassociateConditionWithConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext> => {
@@ -485,6 +503,7 @@ export const addCustomCodeToConfiguration = (
       addCustomCodeInput,options
     );
   }
+
 
 
 
@@ -564,6 +583,7 @@ export const editCustomCodeFromConfiguration = (
 
 
 
+
 export const getEditCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext> => {
@@ -612,7 +632,7 @@ export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValid
  * Accepts a CSV payload in JSON body.
  *
  * Expected CSV headers:
- *     code_number,code_system,display_name
+ *     code,code_system,display_name
  *
  * Returns:
  *     UploadCustomCodesResponse
@@ -629,6 +649,7 @@ export const uploadCustomCodesCsv = (
       uploadCustomCodesCsvInput,options
     );
   }
+
 
 
 
@@ -691,6 +712,7 @@ export const confirmUploadCustomCodesCsv = (
       confirmUploadCustomCodesInput,options
     );
   }
+
 
 
 
@@ -773,6 +795,7 @@ export const deleteCustomCodeFromConfiguration = (
 
 
 
+
 export const getDeleteCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;systemKey: string;code: string}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;systemKey: string;code: string}, TContext> => {
@@ -830,7 +853,7 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
  *     db (AsyncDatabaseConnection, optional): The database connection
  *
  * Returns:
- *     bool: Returns True if the code name has not been used, otherwise returns False
+ *     bool: Returns True if the code has not been used, otherwise returns False
  * @summary Validate Custom Code
  */
 export const validateCustomCodeFromConfiguration = (
@@ -844,6 +867,7 @@ export const validateCustomCodeFromConfiguration = (
       validateCustomCodeInput,options
     );
   }
+
 
 
 
@@ -974,7 +998,7 @@ export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getC
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return { ...query, queryKey: queryOptions.queryKey };
+  return withQueryKey(query, queryOptions.queryKey);
 }
 
 
@@ -1028,6 +1052,7 @@ if(bodyRunInlineConfigurationTest.uploaded_file !== undefined && bodyRunInlineCo
       formData,options
     );
   }
+
 
 
 
@@ -1097,6 +1122,7 @@ export const addCustomSection = (
     ...options,}
     );
   }
+
 
 
 
@@ -1176,6 +1202,7 @@ export const deleteCustomSection = (
 
 
 
+
 export const getDeleteCustomSectionMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomSection>>, TError,{configurationId: string;data: DeleteSectionInput}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomSection>>, TError,{configurationId: string;data: DeleteSectionInput}, TContext> => {
@@ -1230,7 +1257,13 @@ export const useDeleteCustomSection = <TError = AxiosError<HTTPValidationError>,
  *     db (AsyncDatabaseConnection): Database connection
  *
  * Raises:
- *     HTTPException: 400 if the code is not valid, code is in use, or name is in use
+ *     HTTPException: 400 if the code is not valid, code is in use,
+ *         name is in use, the section is system-skipped
+ *         (`DisabledSection`) and therefore not configurable, the
+ *         narrative/action combination is unsupported (e.g.
+ *         narrative="reconstruct" or "keep_on_match" with
+ *         action="retain"), or narrative "reconstruct" targets a
+ *         section without a registered reconstructor
  *     HTTPException: 404 if configuration isn't found
  *     HTTPException: 409 if configuration is not a draft and therefore not editable
  *     HTTPException: 500 if section processing can't be updated
@@ -1250,6 +1283,7 @@ export const updateSection = (
       sectionUpdateInput,options
     );
   }
+
 
 
 
@@ -1328,6 +1362,7 @@ export const activateConfiguration = (
 
 
 
+
 export const getActivateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string}, TContext> => {
@@ -1403,6 +1438,7 @@ export const deactivateConfiguration = (
 
 
 
+
 export const getDeactivateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
 ): UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext> => {
@@ -1466,6 +1502,7 @@ export const releaseConfigurationLock = (
       undefined,options
     );
   }
+
 
 
 

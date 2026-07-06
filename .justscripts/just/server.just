@@ -6,6 +6,7 @@ alias t := test
 alias ti := test-integration
 alias tl := test-lambda
 alias ts := test-scenarios
+alias us := update-snapshots
 alias tu := test-unit
 alias ta := test-all
 alias f := fix
@@ -26,9 +27,9 @@ set dotenv-load
 _venv:
     [ -d .venv ] || python3 -m venv .venv
 
-[doc('Run pytest on a given path')]
+[doc('Run pytest wrapper. Must include arguments.')]
 [group('test')]
-test *ARGS: _venv
+test +ARGS: _venv
     .venv/bin/pytest {{ ARGS }}
 
 [doc('Run Unit tests')]
@@ -45,6 +46,11 @@ test-integration: _venv
 [group('test')]
 test-scenarios: _venv
     {{ if env("CI", "") != "" { ".venv/bin/pytest tests/integration/scenarios" } else { ".venv/bin/pytest -vvv tests/integration/scenarios" } }}
+
+[doc('Update Scenarios tests snapshots.')]
+[group('test')]
+update-snapshots: _venv
+    .venv/bin/pytest -vvv tests/integration/scenarios --update-snapshots
 
 [doc('Run Lambda tests')]
 [group('test')]

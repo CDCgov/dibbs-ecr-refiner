@@ -5,7 +5,7 @@
 export interface UploadCustomCodesPreviewItem {
   code: string;
   system_key: string;
-  system_display_name: string;
   name: string;
+  id: string;
   row?: number | null;
 }

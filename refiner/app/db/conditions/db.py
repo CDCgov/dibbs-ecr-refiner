@@ -1,8 +1,6 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from uuid import UUID
 
-from packaging.version import parse
 from psycopg.rows import class_row, dict_row
 
 from app.services.tes import get_latest_tes_version
@@ -24,7 +22,7 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
     query = """
         SELECT
             DISTINCT(version)
-        FROM conditions
+        FROM tes
         ORDER BY version
     """
     async with db.get_connection() as conn:
@@ -40,11 +38,12 @@ async def _get_conditions_by_canonical_urls_and_version_db(
 ) -> list[DbCondition]:
     query = """
             SELECT
-                id,
-                canonical_url
-            FROM conditions
-            WHERE canonical_url = ANY(%s)
-            AND version = %s
+                c.id,
+                c.canonical_url
+            FROM conditions c
+            JOIN tes t ON t.id = c.tes_id
+            WHERE c.canonical_url = ANY(%s)
+            AND t.version = %s
             """
 
     params = (
@@ -148,15 +147,16 @@ async def get_conditions_by_version_db(
     """
 
     query = """
-            SELECT
-                id,
-                display_name,
-                canonical_url,
-                version
-            FROM conditions
-            WHERE version = %s
-            ORDER BY display_name ASC;
-            """
+        SELECT
+            c.id,
+            c.display_name,
+            c.canonical_url,
+            t.version
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        WHERE t.version = %s
+        ORDER BY c.display_name ASC;
+        """
 
     params = (version,)
 
@@ -168,60 +168,6 @@ async def get_conditions_by_version_db(
     return rows
 
 
-async def get_latest_conditions_db(
-    db: AsyncDatabaseConnection,
-) -> list[DbConditionBase]:
-    """
-    For each unique condition, retrieves the one with the highest semantic version.
-
-    This function fetches all conditions and performs the version filtering in
-    Python to ensure correct semantic versioning. It is used to populate the
-    "Set up new configuration" dropdown so that users can only create
-    configurations based on the most up-to-date value sets.
-    """
-
-    # STEP 1: FETCH ALL CONDITIONS
-    # this query is simple, fast, and offloads the complex logic to python
-    query = """
-        SELECT
-            id,
-            display_name,
-            canonical_url,
-            version
-        FROM conditions;
-    """
-
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
-            await cur.execute(query)
-            all_conditions = await cur.fetchall()
-
-    if not all_conditions:
-        return []
-
-    # STEP 2: GROUP CONDITIONS BY CANONICAL URL
-    # this creates a dictionary where each key is a unique `canonical_url`
-    # and the value is a list of all condition objects with that URL
-    grouped_conditions: dict[str, list[DbConditionBase]] = defaultdict(list)
-    for cond in all_conditions:
-        grouped_conditions[cond.canonical_url].append(cond)
-
-    # STEP 3: HIGHLIGHT LATEST VERSION FOR EACH GROUP
-    # iterate through the dictionary and use `max()` with `packaging.version.parse`
-    # as the key to correctly identify the latest version for each condition
-    latest_conditions: list[DbConditionBase] = [
-        max(cond_group, key=lambda c: parse(c.version))
-        for cond_group in grouped_conditions.values()
-    ]
-
-    # STEP 4: SORT/PACKAGE FINAL LIST
-    # sort the final list alphabetically by `display_name` for a
-    # consistent and user-friendly order in the ui dropdown
-    latest_conditions.sort(key=lambda c: c.display_name)
-
-    return latest_conditions
-
-
 async def get_condition_by_id_db(
     id: UUID, db: AsyncDatabaseConnection
 ) -> DbCondition | None:
@@ -231,21 +177,22 @@ async def get_condition_by_id_db(
 
     query = """
             SELECT
-                id,
-                canonical_url,
-                display_name,
-                version,
-                child_rsg_snomed_codes,
-                snomed_codes,
-                loinc_codes,
-                icd10_codes,
-                rxnorm_codes,
-                cvx_codes,
-                coverage_level,
-                coverage_level_reason,
-                coverage_level_date
-            FROM conditions
-            WHERE id = %s
+                c.id,
+                c.canonical_url,
+                c.display_name,
+                t.version,
+                c.child_rsg_snomed_codes,
+                c.snomed_codes,
+                c.loinc_codes,
+                c.icd10_codes,
+                c.rxnorm_codes,
+                c.cvx_codes,
+                c.coverage_level,
+                c.coverage_level_reason,
+                c.coverage_level_date
+            FROM conditions c
+            JOIN tes t ON t.id = c.tes_id
+            WHERE c.id = %s
             """
 
     params = (id,)
@@ -377,20 +324,21 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
 
     query = """
         SELECT
-            id,
-            display_name,
-            canonical_url,
-            version,
-            child_rsg_snomed_codes,
-            snomed_codes,
-            loinc_codes,
-            icd10_codes,
-            rxnorm_codes,
-            cvx_codes,
-            coverage_level,
-            coverage_level_reason,
-            coverage_level_date
-        FROM conditions
+            c.id,
+            c.display_name,
+            c.canonical_url,
+            t.version,
+            c.child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
         WHERE child_rsg_snomed_codes && %s::text[];
     """
 
@@ -415,9 +363,10 @@ async def get_conditions_by_ids(
         return []
 
     query = """
-        SELECT *
-        FROM conditions
-        WHERE id = ANY(%s);
+        SELECT c.*, t.version
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        WHERE c.id = ANY(%s);
     """
 
     params = (ids,)
@@ -438,9 +387,10 @@ async def get_primary_conditions_for_configurations_db(
     Given a list of configuration IDs, return a mapping of configuration ID to primary condition.
     """
     query = """
-        SELECT cc.configuration_id, cond.*
+        SELECT cc.configuration_id, cond.*, t.version
         FROM conditions cond
         JOIN configurations_conditions cc ON cc.condition_id = cond.id
+        JOIN tes t ON t.id = cond.tes_id
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
     """
@@ -480,10 +430,11 @@ async def get_included_conditions_db(
     """
 
     query = """
-        SELECT *
-        FROM conditions
-        WHERE id = ANY(%s)
-        ORDER BY id;
+        SELECT c.*, t.version
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        WHERE c.id = ANY(%s)
+        ORDER BY c.id;
     """
 
     params = (included_conditions,)
@@ -540,9 +491,10 @@ async def get_conditions_with_rsg_codes_db(
             c.display_name,
             JSONB_AGG(JSONB_BUILD_OBJECT('display', codes.display, 'code', codes.code)) as rsg_codes
         FROM conditions as c
+        JOIN tes t ON t.id = c.tes_id
         LEFT JOIN conditions_rsg_codes as rsg ON rsg.condition_id = c.id
         LEFT JOIN codes ON codes.id = rsg.code_id
-        WHERE c.version = %s
+        WHERE t.version = %s
         GROUP BY
             c.id,
             c.display_name

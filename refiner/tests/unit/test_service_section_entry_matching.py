@@ -259,7 +259,7 @@ def test_narrative_retention_when_narrative_retain(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        narrative="retain",
+        narrative_action="retain",
     )
     assert result.narrative_disposition == "retained"
     text = _find_one(section, "hl7:text")
@@ -295,7 +295,7 @@ def test_narrative_removal_when_narrative_remove(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
-        narrative="remove",
+        narrative_action="remove",
     )
     assert result.narrative_disposition == "removed"
     text = _find_one(section, "hl7:text")
@@ -338,7 +338,7 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
         code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
         section_specification=spec_v1_1.sections["30954-2"],
         namespaces=HL7_NS,
-        narrative="reconstruct",
+        narrative_action="reconstruct",
     )
     assert result.matches_found is True
     assert result.narrative_disposition == "reconstructed"
@@ -349,50 +349,49 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
     assert "Original narrative" not in serialized
     assert "machine-derived" in serialized
     assert "CBC panel" in serialized
-    body_rows = text.xpath(".//hl7:tbody/hl7:tr", namespaces=HL7_NS)
-    assert len(body_rows) == 1
+    # one detail row (carrying a minted xs:ID) per surviving observation;
+    # the panel context renders once in its own table, not per row
+    detail_rows = text.xpath(".//hl7:tbody/hl7:tr[@ID]", namespaces=HL7_NS)
+    assert len(detail_rows) == 1
 
 
-def test_narrative_reconstruct_without_reconstructor_falls_back_to_removal(
+def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
     spec_v1_1,
 ) -> None:
     """
     narrative="reconstruct" on a refinable section with no registered
-    reconstructor (Problems) removes the narrative rather than leaving the
-    stale source text in place.
+    reconstructor (Social History — not reconstructable) falls back to
+    retaining the original narrative rather than swapping in a removal
+    notice. The intent is that the original narrative is more
+    informative to a reviewer than the removal placeholder when
+    reconstruction can't be produced.
     """
 
     section = _build_section(
         """
         <section xmlns="urn:hl7-org:v3">
-            <code code="11450-4"/>
+            <code code="29762-2"/>
             <text>Original narrative content here.</text>
             <entry>
-                <act classCode="ACT" moodCode="EVN">
-                    <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
-                    <entryRelationship typeCode="SUBJ">
-                        <observation classCode="OBS" moodCode="EVN">
-                            <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
-                            <value code="840539006" codeSystem="2.16.840.1.113883.6.96"/>
-                        </observation>
-                    </entryRelationship>
-                </act>
+                <observation classCode="OBS" moodCode="EVN">
+                    <code code="229819007" codeSystem="2.16.840.1.113883.6.96"/>
+                </observation>
             </entry>
         </section>
         """
     )
     result = process(
         section=section,
-        code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
-        section_specification=spec_v1_1.sections["11450-4"],
+        code_system_sets=_make_code_system_sets({"snomed": ["229819007"]}),
+        section_specification=spec_v1_1.sections["29762-2"],
         namespaces=HL7_NS,
-        narrative="reconstruct",
+        narrative_action="reconstruct",
     )
     assert result.matches_found is True
-    assert result.narrative_disposition == "removed"
+    assert result.narrative_disposition == "reconstruct_fallback_retained"
     text = _find_one(section, "hl7:text")
     assert text is not None
-    assert "Original narrative" not in etree.tostring(text, encoding="unicode")
+    assert "Original narrative" in etree.tostring(text, encoding="unicode")
 
 
 # NOTE:

@@ -16,7 +16,6 @@ from ..model import (
     SectionSpecification,
 )
 from ..narrative import (
-    create_minimal_section,
     reconstruct_narrative,
     remove_all_comments,
     replace_narrative_with_reconstruction,
@@ -39,8 +38,9 @@ def process(
     codes_to_match: set[str],
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
+    augmentation_timestamp: str = "",
     code_system_sets: CodeSystemSets | None = None,
-    narrative: DbNarrativeAction = "retain",
+    narrative_action: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using the generic matching logic.
@@ -59,29 +59,35 @@ def process(
     `<text>` elements before searching to prevent false matches.
     Both are saved as deep copies and restored after processing —
     `<code>` unconditionally in the finally block (to avoid
-    corrupting the tree on error), and `<text>` only when the
-    `narrative` action is "retain".
+    corrupting the tree on error), and `<text>` whenever the
+    `narrative` action may end up preserving the original
+    ("retain", "keep_on_match", or the "reconstruct" fallback
+    branch — see Step 5 below).
 
     Source document XML comments are stripped before matching begins.
     Match provenance comments (`eCR Refiner: generic match — ...`)
     are injected above each surviving entry after pruning; these
     survive because they are added after the source comment cleanup.
 
-    If no entries match (or `codes_to_match` is empty), the section
-    is reduced to a minimal stub via `create_minimal_section` (the
-    no-match policy override) and the function returns a
-    `SectionRunResult` with `matches_found=False`. The orchestrator
-    translates this into `SectionOutcome.REFINED_NO_MATCHES_STUBBED`
-    regardless of the narrative configuration — see
-    `refine._interpret_run_result`.
+    If no entries match (or `codes_to_match` is empty), all <entry>
+    children are pruned and the section's <text> is handled per the
+    `narrative` setting:
+
+      - "retain"           → narrative restored intact
+      - "remove"           → narrative replaced with the removal notice
+      - "reconstruct"      → falls back to RETAIN the original narrative
+                             (nothing to rebuild from)
+      - "keep_on_match"    → narrative replaced with the removal notice
+                             (no matches means the negative branch)
+
+    `nullFlavor="NI"` is applied at the section level so the document
+    continues to satisfy CDA schematron rules that require `SHALL
+    contain at least one entry` for refinable sections. See
+    `refine._interpret_run_result` for outcome mapping.
 
     Returns:
         SectionRunResult reporting whether matches were found and
-        what the engine did with the narrative. The
-        `narrative_disposition` field is meaningful only when
-        `matches_found=True`; when no matches are found, the engine
-        stubs the entire section and the orchestrator short-circuits
-        before reading the narrative disposition.
+        what the engine did with the narrative.
     """
 
     # neutralize <code>: remove the @code attribute so the section's
@@ -96,12 +102,15 @@ def process(
 
     # neutralize <text>: clear it so inline codes in the narrative
     # don't produce false matches
-    # only when narrative="retain" is a deep copy saved so the original
-    # can be restored after processing
+    # save a deep copy whenever the narrative may end up preserved —
+    # "retain", "keep_on_match" (resolves to retain when matches are
+    # found), or "reconstruct" (falls back to retain when the engine
+    # cannot rebuild)
+    PRESERVE_NARRATIVE_ACTIONS = {"retain", "keep_on_match", "reconstruct"}
     text_element = section.find("./hl7:text", namespaces=namespaces)
     original_text = (
         deepcopy(text_element)
-        if text_element is not None and narrative == "retain"
+        if text_element is not None and narrative_action in PRESERVE_NARRATIVE_ACTIONS
         else None
     )
     if text_element is not None:
@@ -109,46 +118,76 @@ def process(
 
     try:
         if not codes_to_match:
-            # refiner policy: when there are no codes to match against,
-            # treat as no-match and stub the section. same override as
-            # the "matched nothing" case below.
-            # named as REFINED_NO_MATCHES_STUBBED in
-            # refine._interpret_run_result.
-            create_minimal_section(section=section, removal_reason="no_match")
+            # nothing to match against → treat as no-match. defer to
+            # the shared no-match handler below by jumping straight to
+            # the empty-matches branch.
+            contextual_matches: list[_Element] = []
+        else:
+            try:
+                # STEP 1: strip source document comments before matching
+                # so they cannot interfere with candidate gathering.
+                # provenance comments injected after pruning (STEP 3) will
+                # survive because they are added after this cleanup.
+                remove_all_comments(section)
+
+                # STEP 2: CONTEXT FILTERING
+                contextual_matches = _find_condition_relevant_elements(
+                    section, codes_to_match, namespaces
+                )
+
+            except etree.XPathEvalError as e:
+                raise XMLParsingError(
+                    message="Invalid XPath expression",
+                    details={
+                        "section_details": dict(section.attrib),
+                        "error": str(e),
+                    },
+                )
+
+        if not contextual_matches:
+            # no matches: prune every <entry> and apply the configured
+            # narrative behavior. nullFlavor="NI" is set at the section
+            # level so the document continues to satisfy CDA
+            # schematron rules that require `SHALL contain at least
+            # one entry` for refinable sections — the narrative
+            # remains the source of clinical information.
+            for entry in section.findall("hl7:entry", namespaces=namespaces):
+                remove_element(entry)
+            section.attrib["nullFlavor"] = "NI"
+
+            if narrative_action == "remove" or narrative_action == "keep_on_match":
+                # "keep_on_match" is the negative branch on no-match
+                replace_narrative_with_removal_notice(section, namespaces)
+                return SectionRunResult(
+                    matches_found=False,
+                    narrative_disposition="removed",
+                )
+
+            if narrative_action == "reconstruct":
+                # NOTE: reconstruct + no matches falls back to
+                # retaining the original narrative rather than
+                # swapping in a removal notice. assumption: when the
+                # jurisdiction asked for reconstruction and we can't
+                # produce one, the original narrative is the most
+                # informative state available — strictly more useful
+                # to a reviewer than the removal placeholder.
+                if original_text is not None:
+                    restore_narrative(section, original_text, namespaces)
+                return SectionRunResult(
+                    matches_found=False,
+                    narrative_disposition="reconstruct_fallback_retained",
+                )
+
+            # "retain": restore the original <text> we saved before
+            # neutralizing it
+            if original_text is not None:
+                restore_narrative(section, original_text, namespaces)
             return SectionRunResult(
                 matches_found=False,
-                # placeholder — the orchestrator short-circuits on
-                # matches_found=False and never reads this field.
                 narrative_disposition="retained",
             )
 
         try:
-            # STEP 1: strip source document comments before matching
-            # so they cannot interfere with candidate gathering.
-            # provenance comments injected after pruning (STEP 3) will
-            # survive because they are added after this cleanup.
-            remove_all_comments(section)
-
-            # STEP 2: CONTEXT FILTERING
-            contextual_matches = _find_condition_relevant_elements(
-                section, codes_to_match, namespaces
-            )
-
-            if not contextual_matches:
-                # refiner policy: when no entries match, stub the
-                # section. this overrides the configured narrative
-                # setting — there's no useful narrative to keep when
-                # there's no clinical content left to describe.
-                # named as REFINED_NO_MATCHES_STUBBED in
-                # refine._interpret_run_result.
-                create_minimal_section(section=section, removal_reason="no_match")
-                return SectionRunResult(
-                    matches_found=False,
-                    # placeholder — the orchestrator short-circuits on
-                    # matches_found=False and never reads this field.
-                    narrative_disposition="retained",
-                )
-
             # STEP 3: PRUNE non-matching entries and inject provenance
             # comments above the surviving ones
             surviving_entries = _preserve_relevant_entries(section, contextual_matches)
@@ -161,7 +200,7 @@ def process(
             # STEP 5: handle narrative <text> reconstruction runs HERE,
             # after STEP 4 enrichment, because it reads displayName off
             # the surviving entries it rebuilds the table from
-            match narrative:
+            match narrative_action:
                 case "remove":
                     replace_narrative_with_removal_notice(section, namespaces)
                     return SectionRunResult(
@@ -169,7 +208,9 @@ def process(
                         narrative_disposition="removed",
                     )
                 case "reconstruct":
-                    reconstructed = reconstruct_narrative(section)
+                    reconstructed = reconstruct_narrative(
+                        section, augmentation_timestamp=augmentation_timestamp
+                    )
                     if reconstructed is not None:
                         replace_narrative_with_reconstruction(
                             section, reconstructed, namespaces
@@ -178,17 +219,25 @@ def process(
                             matches_found=True,
                             narrative_disposition="reconstructed",
                         )
-                    # no registered reconstructor or nothing survived;
-                    # fall back to removal rather than leave a stale
-                    # narrative on a refined section
-                    replace_narrative_with_removal_notice(section, namespaces)
+                    # NOTE: no registered reconstructor (or nothing
+                    # survived to rebuild) — fall back to RETAIN the
+                    # original narrative rather than swap in a
+                    # removal notice. assumption: when the
+                    # jurisdiction asked for reconstruction and we
+                    # can't run it, the original narrative is more
+                    # informative to a reviewer than the removal
+                    # placeholder, even though it may reference
+                    # entries that were pruned.
+                    if original_text is not None:
+                        restore_narrative(section, original_text, namespaces)
                     return SectionRunResult(
                         matches_found=True,
-                        narrative_disposition="removed",
+                        narrative_disposition="reconstruct_fallback_retained",
                     )
                 case _:
-                    # "retain": restore the saved original when present;
-                    # a None original means the source had no <text>
+                    # "retain" or "keep_on_match" (matches found):
+                    # restore the saved original when present; a None
+                    # original means the source had no <text>
                     if original_text is not None:
                         restore_narrative(section, original_text, namespaces)
                     return SectionRunResult(

@@ -269,9 +269,9 @@
                 <externalDocument classCode="DOCCLIN" moodCode="EVN">
                   <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.115"/>
                   <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.3.10"/>
-                  <id extension="db734647-fc99-424c-a864-7e3cda82e704" root="2.16.840.1.113883.9.9.9.9.9"/>
+                  <id root="dca02d8c-8b32-507c-91da-0ce03d64700b" assigningAuthorityName="ecr-refiner"/>
                   <code code="55751-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Public Health Case Report (eICR)"/>
-                  <setId extension="31" root="2.16.840.1.113883.3.117.1.1.5.2.1.1.1"/>
+                  <setId root="d781e627-9a67-5d27-b9aa-8d19b03be0ac" assigningAuthorityName="ecr-refiner"/>
                   <versionNumber value="2"/>
                 </externalDocument>
               </reference>

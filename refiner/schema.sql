@@ -1,7 +1,7 @@
 \restrict dbmate
 
 -- Dumped from database version 18.4
--- Dumped by pg_dump version 18.4
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -89,7 +89,8 @@ CREATE TYPE public.section_action AS ENUM (
 CREATE TYPE public.section_narrative AS ENUM (
     'retain',
     'remove',
-    'reconstruct'
+    'reconstruct',
+    'keep_on_match'
 );
 
 
@@ -151,7 +152,6 @@ CREATE TABLE public.codes (
 CREATE TABLE public.conditions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     canonical_url text NOT NULL,
-    version text NOT NULL,
     display_name text,
     child_rsg_snomed_codes text[],
     loinc_codes jsonb,
@@ -164,6 +164,7 @@ CREATE TABLE public.conditions (
     coverage_level text,
     coverage_level_reason text,
     coverage_level_date date,
+    tes_id uuid NOT NULL,
     CONSTRAINT coverage_level_check CHECK ((((coverage_level IS NULL) AND (coverage_level_reason IS NULL) AND (coverage_level_date IS NULL)) OR ((coverage_level = 'complete'::text) AND (coverage_level_reason IS NULL)) OR ((coverage_level = 'partial'::text) AND (coverage_level_reason IS NOT NULL) AND (coverage_level_date IS NULL))))
 );
 
@@ -345,6 +346,18 @@ CREATE TABLE public.systems (
 
 
 --
+-- Name: tes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    version text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -376,11 +389,11 @@ ALTER TABLE ONLY public.codes
 
 
 --
--- Name: conditions conditions_canonical_url_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions conditions_canonical_url_tes_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.conditions
-    ADD CONSTRAINT conditions_canonical_url_version_key UNIQUE (canonical_url, version);
+    ADD CONSTRAINT conditions_canonical_url_tes_id_key UNIQUE (canonical_url, tes_id);
 
 
 --
@@ -552,6 +565,22 @@ ALTER TABLE ONLY public.systems
 
 
 --
+-- Name: tes tes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tes
+    ADD CONSTRAINT tes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tes tes_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tes
+    ADD CONSTRAINT tes_version_key UNIQUE (version);
+
+
+--
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -674,6 +703,13 @@ CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EAC
 
 
 --
+-- Name: tes update_tes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_tes_updated_at BEFORE UPDATE ON public.tes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: users update_users_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -702,6 +738,14 @@ ALTER TABLE ONLY public.conditions_rsg_codes
 
 ALTER TABLE ONLY public.conditions_rsg_codes
     ADD CONSTRAINT conditions_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions conditions_tes_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions
+    ADD CONSTRAINT conditions_tes_id_fkey FOREIGN KEY (tes_id) REFERENCES public.tes(id);
 
 
 --
@@ -854,4 +898,8 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260604134336'),
     ('20260608203714'),
     ('20260615135704'),
-    ('20260615170607');
+    ('20260615170607'),
+    ('20260625153644'),
+    ('20260625154206'),
+    ('20260630173611'),
+    ('20260701151910');

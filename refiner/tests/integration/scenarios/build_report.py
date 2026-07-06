@@ -186,21 +186,40 @@ CAPABILITY_COVERAGE: list[CapabilityRow] = [
     CapabilityRow(
         title="Narrative reconstruction from surviving entries",
         status="Direct",
-        scenarios=["covid_results_reconstruction"],
+        scenarios=[
+            "covid_results_reconstruction",
+            "problems_reconstruction",
+            "immunizations_reconstruction",
+            "medications_reconstruction",
+        ],
         evidence=(
             "`covid_results_reconstruction` configures the Results section "
             '(LOINC 30954-2) with `narrative="reconstruct"`. After entry '
             "refinement prunes the section to the surviving SARS-CoV-2 result, "
             "the engine rebuilds the section `<text>` from those entries rather "
             "than retaining the stale source narrative. The snapshot pins the "
-            "reconstructed table: a machine-derived `<text>` carrying the result "
-            "row (panel, test, result, interpretation, date) plus the "
-            '"machine-derived, not clinician-attested" provenance marker, and '
-            "the validation layer confirms it stays CDA R2 XSD- and "
-            "schematron-valid. Reconstruction is only reachable on the refine "
-            "path — a retained section never reconstructs — so a regression that "
-            "stopped rebuilding the narrative would surface here as the Results "
-            "`<text>` reverting to the source narrative or a removal notice."
+            "reconstructed shape: a machine-derived `<text>` with a per-organizer "
+            "context table (panel, date, specimen, target site) and a detail "
+            "table (test, outcome, interpretation, date) whose rows carry minted "
+            "xs:IDs the surviving entries are relinked to, plus the "
+            '"machine-derived, not clinician-attested" provenance marker. '
+            "`problems_reconstruction` does the same for the Problems section "
+            "(LOINC 11450-4): a per-concern block carrying concern status + noted "
+            "date as context and the surviving Problem Observations (type, "
+            "problem, date) as detail rows. `immunizations_reconstruction` covers "
+            "the flat case (LOINC 11369-6): a single table, one row per surviving "
+            "substanceAdministration (vaccine, date, status), where the vaccine "
+            "name resolves through the displayName/originalText/translation "
+            "fallback that absorbs CVX/RxNorm sender variance. "
+            "`medications_reconstruction` is the second flat section (LOINC "
+            "29549-3), reusing the same machinery with a different field map "
+            "(medication, dose, duration, route). The validation layer confirms "
+            "all four stay CDA R2 XSD- and schematron-valid. Reconstruction is "
+            "only "
+            "reachable on the refine path — a retained section never reconstructs "
+            "— so a regression that stopped rebuilding the narrative would surface "
+            "here as the section `<text>` reverting to the source narrative or a "
+            "removal notice."
         ),
     ),
 ]

@@ -1,5 +1,6 @@
 from .elements import remove_all_comments
 from .footnote import append_section_provenance_footnote
+from .identifiers import compact_reconstruction_references
 from .reconstruction import reconstruct_narrative
 from .writers import (
     create_minimal_section,
@@ -10,6 +11,7 @@ from .writers import (
 
 __all__ = [
     "append_section_provenance_footnote",
+    "compact_reconstruction_references",
     "create_minimal_section",
     "reconstruct_narrative",
     "remove_all_comments",

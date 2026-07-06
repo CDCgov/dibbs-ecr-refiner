@@ -62,18 +62,18 @@ Behaviors the suite pins that are product capabilities rather than entries on th
 
 | Capability | Status | Scenario(s) |
 |------------|--------|-------------|
-| Narrative reconstruction from surviving entries | **Direct** | [`covid_results_reconstruction`](#covid-results-reconstruction) |
+| Narrative reconstruction from surviving entries | **Direct** | [`covid_results_reconstruction`](#covid-results-reconstruction), [`problems_reconstruction`](#problems-reconstruction), [`immunizations_reconstruction`](#immunizations-reconstruction), [`medications_reconstruction`](#medications-reconstruction) |
 
 ### Evidence per capability
 
 **Narrative reconstruction from surviving entries** (Direct)
 
-`covid_results_reconstruction` configures the Results section (LOINC 30954-2) with `narrative="reconstruct"`. After entry refinement prunes the section to the surviving SARS-CoV-2 result, the engine rebuilds the section `<text>` from those entries rather than retaining the stale source narrative. The snapshot pins the reconstructed table: a machine-derived `<text>` carrying the result row (panel, test, result, interpretation, date) plus the "machine-derived, not clinician-attested" provenance marker, and the validation layer confirms it stays CDA R2 XSD- and schematron-valid. Reconstruction is only reachable on the refine path — a retained section never reconstructs — so a regression that stopped rebuilding the narrative would surface here as the Results `<text>` reverting to the source narrative or a removal notice.
+`covid_results_reconstruction` configures the Results section (LOINC 30954-2) with `narrative="reconstruct"`. After entry refinement prunes the section to the surviving SARS-CoV-2 result, the engine rebuilds the section `<text>` from those entries rather than retaining the stale source narrative. The snapshot pins the reconstructed shape: a machine-derived `<text>` with a per-organizer context table (panel, date, specimen, target site) and a detail table (test, outcome, interpretation, date) whose rows carry minted xs:IDs the surviving entries are relinked to, plus the "machine-derived, not clinician-attested" provenance marker. `problems_reconstruction` does the same for the Problems section (LOINC 11450-4): a per-concern block carrying concern status + noted date as context and the surviving Problem Observations (type, problem, date) as detail rows. `immunizations_reconstruction` covers the flat case (LOINC 11369-6): a single table, one row per surviving substanceAdministration (vaccine, date, status), where the vaccine name resolves through the displayName/originalText/translation fallback that absorbs CVX/RxNorm sender variance. `medications_reconstruction` is the second flat section (LOINC 29549-3), reusing the same machinery with a different field map (medication, dose, duration, route). The validation layer confirms all four stay CDA R2 XSD- and schematron-valid. Reconstruction is only reachable on the refine path — a retained section never reconstructs — so a regression that stopped rebuilding the narrative would surface here as the section `<text>` reverting to the source narrative or a removal notice.
 
 
 ## Scenarios
 
-Total: 9 scenarios across 1 fixture.
+Total: 12 scenarios across 1 fixture.
 
 ### covid_baseline
 
@@ -88,7 +88,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `1` |
 | Configuration resolved | `True` |
-| eICR size reduction | `53%` |
+| eICR size reduction | `56%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -102,7 +102,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -113,7 +113,7 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -135,7 +135,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `5` |
 | Configuration resolved | `True` |
-| eICR size reduction | `53%` |
+| eICR size reduction | `56%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -149,7 +149,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -160,7 +160,7 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -182,7 +182,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `9` |
 | Configuration resolved | `True` |
-| eICR size reduction | `55%` |
+| eICR size reduction | `58%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -196,7 +196,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -207,7 +207,7 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -229,7 +229,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `3` |
 | Configuration resolved | `True` |
-| eICR size reduction | `38%` |
+| eICR size reduction | `42%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -243,7 +243,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 2 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -276,7 +276,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `7` |
 | Configuration resolved | `True` |
-| eICR size reduction | `51%` |
+| eICR size reduction | `54%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -290,7 +290,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -301,7 +301,7 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -323,7 +323,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `8` |
 | Configuration resolved | `True` |
-| eICR size reduction | `49%` |
+| eICR size reduction | `53%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -337,7 +337,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 2 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -370,7 +370,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `4` |
 | Configuration resolved | `True` |
-| eICR size reduction | `44%` |
+| eICR size reduction | `47%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -384,7 +384,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | removed by configuration |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -395,7 +395,7 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | removed by configuration |
 | `29299-5` | Reason for visit Narrative | 0 | removed by configuration |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined; narrative removed |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 22 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -415,7 +415,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `6` |
 | Configuration resolved | `True` |
-| eICR size reduction | `47%` |
+| eICR size reduction | `51%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -429,7 +429,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 2 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 2 | refined or retained |
 | `42346-7` | ? | 2 | refined or retained |
@@ -440,7 +440,7 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
@@ -448,6 +448,53 @@ Total: 9 scenarios across 1 fixture.
 | `83910-0` | Public health Note | 2 | refined or retained |
 
 **Pins Roll-up issues:** #4 (direct)
+
+### immunizations_reconstruction
+
+**Fixture:** `all_sections_covid_influenza`
+
+**Snapshot files:** [trace JSON](snapshots/all_sections_covid_influenza/immunizations_reconstruction/expected_trace.json) · [refined eICR](snapshots/all_sections_covid_influenza/immunizations_reconstruction/expected_eICR.xml) · [refined RR](snapshots/all_sections_covid_influenza/immunizations_reconstruction/expected_RR.xml)
+
+**Refinement summary**
+
+| Field | Value |
+|-------|-------|
+| Outcome | `refined` |
+| Configuration version | `11` |
+| Configuration resolved | `True` |
+| eICR size reduction | `50%` |
+| Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
+| Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
+| Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
+| Original eICR id | `2.16.840.1.113883.9.9.9.9.9` |
+| Original RR id | `329b9b59-c1be-4036-8984-42266155b321` |
+
+**Refined eICR — sections retained**
+
+| LOINC | Section | Entries | Disposition |
+|-------|---------|---------|-------------|
+| `18776-5` | Plan of Treatment | 1 | refined or retained |
+| `46240-8` | History of encounters | 1 | refined or retained |
+| `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
+| `29549-3` | Medications Administered | 1 | refined or retained |
+| `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
+| `42346-7` | ? | 1 | refined or retained |
+| `46241-6` | Hospital Admission             Diagnosis | 1 | refined or retained |
+| `11535-2` | Hospital Discharge Diagnosis | 1 | refined or retained |
+| `10187-3` | REVIEW OF SYSTEMS | 0 | narrative-only |
+| `11450-4` | Problem List | 1 | refined or retained |
+| `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
+| `29299-5` | Reason for visit Narrative | 0 | narrative-only |
+| `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
+| `47519-4` | History of Procedures | 0 | narrative-only |
+| `11369-6` | Hx of Immunization | 2 | refined or retained |
+| `29762-2` | Social History | 1 | refined or retained |
+| `90767-5` | Pregnancy summary Document | 1 | refined or retained |
+| `8716-3` | Vital Signs | 1 | refined or retained |
+| `83910-0` | Public health Note | 2 | refined or retained |
+
+**Pins capabilities:** Narrative reconstruction from surviving entries (direct)
 
 ### influenza_baseline
 
@@ -462,7 +509,7 @@ Total: 9 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `2` |
 | Configuration resolved | `True` |
-| eICR size reduction | `50%` |
+| eICR size reduction | `53%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1` |
 | Augmented eICR id | `48c0d1c3-88a9-5604-8258-95023edd319a` |
 | Augmented RR id | `545424f5-c84a-5e39-bc4a-436e79344df2` |
@@ -476,7 +523,7 @@ Total: 9 scenarios across 1 fixture.
 | `18776-5` | Plan of Treatment | 1 | refined or retained |
 | `46240-8` | History of encounters | 1 | refined or retained |
 | `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
-| `11348-0` | HISTORY OF PAST ILLNESS | 0 | stubbed (no matches) |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
 | `29549-3` | Medications Administered | 1 | refined or retained |
 | `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
 | `42346-7` | ? | 1 | refined or retained |
@@ -487,12 +534,106 @@ Total: 9 scenarios across 1 fixture.
 | `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
 | `29299-5` | Reason for visit Narrative | 0 | narrative-only |
 | `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
-| `47519-4` | History of Procedures | 0 | stubbed (no matches) |
+| `47519-4` | History of Procedures | 0 | narrative-only |
 | `11369-6` | Hx of Immunization | 1 | refined or retained |
 | `29762-2` | Social History | 1 | refined or retained |
 | `90767-5` | Pregnancy summary Document | 1 | refined or retained |
 | `8716-3` | Vital Signs | 1 | refined or retained |
 | `83910-0` | Public health Note | 2 | refined or retained |
+
+### medications_reconstruction
+
+**Fixture:** `all_sections_covid_influenza`
+
+**Snapshot files:** [trace JSON](snapshots/all_sections_covid_influenza/medications_reconstruction/expected_trace.json) · [refined eICR](snapshots/all_sections_covid_influenza/medications_reconstruction/expected_eICR.xml) · [refined RR](snapshots/all_sections_covid_influenza/medications_reconstruction/expected_RR.xml)
+
+**Refinement summary**
+
+| Field | Value |
+|-------|-------|
+| Outcome | `refined` |
+| Configuration version | `12` |
+| Configuration resolved | `True` |
+| eICR size reduction | `51%` |
+| Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
+| Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
+| Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
+| Original eICR id | `2.16.840.1.113883.9.9.9.9.9` |
+| Original RR id | `329b9b59-c1be-4036-8984-42266155b321` |
+
+**Refined eICR — sections retained**
+
+| LOINC | Section | Entries | Disposition |
+|-------|---------|---------|-------------|
+| `18776-5` | Plan of Treatment | 1 | refined or retained |
+| `46240-8` | History of encounters | 1 | refined or retained |
+| `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
+| `29549-3` | Medications Administered | 2 | refined or retained |
+| `10160-0` | HISTORY OF MEDICATION USE | 2 | refined or retained |
+| `42346-7` | ? | 2 | refined or retained |
+| `46241-6` | Hospital Admission             Diagnosis | 1 | refined or retained |
+| `11535-2` | Hospital Discharge Diagnosis | 1 | refined or retained |
+| `10187-3` | REVIEW OF SYSTEMS | 0 | narrative-only |
+| `11450-4` | Problem List | 1 | refined or retained |
+| `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
+| `29299-5` | Reason for visit Narrative | 0 | narrative-only |
+| `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
+| `47519-4` | History of Procedures | 0 | narrative-only |
+| `11369-6` | Hx of Immunization | 1 | refined or retained |
+| `29762-2` | Social History | 1 | refined or retained |
+| `90767-5` | Pregnancy summary Document | 1 | refined or retained |
+| `8716-3` | Vital Signs | 1 | refined or retained |
+| `83910-0` | Public health Note | 2 | refined or retained |
+
+**Pins capabilities:** Narrative reconstruction from surviving entries (direct)
+
+### problems_reconstruction
+
+**Fixture:** `all_sections_covid_influenza`
+
+**Snapshot files:** [trace JSON](snapshots/all_sections_covid_influenza/problems_reconstruction/expected_trace.json) · [refined eICR](snapshots/all_sections_covid_influenza/problems_reconstruction/expected_eICR.xml) · [refined RR](snapshots/all_sections_covid_influenza/problems_reconstruction/expected_RR.xml)
+
+**Refinement summary**
+
+| Field | Value |
+|-------|-------|
+| Outcome | `refined` |
+| Configuration version | `10` |
+| Configuration resolved | `True` |
+| eICR size reduction | `57%` |
+| Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
+| Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
+| Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
+| Original eICR id | `2.16.840.1.113883.9.9.9.9.9` |
+| Original RR id | `329b9b59-c1be-4036-8984-42266155b321` |
+
+**Refined eICR — sections retained**
+
+| LOINC | Section | Entries | Disposition |
+|-------|---------|---------|-------------|
+| `18776-5` | Plan of Treatment | 1 | refined or retained |
+| `46240-8` | History of encounters | 1 | refined or retained |
+| `10164-2` | HISTORY OF PRESENT ILLNESS | 0 | narrative-only |
+| `11348-0` | HISTORY OF PAST ILLNESS | 0 | narrative-only |
+| `29549-3` | Medications Administered | 1 | refined or retained |
+| `10160-0` | HISTORY OF MEDICATION USE | 1 | refined or retained |
+| `42346-7` | ? | 1 | refined or retained |
+| `46241-6` | Hospital Admission             Diagnosis | 1 | refined or retained |
+| `11535-2` | Hospital Discharge Diagnosis | 1 | refined or retained |
+| `10187-3` | REVIEW OF SYSTEMS | 0 | narrative-only |
+| `11450-4` | Problem List | 1 | refined or retained |
+| `10154-3` | Chief complaint Narrative - Reported | 0 | narrative-only |
+| `29299-5` | Reason for visit Narrative | 0 | narrative-only |
+| `30954-2` | Relevant diagnostic tests and/or laboratory data | 1 | refined or retained |
+| `47519-4` | History of Procedures | 0 | narrative-only |
+| `11369-6` | Hx of Immunization | 1 | refined or retained |
+| `29762-2` | Social History | 1 | refined or retained |
+| `90767-5` | Pregnancy summary Document | 1 | refined or retained |
+| `8716-3` | Vital Signs | 1 | refined or retained |
+| `83910-0` | Public health Note | 2 | refined or retained |
+
+**Pins capabilities:** Narrative reconstruction from surviving entries (direct)
 
 
 ## Appendix — running the suite
