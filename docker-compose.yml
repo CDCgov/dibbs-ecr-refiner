@@ -74,7 +74,7 @@ services:
       - ./keycloak/exports:/opt/keycloak/data/import
 
   localstack:
-    image: localstack/localstack:4
+    image: localstack/localstack:2026.6.1
     ports:
       - "4566:4566"
     environment:
