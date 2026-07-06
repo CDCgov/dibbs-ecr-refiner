@@ -38,6 +38,7 @@ def process(
     codes_to_match: set[str],
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
+    augmentation_timestamp: str = "",
     code_system_sets: CodeSystemSets | None = None,
     narrative_action: DbNarrativeAction = "retain",
 ) -> SectionRunResult:
@@ -207,7 +208,9 @@ def process(
                         narrative_disposition="removed",
                     )
                 case "reconstruct":
-                    reconstructed = reconstruct_narrative(section)
+                    reconstructed = reconstruct_narrative(
+                        section, augmentation_timestamp=augmentation_timestamp
+                    )
                     if reconstructed is not None:
                         replace_narrative_with_reconstruction(
                             section, reconstructed, namespaces

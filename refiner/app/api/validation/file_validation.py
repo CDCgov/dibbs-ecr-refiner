@@ -15,6 +15,7 @@ from app.core.exceptions import (
 from app.core.models.types import XMLFiles
 from app.services import file_io
 from app.services.ecr.model import RefinedDocument
+from app.services.ecr.narrative import compact_reconstruction_references
 from app.services.format import format_xml_document_for_display
 from app.services.sample_file import create_sample_zip_file
 
@@ -45,9 +46,16 @@ def format_refined_document_or_raise(doc: RefinedDocument) -> RefinedDocument:
     Raises:
         422 if `refined_eicr` or `refined_rr` are not valid XML documents
     """
+    # * pretty-printing indents the minted entry→narrative reference
+    # pointers into mixed content with stray whitespace; restore the
+    # compact <text><reference/></text> form (only the eICR carries them).
+    # paired with formatting here, at the display boundary, so the
+    # unformatted Lambda output is left untouched
     return replace(
         doc,
-        refined_eicr=format_xml_document_for_display_or_raise(doc.refined_eicr),
+        refined_eicr=compact_reconstruction_references(
+            format_xml_document_for_display_or_raise(doc.refined_eicr)
+        ),
         refined_rr=format_xml_document_for_display_or_raise(doc.refined_rr),
     )
 
