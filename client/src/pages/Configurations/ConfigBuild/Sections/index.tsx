@@ -172,9 +172,9 @@ export function Sections({
                       setSelectedSection={() => onSelectedSection(section)}
                     />
                   </td>
-                  <td className="pr-8">
+                  <td className="flex h-21 justify-end pr-8">
                     {section.include ? (
-                      <div className="flex flex-row items-center justify-end">
+                      <div className="flex flex-col items-end justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
                             className="text-gray-cool-50 whitespace-nowrap italic"
@@ -386,7 +386,9 @@ function RefineSwitch({
   const refineLabelText = 'Refine';
   const preserveLabelText = 'Keep original';
 
-  const handleSwitchChange = (checked: boolean) => {
+  const [toggled, setToggled] = useState(isRefineToggled);
+
+  const handleSwitchChange = async (checked: boolean) => {
     // TODO: This validation should eventually be enforced by backend API as well
     if (
       !checked &&
@@ -394,44 +396,53 @@ function RefineSwitch({
         currentSection.narrative === 'keep_on_match')
     ) {
       setError(currentSection.code);
+      setToggled(false);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setToggled(true);
       return;
     }
     clearError();
     updateSection(currentSection, {
       action: checked ? DbSectionAction.refine : DbSectionAction.retain,
     });
+    setToggled((prev) => !prev);
   };
 
   const showError = errorSectionCode === currentSection.code;
 
   return (
-    <div className="flex flex-col items-end gap-1" data-error-trigger>
-      <Field className="flex flex-row items-center justify-end">
-        <Label
-          aria-label={
-            isRefineToggled
-              ? // "Refine Admission Diagnosis section"
-                `${refineLabelText} ${currentSection.name} section`
-              : // "Keep original for Admission Diagnosis section"
-                `${preserveLabelText} for ${currentSection.name} section`
-          }
-        >
-          {isRefineToggled ? (
-            <span>{refineLabelText}</span>
-          ) : (
-            <span className="italic">{preserveLabelText}</span>
-          )}
-        </Label>
-        <Switch
-          disabled={disabled}
-          checked={isRefineToggled}
-          onChange={handleSwitchChange}
-        />
-      </Field>
+    <div
+      className="grid grid-cols-1 grid-rows-1 place-items-end"
+      data-error-trigger
+    >
+      <div className="z-5 col-start-1 row-start-1">
+        <Field className="flex flex-row items-center justify-end">
+          <Label
+            aria-label={
+              isRefineToggled
+                ? // "Refine Admission Diagnosis section"
+                  `${refineLabelText} ${currentSection.name} section`
+                : // "Keep original for Admission Diagnosis section"
+                  `${preserveLabelText} for ${currentSection.name} section`
+            }
+          >
+            {isRefineToggled ? (
+              <span>{refineLabelText}</span>
+            ) : (
+              <span className="italic">{preserveLabelText}</span>
+            )}
+          </Label>
+          <Switch
+            disabled={disabled}
+            checked={toggled}
+            onChange={handleSwitchChange}
+          />
+        </Field>
+      </div>
       {/* TODO: Awaiting Design/PRD feedback on exact error messages per narrative type */}
       {showError && (
         <p
-          className="text-state-error-dark text-xs whitespace-nowrap"
+          className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"
           role="alert"
         >
           {currentSection.narrative === 'reconstruct'
