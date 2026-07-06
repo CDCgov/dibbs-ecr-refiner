@@ -15,6 +15,7 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
         created_at,
         updated_at
     FROM tes
+    ORDER BY version
     """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTes)) as cur:
