@@ -382,11 +382,12 @@ function RefineSwitch({
   const updateSection = useSectionUpdater(configurationId);
   const { clearError, setError, errorSectionCode } = useSectionError();
 
-  const isRefineToggled = currentSection.action === DbSectionAction.refine;
+  const curSectionSetToRefine =
+    currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine';
   const preserveLabelText = 'Keep original';
 
-  const [toggled, setToggled] = useState(isRefineToggled);
+  const [toggled, setToggled] = useState(curSectionSetToRefine);
 
   const handleSwitchChange = async () => {
     // TODO: This validation should eventually be enforced by backend API as well
@@ -418,14 +419,14 @@ function RefineSwitch({
         <Field className="flex flex-row items-center justify-end">
           <Label
             aria-label={
-              isRefineToggled
+              curSectionSetToRefine
                 ? // "Refine Admission Diagnosis section"
                   `${refineLabelText} ${currentSection.name} section`
                 : // "Keep original for Admission Diagnosis section"
                   `${preserveLabelText} for ${currentSection.name} section`
             }
           >
-            {isRefineToggled ? (
+            {curSectionSetToRefine ? (
               <span>{refineLabelText}</span>
             ) : (
               <span className="italic">{preserveLabelText}</span>
