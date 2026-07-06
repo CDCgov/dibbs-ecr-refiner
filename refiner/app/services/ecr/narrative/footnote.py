@@ -31,9 +31,9 @@ from .elements import _ensure_text_element, _sub_element
 # the footnote's data row carries both the configured action ("what
 # the jurisdiction asked for") and the runtime outcome ("what the
 # refiner actually did"). the two columns let a reader see at a glance
-# whether a refiner policy override fired — most rows show the outcome
-# confirming the configuration, but the no-match policy override
-# produces an outcome that diverges from the configured action
+# how the section was handled — most rows show the outcome confirming
+# the configuration, with the no-match variants documenting what was
+# done when matching produced nothing
 
 
 def _build_footnote_id(

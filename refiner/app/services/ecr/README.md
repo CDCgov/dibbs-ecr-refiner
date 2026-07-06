@@ -55,7 +55,19 @@ Refinement attaches an unanchored `<footnote>` to every section in the refined e
 - **where the configuration came from** — explicitly configured by the jurisdiction, held by a system rule, or unconfigured (fell back to retain)
 - **what the refiner actually did** — refined with matches, refined with the narrative removed, retained as-is, removed by configuration, or refined-but-no-matches-found
 
-The "what was configured" and "what actually happened" columns usually agree, but they can diverge. The most common divergence is the no-match case: a jurisdiction configures a section for refinement, the matching step finds nothing in the section that matches the configured codes, and the refiner stubs the section rather than preserving an orphaned narrative. The footnote makes that decision visible — a reviewer sees "Action: refine, Outcome: Refined; no matches found" in the same row and doesn't have to wonder why a refine-configured section came out empty.
+The "what was configured" and "what actually happened" columns usually agree.
+They diverge most often in the no-match case: a jurisdiction configures a
+section for refinement, the matching step finds nothing in the section that
+matches the configured codes, and the engine prunes all entries. What happens to
+the narrative is then driven by the jurisdiction's narrative setting — "retain"
+leaves the original narrative intact (`Outcome: Refined; no matches found,
+narrative retained`), while "remove" and "keep_on_match" both replace it with
+the removal notice (`Outcome: Refined; no matches found, narrative removed`).
+"reconstruct" falls back to retaining the original narrative when the engine
+can't rebuild — either no entries survived to build from, or the section has no
+registered reconstructor (`Outcome: Refined; reconstruction unavailable,
+original narrative retained`). The footnote makes that decision visible in the
+same row as the configured action.
 
 The footnote ID is built from the section's LOINC code and the augmentation timestamp (`ecr-refiner-{loinc}-{timestamp}`), so every footnote in a refinement run is structurally tied to the augmentation author's `<time>` value. A consumer can verify document integrity by checking that all footnote IDs in a document carry the same timestamp the augmentation header advertises.
 
@@ -79,7 +91,12 @@ The user-facing labels for the configuration source and the runtime outcome live
 
 **Callers are insulated.** `testing.py` and `lambda_function.py` pass `XMLFiles` into the pipeline and get strings back. They don't know about `lxml`, element trees, or augmentation contexts. The pipeline's public API didn't change when augmentation was added, and it didn't change when per-section provenance was added.
 
-**Engines report facts; the orchestrator interprets them.** The matching engines return a small `SectionRunResult` describing what they did (matches found or not, what happened to the narrative). `refine.py` maps that structural result to a user-facing `SectionOutcome` for the provenance footnote. This split keeps the matching code focused on structural concerns and puts policy decisions (like "stub the section when nothing matches") in one place where they can be audited and changed without touching the engines.
+**Engines report facts; the orchestrator interprets them.** The matching engines
+return a small `SectionRunResult` describing what they did (matches found or
+not, what happened to the narrative). `refine.py` maps that structural result to
+a user-facing `SectionOutcome` for the provenance footnote. This split keeps the
+matching code focused on structural concerns and the outcome-naming logic in one
+place where it can be audited and changed without touching the engines.
 
 **Namespace standardization.** All modules use `hl7:` as the XPath prefix for `urn:hl7-org:v3`. The namespace map is defined once in `model.py` and imported everywhere. The CDA literature uses both `hl7:` and `cda:` interchangeably (per Keith Boone's _The CDA Book_, §4.2); having one convention across the codebase prevents silent bugs from mismatched prefix/map pairs.
 
