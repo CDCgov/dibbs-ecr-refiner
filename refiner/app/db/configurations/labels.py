@@ -28,9 +28,9 @@ KeepOnMatch = Literal["Keep on match"]
 
 RETAIN = get_args(Retain)[0]
 REFINE = get_args(Refine)[0]
-KEEP_ON_MATCH = get_args(Remove)[0]
+KEEP_ON_MATCH = get_args(KeepOnMatch)[0]
 RECONSTRUCT = get_args(Reconstruct)[0]
-REMOVE = get_args(KeepOnMatch)[0]
+REMOVE = get_args(Remove)[0]
 
 
 @dataclass
