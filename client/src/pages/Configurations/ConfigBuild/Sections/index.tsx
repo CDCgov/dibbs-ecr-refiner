@@ -388,12 +388,11 @@ function RefineSwitch({
 
   const [toggled, setToggled] = useState(isRefineToggled);
 
-  const handleSwitchChange = async (checked: boolean) => {
+  const handleSwitchChange = async () => {
     // TODO: This validation should eventually be enforced by backend API as well
     if (
-      !checked &&
-      (currentSection.narrative === 'reconstruct' ||
-        currentSection.narrative === 'keep_on_match')
+      currentSection.narrative === 'reconstruct' ||
+      currentSection.narrative === 'keep_on_match'
     ) {
       setError(currentSection.code);
       setToggled(false);
@@ -403,7 +402,7 @@ function RefineSwitch({
     }
     clearError();
     updateSection(currentSection, {
-      action: checked ? DbSectionAction.refine : DbSectionAction.retain,
+      action: toggled ? DbSectionAction.retain : DbSectionAction.refine,
     });
     setToggled((prev) => !prev);
   };
