@@ -2,15 +2,27 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.model import HL7_NS
+from app.services.ecr.narrative.identifiers import compact_reconstruction_references
 from app.services.ecr.narrative.reconstruction import (
     RESULT_FIELDS,
+    Block,
+    DetailRow,
     FieldSpec,
-    build_table,
     extract_fields,
+    format_ts,
+    reconstruct_immunizations,
+    reconstruct_medications,
     reconstruct_narrative,
+    reconstruct_problems,
     reconstruct_results,
+    render_code_display,
+    render_coded_concept,
+    render_section_text,
     render_typed_value,
 )
+
+# a fixed run stamp so minted row IDs are deterministic in assertions
+_RUN_TS = "20240101000000+0000"
 
 # NOTE:
 # HELPERS
@@ -33,18 +45,24 @@ def test_render_none_is_empty():
     assert render_typed_value(None) == ""
 
 
-def test_render_cd_with_xsi_type():
-    el = _el(f'<value {_NSDECL} xsi:type="CD" code="112283007" displayName="E. coli"/>')
-    assert render_typed_value(el) == "E. coli (112283007)"
+def test_render_cd_with_xsi_type_surfaces_system_and_code():
+    # a CD value is a clinical concept: display (System code), system from OID
+    el = _el(
+        f'<value {_NSDECL} xsi:type="CD" code="112283007" '
+        'codeSystem="2.16.840.1.113883.6.96" displayName="E. coli"/>'
+    )
+    assert render_typed_value(el) == "E. coli (SNOMED CT 112283007)"
 
 
 def test_render_cd_without_xsi_type_is_monomorphic_coded():
-    # interpretationCode carries @code with no xsi:type — still coded
+    # any @code-bearing element routes through the concept renderer; the
+    # admin/clinical distinction is made at the field-map kind, not here
     el = _el(f'<interpretationCode {_NSDECL} code="A" displayName="Abnormal"/>')
     assert render_typed_value(el) == "Abnormal (A)"
 
 
-def test_render_cd_code_only_falls_back_to_code():
+def test_render_cd_code_only_has_no_redundant_parens():
+    # no human display beyond the code → just the code, not "A (A)"
     el = _el(f'<value {_NSDECL} xsi:type="CD" code="A"/>')
     assert render_typed_value(el) == "A"
 
@@ -70,12 +88,21 @@ def test_render_ivl_ts_low_and_high():
         f'<effectiveTime {_NSDECL} xsi:type="IVL_TS">'
         '<low value="20240115"/><high value="20240122"/></effectiveTime>'
     )
-    assert render_typed_value(el) == "20240115 to 20240122"
+    assert render_typed_value(el) == "2024-01-15 to 2024-01-22"
+
+
+def test_render_ivl_ts_equal_bounds_collapse_to_single_value():
+    # an EHR renders a low==high panel time as one timestamp, not "X to X"
+    el = _el(
+        f'<effectiveTime {_NSDECL} xsi:type="IVL_TS">'
+        '<low value="20240115"/><high value="20240115"/></effectiveTime>'
+    )
+    assert render_typed_value(el) == "2024-01-15"
 
 
 def test_render_ivl_ts_low_only():
     el = _el(f'<effectiveTime {_NSDECL}><low value="20240115"/></effectiveTime>')
-    assert render_typed_value(el) == "20240115"
+    assert render_typed_value(el) == "2024-01-15"
 
 
 def test_render_pivl_ts_frequency():
@@ -88,7 +115,172 @@ def test_render_pivl_ts_frequency():
 
 def test_render_bare_value():
     el = _el(f'<effectiveTime {_NSDECL} value="20240115"/>')
-    assert render_typed_value(el) == "20240115"
+    assert render_typed_value(el) == "2024-01-15"
+
+
+# NOTE:
+# LAYER 1 — format_ts (human-readable HL7 TS, source precision preserved)
+# =============================================================================
+
+
+def test_format_ts_year_only():
+    assert format_ts("2020") == "2020"
+
+
+def test_format_ts_year_month():
+    assert format_ts("202011") == "2020-11"
+
+
+def test_format_ts_date():
+    assert format_ts("20201107") == "2020-11-07"
+
+
+def test_format_ts_datetime_minutes():
+    assert format_ts("202011071159") == "2020-11-07 11:59"
+
+
+def test_format_ts_datetime_seconds():
+    assert format_ts("20201107115930") == "2020-11-07 11:59:30"
+
+
+def test_format_ts_with_offset():
+    assert format_ts("202011071159-0700") == "2020-11-07 11:59 -07:00"
+
+
+def test_format_ts_date_with_offset_keeps_precision():
+    # no fabricated time components when only the date is present
+    assert format_ts("20201107+0000") == "2020-11-07 +00:00"
+
+
+def test_format_ts_empty_and_none():
+    assert format_ts("") == ""
+    assert format_ts(None) == ""
+
+
+def test_format_ts_non_ts_passes_through():
+    # not a TS (e.g. a nullFlavor token slipping in) → unchanged
+    assert format_ts("UNK") == "UNK"
+
+
+# NOTE:
+# LAYER 1 — render_code_display (the real-data display-name fallback chain)
+# =============================================================================
+
+
+def test_code_display_none_is_empty():
+    assert render_code_display(None) == ""
+
+
+def test_code_display_prefers_display_name_attr():
+    el = _el(f'<code {_NSDECL} code="60544-4" displayName="Giardia lamblia, NAAT"/>')
+    assert render_code_display(el) == "Giardia lamblia, NAAT"
+
+
+def test_code_display_falls_back_to_original_text():
+    # real epic (EHR) shape: no @displayName, label in <originalText> wrapping a
+    # <reference> into the narrative; whitespace is normalized
+    el = _el(
+        f'<code {_NSDECL} code="79381-0">'
+        "<originalText>Stool Pathogens,\n   NAAT, Parasite"
+        '<reference value="#Result.Comp1Name"/></originalText>'
+        "</code>"
+    )
+    assert render_code_display(el) == "Stool Pathogens, NAAT, Parasite"
+
+
+def test_code_display_falls_back_to_translation_display_name():
+    el = _el(
+        f'<code {_NSDECL} code="79381-0">'
+        '<translation code="LAB24189" displayName="STOOL PATHOGENS, NAAT, PARASITE"/>'
+        "</code>"
+    )
+    assert render_code_display(el) == "STOOL PATHOGENS, NAAT, PARASITE"
+
+
+def test_code_display_falls_back_to_bare_code():
+    el = _el(f'<code {_NSDECL} code="79381-0"/>')
+    assert render_code_display(el) == "79381-0"
+
+
+def test_code_display_nullflavor_primary_resolves_translation_display():
+    # fickle immunization: nullFlavor primary CVX, real vaccine in translation
+    el = _el(
+        f'<code {_NSDECL} nullFlavor="OTH">'
+        '<translation code="207" codeSystem="2.16.840.1.113883.12.292" '
+        'displayName="COVID-19 mRNA vaccine"/>'
+        "</code>"
+    )
+    assert render_code_display(el) == "COVID-19 mRNA vaccine"
+
+
+def test_code_display_nullflavor_primary_falls_back_to_translation_code():
+    # translation carries a code but no displayName — better than blank
+    el = _el(
+        f'<code {_NSDECL} nullFlavor="OTH">'
+        '<translation code="207" codeSystem="2.16.840.1.113883.12.292"/>'
+        "</code>"
+    )
+    assert render_code_display(el) == "207"
+
+
+def test_render_typed_cd_resolves_through_original_text():
+    # a CD value with no @displayName resolves its display via originalText,
+    # then still surfaces the system + code
+    el = _el(
+        f'<value {_NSDECL} xsi:type="CD" code="35064005" '
+        'codeSystem="2.16.840.1.113883.6.96">'
+        "<originalText>Dark stools (finding)</originalText>"
+        "</value>"
+    )
+    assert render_typed_value(el) == "Dark stools (finding) (SNOMED CT 35064005)"
+
+
+# NOTE:
+# LAYER 1 — render_coded_concept (display + system + code for clinical concepts)
+# =============================================================================
+
+
+def test_coded_concept_code_with_known_system():
+    el = _el(
+        f'<code {_NSDECL} code="105066-5" codeSystem="2.16.840.1.113883.6.1" '
+        'displayName="SARS-CoV-2 Ag"/>'
+    )
+    assert render_coded_concept(el) == "SARS-CoV-2 Ag (LOINC 105066-5)"
+
+
+def test_coded_concept_oid_only_resolves_via_oid_not_codesystemname():
+    # source carries the OID but NO codeSystemName (or a variant spelling);
+    # the system name still resolves canonically from the OID
+    el = _el(
+        f'<value {_NSDECL} xsi:type="CD" code="1119303003" '
+        'codeSystem="2.16.840.1.113883.6.96" '
+        'displayName="Post-acute COVID-19 (disorder)"/>'
+    )
+    assert (
+        render_coded_concept(el)
+        == "Post-acute COVID-19 (disorder) (SNOMED CT 1119303003)"
+    )
+
+
+def test_coded_concept_unknown_system_omits_system_label():
+    el = _el(f'<code {_NSDECL} code="XYZ" codeSystem="9.9.9" displayName="Mystery"/>')
+    assert render_coded_concept(el) == "Mystery (XYZ)"
+
+
+def test_coded_concept_nullflavor_code_is_display_only():
+    # nullFlavor primary, real product in a translation → display only, no parens
+    el = _el(
+        f'<code {_NSDECL} nullFlavor="OTH">'
+        '<translation code="207" codeSystem="2.16.840.1.113883.12.292" '
+        'displayName="COVID-19 mRNA vaccine"/>'
+        "</code>"
+    )
+    assert render_coded_concept(el) == "COVID-19 mRNA vaccine"
+
+
+def test_coded_concept_display_only_when_no_code():
+    el = _el(f'<code {_NSDECL} displayName="Blood specimen"/>')
+    assert render_coded_concept(el) == "Blood specimen"
 
 
 # NOTE:
@@ -116,14 +308,24 @@ def test_extract_fields_attr_typed_and_missing():
 
 
 # NOTE:
-# LAYER 1 — build_table
+# LAYER 1 — render_section_text (block assembler: tables, IDs, relinking)
 # =============================================================================
 
 
-def test_build_table_structure_and_provenance_marker():
-    text = build_table(["A", "B"], [{"A": "1", "B": "2"}, {"A": "3", "B": ""}])
+def _obs(test: str) -> _Element:
+    return _el(f'<observation {_NSDECL}><code displayName="{test}"/></observation>')
 
-    # namespace-qualified <text>
+
+def test_render_section_text_block_structure_and_provenance_marker():
+    obs = _obs("Hemoglobin")
+    block = Block(
+        context={"Panel": "CBC", "Date(s)": "20240115"},
+        columns=["Test", "Outcome"],
+        rows=[DetailRow(source=obs, values={"Test": "Hemoglobin", "Outcome": "9.2"})],
+    )
+
+    text = render_section_text([block], loinc="30954-2", augmentation_timestamp=_RUN_TS)
+
     assert text.tag == "{urn:hl7-org:v3}text"
 
     # block-level machine-derived marker as an XML comment with no double dash
@@ -132,17 +334,43 @@ def test_build_table_structure_and_provenance_marker():
     assert "machine-derived" in comments[0].text
     assert "--" not in comments[0].text
 
-    headers = text.xpath(".//hl7:thead/hl7:tr/hl7:th/text()", namespaces=HL7_NS)
-    assert headers == ["A", "B"]
+    # two tables per block: a one-row context table, then the detail table
+    tables = text.xpath("hl7:table", namespaces=HL7_NS)
+    assert len(tables) == 2
 
-    body_rows = text.xpath(".//hl7:tbody/hl7:tr", namespaces=HL7_NS)
-    assert len(body_rows) == 2
-    first_cells = body_rows[0].xpath("hl7:td/text()", namespaces=HL7_NS)
-    assert first_cells == ["1", "2"]
+    context_headers = tables[0].xpath(".//hl7:th/text()", namespaces=HL7_NS)
+    assert context_headers == ["Panel", "Date(s)"]
+    context_cells = tables[0].xpath(
+        ".//hl7:tbody/hl7:tr/hl7:td/text()", namespaces=HL7_NS
+    )
+    assert context_cells == ["CBC", "20240115"]
+
+    detail_headers = tables[1].xpath(".//hl7:th/text()", namespaces=HL7_NS)
+    assert detail_headers == ["Test", "Outcome"]
+
+
+def test_render_section_text_mints_ids_and_relinks_source():
+    obs = _obs("Hemoglobin")
+    block = Block(
+        context={},
+        columns=["Test"],
+        rows=[DetailRow(source=obs, values={"Test": "Hemoglobin"})],
+    )
+
+    text = render_section_text([block], loinc="30954-2", augmentation_timestamp=_RUN_TS)
+
+    # the detail row carries a minted, run-stamped, document-unique xs:ID
+    row = text.xpath(".//hl7:tbody/hl7:tr", namespaces=HL7_NS)[0]
+    row_id = row.get("ID")
+    assert row_id == "ecr-refiner-30954-2-20240101000000-row1"
+
+    # and the source observation is relinked to that row
+    ref = obs.xpath("hl7:text/hl7:reference/@value", namespaces=HL7_NS)
+    assert ref == [f"#{row_id}"]
 
 
 # NOTE:
-# LAYER 3 — reconstruct_results (the join)
+# LAYER 3 — reconstruct_results (per-organizer blocks)
 # =============================================================================
 
 # two organizers; the first holds TWO result observations so the panel and
@@ -155,7 +383,7 @@ _RESULTS_SECTION = f"""
   <text>...original clinician narrative...</text>
   <entry>
     <organizer classCode="BATTERY" moodCode="EVN">
-      <code displayName="CBC panel"/>
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
       <component>
         <procedure classCode="PROC" moodCode="EVN">
           <participant typeCode="SBJ"><participantRole><playingEntity>
@@ -175,7 +403,8 @@ _RESULTS_SECTION = f"""
         <observation classCode="OBS" moodCode="EVN">
           <code displayName="Bacteria identified"/>
           <effectiveTime value="20240115"/>
-          <value xsi:type="CD" code="112283007" displayName="E. coli"/>
+          <value xsi:type="CD" code="112283007"
+                 codeSystem="2.16.840.1.113883.6.96" displayName="E. coli"/>
         </observation>
       </component>
     </organizer>
@@ -196,34 +425,261 @@ _RESULTS_SECTION = f"""
 """
 
 
-def test_reconstruct_results_columns():
-    columns, _ = reconstruct_results(_el(_RESULTS_SECTION))
-    assert columns == ["Panel", "Specimen", "Test", "Result", "Interpretation", "Date"]
+def test_reconstruct_results_one_block_per_organizer():
+    blocks = reconstruct_results(_el(_RESULTS_SECTION))
+
+    # one block per organizer with surviving observations
+    assert len(blocks) == 2
+    assert blocks[0].columns == ["Test", "Outcome", "Interpretation", "Date(s)"]
 
 
-def test_reconstruct_results_fans_context_across_rows_without_bleed():
-    _, rows = reconstruct_results(_el(_RESULTS_SECTION))
+def test_reconstruct_results_context_is_per_block_not_repeated_on_rows():
+    blocks = reconstruct_results(_el(_RESULTS_SECTION))
 
-    assert len(rows) == 3
-
-    # both rows of the first organizer share its panel + specimen context
-    assert rows[0] == {
-        "Panel": "CBC panel",
+    # the first organizer's context carries panel + specimen, once. Panel
+    # surfaces system + code; Specimen has no @code so it stays display-only
+    assert blocks[0].context == {
+        "Panel": "CBC panel (LOINC 58410-2)",
+        "Date(s)": "",  # no organizer effectiveTime in the fixture
         "Specimen": "Blood specimen",
-        "Test": "Hemoglobin",
-        "Result": "9.2 g/dL",
-        "Interpretation": "Low (L)",
-        "Date": "20240115",
+        "Target Site": "",
     }
-    assert rows[1]["Panel"] == "CBC panel"
-    assert rows[1]["Specimen"] == "Blood specimen"
-    assert rows[1]["Result"] == "E. coli (112283007)"
-    assert rows[1]["Interpretation"] == ""  # no interpretationCode on this obs
+    # its two result rows are the detail, with NO context smeared in
+    assert len(blocks[0].rows) == 2
+    assert blocks[0].rows[0].values == {
+        "Test": "Hemoglobin",  # no @code in the fixture → display-only
+        "Outcome": "9.2 g/dL",
+        "Interpretation": "Low",
+        "Date(s)": "2024-01-15",
+    }
+    # the CD result value surfaces its system + code
+    assert blocks[0].rows[1].values["Outcome"] == "E. coli (SNOMED CT 112283007)"
+    assert blocks[0].rows[1].values["Interpretation"] == ""
 
-    # the second organizer's row does NOT inherit the first's context
-    assert rows[2]["Panel"] == "Glucose panel"
-    assert rows[2]["Specimen"] == ""  # no procedure in this organizer
-    assert rows[2]["Result"] == "105 mg/dL"
+    # the second organizer is its own block; no bleed from the first
+    assert blocks[1].context["Panel"] == "Glucose panel"
+    assert blocks[1].context["Specimen"] == ""  # no procedure in this organizer
+    assert blocks[1].rows[0].values["Outcome"] == "105 mg/dL"
+
+
+# NOTE:
+# LAYER 3 — reconstruct_problems (concern act -> problem observations)
+# =============================================================================
+
+# one concern act holding two problem observations; the second problem has a
+# resolved date (low+high) and resolves its display via originalText
+_PROBLEMS_SECTION = f"""
+<section {_NSDECL}>
+  <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+  <title>Problems</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+      <statusCode code="active"/>
+      <effectiveTime><low value="20251107"/></effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          <code code="75325-1" displayName="Symptom"/>
+          <effectiveTime><low value="20251101"/></effectiveTime>
+          <value xsi:type="CD" code="35064005"
+                 codeSystem="2.16.840.1.113883.6.96" displayName="Dark stools (finding)"/>
+        </observation>
+      </entryRelationship>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          <code code="75322-8" displayName="Complaint"/>
+          <effectiveTime><low value="20251104"/><high value="20251110"/></effectiveTime>
+          <value xsi:type="CD" code="409586006"
+                 codeSystem="2.16.840.1.113883.6.96">
+            <originalText>Paroxysmal cough (finding)</originalText>
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+</section>
+"""
+
+
+def test_reconstruct_problems_one_block_per_concern():
+    blocks = reconstruct_problems(_el(_PROBLEMS_SECTION))
+    assert len(blocks) == 1
+    assert blocks[0].columns == ["Problem Type", "Problem", "Date(s)"]
+
+
+def test_reconstruct_problems_concern_context_and_problem_rows():
+    blocks = reconstruct_problems(_el(_PROBLEMS_SECTION))
+
+    # concern context: status + noted date, rendered once
+    assert blocks[0].context == {"Concern Status": "active", "Date(s)": "2025-11-07"}
+
+    # the two problem observations are the detail rows
+    assert len(blocks[0].rows) == 2
+    # Problem Type (assertion code) is display-only; the Problem surfaces system
+    assert blocks[0].rows[0].values == {
+        "Problem Type": "Symptom",
+        "Problem": "Dark stools (finding) (SNOMED CT 35064005)",
+        "Date(s)": "2025-11-01",
+    }
+    # second problem: display via originalText, resolved range (low to high)
+    assert blocks[0].rows[1].values == {
+        "Problem Type": "Complaint",
+        "Problem": "Paroxysmal cough (finding) (SNOMED CT 409586006)",
+        "Date(s)": "2025-11-04 to 2025-11-10",
+    }
+
+
+# NOTE:
+# LAYER 3 — reconstruct_immunizations (FLAT: one row per substanceAdministration)
+# =============================================================================
+
+# two vaccines: the first resolves its display directly; the second is the
+# fickle case — nullFlavor primary CVX with the real vaccine in a translation
+_IMMUNIZATIONS_SECTION = f"""
+<section {_NSDECL}>
+  <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="Immunizations"/>
+  <title>Immunizations</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+      <id root="00000000-0000-0000-0000-000000000001"/>
+      <statusCode code="completed"/>
+      <effectiveTime value="20201107"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code code="2563008" codeSystem="2.16.840.1.113883.6.88"
+                  displayName="Flucelvax Quadrivalent"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+      <id root="00000000-0000-0000-0000-000000000002"/>
+      <statusCode code="completed"/>
+      <effectiveTime value="20201201"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code nullFlavor="OTH">
+              <translation code="207" codeSystem="2.16.840.1.113883.12.292"
+                           displayName="COVID-19 mRNA vaccine"/>
+            </code>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>
+"""
+
+
+def test_reconstruct_immunizations_is_flat_single_block():
+    blocks = reconstruct_immunizations(_el(_IMMUNIZATIONS_SECTION))
+
+    # flat: exactly one block, empty context, one row per substanceAdministration
+    assert len(blocks) == 1
+    assert blocks[0].context == {}
+    assert blocks[0].columns == ["Immunization", "Date", "Status"]
+    assert len(blocks[0].rows) == 2
+
+
+def test_reconstruct_immunizations_resolves_vaccine_including_translation():
+    blocks = reconstruct_immunizations(_el(_IMMUNIZATIONS_SECTION))
+    rows = blocks[0].rows
+
+    assert rows[0].values == {
+        "Immunization": "Flucelvax Quadrivalent (RxNorm 2563008)",
+        "Date": "2020-11-07",
+        "Status": "completed",
+    }
+    # the fickle one: nullFlavor primary → display-only via the translation
+    # (no parenthetical, since the primary @code is absent)
+    assert rows[1].values["Immunization"] == "COVID-19 mRNA vaccine"
+
+
+def test_reconstruct_immunizations_renders_single_table_no_context():
+    text = render_section_text(
+        reconstruct_immunizations(_el(_IMMUNIZATIONS_SECTION)),
+        loinc="11369-6",
+        augmentation_timestamp=_RUN_TS,
+    )
+    # flat section → exactly one table (no context table), two detail rows
+    tables = text.xpath("hl7:table", namespaces=HL7_NS)
+    assert len(tables) == 1
+    rows = text.xpath(".//hl7:tbody/hl7:tr[@ID]", namespaces=HL7_NS)
+    assert len(rows) == 2
+
+
+def test_reconstruct_immunizations_relink_places_text_validly():
+    # substanceAdministration has no <code>; the relinked <text> must land
+    # after templateId/id (not before templateId, which would be invalid)
+    section = _el(_IMMUNIZATIONS_SECTION)
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    sbadm = section.find("hl7:entry/hl7:substanceAdministration", HL7_NS)
+    children = [etree.QName(c).localname for c in sbadm if c.tag is not etree.Comment]
+    # <text> sits after templateId and id, before statusCode
+    assert children.index("text") > children.index("id")
+    assert children.index("text") < children.index("statusCode")
+    ref = sbadm.xpath("hl7:text/hl7:reference/@value", namespaces=HL7_NS)
+    assert ref == ["#ecr-refiner-11369-6-20240101000000-row1"]
+
+
+# NOTE:
+# LAYER 3 — reconstruct_medications (FLAT, twin of immunizations)
+# =============================================================================
+
+# one med with a dose + a periodic frequency; values humanize via the typed
+# renderer (dose "1 g", route "ORAL"), matching the v3 narrative convention
+_MEDICATIONS_SECTION = f"""
+<section {_NSDECL}>
+  <code code="29549-3" codeSystem="2.16.840.1.113883.6.1"
+        displayName="Medications Administered"/>
+  <title>Medications Administered</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+      <id root="00000000-0000-0000-0000-0000000000aa"/>
+      <statusCode code="completed"/>
+      <effectiveTime xsi:type="PIVL_TS"><period value="8" unit="h"/></effectiveTime>
+      <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1"
+                 displayName="ORAL"/>
+      <doseQuantity value="1" unit="g"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code code="1115699" codeSystem="2.16.840.1.113883.6.88"
+                  displayName="oseltamivir 6 MG/ML [Tamiflu]"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>
+"""
+
+
+def test_reconstruct_medications_is_flat_with_convention_columns():
+    blocks = reconstruct_medications(_el(_MEDICATIONS_SECTION))
+
+    assert len(blocks) == 1
+    assert blocks[0].context == {}
+    assert blocks[0].columns == ["Medication", "Dose", "Duration", "Route"]
+    assert blocks[0].rows[0].values == {
+        "Medication": "oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)",
+        "Dose": "1 g",
+        "Duration": "every 8 h",
+        "Route": "ORAL (NCI Thesaurus C38288)",
+    }
 
 
 # NOTE:
@@ -231,12 +687,13 @@ def test_reconstruct_results_fans_context_across_rows_without_bleed():
 # =============================================================================
 
 
-def test_reconstruct_narrative_results_returns_text_table():
-    text = reconstruct_narrative(_el(_RESULTS_SECTION))
+def test_reconstruct_narrative_results_returns_block_tables():
+    text = reconstruct_narrative(_el(_RESULTS_SECTION), augmentation_timestamp=_RUN_TS)
     assert text is not None
     assert text.tag == "{urn:hl7-org:v3}text"
-    body_rows = text.xpath(".//hl7:tbody/hl7:tr", namespaces=HL7_NS)
-    assert len(body_rows) == 3
+    # one detail row per surviving observation across both organizer blocks
+    detail_rows = text.xpath(".//hl7:tbody/hl7:tr[@ID]", namespaces=HL7_NS)
+    assert len(detail_rows) == 3
 
 
 def test_reconstruct_narrative_unknown_loinc_returns_none():
@@ -244,19 +701,87 @@ def test_reconstruct_narrative_unknown_loinc_returns_none():
         f'<section {_NSDECL}><code code="29762-2" displayName="Social History"/>'
         "<entry/></section>"
     )
-    assert reconstruct_narrative(section) is None
+    assert reconstruct_narrative(section, augmentation_timestamp=_RUN_TS) is None
 
 
-def test_reconstruct_narrative_does_not_mutate_section():
+def test_reconstruct_narrative_relinks_surviving_entries():
+    # ADR 0011: reconstruction now MUTATES the section — it strips the stale
+    # narrative references and relinks each surviving observation to its row
     section = _el(_RESULTS_SECTION)
-    before = etree.tostring(section)
-    reconstruct_narrative(section)
-    assert etree.tostring(section) == before
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    # every surviving result observation now references a reconstructed row ID
+    refs = section.xpath(
+        "hl7:entry/hl7:organizer/hl7:component/hl7:observation"
+        "/hl7:text/hl7:reference/@value",
+        namespaces=HL7_NS,
+    )
+    assert len(refs) == 3
+    assert all(r.startswith("#ecr-refiner-30954-2-") for r in refs)
 
 
-def test_result_fields_use_typed_interpretation():
-    # guard the design choice: interpretation renders via the typed renderer
-    # so it humanizes (Low (L)) with graceful fallback, not a bare code
-    spec = {f.label: f for f in RESULT_FIELDS}["Interpretation"]
-    assert spec.kind == "typed"
-    assert spec.xpath == "hl7:interpretationCode"
+def test_reconstruct_narrative_marks_entries_derived():
+    # the narrative is rebuilt FROM the entries, so the entry↔narrative
+    # relationship is DRIV ("derived from"), not the schema default COMP
+    section = _el(_RESULTS_SECTION)
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    type_codes = section.xpath("hl7:entry/@typeCode", namespaces=HL7_NS)
+    assert type_codes == ["DRIV", "DRIV"]
+
+
+def test_reconstruct_narrative_marks_flat_entries_derived():
+    # flat sections too: every substanceAdministration entry becomes DRIV
+    section = _el(_IMMUNIZATIONS_SECTION)
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    type_codes = section.xpath("hl7:entry/@typeCode", namespaces=HL7_NS)
+    assert type_codes == ["DRIV", "DRIV"]
+
+
+def test_result_fields_use_the_intended_kinds():
+    # guard the design choice: clinical concepts surface system+code, the HL7
+    # interpretation code stays display-only, and the value stays polymorphic
+    by_label = {f.label: f for f in RESULT_FIELDS}
+    assert by_label["Test"].kind == "concept"  # clinical: display (System code)
+    assert by_label["Interpretation"].kind == "coded"  # HL7 admin: display-only
+    assert by_label["Outcome"].kind == "typed"  # polymorphic (PQ/CD/ST)
+
+
+class TestCompactReconstructionReferences:
+    """
+    The minted entry→narrative reference pointer is a mixed-content
+    <reference> and must serialize without surrounding whitespace
+    (Boone, The CDA Book, ch. 6). Pretty-printing the whole document
+    indents it; this collapses it back, scoped to refiner-minted ids.
+    """
+
+    def test_collapses_pretty_printed_reference(self):
+        # the shape pretty_print produces over the whole tree
+        pretty = (
+            "<observation>\n"
+            "  <text>\n"
+            '    <reference value="#ecr-refiner-30954-2-20260101000000-row1"/>\n'
+            "  </text>\n"
+            "</observation>\n"
+        )
+        result = compact_reconstruction_references(pretty)
+        assert (
+            '<text><reference value="#ecr-refiner-30954-2-20260101000000-row1"/></text>'
+            in result
+        )
+        # no whitespace survives between <text>/<reference>/</text>
+        assert "<text>\n" not in result
+        assert "/>\n  </text>" not in result
+
+    def test_leaves_author_attested_references_untouched(self):
+        # a source-document narrative reference (not refiner-minted) is
+        # outside our remit — its whitespace is preserved
+        pretty = (
+            "<observation>\n"
+            "  <text>\n"
+            '    <reference value="#Result.1.2.840.Comp1"/>\n'
+            "  </text>\n"
+            "</observation>\n"
+        )
+        assert compact_reconstruction_references(pretty) == pretty

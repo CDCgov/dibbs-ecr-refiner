@@ -1,7 +1,12 @@
+import re
 from typing import Final
 
 import pytest
 from lxml import etree
+
+from app.api.validation.file_validation import format_refined_document_or_raise
+from app.services.ecr.model import RefinedDocument, ReportableCondition
+from app.services.format import format_xml_document_for_display
 
 from .conftest import SCENARIOS_BY_NAME, load_scenario_xml_files
 from .harness import refine_one
@@ -697,4 +702,60 @@ async def test_configuration_version_is_rendered_into_section_provenance_footnot
         f"update the Scenario docstring in conftest.py and the scenarios "
         f"README, which would then be wrong to describe configuration_version's "
         f"relationship to the XML."
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_reconstruction_reference_pointers_have_no_surrounding_whitespace(
+    setup,
+    build_scenario_configuration,
+) -> None:
+    """
+    the minted entry->narrative <reference> is a mixed-content element and must
+    serialize without surrounding whitespace (Boone, The CDA Book, ch. 6).
+
+    The pipeline emits the raw product unformatted -- the Lambda writes that to
+    S3 and never pretty-prints it -- so the only consumer that indents these
+    pointers is the web-app display boundary. Pretty-printing re-wraps the
+    pointer into indented mixed content, and `format_refined_document_or_raise`
+    must collapse it back. This pins that boundary: the eICR the webapp serves
+    and zips, not the raw pipeline bytes.
+    """
+
+    scenario = SCENARIOS_BY_NAME["immunizations_reconstruction"]
+    config, _ = await build_scenario_configuration(scenario)
+    result = _refine(scenario, config)
+
+    # precondition: formatting WITHOUT the compaction step indents the minted
+    # pointers. if this stops holding, the boundary compaction is a no-op and
+    # this test would pass for the wrong reason.
+    assert re.search(
+        r'<text>\s+<reference value="#ecr-refiner-11369-6-',
+        format_xml_document_for_display(result.documents.eicr),
+    ), (
+        "expected pretty-printing alone to indent the minted reconstruction "
+        "pointers; it did not, so this test no longer guards the boundary "
+        "compaction"
+    )
+
+    doc = RefinedDocument(
+        reportable_condition=ReportableCondition(code="", display_name=""),
+        refined_eicr=result.documents.eicr,
+        refined_rr=result.documents.rr,
+        eicr_size_reduction_percentage=0,
+    )
+    eicr = format_refined_document_or_raise(doc).refined_eicr
+
+    compact = re.findall(
+        r'<text><reference value="#ecr-refiner-11369-6-[^"]*"/></text>', eicr
+    )
+    assert compact, (
+        "expected compact reconstruction reference pointers in the eICR the "
+        "display boundary produces; found none (did the boundary compaction run?)"
+    )
+    # no refiner-minted reference survives in the indented mixed-content form
+    assert re.search(r'<text>\s+<reference value="#ecr-refiner-', eicr) is None, (
+        "a reconstruction reference serialized with surrounding whitespace at "
+        "the display boundary"
     )

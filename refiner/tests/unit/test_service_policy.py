@@ -57,7 +57,7 @@ class TestReconstructableSections:
         Ensure only the intended LOINCs are active for reconstruction.
         TODO: Update this list when more LOINCs are uncommented in policy.py
         """
-        expected = ["30954-2"]
+        expected = ["30954-2", "11450-4", "11369-6", "29549-3"]
         assert RECONSTRUCTABLE_SECTIONS == expected
 
 
@@ -73,7 +73,7 @@ class TestPolicyPredicates:
 
     def test_is_reconstructable_section(self):
         assert is_reconstructable_section("30954-2") is True
-        assert is_reconstructable_section("11450-4") is False
+        assert is_reconstructable_section("29762-2") is False
 
     def test_narrative_requires_refine(self):
         assert narrative_requires_refine("reconstruct") is True
@@ -124,7 +124,7 @@ class TestNormalizeSectionNarrative:
 
     def test_reconstruct_on_non_reconstructable_coerces_to_retain(self):
         action, narrative, notes = normalize_section_narrative(
-            code="11450-4",  # not in ReconstructableSection
+            code="29762-2",  # Social History — not in ReconstructableSection
             section_action="refine",
             narrative_action="reconstruct",
         )
