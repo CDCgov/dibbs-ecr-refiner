@@ -91,6 +91,14 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         }
         refreshUser={refreshUser}
       />
+      <TesUpdateBanner
+        isVisible={
+          user.notifications.to_render[
+            NotificationKeys.most_recent_tes_update
+          ] ?? false
+        }
+        refreshUser={refreshUser}
+      />
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
@@ -130,37 +138,61 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   );
 }
 
-function AppUpdateBanner({
-  isVisible,
-  refreshUser,
-}: {
-  isVisible: boolean;
-  refreshUser: () => void;
-}) {
+function useDismissNotification(key: NotificationKeys, sideEffect: () => void) {
   const { mutateAsync } = useUpdateUserNotifications();
-
-  if (!isVisible) {
-    return null;
-  }
-
-  async function dismissNotification() {
+  async function dismiss() {
     try {
       await mutateAsync({
         data: {
-          key: NotificationKeys.most_recent_app_update,
+          key,
         },
       });
-      refreshUser();
+      sideEffect();
     } catch (error) {
-      console.error('Failed to update user notifications', error);
+      console.error(
+        `Failed to update user notifications with key: ${key}`,
+        error
+      );
     }
   }
+  return dismiss;
+}
+
+interface BannerProps {
+  isVisible: boolean;
+  refreshUser: () => void;
+}
+
+function AppUpdateBanner({ isVisible, refreshUser }: BannerProps) {
+  const dismiss = useDismissNotification(
+    NotificationKeys.most_recent_app_update,
+    refreshUser
+  );
+
+  if (!isVisible) return null;
 
   return (
     <NotificationBanner
       message="There are new updates to eCR Refiner."
       navigateToPageUrl="/app-updates"
-      onDismiss={dismissNotification}
+      onDismiss={dismiss}
+    />
+  );
+}
+
+function TesUpdateBanner({ isVisible, refreshUser }: BannerProps) {
+  const dismiss = useDismissNotification(
+    NotificationKeys.most_recent_tes_update,
+    refreshUser
+  );
+
+  if (!isVisible) return null;
+
+  return (
+    <NotificationBanner
+      message="A new TES update was published."
+      navigateToPageUrl="/app-updates" // TODO: Link to new page
+      onDismiss={dismiss}
     />
   );
 }
