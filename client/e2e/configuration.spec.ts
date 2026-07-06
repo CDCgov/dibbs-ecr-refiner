@@ -733,7 +733,8 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(errorAlert).toBeVisible();
 
     // 4. Persistence via Internal Click
-    await sectionRow.getByRole('switch').setChecked(true);
+    await sectionRow.getByRole('switch').click();
+    await expect(sectionRow.getByRole('switch')).toBeChecked();
     await expect(errorAlert).toBeVisible();
 
     // 5. Dismiss via Input Change
@@ -835,7 +836,8 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(errorAlert).toBeVisible();
 
     // 4. Persistence via Internal Click
-    await sectionRow.getByRole('switch').setChecked(true);
+    await sectionRow.getByRole('switch').click();
+    await expect(sectionRow.getByRole('switch')).toBeChecked();
     await expect(errorAlert).toBeVisible();
 
     // 5. Dismiss via Input Change
