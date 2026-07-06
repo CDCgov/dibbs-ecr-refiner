@@ -80,5 +80,13 @@ PROVENANCE_OUTCOME_NOTES: Final[dict[SectionOutcome, str]] = {
     SectionOutcome.REFINED_WITH_MATCHES: "Refined; matches found",
     SectionOutcome.REFINED_NARRATIVE_REMOVED: "Refined; narrative removed",
     SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED: "Refined; narrative reconstructed",
-    SectionOutcome.REFINED_NO_MATCHES_STUBBED: "Refined; no matches found",
+    SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED: (
+        "Refined; reconstruction unavailable, original narrative retained"
+    ),
+    SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED: (
+        "Refined; no matches found, narrative retained"
+    ),
+    SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED: (
+        "Refined; no matches found, narrative removed"
+    ),
 }

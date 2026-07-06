@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { sleep } from '../../utils';
 
-type SpinnerWithMinimalRenderProps = {
+interface SpinnerWithMinimalRenderProps {
   isLoading: boolean;
   renderWhenDone: React.ReactNode;
   loadingMessage?: string;
   minimalRenderDuration?: number;
-};
+}
 
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
@@ -28,9 +28,9 @@ export function SpinnerWithMinimalRender({
   );
 }
 
-type SpinnerWithMessageProps = {
+interface SpinnerWithMessageProps {
   loadingMessage: string;
-};
+}
 function SpinnerWithMessage({ loadingMessage }: SpinnerWithMessageProps) {
   return (
     <div className="flex items-center">

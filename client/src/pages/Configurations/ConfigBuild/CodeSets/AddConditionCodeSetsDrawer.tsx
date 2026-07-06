@@ -6,14 +6,14 @@ import { IncludedCondition } from '../../../../api/schemas';
 import { TesLink } from '../../TesLink';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
 
-type AddConditionCodeSetsDrawerProps = {
+interface AddConditionCodeSetsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   conditions: IncludedCondition[];
   configurationId: string;
   reportable_condition_display_name: string;
   disabled: boolean;
-};
+}
 
 export function AddConditionCodeSetsDrawer({
   isOpen,

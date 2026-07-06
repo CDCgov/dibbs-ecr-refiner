@@ -453,7 +453,77 @@ class TestConfigurations:
             },
         )
         # FastAPI shouldn't allow this to work
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        # narrative='keep_on_match' requires action='refine'
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "keep_on_match",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "keep_on_match" in response.json()["detail"]
+        assert "refine" in response.json()["detail"]
+
+        # narrative='reconstruct' requires action='refine'
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "reconstruct",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "reconstruct" in response.json()["detail"]
+
+        # narrative='reconstruct' on a refinable but non-reconstructable
+        # section (admission diagnosis) is rejected
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "reconstruct",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "reconstruct" in response.json()["detail"]
+        assert admission_diagnosis_code in response.json()["detail"]
+
+        # DisabledSection (system-skipped) updates are rejected
+        # regardless of payload — those codes are not configurable
+        emergency_outbreak_code = "83910-0"
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": emergency_outbreak_code,
+                "include": True,
+                "narrative": "retain",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert emergency_outbreak_code in response.json()["detail"]
+        assert "system-skipped" in response.json()["detail"]
+
+        # FastAPI rejects unknown narrative values via the Literal type
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": admission_diagnosis_code,
+                "include": True,
+                "narrative": "bogus",
+            },
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     @pytest.mark.parametrize(
         "new_code, new_system_key, new_name",
@@ -486,7 +556,7 @@ class TestConfigurations:
 
         config_id = config["id"]
         initial_code = "VERY-FAKE-CODE-00000"
-        initial_code_name = "Mock code"
+        initial_display_name = "Mock code"
         initial_system = await get_code_system_by_key_db(key="loinc", db=db_pool)
         assert initial_system
         await add_custom_code(
@@ -494,14 +564,14 @@ class TestConfigurations:
             DbConfigurationCustomCode(
                 code=initial_code,
                 system_key=initial_system.key,
-                name=initial_code_name,
+                name=initial_display_name,
             ),
         )
 
         edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
             system_key=initial_system.key,
             code=initial_code,
-            name=initial_code_name,
+            name=initial_display_name,
             new_code=new_code,
             new_name=new_name,
             new_system_key=new_system_key,
@@ -523,7 +593,7 @@ class TestConfigurations:
         if new_name:
             assert edited_custom_code["name"] == new_name
         else:
-            assert edited_custom_code["name"] == initial_code_name
+            assert edited_custom_code["name"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,

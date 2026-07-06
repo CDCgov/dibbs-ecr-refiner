@@ -15,7 +15,10 @@ from app.services.ecr.model import (
     SectionProvenanceRecord,
     SectionSource,
 )
-from app.services.ecr.narrative.constants import PROVENANCE_OUTCOME_NOTES
+from app.services.ecr.narrative.constants import (
+    PROVENANCE_OUTCOME_NOTES,
+    REMOVE_NARRATIVE_MESSAGE,
+)
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
@@ -267,7 +270,13 @@ class TestRefiningService:
         self, eicr_root_v1_1: etree._Element
     ):
         """
-        Tests 'refine' with a non-matching code, which should create a minimal section.
+        Tests 'refine' + narrative='remove' with a non-matching code.
+
+        With the keep-on-match work, the hard-coded "stub the section
+        when nothing matches" policy is gone. The engine now prunes
+        every <entry> and honors the configured narrative: with
+        narrative='remove', the section's <text> is replaced with the
+        removal notice and the section is NOT marked nullFlavor='NI'.
         """
 
         empty_config = await _make_empty_processed_config()
@@ -290,7 +299,313 @@ class TestRefiningService:
         problems_section = eicr_root_v1_1.xpath(
             './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=HL7_NS
         )[0]
+
+        # nullFlavor='NI' is still applied so the document remains
+        # CDA schematron-conformant on sections that require at least
+        # one entry; narrative removal is driven by the narrative setting
         assert problems_section.get("nullFlavor") == "NI"
+
+        # entries should be pruned and the narrative replaced with the
+        # removal notice
+        assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
+        rendered = etree.tostring(problems_section, encoding="unicode")
+        assert REMOVE_NARRATIVE_MESSAGE in rendered
+
+    async def test_refine_no_matches_narrative_retain_v1_1(
+        self,
+        eicr_root_v1_1: etree._Element,
+        original_eicr_root_v1_1: etree._Element,
+    ):
+        """
+        Scenario: Retain Original — coded data=refine, narrative=retain,
+        no matches. The narrative should be preserved untouched.
+        """
+
+        empty_config = await _make_empty_processed_config()
+
+        plan = EICRRefinementPlan(
+            codes_to_check={"NON_EXISTENT_CODE"},
+            code_system_sets=empty_config.code_system_sets,
+            section_instructions={
+                "11450-4": DbConfigurationSectionInstructions(
+                    action="refine", include=True, narrative="retain"
+                )
+            },
+            section_provenance={
+                "11450-4": SectionProvenanceRecord(
+                    loinc_code="11450-4",
+                    display_name="Problems",
+                    include=True,
+                    action="refine",
+                    narrative="retain",
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        problems_section = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=HL7_NS
+        )[0]
+        original_section = original_eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=HL7_NS
+        )[0]
+
+        # nullFlavor='NI' applied for schematron compliance
+        assert problems_section.get("nullFlavor") == "NI"
+        # entries pruned (none matched)
+        assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
+        # narrative removal notice should NOT appear (narrative preserved)
+        rendered = etree.tostring(problems_section, encoding="unicode")
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
+        # original narrative table rows preserved — we check that
+        # every <td> cell content from the original narrative table
+        # also appears in the refined narrative. byte-for-byte
+        # equality is too strict (entry_matching strips XML comments
+        # as part of pre-matching cleanup), but the clinical content
+        # the reviewer reads should be intact.
+        original_cells = [
+            (td.text or "").strip()
+            for td in original_section.xpath("hl7:text//hl7:td", namespaces=HL7_NS)
+            if (td.text or "").strip()
+        ]
+        for cell_text in original_cells:
+            assert cell_text in rendered
+        # the rendered footnote should carry the retained-on-no-match outcome
+        assert (
+            PROVENANCE_OUTCOME_NOTES[
+                SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED
+            ]
+            in rendered
+        )
+
+    async def test_refine_keep_on_match_with_matches_v1_1(
+        self, eicr_root_v1_1: etree._Element
+    ):
+        """
+        Scenario: Keep on Match (Positive) — coded data=refine,
+        narrative=keep_on_match, matches found. Narrative preserved.
+        """
+
+        processed_config = await _make_processed_config_v1_1(
+            loinc_codes=[
+                DbConditionCoding(code="94533-7", display="SARS-CoV-2 N gene"),
+            ],
+        )
+
+        plan = EICRRefinementPlan(
+            codes_to_check=processed_config.codes,
+            code_system_sets=processed_config.code_system_sets,
+            section_instructions={
+                "30954-2": DbConfigurationSectionInstructions(
+                    action="refine", include=True, narrative="keep_on_match"
+                )
+            },
+            section_provenance={
+                "30954-2": SectionProvenanceRecord(
+                    loinc_code="30954-2",
+                    display_name="Results",
+                    include=True,
+                    action="refine",
+                    narrative="keep_on_match",
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        results_section = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=HL7_NS
+        )[0]
+        rendered = etree.tostring(results_section, encoding="unicode")
+
+        # matched entry survived
+        assert "94533-7" in rendered
+        # narrative retained — removal notice should NOT appear
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
+        # footnote shows refined-with-matches outcome
+        assert PROVENANCE_OUTCOME_NOTES[SectionOutcome.REFINED_WITH_MATCHES] in rendered
+
+    async def test_refine_keep_on_match_no_matches_v1_1(
+        self, eicr_root_v1_1: etree._Element
+    ):
+        """
+        Scenario: Keep on Match (Negative) — coded data=refine,
+        narrative=keep_on_match, no matches. Narrative removed.
+        """
+
+        empty_config = await _make_empty_processed_config()
+
+        plan = EICRRefinementPlan(
+            codes_to_check={"NON_EXISTENT_CODE"},
+            code_system_sets=empty_config.code_system_sets,
+            section_instructions={
+                "11450-4": DbConfigurationSectionInstructions(
+                    action="refine", include=True, narrative="keep_on_match"
+                )
+            },
+            section_provenance={
+                "11450-4": SectionProvenanceRecord(
+                    loinc_code="11450-4",
+                    display_name="Problems",
+                    include=True,
+                    action="refine",
+                    narrative="keep_on_match",
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        problems_section = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=HL7_NS
+        )[0]
+        rendered = etree.tostring(problems_section, encoding="unicode")
+
+        # nullFlavor='NI' applied for schematron compliance
+        assert problems_section.get("nullFlavor") == "NI"
+        # entries pruned
+        assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
+        # narrative replaced with removal notice
+        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        # footnote shows the negative branch outcome
+        assert (
+            PROVENANCE_OUTCOME_NOTES[
+                SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
+            ]
+            in rendered
+        )
+
+    async def test_refine_reconstruct_no_matches_falls_back_to_retain_v1_1(
+        self, eicr_root_v1_1: etree._Element
+    ):
+        """
+        narrative='reconstruct' + no matches: the engine can't rebuild
+        from anything, so it falls back to retaining the original
+        narrative rather than swapping in a removal notice. Outcome
+        is REFINED_RECONSTRUCT_FALLBACK_RETAINED.
+        """
+
+        empty_config = await _make_empty_processed_config()
+
+        plan = EICRRefinementPlan(
+            codes_to_check={"NON_EXISTENT_CODE"},
+            code_system_sets=empty_config.code_system_sets,
+            section_instructions={
+                "30954-2": DbConfigurationSectionInstructions(
+                    action="refine", include=True, narrative="reconstruct"
+                )
+            },
+            section_provenance={
+                "30954-2": SectionProvenanceRecord(
+                    loinc_code="30954-2",
+                    display_name="Results",
+                    include=True,
+                    action="refine",
+                    narrative="reconstruct",
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        results_section = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=HL7_NS
+        )[0]
+        rendered = etree.tostring(results_section, encoding="unicode")
+
+        # nullFlavor='NI' applied for schematron compliance
+        assert results_section.get("nullFlavor") == "NI"
+        # entries pruned
+        assert results_section.findall("hl7:entry", namespaces=HL7_NS) == []
+        # narrative NOT replaced with removal notice
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
+        # footnote shows reconstruct-fallback outcome
+        assert (
+            PROVENANCE_OUTCOME_NOTES[
+                SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED
+            ]
+            in rendered
+        )
+
+    async def test_refine_reconstruct_unregistered_falls_back_to_retain_v1_1(
+        self, eicr_root_v1_1: etree._Element
+    ):
+        """
+        narrative='reconstruct' on a section with matches but no
+        registered reconstructor: the engine falls back to retaining
+        the original narrative. Problems (11450-4) is refinable but
+        has no reconstructor in ReconstructableSection.
+
+        Outcome is REFINED_RECONSTRUCT_FALLBACK_RETAINED.
+        """
+
+        processed_config = await _make_processed_config_v1_1(
+            snomed_codes=[
+                DbConditionCoding(
+                    code="840539006", display="Disease caused by SARS-CoV-2"
+                ),
+            ],
+        )
+
+        plan = EICRRefinementPlan(
+            codes_to_check=processed_config.codes,
+            code_system_sets=processed_config.code_system_sets,
+            section_instructions={
+                "11450-4": DbConfigurationSectionInstructions(
+                    action="refine", include=True, narrative="reconstruct"
+                )
+            },
+            section_provenance={
+                "11450-4": SectionProvenanceRecord(
+                    loinc_code="11450-4",
+                    display_name="Problems",
+                    include=True,
+                    action="refine",
+                    narrative="reconstruct",
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        problems_section = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=HL7_NS
+        )[0]
+        rendered = etree.tostring(problems_section, encoding="unicode")
+
+        # matches found → section has surviving entries, not stubbed
+        assert problems_section.get("nullFlavor") is None
+        assert len(problems_section.findall("hl7:entry", namespaces=HL7_NS)) > 0
+        # narrative NOT replaced with removal notice (fallback to retain)
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
+        # footnote shows reconstruct-fallback outcome
+        assert (
+            PROVENANCE_OUTCOME_NOTES[
+                SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED
+            ]
+            in rendered
+        )
 
     async def test_refine_action_with_matches_v1_1(
         self, eicr_root_v1_1: etree._Element
@@ -659,12 +974,16 @@ class TestRefiningService:
         section_text = etree.tostring(enc_section, encoding="unicode")
         assert "772828001" not in section_text
 
-    async def test_non_matching_section_becomes_ni_v1_1(
+    async def test_non_matching_section_no_longer_stubbed_v1_1(
         self, eicr_root_v1_1: etree._Element
     ):
         """
-        Tests that a section with entries but no matching codes becomes nullFlavor NI
-        with all entries removed.
+        Tests that a section with entries but no matching codes has all
+        entries removed and the narrative replaced with the removal
+        notice (narrative='remove' is the _make_plan default).
+        nullFlavor='NI' is retained for CDA schematron compliance, but
+        the narrative is now driven by the narrative setting (no more
+        hard-coded stub table overwriting <text>).
         """
 
         processed_config = await _make_processed_config_v1_1(
@@ -682,12 +1001,16 @@ class TestRefiningService:
             './/hl7:section[hl7:code[@code="11369-6"]]', namespaces=HL7_NS
         )[0]
 
-        # no matching CVX codes for covid → section should be NI
+        # nullFlavor='NI' applied for schematron compliance
         assert imm_section.get("nullFlavor") == "NI"
 
         # entries should be removed
         entries = imm_section.xpath(".//hl7:entry", namespaces=HL7_NS)
         assert len(entries) == 0
+
+        # narrative replaced with the removal notice
+        rendered = etree.tostring(imm_section, encoding="unicode")
+        assert REMOVE_NARRATIVE_MESSAGE in rendered
 
     # NOTE:
     # RR REFINEMENT TESTS

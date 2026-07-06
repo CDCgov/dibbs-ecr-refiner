@@ -198,7 +198,7 @@ function CustomCodeForm({
   return (
     <>
       <Field>
-        <Label>Code #</Label>
+        <Label>Code</Label>
         <TextInput
           type="text"
           value={code}
@@ -230,7 +230,7 @@ function CustomCodeForm({
         </Field>
       </SelectContainer>
       <Field>
-        <Label>Code name</Label>
+        <Label>Display name</Label>
         <TextInput
           type="text"
           value={name}

@@ -3,15 +3,15 @@ import { useIsMutating } from '@tanstack/react-query';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
-type ConfigurationTitleBarProps = {
+interface ConfigurationTitleBarProps {
   step: ConfigurationSteps;
   condition: string;
-};
+}
 
-type ConfigurationTitleContent = {
+interface ConfigurationTitleContent {
   title: string;
   subtitle: React.ReactNode;
-};
+}
 
 export function ConfigurationTitleBar({
   step,
