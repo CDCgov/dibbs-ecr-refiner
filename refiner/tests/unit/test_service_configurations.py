@@ -391,10 +391,10 @@ class TestCloneSectionNarrativeNormalization:
     def test_clone_coerces_reconstruct_on_non_reconstructable_to_retain(self, caplog):
         """
         Stale narrative='reconstruct' on a non-reconstructable section
-        (11450-4 Problems) gets coerced to 'retain'.
+        (29762-2 Social History) gets coerced to 'retain'.
         """
 
-        code = "11450-4"
+        code = "29762-2"
         clone_from = [self._make_section(code, "refine", "reconstruct")]
         clone_to = [self._make_section(code, "refine", "retain")]
 
