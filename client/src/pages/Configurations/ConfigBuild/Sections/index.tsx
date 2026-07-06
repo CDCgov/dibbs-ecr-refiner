@@ -447,7 +447,7 @@ function RefineSwitch({
         >
           {currentSection.narrative === 'reconstruct'
             ? 'To reconstruct narrative, refine must be selected'
-            : 'To have narrative keep on match, refine must be selected'}
+            : 'To keep narrative on match, refine must be selected'}
         </p>
       )}
     </div>

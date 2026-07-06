@@ -475,7 +475,7 @@ describe('Configuration sections', () => {
     const errorMessage = within(row).queryByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
-      /To have narrative keep on match, refine must be selected/
+      /To keep narrative on match, refine must be selected/
     );
   });
 

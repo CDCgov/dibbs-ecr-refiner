@@ -821,7 +821,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     const errorAlert = sectionRow.getByRole('alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toHaveText(
-      /To have narrative keep on match, refine must be selected/
+      /To keep narrative on match, refine must be selected/
     );
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
