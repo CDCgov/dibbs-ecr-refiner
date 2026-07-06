@@ -49,6 +49,10 @@ export function NarrativeSelect({
         aria-label={`Narrative data handling for ${currentSection.name} section`}
         className="min-w-38"
       >
+        {/* these labels are mirrored server-side in
+            refiner/app/db/configurations/labels.py (NARRATIVE_DATA_LABELS),
+            which drives the CSV export and the provenance footnote; keep them
+            in sync when editing */}
         <option value="retain">Keep original</option>
         {!isNarrativeOnly && isReconstructable && (
           <option value="reconstruct" disabled={codedDataAction === 'retain'}>
