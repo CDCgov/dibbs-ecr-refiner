@@ -1,5 +1,3 @@
-import re
-
 from lxml.etree import _Element
 
 from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
@@ -12,6 +10,7 @@ from .constants import (
     PROVENANCE_TABLE_HEADERS,
 )
 from .elements import _ensure_text_element, _sub_element
+from .identifiers import REFINER_ID_PREFIX, run_id_digits
 
 # NOTE:
 # PROVENANCE FOOTNOTE
@@ -49,15 +48,10 @@ def _build_footnote_id(
     The ID is of the form
     `ecr-refiner-{loinc}-{timestamp-digits}`, optionally with a
     `-{n}` suffix for the rare case where the same LOINC appears on
-    multiple top-level sections in a single document. The timestamp
-    digits are extracted from the augmentation author's <time> value
-    (HL7 V3 `YYYYMMDDHHMMSS±ZZZZ` format) by keeping the leading
-    run of digits — the timezone offset is stripped because `+` and
-    the offset digits are not wanted in the ID.
-
-    xs:ID cannot start with a digit or hyphen, so the `ecr-refiner-`
-    prefix is load-bearing: it ensures the resulting string always
-    satisfies the XML Name production.
+    multiple top-level sections in a single document. The prefix and
+    the run-digit extraction are shared with the reconstructed row IDs
+    (see `identifiers`), so a footnote and the rows minted in the same
+    run carry the same stamp.
 
     Args:
         loinc_code: The section's LOINC code (e.g., "46240-8").
@@ -72,9 +66,7 @@ def _build_footnote_id(
         A document-unique xs:ID-safe string.
     """
 
-    match = re.match(r"^\d+", augmentation_timestamp)
-    timestamp_digits = match.group(0) if match else ""
-    base = f"ecr-refiner-{loinc_code}-{timestamp_digits}"
+    base = f"{REFINER_ID_PREFIX}{loinc_code}-{run_id_digits(augmentation_timestamp)}"
     return base if occurrence_index == 0 else f"{base}-{occurrence_index}"
 
 

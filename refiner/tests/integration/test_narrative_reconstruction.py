@@ -30,7 +30,9 @@ def _eicr_with_reconstructed_results(fixtures_path: Path) -> tuple[str, str]:
     section = root.xpath(
         f"//hl7:section[hl7:code/@code='{_RESULTS_LOINC}']", namespaces=HL7_NS
     )[0]
-    new_text = reconstruct_narrative(section)
+    new_text = reconstruct_narrative(
+        section, augmentation_timestamp="20260101000000+0000"
+    )
     assert new_text is not None, "expected a reconstructed <text> for Results"
 
     existing_text = section.find("hl7:text", HL7_NS)

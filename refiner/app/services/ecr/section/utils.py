@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 from ..model import EntryMatchRule, NamespaceMap
-from ..specification.constants import CODE_SYSTEM_LABELS
+from ..specification.constants import CODE_SYSTEM_DISPLAY_NAMES
 
 # NOTE:
 # NAMESPACE CONSTANTS
@@ -31,7 +31,7 @@ def code_system_label(oid: str | None) -> str:
 
     if oid is None:
         return "any code system"
-    return CODE_SYSTEM_LABELS.get(oid, oid)
+    return CODE_SYSTEM_DISPLAY_NAMES.get(oid, oid)
 
 
 # NOTE:

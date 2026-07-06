@@ -550,7 +550,7 @@ class TestRefiningService:
         """
         narrative='reconstruct' on a section with matches but no
         registered reconstructor: the engine falls back to retaining
-        the original narrative. Problems (11450-4) is refinable but
+        the original narrative. Encounters (46240-8) is refinable but
         has no reconstructor in ReconstructableSection.
 
         Outcome is REFINED_RECONSTRUCT_FALLBACK_RETAINED.
@@ -568,14 +568,14 @@ class TestRefiningService:
             codes_to_check=processed_config.codes,
             code_system_sets=processed_config.code_system_sets,
             section_instructions={
-                "11450-4": DbConfigurationSectionInstructions(
+                "46240-8": DbConfigurationSectionInstructions(
                     action="refine", include=True, narrative="reconstruct"
                 )
             },
             section_provenance={
-                "11450-4": SectionProvenanceRecord(
-                    loinc_code="11450-4",
-                    display_name="Problems",
+                "46240-8": SectionProvenanceRecord(
+                    loinc_code="46240-8",
+                    display_name="Encounters",
                     include=True,
                     action="refine",
                     narrative="reconstruct",
@@ -589,14 +589,14 @@ class TestRefiningService:
 
         refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
 
-        problems_section = eicr_root_v1_1.xpath(
-            './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=HL7_NS
+        encounters_section = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="46240-8"]]', namespaces=HL7_NS
         )[0]
-        rendered = etree.tostring(problems_section, encoding="unicode")
+        rendered = etree.tostring(encounters_section, encoding="unicode")
 
         # matches found → section has surviving entries, not stubbed
-        assert problems_section.get("nullFlavor") is None
-        assert len(problems_section.findall("hl7:entry", namespaces=HL7_NS)) > 0
+        assert encounters_section.get("nullFlavor") is None
+        assert len(encounters_section.findall("hl7:entry", namespaces=HL7_NS)) > 0
         # narrative NOT replaced with removal notice (fallback to retain)
         assert REMOVE_NARRATIVE_MESSAGE not in rendered
         # footnote shows reconstruct-fallback outcome

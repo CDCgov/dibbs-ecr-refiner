@@ -1,5 +1,5 @@
-boto3==1.43.36
+boto3==1.43.38
 chardet==7.4.3
 lxml==6.1.1
 pydantic==2.13.4
-aws-lambda-powertools==3.29.0
+aws-lambda-powertools==3.31.0

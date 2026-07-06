@@ -218,7 +218,6 @@ def _upsert_conditions_and_groupers(
         WITH upsert_condition AS (
             INSERT INTO conditions (
                 canonical_url,
-                version,
                 tes_id,
                 display_name,
                 child_rsg_snomed_codes,
@@ -233,7 +232,6 @@ def _upsert_conditions_and_groupers(
             )
             VALUES (
                 %(canonical_url)s,
-                %(version)s,
                 %(tes_id)s,
                 %(display_name)s,
                 %(child_rsg_snomed_codes)s,
@@ -246,10 +244,9 @@ def _upsert_conditions_and_groupers(
                 %(coverage_level_reason)s,
                 %(coverage_level_date)s
             )
-            ON CONFLICT (canonical_url, version)
+            ON CONFLICT (canonical_url, tes_id)
             DO UPDATE SET
                 display_name = EXCLUDED.display_name,
-                tes_id = EXCLUDED.tes_id,
                 child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
                 loinc_codes = EXCLUDED.loinc_codes,
                 snomed_codes = EXCLUDED.snomed_codes,
@@ -261,7 +258,6 @@ def _upsert_conditions_and_groupers(
                 coverage_level_date = EXCLUDED.coverage_level_date
             WHERE
                 conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
-                OR conditions.tes_id IS DISTINCT FROM EXCLUDED.tes_id
                 OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
                 OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
                 OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
@@ -277,10 +273,11 @@ def _upsert_conditions_and_groupers(
 
         UNION ALL
 
-        SELECT id
-        FROM conditions
-        WHERE canonical_url = %(canonical_url)s
-            AND version = %(version)s
+        SELECT c.id
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        WHERE c.canonical_url = %(canonical_url)s
+            AND t.version = %(version)s
             AND NOT EXISTS (SELECT 1 FROM upsert_condition)
 
         LIMIT 1
