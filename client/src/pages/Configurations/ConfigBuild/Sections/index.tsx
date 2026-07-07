@@ -1,6 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import {
+  CodedDataLabelsValue,
   DbSectionAction,
   DisabledSection,
   NarrativeOnlySection,
@@ -382,10 +383,10 @@ function RefineSwitch({
   const updateSection = useSectionUpdater(configurationId);
   const { clearError, setError, errorSectionCode } = useSectionError();
 
+  const refineLabelText = CodedDataLabelsValue.refine;
+  const retainLabelText = CodedDataLabelsValue.retain;
   const curSectionSetToRefine =
     currentSection.action === DbSectionAction.refine;
-  const refineLabelText = 'Refine';
-  const preserveLabelText = 'Keep original';
 
   const [toggled, setToggled] = useState(curSectionSetToRefine);
 
@@ -396,6 +397,9 @@ function RefineSwitch({
       currentSection.narrative === 'keep_on_match'
     ) {
       setError(currentSection.code);
+
+      // set toggled state back and forth on a sleep to give user some visual feedback
+      // that their click registered
       setToggled(false);
       await new Promise((resolve) => setTimeout(resolve, 300));
       setToggled(true);
@@ -411,35 +415,29 @@ function RefineSwitch({
   const showError = errorSectionCode === currentSection.code;
 
   return (
-    <div
-      className="grid grid-cols-1 grid-rows-1 place-items-end"
-      data-error-trigger
-    >
-      <div className="z-5 col-start-1 row-start-1">
-        <Field className="flex flex-row items-center justify-end">
-          <Label
-            aria-label={
-              curSectionSetToRefine
-                ? // "Refine Admission Diagnosis section"
-                  `${refineLabelText} ${currentSection.name} section`
-                : // "Keep original for Admission Diagnosis section"
-                  `${preserveLabelText} for ${currentSection.name} section`
-            }
-          >
-            {curSectionSetToRefine ? (
-              <span>{refineLabelText}</span>
-            ) : (
-              <span className="italic">{preserveLabelText}</span>
-            )}
-          </Label>
-          <Switch
-            disabled={disabled}
-            checked={toggled}
-            onChange={handleSwitchChange}
-          />
-        </Field>
-      </div>
-      {/* TODO: Awaiting Design/PRD feedback on exact error messages per narrative type */}
+    <div className="flex flex-col items-end gap-1" data-error-trigger>
+      <Field className="flex flex-row items-center justify-end">
+        <Label
+          aria-label={
+            curSectionSetToRefine
+              ? // "Refine Admission Diagnosis section"
+                `${refineLabelText} ${currentSection.name} section`
+              : // "Keep original for Admission Diagnosis section"
+                `${retainLabelText} for ${currentSection.name} section`
+          }
+        >
+          {curSectionSetToRefine ? (
+            <span>{refineLabelText}</span>
+          ) : (
+            <span className="italic">{retainLabelText}</span>
+          )}
+        </Label>
+        <Switch
+          disabled={disabled}
+          checked={toggled}
+          onChange={handleSwitchChange}
+        />
+      </Field>
       {showError && (
         <p
           className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"

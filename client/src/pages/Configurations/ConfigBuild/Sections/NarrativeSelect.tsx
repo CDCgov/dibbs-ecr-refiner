@@ -5,6 +5,7 @@ import {
   DbSectionAction,
   DbNarrativeAction,
   DbConfigurationSectionProcessing,
+  NarrativeDataLabelsValue,
 } from '../../../../api/schemas';
 
 // TODO: Audit the existing frontend architecture in `client/src/pages` to identify
@@ -44,16 +45,16 @@ export function NarrativeSelect({
         aria-label={`Narrative data handling for ${currentSection.name} section`}
         className="min-w-38"
       >
-        <option value="retain">Keep original</option>
+        <option value="retain">{NarrativeDataLabelsValue.retain}</option>
         <option value="keep_on_match" disabled={codedDataAction !== 'refine'}>
-          Keep on match
+          {NarrativeDataLabelsValue.keep_on_match}
         </option>
         {!isNarrativeOnly && isReconstructable && (
           <option value="reconstruct" disabled={codedDataAction === 'retain'}>
-            Reconstruct
+            {NarrativeDataLabelsValue.reconstruct}
           </option>
         )}
-        <option value="remove">Exclude</option>
+        <option value="remove">{NarrativeDataLabelsValue.remove}</option>
       </Select>
     </div>
   );
