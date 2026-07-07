@@ -201,6 +201,67 @@ SCENARIOS: list[Scenario] = [
             SectionOverride(current_code="30954-2", narrative="reconstruct"),
         ),
     ),
+    Scenario(
+        name="problems_reconstruction",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=10,
+        # guarantee a surviving Problem Observation to reconstruct from: the
+        # fixture's Problems section carries a "Post-acute COVID-19" problem
+        custom_codes=(
+            CustomCode("1119303003", "snomed", "Post-acute COVID-19 (disorder)"),
+        ),
+        section_overrides=(
+            SectionOverride(current_code="11450-4", narrative="reconstruct"),
+        ),
+    ),
+    Scenario(
+        name="immunizations_reconstruction",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=11,
+        # guarantee a surviving immunization to reconstruct from: the fixture's
+        # Immunizations section carries a Flucelvax (RxNorm) substanceAdministration
+        custom_codes=(
+            CustomCode(
+                "2563008",
+                "rxnorm",
+                "Flucelvax Quadrivalent 2021-2022 Injectable Product",
+            ),
+        ),
+        section_overrides=(
+            SectionOverride(current_code="11369-6", narrative="reconstruct"),
+        ),
+    ),
+    Scenario(
+        name="medications_reconstruction",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=12,
+        # guarantee a surviving medication to reconstruct from: the fixture's
+        # Medications Administered section carries an oseltamivir (RxNorm) entry
+        custom_codes=(
+            CustomCode("1115699", "rxnorm", "oseltamivir 6 MG/ML [Tamiflu]"),
+        ),
+        section_overrides=(
+            SectionOverride(current_code="29549-3", narrative="reconstruct"),
+        ),
+    ),
 ]
 
 # name -> Scenario lookup for the explicit-assertion suite, which references

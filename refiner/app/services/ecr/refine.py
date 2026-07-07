@@ -536,6 +536,7 @@ def refine_eicr(
                 namespaces=HL7_NS,
                 section_specification=section_specification,
                 code_system_sets=plan.code_system_sets,
+                augmentation_timestamp=plan.augmentation_timestamp,
                 narrative=section_rules.narrative,
             )
             outcome = _interpret_run_result(run_result=run_result)

@@ -86,15 +86,15 @@ class ReconstructableSection(StrEnum):
     """
     These sections support the "reconstruct" narrative action.
 
-    Currently, only Results is enabled; others are planned for future
-    iterations. Make sure to update unit tests to ensure only certain sections
+    Results, Problems, Immunizations, and Medications Administered are
+    enabled. Make sure to update unit tests to ensure only certain sections
     are reconstructable.
     """
 
     RESULTS = "30954-2"
-    # PROBLEM = "11450-4"
-    # IMMUNIZATIONS = "11369-6"
-    # MEDICATIONS_ADMINISTERED = "29549-3"
+    PROBLEM = "11450-4"
+    IMMUNIZATIONS = "11369-6"
+    MEDICATIONS_ADMINISTERED = "29549-3"
 
 
 RECONSTRUCTABLE_SECTIONS = [section.value for section in ReconstructableSection]
