@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test';
 
-export class TesUpdatePage {
+export class TesUpdatesPage {
   constructor(private page: Page) {}
 
   async goto() {

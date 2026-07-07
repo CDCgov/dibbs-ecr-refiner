@@ -1,17 +1,17 @@
 import { expect, test } from './fixtures';
 
 test.describe('TES updates page', () => {
-  test.beforeEach(async ({ tesUpdatePage }) => {
-    await tesUpdatePage.goto();
+  test.beforeEach(async ({ tesUpdatesPage }) => {
+    await tesUpdatesPage.goto();
   });
 
   test('Page is accessible and has expected content', async ({
     makeAxeBuilder,
-    tesUpdatePage,
+    tesUpdatesPage,
   }) => {
-    await tesUpdatePage.goToTesUpdate(3);
+    await tesUpdatesPage.goToTesUpdate(3);
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    await tesUpdatePage.goToTesUpdate(6);
+    await tesUpdatesPage.goToTesUpdate(6);
   });
 });
