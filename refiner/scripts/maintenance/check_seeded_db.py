@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -13,12 +14,42 @@ from rich.table import Table
 
 SCRIPTS_DIR = Path(__file__).parent.parent
 ENV_PATH = SCRIPTS_DIR / ".env"
-TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0", "5.0.0"]
+
+# the source-of-truth grouper files that seeding loads from; we discover the
+# expected condition grouper versions from these same files (using the same
+# glob + manifest exclusion as seeding's load_valuesets_from_all_files) so this
+# check tracks seeding behavior automatically instead of going stale
+TES_DATA_DIR = SCRIPTS_DIR / "data" / "source-tes-groupers"
+
+
+def _discover_expected_versions() -> list[str]:
+    """
+    Expected grouper versions = those present in the source files seeding loads.
+
+    Versions are encoded in the filenames (e.g. additional_context_grouper_6.0.0.part01.json).
+    """
+
+    versions = set()
+    for file in TES_DATA_DIR.glob("*.json"):
+        if file.name == "manifest.json":
+            continue
+        if match := re.search(r"(\d+\.\d+\.\d+)", file.name):
+            versions.add(match.group(1))
+    return sorted(versions)
+
+
+TES_CG_VERSIONS = _discover_expected_versions()
 
 TABLES_TO_CHECK = [
     "conditions",
     "conditions_context_groupers",
+    "systems",
     "configurations",
+    "configurations_conditions",
+    "configurations_sections",
+    "configurations_locks",
+    "events",
+    "events_custom_code_uploads",
     "jurisdictions",
     "schema_migrations",
     "sessions",
@@ -32,6 +63,12 @@ DB_CHECKS: list[dict[str, Any]] = [
         "query": "SELECT COUNT(*) AS count FROM conditions;",
         "failure_condition": lambda res: res[0]["count"] == 0,
         "failure_message": "The 'conditions' table is empty. The seeding script may have failed.",
+    },
+    {
+        "title": "Systems Table Populated",
+        "query": "SELECT COUNT(*) AS count FROM systems;",
+        "failure_condition": lambda res: res[0]["count"] == 0,
+        "failure_message": "The 'systems' table is empty. The seeding script may have failed.",
     },
     {
         "title": "No Conditions with Empty Child SNOMED Arrays",
@@ -61,12 +98,16 @@ DB_CHECKS: list[dict[str, Any]] = [
         "failure_message": "Found a child SNOMED code associated with multiple different conditions (canonical_urls).",
     },
     {
-        "title": "Expected Condition Grouper Versions Present",
+        "title": "Condition Grouper Versions Match Source Files",
         "query": "SELECT version FROM conditions GROUP BY version;",
         "failure_condition": lambda res: (
-            not all(v in [r["version"] for r in res] for v in TES_CG_VERSIONS)
+            {r["version"] for r in res} != set(TES_CG_VERSIONS)
         ),
-        "failure_message": "One or more expected condition grouper versions are missing.",
+        "failure_message": (
+            "Condition grouper versions in the DB do not match the source grouper "
+            f"files in {TES_DATA_DIR.name}/ (expected {TES_CG_VERSIONS}). A version is "
+            "either missing (seeding failed) or unexpected (source files changed without a reseed)."
+        ),
     },
     {
         "title": "Coverage Level CHECK Constraint Integrity",
@@ -151,15 +192,15 @@ WARNING_CHECKS: list[dict[str, Any]] = [
         "failure_message": "The 'configurations' table is empty. The seeding script may have failed.",
     },
     {
-        "title": "All Configurations Reference Valid Conditions",
+        "title": "All Configuration-Condition Links Reference Valid Conditions",
         "query": """
             SELECT COUNT(*) AS count
-            FROM configurations c
-            LEFT JOIN conditions cond ON c.condition_id = cond.id
+            FROM configurations_conditions cc
+            LEFT JOIN conditions cond ON cc.condition_id = cond.id
             WHERE cond.id IS NULL;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
-        "failure_message": "There are configurations with invalid condition_id (not found in conditions table).",
+        "failure_message": "There are configuration-condition links with an invalid condition_id (not found in conditions table).",
     },
     {
         "title": "No Users Present",
@@ -241,8 +282,14 @@ def run_check(
         end="",
     )
 
-    cursor.execute(query)
-    result = cursor.fetchall()
+    try:
+        cursor.execute(query)
+        result = cursor.fetchall()
+    except psycopg.Error as error:
+        console.print(" [bold red]💥 ERRORED[/bold red]")
+        console.print(f"    💬 Query failed (schema drift?): {error}")
+        return False
+
     if failure_condition(result):
         failed_emoji = "❌" if check_type == "CRITICAL" else "⚠️"
         console.print(
