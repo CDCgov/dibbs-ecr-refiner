@@ -6,11 +6,13 @@ interface NotificationBannerProps {
   message: string;
   navigateToPageUrl: string;
   onDismiss: () => void;
+  type: 'app' | 'tes';
 }
 export function NotificationBanner({
   message,
   navigateToPageUrl,
   onDismiss,
+  type,
 }: NotificationBannerProps) {
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
@@ -21,6 +23,7 @@ export function NotificationBanner({
             <span className="font-bold text-blue-500">{message}</span>
           </div>
           <Button
+            ariaLabel={type === 'tes' ? 'View TES updates' : 'View app updates'}
             variant="secondary"
             to={navigateToPageUrl}
             onClick={onDismiss}
@@ -29,11 +32,14 @@ export function NotificationBanner({
           </Button>
         </div>
         <Button
-          type="button"
-          onClick={onDismiss}
-          aria-label="Dismiss notification"
+          ariaLabel={
+            type === 'tes'
+              ? 'Dismiss TES updates notification'
+              : 'Dismiss app updates notification'
+          }
           variant="unstyled"
           className="hover:cursor-pointer hover:opacity-75 focus:outline-none"
+          onClick={onDismiss}
         >
           <CloseIcon size={24} className="fill-blue-500" />
         </Button>
