@@ -1,6 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import {
+  CodedDataLabelsValue,
   DbSectionAction,
   DisabledSection,
   NarrativeOnlySection,
@@ -372,8 +373,8 @@ function RefineSwitch({
   const { clearError, setError, errorSectionCode } = useSectionError();
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
-  const refineLabelText = 'Refine';
-  const preserveLabelText = 'Keep original';
+  const refineLabelText = CodedDataLabelsValue.refine;
+  const retainLabelText = CodedDataLabelsValue.retain;
 
   const handleSwitchChange = (checked: boolean) => {
     // TODO: This validation should eventually be enforced by backend API as well
@@ -398,13 +399,13 @@ function RefineSwitch({
               ? // "Refine Admission Diagnosis section"
                 `${refineLabelText} ${currentSection.name} section`
               : // "Keep original for Admission Diagnosis section"
-                `${preserveLabelText} for ${currentSection.name} section`
+                `${retainLabelText} for ${currentSection.name} section`
           }
         >
           {isRefineToggled ? (
             <span>{refineLabelText}</span>
           ) : (
-            <span className="italic">{preserveLabelText}</span>
+            <span className="italic">{retainLabelText}</span>
           )}
         </Label>
         <Switch

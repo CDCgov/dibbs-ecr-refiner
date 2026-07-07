@@ -1,6 +1,10 @@
-from typing import Final
+from dataclasses import dataclass
+from typing import Final, Literal, get_args
 
-from .model import DbNarrativeAction, DbSectionAction
+from .model import (
+    DbNarrativeAction,
+    DbSectionAction,
+)
 
 # NOTE:
 # CONFIG DISPLAY LABELS
@@ -15,14 +19,50 @@ from .model import DbNarrativeAction, DbSectionAction
 # .../Sections/index.tsx. there is no automated guard yet; if these grow or
 # change often, promote them to an API-provided map the client consumes.
 
-CODED_DATA_LABELS: Final[dict[DbSectionAction, str]] = {
-    "retain": "Keep original",
-    "refine": "Refine",
-}
+
+Retain = Literal["Keep original"]
+Refine = Literal["Refine"]
+Remove = Literal["Exclude"]
+Reconstruct = Literal["Reconstruct"]
+KeepOnMatch = Literal["Keep on match"]
+
+RETAIN = get_args(Retain)[0]
+REFINE = get_args(Refine)[0]
+KEEP_ON_MATCH = get_args(KeepOnMatch)[0]
+RECONSTRUCT = get_args(Reconstruct)[0]
+REMOVE = get_args(Remove)[0]
+
+
+@dataclass
+class NarrativeDataLabels:
+    """
+    Enum class to type the narrative actions possible for the frontend.
+    """
+
+    retain: Retain = RETAIN
+    keep_on_match: KeepOnMatch = KEEP_ON_MATCH
+    reconstruct: Reconstruct = RECONSTRUCT
+    remove: Remove = REMOVE
+
+
+@dataclass
+class CodedDataLabels:
+    """
+    Enum class to type the narrative actions possible for the frontend.
+    """
+
+    retain: Retain = RETAIN
+    refine: Refine = REFINE
+
 
 NARRATIVE_DATA_LABELS: Final[dict[DbNarrativeAction, str]] = {
-    "retain": "Keep original",
-    "keep_on_match": "Keep on match",
-    "reconstruct": "Reconstruct",
-    "remove": "Exclude",
+    "retain": RETAIN,
+    "keep_on_match": KEEP_ON_MATCH,
+    "reconstruct": RECONSTRUCT,
+    "remove": REMOVE,
+}
+
+CODED_DATA_LABELS: Final[dict[DbSectionAction, str]] = {
+    "retain": RETAIN,
+    "refine": REFINE,
 }
