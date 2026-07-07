@@ -189,8 +189,10 @@ async def get_serialized_configuration(
         logger (Logger): The standard app logger
 
     Raises:
+        HTTPException: 403 if not running locally
         HTTPException: 404 if configuration cannot be found in the user's jurisdiction
         HTTPException: 400 if the configuration's status is not `active`
+        HTTPException: 404 if the configuration's primary condition is not found
 
     Returns:
         Response: The serialized configuration file content
@@ -225,15 +227,19 @@ async def get_serialized_configuration(
             detail=f"Condition with ID {config.condition_id} could not be found or does not exist.",
         )
 
-    serialized_files = await run_in_threadpool(
-        get_serialized_files,
-        user.jurisdiction_id,
-        primary_condition.canonical_url,
-        config.version,
-        logger,
-    )
-
-    return serialized_files
+    try:
+        return await run_in_threadpool(
+            get_serialized_files,
+            user.jurisdiction_id,
+            primary_condition.canonical_url,
+            config.version,
+            logger,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to fetch one or more files from S3. See logs for details.",
+        )
 
 
 @router.get(
