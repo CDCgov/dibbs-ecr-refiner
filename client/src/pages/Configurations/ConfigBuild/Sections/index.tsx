@@ -383,7 +383,6 @@ function RefineSwitch({
   const updateSection = useSectionUpdater(configurationId);
   const { clearError, setError, errorSectionCode } = useSectionError();
 
-  const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = CodedDataLabelsValue.refine;
   const retainLabelText = CodedDataLabelsValue.retain;
   const curSectionSetToRefine =
@@ -420,14 +419,14 @@ function RefineSwitch({
       <Field className="flex flex-row items-center justify-end">
         <Label
           aria-label={
-            isRefineToggled
+            curSectionSetToRefine
               ? // "Refine Admission Diagnosis section"
                 `${refineLabelText} ${currentSection.name} section`
               : // "Keep original for Admission Diagnosis section"
                 `${retainLabelText} for ${currentSection.name} section`
           }
         >
-          {isRefineToggled ? (
+          {curSectionSetToRefine ? (
             <span>{refineLabelText}</span>
           ) : (
             <span className="italic">{retainLabelText}</span>

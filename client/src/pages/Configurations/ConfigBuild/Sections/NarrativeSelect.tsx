@@ -46,6 +46,9 @@ export function NarrativeSelect({
         className="min-w-38"
       >
         <option value="retain">{NarrativeDataLabelsValue.retain}</option>
+        <option value="keep_on_match" disabled={codedDataAction !== 'refine'}>
+          {NarrativeDataLabelsValue.keep_on_match}
+        </option>
         {!isNarrativeOnly && isReconstructable && (
           <option value="reconstruct" disabled={codedDataAction === 'retain'}>
             {NarrativeDataLabelsValue.reconstruct}
