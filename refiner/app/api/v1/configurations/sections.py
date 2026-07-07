@@ -15,6 +15,7 @@ from app.db.configurations.db import (
     insert_custom_section_db,
     update_configuration_section_db,
 )
+from app.db.configurations.labels import CodedDataLabels, NarrativeDataLabels
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -51,6 +52,8 @@ class UpdateSectionProcessingResponse:
     disabled_section: list[DisabledSection]
     narrative_only_section: list[NarrativeOnlySection]
     reconstructable_section: list[ReconstructableSection]
+    narrative_data_labels: NarrativeDataLabels
+    coded_data_labels: CodedDataLabels
 
 
 @router.post(
@@ -232,6 +235,8 @@ async def update_section(
         narrative_only_section=list(NarrativeOnlySection),
         disabled_section=list(DisabledSection),
         reconstructable_section=list(ReconstructableSection),
+        narrative_data_labels=NarrativeDataLabels(),
+        coded_data_labels=CodedDataLabels(),
     )
 
 
