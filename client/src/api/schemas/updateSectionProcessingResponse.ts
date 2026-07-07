@@ -1,4 +1,6 @@
+import type { CodedDataLabels } from './codedDataLabels';
 import type { DisabledSection } from './disabledSection';
+import type { NarrativeDataLabels } from './narrativeDataLabels';
 import type { NarrativeOnlySection } from './narrativeOnlySection';
 import type { ReconstructableSection } from './reconstructableSection';
 
@@ -10,4 +12,6 @@ export interface UpdateSectionProcessingResponse {
   disabled_section: DisabledSection[];
   narrative_only_section: NarrativeOnlySection[];
   reconstructable_section: ReconstructableSection[];
+  narrative_data_labels: NarrativeDataLabels;
+  coded_data_labels: CodedDataLabels;
 }
