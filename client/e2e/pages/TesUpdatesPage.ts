@@ -17,13 +17,13 @@ export class TesUpdatesPage {
     ).toBeVisible();
   }
 
-  async goToTesUpdate(version: number) {
+  async goToTesUpdate(versionString: string) {
     await this.page
-      .getByRole('button', { name: `Version ${version}.0.0` })
+      .getByRole('button', { name: `Version ${versionString}` })
       .click();
 
     expect(
-      this.page.getByText(`What's changed in Version ${version}.0.0`)
+      this.page.getByText(`What's changed in Version ${versionString}`)
     ).toBeDefined();
   }
 }

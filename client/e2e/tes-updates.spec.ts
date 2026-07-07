@@ -9,9 +9,9 @@ test.describe('TES updates page', () => {
     makeAxeBuilder,
     tesUpdatesPage,
   }) => {
-    await tesUpdatesPage.goToTesUpdate(3);
+    await tesUpdatesPage.goToTesUpdate('3.0.0');
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    await tesUpdatesPage.goToTesUpdate(6);
+    await tesUpdatesPage.goToTesUpdate('6.0.0');
   });
 });
