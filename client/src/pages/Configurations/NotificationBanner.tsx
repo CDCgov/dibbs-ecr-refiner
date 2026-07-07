@@ -16,13 +16,16 @@ export function NotificationBanner({
 }: NotificationBannerProps) {
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
-      <div className="mx-auto flex max-w-7xl items-center">
+      <div className="mx-auto flex max-w-7xl items-center justify-center">
         <div className="flex flex-1 items-center justify-center gap-10">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
             <InfoIcon className="fill-blue-40v shrink-0" />
-            <span className="font-bold text-blue-500">{message}</span>
+            <span className="w-30 font-bold text-blue-500 md:w-75">
+              {message}
+            </span>
           </div>
           <Button
+            className="m-0!"
             ariaLabel={type === 'tes' ? 'View TES updates' : 'View app updates'}
             variant="secondary"
             to={navigateToPageUrl}
