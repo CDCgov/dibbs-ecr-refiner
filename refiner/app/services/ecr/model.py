@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Final, Literal, TypedDict
 from app.db.configurations.model import (
     DbConfigurationSectionInstructions,
     DbNarrativeAction,
+    DbSectionAction,
 )
 
 if TYPE_CHECKING:
@@ -473,7 +474,7 @@ class SectionProvenanceRecord:
     loinc_code: str
     display_name: str
     include: bool
-    action: str
+    action: DbSectionAction
     narrative: DbNarrativeAction
     config_version: int | None
     source: SectionSource
