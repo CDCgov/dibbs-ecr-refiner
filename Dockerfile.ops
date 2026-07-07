@@ -23,6 +23,7 @@ ENV VERSION=$VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 # Install system dependencies
 RUN apk update && apk add --no-cache \
