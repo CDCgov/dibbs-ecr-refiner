@@ -49,7 +49,7 @@ export function TesUpdates() {
                 )}
                 onClick={() => setSelectedUpdate(t)}
               >
-                <div>
+                <div className="text-left">
                   <div className="font-bold">Version {t.version}</div>
                   {new Date(t.created_at).toLocaleString('en-US', dateOptions)}
                 </div>
