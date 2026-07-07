@@ -1,6 +1,6 @@
 
 /**
- * Type for TES update sent to the frontend.
+ * All metadata for a TES update needed for the frontend.
  */
 export interface TesUpdate {
   id: string;

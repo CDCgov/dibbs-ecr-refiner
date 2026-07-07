@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from uuid import UUID
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/tes")
 @dataclass
 class TesUpdate:
     """
-    Type for TES update sent to the frontend.
+    All metadata for a TES update needed for the frontend.
     """
 
     id: UUID
@@ -24,7 +24,7 @@ class TesUpdate:
 @dataclass
 class TesResponse:
     """
-    Response needed for the audit log page.
+    Response needed for the TES updates page.
     """
 
     tes_updates: list[TesUpdate]
@@ -44,7 +44,6 @@ async def get_tes_updates(
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
-        logger (Logger): Standard logger.
 
     Returns:
         TesResponse: A bundle with a list of TesUpdates, including
@@ -53,9 +52,4 @@ async def get_tes_updates(
     """
     updates = await get_tes_updates_db(db=db)
 
-    return TesResponse(
-        tes_updates=[
-            TesUpdate(id=t.id, version=t.version, created_at=t.created_at)
-            for t in updates
-        ]
-    )
+    return TesResponse(tes_updates=[TesUpdate(**asdict(t)) for t in updates])

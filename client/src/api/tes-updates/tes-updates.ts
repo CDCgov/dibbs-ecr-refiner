@@ -48,7 +48,6 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  *
  * Args:
  *     db (AsyncDatabaseConnection): Database connection.
- *     logger (Logger): Standard logger.
  *
  * Returns:
  *     TesResponse: A bundle with a list of TesUpdates, including
