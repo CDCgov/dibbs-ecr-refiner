@@ -7,11 +7,6 @@ import {
   DbConfigurationSectionProcessing,
 } from '../../../../api/schemas';
 
-// TODO: Actual reconstruction logic is not yet implemented in backend. When
-// narrative="reconstruct" is selected, the backend currently treats it as
-// "remove".
-// See refiner/app/services/ecr/refine.py for the `TODO:`
-
 // TODO: Audit the existing frontend architecture in `client/src/pages` to identify
 // bottlenecks for forthcoming Refiner 2.0 designs
 
@@ -50,6 +45,9 @@ export function NarrativeSelect({
         className="min-w-38"
       >
         <option value="retain">Keep original</option>
+        <option value="keep_on_match" disabled={codedDataAction !== 'refine'}>
+          Keep on match
+        </option>
         {!isNarrativeOnly && isReconstructable && (
           <option value="reconstruct" disabled={codedDataAction === 'retain'}>
             Reconstruct
