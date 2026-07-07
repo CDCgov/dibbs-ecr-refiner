@@ -10,6 +10,51 @@ test.describe('Configuration detail flow', () => {
     await deleteAllConfigurations();
   });
 
+  test('Check serialization page (local only) renders as expected', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'COVID-19';
+    const conditionCanonicalUuid = '07221093-b8a1-4b1d-8678-259277bfba64';
+    await configurationsPage.createConfiguration(condition);
+    const link = page.getByRole('link', {
+      name: 'View serialized configuration (local only)',
+    });
+    await expect(link).not.toBeVisible();
+
+    await configurationPage.goToActivateTab();
+    await configurationPage.activateConfiguration();
+    await configurationPage.goToBuildTab();
+    await expect(link).toBeVisible();
+    await link.click();
+    const backToBuildPageLink = page.getByRole('link', {
+      name: 'back to build page',
+    });
+    await expect(backToBuildPageLink).toBeVisible();
+
+    // basic content check
+    await expect(
+      page.getByText(
+        `configurations/SDDH/${conditionCanonicalUuid}/current.json`
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        `configurations/SDDH/${conditionCanonicalUuid}/1/metadata.json`
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        `configurations/SDDH/${conditionCanonicalUuid}/1/active.json`
+      )
+    ).toBeVisible();
+    await backToBuildPageLink.click();
+    await expect(
+      page.getByRole('heading', { name: 'Build configuration', level: 2 })
+    ).toBeVisible();
+  });
+
   test('Validate code set table appearance', async ({
     page,
     configurationsPage,
