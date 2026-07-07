@@ -14,23 +14,21 @@ from .model import (
 # provenance footnote (services/ecr/narrative/footnote.py) so the two never
 # drift from each other.
 #
-# these MUST stay in sync with the client's option labels — see
-# client/src/pages/Configurations/ConfigBuild/Sections/NarrativeSelect.tsx and
-# .../Sections/index.tsx. there is no automated guard yet; if these grow or
-# change often, promote them to an API-provided map the client consumes.
+# Variables are defined this way to allow Orval to codegen and ship them to the
+# frontend so that the user-facing strings are driven by the definitions here.
 
 
-Retain = Literal["Keep original"]
-Refine = Literal["Refine"]
-Remove = Literal["Exclude"]
-Reconstruct = Literal["Reconstruct"]
-KeepOnMatch = Literal["Keep on match"]
+KeepOriginalLiteral = Literal["Keep original"]
+RefineLiteral = Literal["Refine"]
+ExcludeLiteral = Literal["Exclude"]
+ReconstructLiteral = Literal["Reconstruct"]
+KeepOnMatchLiteral = Literal["Keep on match"]
 
-RETAIN = get_args(Retain)[0]
-REFINE = get_args(Refine)[0]
-KEEP_ON_MATCH = get_args(KeepOnMatch)[0]
-RECONSTRUCT = get_args(Reconstruct)[0]
-REMOVE = get_args(Remove)[0]
+RETAIN_LABEL = get_args(KeepOriginalLiteral)[0]
+REFINE_LABEL = get_args(RefineLiteral)[0]
+KEEP_ON_MATCH_LABEL = get_args(KeepOnMatchLiteral)[0]
+RECONSTRUCT_LABEL = get_args(ReconstructLiteral)[0]
+REMOVE_LABEL = get_args(ExcludeLiteral)[0]
 
 
 @dataclass
@@ -39,10 +37,10 @@ class NarrativeDataLabels:
     Enum class to type the narrative actions possible for the frontend.
     """
 
-    retain: Retain = RETAIN
-    keep_on_match: KeepOnMatch = KEEP_ON_MATCH
-    reconstruct: Reconstruct = RECONSTRUCT
-    remove: Remove = REMOVE
+    retain: KeepOriginalLiteral = RETAIN_LABEL
+    keep_on_match: KeepOnMatchLiteral = KEEP_ON_MATCH_LABEL
+    reconstruct: ReconstructLiteral = RECONSTRUCT_LABEL
+    remove: ExcludeLiteral = REMOVE_LABEL
 
 
 @dataclass
@@ -51,18 +49,18 @@ class CodedDataLabels:
     Enum class to type the narrative actions possible for the frontend.
     """
 
-    retain: Retain = RETAIN
-    refine: Refine = REFINE
+    retain: KeepOriginalLiteral = RETAIN_LABEL
+    refine: RefineLiteral = REFINE_LABEL
 
 
 NARRATIVE_DATA_LABELS: Final[dict[DbNarrativeAction, str]] = {
-    "retain": RETAIN,
-    "keep_on_match": KEEP_ON_MATCH,
-    "reconstruct": RECONSTRUCT,
-    "remove": REMOVE,
+    "retain": RETAIN_LABEL,
+    "keep_on_match": KEEP_ON_MATCH_LABEL,
+    "reconstruct": RECONSTRUCT_LABEL,
+    "remove": REMOVE_LABEL,
 }
 
 CODED_DATA_LABELS: Final[dict[DbSectionAction, str]] = {
-    "retain": RETAIN,
-    "refine": REFINE,
+    "retain": RETAIN_LABEL,
+    "refine": REFINE_LABEL,
 }
