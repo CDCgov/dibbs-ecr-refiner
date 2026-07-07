@@ -45,7 +45,7 @@ export function TesUpdates() {
                   'px-6 py-2 hover:cursor-pointer',
                   t.id === selectedUpdate?.id
                     ? 'border-l-blue-cool-50 border-y-gray-cool-20! -mr-px! border-y border-l-8 bg-white'
-                    : 'text-blue-cool-50 px-6 py-2'
+                    : 'text-blue-cool-60 px-6 py-2'
                 )}
                 onClick={() => setSelectedUpdate(t)}
               >
