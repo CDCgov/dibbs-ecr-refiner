@@ -13,7 +13,6 @@ interface ButtonProps extends HeadlessButtonProps {
   variant?: ButtonVariant;
   to?: string;
   href?: string;
-  ariaLabel?: string;
 }
 
 const sharedStyles =
