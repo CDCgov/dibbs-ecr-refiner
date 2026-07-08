@@ -31,7 +31,7 @@ export function TesUpdates() {
       <Title>TES Updates</Title>
 
       <div className="flex">
-        <div className="bg-blue-cool-5 border-gray-cool-20! flex h-160 max-h-160 flex-col overflow-y-scroll border-y border-l">
+        <div className="bg-blue-cool-5 border-gray-cool-20! flex h-160 max-h-160 flex-col overflow-y-scroll border-y border-l min-w-30 md:min-w-52">
           <h2 className="text-gray-cool-60 border-gray-cool-20! border-r px-6 pt-4 pb-6 text-sm font-medium uppercase">
             UPDATES HISTORY
           </h2>
