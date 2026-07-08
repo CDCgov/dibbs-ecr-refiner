@@ -50,6 +50,10 @@ async def get_tes_updates(
             - The version
             - The when it was created
     """
-    updates = await get_tes_updates_db(db=db)
+    updates = sorted(
+        await get_tes_updates_db(db=db),
+        key=lambda r: (r.created_at, r.version),
+        reverse=True,
+    )
 
     return TesResponse(tes_updates=[TesUpdate(**asdict(t)) for t in updates])

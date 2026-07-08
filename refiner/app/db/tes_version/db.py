@@ -33,8 +33,7 @@ async def get_tes_updates_db(db: AsyncDatabaseConnection) -> list[DbTesUpdate]:
         id,
         created_at,
         version
-    FROM tes
-    ORDER BY version DESC;
+    FROM tes;
     """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTesUpdate)) as cur:

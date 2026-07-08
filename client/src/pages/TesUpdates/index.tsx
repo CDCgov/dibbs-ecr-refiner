@@ -5,18 +5,18 @@ import { useState } from 'react';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { TesUpdate } from '../../api/schemas/tesUpdate';
+import { Spinner } from '@components/Spinner';
 
 export function TesUpdates() {
   const { data: tesUpdates, isPending, isError } = useGetTesUpdates();
-  const [selectedUpdate, setSelectedUpdate] = useState<TesUpdate>();
+  const [selectedUpdate, setSelectedUpdate] = useState<TesUpdate | null>(null);
 
-  if (tesUpdates && selectedUpdate === undefined) {
-    setSelectedUpdate(tesUpdates.data.tes_updates[0]);
-  }
-
-  if (isPending) return 'Loading...';
+  if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error occurred!';
 
+  if (!selectedUpdate) {
+    setSelectedUpdate(tesUpdates.data.tes_updates[0]);
+  }
   const dateOptions: Intl.DateTimeFormatOptions = {
     month: '2-digit',
     day: '2-digit',
@@ -27,8 +27,8 @@ export function TesUpdates() {
   };
 
   return (
-    <div className="my-8 px-20">
-      <Title className="mb-6!">TES Updates</Title>
+    <div className="my-8 flex flex-col gap-6 px-20 md:px-20">
+      <Title>TES Updates</Title>
 
       <div className="flex">
         <div className="bg-blue-cool-5 border-gray-cool-20! flex h-full min-h-160 flex-col border">
@@ -41,12 +41,11 @@ export function TesUpdates() {
               <Button
                 variant="unstyled"
                 key={t.id}
-                className={classNames(
-                  'px-6 py-2 hover:cursor-pointer',
-                  t.id === selectedUpdate?.id
-                    ? 'border-l-blue-cool-50 border-y-gray-cool-20! -mr-px! border-y border-l-8 bg-white'
-                    : 'text-blue-cool-60 px-6 py-2'
-                )}
+                className={classNames('px-6 py-2 hover:cursor-pointer', {
+                  'border-l-blue-cool-50 border-y-gray-cool-20! -mr-px! border-y border-l-8 bg-white':
+                    t.id === selectedUpdate?.id,
+                  'text-blue-cool-60 px-6 py-2': t.id !== selectedUpdate?.id,
+                })}
                 onClick={() => setSelectedUpdate(t)}
               >
                 <div className="text-left">
