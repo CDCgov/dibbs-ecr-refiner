@@ -15,39 +15,37 @@ test.describe('Notification banners', () => {
     page,
   }) => {
     // app updates
+    const appText = 'There are new updates to eCR Refiner.';
+    await expect(page.getByText(appText, { exact: true })).toBeVisible();
     await expect(
-      page.getByText('There are new updates to eCR Refiner.')
+      page.getByRole('link', { name: 'View updates for app' })
     ).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'View app updates' })
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Dismiss TES updates notification' })
+      page.getByRole('button', { name: `Dismiss notification for ${appText}` })
     ).toBeVisible();
 
     // tes updates
+    const tesText = 'A new TES update was published.';
+    await expect(page.getByText(tesText, { exact: true })).toBeVisible();
     await expect(
-      page.getByText('A new TES update was published.')
+      page.getByRole('link', { name: 'View updates for TES' })
     ).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'View app updates' })
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Dismiss TES updates notification' })
+      page.getByRole('button', { name: `Dismiss notification for ${tesText}` })
     ).toBeVisible();
   });
 
   test('Banner is dismissed upon clicking the "X" button', async ({ page }) => {
-    const appUpdateText = page.getByText(
-      'There are new updates to eCR Refiner.'
-    );
+    const appText = 'There are new updates to eCR Refiner.';
+    const appUpdateText = page.getByText(appText, { exact: true });
     const appUpdateBannerButton = page.getByRole('button', {
-      name: 'Dismiss app updates notification',
+      name: `Dismiss notification for ${appText}`,
     });
 
-    const tesUpdateText = page.getByText('A new TES update was published.');
+    const tesText = 'A new TES update was published.';
+    const tesUpdateText = page.getByText(tesText, { exact: true });
     const tesUpdateBannerButton = page.getByRole('button', {
-      name: 'Dismiss TES updates notification',
+      name: `Dismiss notification for ${tesText}`,
     });
 
     await expect(appUpdateText).toBeVisible();
@@ -67,20 +65,24 @@ test.describe('Notification banners', () => {
     await expect(tesUpdateText).not.toBeVisible();
   });
 
-  test('clicking "view updates" button dismisses the banner', async ({
+  test('Clicking "view updates" button dismisses the banner', async ({
     page,
     configurationsPage,
   }) => {
-    const bannerText = page.getByText('There are new updates to eCR Refiner.');
+    const bannerText = page.getByText('There are new updates to eCR Refiner.', {
+      exact: true,
+    });
 
     await expect(bannerText).toBeVisible();
 
-    await page.getByRole('link', { name: 'View app updates' }).click();
+    await page.getByRole('link', { name: 'View updates for app' }).click();
     await expect(
       page.getByRole('heading', { name: 'App updates' })
     ).toBeVisible();
 
     await configurationsPage.goto();
     await expect(bannerText).not.toBeVisible();
+
+    // TODO: Add TES expectations when page is available
   });
 });
