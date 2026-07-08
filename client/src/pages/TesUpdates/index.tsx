@@ -31,8 +31,8 @@ export function TesUpdates() {
       <Title>TES Updates</Title>
 
       <div className="flex">
-        <div className="bg-blue-cool-5 border-gray-cool-20! flex h-full min-h-160 flex-col border">
-          <h2 className="text-gray-cool-60 mb-6 px-6 pt-4 text-sm font-medium uppercase">
+        <div className="bg-blue-cool-5 border-gray-cool-20! flex h-160 max-h-160 flex-col overflow-y-scroll border-y border-l">
+          <h2 className="text-gray-cool-60 border-gray-cool-20! border-r px-6 pt-4 pb-6 text-sm font-medium uppercase">
             UPDATES HISTORY
           </h2>
 
@@ -42,9 +42,10 @@ export function TesUpdates() {
                 variant="unstyled"
                 key={t.id}
                 className={classNames('px-6 py-2 hover:cursor-pointer', {
-                  'border-l-blue-cool-50 border-y-gray-cool-20! -mr-px! border-y border-l-8 bg-white':
+                  'border-l-blue-cool-50 border-y-gray-cool-20! border-y border-l-8 bg-white':
                     t.id === selectedUpdate?.id,
-                  'text-blue-cool-60 px-6 py-2': t.id !== selectedUpdate?.id,
+                  'text-blue-cool-60 border-gray-cool-20! border-r px-6 py-2':
+                    t.id !== selectedUpdate?.id,
                 })}
                 onClick={() => setSelectedUpdate(t)}
               >
@@ -55,6 +56,11 @@ export function TesUpdates() {
               </Button>
             );
           })}
+          {/* element here to allow border for the un-filled portion of the sidebar */}
+          <div
+            className="border-gray-cool-20! grow border-r"
+            aria-hidden="true"
+          />
         </div>
 
         <div className="border-gray-cool-20! grow border-y border-r bg-white p-8">
