@@ -27,11 +27,11 @@ export function TesUpdates() {
   };
 
   return (
-    <div className="my-8 flex flex-col gap-6 px-20 md:px-20">
+    <div className="my-8 flex flex-col gap-6 px-2 md:px-20">
       <Title>TES Updates</Title>
 
       <div className="flex">
-        <div className="bg-blue-cool-5 border-gray-cool-20! flex h-160 max-h-160 flex-col overflow-y-scroll border-y border-l min-w-30 md:min-w-52">
+        <div className="bg-blue-cool-5 border-gray-cool-20! flex h-160 max-h-160 min-w-30 flex-col overflow-y-scroll border-y border-l md:min-w-52">
           <h2 className="text-gray-cool-60 border-gray-cool-20! border-r px-6 pt-4 pb-6 text-sm font-medium uppercase">
             UPDATES HISTORY
           </h2>
