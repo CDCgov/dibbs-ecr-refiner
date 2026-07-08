@@ -54,7 +54,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       onClick,
       className,
       disabled,
-      ariaLabel,
       ...props
     },
     ref
@@ -67,7 +66,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (href) {
       return (
-        <a href={href} className={variantClass} aria-label={ariaLabel}>
+        <a href={href} className={variantClass}>
           {children}
         </a>
       );
@@ -81,7 +80,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>
           }
           className={variantClass}
-          aria-label={ariaLabel}
         >
           {children}
         </Link>
@@ -95,7 +93,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled}
         onClick={onClick}
         className={variantClass}
-        aria-label={ariaLabel}
         {...props}
       >
         {children}

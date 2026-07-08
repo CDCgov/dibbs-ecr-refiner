@@ -4,15 +4,13 @@ import { InfoIcon } from '@components/Icons/InfoIcon';
 
 interface NotificationBannerProps {
   message: string;
-  navigateToPageUrl: string;
   onDismiss: () => void;
-  type: 'app' | 'tes';
+  children: React.ReactNode;
 }
 export function NotificationBanner({
   message,
-  navigateToPageUrl,
   onDismiss,
-  type,
+  children,
 }: NotificationBannerProps) {
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
@@ -24,27 +22,16 @@ export function NotificationBanner({
               {message}
             </span>
           </div>
-          <Button
-            className="m-0!"
-            ariaLabel={type === 'tes' ? 'View TES updates' : 'View app updates'}
-            variant="secondary"
-            to={navigateToPageUrl}
-            onClick={onDismiss}
-          >
-            View updates
-          </Button>
+          {children}
         </div>
         <Button
-          ariaLabel={
-            type === 'tes'
-              ? 'Dismiss TES updates notification'
-              : 'Dismiss app updates notification'
-          }
+          type="button"
           variant="unstyled"
           className="hover:cursor-pointer hover:opacity-75 focus:outline-none"
           onClick={onDismiss}
         >
           <CloseIcon size={24} className="fill-blue-500" />
+          <span className="sr-only">Dismiss notification for {message}</span>
         </Button>
       </div>
     </div>

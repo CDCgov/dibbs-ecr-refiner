@@ -174,10 +174,17 @@ function AppUpdateBanner({ isVisible, refreshUser }: BannerProps) {
   return (
     <NotificationBanner
       message="There are new updates to eCR Refiner."
-      type="app"
-      navigateToPageUrl="/app-updates"
       onDismiss={dismiss}
-    />
+    >
+      <Button
+        className="m-0!"
+        variant="secondary"
+        to="/app-updates"
+        onClick={dismiss}
+      >
+        View updates <span className="sr-only">for app</span>
+      </Button>
+    </NotificationBanner>
   );
 }
 
@@ -192,10 +199,17 @@ function TesUpdateBanner({ isVisible, refreshUser }: BannerProps) {
   return (
     <NotificationBanner
       message="A new TES update was published."
-      type="tes"
-      navigateToPageUrl="/app-updates" // TODO: Link to new page
       onDismiss={dismiss}
-    />
+    >
+      <Button
+        className="m-0!"
+        variant="secondary"
+        to="/tes-updates"
+        onClick={dismiss}
+      >
+        View updates <span className="sr-only">for TES</span>
+      </Button>
+    </NotificationBanner>
   );
 }
 
