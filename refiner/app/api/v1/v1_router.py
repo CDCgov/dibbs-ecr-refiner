@@ -8,6 +8,7 @@ from .events import router as events_router
 from .info import router as info_router
 from .releases import router as releases_router
 from .simulator import router as simulator_router
+from .tes import router as tes_router
 
 router = APIRouter(prefix="/v1")
 router.include_router(conditions_router)
@@ -18,3 +19,4 @@ router.include_router(info_router)
 router.include_router(releases_router)
 router.include_router(code_systems_router)
 router.include_router(app_notifications_router)
+router.include_router(tes_router)
