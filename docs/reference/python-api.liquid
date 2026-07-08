@@ -1,0 +1,107 @@
+---
+layout: layout.liquid
+title: Python API Reference
+pagination:
+  data: pythonApiArray.modules
+  size: 1
+  alias: item
+permalink: "/reference/python-api/{{ item.slug }}/"
+---
+
+{% assign pageTitle = "Python API Reference" %}
+
+{%- comment -%} Prefer canonical module entry from pythonApiArray in case the paginated item is partial. {%- endcomment -%}
+{% assign me = pythonApiArray.modules | where: "slug", item.slug | first %}
+{% if me %}{% assign item = me %}{% endif %}
+
+<h1>{{ pageTitle }}: <code>{{ item.name }}</code></h1>
+
+<h2>Description</h2>
+{% if item.docstring %}
+  {% capture renderedDescription %}{% renderTemplate "liquid,md", item %}{{ docstring }}{% endrenderTemplate %}{% endcapture %}
+  <div class="prose max-w-none">{{ renderedDescription | sanitize }}</div>
+{% else %}
+  <div class="prose max-w-none">No description provided.</div>
+{% endif %}
+
+<h2>Members</h2>
+{% if item.members and item.members.size > 0 %}
+<table class="w-full border-collapse mb-4 text-left" aria-describedby="module-members">
+  <thead class="bg-gray-100 border-b border-gray-200 text-[0.9rem]">
+    <tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">Type</th><th class="px-3 py-2">Description</th></tr>
+  </thead>
+  <tbody class="text-[0.9rem]">
+  {% for member in item.members %}
+    <tr class="border-b border-gray-50">
+      <td class="px-3 py-2"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{{ member.name }}</code></td>
+      <td class="px-3 py-2">{{ member.type }}</td>
+      <td class="px-3 py-2">
+        {% if member.docstring %}
+          {% capture renderedMemberDescription %}{% renderTemplate "liquid,md", member %}{{ docstring }}{% endrenderTemplate %}{% endcapture %}
+          <div class="prose max-w-none">{{ renderedMemberDescription | sanitize }}</div>
+        {% else %}
+          <p>No description provided.</p>
+        {% endif %}
+        {% if member.methods and member.methods.size > 0 %}
+          <details open>
+            <summary>Methods</summary>
+            <ul>
+            {% for method in member.methods %}
+              <li><code>{{ method.name }}</code>{% if method.docstring %}: {% capture renderedMethodDescription %}{% renderTemplate "liquid,md", method %}{{ docstring }}{% endrenderTemplate %}{% endcapture %} <span class="prose max-w-none">{{ renderedMethodDescription | sanitize }}</span>{% endif %}</li>
+            {% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No members.</p>
+{% endif %}
+
+<nav class="pagination">
+  {%- comment -%} build prev/next slugs from pythonApiArray.modules so links stay stable {%- endcomment -%}
+  {% assign prevSlug = "" %}
+  {% assign nextSlug = "" %}
+  {% for module in pythonApiArray.modules %}
+    {% if module.slug == item.slug %}
+      {% assign idx = forloop.index0 %}
+      {% if idx > 0 %}
+        {% assign prevIndex = idx | minus: 1 %}
+        {% assign prevSlug = pythonApiArray.modules[prevIndex].slug %}
+      {% endif %}
+      {% assign lastIndex = pythonApiArray.modules | size | minus: 1 %}
+      {% if idx < lastIndex %}
+        {% assign nextIndex = idx | plus: 1 %}
+        {% assign nextSlug = pythonApiArray.modules[nextIndex].slug %}
+      {% endif %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+
+  <div class="flex flex-col md:flex-row gap-4 mt-4">
+    {% if prevSlug != "" %}
+      {% assign prevModule = pythonApiArray.modules | where: "slug", prevSlug | first %}
+      <div class="w-full md:w-1/2">
+        <a class="flex flex-col justify-center w-full h-[11vh] px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg no-underline text-gray-900 items-start text-left" href="/reference/python-api/{{ prevSlug }}/" rel="prev" title="{{ prevModule.name }}">
+          <div class="font-bold">&larr; Previous</div>
+          <div class="text-sm">Members: {{ prevModule.memberCount }}</div>
+          <div class="text-xs text-gray-600 truncate" title="{{ prevModule.name }}">{{ prevModule.name }}</div>
+        </a>
+      </div>
+    {% endif %}
+
+    {% if nextSlug != "" %}
+      {% assign nextModule = pythonApiArray.modules | where: "slug", nextSlug | first %}
+      <div class="w-full md:w-1/2">
+        <a class="flex flex-col justify-center w-full h-[11vh] px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg no-underline text-gray-900 items-end text-right" href="/reference/python-api/{{ nextSlug }}/" rel="next" title="{{ nextModule.name }}">
+          <div class="font-bold">Next &rarr;</div>
+          <div class="text-sm">Members: {{ nextModule.memberCount }}</div>
+          <div class="text-xs text-gray-600 truncate" title="{{ nextModule.name }}">{{ nextModule.name }}</div>
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</nav>

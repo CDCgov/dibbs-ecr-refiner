@@ -1,0 +1,32 @@
+---
+layout: layout.liquid
+title: Python API Index
+---
+
+{% renderTemplate "md" %}
+# Python API
+
+Browse the generated Python modules.
+{% endrenderTemplate %}
+
+<table class="w-full border-collapse mb-4 text-left" aria-describedby="python-api-index">
+  <thead class="bg-gray-100 border-b border-gray-200 text-[0.9rem]">
+    <tr><th class="px-3 py-2">Module</th><th class="px-3 py-2">Members</th><th class="px-3 py-2">Description</th></tr>
+  </thead>
+  <tbody class="text-[0.9rem]">
+  {% for module in pythonApiArray.modules %}
+    <tr>
+      <td><a href="/reference/python-api/{{ module.slug }}/"><code>{{ module.name }}</code></a></td>
+      <td>{{ module.memberCount }}</td>
+      <td>
+        {% if module.docstring %}
+          {% capture renderedModuleDescription %}{% renderTemplate "liquid,md", module %}{{ docstring }}{% endrenderTemplate %}{% endcapture %}
+          <div class="prose max-w-none">{{ renderedModuleDescription | sanitize }}</div>
+        {% else %}
+          <p>No description provided.</p>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

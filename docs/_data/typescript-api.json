@@ -1,0 +1,1964 @@
+{
+  "modules": [
+    {
+      "name": "App",
+      "docstring": "",
+      "members": [
+        {
+          "name": "App",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 18,
+          "signatures": [
+            {
+              "name": "App",
+              "docstring": "",
+              "lineno": 18
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Button",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ButtonVariant",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 9
+        },
+        {
+          "name": "Button",
+          "type": "Unknown(32)",
+          "docstring": "Button component supporting multiple variants and behaviors,\nincluding primary, secondary, and disabled styles, with optional\nrouting functionality.",
+          "lineno": 45
+        }
+      ]
+    },
+    {
+      "name": "components/Checkbox",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Checkbox",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "Checkbox",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Combobox",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Combobox",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 16,
+          "signatures": [
+            {
+              "name": "Combobox",
+              "docstring": "",
+              "lineno": 16
+            }
+          ]
+        },
+        {
+          "name": "ComboboxInput",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 35,
+          "signatures": [
+            {
+              "name": "ComboboxInput",
+              "docstring": "",
+              "lineno": 35
+            }
+          ]
+        },
+        {
+          "name": "ComboboxOption",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 144,
+          "signatures": [
+            {
+              "name": "ComboboxOption",
+              "docstring": "",
+              "lineno": 144
+            }
+          ]
+        },
+        {
+          "name": "ComboboxOptions",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 121,
+          "signatures": [
+            {
+              "name": "ComboboxOptions",
+              "docstring": "",
+              "lineno": 121
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/ConfigurationsTable",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConfigurationsTable",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 11,
+          "signatures": [
+            {
+              "name": "ConfigurationsTable",
+              "docstring": "",
+              "lineno": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Diff",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Diff",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 22,
+          "signatures": [
+            {
+              "name": "Diff",
+              "docstring": "",
+              "lineno": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Diff/DiffToggleOptions",
+      "docstring": "",
+      "members": [
+        {
+          "name": "DiffToggleOptions",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 54,
+          "signatures": [
+            {
+              "name": "DiffToggleOptions",
+              "docstring": "",
+              "lineno": 54
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Diff/Warning",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Warning",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 6,
+          "signatures": [
+            {
+              "name": "Warning",
+              "docstring": "",
+              "lineno": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/ExternalLink",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ExternalLink",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 11,
+          "signatures": [
+            {
+              "name": "ExternalLink",
+              "docstring": "",
+              "lineno": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Field",
+      "docstring": "",
+      "members": [
+        {
+          "name": "FieldProps",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 7
+        },
+        {
+          "name": "Field",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "Field",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/FileUploadWarning",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ERROR_UPLOAD_MESSAGE",
+          "type": "Unknown(32)",
+          "docstring": "",
+          "lineno": 3
+        },
+        {
+          "name": "FileUploadWarning",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 10,
+          "signatures": [
+            {
+              "name": "FileUploadWarning",
+              "docstring": "",
+              "lineno": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Icons/CloseIcon",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CloseIcon",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "CloseIcon",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Icons/InfoIcon",
+      "docstring": "",
+      "members": [
+        {
+          "name": "InfoIcon",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "InfoIcon",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Icons/types",
+      "docstring": "",
+      "members": [
+        {
+          "name": "IconProps",
+          "type": "Unknown(256)",
+          "docstring": "",
+          "lineno": 1
+        }
+      ]
+    },
+    {
+      "name": "components/Icons/UploadIcon",
+      "docstring": "",
+      "members": [
+        {
+          "name": "UploadIcon",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "UploadIcon",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Label",
+      "docstring": "",
+      "members": [
+        {
+          "name": "LabelProps",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 27
+        },
+        {
+          "name": "Label",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "Label",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Layout",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Footer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 110,
+          "signatures": [
+            {
+              "name": "Footer",
+              "docstring": "",
+              "lineno": 110
+            }
+          ]
+        },
+        {
+          "name": "Header",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 35,
+          "signatures": [
+            {
+              "name": "Header",
+              "docstring": "",
+              "lineno": 35
+            }
+          ]
+        },
+        {
+          "name": "Layout",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 13,
+          "signatures": [
+            {
+              "name": "Layout",
+              "docstring": "",
+              "lineno": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Modal",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Modal",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 56,
+          "signatures": [
+            {
+              "name": "Modal",
+              "docstring": "This is a generic Modal component.",
+              "lineno": 56
+            }
+          ]
+        },
+        {
+          "name": "ModalBody",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 125,
+          "signatures": [
+            {
+              "name": "ModalBody",
+              "docstring": "",
+              "lineno": 125
+            }
+          ]
+        },
+        {
+          "name": "ModalFooter",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 137,
+          "signatures": [
+            {
+              "name": "ModalFooter",
+              "docstring": "",
+              "lineno": 137
+            }
+          ]
+        },
+        {
+          "name": "ModalHeader",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 113,
+          "signatures": [
+            {
+              "name": "ModalHeader",
+              "docstring": "",
+              "lineno": 113
+            }
+          ]
+        },
+        {
+          "name": "ModalTitle",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 117,
+          "signatures": [
+            {
+              "name": "ModalTitle",
+              "docstring": "",
+              "lineno": 117
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/NavigationBar",
+      "docstring": "",
+      "members": [
+        {
+          "name": "NavigationBar",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "NavigationBar",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Pagination",
+      "docstring": "",
+      "members": [
+        {
+          "name": "PaginationProps",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 10
+        },
+        {
+          "name": "Pagination",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 23,
+          "signatures": [
+            {
+              "name": "Pagination",
+              "docstring": "",
+              "lineno": 23
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Search",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Search",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 6,
+          "signatures": [
+            {
+              "name": "Search",
+              "docstring": "",
+              "lineno": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Select",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Select",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 15,
+          "signatures": [
+            {
+              "name": "Select",
+              "docstring": "",
+              "lineno": 15
+            }
+          ]
+        },
+        {
+          "name": "SelectContainer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 9,
+          "signatures": [
+            {
+              "name": "SelectContainer",
+              "docstring": "",
+              "lineno": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Spinner",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Spinner",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 7,
+          "signatures": [
+            {
+              "name": "Spinner",
+              "docstring": "",
+              "lineno": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Spinner/SpinnerWithMinimalRender",
+      "docstring": "",
+      "members": [
+        {
+          "name": "SpinnerWithMinimalRender",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 13,
+          "signatures": [
+            {
+              "name": "SpinnerWithMinimalRender",
+              "docstring": "",
+              "lineno": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Table",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Table",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 17,
+          "signatures": [
+            {
+              "name": "Table",
+              "docstring": "",
+              "lineno": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/TextInput",
+      "docstring": "",
+      "members": [
+        {
+          "name": "TextInputProps",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 13
+        },
+        {
+          "name": "TextInput",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "TextInput",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Title",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Title",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 7,
+          "signatures": [
+            {
+              "name": "Title",
+              "docstring": "",
+              "lineno": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Toast",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Toast",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 18,
+          "signatures": [
+            {
+              "name": "Toast",
+              "docstring": "Don't use  `Toast`  directly. Instead use the  `useToast`  hook.",
+              "lineno": 18
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Tooltip",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Tooltip",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 68,
+          "signatures": [
+            {
+              "name": "Tooltip",
+              "docstring": "",
+              "lineno": 68
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "components/Tooltip/QuestionIcon",
+      "docstring": "",
+      "members": [
+        {
+          "name": "QuestionIcon",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 1,
+          "signatures": [
+            {
+              "name": "QuestionIcon",
+              "docstring": "",
+              "lineno": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/useConfigLockRelease",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useConfigLockRelease",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "useConfigLockRelease",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/UseDatetimeFormatter",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useDatetimeFormatter",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 13,
+          "signatures": [
+            {
+              "name": "useDatetimeFormatter",
+              "docstring": "",
+              "lineno": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/useErrorFormatter",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useApiErrorFormatter",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "useApiErrorFormatter",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/useGetEnv",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useGetEnv",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 6,
+          "signatures": [
+            {
+              "name": "useGetEnv",
+              "docstring": "Gets the  `app-env`  variable from  `index.html`  inserted dynamically by the server\nduring a request.",
+              "lineno": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/useLogin",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useLogin",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 11,
+          "signatures": [
+            {
+              "name": "useLogin",
+              "docstring": "",
+              "lineno": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/useSearch",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useSearch",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "useSearch",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hooks/useToast",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useToast",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 22,
+          "signatures": [
+            {
+              "name": "useToast",
+              "docstring": "",
+              "lineno": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "docstring": "",
+      "members": []
+    },
+    {
+      "name": "pages/ActivityLog",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ActivityLog",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 11,
+          "signatures": [
+            {
+              "name": "ActivityLog",
+              "docstring": "",
+              "lineno": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/ActivityLog/ActivityLogEntries",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ActivityLogEntries",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 14,
+          "signatures": [
+            {
+              "name": "ActivityLogEntries",
+              "docstring": "",
+              "lineno": 14
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/AppUpdates",
+      "docstring": "",
+      "members": [
+        {
+          "name": "AppUpdates",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 7,
+          "signatures": [
+            {
+              "name": "AppUpdates",
+              "docstring": "",
+              "lineno": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Configurations",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 70,
+          "signatures": [
+            {
+              "name": "Configurations",
+              "docstring": "",
+              "lineno": 70
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigActivate",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConfigActivate",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 19,
+          "signatures": [
+            {
+              "name": "ConfigActivate",
+              "docstring": "",
+              "lineno": 19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigActivate/ActivationButtons",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ActivationButtons",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 21,
+          "signatures": [
+            {
+              "name": "ActivationButtons",
+              "docstring": "",
+              "lineno": 21
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigActivate/SwitchToVersionButton",
+      "docstring": "",
+      "members": [
+        {
+          "name": "SwitchToVersionButton",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 19,
+          "signatures": [
+            {
+              "name": "SwitchToVersionButton",
+              "docstring": "",
+              "lineno": 19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigActivate/TurnOffConfigButton",
+      "docstring": "",
+      "members": [
+        {
+          "name": "TurnOffConfigButton",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 19,
+          "signatures": [
+            {
+              "name": "TurnOffConfigButton",
+              "docstring": "",
+              "lineno": 19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigActivate/TurnOnConfigButton",
+      "docstring": "",
+      "members": [
+        {
+          "name": "TurnOnConfigButton",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 17,
+          "signatures": [
+            {
+              "name": "TurnOnConfigButton",
+              "docstring": "",
+              "lineno": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CsvImportStep",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 38
+        },
+        {
+          "name": "ConfigBuild",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 47,
+          "signatures": [
+            {
+              "name": "ConfigBuild",
+              "docstring": "",
+              "lineno": 47
+            }
+          ]
+        },
+        {
+          "name": "Export",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 149,
+          "signatures": [
+            {
+              "name": "Export",
+              "docstring": "",
+              "lineno": 149
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CodeSets/AddConditionCodeSetsDrawer",
+      "docstring": "",
+      "members": [
+        {
+          "name": "AddConditionCodeSetsDrawer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 18,
+          "signatures": [
+            {
+              "name": "AddConditionCodeSetsDrawer",
+              "docstring": "",
+              "lineno": 18
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CodeSets/CodeSetsTable",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConditionCodeTable",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 30,
+          "signatures": [
+            {
+              "name": "ConditionCodeTable",
+              "docstring": "",
+              "lineno": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CodeSets/CompletenessStatusBadge",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CompletenessStatusBadgeProps",
+          "type": "Unknown(256)",
+          "docstring": "",
+          "lineno": 17
+        },
+        {
+          "name": "CompletenessStatusBadge",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 21,
+          "signatures": [
+            {
+              "name": "CompletenessStatusBadge",
+              "docstring": "",
+              "lineno": 21
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CodeSets/ConditionCodeSetListItem",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConditionCodeSetListItem",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 22,
+          "signatures": [
+            {
+              "name": "ConditionCodeSetListItem",
+              "docstring": "",
+              "lineno": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CodeSets/Drawer",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Drawer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 31,
+          "signatures": [
+            {
+              "name": "Drawer",
+              "docstring": "Drawer component used as a sidebar overlay for displaying grouped content.\nSupports a title, subtitle, search filter, and custom children.",
+              "lineno": 31
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CustomCodes",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CustomCodesDetail",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 43,
+          "signatures": [
+            {
+              "name": "CustomCodesDetail",
+              "docstring": "",
+              "lineno": 43
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CustomCodes/CsvImport/ImportCustomCodes",
+      "docstring": "",
+      "members": [
+        {
+          "name": "UploadError",
+          "type": "Unknown(256)",
+          "docstring": "",
+          "lineno": 42
+        },
+        {
+          "name": "ImportCustomCodes",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 55,
+          "signatures": [
+            {
+              "name": "ImportCustomCodes",
+              "docstring": "",
+              "lineno": 55
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CustomCodes/CsvImport/Modals",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConfirmModal",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 28,
+          "signatures": [
+            {
+              "name": "ConfirmModal",
+              "docstring": "",
+              "lineno": 28
+            }
+          ]
+        },
+        {
+          "name": "PreviewEditModal",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 100,
+          "signatures": [
+            {
+              "name": "PreviewEditModal",
+              "docstring": "",
+              "lineno": 100
+            }
+          ]
+        },
+        {
+          "name": "UndoModal",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 59,
+          "signatures": [
+            {
+              "name": "UndoModal",
+              "docstring": "",
+              "lineno": 59
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CustomCodes/CsvImport/utils",
+      "docstring": "",
+      "members": [
+        {
+          "name": "buildCsvDownloadTemplate",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "buildCsvDownloadTemplate",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/CustomCodes/CustomCodeModal",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CustomCodeModal",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 28,
+          "signatures": [
+            {
+              "name": "CustomCodeModal",
+              "docstring": "",
+              "lineno": 28
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/DraftBanner",
+      "docstring": "",
+      "members": [
+        {
+          "name": "DraftBanner",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 23,
+          "signatures": [
+            {
+              "name": "DraftBanner",
+              "docstring": "",
+              "lineno": 23
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/fixtures",
+      "docstring": "",
+      "members": [
+        {
+          "name": "MOCK_CONFIG_DRAFT_ID",
+          "type": "Unknown(32)",
+          "docstring": "",
+          "lineno": 4
+        },
+        {
+          "name": "mockCodeSets",
+          "type": "Unknown(32)",
+          "docstring": "",
+          "lineno": 13
+        },
+        {
+          "name": "mockCodeSystems",
+          "type": "Unknown(32)",
+          "docstring": "",
+          "lineno": 19
+        },
+        {
+          "name": "mockCustomCodes",
+          "type": "Unknown(32)",
+          "docstring": "",
+          "lineno": 5
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Lock/ConfigLockBanner",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConfigLockBanner",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 10,
+          "signatures": [
+            {
+              "name": "ConfigLockBanner",
+              "docstring": "",
+              "lineno": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Sections",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 35,
+          "signatures": [
+            {
+              "name": "Sections",
+              "docstring": "",
+              "lineno": 35
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/CustomSectionBadge",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CustomSectionBadge",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 1,
+          "signatures": [
+            {
+              "name": "CustomSectionBadge",
+              "docstring": "",
+              "lineno": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/CustomSectionModal",
+      "docstring": "",
+      "members": [
+        {
+          "name": "CustomSectionModal",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 29,
+          "signatures": [
+            {
+              "name": "CustomSectionModal",
+              "docstring": "",
+              "lineno": 29
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/NarrativeSelect",
+      "docstring": "",
+      "members": [
+        {
+          "name": "NarrativeSelect",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 27,
+          "signatures": [
+            {
+              "name": "NarrativeSelect",
+              "docstring": "",
+              "lineno": 27
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/SectionErrorContext",
+      "docstring": "",
+      "members": [
+        {
+          "name": "SectionErrorContext",
+          "type": "Unknown(32)",
+          "docstring": "",
+          "lineno": 9
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/SectionErrorProvider",
+      "docstring": "",
+      "members": [
+        {
+          "name": "SectionErrorProvider",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 5,
+          "signatures": [
+            {
+              "name": "SectionErrorProvider",
+              "docstring": "",
+              "lineno": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/Switch",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Switch",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 2,
+          "signatures": [
+            {
+              "name": "Switch",
+              "docstring": "",
+              "lineno": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/useSectionError",
+      "docstring": "",
+      "members": [
+        {
+          "name": "useSectionError",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "useSectionError",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Sections/useSectionUpdater",
+      "docstring": "",
+      "members": [
+        {
+          "name": "SectionPatch",
+          "type": "TypeAlias",
+          "docstring": "",
+          "lineno": 10
+        },
+        {
+          "name": "useSectionUpdater",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 17,
+          "signatures": [
+            {
+              "name": "useSectionUpdater",
+              "docstring": "",
+              "lineno": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/Status",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Status",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "Status",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigBuild/VersionMenu",
+      "docstring": "",
+      "members": [
+        {
+          "name": "VersionMenu",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 18,
+          "signatures": [
+            {
+              "name": "VersionMenu",
+              "docstring": "",
+              "lineno": 18
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigTest",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConfigTest",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 25,
+          "signatures": [
+            {
+              "name": "ConfigTest",
+              "docstring": "",
+              "lineno": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/ConfigurationTitleBar",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ConfigurationTitleBar",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 16,
+          "signatures": [
+            {
+              "name": "ConfigurationTitleBar",
+              "docstring": "",
+              "lineno": 16
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/layout",
+      "docstring": "",
+      "members": [
+        {
+          "name": "NavigationContainer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 1,
+          "signatures": [
+            {
+              "name": "NavigationContainer",
+              "docstring": "",
+              "lineno": 1
+            }
+          ]
+        },
+        {
+          "name": "SectionContainer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 13,
+          "signatures": [
+            {
+              "name": "SectionContainer",
+              "docstring": "",
+              "lineno": 13
+            }
+          ]
+        },
+        {
+          "name": "TitleContainer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 17,
+          "signatures": [
+            {
+              "name": "TitleContainer",
+              "docstring": "",
+              "lineno": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/Steps",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Steps",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 20,
+          "signatures": [
+            {
+              "name": "Steps",
+              "docstring": "",
+              "lineno": 20
+            }
+          ]
+        },
+        {
+          "name": "StepsContainer",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 8,
+          "signatures": [
+            {
+              "name": "StepsContainer",
+              "docstring": "",
+              "lineno": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Configurations/TesLink",
+      "docstring": "",
+      "members": [
+        {
+          "name": "TesLink",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "TesLink",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Home",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Home",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 5,
+          "signatures": [
+            {
+              "name": "Home",
+              "docstring": "",
+              "lineno": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/NotFound",
+      "docstring": "",
+      "members": [
+        {
+          "name": "NotFound",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 3,
+          "signatures": [
+            {
+              "name": "NotFound",
+              "docstring": "",
+              "lineno": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/SessionRedirect",
+      "docstring": "",
+      "members": [
+        {
+          "name": "SessionRedirect",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 7,
+          "signatures": [
+            {
+              "name": "SessionRedirect",
+              "docstring": "",
+              "lineno": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Simulator",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Simulator",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 21,
+          "signatures": [
+            {
+              "name": "Simulator",
+              "docstring": "",
+              "lineno": 21
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Simulator/Layout",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Container",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 9,
+          "signatures": [
+            {
+              "name": "Container",
+              "docstring": "",
+              "lineno": 9
+            }
+          ]
+        },
+        {
+          "name": "Content",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 31,
+          "signatures": [
+            {
+              "name": "Content",
+              "docstring": "",
+              "lineno": 31
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Simulator/ReportableConditionsResults",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ReportableConditionsResults",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 20,
+          "signatures": [
+            {
+              "name": "ReportableConditionsResults",
+              "docstring": "",
+              "lineno": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Simulator/RunSimulation",
+      "docstring": "",
+      "members": [
+        {
+          "name": "RunSimulation",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 17,
+          "signatures": [
+            {
+              "name": "RunSimulation",
+              "docstring": "",
+              "lineno": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Simulator/Success",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Success",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 16,
+          "signatures": [
+            {
+              "name": "Success",
+              "docstring": "",
+              "lineno": 16
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages/Simulator/Uploading",
+      "docstring": "",
+      "members": [
+        {
+          "name": "Uploading",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "Uploading",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "test-utils",
+      "docstring": "",
+      "members": [
+        {
+          "name": "TestQueryClientProvider",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 15,
+          "signatures": [
+            {
+              "name": "TestQueryClientProvider",
+              "docstring": "",
+              "lineno": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "utils",
+      "docstring": "",
+      "members": [
+        {
+          "name": "highlightMatches",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 4,
+          "signatures": [
+            {
+              "name": "highlightMatches",
+              "docstring": "",
+              "lineno": 4
+            }
+          ]
+        },
+        {
+          "name": "sleep",
+          "type": "Function",
+          "docstring": "",
+          "lineno": 33,
+          "signatures": [
+            {
+              "name": "sleep",
+              "docstring": "",
+              "lineno": 33
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vite-env",
+      "docstring": "",
+      "members": [
+        {
+          "name": "ImportMeta",
+          "type": "Unknown(256)",
+          "docstring": "The type of  `import.meta` .\n\nIf you need to declare that a given property exists on  `import.meta` ,\nthis type may be augmented via interface merging.",
+          "lineno": 629
+        },
+        {
+          "name": "ImportMetaEnv",
+          "type": "Unknown(256)",
+          "docstring": "",
+          "lineno": 14
+        }
+      ]
+    }
+  ]
+}

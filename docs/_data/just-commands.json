@@ -1,0 +1,383 @@
+[
+  {
+    "name": "client::e2e",
+    "description": "Run e2e Playwright tests in dev mode; use this for local/regression testing",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "client::install",
+    "description": "Run arbitrary `npm install *` commands within `client/`",
+    "aliases": [
+      "c i"
+    ]
+  },
+  {
+    "name": "client::playwright",
+    "description": "Run arbitrary `npx playwright <command>` within `client/` (e.g. `just client playwright test`)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "client::run",
+    "description": "Run arbitrary `npm run *` commands within `client/`",
+    "aliases": [
+      "c r"
+    ]
+  },
+  {
+    "name": "client::test",
+    "description": "Run ui/ux tests",
+    "aliases": [
+      "c t"
+    ]
+  },
+  {
+    "name": "cloud::demo-db-url",
+    "description": "Retrieve the DB_URL for the Demo environment",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "cloud::demo-jurisdiction-authored",
+    "description": "Retrieve a list of jurisdictions who have authored conditions in the demo application",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "cloud::demo-show-network-address-pool",
+    "description": "Retrieve the current backend address pool configuration for the Demo environment",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "cloud::demo-update-network-address-pool",
+    "description": "Update the current backend address pool configuration for the Demo environment",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::check-code",
+    "description": "Find a specific code within a condition, version, and code system. Usage: just db check-code \"COVID-19\" \"3.0.0\" \"rxnorm_codes\" \"2284960\"",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::check-condition-version",
+    "description": "Check if conditions exist for a specific version (e.g., `just db check-condition-version 3.0.0`)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::check-config-combo",
+    "description": "Find configurations for a jurisdiction and condition name (e.g., `just db check-config-combo wa zika`)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::check-configs-by-jurisdiction",
+    "description": "Find all configurations for a specific jurisdiction (e.g., `just db check-configs-by-jurisdiction wa`)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::check-seeding",
+    "description": "Run all DB sanity checks (seeding, integrity, etc)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::clean",
+    "description": "Completely wipes the refiner local development database",
+    "aliases": [
+      "db c"
+    ]
+  },
+  {
+    "name": "database::count-conditions",
+    "description": "Get the count of conditions, grouped by version",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::delete-configuration",
+    "description": "Cascade delete all the related configuration artifacts. For use after an E2E test run",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::fetch-tes-data",
+    "description": "Runs the pipeline scripts that fetch data from the TES API (you must have a TES_API_KEY in your local .env file)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::find-condition",
+    "description": "Find a condition by its name (case-insensitive search)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::query",
+    "description": "Run a raw SQL query against the database (e.g., `just db query \"SELECT * FROM conditions LIMIT 5;\"`)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::recent-configurations",
+    "description": "Show the 5 most recently created configurations",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::refresh",
+    "description": "Runs a full database refresh (wipe, migrate, seed)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::seed",
+    "description": "Runs the seeding script to seed the database with condition data",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::set-jd",
+    "description": "Set the jurisdiction for the \"refiner\" user. Creates the jurisdiction record if it does not exist",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::table",
+    "description": "Describe the schema of a table (e.g., `just db table conditions`)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::tables",
+    "description": "List all tables in the public schema",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "database::validate-tes-data",
+    "description": "If new or changed files from `fetch-tes-data` are found, check that their structure supports the seeding process.",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "decisions::new",
+    "description": "Create a new decision from the template found in docs/decisions/.template",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "dev::down",
+    "description": "Stop the project's core services with docker compose.",
+    "aliases": [
+      "d d"
+    ]
+  },
+  {
+    "name": "dev::rm",
+    "description": "Remove the project's core services and their volumes with docker compose.",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "dev::show",
+    "description": "Show running `dibbs-ecr-refiner` containers with helpful output",
+    "aliases": [
+      "d s"
+    ]
+  },
+  {
+    "name": "dev::up",
+    "description": "Start only the project's core services with docker compose.",
+    "aliases": [
+      "d u"
+    ]
+  },
+  {
+    "name": "docker::build-all",
+    "description": "Build all project containers locally",
+    "aliases": [
+      "dk b"
+    ]
+  },
+  {
+    "name": "docker::build-app",
+    "description": "Build the application container locally",
+    "aliases": [
+      "dk ba"
+    ]
+  },
+  {
+    "name": "docker::build-lambda",
+    "description": "Build the lambda container locally",
+    "aliases": [
+      "dk bl"
+    ]
+  },
+  {
+    "name": "docker::build-ops",
+    "description": "Build the ops container locally",
+    "aliases": [
+      "dk bo"
+    ]
+  },
+  {
+    "name": "lint",
+    "description": "Run linting and formatting rules on all code",
+    "recipe_aliases": [],
+    "module_name": null,
+    "aliases": [
+      "l"
+    ]
+  },
+  {
+    "name": "migrate::create",
+    "description": "Create a new migration script",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "migrate::local",
+    "description": "Shortcut: migrate local",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "migrate::run",
+    "description": "Run migrations with migrate for a given environment (local, demo, prod)",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "risk-assessments::new",
+    "description": "Create a new risk assessment from the template found in docs/risk-assessments/.template",
+    "recipe_aliases": [],
+    "aliases": []
+  },
+  {
+    "name": "server::check",
+    "description": "Run mypy type checks",
+    "aliases": [
+      "s c"
+    ]
+  },
+  {
+    "name": "server::fix",
+    "description": "Run Ruff checker, fix things, and formatter",
+    "aliases": [
+      "s f"
+    ]
+  },
+  {
+    "name": "server::install",
+    "description": "Install dependencies locally",
+    "aliases": [
+      "s i"
+    ]
+  },
+  {
+    "name": "server::install-all",
+    "description": "Install all depenencies e.g Refiner and Lambda",
+    "aliases": [
+      "s ia"
+    ]
+  },
+  {
+    "name": "server::install-dev",
+    "description": "Install all dependencies locally",
+    "aliases": [
+      "s id"
+    ]
+  },
+  {
+    "name": "server::install-lambda",
+    "description": "Install Lambda dependencies locally",
+    "aliases": [
+      "s il"
+    ]
+  },
+  {
+    "name": "server::install-lambda-dev",
+    "description": "Install all Lambda dependencies locally",
+    "aliases": [
+      "s ild"
+    ]
+  },
+  {
+    "name": "server::lint",
+    "description": "Run Ruff checker and formatter",
+    "aliases": [
+      "s l"
+    ]
+  },
+  {
+    "name": "server::seed-localstack",
+    "description": "Seed Localstack with the infra needed for manual tests",
+    "aliases": [
+      "s sl"
+    ]
+  },
+  {
+    "name": "server::test",
+    "description": "Run pytest wrapper. Must include arguments.",
+    "aliases": [
+      "s t"
+    ]
+  },
+  {
+    "name": "server::test-all",
+    "description": "Run all tests",
+    "aliases": [
+      "s ta"
+    ]
+  },
+  {
+    "name": "server::test-integration",
+    "description": "Run Integration tests",
+    "aliases": [
+      "s ti"
+    ]
+  },
+  {
+    "name": "server::test-lambda",
+    "description": "Run Lambda tests",
+    "aliases": [
+      "s tl"
+    ]
+  },
+  {
+    "name": "server::test-scenarios",
+    "description": "Run Scenarios tests",
+    "aliases": [
+      "s ts"
+    ]
+  },
+  {
+    "name": "server::test-unit",
+    "description": "Run Unit tests",
+    "aliases": [
+      "s tu"
+    ]
+  },
+  {
+    "name": "server::update-snapshots",
+    "description": "Update Scenarios tests snapshots.",
+    "aliases": [
+      "s us"
+    ]
+  },
+  {
+    "name": "test",
+    "description": "Run tests on all code",
+    "recipe_aliases": [],
+    "module_name": null,
+    "aliases": [
+      "t"
+    ]
+  }
+]

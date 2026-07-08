@@ -1,0 +1,21 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "eleventy",
+    "serve": "eleventy --serve",
+    "build:css": "npx @tailwindcss/cli -i ./tailwind.css -o ./css/docs.css --minify",
+    "watch:css": "npx @tailwindcss/cli -i ./tailwind.css -o ./css/docs.css --watch"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "@tailwindcss/postcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.20",
+    "autoprefixer": "^10.5.2",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^4.3.2"
+  }
+}

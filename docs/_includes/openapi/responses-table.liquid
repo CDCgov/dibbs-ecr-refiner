@@ -1,0 +1,47 @@
+{% assign responses_size = responses | size %}
+{%- comment -%}
+Ensure we have the canonical `item` (with responses) before rendering.
+Delegates lookup logic to shared include so this template remains
+presentation-focused.
+Expects: responses (optional), item (optional), openapiArray, page.
+{%- endcomment -%}
+{% include "openapi/canonical-lookup.liquid" %}
+
+{% assign responses_size = responses | size %}
+
+{% if responses and responses_size > 0 %}
+<table class="w-full border-collapse mb-4 text-left" aria-describedby="responses">
+   <thead class="bg-gray-100 border-b border-gray-200 text-[0.9rem]">
+     <tr><th class="px-3 py-2">Status</th><th class="px-3 py-2">Description</th><th class="px-3 py-2">Content</th></tr>
+   </thead>
+   <tbody class="text-[0.9rem]">
+   {% for r in responses %}
+     <tr class="border-b border-gray-50">
+       <td class="px-3 py-2"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{{ r.code }}</code></td>
+       <td class="px-3 py-2">{% if r.description %}{% capture renderedRespDesc %}{% renderFile "./_includes/openapi/description.md", r, "liquid,md" %}{% endcapture %}{{ renderedRespDesc | sanitize }}{% else %}-{% endif %}</td>
+       <td class="px-3 py-2">
+           {% assign content_size = r.content | size %}
+         {% if r.content and content_size > 0 %}
+           {% for c in r.content %}
+             <div><strong class="font-bold">{{ c.media }}</strong></div>
+             <div class="text-xs">Title: {{ c.schemaTitle | default: '-' }}</div>
+             <div class="text-xs">Ref: {{ c.schemaRef | default: '-' }}</div>
+             <div class="text-xs">Type: {{ c.schemaType | default: '-' }}</div>
+              {% if c.schemaResolved %}
+                <div class="schema-summary text-sm">
+                  {% include "openapi/schema-renderer.liquid" with schema=c.schemaResolved %}
+                </div>
+              {% endif %}
+             {% if forloop.last == false %}<hr class="border-t border-gray-100 my-1.5">{% endif %}
+           {% endfor %}
+         {% else %}
+           -
+         {% endif %}
+       </td>
+     </tr>
+   {% endfor %}
+   </tbody>
+ </table>
+{% else %}
+<p>No responses.</p>
+{% endif %}

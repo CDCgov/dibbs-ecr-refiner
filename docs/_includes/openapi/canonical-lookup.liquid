@@ -1,0 +1,39 @@
+{%- comment -%}
+Canonical lookup for an OpenAPI entry.
+Expects (optional) globals: openapiArray, page, item.
+If the provided `item` is partial (missing parameters/responses) or
+missing entirely, this include tries to find the canonical entry in
+`openapiArray` by `item.slug` or by deriving a slug from `page.url`.
+On success it will assign `item` to the canonical entry.
+{%- endcomment -%}
+
+{%- if openapiArray -%}
+  {%- assign needs_lookup = false -%}
+  {%- if item == nil -%}
+    {%- assign needs_lookup = true -%}
+  {%- else -%}
+    {%- unless item.parameters and item.responses -%}
+      {%- assign needs_lookup = true -%}
+    {%- endunless -%}
+  {%- endif -%}
+
+  {%- if needs_lookup -%}
+    {%- assign lookup_slug = nil -%}
+    {%- if item and item.slug -%}
+      {%- assign lookup_slug = item.slug -%}
+    {%- else -%}
+      {%- if page and page.url -%}
+        {%- assign parts = page.url | split: '/' -%}
+        {%- assign idx = parts | size | minus: 2 -%}
+        {%- assign lookup_slug = parts[idx] -%}
+      {%- endif -%}
+    {%- endif -%}
+
+    {%- if lookup_slug -%}
+      {%- assign me = openapiArray | where: "slug", lookup_slug | first -%}
+      {%- if me -%}
+        {%- assign item = me -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endif -%}

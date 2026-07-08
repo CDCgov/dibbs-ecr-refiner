@@ -1,0 +1,151 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@source "./**/*.liquid";
+@source "./**/*.md";
+
+@layer base {
+  /* To lock the document height to the viewport and prevent unwanted
+   * page-level scrolling, the html and body elements have been switched from
+   * h-full to a fixed height: 100dvh. We applied overflow: hidden to the
+   * html element to ensure the outer document remains static, while setting
+   * overflow-y: auto on the body to handle internal content scrolling. This
+   * configuration uses modern Dynamic Viewport Units to provide a consistent
+   * full-screen layout across both desktop and mobile browsers.
+   */
+  html,
+  body {
+    @apply h-dvh;
+  }
+  html {
+    @apply overflow-hidden;
+  }
+  body {
+    @apply m-0 overflow-y-auto;
+  }
+  #root {
+    @apply h-full;
+  }
+
+  a {
+    @apply text-blue-cool-60 hover:text-blue-cool-50 underline underline-offset-2;
+  }
+
+  label + select {
+    @apply !mt-2;
+  }
+
+  ul {
+    list-style: disc;
+  }
+}
+@layer utilities {
+  .border-thin {
+    @apply border-1;
+  }
+}
+
+@theme {
+  --api-content-width: 800px;
+
+  --font-public-sans: "Public Sans Variable", "sans-serif";
+  --font-merriweather: "Merriweather Variable", "serif";
+  --color-primary-container: #3a7d950d;
+  --drop-shadow-base: drop-shadow(0px 4px 8px rgb(0, 0, 0, 0.15));
+
+  /* Color reference */
+  /* https://designsystem.digital.gov/design-tokens/color/system-tokens/ */
+
+  --color-blue-100: #e8f5ff;
+  --color-blue-200: #a1d3ff;
+  --color-blue-300: #0076d6;
+  --color-blue-400: #005ea2;
+  --color-blue-500: #112f4e;
+
+  --color-blue-cool-5: #e7f2f5;
+  --color-blue-cool-10: #dae9ee;
+  --color-blue-cool-20: #adcfdc;
+  --color-blue-cool-30: #82b4c9;
+  --color-blue-cool-40: #6499af;
+  --color-blue-cool-50: #3a7d95;
+  --color-blue-cool-60: #2e6276;
+  --color-blue-cool-80: #14333d;
+  --color-blue-cool-90: #0f191c;
+
+  --color-gray-100: #fbfcfd;
+  --color-gray-200: #f3f3f3;
+  --color-gray-300: #f0f0f0;
+  --color-gray-400: #dfe1e2;
+  --color-gray-500: #919191;
+  --color-gray-600: #5c5c5c;
+
+  --color-gray-1: #fcfcfc;
+  --color-gray-2: #f9f9f9;
+  --color-gray-3: #f6f6f6;
+  --color-gray-4: #f3f3f3;
+  --color-gray-5: #f0f0f0;
+  --color-gray-10: #e6e6e6;
+  --color-gray-20: #c9c9c9;
+  --color-gray-30: #adadad;
+  --color-gray-40: #919191;
+  --color-gray-50: #757575;
+  --color-gray-60: #5c5c5c;
+  --color-gray-70: #454545;
+  --color-gray-80: #2e2e2e;
+  --color-gray-90: #1b1b1b;
+
+  --color-gray-cool-1: #fbfcfd;
+  --color-gray-cool-2: #f7f9fa;
+  --color-gray-cool-3: #f5f6f7;
+  --color-gray-cool-4: #f1f3f6;
+  --color-gray-cool-5: #edeff0;
+  --color-gray-cool-10: #dfe1e2;
+  --color-gray-cool-20: #c6cace;
+  --color-gray-cool-30: #a9aeb1;
+  --color-gray-cool-40: #8d9297;
+  --color-gray-cool-50: #71767a;
+  --color-gray-cool-60: #565c65;
+  --color-gray-cool-70: #3d4551;
+  --color-gray-cool-80: #2d2e2f;
+  --color-gray-cool-90: #1c1d1f;
+
+  --color-disabled-light: #dfe1e2;
+  --color-disabled-dark: #565c65;
+  --color-disabled: #a9aeb1;
+
+  --color-red-300: #e41d3d;
+
+  --color-state-success-lighter: #ecf3ec;
+  --color-state-success: #00a91c;
+  --color-state-success-dark: #216e1f;
+  --color-state-warning-lighter: #fff5c2;
+  --color-state-warning: #ddaa01;
+  --color-state-warning-darker: #5c4809;
+  --color-state-error-lighter: #f4e3db;
+  --color-state-error-light: #fdb8ae;
+  --color-state-error: #fb5a47;
+  --color-state-error-dark: #b50909;
+
+  --color-violet-warm-60: #864381;
+  --color-violet-warm-70: #5c395a;
+  --color-violet-warm-80: #382936;
+
+  --color-yellow-vivid-5v: #fff5c2;
+  --color-yellow-vivid-10v: #fee685;
+  --color-yellow-vivid-20v: #face00;
+  --color-yellow-vivid-30v: #ddaa01;
+  --color-yellow-vivid-40v: #b38c00;
+  --color-yellow-vivid-50v: #947100;
+  --color-yellow-vivid-60v: #776017;
+
+  --color-blue-5v: #e8f5ff;
+  --color-blue-10v: #cfe8ff;
+  --color-blue-20v: #a1d3ff;
+  --color-blue-30v: #58b4ff;
+  --color-blue-40v: #2491ff;
+  --color-blue-50v: #0076d6;
+  --color-blue-60v: #005ea2;
+
+  --color-green-cool-10v: #b7f5bd;
+
+  --color-red-warm-10v: #fce1d4;
+}

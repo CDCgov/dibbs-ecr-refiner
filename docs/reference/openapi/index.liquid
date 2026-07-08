@@ -1,0 +1,28 @@
+---
+layout: layout.liquid
+title: OpenAPI Reference
+---
+
+
+{% renderTemplate "md" %}
+# OpenAPI Reference
+This page lists all endpoints discovered in the OpenAPI schema.
+
+Click an endpoint to view its details.
+{% endrenderTemplate %}
+
+
+<table class="w-full border-collapse mb-4 text-left" aria-describedby="openapi-index">
+  <thead class="bg-gray-100 border-b border-gray-200 text-[0.9rem]">
+    <tr><th class="px-3 py-2">Method</th><th class="px-3 py-2">Path</th><th class="px-3 py-2">Summary</th></tr>
+  </thead>
+  <tbody class="text-[0.9rem]">
+  {% for ep in openapiArray %}
+    <tr class="border-b border-gray-50">
+      <td class="px-3 py-2"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{{ ep.method | upcase }}</code></td>
+      <td class="px-3 py-2"><a class="text-blue-600 underline" href="/reference/openapi/{{ ep.slug }}/">{{ ep.path }}</a></td>
+      <td class="px-3 py-2">{{ ep.summary | default: '-' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

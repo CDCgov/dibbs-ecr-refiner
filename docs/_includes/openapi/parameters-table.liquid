@@ -1,0 +1,30 @@
+{% assign params_size = params | size %}
+{%- comment -%}
+Try to ensure `item` is canonical (contains parameters/responses) by
+delegating lookup logic to the shared include. This makes the table
+template focused on presentation only.
+Expects: params (optional), item (optional), openapiArray, page.
+{%- endcomment -%}
+{% include "openapi/canonical-lookup.liquid" %}
+
+{% assign params_size = params | size %}
+
+{% if params and params_size > 0 %}
+<table class="w-full border-collapse mb-4 text-left" aria-describedby="parameters">
+   <thead class="bg-gray-100 border-b border-gray-200 text-[0.9rem]">
+     <tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">In</th><th class="px-3 py-2">Type</th><th class="px-3 py-2">Description</th></tr>
+   </thead>
+   <tbody>
+   {% for p in params %}
+     <tr class="border-b border-gray-50">
+       <td class="px-3 py-2"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{{ p.name }}</code></td>
+       <td class="px-3 py-2">{{ p.in }}</td>
+       <td class="px-3 py-2">{{ p.schema.type | default: '-' }}</td>
+       <td class="px-3 py-2">{% if p.description %}{% capture paramDesc %}{% renderFile "./_includes/openapi/description.md", p, "liquid,md" %}{% endcapture %}{{ paramDesc | sanitize }}{% else %}-{% endif %}</td>
+     </tr>
+   {% endfor %}
+   </tbody>
+ </table>
+{% else %}
+<p>No parameters.</p>
+{% endif %}

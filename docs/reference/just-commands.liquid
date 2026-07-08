@@ -1,0 +1,42 @@
+---
+layout: layout.liquid
+title: Just Commands Reference
+---
+
+{% renderTemplate "md" %}
+# Just Commands
+
+Reference for the available `just` recipes used in this project.
+
+> 💡 **Tip**
+>
+> The `::` can be removed to use sub-command syntax (e.g. `client e2e`), but
+> using the double-colon will provide autocompletion in the terminal.
+{% endrenderTemplate %}
+
+{% if justCommands and justCommands.size > 0 %}
+<table class="w-full border-collapse mb-4 text-left" aria-describedby="just-commands-index">
+  <thead class="bg-gray-100 border-b border-gray-200 text-[0.9rem]">
+    <tr><th class="px-3 py-2">Command</th><th class="px-3 py-2">Description</th><th class="px-3 py-2">Aliases</th></tr>
+  </thead>
+  <tbody class="text-[0.9rem]">
+  {% for cmd in justCommands %}
+    <tr class="border-b border-gray-50">
+      <td class="px-3 py-2"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{{ cmd.name }}</code></td>
+      <td class="px-3 py-2">{% capture renderedDescription %}{% renderTemplate "liquid,md", cmd %}{{ description | default: "No description available." }}{% endrenderTemplate %}{% endcapture %}<div class="prose max-w-none">{{ renderedDescription }}</div></td>
+      <td class="px-3 py-2">
+        {% if cmd.aliases and cmd.aliases.size > 0 %}
+          {% for alias in cmd.aliases %}
+            <code>{{ alias }}</code>{% unless forloop.last %}, {% endunless %}
+          {% endfor %}
+        {% else %}
+          <em>None</em>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No Just commands found.</p>
+{% endif %}

@@ -1,0 +1,17 @@
+{%- comment -%}
+Endpoint header. Expects `item` (may be partial), `openapiArray`, `page`.
+Use the shared canonical-lookup include to ensure downstream includes
+have a complete `item` with parameters and responses.
+{%- endcomment -%}
+{% include "openapi/canonical-lookup.liquid" %}
+
+<h1>Endpoint: <code>{{ item.path }}</code></h1>
+
+<h2>Method: <code>{{ item.method | upcase }}</code></h2>
+
+{%- if item.description -%}
+  {% capture renderedDesc %}{% renderFile "./_includes/openapi/description.md", item, "liquid,md" %}{% endcapture %}
+  <div class="prose max-w-none">{{ renderedDesc | sanitize }}</div>
+{%- else -%}
+  <div class="prose max-w-none">No description provided.</div>
+{%- endif -%}

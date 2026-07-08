@@ -1,0 +1,43 @@
+{%- comment -%}
+Schema renderer include.
+Usage: include "openapi/schema-renderer.liquid" with schema=... where
+`schema` is an object that may contain `title`, `description`, `type`,
+`properties`, `items` etc. This include renders a compact summary used
+in response/content tables.
+{%- endcomment -%}
+
+{%- if schema.title -%}
+  <div class="font-bold">{{ schema.title }}</div>
+{%- endif -%}
+
+{%- if schema.description -%}
+  <div class="text-gray-600">{{ schema.description }}</div>
+{%- endif -%}
+
+{%- if schema.type == 'object' and schema.properties -%}
+  <div class="italic">Properties:</div>
+  <ul class="list-disc list-inside">
+    {%- for p in schema.properties -%}
+      <li>
+        <code class="bg-gray-100 px-1 py-0.5 rounded text-xs">{{ p.name }}</code>
+        — {{ p.type | default: 'object' }}
+        {%- if p.required -%} <strong class="font-bold">(required)</strong>{%- endif -%}
+        {%- if p.description -%}: {{ p.description }}{%- endif -%}
+      </li>
+    {%- endfor -%}
+  </ul>
+{%- elsif schema.type == 'array' and schema.items -%}
+  <div class="italic">Array of: {{ schema.items.type | default: '-' }}{%- if schema.items.title -%} ({{ schema.items.title }}){%- endif -%}</div>
+  {%- if schema.items.properties -%}
+    <div class="italic">Item Properties:</div>
+    <ul class="list-disc list-inside">
+      {%- for p in schema.items.properties -%}
+        <li>
+          <code class="bg-gray-100 px-1 py-0.5 rounded text-xs">{{ p.name }}</code>
+          — {{ p.type | default: 'object' }}
+          {%- if p.required -%} <strong class="font-bold">(required)</strong>{%- endif -%}
+          {%- if p.description -%}: {{ p.description }}{%- endif -%}
+        </li>
+      {%- endfor -%}
+    </ul>
+  {%- endif -%}

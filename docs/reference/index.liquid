@@ -1,0 +1,17 @@
+---
+layout: layout.liquid
+title: API Reference
+---
+
+{% renderTemplate 'md' %}
+# API Reference
+
+Select a section to explore the documented APIs.
+{% endrenderTemplate %}
+
+<ul>
+  <li><a href="./just-commands/">Just Commands</a> - {{ justCommands | size }} commands</li>
+  <li><a href="./python-api/">Python API</a> - {{ pythonApiArray.modules | size }} modules</li>
+  <li><a href="./typescript-api/">TypeScript API</a> - {{ typescriptApiArray.modules | size }} modules</li>
+  <li><a href="./openapi/">OpenAPI</a> - {{ openapiArray | size }} endpoints</li>
+</ul>

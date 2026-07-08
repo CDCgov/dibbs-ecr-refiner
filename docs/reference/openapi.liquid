@@ -1,0 +1,68 @@
+---
+layout: layout.liquid
+title: OpenAPI Specification
+pagination:
+  data: openapiArray
+  size: 1
+  alias: item
+permalink: "/reference/openapi/{{ item.slug }}/"
+---
+{%- comment -%} Prefer canonical entry from openapiArray in this top-level
+   template so child includes see full item data (parameters/responses).
+{%- endcomment -%}
+{% include "openapi/canonical-lookup.liquid" %}
+{% include "openapi/endpoint-header.liquid" %}
+
+<h3>Parameters</h3>
+{% include "openapi/parameters-table.liquid" with params=item.parameters %}
+
+<h3>Responses</h3>
+{% include "openapi/responses-table.liquid" with responses=item.responses %}
+
+<!-- TODO: Expand schema rendering to show properties and examples. -->
+
+<nav class="pagination">
+  {%- comment -%} build prev/next slugs from openapiArray to ensure links work
+     (pagination.nextUrl was empty in some configs) {%- endcomment -%}
+  {% assign prevSlug = "" %}
+  {% assign nextSlug = "" %}
+  {% for ep in openapiArray %}
+    {% if ep.slug == item.slug %}
+      {% assign idx = forloop.index0 %}
+      {% if idx > 0 %}
+        {% assign prevIndex = idx | minus: 1 %}
+        {% assign prevSlug = openapiArray[prevIndex].slug %}
+      {% endif %}
+      {% assign lastIndex = openapiArray | size | minus: 1 %}
+      {% if idx < lastIndex %}
+        {% assign nextIndex = idx | plus: 1 %}
+        {% assign nextSlug = openapiArray[nextIndex].slug %}
+      {% endif %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+
+  <div class="flex flex-col gap-2 mt-4">
+    <div class="w-full">
+      {% if prevSlug != "" %}
+        {% assign prevEp = openapiArray | where: "slug", prevSlug | first %}
+        <a class="flex flex-col justify-center w-full h-[11vh] px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg no-underline text-gray-900 items-start text-left" href="/reference/openapi/{{ prevSlug }}/" rel="prev" title="{{ prevEp.path }}">
+          <div class="title">&larr; Previous</div>
+          <div class="method">{{ prevEp.method | upcase }}</div>
+          <div class="path" title="{{ prevEp.path }}">{{ prevEp.path }}</div>
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="w-full">
+      {% if nextSlug != "" %}
+        {% assign nextEp = openapiArray | where: "slug", nextSlug | first %}
+        <a class="flex flex-col justify-center w-full h-[11vh] px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg no-underline text-gray-900 items-end text-right" href="/reference/openapi/{{ nextSlug }}/" rel="next" title="{{ nextEp.path }}">
+          <div class="title">Next &rarr;</div>
+          <div class="method">{{ nextEp.method | upcase }}</div>
+          <div class="path" title="{{ nextEp.path }}">{{ nextEp.path }}</div>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</nav>

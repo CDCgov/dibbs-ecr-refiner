@@ -1,0 +1,905 @@
+\restrict dbmate
+
+-- Dumped from database version 18.3
+-- Dumped by pg_dump version 18.3
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
+-- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.configuration_status AS ENUM (
+    'active',
+    'inactive',
+    'draft'
+);
+
+
+--
+-- Name: configurations_sections_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.configurations_sections_type AS ENUM (
+    'standard',
+    'custom'
+);
+
+
+--
+-- Name: event_type_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.event_type_enum AS ENUM (
+    'create_configuration',
+    'activate_configuration',
+    'deactivate_configuration',
+    'add_code',
+    'delete_code',
+    'edit_code',
+    'section_update',
+    'lock_acquire',
+    'lock_release',
+    'lock_renew',
+    'bulk_add_custom_code',
+    'create_custom_section',
+    'edit_custom_section',
+    'delete_custom_section'
+);
+
+
+--
+-- Name: section_action; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.section_action AS ENUM (
+    'refine',
+    'retain'
+);
+
+
+--
+-- Name: section_narrative; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.section_narrative AS ENUM (
+    'retain',
+    'remove',
+    'reconstruct',
+    'keep_on_match'
+);
+
+
+--
+-- Name: configurations_set_last_activated_at_on_status_change(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.configurations_set_last_activated_at_on_status_change() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  -- when going from any status to "active" we update `last_activated_at`
+  IF NEW.status = 'active' AND OLD.status IS DISTINCT FROM 'active' THEN
+    NEW.last_activated_at := NOW();
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: set_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    display text CONSTRAINT codes_name_not_null NOT NULL,
+    code text CONSTRAINT codes_value_not_null NOT NULL,
+    version text NOT NULL,
+    system_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: conditions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conditions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    canonical_url text NOT NULL,
+    version text NOT NULL,
+    display_name text,
+    child_rsg_snomed_codes text[],
+    loinc_codes jsonb,
+    snomed_codes jsonb,
+    icd10_codes jsonb,
+    rxnorm_codes jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    coverage_level text,
+    coverage_level_reason text,
+    coverage_level_date date,
+    tes_id uuid NOT NULL,
+    CONSTRAINT coverage_level_check CHECK ((((coverage_level IS NULL) AND (coverage_level_reason IS NULL) AND (coverage_level_date IS NULL)) OR ((coverage_level = 'complete'::text) AND (coverage_level_reason IS NULL)) OR ((coverage_level = 'partial'::text) AND (coverage_level_reason IS NOT NULL) AND (coverage_level_date IS NULL))))
+);
+
+
+--
+-- Name: conditions_context_groupers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conditions_context_groupers (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    condition_id uuid NOT NULL,
+    name text NOT NULL,
+    category text NOT NULL,
+    canonical_url text NOT NULL,
+    code_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    completeness text
+);
+
+
+--
+-- Name: conditions_rsg_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conditions_rsg_codes (
+    condition_id uuid NOT NULL,
+    code_id uuid NOT NULL
+);
+
+
+--
+-- Name: configurations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    version integer NOT NULL,
+    jurisdiction_id text NOT NULL,
+    name text NOT NULL,
+    custom_codes jsonb DEFAULT '[]'::jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    status public.configuration_status DEFAULT 'draft'::public.configuration_status NOT NULL,
+    last_activated_at timestamp with time zone,
+    last_activated_by uuid,
+    created_by uuid NOT NULL,
+    s3_url text
+);
+
+
+--
+-- Name: configurations_conditions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_conditions (
+    configuration_id uuid NOT NULL,
+    condition_id uuid NOT NULL,
+    is_primary boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: configurations_locks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_locks (
+    configuration_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    expires_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: configurations_sections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_sections (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    configuration_id uuid NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    action public.section_action NOT NULL,
+    include boolean NOT NULL,
+    versions text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    section_type public.configurations_sections_type NOT NULL,
+    narrative public.section_narrative CONSTRAINT configurations_sections_narrative_new_not_null NOT NULL
+);
+
+
+--
+-- Name: custom_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.custom_codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    display text CONSTRAINT custom_codes_name_not_null NOT NULL,
+    code text CONSTRAINT custom_codes_value_not_null NOT NULL,
+    system_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.events (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    jurisdiction_id text NOT NULL,
+    user_id uuid NOT NULL,
+    configuration_id uuid NOT NULL,
+    event_type public.event_type_enum NOT NULL,
+    action_text text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: events_custom_code_uploads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.events_custom_code_uploads (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_id uuid NOT NULL,
+    system text NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL
+);
+
+
+--
+-- Name: jurisdictions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.jurisdictions (
+    id text NOT NULL,
+    name text NOT NULL,
+    state_code text
+);
+
+
+--
+-- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schema_migrations (
+    version character varying NOT NULL
+);
+
+
+--
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sessions (
+    token_hash text NOT NULL,
+    user_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL
+);
+
+
+--
+-- Name: systems; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.systems (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    key text NOT NULL,
+    display_name text NOT NULL,
+    oid text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: tes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    version text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.users (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    username text NOT NULL,
+    email text NOT NULL,
+    jurisdiction_id text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    notifications jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+
+
+--
+-- Name: codes codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT codes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codes codes_system_id_version_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, code);
+
+
+--
+-- Name: conditions conditions_canonical_url_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions
+    ADD CONSTRAINT conditions_canonical_url_version_key UNIQUE (canonical_url, version);
+
+
+--
+-- Name: conditions_context_groupers conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_context_groupers
+    ADD CONSTRAINT conditions_context_groupers_condition_id_canonical_url_key UNIQUE (condition_id, canonical_url);
+
+
+--
+-- Name: conditions_context_groupers conditions_context_groupers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_context_groupers
+    ADD CONSTRAINT conditions_context_groupers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conditions conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions
+    ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conditions_rsg_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_rsg_codes
+    ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
+
+
+--
+-- Name: configurations_conditions configurations_conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_pkey PRIMARY KEY (configuration_id, condition_id);
+
+
+--
+-- Name: configurations_locks configurations_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_locks
+    ADD CONSTRAINT configurations_locks_pkey PRIMARY KEY (configuration_id);
+
+
+--
+-- Name: configurations configurations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations
+    ADD CONSTRAINT configurations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: configurations_sections configurations_sections_configuration_id_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_code_key UNIQUE (configuration_id, code);
+
+
+--
+-- Name: configurations_sections configurations_sections_configuration_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_name_key UNIQUE (configuration_id, name);
+
+
+--
+-- Name: configurations_sections configurations_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_codes custom_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_codes custom_codes_system_id_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_system_id_value_key UNIQUE (system_id, code);
+
+
+--
+-- Name: events_custom_code_uploads events_custom_code_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events_custom_code_uploads
+    ADD CONSTRAINT events_custom_code_uploads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: events events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jurisdictions jurisdictions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.jurisdictions
+    ADD CONSTRAINT jurisdictions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (token_hash);
+
+
+--
+-- Name: systems systems_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_display_name_key UNIQUE (display_name);
+
+
+--
+-- Name: systems systems_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_key_key UNIQUE (key);
+
+
+--
+-- Name: systems systems_oid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_oid_key UNIQUE (oid);
+
+
+--
+-- Name: systems systems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tes tes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tes
+    ADD CONSTRAINT tes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tes tes_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tes
+    ADD CONSTRAINT tes_version_key UNIQUE (version);
+
+
+--
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX conditions_context_groupers_category_idx ON public.conditions_context_groupers USING btree (category);
+
+
+--
+-- Name: conditions_context_groupers_condition_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX conditions_context_groupers_condition_id_idx ON public.conditions_context_groupers USING btree (condition_id);
+
+
+--
+-- Name: configurations_sections_code_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configurations_sections_code_idx ON public.configurations_sections USING btree (code);
+
+
+--
+-- Name: configurations_sections_configuration_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configurations_sections_configuration_id_idx ON public.configurations_sections USING btree (configuration_id);
+
+
+--
+-- Name: idx_conditions_child_snomed_codes; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_conditions_child_snomed_codes ON public.conditions USING gin (child_rsg_snomed_codes);
+
+
+--
+-- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX one_primary_per_configuration ON public.configurations_conditions USING btree (configuration_id) WHERE (is_primary = true);
+
+
+--
+-- Name: configurations configurations_set_last_activated_at_on_status_change_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER configurations_set_last_activated_at_on_status_change_trigger BEFORE UPDATE OF status ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.configurations_set_last_activated_at_on_status_change();
+
+
+--
+-- Name: codes update_codes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_codes_updated_at BEFORE UPDATE ON public.codes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: conditions_context_groupers update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_conditions_context_groupers_updated_at BEFORE UPDATE ON public.conditions_context_groupers FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: conditions update_conditions_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_conditions_updated_at BEFORE UPDATE ON public.conditions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: configurations_sections update_configurations_sections_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_configurations_sections_updated_at BEFORE UPDATE ON public.configurations_sections FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: configurations update_configurations_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: custom_codes update_custom_codes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_custom_codes_updated_at BEFORE UPDATE ON public.custom_codes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: systems update_systems_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EACH ROW WHEN ((old.display_name IS DISTINCT FROM new.display_name)) EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: tes update_tes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_tes_updated_at BEFORE UPDATE ON public.tes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: users update_users_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: conditions_context_groupers conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_context_groupers
+    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: conditions_rsg_codes conditions_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_rsg_codes
+    ADD CONSTRAINT conditions_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions_rsg_codes conditions_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_rsg_codes
+    ADD CONSTRAINT conditions_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions conditions_tes_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions
+    ADD CONSTRAINT conditions_tes_id_fkey FOREIGN KEY (tes_id) REFERENCES public.tes(id);
+
+
+--
+-- Name: configurations_conditions configurations_conditions_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: configurations_conditions configurations_conditions_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: configurations configurations_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations
+    ADD CONSTRAINT configurations_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id);
+
+
+--
+-- Name: configurations configurations_jurisdiction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations
+    ADD CONSTRAINT configurations_jurisdiction_id_fkey FOREIGN KEY (jurisdiction_id) REFERENCES public.jurisdictions(id);
+
+
+--
+-- Name: configurations configurations_last_activated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations
+    ADD CONSTRAINT configurations_last_activated_by_fkey FOREIGN KEY (last_activated_by) REFERENCES public.users(id);
+
+
+--
+-- Name: configurations_locks configurations_locks_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_locks
+    ADD CONSTRAINT configurations_locks_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: configurations_locks configurations_locks_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_locks
+    ADD CONSTRAINT configurations_locks_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: configurations_sections configurations_sections_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: custom_codes custom_codes_system_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
+
+
+--
+-- Name: events_custom_code_uploads events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events_custom_code_uploads
+    ADD CONSTRAINT events_custom_code_uploads_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: codes fk_codes_system_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codes
+    ADD CONSTRAINT fk_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
+
+
+--
+-- Name: events fk_events_configurations; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT fk_events_configurations FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: events fk_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: users users_jurisdiction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_jurisdiction_id_fkey FOREIGN KEY (jurisdiction_id) REFERENCES public.jurisdictions(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict dbmate
+
+
+--
+-- Dbmate schema migrations
+--
+
+INSERT INTO public.schema_migrations (version) VALUES
+    ('20260226212322'),
+    ('20260305221859'),
+    ('20260309001833'),
+    ('20260309143000'),
+    ('20260309151338'),
+    ('20260318125201'),
+    ('20260402215326'),
+    ('20260420140437'),
+    ('20260427151426'),
+    ('20260505141110'),
+    ('20260511160133'),
+    ('20260520185510'),
+    ('20260526153052'),
+    ('20260602161536'),
+    ('20260603120000'),
+    ('20260604134336'),
+    ('20260608203714'),
+    ('20260615135704'),
+    ('20260615170607'),
+    ('20260625153644'),
+    ('20260625154206'),
+    ('20260630173611');

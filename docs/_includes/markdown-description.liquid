@@ -1,0 +1,8 @@
+{%- comment -%} Renders a Markdown description using the site's markdown
+renderer when available. Expects `cmd` object with optional `description`.
+{%- endcomment -%}
+{%- if cmd.description -%}
+  {% renderTemplate "md" %}{{ cmd.description }}{% endrenderTemplate %}
+{%- else -%}
+  No description available.
+{%- endif -%}

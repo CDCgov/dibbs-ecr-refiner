@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title | default: "DIBBs eCR Refiner Documentation" }}</title>
+  <!-- Tailwind output: include generated CSS (build step should produce /css/tailwind.css) -->
+  <link rel="stylesheet" href="/css/docs.css">
+</head>
+<body>
+  {%- comment -%}
+  Sidebar navigation. Consider moving the link list to `_data/navigation.yml`
+  and rendering it here so adding pages doesn't require template edits.
+  {%- endcomment -%}
+  <nav class="w-[260px] fixed top-0 left-0 bottom-0 p-6 border-r border-gray-200 bg-blue-300 overflow-y-auto text-white">
+    <a href="/" class="text-lg font-bold text-white no-underline block mb-6">DIBBs eCR Refiner</a>
+    <ul class="list-none">
+      <li class="mb-2"><a href="/" class="text-gray-900 no-underline text-sm hover:text-white">Home</a></li>
+      <li class="mb-2"><a href="/onboarding/" class="text-gray-900 no-underline text-sm hover:text-white">Onboarding</a></li>
+      <li class="mb-2"><a href="/business-logic/" class="text-gray-900 no-underline text-sm hover:text-white">Business Logic</a></li>
+      <li class="mb-2"><a href="/reference/" class="text-gray-900 no-underline text-sm hover:text-white">API Reference</a></li>
+    </ul>
+  </nav>
+  <main class="ml-[260px] px-12 py-8 w-full max-w-[var(--api-content-width)] prose">
+    {{ content }}
+  </main>
+</body>
+</html>
