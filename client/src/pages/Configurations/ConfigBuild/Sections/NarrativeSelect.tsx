@@ -5,12 +5,8 @@ import {
   DbSectionAction,
   DbNarrativeAction,
   DbConfigurationSectionProcessing,
+  NarrativeDataLabelsValue,
 } from '../../../../api/schemas';
-
-// TODO: Actual reconstruction logic is not yet implemented in backend. When
-// narrative="reconstruct" is selected, the backend currently treats it as
-// "remove".
-// See refiner/app/services/ecr/refine.py for the `TODO:`
 
 // TODO: Audit the existing frontend architecture in `client/src/pages` to identify
 // bottlenecks for forthcoming Refiner 2.0 designs
@@ -49,13 +45,16 @@ export function NarrativeSelect({
         aria-label={`Narrative data handling for ${currentSection.name} section`}
         className="min-w-38"
       >
-        <option value="retain">Keep original</option>
+        <option value="retain">{NarrativeDataLabelsValue.retain}</option>
+        <option value="keep_on_match" disabled={codedDataAction !== 'refine'}>
+          {NarrativeDataLabelsValue.keep_on_match}
+        </option>
         {!isNarrativeOnly && isReconstructable && (
           <option value="reconstruct" disabled={codedDataAction === 'retain'}>
-            Reconstruct
+            {NarrativeDataLabelsValue.reconstruct}
           </option>
         )}
-        <option value="remove">Exclude</option>
+        <option value="remove">{NarrativeDataLabelsValue.remove}</option>
       </Select>
     </div>
   );

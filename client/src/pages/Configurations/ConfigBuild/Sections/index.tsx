@@ -1,6 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import {
+  CodedDataLabelsValue,
   DbSectionAction,
   DisabledSection,
   NarrativeOnlySection,
@@ -25,6 +26,8 @@ import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Tooltip } from '@components/Tooltip';
+import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
+import { KeepOnMatchModal } from './KeepOnMatchModal';
 
 interface SectionsProps {
   configurationId: string;
@@ -40,6 +43,7 @@ export function Sections({
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
   //   - disabled_sections: sections that are always retained by the refiner regardless of
@@ -100,6 +104,7 @@ export function Sections({
               }
               onClose={resetModal}
             />
+            <KeepOnMatchModal isOpen={isInfoOpen} setIsOpen={setIsInfoOpen} />
           </div>
           <p className="italic">
             Choose which sections of your eICR to include, as well as whether to
@@ -132,10 +137,17 @@ export function Sections({
                 <th scope="col" className="w-40">
                   <div className="flex gap-1">
                     <span>Narrative data</span>
-                    <Tooltip
-                      position="left"
-                      label="Keep the original data included in the narrative block, reconstruct the data from refined coded data, or omit exclude the narrative block for this section."
-                    />
+                    <Button
+                      variant="unstyled"
+                      type="button"
+                      onClick={() => setIsInfoOpen(true)}
+                      className="inline-flex cursor-pointer rounded-sm focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+                    >
+                      <span aria-hidden>
+                        <QuestionIcon />
+                      </span>
+                      <span className="sr-only">More information</span>
+                    </Button>
                   </div>
                 </th>
               </tr>
@@ -161,9 +173,9 @@ export function Sections({
                       setSelectedSection={() => onSelectedSection(section)}
                     />
                   </td>
-                  <td className="pr-8">
+                  <td className="flex h-21 justify-end pr-8">
                     {section.include ? (
-                      <div className="flex flex-row items-center justify-end">
+                      <div className="flex flex-col items-end justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
                             className="text-gray-cool-50 whitespace-nowrap italic"
@@ -371,20 +383,33 @@ function RefineSwitch({
   const updateSection = useSectionUpdater(configurationId);
   const { clearError, setError, errorSectionCode } = useSectionError();
 
-  const isRefineToggled = currentSection.action === DbSectionAction.refine;
-  const refineLabelText = 'Refine';
-  const preserveLabelText = 'Keep original';
+  const refineLabelText = CodedDataLabelsValue.refine;
+  const retainLabelText = CodedDataLabelsValue.retain;
+  const curSectionSetToRefine =
+    currentSection.action === DbSectionAction.refine;
 
-  const handleSwitchChange = (checked: boolean) => {
+  const [toggled, setToggled] = useState(curSectionSetToRefine);
+
+  const handleSwitchChange = async () => {
     // TODO: This validation should eventually be enforced by backend API as well
-    if (!checked && currentSection.narrative === 'reconstruct') {
+    if (
+      currentSection.narrative === 'reconstruct' ||
+      currentSection.narrative === 'keep_on_match'
+    ) {
       setError(currentSection.code);
+
+      // set toggled state back and forth on a sleep to give user some visual feedback
+      // that their click registered
+      setToggled(false);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setToggled(true);
       return;
     }
     clearError();
     updateSection(currentSection, {
-      action: checked ? DbSectionAction.refine : DbSectionAction.retain,
+      action: toggled ? DbSectionAction.retain : DbSectionAction.refine,
     });
+    setToggled((prev) => !prev);
   };
 
   const showError = errorSectionCode === currentSection.code;
@@ -394,31 +419,33 @@ function RefineSwitch({
       <Field className="flex flex-row items-center justify-end">
         <Label
           aria-label={
-            isRefineToggled
+            curSectionSetToRefine
               ? // "Refine Admission Diagnosis section"
                 `${refineLabelText} ${currentSection.name} section`
               : // "Keep original for Admission Diagnosis section"
-                `${preserveLabelText} for ${currentSection.name} section`
+                `${retainLabelText} for ${currentSection.name} section`
           }
         >
-          {isRefineToggled ? (
+          {curSectionSetToRefine ? (
             <span>{refineLabelText}</span>
           ) : (
-            <span className="italic">{preserveLabelText}</span>
+            <span className="italic">{retainLabelText}</span>
           )}
         </Label>
         <Switch
           disabled={disabled}
-          checked={isRefineToggled}
+          checked={toggled}
           onChange={handleSwitchChange}
         />
       </Field>
       {showError && (
         <p
-          className="text-state-error-dark text-xs whitespace-nowrap"
+          className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"
           role="alert"
         >
-          To reconstruct narrative, refine must be selected
+          {currentSection.narrative === 'reconstruct'
+            ? 'To reconstruct narrative, refine must be selected'
+            : 'To keep narrative on match, refine must be selected'}
         </p>
       )}
     </div>

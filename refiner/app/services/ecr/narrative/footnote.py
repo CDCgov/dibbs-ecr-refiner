@@ -1,5 +1,7 @@
 from lxml.etree import _Element
 
+from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
+
 from ..model import SectionProvenanceRecord
 from .constants import (
     PROVENANCE_LABEL,
@@ -134,8 +136,13 @@ def append_section_provenance_footnote(
     _add_provenance_cell(row, provenance.loinc_code)
     _add_provenance_cell(row, provenance.display_name)
     _add_provenance_cell(row, "Yes" if provenance.include else "No")
-    _add_provenance_cell(row, provenance.action)
-    _add_provenance_cell(row, "Yes" if provenance.narrative == "retain" else "No")
+    _add_provenance_cell(
+        row, CODED_DATA_LABELS.get(provenance.action, provenance.action)
+    )
+    _add_provenance_cell(
+        row,
+        NARRATIVE_DATA_LABELS.get(provenance.narrative, str(provenance.narrative)),
+    )
     _add_provenance_cell(
         row,
         f"v{provenance.config_version}"

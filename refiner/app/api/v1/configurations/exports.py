@@ -15,6 +15,7 @@ from app.db.conditions.db import (
 )
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -149,26 +150,14 @@ def _get_coded_data_value(loinc: str, action: DbSectionAction, included: bool) -
     if loinc in NARRATIVE_ONLY_SECTIONS:
         return "N/A"
 
-    if action == "retain":
-        return "Keep original"
-
-    if action == "refine":
-        return "Refine"
-
-    return "N/A"
+    return CODED_DATA_LABELS.get(action, "N/A")
 
 
 def _get_narrative_data_value(narrative: DbNarrativeAction, included: bool) -> str:
     if not included:
         return "N/A"
 
-    if narrative == "retain":
-        return "Keep original"
-
-    if narrative == "remove":
-        return "Exclude"
-
-    return "Reconstruct"
+    return NARRATIVE_DATA_LABELS.get(narrative, "N/A")
 
 
 async def _build_config_csv(
