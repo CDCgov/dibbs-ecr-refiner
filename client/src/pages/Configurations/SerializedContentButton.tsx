@@ -1,4 +1,5 @@
 import { Button } from '@components/Button';
+import { useGetEnv } from '../../hooks/useGetEnv';
 
 interface SerializedContentButtonProps {
   configurationId: string;
@@ -7,6 +8,9 @@ interface SerializedContentButtonProps {
 export function SerializedContentButton({
   configurationId,
 }: SerializedContentButtonProps) {
+  const env = useGetEnv();
+  if (env === 'live') return;
+
   return (
     <Button
       className="m-0! p-0!"
