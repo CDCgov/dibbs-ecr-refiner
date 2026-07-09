@@ -243,7 +243,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
     useExtendedSearch: true,
   });
   const searchTextLongEnough =
-    searchText.length > MIN_CONFIG_SEARCH_TEXT_LENGTH;
+    searchText.length >= MIN_CONFIG_SEARCH_TEXT_LENGTH;
   const isSearching = searchTextLongEnough && results.length > 0;
 
   function reset() {
