@@ -1,7 +1,7 @@
 # 11. Updating Active Configs in S3
 
 **Date:** 2026-06-24  
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context and Problem Statement
 
