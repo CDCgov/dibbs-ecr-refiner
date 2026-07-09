@@ -69,20 +69,38 @@ test.describe('Notification banners', () => {
     page,
     configurationsPage,
   }) => {
-    const bannerText = page.getByText('There are new updates to eCR Refiner.', {
-      exact: true,
+    await test.step('App banner', async () => {
+      const appBannerText = page.getByText(
+        'There are new updates to eCR Refiner.',
+        {
+          exact: true,
+        }
+      );
+
+      await expect(appBannerText).toBeVisible();
+
+      await page.getByRole('link', { name: 'View updates for app' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'App updates' })
+      ).toBeVisible();
+
+      await configurationsPage.goto();
+      await expect(appBannerText).not.toBeVisible();
     });
 
-    await expect(bannerText).toBeVisible();
+    await test.step('TES banner', async () => {
+      const tesBannerText = page.getByText('A new TES update was published.', {
+        exact: true,
+      });
+      await expect(tesBannerText).toBeVisible();
 
-    await page.getByRole('link', { name: 'View updates for app' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'App updates' })
-    ).toBeVisible();
+      await page.getByRole('link', { name: 'View updates for TES' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'TES Updates' })
+      ).toBeVisible();
 
-    await configurationsPage.goto();
-    await expect(bannerText).not.toBeVisible();
-
-    // TODO: Add TES expectations when page is available
+      await configurationsPage.goto();
+      await expect(tesBannerText).not.toBeVisible();
+    });
   });
 });
