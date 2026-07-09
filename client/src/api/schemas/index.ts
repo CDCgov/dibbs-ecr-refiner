@@ -62,6 +62,8 @@ export * from './releaseNotes';
 export * from './releasesResponse';
 export * from './sectionUpdateInput';
 export * from './simulatorUploadResponse';
+export * from './tesResponse';
+export * from './tesUpdate';
 export * from './updateCustomCodeInput';
 export * from './updateSectionProcessingResponse';
 export * from './updateUserNotificationsRequest';
