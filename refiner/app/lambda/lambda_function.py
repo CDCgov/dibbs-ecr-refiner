@@ -674,17 +674,12 @@ def skip_all_conditions_for_missing_mapping(
     Mark every condition in a jurisdiction as skipped when the mapping file is missing.
     """
     for condition in jurisdiction_group.conditions:
-        logger.info(
-            "Mapping file not found for condition",
+        mark_condition_skipped(
             jurisdiction_code=jurisdiction_code,
-            rsg_code=condition.code,
-            refinement_outcome="skipped",
+            condition_code=condition.code,
             reason="no_mapping_file",
+            state=state,
         )
-        state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(
-            condition.code
-        )
-        state.metadata[jurisdiction_code][condition.code] = False
 
 
 def mark_condition_skipped(
