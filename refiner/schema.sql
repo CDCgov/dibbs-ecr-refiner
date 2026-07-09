@@ -1,7 +1,7 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
--- Dumped by pg_dump version 18.4
+-- Dumped from database version 18.3
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -153,7 +153,6 @@ CREATE TABLE public.conditions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     canonical_url text NOT NULL,
     display_name text,
-    child_rsg_snomed_codes text[],
     loinc_codes jsonb,
     snomed_codes jsonb,
     icd10_codes jsonb,
@@ -633,13 +632,6 @@ CREATE INDEX configurations_sections_configuration_id_idx ON public.configuratio
 
 
 --
--- Name: idx_conditions_child_snomed_codes; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_conditions_child_snomed_codes ON public.conditions USING gin (child_rsg_snomed_codes);
-
-
---
 -- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -902,4 +894,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260625153644'),
     ('20260625154206'),
     ('20260630173611'),
-    ('20260701151910');
+    ('20260701151910'),
+    ('20260709201220');
