@@ -1,6 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import {
+  CodedDataLabelsValue,
   DbSectionAction,
   DisabledSection,
   NarrativeOnlySection,
@@ -382,10 +383,10 @@ function RefineSwitch({
   const updateSection = useSectionUpdater(configurationId);
   const { clearError, setError, errorSectionCode } = useSectionError();
 
+  const refineLabelText = CodedDataLabelsValue.refine;
+  const retainLabelText = CodedDataLabelsValue.retain;
   const curSectionSetToRefine =
     currentSection.action === DbSectionAction.refine;
-  const refineLabelText = 'Refine';
-  const preserveLabelText = 'Keep original';
 
   const [toggled, setToggled] = useState(curSectionSetToRefine);
 
@@ -396,6 +397,9 @@ function RefineSwitch({
       currentSection.narrative === 'keep_on_match'
     ) {
       setError(currentSection.code);
+
+      // set toggled state back and forth on a sleep to give user some visual feedback
+      // that their click registered
       setToggled(false);
       await new Promise((resolve) => setTimeout(resolve, 300));
       setToggled(true);
@@ -423,13 +427,13 @@ function RefineSwitch({
                 ? // "Refine Admission Diagnosis section"
                   `${refineLabelText} ${currentSection.name} section`
                 : // "Keep original for Admission Diagnosis section"
-                  `${preserveLabelText} for ${currentSection.name} section`
+                  `${retainLabelText} for ${currentSection.name} section`
             }
           >
             {curSectionSetToRefine ? (
               <span>{refineLabelText}</span>
             ) : (
-              <span className="italic">{preserveLabelText}</span>
+              <span className="italic">{retainLabelText}</span>
             )}
           </Label>
           <Switch

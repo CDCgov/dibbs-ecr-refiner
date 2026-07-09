@@ -10,12 +10,16 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { SimulatorPage } from '../pages/SimulatorPage';
 import { Api } from './api';
 import { ActivityLogPage } from '../pages/ActivityLogPage';
+import { TesUpdatesPage } from '../pages/TesUpdatesPage';
+import { AppUpdatesPage } from '../pages/AppUpdatesPage';
 
 interface Fixtures {
   configurationPage: ConfigurationPage;
   configurationsPage: ConfigurationsPage;
   simulatorPage: SimulatorPage;
   activityLogPage: ActivityLogPage;
+  tesUpdatesPage: TesUpdatesPage;
+  appUpdatesPage: AppUpdatesPage;
   makeAxeBuilder: () => AxeBuilder;
   api: Api;
 }
@@ -42,6 +46,12 @@ const extendedTest = baseTest.extend<Fixtures>({
   },
   activityLogPage: async ({ page }, use) => {
     await use(new ActivityLogPage(page));
+  },
+  tesUpdatesPage: async ({ page }, use) => {
+    await use(new TesUpdatesPage(page));
+  },
+  appUpdatesPage: async ({ page }, use) => {
+    await use(new AppUpdatesPage(page));
   },
 });
 

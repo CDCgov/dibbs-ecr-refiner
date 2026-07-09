@@ -9,6 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from app.db.tes.db import get_loaded_tes_versions_db
+from app.services.tes import get_latest_tes_version
+
 from ...api.v1.releases import get_latest_release_created_at
 from ...db.jurisdictions.db import upsert_jurisdiction_db
 from ...db.jurisdictions.model import DbJurisdiction
@@ -223,6 +226,7 @@ class NotificationKeys(StrEnum):
     """
 
     MOST_RECENT_APP_UPDATE = "most_recent_app_update"
+    MOST_RECENT_TES_UPDATE = "most_recent_tes_update"
 
 
 @dataclass(frozen=True)
@@ -245,14 +249,16 @@ class UserResponse(BaseModel):
     notifications: NotificationsToRender
 
     @classmethod
-    def from_db_user(cls, db_user: DbUser) -> "UserResponse":
+    async def from_db_user(
+        cls, user: DbUser, db: AsyncDatabaseConnection
+    ) -> "UserResponse":
         """
         Mapping method to layer notification information into base db info.
         """
 
         latest_release_dt = _map_to_aware_dt(get_latest_release_created_at())
 
-        app_update_ack_str = db_user.notifications.get(
+        app_update_ack_str = user.notifications.get(
             NotificationKeys.MOST_RECENT_APP_UPDATE
         )
         app_update_ack_dt = _map_to_aware_dt(
@@ -261,13 +267,29 @@ class UserResponse(BaseModel):
 
         should_show_app_update = latest_release_dt > app_update_ack_dt
 
+        latest_tes_version = get_latest_tes_version(
+            await get_loaded_tes_versions_db(db=db)
+        )
+        latest_tes_release_dt = _map_to_aware_dt(latest_tes_version.created_at)
+
+        tes_update_ack_str = user.notifications.get(
+            NotificationKeys.MOST_RECENT_TES_UPDATE
+        )
+
+        tes_update_ack_dt = _map_to_aware_dt(
+            tes_update_ack_str if tes_update_ack_str else datetime.min
+        )
+
+        should_show_tes_update = latest_tes_release_dt > tes_update_ack_dt
+
         return cls(
-            id=db_user.id,
-            username=db_user.username,
-            jurisdiction_id=db_user.jurisdiction_id,
+            id=user.id,
+            username=user.username,
+            jurisdiction_id=user.jurisdiction_id,
             notifications=NotificationsToRender(
                 to_render={
-                    NotificationKeys.MOST_RECENT_APP_UPDATE: should_show_app_update
+                    NotificationKeys.MOST_RECENT_APP_UPDATE: should_show_app_update,
+                    NotificationKeys.MOST_RECENT_TES_UPDATE: should_show_tes_update,
                 }
             ),
         )
@@ -301,7 +323,7 @@ async def get_user(
     if not user:
         return None
 
-    return UserResponse.from_db_user(user)
+    return await UserResponse.from_db_user(user=user, db=db)
 
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)

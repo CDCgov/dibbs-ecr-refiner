@@ -46,20 +46,28 @@ export function Header({ displayName }: HeaderProps) {
         </MenuButton>
         <MenuItems
           anchor="bottom"
-          className="ring-opacity-5 absolute right-0 mt-0.5 w-40 origin-top-right rounded-md bg-white shadow-lg"
+          className="ring-opacity-5 absolute right-0 mt-0.5 flex w-40 origin-top-right flex-col gap-2 rounded-md bg-white shadow-lg focus-within:outline-none!"
         >
           <MenuItem>
             <Link
+              className="hover:bg-gray-cool-1 data-focus:outline-blue-40v block p-3 hover:outline-none! data-focus:rounded-md data-focus:outline-4 data-focus:-outline-offset-4"
               to="/app-updates"
-              className="border-gray-cool-40! block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-300 data-focus:text-gray-900"
             >
               App updates
             </Link>
           </MenuItem>
           <MenuItem>
+            <Link
+              className="hover:bg-gray-cool-1 data-focus:outline-blue-40v block p-3 hover:outline-none! data-focus:rounded-md data-focus:outline-4 data-focus:-outline-offset-4"
+              to="/tes-updates"
+            >
+              TES updates
+            </Link>
+          </MenuItem>
+          <MenuItem>
             <a
+              className="hover:bg-gray-cool-1 data-focus:outline-blue-40v block p-3 hover:outline-none! data-focus:rounded-md data-focus:outline-4 data-focus:-outline-offset-4"
               href="/api/logout"
-              className="border-gray-cool-40! block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-300 data-focus:text-gray-900"
             >
               Log out
             </a>
