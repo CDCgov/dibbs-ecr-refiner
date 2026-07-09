@@ -14,25 +14,31 @@ test.describe('Notification banners', () => {
   test('Both an app update banner and a TES update banner are displayed to the user', async ({
     page,
   }) => {
-    // app updates
-    const appText = 'There are new updates to eCR Refiner.';
-    await expect(page.getByText(appText, { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole('link', { name: 'View updates for app' })
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: `Dismiss notification for ${appText}` })
-    ).toBeVisible();
+    await test.step('App banner', async () => {
+      const appText = 'There are new updates to eCR Refiner.';
+      await expect(page.getByText(appText, { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'View updates for app' })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', {
+          name: `Dismiss notification for ${appText}`,
+        })
+      ).toBeVisible();
+    });
 
-    // tes updates
-    const tesText = 'A new TES update was published.';
-    await expect(page.getByText(tesText, { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole('link', { name: 'View updates for TES' })
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: `Dismiss notification for ${tesText}` })
-    ).toBeVisible();
+    await test.step('TES banner', async () => {
+      const tesText = 'A new TES update was published.';
+      await expect(page.getByText(tesText, { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'View updates for TES' })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', {
+          name: `Dismiss notification for ${tesText}`,
+        })
+      ).toBeVisible();
+    });
   });
 
   test('Banner is dismissed upon clicking the "X" button', async ({ page }) => {
@@ -56,7 +62,7 @@ test.describe('Notification banners', () => {
     await tesUpdateBannerButton.click();
     await expect(tesUpdateText).not.toBeVisible();
 
-    // make sure they're gone on a refresh
+    // make sure they're both gone on a refresh
     await page.reload();
     await expect(
       page.getByRole('heading', { name: 'Configurations', level: 1 })
