@@ -3,6 +3,7 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
+from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
@@ -12,25 +13,6 @@ from .model import (
     DbConditionBase,
     DbConditionsContextGrouper,
 )
-
-
-async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
-    """
-    Queries the database for all TES versions available for use.
-    """
-
-    query = """
-        SELECT
-            DISTINCT(version)
-        FROM tes
-        ORDER BY version
-    """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
-
-    return [row["version"] for row in rows]
 
 
 async def _get_conditions_by_canonical_urls_and_version_db(
@@ -100,9 +82,9 @@ async def get_latest_tes_condition_db(
         DbCondition: The latest version of the condition
     """
     tes_versions = await get_loaded_tes_versions_db(db=db)
-    latest_version = get_latest_tes_version(available_versions=tes_versions)
+    latest_tes = get_latest_tes_version(available_versions=tes_versions)
     condition = await _get_condition_by_canonical_url_and_version_db(
-        canonical_url=condition.canonical_url, version=latest_version, db=db
+        canonical_url=condition.canonical_url, version=latest_tes.version, db=db
     )
     return condition
 
@@ -123,7 +105,7 @@ async def get_latest_tes_condition_ids_db(
 
     # get the latest TES version
     tes_versions = await get_loaded_tes_versions_db(db=db)
-    latest_version = get_latest_tes_version(available_versions=tes_versions)
+    latest_tes = get_latest_tes_version(available_versions=tes_versions)
 
     # get the condition objects for IDs passed in
     given_conditions = await get_conditions_by_ids(ids=ids, db=db)
@@ -133,7 +115,7 @@ async def get_latest_tes_condition_ids_db(
 
     # get the latest conditions by the canonical URL and most recent TES version
     latest_conditions = await _get_conditions_by_canonical_urls_and_version_db(
-        canonical_urls=canonical_urls, version=latest_version, db=db
+        canonical_urls=canonical_urls, version=latest_tes.version, db=db
     )
 
     return [lc.id for lc in latest_conditions]
@@ -500,8 +482,8 @@ async def get_conditions_with_rsg_codes_db(
             c.display_name
         ORDER BY LOWER(c.display_name);
     """
-    version = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
-    params = (version,)
+    latest_tes = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
+    params = (latest_tes.version,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
