@@ -181,7 +181,12 @@ async def get_condition_by_id_db(
                 c.canonical_url,
                 c.display_name,
                 t.version,
-                c.child_rsg_snomed_codes,
+                ARRAY(
+                    SELECT codes.code
+                    FROM conditions_rsg_codes crc
+                    JOIN codes ON crc.code_id = codes.id
+                    WHERE crc.condition_id = c.id
+                ) as child_rsg_snomed_codes,
                 c.snomed_codes,
                 c.loinc_codes,
                 c.icd10_codes,
@@ -309,7 +314,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     Finds all conditions that are associated with the given list of child RSG SNOMED codes
     for any potential version of that condition data.
 
-    This uses the GIN index on the `child_rsg_snomed_codes` array column for performance.
+    This queries the `conditions_rsg_codes` join table and `codes` table.
 
     Args:
         db: The database connection.
@@ -328,7 +333,12 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.display_name,
             c.canonical_url,
             t.version,
-            c.child_rsg_snomed_codes,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
             c.snomed_codes,
             c.loinc_codes,
             c.icd10_codes,
@@ -339,7 +349,13 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
-        WHERE child_rsg_snomed_codes && %s::text[];
+        WHERE EXISTS (
+            SELECT 1
+            FROM conditions_rsg_codes crc
+            JOIN codes ON crc.code_id = codes.id
+            WHERE crc.condition_id = c.id
+            AND codes.code = ANY(%s)
+        );
     """
 
     params = (codes,)
