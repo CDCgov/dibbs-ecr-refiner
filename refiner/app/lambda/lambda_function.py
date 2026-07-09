@@ -579,18 +579,12 @@ def process_condition(
     cg_metadata = rsg_cg_payload.mappings.get(rsg_code)
 
     if cg_metadata is None:
-        logger.info(
-            "RSG code isn't in the CG map, skipping.",
-            rsg_code=rsg_code,
-            rsg_cg_payload=rsg_cg_payload.to_dict(),
-            jurisdiction_code=jurisdiction_code,
-            operation="skipped",
-        )
         mark_condition_skipped(
             jurisdiction_code=jurisdiction_code,
             condition_code=rsg_code,
             reason="rsg_not_in_mapping",
             state=state,
+            rsg_cg_payload=rsg_cg_payload.to_dict(),
         )
         return
 
@@ -665,7 +659,6 @@ def load_condition_mapping_for_jurisdiction(
             "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
             key=rsg_cg_mapping_file_key,
             jurisdiction_code=jurisdiction_code,
-            operation="skipped",
         )
         return None
 
@@ -699,6 +692,7 @@ def mark_condition_skipped(
     condition_code: str,
     reason: str,
     state: RefinementState,
+    **kwargs,
 ) -> None:
     """
     Helper to mark a condition as "skipped" during refinement.
@@ -709,6 +703,7 @@ def mark_condition_skipped(
         condition_code=condition_code,
         reason=reason,
         operation="skipped",
+        **kwargs,
     )
 
     state.metadata[jurisdiction_code][condition_code] = False
@@ -748,7 +743,6 @@ def load_active_configuration(
             key=current_file_key,
             jurisdiction_code=jurisdiction_code,
             rsg_metadata=rsg_metadata,
-            operation="skipped",
         )
         return None
 
