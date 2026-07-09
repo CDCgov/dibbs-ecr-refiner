@@ -1,11 +1,11 @@
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
 from app.db.pool import AsyncDatabaseConnection, get_db
-from app.db.tes_version.db import get_tes_updates_db
+from app.db.tes.db import get_loaded_tes_versions_db
 
 router = APIRouter(prefix="/tes")
 
@@ -33,7 +33,7 @@ class TesResponse:
 @router.get(
     "/",
     response_model=TesResponse,
-    tags=["tes_updates"],
+    tags=["tes"],
     operation_id="getTesUpdates",
 )
 async def get_tes_updates(
@@ -51,9 +51,14 @@ async def get_tes_updates(
             - The when it was created
     """
     updates = sorted(
-        await get_tes_updates_db(db=db),
+        await get_loaded_tes_versions_db(db=db),
         key=lambda r: (r.created_at, r.version),
         reverse=True,
     )
 
-    return TesResponse(tes_updates=[TesUpdate(**asdict(t)) for t in updates])
+    return TesResponse(
+        tes_updates=[
+            TesUpdate(id=t.id, version=t.version, created_at=t.created_at)
+            for t in updates
+        ]
+    )
