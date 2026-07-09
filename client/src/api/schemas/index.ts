@@ -64,6 +64,8 @@ export * from './sectionUpdateInput';
 export * from './serializedFile';
 export * from './serializedFiles';
 export * from './simulatorUploadResponse';
+export * from './tesResponse';
+export * from './tesUpdate';
 export * from './updateCustomCodeInput';
 export * from './updateSectionProcessingResponse';
 export * from './updateUserNotificationsRequest';
