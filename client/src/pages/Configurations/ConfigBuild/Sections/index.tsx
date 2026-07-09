@@ -439,7 +439,6 @@ function RefineSwitch({
           />
         </Field>
       </div>
-      {/* TODO: Awaiting Design/PRD feedback on exact error messages per narrative type */}
       {showError && (
         <p
           className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"
