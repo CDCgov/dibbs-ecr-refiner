@@ -9545,10 +9545,10 @@
         {
           "name": "get_section_by_code",
           "type": "function",
-          "docstring": "Get a top-level section from structuredBody by its LOINC code.\n\nSearches only direct <component>/<section> children of structuredBody,\nnot nested sub-sections within other sections. This matches the eICR\nIG's section cardinality semantics: the sections defined by the IG\nare top-level, and repeated occurrences of the same LOINC code at\ndeeper levels represent different semantic content that should not\nbe conflated with top-level sections.\n\nIf the document has multiple top-level sections with the same LOINC\ncode (which should not occur in a Schematron-valid eICR but could\noccur in a malformed document), the first match is returned. Callers\nthat need to handle this case should compare against the full list\nproduced by `get_section_loinc_codes`.\n\nArgs:\n    structured_body: The HL7 structuredBody element to search within.\n    loinc_code: The LOINC code of the section to retrieve.\n    namespaces: The namespaces to use for element search. Defaults to hl7.\n\nReturns:\n    The section element, or None if no top-level section with that\n    LOINC code is present.\n\nRaises:\n    XMLParsingError: If XPath evaluation fails.",
+          "docstring": "Get a top-level section from structuredBody by its LOINC code.\n\nSearches only direct `<component>`/`<section>` children of structuredBody,\nnot nested sub-sections within other sections. This matches the eICR\nIG's section cardinality semantics: the sections defined by the IG\nare top-level, and repeated occurrences of the same LOINC code at\ndeeper levels represent different semantic content that should not\nbe conflated with top-level sections.\n\nIf the document has multiple top-level sections with the same LOINC\ncode (which should not occur in a Schematron-valid eICR but could\noccur in a malformed document), the first match is returned. Callers\nthat need to handle this case should compare against the full list\nproduced by `get_section_loinc_codes`.\n\nArgs:\n    structured_body: The HL7 structuredBody element to search within.\n    loinc_code: The LOINC code of the section to retrieve.\n    namespaces: The namespaces to use for element search. Defaults to hl7.\n\nReturns:\n    The section element, or `None` if no top-level section with that\n    LOINC code is present.\n\nRaises:\n    XMLParsingError: If XPath evaluation fails.",
           "parsed_docstring": {
             "summary": "Get a top-level section from structuredBody by its LOINC code.",
-            "description": "Searches only direct <component>/<section> children of structuredBody,\nnot nested sub-sections within other sections. This matches the eICR\nIG's section cardinality semantics: the sections defined by the IG\nare top-level, and repeated occurrences of the same LOINC code at\ndeeper levels represent different semantic content that should not\nbe conflated with top-level sections.\n\nIf the document has multiple top-level sections with the same LOINC\ncode (which should not occur in a Schematron-valid eICR but could\noccur in a malformed document), the first match is returned. Callers\nthat need to handle this case should compare against the full list\nproduced by `get_section_loinc_codes`.",
+            "description": "Searches only direct `<component>`/`<section>` children of structuredBody,\nnot nested sub-sections within other sections. This matches the eICR\nIG's section cardinality semantics: the sections defined by the IG\nare top-level, and repeated occurrences of the same LOINC code at\ndeeper levels represent different semantic content that should not\nbe conflated with top-level sections.\n\nIf the document has multiple top-level sections with the same LOINC\ncode (which should not occur in a Schematron-valid eICR but could\noccur in a malformed document), the first match is returned. Callers\nthat need to handle this case should compare against the full list\nproduced by `get_section_loinc_codes`.",
             "params": [
               {
                 "name": "structured_body",
@@ -9571,7 +9571,7 @@
             ],
             "returns": {
               "type": "",
-              "description": "The section element, or None if no top-level section with that\nLOINC code is present."
+              "description": "The section element, or `None` if no top-level section with that\nLOINC code is present."
             },
             "raises": [
               {
@@ -9604,15 +9604,15 @@
         {
           "name": "get_section_loinc_codes",
           "type": "function",
-          "docstring": "Return LOINC codes for all top-level sections in structuredBody.\n\nUsed to discover which sections are actually present in a given eICR\ndocument before applying any refinement logic. Only considers direct\n<component>/<section> children of structuredBody; nested sub-sections\nare deliberately excluded to match the eICR IG's section cardinality\nmodel.\n\nArgs:\n    structured_body: The <structuredBody> XML element from an eICR.\n    namespaces: The XML namespaces to use for the XPath query.\n\nReturns:\n    A list of LOINC code strings for the top-level sections found\n    in the document. Order matches document order. Duplicates are\n    preserved; callers that need deduplication should convert to\n    a set.\n\nRaises:\n    XMLParsingError: If XPath evaluation fails.",
+          "docstring": "Return LOINC codes for all top-level sections in structuredBody.\n\nUsed to discover which sections are actually present in a given eICR\ndocument before applying any refinement logic. Only considers direct\n`<component>`/`<section>` children of structuredBody; nested sub-sections\nare deliberately excluded to match the eICR IG's section cardinality\nmodel.\n\nArgs:\n    structured_body: The `<structuredBody>` XML element from an eICR.\n    namespaces: The XML namespaces to use for the XPath query.\n\nReturns:\n    A list of LOINC code strings for the top-level sections found\n    in the document. Order matches document order. Duplicates are\n    preserved; callers that need deduplication should convert to\n    a set.\n\nRaises:\n    XMLParsingError: If XPath evaluation fails.",
           "parsed_docstring": {
             "summary": "Return LOINC codes for all top-level sections in structuredBody.",
-            "description": "Used to discover which sections are actually present in a given eICR\ndocument before applying any refinement logic. Only considers direct\n<component>/<section> children of structuredBody; nested sub-sections\nare deliberately excluded to match the eICR IG's section cardinality\nmodel.",
+            "description": "Used to discover which sections are actually present in a given eICR\ndocument before applying any refinement logic. Only considers direct\n`<component>`/`<section>` children of structuredBody; nested sub-sections\nare deliberately excluded to match the eICR IG's section cardinality\nmodel.",
             "params": [
               {
                 "name": "structured_body",
                 "type": "",
-                "description": "The <structuredBody> XML element from an eICR.",
+                "description": "The `<structuredBody>` XML element from an eICR.",
                 "default": ""
               },
               {
