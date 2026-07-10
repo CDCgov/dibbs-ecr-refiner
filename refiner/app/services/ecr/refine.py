@@ -588,13 +588,13 @@ def refine_rr(
     beforehand and serializing afterward.
 
     Processing behavior:
-        - It iterates through the RR and removes information common to all RR's.
-        - It loops through all the condition observations in the reportability RC
-            - Anything that isn't RRSVS1 reportable is filtered out
-            - Of the remaining reportable observations, anything that isn't specified
-              in the refinement configurations are filtered out
-            - For anything remaining, any codes that aren't specified within the
-              in the configuration RSG or custom codes are filtered out.
+    - It iterates through the RR and removes information common to all RR's.
+    - It loops through all the condition observations in the reportability RC
+        - Anything that isn't RRSVS1 reportable is filtered out
+        - Of the remaining reportable observations, anything that isn't specified
+          in the refinement configurations are filtered out
+        - For anything remaining, any codes that aren't specified within the
+          in the configuration RSG or custom codes are filtered out.
 
     Args:
         rr_root: The parsed RR root element.
@@ -730,15 +730,14 @@ def refine_rr_for_unconfigured_conditions(
     reportability information appears exactly once.
 
     Example scenario:
-        SDDH has two reportable conditions: COVID (840539006) and Influenza (772828001).
-        Only COVID has an active configuration.
-
+    - SDDH has two reportable conditions: COVID (840539006) and Influenza
+      (772828001). Only COVID has an active configuration.
         - COVID goes through refine_for_condition → produces refined_eICR.xml + refined_RR.xml
         - Influenza has no config → this function produces an RR with only the
           Influenza reportability observation, written to unrefined_rr/refined_RR.xml
 
-        The jurisdiction receives both and can process each condition without
-        seeing COVID reported twice.
+    The jurisdiction receives both and can process each condition without
+    seeing COVID reported twice.
 
     Args:
         xml_files: The eICR/RR pair. Only the RR is used.
