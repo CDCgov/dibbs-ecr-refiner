@@ -3,7 +3,7 @@ pagination:
   data: pythonApiArray.modules
   size: 1
   alias: module
-permalink: "/reference/python-api/module-{{ module.name | replace: '.', '-' }}/"
+permalink: "/reference/python-api/module-{{ module.name | replace: '.', '-' | replace: '_', '-' }}/"
 layout: layout.liquid
 ---
 
