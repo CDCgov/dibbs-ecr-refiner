@@ -203,6 +203,7 @@ def main():
         module_count = len(data["modules"])
         with open(output_dir / "python-api.json", "w") as f:
             json.dump(data, f, indent=2)
+            f.write("\n")
         print(f"Wrote {module_count} Python modules to {output_dir / 'python-api.json'}")
     except Exception as e:
         print(f"Error extracting Python docs: {e}", file=sys.stderr)

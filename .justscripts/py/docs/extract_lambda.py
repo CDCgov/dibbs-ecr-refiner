@@ -209,6 +209,7 @@ def main():
         module_count = len(data["modules"])
         with open(output_dir / "lambda-api.json", "w") as f:
             json.dump(data, f, indent=2)
+            f.write("\n")
         print(f"Wrote {module_count} Lambda functions to {output_dir / 'lambda-api.json'}")
     except Exception as e:
         print(f"Error extracting Lambda docs: {e}", file=sys.stderr)
