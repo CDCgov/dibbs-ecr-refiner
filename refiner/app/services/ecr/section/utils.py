@@ -197,9 +197,9 @@ def build_generic_match_comment_text(
         eCR Refiner: generic match — {tag}[{code}] "{display}" at {path}
 
     Args:
-        matched_code:    The code value that triggered the match.
+        matched_code: The code value that triggered the match.
         matched_display: Display name for the code, or empty string.
-        matched_tag:     Local element name (e.g. "code", "value").
+        matched_tag: Local element name (e.g. "code", "value").
         path_from_entry: Slash-separated path from the entry root to
                          the matched element (e.g. "act/observation/value").
                          Used to show where in the entry the match landed.
@@ -224,7 +224,7 @@ def build_generic_match_comment_text(
 
 def insert_comment_before(entry: _Element, comment_text: str) -> None:
     """
-    Insert an XML comment immediately before an <entry> element.
+    Insert an XML comment immediately before an `<entry>` element.
 
     Used by both matching engines after pruning to annotate surviving
     entries with match provenance. The comment is inserted as the
@@ -237,7 +237,7 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
     readability.
 
     Args:
-        entry:        The <entry> element to annotate.
+        entry: The `<entry>` element to annotate.
         comment_text: Text for the comment node. Passed directly to
                       etree.Comment(). Include a leading and trailing
                       space for readability within the comment delimiters.

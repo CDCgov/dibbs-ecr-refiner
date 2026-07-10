@@ -89,23 +89,23 @@ def process(
     4. Enriches displayName on all surviving code-bearing elements
     5. Injects per-entry match provenance comments above surviving
        entries — added after source comment cleanup so they survive
-    6. Handles narrative <text> based on the `narrative` action
+    6. Handles narrative `<text>` based on the `narrative` action
 
-    No UUID swap needed — match rules only search within <entry>
-    elements, so the section's own <code> is never at risk of matching.
+    No UUID swap needed — match rules only search within `<entry>`
+    elements, so the section's own `<code>` is never at risk of matching.
 
-    If no entries match, all <entry> children are pruned and the
-    section's <text> is handled per the `narrative` setting:
+    If no entries match, all `<entry>` children are pruned and the
+    section's `<text>` is handled per the `narrative` setting:
 
-      - "retain"           → narrative left intact
-      - "remove"           → narrative replaced with the removal notice
-      - "reconstruct"      → falls back to RETAIN the original narrative
-                             (nothing to rebuild from). NOTE: this
-                             honors the user's preference for the most
-                             informative state available rather than
-                             swapping in a removal notice.
-      - "keep_on_match"    → narrative replaced with the removal notice
-                             (no matches means the negative branch)
+    - "retain"           → narrative left intact
+    - "remove"           → narrative replaced with the removal notice
+    - "reconstruct"      → falls back to RETAIN the original narrative
+                         (nothing to rebuild from). NOTE: this
+                         honors the user's preference for the most
+                         informative state available rather than
+                         swapping in a removal notice.
+    - "keep_on_match"    → narrative replaced with the removal notice
+                         (no matches means the negative branch)
 
     The orchestrator maps the resulting `SectionRunResult` to
     `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
@@ -388,7 +388,7 @@ def _inject_entry_match_comments(
     namespaces: NamespaceMap,
 ) -> None:
     """
-    Insert XML comments above each surviving <entry> describing what drove its retention.
+    Insert XML comments above each surviving `<entry>` describing what drove its retention.
 
     Delegates comment text building to `utils.build_entry_match_comment_text`
     and insertion to `utils.insert_comment_before`.
