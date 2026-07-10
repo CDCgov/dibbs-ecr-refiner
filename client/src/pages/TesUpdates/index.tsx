@@ -1,11 +1,11 @@
 import { Title } from '@components/Title';
-import { useGetTesUpdates } from '../../api/tes-updates/tes-updates';
 import { ExternalLink } from '@components/ExternalLink';
 import { useState } from 'react';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { TesUpdate } from '../../api/schemas/tesUpdate';
 import { Spinner } from '@components/Spinner';
+import { useGetTesUpdates } from '../../api/tes/tes';
 
 export function TesUpdates() {
   const { data: tesUpdates, isPending, isError } = useGetTesUpdates();
