@@ -1,11 +1,9 @@
 const { EleventyRenderPlugin } = require("@11ty/eleventy");
 const markdownIt = require("markdown-it");
+const sanitize = require("sanitize-html");
 const md = new markdownIt({ html: true, breaks: false, linkify: false });
-const path = require("path");
 
-const projectRoot = path.resolve(__dirname, "..");
-
-module.exports = function (eleventyConfig) {
+module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "css": "css" });
   eleventyConfig.addPassthroughCopy({ "img": "img" });
 
@@ -75,14 +73,19 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addFilter("sanitize", (value) => {
     if (!value) return "";
     let s = String(value);
-    s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-    s = s.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "");
-    s = s.replace(/<(iframe|object|embed|link|meta)[\s\S]*?>[\s\S]*?<\/\1>/gi, "");
-    s = s.replace(/<(iframe|object|embed|link|meta)[\s\S]*?>/gi, "");
-    s = s.replace(/\son\w+\s*=\s*("[\s\S]*?"|'[\s\S]*?'|[^\s>]+)/gi, "");
-    s = s.replace(/\sstyle\s*=\s*("[\s\S]*?"|'[\s\S]*?'|[^\s>]+)/gi, "");
-    s = s.replace(/(href|src)\s*=\s*("|')\s*javascript:[\s\S]*?\2/gi, '$1=$2#$2');
-    return s;
+    return sanitize(s, {
+      allowedTags: [
+        'p', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'br', 'code',
+        'dd', 'dl', 'dt', 'detail', 'pre', 'span', 'div', 'h1', 'h2', 'h3',
+        'h4', 'h5', 'h6', 'summary',
+      ],
+      allowedAttributes: {
+        'a': ['href', 'title', 'target', 'class'],
+        '*': ['class', 'id'],
+      },
+      allowedTargetBlank: true,
+      disallowedTagsMode: 'discard',
+    });
   });
 
   return {
