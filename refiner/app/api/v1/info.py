@@ -3,10 +3,11 @@ from fastapi.responses import JSONResponse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import ENVIRONMENT
-from app.db.conditions.db import get_condition_by_id_db, get_loaded_tes_versions_db
+from app.db.conditions.db import get_condition_by_id_db
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.schema_migrations.db import get_latest_migration_db
+from app.db.tes.db import get_loaded_tes_versions_db
 from app.db.users.model import DbUser
 from app.services.tes import get_latest_tes_version
 
@@ -60,8 +61,8 @@ async def get_info(
             },
             "data": {
                 "revision": await get_latest_migration_db(db=db),
-                "tes_versions": tes_versions,
-                "latest_tes_version": latest_tes_version,
+                "tes_versions": [tes.version for tes in tes_versions],
+                "latest_tes_version": latest_tes_version.version,
             },
             "session": {
                 "username": user.username,

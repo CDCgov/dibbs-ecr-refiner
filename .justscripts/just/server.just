@@ -30,22 +30,22 @@ _venv:
 [doc('Run pytest wrapper. Must include arguments.')]
 [group('test')]
 test +ARGS: _venv
-    .venv/bin/pytest {{ ARGS }}
+    .venv/bin/python3 -m pytest {{ ARGS }}
 
 [doc('Run Unit tests')]
 [group('test')]
 test-unit: _venv
-    {{ if env("CI", "") != "" { ".venv/bin/pytest tests/unit" } else { ".venv/bin/pytest -vvv tests/unit" } }}
+    .venv/bin/python3 -m pytest tests/unit
 
 [doc('Run Integration tests')]
 [group('test')]
 test-integration: _venv
-    {{ if env("CI", "") != "" { ".venv/bin/pytest tests/integration --ignore=tests/integration/scenarios" } else { ".venv/bin/pytest -vvv tests/integration --ignore=tests/integration/scenarios" } }}
+    .venv/bin/python3 -m pytest tests/integration --ignore=tests/integration/scenarios
 
 [doc('Run Scenarios tests')]
 [group('test')]
 test-scenarios: _venv
-    {{ if env("CI", "") != "" { ".venv/bin/pytest tests/integration/scenarios" } else { ".venv/bin/pytest -vvv tests/integration/scenarios" } }}
+    .venv/bin/python3 -m pytest tests/integration/scenarios
 
 [doc('Update Scenarios tests snapshots.')]
 [group('test')]
@@ -55,7 +55,7 @@ update-snapshots: _venv
 [doc('Run Lambda tests')]
 [group('test')]
 test-lambda: _venv
-    {{ if env("CI", "") != "" { ".venv/bin/pytest app/lambda" } else { ".venv/bin/pytest -vvv app/lambda" } }}
+    .venv/bin/python3 -m pytest app/lambda
 
 [doc('Run all tests')]
 [group('test')]

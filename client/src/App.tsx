@@ -14,6 +14,7 @@ import { Spinner } from '@components/Spinner';
 import { SessionRedirect } from './pages/SessionRedirect';
 import { ActivityLog } from './pages/ActivityLog';
 import { AppUpdates } from './pages/AppUpdates';
+import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
 import { TesUpdates } from './pages/TesUpdates';
 
 export function App() {
@@ -50,6 +51,10 @@ export function App() {
         <Route
           path="/configurations/:id/activate"
           element={<ConfigActivate />}
+        />
+        <Route
+          path="/configurations/:id/serialized"
+          element={<ConfigSerialized />}
         />
         <Route path="/app-updates" element={<AppUpdates />} />
         <Route path="/simulator" element={<Simulator />} />
