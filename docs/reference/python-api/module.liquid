@@ -19,7 +19,7 @@ layout: layout.liquid
 <h2 class="font-merriweather text-xl font-semibold mb-4">Members</h2>
 <div class="space-y-6">
   {% for member in module.members %}
-  <div id="{{ member.name }}" class="border rounded-lg p-6 border-gray-cool-4 scroll-mt-4">
+  <div id="{{ member.name }}" class="border rounded-lg p-6 border-gray-cool-4 scroll-mt-4 max-w-3xl">
     <h3 class="text-lg font-semibold mb-2 group">
       <span class="text-gray-60 text-sm">{{ member.type }}</span>
       <code class="ml-2">{{ member.name }}</code>
