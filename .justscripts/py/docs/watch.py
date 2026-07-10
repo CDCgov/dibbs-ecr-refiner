@@ -36,7 +36,12 @@ class PythonDocsHandler(FileSystemEventHandler):
 
     def _sync_docs(self, changed_file: Path):
         """Run extraction scripts."""
-        print(f"\n🔄 Detected change in {changed_file.relative_to(Path.cwd())}")
+        try:
+            display_path = changed_file.relative_to(Path.cwd())
+        except ValueError:
+            # Path is already relative
+            display_path = changed_file
+        print(f"\n🔄 Detected change in {display_path}")
         print("📚 Re-extracting Python API docs...")
 
         venv_python = Path("refiner/.venv/bin/python3")
