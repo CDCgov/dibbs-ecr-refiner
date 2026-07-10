@@ -1391,10 +1391,10 @@
         {
           "name": "extract_persistence_id",
           "type": "function",
-          "docstring": "Extract the persistence_id from an S3 object key.\n\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
+          "docstring": "Extract the persistence_id from an S3 object key.\n\n```\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n```\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
           "parsed_docstring": {
             "summary": "Extract the persistence_id from an S3 object key.",
-            "description": "Object key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e",
+            "description": "```\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n```",
             "params": [
               {
                 "name": "object_key",
@@ -1464,7 +1464,7 @@
             },
             "raises": []
           },
-          "lineno": 297,
+          "lineno": 299,
           "signature": "get_s3_object_content(s3_client, bucket: str, key: str) -> str",
           "parameters": [
             {
@@ -1523,7 +1523,7 @@
               }
             ]
           },
-          "lineno": 314,
+          "lineno": 316,
           "signature": "check_s3_object_exists(s3_client, bucket: str, key: str) -> bool",
           "parameters": [
             {
@@ -1570,7 +1570,7 @@
               }
             ]
           },
-          "lineno": 342,
+          "lineno": 344,
           "signature": "parse_s3_content_to_dict(body: str) -> dict",
           "parameters": [
             {
@@ -1614,7 +1614,7 @@
             },
             "raises": []
           },
-          "lineno": 364,
+          "lineno": 366,
           "signature": "read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None",
           "parameters": [
             {
@@ -1649,7 +1649,7 @@
             },
             "raises": []
           },
-          "lineno": 398,
+          "lineno": 400,
           "signature": "read_current_version(s3_client, bucket: str, key: str) -> int | None",
           "parameters": [
             {
@@ -1708,7 +1708,7 @@
               }
             ]
           },
-          "lineno": 426,
+          "lineno": 428,
           "signature": "read_configuration_file(s3_client, bucket: str, key: str) -> dict",
           "parameters": [
             {
@@ -1774,7 +1774,7 @@
             },
             "raises": []
           },
-          "lineno": 463,
+          "lineno": 465,
           "signature": "run_refinement(input: RefinementInput) -> RefinementOutput",
           "parameters": [
             {
@@ -1796,7 +1796,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 529,
+          "lineno": 531,
           "signature": "process_jurisdiction(jurisdiction_group: JurisdictionReportableConditions, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1833,7 +1833,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 566,
+          "lineno": 568,
           "signature": "process_condition(jurisdiction_code: str, reportable_condition: ReportableCondition, rsg_cg_payload: ConditionMappingPayload, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1880,7 +1880,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 646,
+          "lineno": 648,
           "signature": "load_condition_mapping_for_jurisdiction(s3_client, config_bucket: str, jurisdiction_code: str) -> ConditionMappingPayload | None",
           "parameters": [
             {
@@ -1912,7 +1912,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 675,
+          "lineno": 677,
           "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
           "parameters": [
             {
@@ -1944,7 +1944,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 697,
+          "lineno": 699,
           "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState) -> None",
           "parameters": [
             {
@@ -1981,7 +1981,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 718,
+          "lineno": 720,
           "methods": [
             {
               "name": "__init__",
@@ -2026,7 +2026,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 724,
+          "lineno": 726,
           "signature": "load_active_configuration(s3_client, config_bucket: str, jurisdiction_code: str, cg_metadata: ConditionMapValue, rsg_metadata: ReportableCondition) -> ActiveConfiguration | None",
           "parameters": [
             {
@@ -2068,7 +2068,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 783,
+          "lineno": 785,
           "signature": "write_refined_outputs(refiner_input: RefinementInput, jurisdiction_code: str, condition_code: str, condition_grouper_name: str, result: RefinementResult, state: RefinementState) -> None",
           "parameters": [
             {
@@ -2115,7 +2115,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 830,
+          "lineno": 832,
           "signature": "write_remainder_rrs(refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {

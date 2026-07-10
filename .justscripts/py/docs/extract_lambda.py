@@ -2,6 +2,66 @@ import json
 import sys
 from pathlib import Path
 import griffe
+from docstring_parser import parse as parse_docstring, Style
+
+
+def _parse_google_docstring(raw: str) -> dict:
+    """Parse a Google-style docstring into structured data."""
+    if not raw:
+        return {
+            "summary": "",
+            "description": "",
+            "params": [],
+            "returns": None,
+            "raises": [],
+        }
+
+    try:
+        parsed = parse_docstring(raw, style=Style.GOOGLE)
+    except Exception:
+        return {
+            "summary": "",
+            "description": "",
+            "params": [],
+            "returns": None,
+            "raises": [],
+        }
+
+    summary = parsed.short_description or ""
+    description = parsed.long_description or ""
+
+    params = []
+    if parsed.params:
+        for p in parsed.params:
+            params.append({
+                "name": p.arg_name,
+                "type": p.type_name or "",
+                "description": p.description or "",
+                "default": str(p.default) if p.default is not None else "",
+            })
+
+    returns = None
+    if parsed.returns:
+        returns = {
+            "type": parsed.returns.type_name or "",
+            "description": parsed.returns.description or "",
+        }
+
+    raises = []
+    if parsed.raises:
+        for r in parsed.raises:
+            raises.append({
+                "type": r.type_name or "",
+                "description": r.description or "",
+            })
+
+    return {
+        "summary": summary,
+        "description": description,
+        "params": params,
+        "returns": returns,
+        "raises": raises,
+    }
 
 
 def _get_docstring(member):
@@ -44,6 +104,9 @@ def extract_lambda_docs(search_path: str) -> dict:
             continue
         if member_name.startswith("_"):
             continue
+        # Skip test modules
+        if member_name.startswith("test_"):
+            continue
 
         # If it's a submodule, recurse into it
         if member.kind == "module":
@@ -59,6 +122,7 @@ def extract_lambda_docs(search_path: str) -> dict:
                 member_info = {
                     "name": sub_member.path,
                     "docstring": _get_docstring(sub_member),
+                    "parsed_docstring": _parse_google_docstring(_get_docstring(sub_member)),
                     "lineno": sub_member.lineno,
                 }
 
@@ -88,6 +152,7 @@ def extract_lambda_docs(search_path: str) -> dict:
                         method_info = {
                             "name": method_name,
                             "docstring": _get_docstring(method),
+                            "parsed_docstring": _parse_google_docstring(_get_docstring(method)),
                             "lineno": method.lineno,
                         }
                         if method.signature:
@@ -111,6 +176,7 @@ def extract_lambda_docs(search_path: str) -> dict:
             member_info = {
                 "name": member.path,
                 "docstring": _get_docstring(member),
+                "parsed_docstring": _parse_google_docstring(_get_docstring(member)),
                 "lineno": member.lineno,
             }
 
