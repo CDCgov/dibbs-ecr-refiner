@@ -896,10 +896,10 @@
         {
           "name": "test_lambda_inactive",
           "type": "function",
-          "docstring": "Test that a file with two reportable conditions works when configurations are not\npresent for either condition.",
+          "docstring": "Test that a file with two reportable conditions works when configurations are not present for either condition.",
           "parsed_docstring": {
-            "summary": "Test that a file with two reportable conditions works when configurations are not",
-            "description": "present for either condition.",
+            "summary": "Test that a file with two reportable conditions works when configurations are not present for either condition.",
+            "description": "",
             "params": [],
             "returns": null,
             "raises": []
@@ -937,15 +937,15 @@
         {
           "name": "test_lambda_one_active",
           "type": "function",
-          "docstring": "Test that a file with two reportable conditions works when a configuration is\nactive for only one of those conditions.",
+          "docstring": "Test that a file with two reportable conditions works when a configuration is active for only one of those conditions.",
           "parsed_docstring": {
-            "summary": "Test that a file with two reportable conditions works when a configuration is",
-            "description": "active for only one of those conditions.",
+            "summary": "Test that a file with two reportable conditions works when a configuration is active for only one of those conditions.",
+            "description": "",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 206,
+          "lineno": 205,
           "signature": "test_lambda_one_active(lambda_event, s3_client, data_bucket, config_bucket, config_lambda_env, s3_input_objects)",
           "parameters": [
             {
@@ -983,15 +983,15 @@
         {
           "name": "test_lambda_all_active",
           "type": "function",
-          "docstring": "Test that a file with two reportable conditions works when a configuration is\nactive for both of those conditions.",
+          "docstring": "Test that a file with two reportable conditions works when a configuration is active for both of those conditions.",
           "parsed_docstring": {
-            "summary": "Test that a file with two reportable conditions works when a configuration is",
-            "description": "active for both of those conditions.",
+            "summary": "Test that a file with two reportable conditions works when a configuration is active for both of those conditions.",
+            "description": "",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 342,
+          "lineno": 340,
           "signature": "test_lambda_all_active(lambda_event, s3_client, data_bucket, config_bucket, config_lambda_env, s3_input_objects)",
           "parameters": [
             {
