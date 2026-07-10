@@ -10,14 +10,9 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "img": "img" });
 
   // Watch generated docs data so `docs::serve` refreshes when sync rewrites it.
+  // Note: Python source watching is handled by watch.py which re-extracts on change
   eleventyConfig.addWatchTarget("./_data/**/*.json");
   eleventyConfig.addWatchTarget("./_data/**/*.toml");
-
-  // Watch refiner source files to trigger extraction on change
-  eleventyConfig.addWatchTarget(path.join(projectRoot, "refiner/app/services/**/*.py"));
-  eleventyConfig.addWatchTarget(path.join(projectRoot, "refiner/app/api/**/*.py"));
-  eleventyConfig.addWatchTarget(path.join(projectRoot, "refiner/app/core/**/*.py"));
-  eleventyConfig.addWatchTarget(path.join(projectRoot, "refiner/app/lambda/**/*.py"));
 
   // Use Eleventy's Render plugin so templates can render markdown/liquid
   // content consistently via the `render` filter.
