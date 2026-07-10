@@ -99,15 +99,15 @@ def format_ts(raw: str | None) -> str:
     Preserves the source precision (never fabricates missing components)
     and presents the timezone offset exactly as given (no conversion):
 
-        2020             -> 2020
-        202011           -> 2020-11
-        20201107         -> 2020-11-07
-        202011071159     -> 2020-11-07 11:59
-        20201107115930   -> 2020-11-07 11:59:30
-        202011071159-0700 -> 2020-11-07 11:59 -07:00
+    - 2020             -> 2020
+    - 202011           -> 2020-11
+    - 20201107         -> 2020-11-07
+    - 202011071159     -> 2020-11-07 11:59
+    - 20201107115930   -> 2020-11-07 11:59:30
+    - 202011071159-0700 -> 2020-11-07 11:59 -07:00
 
     A value that is not a recognizable TS (or is empty) is returned
-    unchanged, so this is safe to apply to any rendered @value.
+    unchanged, so this is safe to apply to any rendered `@value`.
 
     Args:
         raw: The raw TS string, or None.
@@ -168,19 +168,19 @@ def render_code_display(el: _Element | None) -> str:
     """
     Resolve a coded element to its human display string.
 
-    Tries, in order: the @displayName attribute, the text of an
-    <originalText> child (ignoring any <reference> it wraps), the
-    @displayName of the first <translation>, the bare @code, and finally
-    the @code of the first <translation>. Returns "" when none resolve.
+    Tries, in order: the `@displayName` attribute, the text of an
+    `<originalText>` child (ignoring any `<reference>` it wraps), the
+    `@displayName` of the first `<translation>`, the bare `@code`, and finally
+    the `@code` of the first `<translation>`. Returns "" when none resolve.
 
     The translation fallbacks matter for immunizations and medications: a
     sender may put a nullFlavor on the primary CVX/RxNorm code and carry the
-    real code (and sometimes its display) in a <translation> (NDC, RxNorm,
-    CVX). Resolving translation @displayName *and* @code keeps those rows from
+    real code (and sometimes its display) in a `<translation>` (NDC, RxNorm,
+    CVX). Resolving translation `@displayName` *and* `@code` keeps those rows from
     rendering blank.
 
     Args:
-        el: A coded element (<code>, <value xsi:type="CD">, etc.), or None.
+        el: A coded element (`<code>`, `<value xsi:type="CD">`, etc.), or None.
 
     Returns:
         A human-readable display string, or "".
@@ -225,13 +225,13 @@ def render_coded_concept(el: _Element | None) -> str:
     chain. The code half is the element's own `@code`, qualified by the
     human-readable system name resolved from `@codeSystem` (the OID).
 
-        - code + known system -> "E. coli (SNOMED CT 112283007)"
-        - code + unknown system -> "E. coli (112283007)"
-        - no human display, only a code -> "SNOMED CT 112283007"
-        - nullFlavor / missing code -> display-only (no empty parens)
+    - code + known system -> "E. coli (SNOMED CT 112283007)"
+    - code + unknown system -> "E. coli (112283007)"
+    - no human display, only a code -> "SNOMED CT 112283007"
+    - nullFlavor / missing code -> display-only (no empty parens)
 
     Args:
-        el: A clinical coded element (<code>, <value xsi:type="CD">, …), or None.
+        el: A clinical coded element (`<code>`, `<value xsi:type="CD">`, …), or None.
 
     Returns:
         The rendered concept string, or "".
@@ -436,7 +436,7 @@ def _strip_entry_references(section: _Element) -> None:
 
 def _mark_entries_derived(section: _Element) -> None:
     """
-    Set entry/@typeCode="DRIV" on every entry in a reconstructed section.
+    Set `entry/@typeCode="DRIV"` on every entry in a reconstructed section.
 
     Reconstruction rebuilds the section narrative FROM these entries, so the
     entry↔narrative relationship is "derived from" (DRIV), not the schema
@@ -454,11 +454,11 @@ def _relink_source(source: _Element, row_id: str) -> None:
     """
     Point a surviving entry at the reconstructed row that represents it.
 
-    Ensures `source` has a <text> child holding a single
-    <reference value="#row_id"/>. When the <text> must be created it is
+    Ensures `source` has a `<text>` child holding a single
+    <reference value="#row_id"/>. When the `<text>` must be created it is
     placed after the last of templateId/id/code — the elements that precede
-    <text> in the CDA R2 clinical-statement sequence — so it lands validly
-    whether the source carries a <code> (observation) or not
+    `<text>` in the CDA R2 clinical-statement sequence — so it lands validly
+    whether the source carries a `<code>` (observation) or not
     (substanceAdministration).
     """
 
@@ -478,7 +478,7 @@ def _relink_source(source: _Element, row_id: str) -> None:
 
 def _append_table(parent: _Element, columns: list[str]) -> _Element:
     """
-    Append a bordered <table> with a header row; return its <tbody>.
+    Append a bordered `<table>` with a header row; return its `<tbody>`.
     """
 
     table = _sub_element(parent, "table", border="1")
@@ -496,12 +496,12 @@ def render_section_text(
     augmentation_timestamp: str,
 ) -> _Element:
     """
-    Assemble a section's reconstructed <text> from its blocks.
+    Assemble a section's reconstructed `<text>` from its blocks.
 
     Each block renders as an optional one-row context table followed by a
     detail table whose rows carry document-unique xs:IDs. Every detail row's
     source entry is relinked to its row, so the entry↔narrative round-trip
-    holds after the caller swaps in this <text>.
+    holds after the caller swaps in this `<text>`.
 
     Args:
         blocks: One self-contained block per grouping entry.
@@ -510,7 +510,7 @@ def render_section_text(
             stamp the row IDs to the same run as the provenance footnote.
 
     Returns:
-        A detached, namespace-qualified <text>.
+        A detached, namespace-qualified `<text>`.
     """
 
     text = _make_element("text")
@@ -626,7 +626,7 @@ def reconstruct_results(section: _Element) -> list[Block]:
     Context is rendered once per block — never repeated down the result rows.
 
     Args:
-        section: The post-prune, post-enrich Results <section>.
+        section: The post-prune, post-enrich Results `<section>`.
 
     Returns:
         One Block per organizer that has surviving result observations.
@@ -670,7 +670,7 @@ def reconstruct_problems(section: _Element) -> list[Block]:
     through entryRelationship. Context renders once per block, not per row.
 
     Args:
-        section: The post-prune, post-enrich Problems <section>.
+        section: The post-prune, post-enrich Problems `<section>`.
 
     Returns:
         One Block per concern act that has surviving problem observations.
@@ -712,7 +712,7 @@ def _reconstruct_flat(
     substanceAdministration sections (Immunizations, Medications) take.
 
     Args:
-        section: The post-prune, post-enrich <section>.
+        section: The post-prune, post-enrich `<section>`.
         anchor_xpath: Row anchor, relative to the section.
         fields: The field map read off each anchor.
 
@@ -735,7 +735,7 @@ def reconstruct_immunizations(section: _Element) -> list[Block]:
     Reconstruct the Immunizations section: one row per vaccine.
 
     Args:
-        section: The post-prune, post-enrich Immunizations <section>.
+        section: The post-prune, post-enrich Immunizations `<section>`.
 
     Returns:
         A single flat Block, or [] when no substanceAdministration survived.
@@ -753,7 +753,7 @@ def reconstruct_medications(section: _Element) -> list[Block]:
     Reconstruct the Medications Administered section: one row per medication.
 
     Args:
-        section: The post-prune, post-enrich Medications <section>.
+        section: The post-prune, post-enrich Medications `<section>`.
 
     Returns:
         A single flat Block, or [] when no substanceAdministration survived.
@@ -787,10 +787,10 @@ def reconstruct_narrative(
     augmentation_timestamp: str,
 ) -> _Element | None:
     """
-    Reconstruct a section's narrative <text> from its surviving entries.
+    Reconstruct a section's narrative `<text>` from its surviving entries.
 
     Dispatches on the section's LOINC code. Returns a detached, namespace-
-    qualified <text> ready to replace the section's existing narrative, or
+    qualified `<text>` ready to replace the section's existing narrative, or
     None when the section has no registered reconstructor or nothing
     survived to reconstruct — in which case the caller falls back to the
     removal notice rather than leaving a stale narrative.
@@ -801,13 +801,13 @@ def reconstruct_narrative(
     is derived from the entries). See ADR 0011. It is no longer a pure read.
 
     Args:
-        section: The post-prune, post-enrich <section>.
+        section: The post-prune, post-enrich `<section>`.
         augmentation_timestamp: The refinement run's HL7 V3 time value,
             used to stamp the minted row IDs to the same run as the
             section's provenance footnote.
 
     Returns:
-        A detached <text>, or None.
+        A detached `<text>`, or None.
     """
 
     loinc_codes = section.xpath("hl7:code/@code", namespaces=HL7_NS)

@@ -10049,10 +10049,10 @@
         {
           "name": "format_ts",
           "type": "function",
-          "docstring": "Render an HL7 V3 TS string as a human-readable date/time.\n\nPreserves the source precision (never fabricates missing components)\nand presents the timezone offset exactly as given (no conversion):\n\n    2020             -> 2020\n    202011           -> 2020-11\n    20201107         -> 2020-11-07\n    202011071159     -> 2020-11-07 11:59\n    20201107115930   -> 2020-11-07 11:59:30\n    202011071159-0700 -> 2020-11-07 11:59 -07:00\n\nA value that is not a recognizable TS (or is empty) is returned\nunchanged, so this is safe to apply to any rendered @value.\n\nArgs:\n    raw: The raw TS string, or None.\n\nReturns:\n    The formatted date/time, the input unchanged if not a TS, or \"\".",
+          "docstring": "Render an HL7 V3 TS string as a human-readable date/time.\n\nPreserves the source precision (never fabricates missing components)\nand presents the timezone offset exactly as given (no conversion):\n\n- 2020             -> 2020\n- 202011           -> 2020-11\n- 20201107         -> 2020-11-07\n- 202011071159     -> 2020-11-07 11:59\n- 20201107115930   -> 2020-11-07 11:59:30\n- 202011071159-0700 -> 2020-11-07 11:59 -07:00\n\nA value that is not a recognizable TS (or is empty) is returned\nunchanged, so this is safe to apply to any rendered `@value`.\n\nArgs:\n    raw: The raw TS string, or None.\n\nReturns:\n    The formatted date/time, the input unchanged if not a TS, or \"\".",
           "parsed_docstring": {
             "summary": "Render an HL7 V3 TS string as a human-readable date/time.",
-            "description": "Preserves the source precision (never fabricates missing components)\nand presents the timezone offset exactly as given (no conversion):\n\n    2020             -> 2020\n    202011           -> 2020-11\n    20201107         -> 2020-11-07\n    202011071159     -> 2020-11-07 11:59\n    20201107115930   -> 2020-11-07 11:59:30\n    202011071159-0700 -> 2020-11-07 11:59 -07:00\n\nA value that is not a recognizable TS (or is empty) is returned\nunchanged, so this is safe to apply to any rendered @value.",
+            "description": "Preserves the source precision (never fabricates missing components)\nand presents the timezone offset exactly as given (no conversion):\n\n- 2020             -> 2020\n- 202011           -> 2020-11\n- 20201107         -> 2020-11-07\n- 202011071159     -> 2020-11-07 11:59\n- 20201107115930   -> 2020-11-07 11:59:30\n- 202011071159-0700 -> 2020-11-07 11:59 -07:00\n\nA value that is not a recognizable TS (or is empty) is returned\nunchanged, so this is safe to apply to any rendered `@value`.",
             "params": [
               {
                 "name": "raw",
@@ -10081,15 +10081,15 @@
         {
           "name": "render_code_display",
           "type": "function",
-          "docstring": "Resolve a coded element to its human display string.\n\nTries, in order: the @displayName attribute, the text of an\n<originalText> child (ignoring any <reference> it wraps), the\n@displayName of the first <translation>, the bare @code, and finally\nthe @code of the first <translation>. Returns \"\" when none resolve.\n\nThe translation fallbacks matter for immunizations and medications: a\nsender may put a nullFlavor on the primary CVX/RxNorm code and carry the\nreal code (and sometimes its display) in a <translation> (NDC, RxNorm,\nCVX). Resolving translation @displayName *and* @code keeps those rows from\nrendering blank.\n\nArgs:\n    el: A coded element (<code>, <value xsi:type=\"CD\">, etc.), or None.\n\nReturns:\n    A human-readable display string, or \"\".",
+          "docstring": "Resolve a coded element to its human display string.\n\nTries, in order: the `@displayName` attribute, the text of an\n`<originalText>` child (ignoring any `<reference>` it wraps), the\n`@displayName` of the first `<translation>`, the bare `@code`, and finally\nthe `@code` of the first `<translation>`. Returns \"\" when none resolve.\n\nThe translation fallbacks matter for immunizations and medications: a\nsender may put a nullFlavor on the primary CVX/RxNorm code and carry the\nreal code (and sometimes its display) in a `<translation>` (NDC, RxNorm,\nCVX). Resolving translation `@displayName` *and* `@code` keeps those rows from\nrendering blank.\n\nArgs:\n    el: A coded element (`<code>`, `<value xsi:type=\"CD\">`, etc.), or None.\n\nReturns:\n    A human-readable display string, or \"\".",
           "parsed_docstring": {
             "summary": "Resolve a coded element to its human display string.",
-            "description": "Tries, in order: the @displayName attribute, the text of an\n<originalText> child (ignoring any <reference> it wraps), the\n@displayName of the first <translation>, the bare @code, and finally\nthe @code of the first <translation>. Returns \"\" when none resolve.\n\nThe translation fallbacks matter for immunizations and medications: a\nsender may put a nullFlavor on the primary CVX/RxNorm code and carry the\nreal code (and sometimes its display) in a <translation> (NDC, RxNorm,\nCVX). Resolving translation @displayName *and* @code keeps those rows from\nrendering blank.",
+            "description": "Tries, in order: the `@displayName` attribute, the text of an\n`<originalText>` child (ignoring any `<reference>` it wraps), the\n`@displayName` of the first `<translation>`, the bare `@code`, and finally\nthe `@code` of the first `<translation>`. Returns \"\" when none resolve.\n\nThe translation fallbacks matter for immunizations and medications: a\nsender may put a nullFlavor on the primary CVX/RxNorm code and carry the\nreal code (and sometimes its display) in a `<translation>` (NDC, RxNorm,\nCVX). Resolving translation `@displayName` *and* `@code` keeps those rows from\nrendering blank.",
             "params": [
               {
                 "name": "el",
                 "type": "",
-                "description": "A coded element (<code>, <value xsi:type=\"CD\">, etc.), or None.",
+                "description": "A coded element (`<code>`, `<value xsi:type=\"CD\">`, etc.), or None.",
                 "default": ""
               }
             ],
@@ -10113,15 +10113,15 @@
         {
           "name": "render_coded_concept",
           "type": "function",
-          "docstring": "Render a clinical coded element as `displayName (System code)`.\n\nThe display half flows through the full `render_code_display` fallback\nchain. The code half is the element's own `@code`, qualified by the\nhuman-readable system name resolved from `@codeSystem` (the OID).\n\n    - code + known system -> \"E. coli (SNOMED CT 112283007)\"\n    - code + unknown system -> \"E. coli (112283007)\"\n    - no human display, only a code -> \"SNOMED CT 112283007\"\n    - nullFlavor / missing code -> display-only (no empty parens)\n\nArgs:\n    el: A clinical coded element (<code>, <value xsi:type=\"CD\">, \u2026), or None.\n\nReturns:\n    The rendered concept string, or \"\".",
+          "docstring": "Render a clinical coded element as `displayName (System code)`.\n\nThe display half flows through the full `render_code_display` fallback\nchain. The code half is the element's own `@code`, qualified by the\nhuman-readable system name resolved from `@codeSystem` (the OID).\n\n- code + known system -> \"E. coli (SNOMED CT 112283007)\"\n- code + unknown system -> \"E. coli (112283007)\"\n- no human display, only a code -> \"SNOMED CT 112283007\"\n- nullFlavor / missing code -> display-only (no empty parens)\n\nArgs:\n    el: A clinical coded element (`<code>`, `<value xsi:type=\"CD\">`, \u2026), or None.\n\nReturns:\n    The rendered concept string, or \"\".",
           "parsed_docstring": {
             "summary": "Render a clinical coded element as `displayName (System code)`.",
-            "description": "The display half flows through the full `render_code_display` fallback\nchain. The code half is the element's own `@code`, qualified by the\nhuman-readable system name resolved from `@codeSystem` (the OID).\n\n    - code + known system -> \"E. coli (SNOMED CT 112283007)\"\n    - code + unknown system -> \"E. coli (112283007)\"\n    - no human display, only a code -> \"SNOMED CT 112283007\"\n    - nullFlavor / missing code -> display-only (no empty parens)",
+            "description": "The display half flows through the full `render_code_display` fallback\nchain. The code half is the element's own `@code`, qualified by the\nhuman-readable system name resolved from `@codeSystem` (the OID).\n\n- code + known system -> \"E. coli (SNOMED CT 112283007)\"\n- code + unknown system -> \"E. coli (112283007)\"\n- no human display, only a code -> \"SNOMED CT 112283007\"\n- nullFlavor / missing code -> display-only (no empty parens)",
             "params": [
               {
                 "name": "el",
                 "type": "",
-                "description": "A clinical coded element (<code>, <value xsi:type=\"CD\">, \u2026), or None.",
+                "description": "A clinical coded element (`<code>`, `<value xsi:type=\"CD\">`, \u2026), or None.",
                 "default": ""
               }
             ],
@@ -10234,10 +10234,10 @@
         {
           "name": "render_section_text",
           "type": "function",
-          "docstring": "Assemble a section's reconstructed <text> from its blocks.\n\nEach block renders as an optional one-row context table followed by a\ndetail table whose rows carry document-unique xs:IDs. Every detail row's\nsource entry is relinked to its row, so the entry\u2194narrative round-trip\nholds after the caller swaps in this <text>.\n\nArgs:\n    blocks: One self-contained block per grouping entry.\n    loinc: The section's LOINC code, used in the row ID namespace.\n    augmentation_timestamp: The run's HL7 V3 time value; its digits\n        stamp the row IDs to the same run as the provenance footnote.\n\nReturns:\n    A detached, namespace-qualified <text>.",
+          "docstring": "Assemble a section's reconstructed `<text>` from its blocks.\n\nEach block renders as an optional one-row context table followed by a\ndetail table whose rows carry document-unique xs:IDs. Every detail row's\nsource entry is relinked to its row, so the entry\u2194narrative round-trip\nholds after the caller swaps in this `<text>`.\n\nArgs:\n    blocks: One self-contained block per grouping entry.\n    loinc: The section's LOINC code, used in the row ID namespace.\n    augmentation_timestamp: The run's HL7 V3 time value; its digits\n        stamp the row IDs to the same run as the provenance footnote.\n\nReturns:\n    A detached, namespace-qualified `<text>`.",
           "parsed_docstring": {
-            "summary": "Assemble a section's reconstructed <text> from its blocks.",
-            "description": "Each block renders as an optional one-row context table followed by a\ndetail table whose rows carry document-unique xs:IDs. Every detail row's\nsource entry is relinked to its row, so the entry\u2194narrative round-trip\nholds after the caller swaps in this <text>.",
+            "summary": "Assemble a section's reconstructed `<text>` from its blocks.",
+            "description": "Each block renders as an optional one-row context table followed by a\ndetail table whose rows carry document-unique xs:IDs. Every detail row's\nsource entry is relinked to its row, so the entry\u2194narrative round-trip\nholds after the caller swaps in this `<text>`.",
             "params": [
               {
                 "name": "blocks",
@@ -10260,7 +10260,7 @@
             ],
             "returns": {
               "type": "",
-              "description": "A detached, namespace-qualified <text>."
+              "description": "A detached, namespace-qualified `<text>`."
             },
             "raises": []
           },
@@ -10379,7 +10379,7 @@
         {
           "name": "reconstruct_results",
           "type": "function",
-          "docstring": "Reconstruct the Results section as one block per panel.\n\nJOIN section: each organizer is a self-contained block. Its context is\nthe PANEL (its own fields) merged with the SPECIMEN reached SIDEWAYS to a\nsibling procedure; its detail rows are the child result observations.\nContext is rendered once per block \u2014 never repeated down the result rows.\n\nArgs:\n    section: The post-prune, post-enrich Results <section>.\n\nReturns:\n    One Block per organizer that has surviving result observations.",
+          "docstring": "Reconstruct the Results section as one block per panel.\n\nJOIN section: each organizer is a self-contained block. Its context is\nthe PANEL (its own fields) merged with the SPECIMEN reached SIDEWAYS to a\nsibling procedure; its detail rows are the child result observations.\nContext is rendered once per block \u2014 never repeated down the result rows.\n\nArgs:\n    section: The post-prune, post-enrich Results `<section>`.\n\nReturns:\n    One Block per organizer that has surviving result observations.",
           "parsed_docstring": {
             "summary": "Reconstruct the Results section as one block per panel.",
             "description": "JOIN section: each organizer is a self-contained block. Its context is\nthe PANEL (its own fields) merged with the SPECIMEN reached SIDEWAYS to a\nsibling procedure; its detail rows are the child result observations.\nContext is rendered once per block \u2014 never repeated down the result rows.",
@@ -10387,7 +10387,7 @@
               {
                 "name": "section",
                 "type": "",
-                "description": "The post-prune, post-enrich Results <section>.",
+                "description": "The post-prune, post-enrich Results `<section>`.",
                 "default": ""
               }
             ],
@@ -10411,7 +10411,7 @@
         {
           "name": "reconstruct_problems",
           "type": "function",
-          "docstring": "Reconstruct the Problems section as one block per concern.\n\nJOIN section, mirroring Results one level down: each Problem Concern Act\nis a self-contained block whose context is the concern (status + noted\ndate) and whose detail rows are the Problem Observations reached DOWN\nthrough entryRelationship. Context renders once per block, not per row.\n\nArgs:\n    section: The post-prune, post-enrich Problems <section>.\n\nReturns:\n    One Block per concern act that has surviving problem observations.",
+          "docstring": "Reconstruct the Problems section as one block per concern.\n\nJOIN section, mirroring Results one level down: each Problem Concern Act\nis a self-contained block whose context is the concern (status + noted\ndate) and whose detail rows are the Problem Observations reached DOWN\nthrough entryRelationship. Context renders once per block, not per row.\n\nArgs:\n    section: The post-prune, post-enrich Problems `<section>`.\n\nReturns:\n    One Block per concern act that has surviving problem observations.",
           "parsed_docstring": {
             "summary": "Reconstruct the Problems section as one block per concern.",
             "description": "JOIN section, mirroring Results one level down: each Problem Concern Act\nis a self-contained block whose context is the concern (status + noted\ndate) and whose detail rows are the Problem Observations reached DOWN\nthrough entryRelationship. Context renders once per block, not per row.",
@@ -10419,7 +10419,7 @@
               {
                 "name": "section",
                 "type": "",
-                "description": "The post-prune, post-enrich Problems <section>.",
+                "description": "The post-prune, post-enrich Problems `<section>`.",
                 "default": ""
               }
             ],
@@ -10443,7 +10443,7 @@
         {
           "name": "reconstruct_immunizations",
           "type": "function",
-          "docstring": "Reconstruct the Immunizations section: one row per vaccine.\n\nArgs:\n    section: The post-prune, post-enrich Immunizations <section>.\n\nReturns:\n    A single flat Block, or [] when no substanceAdministration survived.",
+          "docstring": "Reconstruct the Immunizations section: one row per vaccine.\n\nArgs:\n    section: The post-prune, post-enrich Immunizations `<section>`.\n\nReturns:\n    A single flat Block, or [] when no substanceAdministration survived.",
           "parsed_docstring": {
             "summary": "Reconstruct the Immunizations section: one row per vaccine.",
             "description": "",
@@ -10451,7 +10451,7 @@
               {
                 "name": "section",
                 "type": "",
-                "description": "The post-prune, post-enrich Immunizations <section>.",
+                "description": "The post-prune, post-enrich Immunizations `<section>`.",
                 "default": ""
               }
             ],
@@ -10475,7 +10475,7 @@
         {
           "name": "reconstruct_medications",
           "type": "function",
-          "docstring": "Reconstruct the Medications Administered section: one row per medication.\n\nArgs:\n    section: The post-prune, post-enrich Medications <section>.\n\nReturns:\n    A single flat Block, or [] when no substanceAdministration survived.",
+          "docstring": "Reconstruct the Medications Administered section: one row per medication.\n\nArgs:\n    section: The post-prune, post-enrich Medications `<section>`.\n\nReturns:\n    A single flat Block, or [] when no substanceAdministration survived.",
           "parsed_docstring": {
             "summary": "Reconstruct the Medications Administered section: one row per medication.",
             "description": "",
@@ -10483,7 +10483,7 @@
               {
                 "name": "section",
                 "type": "",
-                "description": "The post-prune, post-enrich Medications <section>.",
+                "description": "The post-prune, post-enrich Medications `<section>`.",
                 "default": ""
               }
             ],
@@ -10520,15 +10520,15 @@
         {
           "name": "reconstruct_narrative",
           "type": "function",
-          "docstring": "Reconstruct a section's narrative <text> from its surviving entries.\n\nDispatches on the section's LOINC code. Returns a detached, namespace-\nqualified <text> ready to replace the section's existing narrative, or\nNone when the section has no registered reconstructor or nothing\nsurvived to reconstruct \u2014 in which case the caller falls back to the\nremoval notice rather than leaving a stale narrative.\n\nThis function MUTATES `section`: it strips the now-dangling narrative\nreferences off the surviving entries, relinks each one to the row that\nrepresents it, and stamps every entry with typeCode=\"DRIV\" (the narrative\nis derived from the entries). See ADR 0011. It is no longer a pure read.\n\nArgs:\n    section: The post-prune, post-enrich <section>.\n    augmentation_timestamp: The refinement run's HL7 V3 time value,\n        used to stamp the minted row IDs to the same run as the\n        section's provenance footnote.\n\nReturns:\n    A detached <text>, or None.",
+          "docstring": "Reconstruct a section's narrative `<text>` from its surviving entries.\n\nDispatches on the section's LOINC code. Returns a detached, namespace-\nqualified `<text>` ready to replace the section's existing narrative, or\nNone when the section has no registered reconstructor or nothing\nsurvived to reconstruct \u2014 in which case the caller falls back to the\nremoval notice rather than leaving a stale narrative.\n\nThis function MUTATES `section`: it strips the now-dangling narrative\nreferences off the surviving entries, relinks each one to the row that\nrepresents it, and stamps every entry with typeCode=\"DRIV\" (the narrative\nis derived from the entries). See ADR 0011. It is no longer a pure read.\n\nArgs:\n    section: The post-prune, post-enrich `<section>`.\n    augmentation_timestamp: The refinement run's HL7 V3 time value,\n        used to stamp the minted row IDs to the same run as the\n        section's provenance footnote.\n\nReturns:\n    A detached `<text>`, or None.",
           "parsed_docstring": {
-            "summary": "Reconstruct a section's narrative <text> from its surviving entries.",
-            "description": "Dispatches on the section's LOINC code. Returns a detached, namespace-\nqualified <text> ready to replace the section's existing narrative, or\nNone when the section has no registered reconstructor or nothing\nsurvived to reconstruct \u2014 in which case the caller falls back to the\nremoval notice rather than leaving a stale narrative.\n\nThis function MUTATES `section`: it strips the now-dangling narrative\nreferences off the surviving entries, relinks each one to the row that\nrepresents it, and stamps every entry with typeCode=\"DRIV\" (the narrative\nis derived from the entries). See ADR 0011. It is no longer a pure read.",
+            "summary": "Reconstruct a section's narrative `<text>` from its surviving entries.",
+            "description": "Dispatches on the section's LOINC code. Returns a detached, namespace-\nqualified `<text>` ready to replace the section's existing narrative, or\nNone when the section has no registered reconstructor or nothing\nsurvived to reconstruct \u2014 in which case the caller falls back to the\nremoval notice rather than leaving a stale narrative.\n\nThis function MUTATES `section`: it strips the now-dangling narrative\nreferences off the surviving entries, relinks each one to the row that\nrepresents it, and stamps every entry with typeCode=\"DRIV\" (the narrative\nis derived from the entries). See ADR 0011. It is no longer a pure read.",
             "params": [
               {
                 "name": "section",
                 "type": "",
-                "description": "The post-prune, post-enrich <section>.",
+                "description": "The post-prune, post-enrich `<section>`.",
                 "default": ""
               },
               {
@@ -10540,7 +10540,7 @@
             ],
             "returns": {
               "type": "",
-              "description": "A detached <text>, or None."
+              "description": "A detached `<text>`, or None."
             },
             "raises": []
           },
