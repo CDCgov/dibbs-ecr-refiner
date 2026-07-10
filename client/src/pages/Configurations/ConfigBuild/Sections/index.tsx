@@ -415,29 +415,34 @@ function RefineSwitch({
   const showError = errorSectionCode === currentSection.code;
 
   return (
-    <div className="flex flex-col items-end gap-1" data-error-trigger>
-      <Field className="flex flex-row items-center justify-end">
-        <Label
-          aria-label={
-            curSectionSetToRefine
-              ? // "Refine Admission Diagnosis section"
-                `${refineLabelText} ${currentSection.name} section`
-              : // "Keep original for Admission Diagnosis section"
-                `${retainLabelText} for ${currentSection.name} section`
-          }
-        >
-          {curSectionSetToRefine ? (
-            <span>{refineLabelText}</span>
-          ) : (
-            <span className="italic">{retainLabelText}</span>
-          )}
-        </Label>
-        <Switch
-          disabled={disabled}
-          checked={toggled}
-          onChange={handleSwitchChange}
-        />
-      </Field>
+    <div
+      className="grid grid-cols-1 grid-rows-1 place-items-end"
+      data-error-trigger
+    >
+      <div className="z-5 col-start-1 row-start-1">
+        <Field className="flex flex-row items-center justify-end">
+          <Label
+            aria-label={
+              curSectionSetToRefine
+                ? // "Refine Admission Diagnosis section"
+                  `${refineLabelText} ${currentSection.name} section`
+                : // "Keep original for Admission Diagnosis section"
+                  `${retainLabelText} for ${currentSection.name} section`
+            }
+          >
+            {curSectionSetToRefine ? (
+              <span>{refineLabelText}</span>
+            ) : (
+              <span className="italic">{retainLabelText}</span>
+            )}
+          </Label>
+          <Switch
+            disabled={disabled}
+            checked={toggled}
+            onChange={handleSwitchChange}
+          />
+        </Field>
+      </div>
       {showError && (
         <p
           className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"

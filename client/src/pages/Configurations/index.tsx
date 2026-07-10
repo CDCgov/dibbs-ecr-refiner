@@ -37,8 +37,7 @@ import { useSearch } from '../../hooks/useSearch';
 import { FuseResult, FuseResultMatch, RangeTuple } from 'fuse.js';
 import classNames from 'classnames';
 import { Search } from '@components/Search';
-import { InfoIcon } from '@components/Icons/InfoIcon';
-import { CloseIcon } from '@components/Icons/CloseIcon';
+import { NotificationBanner } from './NotificationBanner';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -92,6 +91,14 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         }
         refreshUser={refreshUser}
       />
+      <TesUpdateBanner
+        isVisible={
+          user.notifications.to_render[
+            NotificationKeys.most_recent_tes_update
+          ] ?? false
+        }
+        refreshUser={refreshUser}
+      />
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
@@ -131,62 +138,78 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   );
 }
 
-function AppUpdateBanner({
-  isVisible,
-  refreshUser,
-}: {
-  isVisible: boolean;
-  refreshUser: () => void;
-}) {
+function useDismissNotification(key: NotificationKeys, sideEffect: () => void) {
   const { mutateAsync } = useUpdateUserNotifications();
-
-  if (!isVisible) {
-    return null;
-  }
-
-  async function dismissNotification() {
+  async function dismiss() {
     try {
       await mutateAsync({
         data: {
-          key: NotificationKeys.most_recent_app_update,
+          key,
         },
       });
-      refreshUser();
+      sideEffect();
     } catch (error) {
-      console.error('Failed to update user notifications', error);
+      console.error(
+        `Failed to update user notifications with key: ${key}`,
+        error
+      );
     }
   }
+  return dismiss;
+}
+
+interface BannerProps {
+  isVisible: boolean;
+  refreshUser: () => void;
+}
+
+function AppUpdateBanner({ isVisible, refreshUser }: BannerProps) {
+  const dismiss = useDismissNotification(
+    NotificationKeys.most_recent_app_update,
+    refreshUser
+  );
+
+  if (!isVisible) return null;
 
   return (
-    <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
-      <div className="mx-auto flex max-w-7xl items-center">
-        <div className="flex flex-1 items-center justify-center gap-4">
-          <div className="flex items-center gap-2">
-            <InfoIcon className="fill-blue-40v" />
-            <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
-              There are new updates to eCR Refiner.
-            </span>
-          </div>
-          <Button
-            variant="secondary"
-            to="/app-updates"
-            onClick={dismissNotification}
-          >
-            View updates
-          </Button>
-        </div>
+    <NotificationBanner
+      message="There are new updates to eCR Refiner."
+      onDismiss={dismiss}
+    >
+      <Button
+        className="m-0!"
+        variant="secondary"
+        to="/app-updates"
+        onClick={dismiss}
+      >
+        View updates <span className="sr-only">for app</span>
+      </Button>
+    </NotificationBanner>
+  );
+}
 
-        <Button
-          type="button"
-          onClick={dismissNotification}
-          aria-label="Dismiss notification"
-          variant="unstyled"
-          className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
-        >
-          <CloseIcon size={24} className="fill-blue-500" />
-        </Button>
-      </div>
-    </div>
+function TesUpdateBanner({ isVisible, refreshUser }: BannerProps) {
+  const dismiss = useDismissNotification(
+    NotificationKeys.most_recent_tes_update,
+    refreshUser
+  );
+
+  if (!isVisible) return null;
+
+  return (
+    <NotificationBanner
+      message="A new TES update was published."
+      onDismiss={dismiss}
+    >
+      <Button
+        className="m-0!"
+        variant="secondary"
+        to="/tes-updates"
+        onClick={dismiss}
+      >
+        View updates <span className="sr-only">for TES</span>
+      </Button>
+    </NotificationBanner>
   );
 }
 
@@ -220,7 +243,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
     useExtendedSearch: true,
   });
   const searchTextLongEnough =
-    searchText.length > MIN_CONFIG_SEARCH_TEXT_LENGTH;
+    searchText.length >= MIN_CONFIG_SEARCH_TEXT_LENGTH;
   const isSearching = searchTextLongEnough && results.length > 0;
 
   function reset() {

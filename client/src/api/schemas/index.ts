@@ -61,6 +61,8 @@ export * from './release';
 export * from './releaseNotes';
 export * from './releasesResponse';
 export * from './sectionUpdateInput';
+export * from './serializedFile';
+export * from './serializedFiles';
 export * from './simulatorUploadResponse';
 export * from './tesResponse';
 export * from './tesUpdate';
