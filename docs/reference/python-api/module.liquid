@@ -19,13 +19,20 @@ layout: layout.liquid
 <h2 class="font-merriweather text-xl font-semibold mb-4">Members</h2>
 <div class="space-y-6">
   {% for member in module.members %}
-  <div class="border rounded-lg p-6 border-gray-cool-4">
-    <h3 class="text-lg font-semibold mb-2">
+  <div id="{{ member.name }}" class="border rounded-lg p-6 border-gray-cool-4 scroll-mt-4">
+    <h3 class="text-lg font-semibold mb-2 group">
       <span class="text-gray-60 text-sm">{{ member.type }}</span>
       <code class="ml-2">{{ member.name }}</code>
+      <a href="#{{ member.name }}" class="ml-2 text-gray-40 hover:text-gray-60 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Link to {{ member.name }}">#</a>
     </h3>
-    {% if member.parsed_docstring %}
-      {{ member.parsed_docstring | renderDocstring }}
+    {% assign has_parsed = false %}
+    {% if member.parsed_docstring.summary != "" or member.parsed_docstring.description != "" %}
+      {% assign has_parsed = true %}
+    {% endif %}
+    {% if has_parsed %}
+      <div class="prose max-w-none mt-6 text-xl">
+        {{ member.parsed_docstring | renderDocstring | renderMarkdown | sanitize }}
+      </div>
     {% elsif member.docstring %}
       <div class="prose max-w-none mb-3">
         {{ member.docstring | renderMarkdown | sanitize }}
@@ -66,15 +73,20 @@ layout: layout.liquid
     <h4 class="text-sm font-medium text-gray-60 mt-4 mb-2">Methods</h4>
     <div class="space-y-3">
       {% for method in member.methods %}
-      <div class="border-l-2 border-gray-cool-4 pl-4">
+      <div id="{{ member.name }}.{{ method.name }}" class="border-l-2 border-gray-cool-4 pl-4 scroll-mt-4 group">
         <div class="font-mono text-sm">
           <span class="text-gray-60">{{ method.name }}</span>
+          <a href="#{{ member.name }}.{{ method.name }}" class="ml-2 text-gray-40 hover:text-gray-60 opacity-0 group-hover:opacity-100 transition-opacity text-xs" aria-label="Link to {{ member.name }}.{{ method.name }}">#</a>
         </div>
-        {% if method.parsed_docstring %}
+        {% assign has_method_parsed = false %}
+        {% if method.parsed_docstring.summary != "" or method.parsed_docstring.description != "" %}
+          {% assign has_method_parsed = true %}
+        {% endif %}
+        {% if has_method_parsed %}
           {{ method.parsed_docstring | renderDocstring }}
         {% elsif method.docstring %}
-          <div class="text-sm text-gray-60 mt-1">
-            {{ method.docstring }}
+          <div class="text-sm text-gray-60 mt-1 prose max-w-none">
+            {{ method.docstring | renderMarkdown | sanitize }}
           </div>
         {% endif %}
         {% if method.signature %}

@@ -34,7 +34,7 @@ module.exports = function (eleventyConfig) {
     if (!docstring) return "";
     let html = "";
     if (docstring.summary) {
-      html += `<p class="text-gray-900">${docstring.summary}</p>`;
+      html += `<p class="text-gray-900">${md.renderInline(docstring.summary)}</p>`;
     }
     if (docstring.description) {
       html += `<div class="prose max-w-none mb-3 text-gray-700">${md.render(docstring.description)}</div>`;
@@ -47,7 +47,7 @@ module.exports = function (eleventyConfig) {
         if (p.type) html += ` <span class="text-blue-cool-50">: ${p.type}</span>`;
         if (p.default) html += ` <span class="text-gray-500"> = ${p.default}</span>`;
         html += "</dt>";
-        if (p.description) html += `<dd class="mt-1 text-gray-60">${md.render(p.description)}</dd>`;
+        if (p.description) html += `<dd class="mt-1 text-gray-60 prose max-w-none">${md.render(p.description)}</dd>`;
         html += "</div>";
       }
       html += "</dl>";
@@ -58,7 +58,7 @@ module.exports = function (eleventyConfig) {
       html += "<dt class=\"font-mono text-gray-90\">";
       if (docstring.returns.type) html += `<span class="text-blue-cool-50">${docstring.returns.type}</span>: `;
       html += "</dt>";
-      if (docstring.returns.description) html += `<dd class="mt-1 text-gray-60">${md.render(docstring.returns.description)}</dd>`;
+      if (docstring.returns.description) html += `<dd class="mt-1 text-gray-60 prose max-w-none">${md.render(docstring.returns.description)}</dd>`;
       html += "</div></dl>";
     }
     if (docstring.raises && docstring.raises.length > 0) {
@@ -68,7 +68,7 @@ module.exports = function (eleventyConfig) {
         html += "<dt class=\"font-mono text-gray-90\">";
         if (r.type) html += `<span class="text-blue-cool-50">${r.type}</span>`;
         html += "</dt>";
-        if (r.description) html += `<dd class="mt-1 text-gray-60">${md.render(r.description)}</dd>`;
+        if (r.description) html += `<dd class="mt-1 text-gray-60 prose max-w-none">${md.render(r.description)}</dd>`;
         html += "</div>";
       }
       html += "</dl>";
