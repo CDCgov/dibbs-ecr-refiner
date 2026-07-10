@@ -1,0 +1,843 @@
+{
+  "modules": [
+    {
+      "name": "app.lambda.test_lambda.MockLambdaContext",
+      "docstring": "",
+      "lineno": 20,
+      "methods": []
+    },
+    {
+      "name": "app.lambda.test_lambda.aws_mock",
+      "docstring": "",
+      "lineno": 29,
+      "signature": "aws_mock()",
+      "parameters": []
+    },
+    {
+      "name": "app.lambda.test_lambda.config_lambda_env",
+      "docstring": "",
+      "lineno": 35,
+      "signature": "config_lambda_env(monkeypatch) -> dict[str, str]",
+      "parameters": [
+        {
+          "name": "monkeypatch",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "dict[str, str]"
+    },
+    {
+      "name": "app.lambda.test_lambda.lambda_event",
+      "docstring": "",
+      "lineno": 51,
+      "signature": "lambda_event() -> dict",
+      "parameters": [],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.test_lambda.sample_xml_files",
+      "docstring": "",
+      "lineno": 58,
+      "signature": "sample_xml_files() -> dict[str, bytes]",
+      "parameters": [],
+      "return_annotation": "dict[str, bytes]"
+    },
+    {
+      "name": "app.lambda.test_lambda.s3_client",
+      "docstring": "",
+      "lineno": 74,
+      "signature": "s3_client(aws_mock)",
+      "parameters": [
+        {
+          "name": "aws_mock",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.data_bucket",
+      "docstring": "",
+      "lineno": 79,
+      "signature": "data_bucket(s3_client) -> str",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "str"
+    },
+    {
+      "name": "app.lambda.test_lambda.config_bucket",
+      "docstring": "",
+      "lineno": 85,
+      "signature": "config_bucket(s3_client) -> str",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "str"
+    },
+    {
+      "name": "app.lambda.test_lambda.s3_input_objects",
+      "docstring": "",
+      "lineno": 91,
+      "signature": "s3_input_objects(s3_client, data_bucket, sample_xml_files)",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "sample_xml_files",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.collect_lambda_output_keys",
+      "docstring": "Returns a list of all keys written to the S3 bucket.",
+      "lineno": 114,
+      "signature": "collect_lambda_output_keys(s3_client, bucket) -> list[str]",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "list[str]"
+    },
+    {
+      "name": "app.lambda.test_lambda.get_refiner_complete_content",
+      "docstring": "Returns the content of the RefinerComplete file as a dict",
+      "lineno": 121,
+      "signature": "get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "persistance_id",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.test_lambda.test_lambda_inactive",
+      "docstring": "Test that a file with two reportable conditions works when configurations are not\npresent for either condition.",
+      "lineno": 131,
+      "signature": "test_lambda_inactive(lambda_event, s3_client, data_bucket, config_lambda_env, s3_input_objects)",
+      "parameters": [
+        {
+          "name": "lambda_event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_lambda_env",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_input_objects",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.test_lambda_one_active",
+      "docstring": "Test that a file with two reportable conditions works when a configuration is\nactive for only one of those conditions.",
+      "lineno": 206,
+      "signature": "test_lambda_one_active(lambda_event, s3_client, data_bucket, config_bucket, config_lambda_env, s3_input_objects)",
+      "parameters": [
+        {
+          "name": "lambda_event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_lambda_env",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_input_objects",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.test_lambda_all_active",
+      "docstring": "Test that a file with two reportable conditions works when a configuration is\nactive for both of those conditions.",
+      "lineno": 342,
+      "signature": "test_lambda_all_active(lambda_event, s3_client, data_bucket, config_bucket, config_lambda_env, s3_input_objects)",
+      "parameters": [
+        {
+          "name": "lambda_event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_lambda_env",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_input_objects",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.lambda_function.RefinerCompleteSuccess",
+      "docstring": "Represents a successful completion file written after all refinement is done.\n\nRequired by AIMS infrastructure.",
+      "lineno": 54,
+      "methods": []
+    },
+    {
+      "name": "app.lambda.lambda_function.RefinerCompleteError",
+      "docstring": "Represents a fatal error completion file written despite of failure.\n\nRequired by AIMS infrastructure.",
+      "lineno": 66,
+      "methods": []
+    },
+    {
+      "name": "app.lambda.lambda_function.RefinementState",
+      "docstring": "Internal mutable state accumulated during refinement processing.\n\nTracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).",
+      "lineno": 77,
+      "methods": [
+        {
+          "name": "__init__",
+          "docstring": "",
+          "lineno": 0,
+          "signature": "__init__(output_files: set[str] = set(), metadata: RefinerMetadata = dict(), skipped_condition_codes_by_jurisdiction: dict[str, set[str]] = (lambda: defaultdict(set))()) -> None",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null
+            },
+            {
+              "name": "output_files",
+              "annotation": "set[str]",
+              "default": "set()"
+            },
+            {
+              "name": "metadata",
+              "annotation": "RefinerMetadata",
+              "default": "dict()"
+            },
+            {
+              "name": "skipped_condition_codes_by_jurisdiction",
+              "annotation": "dict[str, set[str]]",
+              "default": "(lambda: defaultdict(set))()"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.lambda_function.RefinementInput",
+      "docstring": "Information required as an input by the refinement process.",
+      "lineno": 95,
+      "methods": [
+        {
+          "name": "__init__",
+          "docstring": "",
+          "lineno": 0,
+          "signature": "__init__(xml_files: XMLFiles, s3_client: Any, config_bucket_name: str, output_bucket_name: str, persistence_id: str) -> None",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null
+            },
+            {
+              "name": "xml_files",
+              "annotation": "XMLFiles",
+              "default": null
+            },
+            {
+              "name": "s3_client",
+              "annotation": "Any",
+              "default": null
+            },
+            {
+              "name": "config_bucket_name",
+              "annotation": "str",
+              "default": null
+            },
+            {
+              "name": "output_bucket_name",
+              "annotation": "str",
+              "default": null
+            },
+            {
+              "name": "persistence_id",
+              "annotation": "str",
+              "default": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.lambda_function.RefinementOutput",
+      "docstring": "All metadata required by AIMS post-refinement.",
+      "lineno": 108,
+      "methods": [
+        {
+          "name": "__init__",
+          "docstring": "",
+          "lineno": 0,
+          "signature": "__init__(output_file_keys: list[str], metadata: RefinerMetadata) -> None",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null
+            },
+            {
+              "name": "output_file_keys",
+              "annotation": "list[str]",
+              "default": null
+            },
+            {
+              "name": "metadata",
+              "annotation": "RefinerMetadata",
+              "default": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.lambda_function.lambda_handler",
+      "docstring": "Main Lambda handler function.\n\nProcesses S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each record.body contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key\n\nParameters:\n    event: Dict containing the Lambda function event data from SQS\n    context: Lambda runtime context\n\nReturns:\n    Dict containing status message",
+      "lineno": 121,
+      "signature": "lambda_handler(event, context) -> dict",
+      "parameters": [
+        {
+          "name": "event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "context",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.lambda_function.extract_persistence_id",
+      "docstring": "Extract the persistence_id from an S3 object key.\n\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
+      "lineno": 274,
+      "signature": "extract_persistence_id(object_key: str, input_prefix: str) -> str",
+      "parameters": [
+        {
+          "name": "object_key",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "input_prefix",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "str"
+    },
+    {
+      "name": "app.lambda.lambda_function.get_s3_object_content",
+      "docstring": "Retrieve and decode an S3 object as UTF-8 string.\n\nArgs:\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    key: S3 object key\n\nReturns:\n    str: The object content as a UTF-8 string",
+      "lineno": 297,
+      "signature": "get_s3_object_content(s3_client, bucket: str, key: str) -> str",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "key",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "str"
+    },
+    {
+      "name": "app.lambda.lambda_function.check_s3_object_exists",
+      "docstring": "Check whether an object exists in S3 using a HEAD request.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key.\n\nReturns:\n    bool: True if the object exists, False if not found.\n\nRaises:\n    Exception: If the S3 request fails with an error other than 404/NoSuchKey.",
+      "lineno": 314,
+      "signature": "check_s3_object_exists(s3_client, bucket: str, key: str) -> bool",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "key",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "bool"
+    },
+    {
+      "name": "app.lambda.lambda_function.parse_s3_content_to_dict",
+      "docstring": "Parse a JSON string into a dictionary.\n\nArgs:\n    body: A JSON-encoded string, typically read from an S3 object.\n\nReturns:\n    dict: The parsed dictionary.\n\nRaises:\n    json.JSONDecodeError: If the string is not valid JSON.",
+      "lineno": 342,
+      "signature": "parse_s3_content_to_dict(body: str) -> dict",
+      "parameters": [
+        {
+          "name": "body",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.lambda_function.read_rsg_cg_mapping_file",
+      "docstring": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.\n\nThis file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the mapping file.\n\nReturns:\n    dict | None: The mapping data as a dictionary, or None if the file\n        does not exist or is empty.",
+      "lineno": 364,
+      "signature": "read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "key",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "dict | None"
+    },
+    {
+      "name": "app.lambda.lambda_function.read_current_version",
+      "docstring": "Fetches the current active configuration version from `current.json` in the\nconfiguration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;\n\nReturns:\n    int | None: Active configuration version as an int, or None if no active version exists",
+      "lineno": 398,
+      "signature": "read_current_version(s3_client, bucket: str, key: str) -> int | None",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "key",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "int | None"
+    },
+    {
+      "name": "app.lambda.lambda_function.read_configuration_file",
+      "docstring": "Read an activated configuration file (active.json) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system code_system_sets, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
+      "lineno": 426,
+      "signature": "read_configuration_file(s3_client, bucket: str, key: str) -> dict",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "key",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.lambda_function.run_refinement",
+      "docstring": "Process eICR and RR through the refiner for all jurisdictions and conditions.\n\nThis function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed\n\nArgs:\n    xml_files: Container with eICR and RR XML strings\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    config_bucket: S3 configuration bucket name\n    persistence_id: The persistence ID for constructing output paths\n\nReturns:\n    ProcessedResult: the result of the refinement process",
+      "lineno": 463,
+      "signature": "run_refinement(input: RefinementInput) -> RefinementOutput",
+      "parameters": [
+        {
+          "name": "input",
+          "annotation": "RefinementInput",
+          "default": null
+        }
+      ],
+      "return_annotation": "RefinementOutput"
+    },
+    {
+      "name": "app.lambda.lambda_function.process_jurisdiction",
+      "docstring": "Process all reportable conditions for a given jurisdiction.",
+      "lineno": 529,
+      "signature": "process_jurisdiction(jurisdiction_group: JurisdictionReportableConditions, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
+      "parameters": [
+        {
+          "name": "jurisdiction_group",
+          "annotation": "JurisdictionReportableConditions",
+          "default": null
+        },
+        {
+          "name": "refiner_input",
+          "annotation": "RefinementInput",
+          "default": null
+        },
+        {
+          "name": "state",
+          "annotation": "RefinementState",
+          "default": null
+        },
+        {
+          "name": "run",
+          "annotation": "AugmentationRun",
+          "default": null
+        }
+      ],
+      "return_annotation": "None"
+    },
+    {
+      "name": "app.lambda.lambda_function.process_condition",
+      "docstring": "Process a single reportable condition for a jurisdiction.",
+      "lineno": 566,
+      "signature": "process_condition(jurisdiction_code: str, reportable_condition: ReportableCondition, rsg_cg_payload: ConditionMappingPayload, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
+      "parameters": [
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "reportable_condition",
+          "annotation": "ReportableCondition",
+          "default": null
+        },
+        {
+          "name": "rsg_cg_payload",
+          "annotation": "ConditionMappingPayload",
+          "default": null
+        },
+        {
+          "name": "refiner_input",
+          "annotation": "RefinementInput",
+          "default": null
+        },
+        {
+          "name": "state",
+          "annotation": "RefinementState",
+          "default": null
+        },
+        {
+          "name": "run",
+          "annotation": "AugmentationRun",
+          "default": null
+        }
+      ],
+      "return_annotation": "None"
+    },
+    {
+      "name": "app.lambda.lambda_function.load_condition_mapping_for_jurisdiction",
+      "docstring": "Load the RSG -> CG mapping payload for a jurisdiction.",
+      "lineno": 646,
+      "signature": "load_condition_mapping_for_jurisdiction(s3_client, config_bucket: str, jurisdiction_code: str) -> ConditionMappingPayload | None",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "ConditionMappingPayload | None"
+    },
+    {
+      "name": "app.lambda.lambda_function.skip_all_conditions_for_missing_mapping",
+      "docstring": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.",
+      "lineno": 675,
+      "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
+      "parameters": [
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "jurisdiction_group",
+          "annotation": "JurisdictionReportableConditions",
+          "default": null
+        },
+        {
+          "name": "state",
+          "annotation": "RefinementState",
+          "default": null
+        }
+      ],
+      "return_annotation": "None"
+    },
+    {
+      "name": "app.lambda.lambda_function.mark_condition_skipped",
+      "docstring": "Helper to mark a condition as \"skipped\" during refinement.",
+      "lineno": 697,
+      "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState) -> None",
+      "parameters": [
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "condition_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "reason",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "state",
+          "annotation": "RefinementState",
+          "default": null
+        }
+      ],
+      "return_annotation": "None"
+    },
+    {
+      "name": "app.lambda.lambda_function.ActiveConfiguration",
+      "docstring": "",
+      "lineno": 718,
+      "methods": [
+        {
+          "name": "__init__",
+          "docstring": "",
+          "lineno": 0,
+          "signature": "__init__(configuration: ProcessedConfiguration, version: int) -> None",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null,
+              "default": null
+            },
+            {
+              "name": "configuration",
+              "annotation": "ProcessedConfiguration",
+              "default": null
+            },
+            {
+              "name": "version",
+              "annotation": "int",
+              "default": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.lambda_function.load_active_configuration",
+      "docstring": "Attempts to find and load the active configuration.",
+      "lineno": 724,
+      "signature": "load_active_configuration(s3_client, config_bucket: str, jurisdiction_code: str, cg_metadata: ConditionMapValue, rsg_metadata: ReportableCondition) -> ActiveConfiguration | None",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_bucket",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "cg_metadata",
+          "annotation": "ConditionMapValue",
+          "default": null
+        },
+        {
+          "name": "rsg_metadata",
+          "annotation": "ReportableCondition",
+          "default": null
+        }
+      ],
+      "return_annotation": "ActiveConfiguration | None"
+    },
+    {
+      "name": "app.lambda.lambda_function.write_refined_outputs",
+      "docstring": "Write refined eICR and RR artifacts to S3.",
+      "lineno": 783,
+      "signature": "write_refined_outputs(refiner_input: RefinementInput, jurisdiction_code: str, condition_code: str, condition_grouper_name: str, result: RefinementResult, state: RefinementState) -> None",
+      "parameters": [
+        {
+          "name": "refiner_input",
+          "annotation": "RefinementInput",
+          "default": null
+        },
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "condition_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "condition_grouper_name",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "result",
+          "annotation": "RefinementResult",
+          "default": null
+        },
+        {
+          "name": "state",
+          "annotation": "RefinementState",
+          "default": null
+        }
+      ],
+      "return_annotation": "None"
+    },
+    {
+      "name": "app.lambda.lambda_function.write_remainder_rrs",
+      "docstring": "Write augmented remainder RR outputs for jurisdictions that need them.\n\nFor each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
+      "lineno": 830,
+      "signature": "write_remainder_rrs(refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
+      "parameters": [
+        {
+          "name": "refiner_input",
+          "annotation": "RefinementInput",
+          "default": null
+        },
+        {
+          "name": "state",
+          "annotation": "RefinementState",
+          "default": null
+        },
+        {
+          "name": "run",
+          "annotation": "AugmentationRun",
+          "default": null
+        }
+      ],
+      "return_annotation": "None"
+    }
+  ]
+}

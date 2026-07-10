@@ -1,0 +1,162 @@
+[[domains]]
+name = "Refinement Engine"
+description = "Core eICR refinement, augmentation, and reportability logic"
+modules = [
+    "app.services.ecr.refine",
+    "app.services.ecr.augment",
+    "app.services.ecr.reportability",
+    "app.services.ecr.model",
+    "app.services.ecr.policy",
+]
+
+[[domains]]
+name = "eICR Narrative"
+description = "Narrative reconstruction, elements, footnotes, identifiers, and writers"
+modules = [
+    "app.services.ecr.narrative.reconstruction",
+    "app.services.ecr.narrative.elements",
+    "app.services.ecr.narrative.footnote",
+    "app.services.ecr.narrative.identifiers",
+    "app.services.ecr.narrative.writers",
+    "app.services.ecr.narrative.constants",
+]
+
+[[domains]]
+name = "Section Matching"
+description = "Entry matching, generic matching, traversal, and utilities for CDA sections"
+modules = [
+    "app.services.ecr.section.entry_matching",
+    "app.services.ecr.section.generic_matching",
+    "app.services.ecr.section.traversal",
+    "app.services.ecr.section.utils",
+]
+
+[[domains]]
+name = "Specification"
+description = "Catalog loading, constants, entry match rules, OIDs, and version management"
+modules = [
+    "app.services.ecr.specification.catalog",
+    "app.services.ecr.specification.constants",
+    "app.services.ecr.specification.entry_match_rules",
+    "app.services.ecr.specification.loader",
+    "app.services.ecr.specification.template_oids",
+    "app.services.ecr.specification.versions",
+]
+
+[[domains]]
+name = "Pipeline"
+description = "End-to-end processing pipeline orchestrating extraction, validation, and refinement"
+modules = [
+    "app.services.pipeline",
+]
+
+[[domains]]
+name = "File I/O & Format"
+description = "File handling, format conversion, and XSLT processing"
+modules = [
+    "app.services.file_io",
+    "app.services.format",
+    "app.services.xslt",
+    "app.services.sample_file",
+]
+
+[[domains]]
+name = "Terminology & Code Systems"
+description = "Terminology services and code system management"
+modules = [
+    "app.services.terminology",
+    "app.services.code_systems",
+]
+
+[[domains]]
+name = "AWS / S3"
+description = "AWS S3 integration and key management"
+modules = [
+    "app.services.aws.s3",
+    "app.services.aws.s3_keys",
+]
+
+[[domains]]
+name = "Configuration"
+description = "Configuration management and locking"
+modules = [
+    "app.services.configurations",
+    "app.services.configuration_locks",
+]
+
+[[domains]]
+name = "TES"
+description = "Test Execution Service integration"
+modules = [
+    "app.services.tes",
+]
+
+[[domains]]
+name = "Testing"
+description = "Testing utilities and helpers"
+modules = [
+    "app.services.testing",
+]
+
+[[domains]]
+name = "Logging"
+description = "Application logging utilities"
+modules = [
+    "app.services.logger",
+]
+
+[[domains]]
+name = "Assets"
+description = "Static asset management"
+modules = [
+    "app.services.assets",
+]
+
+[[domains]]
+name = "API - Auth"
+description = "Authentication configuration, handlers, middleware, and session management"
+modules = [
+    "app.api.auth.config",
+    "app.api.auth.handlers",
+    "app.api.auth.middleware",
+    "app.api.auth.session",
+]
+
+[[domains]]
+name = "API - V1"
+description = "Versioned API endpoints for app notifications, code systems, conditions, events, info, releases, simulator, and TES"
+modules = [
+    "app.api.v1.app_notifications",
+    "app.api.v1.code_systems",
+    "app.api.v1.conditions",
+    "app.api.v1.events",
+    "app.api.v1.info",
+    "app.api.v1.releases",
+    "app.api.v1.simulator",
+    "app.api.v1.tes",
+    "app.api.v1.v1_router",
+]
+
+[[domains]]
+name = "API - Validation"
+description = "File validation endpoints"
+modules = [
+    "app.api.validation.file_validation",
+]
+
+[[domains]]
+name = "Core - Config & Exceptions"
+description = "Application settings, exceptions, and utilities"
+modules = [
+    "app.core.config",
+    "app.core.exceptions",
+    "app.core.utils",
+]
+
+[[domains]]
+name = "Lambda"
+description = "AWS Lambda functions for refinement processing"
+modules = [
+    "app.lambda.lambda_function",
+    "app.lambda.test_lambda",
+]

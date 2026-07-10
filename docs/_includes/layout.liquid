@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title | default: "eCR Refiner Docs" }}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Public+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/docs.css">
+</head>
+<body class="bg-gray-1 text-gray-900 font-public-sans">
+  <header class="bg-blue-cool-80 flex items-center gap-3 px-6 py-4">
+    <a href="/" class="block">
+      <img src="/img/dibbs-logo.svg" alt="DIBBs" class="h-10 w-10 inline" role="presentation">
+      <span class="font-merriweather text-2xl text-white">eCR Refiner</span>
+    </a>
+  </header>
+  <div class="flex min-h-[calc(100vh-72px)]">
+    <aside class="w-64 shrink-0 border-r border-gray-cool-4 bg-gray-1 p-6 overflow-y-auto">
+      <nav class="mt-4 space-y-1">
+        <a href="/" class="block rounded px-2 py-1 text-sm {% if page.url == '/' %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Home</a>
+        <a href="/reference/python-api/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Python API</a>
+        <a href="/reference/lambda/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Lambda</a>
+      </nav>
+      <nav class="mt-4 space-y-1">
+        <a href="/onboarding/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Onboarding</a>
+        <a href="/business-logic/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Business Logic</a>
+        <a href="/decisions/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Decisions</a>
+      </nav>
+    </aside>
+    <main class="flex-1 p-8">
+      {{ content | sanitize }}
+    </main>
+  </div>
+</body>
+</html>
