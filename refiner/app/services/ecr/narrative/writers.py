@@ -71,15 +71,15 @@ def replace_narrative_with_removal_notice(
     namespaces: NamespaceMap = HL7_NS,
 ) -> None:
     """
-    Replace the section's <text> with a notice explaining the removal.
+    Replace the section's `<text>` with a notice explaining the removal.
 
-    Produces a <text> containing a single <paragraph> carrying the
+    Produces a `<text>` containing a single `<paragraph>` carrying the
     REMOVE_NARRATIVE_MESSAGE. This is used when a jurisdiction has
     configured a section to have its narrative stripped while keeping
     the clinical entries intact for machine processing.
 
     The replacement is performed via `section.replace()` to preserve
-    the element's position in the CDA R2 xs:sequence. If no <text>
+    the element's position in the CDA R2 xs:sequence. If no `<text>`
     element exists, one is created via `_ensure_text_element`.
 
     The provenance footnote that will be appended afterward by
@@ -105,7 +105,7 @@ def replace_narrative_with_reconstruction(
     namespaces: NamespaceMap = HL7_NS,
 ) -> None:
     """
-    Swap in a reconstructed <text> built from the section's surviving entries.
+    Swap in a reconstructed `<text>` built from the section's surviving entries.
 
     The reconstructed element is produced (pure, detached) by
     `reconstruction.reconstruct_narrative`; this writer only places it
@@ -127,15 +127,15 @@ def restore_narrative(
     namespaces: NamespaceMap = HL7_NS,
 ) -> None:
     """
-    Restore a previously-saved <text> element into a section.
+    Restore a previously-saved `<text>` element into a section.
 
     Used by the generic matching path, which clears the section's
-    <text> during processing (to prevent inline narrative codes from
+    `<text>` during processing (to prevent inline narrative codes from
     producing false matches) and then restores the original deep copy
     afterward.
 
-    Replaces the current <text> element with the provided deep copy.
-    If no <text> element currently exists, the original is inserted
+    Replaces the current `<text>` element with the provided deep copy.
+    If no `<text>` element currently exists, the original is inserted
     per the CDA R2 xs:sequence.
     """
 
@@ -154,8 +154,8 @@ def create_minimal_section(
     """
     Reduce a section to a minimal stub with an explanation message.
 
-    Updates the <text> element with a single-row status table, removes
-    all <entry> elements, and sets nullFlavor="NI" on the section. The
+    Updates the `<text>` element with a single-row status table, removes
+    all `<entry>` elements, and sets nullFlavor="NI" on the section. The
     message displayed in the stub varies based on why the section was
     reduced:
 
@@ -164,11 +164,11 @@ def create_minimal_section(
       - "configured": Jurisdiction configured the section to be removed.
                       Uses REMOVE_SECTION_MESSAGE.
 
-    The stub table uses proper <thead>/<th> header semantics and
-    <tbody>/<tr>/<td> body rows rather than the HTML-invalid
-    `<thead>/<tr>/<td>` structure the previous implementation used.
+    The stub table uses proper `<thead>`/`<th>` header semantics and
+    `<tbody>`/`<tr>`/`<td>` body rows rather than the HTML-invalid
+    ``<thead>`/`<tr>`/`<td>`` structure the previous implementation used.
 
-    If the section has no <text> element at all, one is created via
+    If the section has no `<text>` element at all, one is created via
     `_ensure_text_element`, which inserts it in the correct xs:sequence
     position.
 
