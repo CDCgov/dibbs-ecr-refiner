@@ -236,8 +236,10 @@ export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
  *     logger (Logger): The standard app logger
  *
  * Raises:
+ *     HTTPException: 403 if not running locally
  *     HTTPException: 404 if configuration cannot be found in the user's jurisdiction
  *     HTTPException: 400 if the configuration's status is not `active`
+ *     HTTPException: 404 if the configuration's primary condition is not found
  *
  * Returns:
  *     Response: The serialized configuration file content
