@@ -47,8 +47,8 @@ def enrich_surviving_entries(
     """
     Enrich `displayName` on all surviving code-bearing elements.
 
-    Walks every <entry> in the section after pruning and sets
-    `displayName` on any <code>, <value>, or <translation> element
+    Walks every `<entry>` in the section after pruning and sets
+    `displayName` on any `<code>`, `<value>`, or `<translation>` element
     that has a `@code` attribute but no `@displayName`. The
     enrichment lookup uses the element's own `@codeSystem` attribute
     to scope the search in `code_system_sets`.
@@ -126,16 +126,16 @@ def build_entry_match_comment_text(
     list of EntryMatch objects (typed as `list` to avoid importing the
     dataclass here; callers are responsible for passing the correct type).
 
-    Comment format (single match):
-        eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
+    - Comment format (single match):
+        - eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
 
-    Comment format (multiple matches):
-        eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
-        eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
-        ...
+    - Comment format (multiple matches):
+        - eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
+        - eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
+        - ...
 
-    Returns a string suitable for passing to etree.Comment(). Leading/
-    trailing spacing is included for readability.
+    Returns a string suitable for passing to etree.Comment(). Leading/trailing
+    spacing is included for readability.
     """
 
     lines: list[str] = []
