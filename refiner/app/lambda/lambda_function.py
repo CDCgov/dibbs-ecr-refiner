@@ -191,7 +191,7 @@ def lambda_handler(event, context) -> dict:
                 logger.info(f"Extracted persistence_id: {persistence_id}")
                 logger.append_keys(persistence_id=persistence_id)
             except ValueError as e:
-                logger.error(f"Malformed S3 object key, skipping record: {str(e)}")
+                logger.error("Malformed S3 object key, skipping record", exception=e)
                 batch_item_failures.append({"itemIdentifier": record_id})
                 continue
 
@@ -254,7 +254,7 @@ def lambda_handler(event, context) -> dict:
                 )
 
             except Exception as e:
-                logger.error(f"Fatal error processing record: {str(e)}", exception=e)
+                logger.error("Fatal error processing record", exception=e)
 
                 # Attempt to write a skip file
                 try:
@@ -272,7 +272,7 @@ def lambda_handler(event, context) -> dict:
                     logger.info(f"Wrote fatal error signal to {complete_key}")
                 except Exception as s3_err:
                     logger.error(
-                        f"Failed to write error signal to S3: {str(s3_err)}",
+                        "Failed to write error signal to S3",
                         exception=s3_err,
                     )
                 batch_item_failures.append({"itemIdentifier": record_id})
@@ -280,7 +280,7 @@ def lambda_handler(event, context) -> dict:
         return {"batchItemFailures": batch_item_failures}
 
     except Exception as e:
-        logger.error(f"Error processing: {str(e)}", exception=e)
+        logger.error("Error processing", exception=e)
         raise
 
 
