@@ -241,7 +241,25 @@ async def get_condition_by_id(db_pool):
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
                     """
-                    SELECT c.*, t.version
+                    SELECT
+                        c.id,
+                        c.canonical_url,
+                        c.display_name,
+                        t.version,
+                        ARRAY(
+                            SELECT codes.code
+                            FROM conditions_rsg_codes crc
+                            JOIN codes ON crc.code_id = codes.id
+                            WHERE crc.condition_id = c.id
+                        ) as child_rsg_snomed_codes,
+                        c.snomed_codes,
+                        c.loinc_codes,
+                        c.icd10_codes,
+                        c.rxnorm_codes,
+                        c.cvx_codes,
+                        c.coverage_level,
+                        c.coverage_level_reason,
+                        c.coverage_level_date
                     FROM conditions c
                     JOIN tes t ON t.id = c.tes_id
                     WHERE c.id = %s

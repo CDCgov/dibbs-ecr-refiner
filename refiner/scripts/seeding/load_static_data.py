@@ -43,7 +43,6 @@ class ConditionRow(TypedDict):
     canonical_url: str
     version: str
     display_name: str
-    child_rsg_snomed_codes: list[str] | None
     loinc_codes: list[Code] | None
     snomed_codes: list[Code] | None
     icd10_codes: list[Code] | None
@@ -220,7 +219,6 @@ def _upsert_conditions_and_groupers(
                 canonical_url,
                 tes_id,
                 display_name,
-                child_rsg_snomed_codes,
                 loinc_codes,
                 snomed_codes,
                 icd10_codes,
@@ -234,7 +232,6 @@ def _upsert_conditions_and_groupers(
                 %(canonical_url)s,
                 %(tes_id)s,
                 %(display_name)s,
-                %(child_rsg_snomed_codes)s,
                 %(loinc_codes)s,
                 %(snomed_codes)s,
                 %(icd10_codes)s,
@@ -247,7 +244,6 @@ def _upsert_conditions_and_groupers(
             ON CONFLICT (canonical_url, tes_id)
             DO UPDATE SET
                 display_name = EXCLUDED.display_name,
-                child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
                 loinc_codes = EXCLUDED.loinc_codes,
                 snomed_codes = EXCLUDED.snomed_codes,
                 icd10_codes = EXCLUDED.icd10_codes,
@@ -258,7 +254,6 @@ def _upsert_conditions_and_groupers(
                 coverage_level_date = EXCLUDED.coverage_level_date
             WHERE
                 conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
-                OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
                 OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
                 OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
                 OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
@@ -270,16 +265,13 @@ def _upsert_conditions_and_groupers(
             RETURNING id
         )
         SELECT id FROM upsert_condition
-
         UNION ALL
-
         SELECT c.id
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE c.canonical_url = %(canonical_url)s
             AND t.version = %(version)s
             AND NOT EXISTS (SELECT 1 FROM upsert_condition)
-
         LIMIT 1
     """
 

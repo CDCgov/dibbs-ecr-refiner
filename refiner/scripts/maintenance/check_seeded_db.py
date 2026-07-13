@@ -34,8 +34,12 @@ DB_CHECKS: list[dict[str, Any]] = [
         "failure_message": "The 'conditions' table is empty. The seeding script may have failed.",
     },
     {
-        "title": "No Conditions with Empty Child SNOMED Arrays",
-        "query": "SELECT COUNT(*) AS count FROM conditions WHERE array_length(child_rsg_snomed_codes, 1) IS NULL;",
+        "title": "No Conditions without Child SNOMED Codes",
+        "query": """
+            SELECT COUNT(*) AS count
+            FROM conditions c
+            WHERE NOT EXISTS (SELECT 1 FROM conditions_rsg_codes crc WHERE crc.condition_id = c.id);
+        """,
         "failure_condition": lambda res: res[0]["count"] > 0,
         "failure_message": "Found conditions with no child SNOMED codes, indicating an aggregation error.",
     },
@@ -45,16 +49,12 @@ DB_CHECKS: list[dict[str, Any]] = [
             SELECT COUNT(*) as count
             FROM (
                 SELECT
-                    code,
-                    COUNT(DISTINCT canonical_url) as url_count
-                FROM (
-                    SELECT
-                        unnest(child_rsg_snomed_codes) AS code,
-                        canonical_url
-                    FROM conditions
-                ) as unnested_with_url
-                GROUP BY code
-                HAVING COUNT(DISTINCT canonical_url) > 1
+                    code_id,
+                    COUNT(DISTINCT c.canonical_url) as url_count
+                FROM conditions_rsg_codes crc
+                JOIN conditions c ON crc.condition_id = c.id
+                GROUP BY code_id
+                HAVING COUNT(DISTINCT c.canonical_url) > 1
             ) as duplicates;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -62,7 +62,12 @@ DB_CHECKS: list[dict[str, Any]] = [
     },
     {
         "title": "Expected Condition Grouper Versions Present",
-        "query": "SELECT version FROM conditions GROUP BY version;",
+        "query": """
+            SELECT t.version
+            FROM conditions c
+            JOIN tes t ON t.id = c.tes_id
+            GROUP BY t.version;
+        """,
         "failure_condition": lambda res: (
             not all(v in [r["version"] for r in res] for v in TES_CG_VERSIONS)
         ),
@@ -154,8 +159,8 @@ WARNING_CHECKS: list[dict[str, Any]] = [
         "title": "All Configurations Reference Valid Conditions",
         "query": """
             SELECT COUNT(*) AS count
-            FROM configurations c
-            LEFT JOIN conditions cond ON c.condition_id = cond.id
+            FROM configurations_conditions cc
+            LEFT JOIN conditions cond ON cc.condition_id = cond.id
             WHERE cond.id IS NULL;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -191,10 +196,11 @@ COMPARISON_CHECKS: list[dict[str, Any]] = [
     {
         "title": "Code Counts for v3 vs v4 (COVID-19 & Influenza)",
         "query": """
-            SELECT version, display_name, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes
-            FROM conditions
-            WHERE display_name IN ('COVID-19', 'Influenza')
-            ORDER BY display_name, version;
+            SELECT t.version, c.display_name, c.loinc_codes, c.snomed_codes, c.icd10_codes, c.rxnorm_codes
+            FROM conditions c
+            JOIN tes t ON t.id = c.tes_id
+            WHERE c.display_name IN ('COVID-19', 'Influenza')
+            ORDER BY c.display_name, t.version;
         """,
     }
 ]
@@ -286,14 +292,15 @@ def display_coverage_stats(cursor: Cursor, console: Console) -> None:
 
     cursor.execute("""
         SELECT
-            version,
+            t.version,
             COUNT(*) FILTER (WHERE coverage_level = 'complete') AS complete,
             COUNT(*) FILTER (WHERE coverage_level = 'partial') AS partial,
             COUNT(*) FILTER (WHERE coverage_level IS NULL) AS not_declared,
             COUNT(*) AS total
-        FROM conditions
-        GROUP BY version
-        ORDER BY version;
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        GROUP BY t.version
+        ORDER BY t.version;
     """)
     results = cursor.fetchall()
 
@@ -334,8 +341,9 @@ def display_acg_category_stats(cursor: Cursor, console: Console) -> None:
             SUM(cg.code_count) AS total_codes
         FROM conditions_context_groupers cg
         JOIN conditions c ON cg.condition_id = c.id
-        WHERE c.version = (
-            SELECT MAX(version) FROM conditions
+        JOIN tes t ON t.id = c.tes_id
+        WHERE t.version = (
+            SELECT MAX(version) FROM tes
         )
         GROUP BY cg.category
         ORDER BY grouper_count DESC;
