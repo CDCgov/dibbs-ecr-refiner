@@ -165,6 +165,7 @@ def lambda_handler(event, context) -> dict:
             s3_bucket_name = s3_event["detail"]["bucket"]["name"]
 
             logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
+            logger.append_keys(s3_bucket_name=s3_bucket_name)
 
             try:
                 # Extract persistence_id from the RR object key
@@ -172,6 +173,7 @@ def lambda_handler(event, context) -> dict:
                     s3_object_key, REFINER_INPUT_PREFIX
                 )
                 logger.info(f"Extracted persistence_id: {persistence_id}")
+                logger.append_keys(persistence_id=persistence_id)
             except ValueError as e:
                 logger.error(f"Malformed S3 object key, skipping record: {str(e)}")
                 batch_item_failures.append({"itemIdentifier": record_id})
@@ -185,7 +187,7 @@ def lambda_handler(event, context) -> dict:
                 )
                 logger.info("Retrieved RR from s3")
 
-                # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
+                # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistence_id>
                 eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
                 logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
 
@@ -217,7 +219,7 @@ def lambda_handler(event, context) -> dict:
                     "RefinerOutputFiles": result.output_file_keys,
                 }
 
-                # Construct RefinerComplete path: RefinerComplete/<persistance_id>
+                # Construct RefinerComplete path: RefinerComplete/<persistence_id>
                 complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
 
                 # PUT RefinerCompleteFile
@@ -275,7 +277,7 @@ def extract_persistence_id(object_key: str, input_prefix: str) -> str:
     """
     Extract the persistence_id from an S3 object key.
 
-    Object key format: <pipeline-step>/<persistance_id>
+    Object key format: <pipeline-step>/<persistence_id>
     Example: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
     Returns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
 
