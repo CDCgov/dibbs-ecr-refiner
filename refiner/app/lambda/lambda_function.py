@@ -666,8 +666,8 @@ def process_condition(
 
     logger.info(
         "Refinement complete for condition.",
-        rsg_code=rsg_code,
         jurisidiction_code=jurisdiction_code,
+        condition_code=rsg_code,
         metrics=asdict(result.metrics),
         report=asdict(result.report),
         operation="log_summary",
@@ -794,8 +794,8 @@ def load_active_configuration(
         "Using activated configuration file",
         key=serialized_configuration_key,
         jurisdiction_code=jurisdiction_code,
+        condition_code=rsg_metadata.code,
         canonical_url=cg_metadata.canonical_url,
-        rsg_code=rsg_metadata.code,
         config_version=config_version_to_use,
         operation=LogOperation.ACTIVATION_FILE_READ,
     )
