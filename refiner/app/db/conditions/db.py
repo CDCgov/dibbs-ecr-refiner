@@ -163,7 +163,12 @@ async def get_condition_by_id_db(
                 c.canonical_url,
                 c.display_name,
                 t.version,
-                c.child_rsg_snomed_codes,
+                ARRAY(
+                    SELECT codes.code
+                    FROM conditions_rsg_codes crc
+                    JOIN codes ON crc.code_id = codes.id
+                    WHERE crc.condition_id = c.id
+                ) as child_rsg_snomed_codes,
                 c.snomed_codes,
                 c.loinc_codes,
                 c.icd10_codes,
@@ -291,7 +296,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     Finds all conditions that are associated with the given list of child RSG SNOMED codes
     for any potential version of that condition data.
 
-    This uses the GIN index on the `child_rsg_snomed_codes` array column for performance.
+    This queries the `conditions_rsg_codes` join table and `codes` table.
 
     Args:
         db: The database connection.
@@ -310,7 +315,12 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.display_name,
             c.canonical_url,
             t.version,
-            c.child_rsg_snomed_codes,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
             c.snomed_codes,
             c.loinc_codes,
             c.icd10_codes,
@@ -321,7 +331,13 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
-        WHERE child_rsg_snomed_codes && %s::text[];
+        WHERE EXISTS (
+            SELECT 1
+            FROM conditions_rsg_codes crc
+            JOIN codes ON crc.code_id = codes.id
+            WHERE crc.condition_id = c.id
+            AND codes.code = ANY(%s)
+        );
     """
 
     params = (codes,)
@@ -345,7 +361,25 @@ async def get_conditions_by_ids(
         return []
 
     query = """
-        SELECT c.*, t.version
+        SELECT
+            c.id,
+            c.canonical_url,
+            c.display_name,
+            t.version,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s);
@@ -369,10 +403,29 @@ async def get_primary_conditions_for_configurations_db(
     Given a list of configuration IDs, return a mapping of configuration ID to primary condition.
     """
     query = """
-        SELECT cc.configuration_id, cond.*, t.version
-        FROM conditions cond
-        JOIN configurations_conditions cc ON cc.condition_id = cond.id
-        JOIN tes t ON t.id = cond.tes_id
+        SELECT
+            cc.configuration_id,
+            c.id,
+            c.canonical_url,
+            c.display_name,
+            t.version,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
+        FROM conditions c
+        JOIN configurations_conditions cc ON cc.condition_id = c.id
+        JOIN tes t ON t.id = c.tes_id
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
     """
@@ -412,7 +465,25 @@ async def get_included_conditions_db(
     """
 
     query = """
-        SELECT c.*, t.version
+        SELECT
+            c.id,
+            c.canonical_url,
+            c.display_name,
+            t.version,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
