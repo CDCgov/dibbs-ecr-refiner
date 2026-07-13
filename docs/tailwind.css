@@ -1,0 +1,14 @@
+@import "../client/src/tailwind.css";
+
+@theme {
+  --font-merriweather: 'Merriweather', 'serif';
+  --font-public-sans: 'Public Sans', 'sans-serif';
+}
+
+@plugin "@tailwindcss/typography";
+@source "./**/*.liquid";
+@source "./**/*.md";
+
+@layer base {
+  /* docs-specific overrides below */
+}

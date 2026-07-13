@@ -416,39 +416,39 @@ def refine_eicr(
     function receives a fully resolved plan with no document introspection.
 
     Processing behavior:
-        - It iterates through the instructions in the plan.
-        - For each section, it executes one of four branches based on the
-          configured (include, action, narrative) combination and whether
-          the section is narrative-only in the eICR spec:
+    - It iterates through the instructions in the plan.
+    - For each section, it executes one of four branches based on the
+      configured (include, action, narrative) combination and whether
+      the section is narrative-only in the eICR spec:
 
-            - include=False                              -> remove (stub)
-            - include=True, narrative-only section       -> narrative-only branch
-            - include=True, action="retain", refinable   -> retain branch
-            - include=True, action="refine", refinable   -> refine via process_section
+        - `include=False`                              -> remove (stub)
+        - `include=True, narrative-only section`       -> narrative-only branch
+        - `include=True, action="retain", refinable`   -> retain branch
+        - `include=True, action="refine", refinable`   -> refine via `process_section`
 
-        - The narrative-only branch is reached when the section has no
-          entry match rules in the spec. There is no coded data to
-          refine, so the only decision is what to do with the narrative.
-          The outcome is NARRATIVE_ONLY_RETAINED or NARRATIVE_ONLY_REMOVED
-          depending on the configured narrative setting — distinct from
-          the configured-retain outcomes below because this reflects the
-          spec's structural reality, not a jurisdiction choice.
-        - The retain branch honors the narrative setting: when the
-          jurisdiction has configured narrative removal on a retained
-          section, the narrative is replaced with the removal notice
-          while the entries are left untouched.
-        - The refine branch delegates to process_section, which dispatches
-          to the section-aware or generic matching engine based on the
-          section specification. The engine returns a SectionRunResult
-          which is then interpreted into a SectionOutcome via
-          _interpret_run_result.
-        - After each branch, the section's provenance record is finalized
-          with the runtime outcome via dataclasses.replace, and an
-          unanchored provenance footnote is appended to the section's
-          <text> element. The footnote ID is built from the section's
-          LOINC code and the plan's augmentation_timestamp, tying it to
-          the augmentation author's <time> value for forensic
-          traceability.
+    - The narrative-only branch is reached when the section has no
+      entry match rules in the spec. There is no coded data to
+      refine, so the only decision is what to do with the narrative.
+      The outcome is `NARRATIVE_ONLY_RETAINED` or `NARRATIVE_ONLY_REMOVED`
+      depending on the configured narrative setting — distinct from
+      the configured-retain outcomes below because this reflects the
+      spec's structural reality, not a jurisdiction choice.
+    - The retain branch honors the narrative setting: when the
+      jurisdiction has configured narrative removal on a retained
+      section, the narrative is replaced with the removal notice
+      while the entries are left untouched.
+    - The refine branch delegates to process_section, which dispatches
+      to the section-aware or generic matching engine based on the
+      section specification. The engine returns a `SectionRunResult`
+      which is then interpreted into a `SectionOutcome` via
+      `_interpret_run_result`.
+    - After each branch, the section's provenance record is finalized
+      with the runtime outcome via `dataclasses.replace`, and an
+      unanchored provenance footnote is appended to the section's
+      `<text>` element. The footnote ID is built from the section's
+      LOINC code and the plan's augmentation_timestamp, tying it to
+      the augmentation author's `<time>` value for forensic
+      traceability.
 
     Args:
         eicr_root: The parsed eICR root element.
@@ -588,13 +588,13 @@ def refine_rr(
     beforehand and serializing afterward.
 
     Processing behavior:
-        - It iterates through the RR and removes information common to all RR's.
-        - It loops through all the condition observations in the reportability RC
-            - Anything that isn't RRSVS1 reportable is filtered out
-            - Of the remaining reportable observations, anything that isn't specified
-              in the refinement configurations are filtered out
-            - For anything remaining, any codes that aren't specified within the
-              in the configuration RSG or custom codes are filtered out.
+    - It iterates through the RR and removes information common to all RR's.
+    - It loops through all the condition observations in the reportability RC
+        - Anything that isn't RRSVS1 reportable is filtered out
+        - Of the remaining reportable observations, anything that isn't specified
+          in the refinement configurations are filtered out
+        - For anything remaining, any codes that aren't specified within the
+          in the configuration RSG or custom codes are filtered out.
 
     Args:
         rr_root: The parsed RR root element.
@@ -730,15 +730,14 @@ def refine_rr_for_unconfigured_conditions(
     reportability information appears exactly once.
 
     Example scenario:
-        SDDH has two reportable conditions: COVID (840539006) and Influenza (772828001).
-        Only COVID has an active configuration.
-
+    - SDDH has two reportable conditions: COVID (840539006) and Influenza
+      (772828001). Only COVID has an active configuration.
         - COVID goes through refine_for_condition → produces refined_eICR.xml + refined_RR.xml
         - Influenza has no config → this function produces an RR with only the
           Influenza reportability observation, written to unrefined_rr/refined_RR.xml
 
-        The jurisdiction receives both and can process each condition without
-        seeing COVID reported twice.
+    The jurisdiction receives both and can process each condition without
+    seeing COVID reported twice.
 
     Args:
         xml_files: The eICR/RR pair. Only the RR is used.

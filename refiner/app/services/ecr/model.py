@@ -101,10 +101,10 @@ class TriggerCode:
 @dataclass(frozen=True)
 class EntryMatchRule:
     """
-    Each <section> has its own rules for their <entry>s; this object memorializes those rules.
+    Each `<section>` has its own rules for their `<entry>`s; this object memorializes those rules.
 
     Rules are evaluated in list order with structural precedence: if a
-    rule's code_xpath finds code-bearing elements in an entry (candidates),
+    rule's `code_xpath` finds code-bearing elements in an entry (candidates),
     that rule claims the entry regardless of whether any codes matched —
     subsequent rules are not evaluated. This prevents fallback rules from
     running on entries that were already examined by a more specific rule.
@@ -185,19 +185,16 @@ class EntryMatchRule:
             IG conformance tier for this rule. Used in match provenance
             comments to indicate how the rule relates to the spec:
 
-                1 — SHALL: directly mandated by the IG. The primary
-                    conformant path. If a sender follows the spec, this
-                    rule matches.
+            1. SHALL: directly mandated by the IG. The primary conformant path.
+            If a sender follows the spec, this rule matches.
 
-                2 — SHOULD/MAY: permitted by the IG but not required.
-                    Handles optional patterns (translations, alternate
-                    code locations) that conformant senders may or may
-                    not use.
+            2. SHOULD/MAY: permitted by the IG but not required. Handles
+            optional patterns (translations, alternate code locations) that
+            conformant senders may or may not use.
 
-                3 — HEURISTIC: not IG-conformant but observed in real
-                    EHR output. Accommodates vendor variance. Each tier
-                    3 rule should carry a comment explaining what
-                    real-world pattern it was written for.
+            3. HEURISTIC: not IG-conformant but observed in real EHR output.
+            Accommodates vendor variance. Each tier 3 rule should carry a
+            comment explaining what real-world pattern it was written for.
 
             Surfaces in XML match comments as (T1), (T2), or (T3) so
             readers can immediately tell whether a match fired on a
@@ -304,16 +301,16 @@ class SectionSource(StrEnum):
     eICR looks the way it does.
 
     Values:
-        CONFIGURED:   The jurisdiction explicitly configured this section in
-                      the application. Instructions reflect their choices.
-        SYSTEM_SKIP:  The section is in SECTION_PROCESSING_SKIP — a hardcoded
-                      set of sections that are always retained regardless of
-                      jurisdiction configuration (e.g., emergency outbreak info,
-                      reportability response info).
-        UNCONFIGURED: The section was present in the source document but absent
-                      from the jurisdiction's configuration. Falls back to
-                      SKIP_SECTION_INSTRUCTIONS (include=True, retain) so the
-                      section is preserved intact.
+    - CONFIGURED:   The jurisdiction explicitly configured this section in
+                    the application. Instructions reflect their choices.
+    - SYSTEM_SKIP:  The section is in SECTION_PROCESSING_SKIP — a hardcoded
+                    set of sections that are always retained regardless of
+                    jurisdiction configuration (e.g., emergency outbreak info,
+                    reportability response info).
+    - UNCONFIGURED: The section was present in the source document but absent
+                    from the jurisdiction's configuration. Falls back to
+                    SKIP_SECTION_INSTRUCTIONS (include=True, retain) so the
+                    section is preserved intact.
     """
 
     CONFIGURED = "configured"
@@ -333,77 +330,77 @@ class SectionOutcome(StrEnum):
     The ten outcomes cover the full configuration space (current and
     future):
 
-        REMOVED_BY_CONFIG:
-            include=False. Section reduced to a minimal stub regardless
-            of action/narrative settings.
+    - REMOVED_BY_CONFIG:
+        include=False. Section reduced to a minimal stub regardless
+        of action/narrative settings.
 
-        RETAINED:
-            include=True, action="retain", narrative="retain". Section
-            with coded entries left untouched because the jurisdiction
-            asked us to.
+    - RETAINED:
+        include=True, action="retain", narrative="retain". Section
+        with coded entries left untouched because the jurisdiction
+        asked us to.
 
-        RETAINED_NARRATIVE_REMOVED:
-            include=True, action="retain", narrative="remove". Coded
-            entries kept as provided, narrative replaced with the
-            removal notice.
+    - RETAINED_NARRATIVE_REMOVED:
+        include=True, action="retain", narrative="remove". Coded
+        entries kept as provided, narrative replaced with the
+        removal notice.
 
-        NARRATIVE_ONLY_RETAINED:
-            include=True, narrative="retain", section is narrative-only
-            (the eICR spec defines no entry match rules for it). There
-            was no coded data to refine — the section is conveyed
-            entirely through its <text> element — so the only decision
-            was what to do with the narrative. Distinct from RETAINED:
-            this is the spec's structural reality, not a configuration
-            choice the jurisdiction made.
+    - NARRATIVE_ONLY_RETAINED:
+        include=True, narrative="retain", section is narrative-only
+        (the eICR spec defines no entry match rules for it). There
+        was no coded data to refine — the section is conveyed
+        entirely through its <text> element — so the only decision
+        was what to do with the narrative. Distinct from RETAINED:
+        this is the spec's structural reality, not a configuration
+        choice the jurisdiction made.
 
-        NARRATIVE_ONLY_REMOVED:
-            include=True, narrative="remove", section is narrative-only.
-            Narrative replaced with the removal notice; there are no
-            coded entries to preserve. Distinct from
-            RETAINED_NARRATIVE_REMOVED for the same reason as above.
+    - NARRATIVE_ONLY_REMOVED:
+        include=True, narrative="remove", section is narrative-only.
+        Narrative replaced with the removal notice; there are no
+        coded entries to preserve. Distinct from
+        RETAINED_NARRATIVE_REMOVED for the same reason as above.
 
-        REFINED_WITH_MATCHES:
-            include=True, action="refine", narrative="retain" (or
-            "keep_on_match" with matches). Entries filtered to those
-            matching the configuration, original narrative preserved
-            for context.
+    - REFINED_WITH_MATCHES:
+        include=True, action="refine", narrative="retain" (or
+        "keep_on_match" with matches). Entries filtered to those
+        matching the configuration, original narrative preserved
+        for context.
 
-        REFINED_NARRATIVE_REMOVED:
-            include=True, action="refine", narrative="remove". Entries
-            filtered, narrative replaced with the removal notice.
+    - REFINED_NARRATIVE_REMOVED:
+        include=True, action="refine", narrative="remove". Entries
+        filtered, narrative replaced with the removal notice.
 
-        REFINED_NARRATIVE_RECONSTRUCTED:
-            include=True, action="refine", narrative="refine" (future).
-            Entries filtered, narrative reconstructed from surviving
-            entries. Not yet reachable — depends on narrative
-            reconstruction work landing.
+    - REFINED_NARRATIVE_RECONSTRUCTED:
+        include=True, action="refine", narrative="refine" (future).
+        Entries filtered, narrative reconstructed from surviving
+        entries. Not yet reachable — depends on narrative
+        reconstruction work landing.
 
-        REFINED_RECONSTRUCT_FALLBACK_RETAINED:
-            include=True, action="refine", narrative="reconstruct".
-            The jurisdiction asked for narrative reconstruction but
-            the engine couldn't produce one — either no entries
-            survived to rebuild from (no-match) or the section has
-            no registered reconstructor and the matched-path
-            fallback fired. Rather than discard the most informative
-            state available, the engine keeps the original narrative
-            in place. Distinct from the plain RETAINED / REFINED_*
-            outcomes so the provenance footnote can tell a reviewer
-            "you asked for reconstruct; we couldn't, so we kept the
-            original."
+    - REFINED_RECONSTRUCT_FALLBACK_RETAINED:
+        include=True, action="refine", narrative="reconstruct".
+        The jurisdiction asked for narrative reconstruction but
+        the engine couldn't produce one — either no entries
+        survived to rebuild from (no-match) or the section has
+        no registered reconstructor and the matched-path
+        fallback fired. Rather than discard the most informative
+        state available, the engine keeps the original narrative
+        in place. Distinct from the plain RETAINED / REFINED_*
+        outcomes so the provenance footnote can tell a reviewer
+        "you asked for reconstruct; we couldn't, so we kept the
+        original."
 
-        REFINED_NO_MATCHES_NARRATIVE_RETAINED:
-            include=True, action="refine", narrative="retain" (or
-            "keep_on_match" without matches → narrative removed; see
-            sibling outcome). Matching produced nothing, but the
-            jurisdiction asked us to keep the original narrative —
-            entries are pruned, narrative is preserved.
+    - REFINED_NO_MATCHES_NARRATIVE_RETAINED:
+        include=True, action="refine", narrative="retain" (or
+        "keep_on_match" without matches → narrative removed; see
+        sibling outcome). Matching produced nothing, but the
+        jurisdiction asked us to keep the original narrative —
+        entries are pruned, narrative is preserved.
 
-        REFINED_NO_MATCHES_NARRATIVE_REMOVED:
-            include=True, action="refine", narrative in
-            ("remove" / "keep_on_match"). Matching produced nothing;
-            entries are pruned and the narrative is replaced with
-            the removal notice. For "keep_on_match" this is the
-            negative branch: no matches → narrative removed.
+    - REFINED_NO_MATCHES_NARRATIVE_REMOVED:
+        include=True, action="refine", narrative in
+        ("remove" / "keep_on_match"). Matching produced nothing;
+        entries are pruned and the narrative is replaced with
+        the removal notice. For "keep_on_match" this is the
+        negative branch: no matches → narrative removed.
 
     The combination (action="retain", narrative in ("reconstruct",
     "keep_on_match")) is invalid because both require refined entries

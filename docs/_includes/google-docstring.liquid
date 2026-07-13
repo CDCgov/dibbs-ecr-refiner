@@ -1,0 +1,57 @@
+{% if parsed_docstring.summary %}
+<p class="text-gray-900">{{ parsed_docstring.summary }}</p>
+{% endif %}
+
+{% if parsed_docstring.description %}
+<div class="prose max-w-none mb-3 text-gray-700">
+  {{ parsed_docstring.description | renderMarkdown | sanitize }}
+</div>
+{% endif %}
+
+{% if parsed_docstring.params.size > 0 %}
+<h4 class="text-sm font-medium text-gray-60 mb-2">Parameters</h4>
+<dl class="text-sm space-y-2">
+  {% for p in parsed_docstring.params %}
+  <div class="border-b border-gray-cool-3 pb-2">
+    <dt class="font-mono text-gray-90">
+      {{ p.name }}
+      {% if p.type %} <span class="text-blue-cool-50">: {{ p.type }}</span>{% endif %}
+      {% if p.default %} <span class="text-gray-500"> = {{ p.default }}</span>{% endif %}
+    </dt>
+    {% if p.description %}
+    <dd class="mt-1 text-gray-60">{{ p.description | renderMarkdown | sanitize }}</dd>
+    {% endif %}
+  </div>
+  {% endfor %}
+</dl>
+{% endif %}
+
+{% if parsed_docstring.returns %}
+<h4 class="text-sm font-medium text-gray-60 mb-2 mt-4">Returns</h4>
+<dl class="text-sm space-y-2">
+  <div class="border-b border-gray-cool-3 pb-2">
+    <dt class="font-mono text-gray-90">
+      {% if parsed_docstring.returns.type %}<span class="text-blue-cool-50">{{ parsed_docstring.returns.type }}</span>: {% endif %}
+    </dt>
+    {% if parsed_docstring.returns.description %}
+    <dd class="mt-1 text-gray-60">{{ parsed_docstring.returns.description | renderMarkdown | sanitize }}</dd>
+    {% endif %}
+  </div>
+</dl>
+{% endif %}
+
+{% if parsed_docstring.raises.size > 0 %}
+<h4 class="text-sm font-medium text-gray-60 mb-2 mt-4">Raises</h4>
+<dl class="text-sm space-y-2">
+  {% for r in parsed_docstring.raises %}
+  <div class="border-b border-gray-cool-3 pb-2">
+    <dt class="font-mono text-gray-90">
+      {% if r.type %}<span class="text-blue-cool-50">{{ r.type }}</span>{% endif %}
+    </dt>
+    {% if r.description %}
+    <dd class="mt-1 text-gray-60">{{ r.description | renderMarkdown | sanitize }}</dd>
+    {% endif %}
+  </div>
+  {% endfor %}
+</dl>
+{% endif %}

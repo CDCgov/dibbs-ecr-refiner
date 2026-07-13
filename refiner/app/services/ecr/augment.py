@@ -243,8 +243,8 @@ class AugmentationRun:
 
     augmentation_time conforms to DTM.US.FIELDED
     (urn:oid:2.16.840.1.113883.10.20.22.5.4) and is stamped on every
-    augmented document's <effectiveTime> and on the augmentation
-    author's <time>. It also propagates to the per-section provenance
+    augmented document's `<effectiveTime>` and on the augmentation
+    author's `<time>`. It also propagates to the per-section provenance
     footnote IDs built during eICR refinement, giving downstream
     consumers a structural consistency check across all outputs of a
     single run.
@@ -557,7 +557,7 @@ def update_rr_eicr_external_document_reference(
     reads the same already-stamped values back. Per the eCR Data
     Augmentation IG v5 Vol 1 §2.1.7, the reference's id and setId carry
     assigningAuthorityName="ecr-refiner"; versionNumber mirrors the
-    refined eICR's value. The <code> (55751-2 LOINC) is left untouched.
+    refined eICR's value. The `<code>` (55751-2 LOINC) is left untouched.
 
     The id and setId elements are replaced wholesale rather than
     patched, so no residual original-eICR attributes (e.g. an inherited
@@ -709,7 +709,7 @@ def _add_augmentation_template_id(
     Data Augmentation Header (root=2.16.840.1.113883.10.20.15.2.1.4,
     ext=2026-04-01).
 
-    Placed immediately before the document <id>, after any existing
+    Placed immediately before the document `<id>`, after any existing
     templateId elements, to maintain CDA schema element ordering.
     """
 
@@ -730,7 +730,7 @@ def _replace_document_id(
     assigning_authority_name: str,
 ) -> AugmentedResult:
     """
-    Replace the document <id> with a new id root and assigningAuthorityName.
+    Replace the document `<id>` with a new id root and assigningAuthorityName.
 
     The assigningAuthorityName is drawn from the Data Augmentation
     Document Source value set, we use "ecr-refiner" for
@@ -755,7 +755,7 @@ def _replace_document_id(
 
 def _replace_effective_time(doc_root: _Element, augmentation_time: str) -> None:
     """
-    Replace the document <effectiveTime> with the augmentation timestamp.
+    Replace the document `<effectiveTime>` with the augmentation timestamp.
     """
 
     old_eff = _find_required(doc_root, "hl7:effectiveTime")
@@ -769,15 +769,15 @@ def _replace_set_id(
     assigning_authority_name: str,
 ) -> None:
     """
-    Replace or insert the document <setId>.
+    Replace or insert the document `<setId>`.
 
     The augmented setId carries assigningAuthorityName from the Data
     Augmentation Document Source value set (we use "ecr-refiner"
     for Refiner-produced documents).
 
-    If <setId> doesn't exist (optional in CDA R2), inserts one in the
-    correct schema position: after <languageCode> or
-    <confidentialityCode>, before <versionNumber> or <recordTarget>.
+    If `<setId>` doesn't exist (optional in CDA R2), inserts one in the
+    correct schema position: after `<languageCode>` or
+    `<confidentialityCode>`, before `<versionNumber>` or `<recordTarget>`.
     """
 
     new_set_id = _make_element(
@@ -799,15 +799,15 @@ def _replace_set_id(
 
 def _replace_version_number(doc_root: _Element, version_value: str) -> None:
     """
-    Replace or insert <versionNumber>.
+    Replace or insert `<versionNumber>`.
 
     The augmented document inherits versionNumber from the source
     eICR (passed in via the AugmentationRun), so an augmented
     eICR/RR pair tracks the EHR's clinical-case versioning stream.
 
-    If <versionNumber> doesn't exist (optional in CDA R2), inserts
-    one in the correct schema position: after <setId>, before
-    <recordTarget>.
+    If `<versionNumber>` doesn't exist (optional in CDA R2), inserts
+    one in the correct schema position: after `<setId>`, before
+    `<recordTarget>`.
     """
 
     new_version = _make_element("versionNumber", value=version_value)
@@ -842,7 +842,7 @@ def _add_augmentation_author(
     identity is carried via softwareName's coded attributes (no
     functionCode at the header level under v4).
 
-    The author is appended after any existing <author> elements per
+    The author is appended after any existing `<author>` elements per
     CDA R2 element ordering.
     """
 
@@ -884,8 +884,8 @@ def _insert_author(doc_root: _Element, new_author: _Element) -> None:
     CDA R2 element order within ClinicalDocument is:
         ... → recordTarget → author → ... → custodian → ...
 
-    We insert after the last existing <author>. If none exist (unusual
-    but theoretically possible), we insert before <custodian>.
+    We insert after the last existing `<author>`. If none exist (unusual
+    but theoretically possible), we insert before `<custodian>`.
     """
 
     existing_authors = doc_root.findall("hl7:author", HL7_NS)
@@ -916,7 +916,7 @@ def _add_related_document(
     Replace the relatedDocument chain with v4-shaped sibling blocks.
 
     Per IG v4 (Vol 2 §1.1 / §1.2), each prior augmentation contributes
-    its own <relatedDocument> sibling rather than appending an <id>
+    its own `<relatedDocument>` sibling rather than appending an `<id>`
     to a shared parentDocument.
 
     Steps:
@@ -947,7 +947,7 @@ def _add_related_document(
 
 def _build_related_document_for_input(original: _OriginalIdentity) -> _Element:
     """
-    Build a v4-shape <relatedDocument> referencing the input we just augmented.
+    Build a v4-shape `<relatedDocument>` referencing the input we just augmented.
 
     Honestly emits whatever identity the input had; id is always
     present (every CDA document has one), setId and versionNumber
@@ -1004,8 +1004,8 @@ def _insert_related_document(doc_root: _Element, related_doc: _Element) -> None:
     CDA R2 ordering: ... → custodian → ... → relatedDocument → ... →
     componentOf → component.
 
-    We insert before <componentOf> if it exists, otherwise before
-    <component>.
+    We insert before `<componentOf>` if it exists, otherwise before
+    `<component>`.
     """
 
     component_of = doc_root.find("hl7:componentOf", HL7_NS)

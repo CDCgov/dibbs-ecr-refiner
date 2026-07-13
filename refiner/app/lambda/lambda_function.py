@@ -275,9 +275,11 @@ def extract_persistence_id(object_key: str, input_prefix: str) -> str:
     """
     Extract the persistence_id from an S3 object key.
 
+    ```
     Object key format: <pipeline-step>/<persistance_id>
     Example: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
     Returns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
+    ```
 
     Args:
         object_key: The S3 object key
