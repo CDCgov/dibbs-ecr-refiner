@@ -61,7 +61,7 @@ export function ActivityLog() {
               </Select>
             </Field>
           </SelectContainer>
-          <Export
+          <ExportLink
             canonicalUrl={
               conditionFilter === ALL_CONDITIONS_LITERAL
                 ? null
@@ -90,11 +90,11 @@ export function ActivityLog() {
   );
 }
 
-interface ExportProps {
+interface ExportLinkProps {
   canonicalUrl: string | null;
 }
 
-function Export({ canonicalUrl }: ExportProps) {
+function ExportLink({ canonicalUrl }: ExportLinkProps) {
   const params = new URLSearchParams({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
