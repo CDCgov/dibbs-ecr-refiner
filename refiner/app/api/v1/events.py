@@ -219,6 +219,7 @@ async def get_events_export(
     timezone: str = Depends(_validate_timezone),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    canonical_url: str | None = None,
 ) -> Response:
     """
     Generate a CSV export of all events within a jurisdiction.
@@ -227,6 +228,7 @@ async def get_events_export(
         timezone (str): The user's timezone as a string
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): The database connection
+        canonical_url (str | None): An optional canonical URL to filter the export by condition
 
     Returns:
         Response: The generated CSV file
@@ -236,7 +238,7 @@ async def get_events_export(
     writer.writerow(["Name", "Condition", "Action", "Date"])  # headers
 
     async for event in get_all_events_by_jd_db(
-        jurisdiction_id=user.jurisdiction_id, db=db
+        jurisdiction_id=user.jurisdiction_id, canonical_url=canonical_url, db=db
     ):
         writer.writerow(
             [

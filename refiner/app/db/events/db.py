@@ -188,9 +188,12 @@ async def get_events_by_jd_db(
 async def get_all_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
+    canonical_url: str | None = None,
 ) -> AsyncIterator[AuditEvent]:
     """
     Streams all events for a jurisdiction.
+
+    Optionally filters by canonical_url if provided.
 
     Intended for CSV export.
     """
@@ -211,10 +214,12 @@ async def get_all_events_by_jd_db(
         LEFT JOIN configurations c ON e.configuration_id = c.id
         LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
         LEFT JOIN conditions cond ON cond.id = cc.condition_id
+                                AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
         WHERE e.jurisdiction_id = %s
+        AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
         ORDER BY e.created_at DESC;
     """
-    params = (jurisdiction_id,)
+    params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:

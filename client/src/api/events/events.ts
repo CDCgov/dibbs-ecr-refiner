@@ -259,6 +259,7 @@ export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof g
  *     timezone (str): The user's timezone as a string
  *     user (DbUser): The logged-in user
  *     db (AsyncDatabaseConnection): The database connection
+ *     canonical_url (str | None): An optional canonical URL to filter the export by condition
  *
  * Returns:
  *     Response: The generated CSV file

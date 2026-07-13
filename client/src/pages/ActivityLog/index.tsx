@@ -61,7 +61,13 @@ export function ActivityLog() {
               </Select>
             </Field>
           </SelectContainer>
-          <Export />
+          <Export
+            canonicalUrl={
+              conditionFilter === ALL_CONDITIONS_LITERAL
+                ? null
+                : conditionFilter
+            }
+          />
         </div>
       </div>
       <div className="mt-6 flex flex-col">
@@ -84,11 +90,23 @@ export function ActivityLog() {
   );
 }
 
-function Export() {
+interface ExportProps {
+  canonicalUrl: string | null;
+}
+
+function Export({ canonicalUrl }: ExportProps) {
+  const params = new URLSearchParams({
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+
+  if (canonicalUrl) {
+    params.set('canonical_url', canonicalUrl);
+  }
+
   return (
     <a
       className="text-blue-cool-60 font-bold hover:cursor-pointer hover:underline"
-      href={`/api/v1/events/export?timezone=${Intl.DateTimeFormat().resolvedOptions().timeZone}`}
+      href={`/api/v1/events/export?${params.toString()}`}
       download
     >
       Export configuration
