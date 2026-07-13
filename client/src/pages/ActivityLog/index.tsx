@@ -95,6 +95,8 @@ interface ExportLinkProps {
 }
 
 function ExportLink({ canonicalUrl }: ExportLinkProps) {
+  // Send user's IANA time zone name to the server so it can generate timestamps in their local time
+  // See here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/resolvedOptions#timezone
   const params = new URLSearchParams({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });

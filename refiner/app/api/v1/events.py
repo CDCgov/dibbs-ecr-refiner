@@ -196,6 +196,16 @@ async def get_custom_code_upload_events(
 
 
 def _format_timestamp(dt: datetime, timezone: str) -> str:
+    """
+    Formats the timestamp into the expected string.
+
+    Args:
+        dt (datetime): The datetime
+        timezone (str): The IANA timezone (ex: `"America/Los_Angeles"`)
+
+    Returns:
+        str: Formatted timestamp as a string
+    """
     tz = ZoneInfo(timezone)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
@@ -203,6 +213,20 @@ def _format_timestamp(dt: datetime, timezone: str) -> str:
 
 
 def _validate_timezone(timezone: str = "UTC") -> str:
+    """
+    Validates the timezone being passed in, which comes from the client. Expects IANA time zone.
+
+    See here: https://docs.python.org/3/library/zoneinfo.html
+
+    Args:
+        timezone (str, optional): Client timezone. Defaults to "UTC" if not provided.
+
+    Raises:
+        HTTPException: 400 if timezone is not valid
+
+    Returns:
+        str: Validated timezone string
+    """
     try:
         ZoneInfo(timezone)
         return timezone
@@ -210,7 +234,10 @@ def _validate_timezone(timezone: str = "UTC") -> str:
         raise HTTPException(status_code=400, detail=f"Invalid timezone: {timezone}")
 
 
-def _get_export_name() -> str:
+def _get_exported_file_name() -> str:
+    """
+    Calculates and returns the name of the CSV file to be exported.
+    """
     return f"Activity_Log_Export_{get_export_timestamp()}.csv"
 
 
@@ -252,5 +279,7 @@ async def get_events_export(
     return Response(
         content=output.getvalue(),
         media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="{_get_export_name()}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{_get_exported_file_name()}"'
+        },
     )
