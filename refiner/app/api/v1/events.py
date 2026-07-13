@@ -211,7 +211,7 @@ def _validate_timezone(timezone: str = "UTC") -> str:
 
 
 def _get_export_name() -> str:
-    return f"Acitivity_Log_Export_{get_export_timestamp()}.csv"
+    return f"Activity_Log_Export_{get_export_timestamp()}.csv"
 
 
 @router.get("/export", tags=["events"], response_class=Response)
