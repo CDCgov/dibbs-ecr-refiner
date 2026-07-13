@@ -249,7 +249,6 @@ async def get_events_export(
             ]
         )
 
-    output.seek(0)  # go to start of the stream
     return Response(
         content=output.getvalue(),
         media_type="text/csv",
