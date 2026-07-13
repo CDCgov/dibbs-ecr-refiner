@@ -665,6 +665,32 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #     prevents 260373001 "Detected" (no sdtc:valueSet) from matching
 #     while still matching 5247005 "Bordetella pertussis" (has
 #     sdtc:valueSet when placed as an RCTC trigger value).
+#
+# SHARED-CONTEXT CARVE-OUT (all three rules):
+#   the Trigger Code Result Organizer (V2) permits sibling components that
+#   are **not** result observations--the Specimen Collection Procedure (ID)
+#   …4.415 (SHOULD 0..1, CONF:4527-450/451: collection date, body site,
+#   source) and the Laboratory Result Status (ID) …4.418 (MAY 0..1). these
+#   are organizer-scoped context applying to every result in the battery and
+#   are unmatchable by construction (their codes are never configured
+#   triggers). because they contain no Result Observation, the plain
+#   component prune would drop them even when a sibling result is retained,
+#   silently losing the specimen context a PHA keys a case to. the guard
+#   below exempts any organizer/component that does not itself contain a
+#   Result Observation V3, so those siblings survive alongside a retained
+#   result. it is keyed to the Result Observation V3 templateId--**not** "any
+#   observation"--precisely so Laboratory Result Status (its own observation
+#   template) is treated as shared context rather than a prunable candidate.
+#   an organizer with zero result matches is still removed wholesale (its
+#   procedure goes with it)--the carve-out only fires within a matched entry
+
+# only prune organizer components that actually carry a Result Observation;
+# non-result siblings (Specimen Collection Procedure, Lab Result Status) are
+# retained as shared context
+_RESULT_COMPONENT_PRUNE_GUARD: Final[str] = (
+    f".//hl7:observation[hl7:templateId[@root='{RESULT_OBSERVATION_V3}']]"
+)
+
 _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     # rule 1 — TIER 1: LOINC test name on observation/code
     EntryMatchRule(
@@ -675,6 +701,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         ),
         code_system_oid=LOINC_OID,
         prune_container_xpath="hl7:organizer/hl7:component",
+        prune_container_guard_xpath=_RESULT_COMPONENT_PRUNE_GUARD,
         tier=1,
     ),
     # rule 2 — TIER 2: LOINC trigger code in translation
@@ -687,6 +714,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         ),
         code_system_oid=LOINC_OID,
         prune_container_xpath="hl7:organizer/hl7:component",
+        prune_container_guard_xpath=_RESULT_COMPONENT_PRUNE_GUARD,
         tier=2,
     ),
     # rule 3 — TIER 2: organism/substance SNOMED on observation/value
@@ -700,6 +728,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         code_system_oid=SNOMED_OID,
         require_value_set_attr=True,
         prune_container_xpath="hl7:organizer/hl7:component",
+        prune_container_guard_xpath=_RESULT_COMPONENT_PRUNE_GUARD,
         tier=2,
     ),
 ]

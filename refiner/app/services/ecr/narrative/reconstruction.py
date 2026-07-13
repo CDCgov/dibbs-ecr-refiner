@@ -9,7 +9,12 @@ from app.services.ecr.policy import ReconstructableSection
 from app.services.format import remove_element
 
 from ..model import HL7_NS, HL7_XSI_NS
-from ..specification.constants import CODE_SYSTEM_DISPLAY_NAMES
+from ..specification.constants import (
+    CODE_SYSTEM_DISPLAY_NAMES,
+    NON_SPECIFIC_SNOMED_CODES,
+    OBSERVATION_INTERPRETATION_DISPLAY,
+    SNOMED_OID,
+)
 from .elements import _make_element, _sub_element
 from .identifiers import REFINER_ID_PREFIX, run_id_digits
 
@@ -179,6 +184,12 @@ def render_code_display(el: _Element | None) -> str:
     CVX). Resolving translation @displayName *and* @code keeps those rows from
     rendering blank.
 
+    One exception to "@displayName wins": a generic SNOMED placeholder
+    (`NON_SPECIFIC_SNOMED_CODES`, e.g. "Drug or medicament") carries a
+    displayName that says nothing specific. When the element is one of these,
+    its displayName is skipped in favor of the real product parked in
+    <originalText> / <translation>, and used only as the last resort.
+
     Args:
         el: A coded element (<code>, <value xsi:type="CD">, etc.), or None.
 
@@ -189,7 +200,15 @@ def render_code_display(el: _Element | None) -> str:
     if el is None:
         return ""
 
-    if display := _normalize(el.get("displayName")):
+    display = _normalize(el.get("displayName"))
+
+    # a generic SNOMED placeholder displayName must not shadow the specific
+    # product the sender carried in originalText/translation
+    is_placeholder = (
+        el.get("code") in NON_SPECIFIC_SNOMED_CODES
+        and el.get("codeSystem") == SNOMED_OID
+    )
+    if display and not is_placeholder:
         return display
 
     original_text = el.find("hl7:originalText", HL7_NS)
@@ -199,10 +218,48 @@ def render_code_display(el: _Element | None) -> str:
         if text := str(original_text.xpath("normalize-space(.)")):
             return text
 
-    if display := _first_xpath_str(el, "hl7:translation/@displayName"):
-        return display
+    if translation_display := _first_xpath_str(el, "hl7:translation/@displayName"):
+        return translation_display
 
-    return el.get("code") or _first_xpath_str(el, "hl7:translation/@code")
+    # a placeholder display is still better than a bare code as a last resort
+    return display or el.get("code") or _first_xpath_str(el, "hl7:translation/@code")
+
+
+# NOTE:
+# LAYER 1 — SHARED PRIMITIVE: interpretation-flag renderer
+# =============================================================================
+# interpretationCode is HL7 ObservationInterpretation--a closed result-flag
+# vocabulary ("A", "H", "L"). it stays display-only (no code suffix), but real
+# senders frequently omit @displayName, leaving a bare letter that reads as
+# noise to a PHA; we prefer whatever human display the sender gave (via the
+# full render_code_display chain) and only reach for the map when we
+# would otherwise be showing the raw @code
+
+
+def render_interpretation(el: _Element | None) -> str:
+    """
+    Render an ObservationInterpretation coded element to its flag display.
+
+    Defers to `render_code_display`; only when that resolves to nothing but
+    the bare `@code` does it substitute the canonical HL7 display ("A" ->
+    "Abnormal", "H" -> "High", "L" -> "Low"). An unmapped code is returned
+    as-is, so this never hides an interpretation it does not recognize.
+
+    Args:
+        el: An `<interpretationCode>` element, or None.
+
+    Returns:
+        The interpretation display string, or "".
+    """
+
+    if el is None:
+        return ""
+
+    display = render_code_display(el)
+    code = el.get("code")
+    if code and display == code:
+        return OBSERVATION_INTERPRETATION_DISPLAY.get(code, code)
+    return display
 
 
 # NOTE:
@@ -211,7 +268,7 @@ def render_code_display(el: _Element | None) -> str:
 # clinical-terminology concepts (LOINC panels, SNOMED findings, RxNorm/CVX
 # products) surface their authoritative half--code + system--alongside the
 # editable displayName, so a reader of the stylesheet-rendered HTML who never
-# opens the structured entries still gets a verifiable concept identifier.
+# opens the structured entries still gets a verifiable concept identifier;
 # the system name is resolved from the codeSystem OID, **not** the unreliable
 # codeSystemName attribute. HL7 admin/status vocabularies (statusCode,
 # interpretationCode) stay display-only via render_code_display
@@ -268,6 +325,29 @@ def render_coded_concept(el: _Element | None) -> str:
 # display-only (no "(code)" suffix)--matching what pre-refined narratives show
 
 
+def _render_bound(bound: _Element) -> str:
+    """
+    Render one IVL low/high bound to a string.
+
+    A bound may be a PQ (value + unit, as in an IVL_PQ reference range) or a
+    bare timestamp (as in an IVL_TS effective time). A `@unit` marks the PQ
+    case and keeps the unit on the value; otherwise the value is humanized as
+    a TS.
+
+    Args:
+        bound: The `<low>` or `<high>` element.
+
+    Returns:
+        The rendered bound, or "".
+    """
+
+    value = bound.get("value")
+    if not value:
+        return ""
+    unit = bound.get("unit")
+    return f"{value} {unit}" if unit else format_ts(value)
+
+
 def render_typed_value(el: _Element | None) -> str:
     """
     Render a CDA value-bearing element to a display string.
@@ -305,13 +385,15 @@ def render_typed_value(el: _Element | None) -> str:
     if xsi_type == "ST":
         return _normalize(el.text)
 
-    # interval of time (IVL_TS)--low/high children. equal bounds collapse to a
-    # single value: an EHR renders a low==high panel time as one timestamp, not
-    # "X to X" (confirmed against real Epic Results narrative)
+    # interval (IVL_TS panel/effective time, or IVL_PQ reference range)--low/high
+    # children, each rendered per its own type so a PQ bound keeps its unit and a
+    # TS bound is humanized; equal bounds collapse to a single value: an EHR
+    # renders a low==high panel time as one timestamp, not "X to X" (confirmed
+    # against real Epic Results narrative)
     low, high = el.find("hl7:low", HL7_NS), el.find("hl7:high", HL7_NS)
     if low is not None or high is not None:
-        lo = format_ts(low.get("value")) if low is not None else ""
-        hi = format_ts(high.get("value")) if high is not None else ""
+        lo = _render_bound(low) if low is not None else ""
+        hi = _render_bound(high) if high is not None else ""
         if lo and hi:
             return lo if lo == hi else f"{lo} to {hi}"
         return lo or hi or ""
@@ -334,6 +416,9 @@ def render_typed_value(el: _Element | None) -> str:
 #   "attr"    -> xpath ends at an attribute; lxml returns the string directly
 #   "coded"   -> a <code>-like element rendered display-ONLY (admin/status
 #                vocabularies); hand it to render_code_display
+#   "interp"  -> an <interpretationCode> rendered display-ONLY, with the HL7
+#                ObservationInterpretation flag map as a fallback for a bare
+#                @code; hand it to render_interpretation
 #   "concept" -> a CLINICAL coded element rendered "display (System code)";
 #                hand it to render_coded_concept
 #   "typed"   -> a polymorphic value element; hand it to render_typed_value
@@ -348,7 +433,7 @@ class FieldSpec(NamedTuple):
 
     label: str  # becomes the column header
     xpath: str  # RELATIVE to the anchor element passed to extract_fields
-    kind: Literal["attr", "coded", "concept", "typed", "text"]
+    kind: Literal["attr", "coded", "interp", "concept", "typed", "text"]
 
 
 def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, str]:
@@ -380,6 +465,10 @@ def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, st
         elif spec.kind == "coded":
             row[spec.label] = (
                 render_code_display(first) if isinstance(first, _Element) else ""
+            )
+        elif spec.kind == "interp":
+            row[spec.label] = (
+                render_interpretation(first) if isinstance(first, _Element) else ""
             )
         elif spec.kind == "concept":
             row[spec.label] = (
@@ -549,10 +638,19 @@ def render_section_text(
 # label on @displayName. In the future template-aware engine these become
 # keyed by templateId and fold in unchanged
 
-# context anchor: <organizer> (the panel)
+# context anchor: <organizer> (the panel). Performer answers "which lab ran
+# this?"--the performing organization. CDA allows performer on the organizer OR
+# on the child observations, so we reach for the first one anywhere under the
+# panel rather than assume a level (scoped to performer so it never picks up an
+# author's organization)
+_PERFORMING_ORG_NAME = (
+    ".//hl7:performer/hl7:assignedEntity/hl7:representedOrganization/hl7:name"
+)
+
 PANEL_FIELDS: list[FieldSpec] = [
     FieldSpec("Panel", "hl7:code", "concept"),
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),
+    FieldSpec("Performer", _PERFORMING_ORG_NAME, "text"),
 ]
 
 # context anchor: <procedure> (the specimen, a sibling of the observations)
@@ -565,11 +663,19 @@ SPECIMEN_FIELDS: list[FieldSpec] = [
     FieldSpec("Target Site", "hl7:targetSiteCode", "concept"),
 ]
 
-# detail anchor: <observation> (the result row's OWN fields)
+# detail anchor: <observation> (the result row's OWN fields); interpretation is
+# the observation's own flag (a direct child--never the reference range's nested
+# interpretationCode)--reference range is the observationRange value (IVL_PQ), a
+# distinct column so a reader sees the result against its normal range
 RESULT_FIELDS: list[FieldSpec] = [
     FieldSpec("Test", "hl7:code", "concept"),
     FieldSpec("Outcome", "hl7:value", "typed"),  # PQ, CD, ST — renderer decides
-    FieldSpec("Interpretation", "hl7:interpretationCode", "coded"),  # HL7 admin
+    FieldSpec("Interpretation", "hl7:interpretationCode", "interp"),  # HL7 flag
+    FieldSpec(
+        "Reference Range",
+        "hl7:referenceRange/hl7:observationRange/hl7:value",
+        "typed",  # IVL_PQ — bounds render with units
+    ),
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),  # flat @value or IVL
 ]
 

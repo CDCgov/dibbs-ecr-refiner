@@ -51,6 +51,47 @@ CODE_SYSTEM_DISPLAY_NAMES: Final[dict[str, str]] = {
     CPT4_OID: "CPT-4",
 }
 
+# HL7 ObservationInterpretation (codeSystem 2.16.840.1.113883.5.83): the
+# result-flag vocabulary a lab stamps on an observation (and on a reference
+# range). Senders often carry only the bare @code ("A", "H", "L") with no
+# @displayName, which reads as a cryptic letter to a PHA. This maps the clinical
+# subset that actually shows up in eICR lab results to its canonical display;
+# unknown codes fall back to the raw @code (see render_interpretation).
+OBSERVATION_INTERPRETATION_DISPLAY: Final[dict[str, str]] = {
+    "N": "Normal",
+    "A": "Abnormal",
+    "AA": "Critically abnormal",
+    "H": "High",
+    "HH": "Critically high",
+    "L": "Low",
+    "LL": "Critically low",
+    "HU": "Significantly high",
+    "LU": "Significantly low",
+    "I": "Intermediate",
+    "R": "Resistant",
+    "S": "Susceptible",
+    "POS": "Positive",
+    "NEG": "Negative",
+    "IND": "Indeterminate",
+    "E": "Equivocal",
+}
+
+# SNOMED "non-specific" placeholder codes: generic parents a sender drops in
+# when it has no specific product code. their displayName ("Drug or medicament")
+# says nothing a reader couldn't get from the section header, yet it would
+# otherwise shadow the real product the sender parked in <originalText> or a
+# <translation> (an IV admixture's sig, a compound's RxNorm cuvee). A coded
+# element carrying one of these is treated as display-uninformative so resolution
+# looks past it (see render_code_display). Keyed to SNOMED only; grows by evidence
+# TODO:
+# try to get some sample data of this pattern to better understand where the fix should live,
+# e.g., here or a fallback entry matching rule
+NON_SPECIFIC_SNOMED_CODES: Final[frozenset[str]] = frozenset(
+    {
+        "410942007",  # drug or medicament
+    }
+)
+
 OID_TO_SYSTEM_KEY_MAP: Final[dict[str, str]] = {
     LOINC_OID: "loinc",
     SNOMED_OID: "snomed",

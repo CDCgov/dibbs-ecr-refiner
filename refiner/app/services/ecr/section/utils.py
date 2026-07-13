@@ -49,9 +49,25 @@ def enrich_surviving_entries(
 
     Walks every <entry> in the section after pruning and sets
     `displayName` on any <code>, <value>, or <translation> element
-    that has a `@code` attribute but no `@displayName`. The
-    enrichment lookup uses the element's own `@codeSystem` attribute
-    to scope the search in `code_system_sets`.
+    that has a `@code` attribute but no `@displayName`, trying two
+    sources in order:
+
+      1. the jurisdiction `code_system_sets`, scoped by the element's
+         own `@codeSystem` — the authoritative terminology display.
+      2. a fallback: the human label the sender parked in the section
+         narrative and pointed at with
+         `<originalText><reference value="#id"/></originalText>`. This
+         recovers a display for codes the jurisdiction sets don't carry
+         (a raw SNOMED value whose only readable form is the narrative
+         cell it references).
+
+    Because the enrichment lands on the structured entry itself, every
+    downstream consumer benefits: the shipped coded data is more
+    complete AND narrative reconstruction (which reads `@displayName`
+    first) renders the label instead of a bare code. The narrative
+    fallback runs while the ORIGINAL <text> is still present — before
+    the caller reconstructs or removes it — so the reference still
+    resolves.
 
     This is how the refiner surfaces human-readable labels on code
     elements that the structural match rules didn't directly target
@@ -75,6 +91,8 @@ def enrich_surviving_entries(
         "{urn:hl7-org:v3}translation",
     }
 
+    narrative_index = _index_narrative_display_ids(section, namespaces)
+
     for entry in section.findall("hl7:entry", namespaces):
         for element in entry.iter():
             if element.tag not in code_bearing_tags:
@@ -93,6 +111,15 @@ def enrich_surviving_entries(
             if coding is not None:
                 _enrich_display_name(element, coding)
 
+            # fall back to the narrative only if the code sets did not
+            # already supply a display
+            if not (element.get("displayName") or "").strip():
+                display = _resolve_reference_display(
+                    element, narrative_index, namespaces
+                )
+                if display:
+                    element.set("displayName", display)
+
 
 def _enrich_display_name(code_element: _Element, coding: "Coding") -> None:
     """
@@ -108,6 +135,75 @@ def _enrich_display_name(code_element: _Element, coding: "Coding") -> None:
 
     if coding.display:
         code_element.set("displayName", coding.display)
+
+
+def _index_narrative_display_ids(
+    section: _Element,
+    namespaces: NamespaceMap,
+) -> dict[str, str]:
+    """
+    Map every `@ID` in the section narrative to its collapsed text.
+
+    Built once per section so an `<originalText><reference value="#id"/>`
+    on a coded entry can be resolved back to the human label the sender
+    rendered in the narrative cell. Scoped to the section's own <text>
+    (narrative IDs live there, not on structured entries), and returns
+    {} when the section has no narrative.
+
+    Args:
+        section: The section element (original <text> still present).
+        namespaces: XML namespaces for element search.
+
+    Returns:
+        An `ID` -> normalized-text mapping.
+    """
+
+    text = section.find("hl7:text", namespaces)
+    if text is None:
+        return {}
+
+    index: dict[str, str] = {}
+    for element in text.iter():
+        node_id = element.get("ID")
+        if node_id:
+            index[node_id] = str(element.xpath("normalize-space(.)"))
+    return index
+
+
+def _resolve_reference_display(
+    element: _Element,
+    narrative_index: dict[str, str],
+    namespaces: NamespaceMap,
+) -> str | None:
+    """
+    Resolve a coded element's narrative-reference label, if it has one.
+
+    Reads `originalText/reference/@value` (`#id`), strips the fragment
+    marker, and looks the id up in the pre-built narrative index. Only
+    the element's OWN originalText reference is followed — never the
+    coarser observation-level `<text>` link, which points at the whole
+    row rather than this concept's label.
+
+    Args:
+        element: A code-bearing element (<code>, <value>, <translation>).
+        narrative_index: The section's `ID` -> text map.
+        namespaces: XML namespaces for element search.
+
+    Returns:
+        The resolved display string, or None when there is no reference,
+        it is not a fragment pointer, or the id does not resolve to
+        non-empty narrative text.
+    """
+
+    reference = element.find("hl7:originalText/hl7:reference", namespaces)
+    if reference is None:
+        return None
+
+    value = reference.get("value")
+    if not value or not value.startswith("#"):
+        return None
+
+    return narrative_index.get(value[1:]) or None
 
 
 # NOTE:

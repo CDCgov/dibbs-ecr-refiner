@@ -157,6 +157,37 @@ class EntryMatchRule:
             organizer/component) and each sub-observation should be
             individually retained or removed.
 
+        prune_container_guard_xpath:
+            XPath expression (relative to a prune_container_xpath
+            container) that gates whether the container is eligible for
+            pruning at all. When set, a container is only pruned when
+            this xpath matches *inside* it AND it holds no matched code
+            element; a container that does not match the guard is
+            retained as shared, organizer-scoped context.
+
+            This exists because an organizer may carry sibling
+            components that are not themselves match candidates but
+            apply to every observation in the battery. The canonical
+            case is the Results Specimen Collection Procedure (ID)
+            (2.16.840.1.113883.10.20.22.4.415) — a <component><procedure>
+            with fixed code 17636008 that carries the specimen collection
+            date, body site, and source. It is unmatchable by
+            construction (its code is never a configured trigger), so the
+            component-level prune would drop it even when a Result
+            Observation in the same organizer is retained, silently
+            losing the very context a PHA keys a case to.
+
+            The guard is deliberately specific to the match target
+            (Result Observation V3), not "any observation": Laboratory
+            Result Status (…4.418) is itself an <observation> under a
+            sibling component and must also survive as shared context.
+            Keying the guard on the Result Observation V3 templateId
+            retains those siblings while still pruning non-matching
+            Result Observations.
+
+            When None, every container in prune_container_xpath is
+            eligible for pruning (the original behavior). Default None.
+
         require_value_set_attr:
             When True, a code element only qualifies as a match
             candidate if it also carries an sdtc:valueSet attribute.
@@ -244,6 +275,7 @@ class EntryMatchRule:
     translation_xpath: str | None = None
     translation_code_system_oid: str | None = None
     prune_container_xpath: str | None = None
+    prune_container_guard_xpath: str | None = None
     require_value_set_attr: bool = False
     tier: int = 1
     preserve_whole_entry: bool = False
