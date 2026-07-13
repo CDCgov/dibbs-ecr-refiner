@@ -111,7 +111,7 @@ function ExportLink({ canonicalUrl }: ExportLinkProps) {
       href={`/api/v1/events/export?${params.toString()}`}
       anchorProps={{ download: true }}
     >
-      Export configuration
+      Export as CSV
     </Button>
   );
 }
