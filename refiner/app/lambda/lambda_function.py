@@ -394,7 +394,7 @@ def parse_s3_content_to_dict(body: str) -> dict:
         data = json.loads(body)
         return data
     except json.JSONDecodeError as e:
-        logger.error("Decoding S3 string to JSON failed", e)
+        logger.error("Decoding S3 string to JSON failed", exception=e)
         raise
 
 
