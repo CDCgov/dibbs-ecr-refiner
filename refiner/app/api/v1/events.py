@@ -1,14 +1,19 @@
 import asyncio
+import csv
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from io import StringIO
 from logging import Logger
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.exceptions import DatabaseConnectionError, DatabaseQueryError
 from app.db.events.db import (
     AuditEvent,
+    get_all_events_by_jd_db,
     get_custom_code_upload_events_by_event_id,
     get_event_count_by_condition_db,
     get_event_filter_options_db,
@@ -17,6 +22,7 @@ from app.db.events.db import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.file_exports import get_export_timestamp
 from app.services.logger import get_logger
 
 router = APIRouter(prefix="/events")
@@ -187,3 +193,63 @@ async def get_custom_code_upload_events(
         )
         for cc in custom_code_events
     ]
+
+
+def _format_timestamp(dt: datetime, timezone: str) -> str:
+    tz = ZoneInfo(timezone)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(tz).strftime("%m/%d/%Y %I:%M %p")
+
+
+def _validate_timezone(timezone: str = "UTC") -> str:
+    try:
+        ZoneInfo(timezone)
+        return timezone
+    except ZoneInfoNotFoundError:
+        raise HTTPException(status_code=400, detail=f"Invalid timezone: {timezone}")
+
+
+def _get_export_name() -> str:
+    return f"Acitivity_Log_Export_{get_export_timestamp()}.csv"
+
+
+@router.get("/export", tags=["events"], response_class=Response)
+async def get_events_export(
+    timezone: str = Depends(_validate_timezone),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Generate a CSV export of all events within a jurisdiction.
+
+    Args:
+        timezone (str): The user's timezone as a string
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        Response: The generated CSV file
+    """
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Name", "Condition", "Action", "Date"])  # headers
+
+    async for event in get_all_events_by_jd_db(
+        jurisdiction_id=user.jurisdiction_id, db=db
+    ):
+        writer.writerow(
+            [
+                event.username,
+                f"{event.configuration_name} (Version {event.configuration_version})",
+                event.action_text,
+                _format_timestamp(dt=event.created_at, timezone=timezone),
+            ]
+        )
+
+    output.seek(0)  # go to start of the stream
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{_get_export_name()}"'},
+    )

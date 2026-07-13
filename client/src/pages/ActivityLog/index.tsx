@@ -37,29 +37,32 @@ export function ActivityLog() {
         <p className="mt-2">
           Review activity in eCR Refiner from yourself and others on the team.
         </p>
-        <SelectContainer className="mt-6">
-          <Field>
-            <Label>Condition</Label>
-            <Select
-              value={conditionFilter}
-              onChange={(e) => {
-                setSelectedPage(1);
-                setConditionFilter(e.target.value);
-              }}
-            >
-              <option value={ALL_CONDITIONS_LITERAL}>
-                {ALL_CONDITIONS_LITERAL}
-              </option>
-              {configuration_options.map(({ canonical_url, name }) => {
-                return (
-                  <option value={canonical_url} key={canonical_url}>
-                    {name}
-                  </option>
-                );
-              })}
-            </Select>
-          </Field>
-        </SelectContainer>
+        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+          <SelectContainer className="mt-6">
+            <Field>
+              <Label>Condition</Label>
+              <Select
+                value={conditionFilter}
+                onChange={(e) => {
+                  setSelectedPage(1);
+                  setConditionFilter(e.target.value);
+                }}
+              >
+                <option value={ALL_CONDITIONS_LITERAL}>
+                  {ALL_CONDITIONS_LITERAL}
+                </option>
+                {configuration_options.map(({ canonical_url, name }) => {
+                  return (
+                    <option value={canonical_url} key={canonical_url}>
+                      {name}
+                    </option>
+                  );
+                })}
+              </Select>
+            </Field>
+          </SelectContainer>
+          <Export />
+        </div>
       </div>
       <div className="mt-6 flex flex-col">
         <ActivityLogEntries
@@ -78,5 +81,17 @@ export function ActivityLog() {
         />
       </div>
     </section>
+  );
+}
+
+function Export() {
+  return (
+    <a
+      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
+      href={`/api/v1/events/export?timezone=${Intl.DateTimeFormat().resolvedOptions().timeZone}`}
+      download
+    >
+      Export configuration
+    </a>
   );
 }

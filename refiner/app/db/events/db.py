@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -139,7 +140,9 @@ async def get_events_by_jd_db(
     canonical_url: str | None = None,
 ) -> list[AuditEvent]:
     """
-    Fetches all events for a given jurisdiction and condition.
+    Fetches paginated event results for a jurisdiction.
+
+    Intended to be displayed in the client.
     """
     offset = (page - 1) * page_size
 
@@ -180,6 +183,45 @@ async def get_events_by_jd_db(
             await cur.execute(query, params)
             events_rows = await cur.fetchall()
             return events_rows
+
+
+async def get_all_events_by_jd_db(
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+) -> AsyncIterator[AuditEvent]:
+    """
+    Streams all events for a jurisdiction.
+
+    Intended for CSV export.
+    """
+    query = """
+        SELECT
+            e.id,
+            u.username,
+            c.name AS configuration_name,
+            c.version AS configuration_version,
+            cond.id AS condition_id,
+            e.action_text,
+            e.created_at,
+            EXISTS (
+                SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
+            ) AS has_custom_code_upload_events
+        FROM events e
+        LEFT JOIN users u ON e.user_id = u.id
+        LEFT JOIN configurations c ON e.configuration_id = c.id
+        LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        LEFT JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE e.jurisdiction_id = %s
+        ORDER BY e.created_at DESC;
+    """
+    params = (jurisdiction_id,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
+            await cur.execute(query, params)
+            while chunk := await cur.fetchmany(500):
+                for row in chunk:
+                    yield row
 
 
 async def get_custom_code_upload_events_by_event_id(
