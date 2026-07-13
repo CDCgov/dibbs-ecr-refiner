@@ -87,7 +87,7 @@ export function ActivityLog() {
 function Export() {
   return (
     <a
-      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
+      className="text-blue-cool-60 font-bold hover:cursor-pointer hover:underline"
       href={`/api/v1/events/export?timezone=${Intl.DateTimeFormat().resolvedOptions().timeZone}`}
       download
     >
