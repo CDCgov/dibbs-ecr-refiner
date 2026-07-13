@@ -694,7 +694,7 @@ def mark_condition_skipped(
     """
     logger.info(
         "Refiner skipped condition.",
-        jurisdiction=jurisdiction_code,
+        jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
         reason=reason,
         operation="skipped",
