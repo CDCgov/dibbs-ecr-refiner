@@ -229,7 +229,7 @@ Total: 12 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `3` |
 | Configuration resolved | `True` |
-| eICR size reduction | `42%` |
+| eICR size reduction | `41%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -276,7 +276,7 @@ Total: 12 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `7` |
 | Configuration resolved | `True` |
-| eICR size reduction | `54%` |
+| eICR size reduction | `53%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -323,7 +323,7 @@ Total: 12 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `8` |
 | Configuration resolved | `True` |
-| eICR size reduction | `53%` |
+| eICR size reduction | `52%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -415,7 +415,7 @@ Total: 12 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `6` |
 | Configuration resolved | `True` |
-| eICR size reduction | `51%` |
+| eICR size reduction | `50%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -554,7 +554,7 @@ Total: 12 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `12` |
 | Configuration resolved | `True` |
-| eICR size reduction | `51%` |
+| eICR size reduction | `50%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |
@@ -601,7 +601,7 @@ Total: 12 scenarios across 1 fixture.
 | Outcome | `refined` |
 | Configuration version | `10` |
 | Configuration resolved | `True` |
-| eICR size reduction | `57%` |
+| eICR size reduction | `56%` |
 | Canonical URL | `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64` |
 | Augmented eICR id | `dca02d8c-8b32-507c-91da-0ce03d64700b` |
 | Augmented RR id | `65fbb67d-d377-5c19-838f-7856dcb7f16a` |

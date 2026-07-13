@@ -20,6 +20,11 @@ MED_ADMIN_LOINC: Final[str] = "29549-3"
 MED_USE_LOINC: Final[str] = "10160-0"
 PROCEDURES_LOINC: Final[str] = "47519-4"
 VITAL_SIGNS_LOINC: Final[str] = "8716-3"
+RESULTS_LOINC: Final[str] = "30954-2"
+
+# Specimen Collection Procedure (ID) …4.415: fixed SNOMED code, organizer-scoped
+# shared context that must survive the Results component prune
+SPECIMEN_COLLECTION_CODE: Final[str] = "17636008"
 
 # codes under test
 CROSS_OID_IMMUNIZATION_CODE: Final[str] = (
@@ -758,4 +763,78 @@ async def test_reconstruction_reference_pointers_have_no_surrounding_whitespace(
     assert re.search(r'<text>\s+<reference value="#ecr-refiner-', eicr) is None, (
         "a reconstruction reference serialized with surrounding whitespace at "
         "the display boundary"
+    )
+
+
+# NOTE:
+# RESULTS SPECIMEN COLLECTION PROCEDURE -- shared-context carve-out
+# =============================================================================
+# the Specimen Collection Procedure (…4.415) is an organizer-scoped sibling
+# component carrying the specimen collection date / body site / source. it has
+# no matchable trigger code, so the component-level prune used to drop it even
+# when a result in the same organizer was retained -- silently losing the
+# context a PHA keys a case to. this asserts, on the real fixture, that a
+# retained reportable result keeps its specimen collection procedure
+
+
+def _results_specimen_procedures(root: etree._Element) -> list[etree._Element]:
+    return root.xpath(
+        f".//hl7:section[hl7:code/@code='{RESULTS_LOINC}']"
+        f"//hl7:organizer/hl7:component/hl7:procedure"
+        f"[hl7:code/@code='{SPECIMEN_COLLECTION_CODE}']",
+        namespaces=HL7_NS,
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_results_specimen_collection_procedure_survives_refinement(
+    setup,
+    build_scenario_configuration,
+) -> None:
+    """
+    A retained reportable result keeps its Specimen Collection Procedure.
+
+    covid_baseline's Results section has an organizer with a matched COVID
+    result and a sibling Specimen Collection Procedure (…4.415). After
+    refinement the procedure -- with its collection date and target site --
+    must survive rather than being pruned as non-matching.
+
+    Precondition: the source really carries the specimen procedure inside the
+    Results section (else the fixture drifted and the test is vacuous).
+    """
+
+    scenario = SCENARIOS_BY_NAME["covid_baseline"]
+    config, _ = await build_scenario_configuration(scenario)
+
+    source_root = etree.fromstring(
+        load_scenario_xml_files(scenario).eicr.encode("utf-8")
+    )
+    source_procs = _results_specimen_procedures(source_root)
+    assert source_procs, (
+        f"covid_baseline's Results section carries no Specimen Collection "
+        f"Procedure (code {SPECIMEN_COLLECTION_CODE}); this test no longer "
+        f"exercises the shared-context carve-out. Restore the fixture or remove "
+        f"this test."
+    )
+
+    result = _refine(scenario, config)
+    refined_root = etree.fromstring(result.documents.eicr.encode("utf-8"))
+    refined_procs = _results_specimen_procedures(refined_root)
+
+    assert refined_procs, (
+        "The Specimen Collection Procedure was pruned from the refined Results "
+        "section. The component-level prune dropped an organizer-scoped shared "
+        "context sibling alongside a retained result -- the specimen data-loss "
+        "regression."
+    )
+
+    # the procedure's clinical payload--collection date + body site--is what
+    # makes it worth keeping; assert it survived intact, not just the shell
+    proc = refined_procs[0]
+    assert proc.xpath("hl7:effectiveTime/hl7:low/@value", namespaces=HL7_NS), (
+        "specimen procedure retained but its collection date was stripped"
+    )
+    assert proc.xpath("hl7:targetSiteCode/@code", namespaces=HL7_NS), (
+        "specimen procedure retained but its target site (body structure) was stripped"
     )

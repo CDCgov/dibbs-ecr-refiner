@@ -17,6 +17,7 @@ from app.services.ecr.narrative.reconstruction import (
     reconstruct_results,
     render_code_display,
     render_coded_concept,
+    render_interpretation,
     render_section_text,
     render_typed_value,
 )
@@ -103,6 +104,24 @@ def test_render_ivl_ts_equal_bounds_collapse_to_single_value():
 def test_render_ivl_ts_low_only():
     el = _el(f'<effectiveTime {_NSDECL}><low value="20240115"/></effectiveTime>')
     assert render_typed_value(el) == "2024-01-15"
+
+
+def test_render_ivl_pq_reference_range_keeps_units():
+    # an IVL_PQ reference range: each bound is a PQ, so the unit rides along
+    # (format_ts would silently drop it)
+    el = _el(
+        f'<value {_NSDECL} xsi:type="IVL_PQ">'
+        '<low unit="g/dL" value="13.5"/><high unit="g/dL" value="17.5"/></value>'
+    )
+    assert render_typed_value(el) == "13.5 g/dL to 17.5 g/dL"
+
+
+def test_render_ivl_pq_high_only_bound():
+    el = _el(
+        f'<value {_NSDECL} xsi:type="IVL_PQ">'
+        '<high inclusive="false" unit="[iU]/mL" value="45"/></value>'
+    )
+    assert render_typed_value(el) == "45 [iU]/mL"
 
 
 def test_render_pivl_ts_frequency():
@@ -233,6 +252,90 @@ def test_render_typed_cd_resolves_through_original_text():
         "</value>"
     )
     assert render_typed_value(el) == "Dark stools (finding) (SNOMED CT 35064005)"
+
+
+def test_code_display_generic_snomed_placeholder_prefers_original_text():
+    # SNOMED 410942007 "Drug or medicament" is a non-specific placeholder; its
+    # displayName must not shadow the real product parked in originalText
+    el = _el(
+        f'<code {_NSDECL} code="410942007" '
+        'codeSystem="2.16.840.1.113883.6.96" displayName="Drug or medicament">'
+        "<originalText>Multivitamin infusion (RxNorm cuvee)</originalText>"
+        "</code>"
+    )
+    assert render_code_display(el) == "Multivitamin infusion (RxNorm cuvee)"
+
+
+def test_code_display_generic_snomed_placeholder_prefers_translation():
+    # with no originalText, the placeholder still yields to a translation display
+    el = _el(
+        f'<code {_NSDECL} code="410942007" '
+        'codeSystem="2.16.840.1.113883.6.96" displayName="Drug or medicament">'
+        '<translation code="311354" codeSystem="2.16.840.1.113883.6.88" '
+        'displayName="Sodium Chloride 0.9% IV Solution"/>'
+        "</code>"
+    )
+    assert render_code_display(el) == "Sodium Chloride 0.9% IV Solution"
+
+
+def test_code_display_generic_placeholder_falls_back_to_its_own_display():
+    # when nothing more specific exists, the generic text is still better than
+    # a bare code
+    el = _el(
+        f'<code {_NSDECL} code="410942007" '
+        'codeSystem="2.16.840.1.113883.6.96" displayName="Drug or medicament"/>'
+    )
+    assert render_code_display(el) == "Drug or medicament"
+
+
+def test_code_display_placeholder_code_in_other_system_is_not_treated_special():
+    # the placeholder set is SNOMED-scoped; the same digits under another system
+    # keep the normal "displayName wins" behavior
+    el = _el(
+        f'<code {_NSDECL} code="410942007" '
+        'codeSystem="2.16.840.1.113883.6.1" displayName="Some LOINC concept">'
+        "<originalText>should not be preferred</originalText>"
+        "</code>"
+    )
+    assert render_code_display(el) == "Some LOINC concept"
+
+
+# NOTE:
+# LAYER 1 — render_interpretation (HL7 ObservationInterpretation flag display)
+# =============================================================================
+
+
+def test_interpretation_none_is_empty():
+    assert render_interpretation(None) == ""
+
+
+def test_interpretation_maps_bare_code_to_canonical_display():
+    # the real-data case: sender gives only @code, no @displayName — "A" reads
+    # as noise, so we substitute the canonical flag
+    for code, expected in (("A", "Abnormal"), ("H", "High"), ("L", "Low")):
+        el = _el(
+            f'<interpretationCode {_NSDECL} code="{code}" '
+            'codeSystem="2.16.840.1.113883.5.83"/>'
+        )
+        assert render_interpretation(el) == expected
+
+
+def test_interpretation_prefers_sender_display_name():
+    # when the sender DID label it, we keep their words rather than override
+    el = _el(
+        f'<interpretationCode {_NSDECL} code="A" '
+        'codeSystem="2.16.840.1.113883.5.83" displayName="Abnormal alert"/>'
+    )
+    assert render_interpretation(el) == "Abnormal alert"
+
+
+def test_interpretation_unmapped_code_returns_bare_code():
+    # never hide an interpretation we do not recognize
+    el = _el(
+        f'<interpretationCode {_NSDECL} code="ZZZ" '
+        'codeSystem="2.16.840.1.113883.5.83"/>'
+    )
+    assert render_interpretation(el) == "ZZZ"
 
 
 # NOTE:
@@ -384,6 +487,13 @@ _RESULTS_SECTION = f"""
   <entry>
     <organizer classCode="BATTERY" moodCode="EVN">
       <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
+      <performer>
+        <assignedEntity>
+          <representedOrganization>
+            <name>Acme Reference Lab</name>
+          </representedOrganization>
+        </assignedEntity>
+      </performer>
       <component>
         <procedure classCode="PROC" moodCode="EVN">
           <participant typeCode="SBJ"><participantRole><playingEntity>
@@ -397,6 +507,11 @@ _RESULTS_SECTION = f"""
           <effectiveTime value="20240115"/>
           <value xsi:type="PQ" value="9.2" unit="g/dL"/>
           <interpretationCode code="L" displayName="Low"/>
+          <referenceRange><observationRange>
+            <value xsi:type="IVL_PQ">
+              <low unit="g/dL" value="13.5"/><high unit="g/dL" value="17.5"/>
+            </value>
+          </observationRange></referenceRange>
         </observation>
       </component>
       <component>
@@ -430,17 +545,25 @@ def test_reconstruct_results_one_block_per_organizer():
 
     # one block per organizer with surviving observations
     assert len(blocks) == 2
-    assert blocks[0].columns == ["Test", "Outcome", "Interpretation", "Date(s)"]
+    assert blocks[0].columns == [
+        "Test",
+        "Outcome",
+        "Interpretation",
+        "Reference Range",
+        "Date(s)",
+    ]
 
 
 def test_reconstruct_results_context_is_per_block_not_repeated_on_rows():
     blocks = reconstruct_results(_el(_RESULTS_SECTION))
 
-    # the first organizer's context carries panel + specimen, once. Panel
-    # surfaces system + code; Specimen has no @code so it stays display-only
+    # the first organizer's context carries panel + performer + specimen, once.
+    # Panel surfaces system + code; Performer is the performing org name reached
+    # off the panel; Specimen has no @code so it stays display-only
     assert blocks[0].context == {
         "Panel": "CBC panel (LOINC 58410-2)",
         "Date(s)": "",  # no organizer effectiveTime in the fixture
+        "Performer": "Acme Reference Lab",
         "Specimen": "Blood specimen",
         "Target Site": "",
     }
@@ -450,6 +573,7 @@ def test_reconstruct_results_context_is_per_block_not_repeated_on_rows():
         "Test": "Hemoglobin",  # no @code in the fixture → display-only
         "Outcome": "9.2 g/dL",
         "Interpretation": "Low",
+        "Reference Range": "13.5 g/dL to 17.5 g/dL",  # IVL_PQ bounds keep units
         "Date(s)": "2024-01-15",
     }
     # the CD result value surfaces its system + code
@@ -741,11 +865,13 @@ def test_reconstruct_narrative_marks_flat_entries_derived():
 
 def test_result_fields_use_the_intended_kinds():
     # guard the design choice: clinical concepts surface system+code, the HL7
-    # interpretation code stays display-only, and the value stays polymorphic
+    # interpretation flag stays display-only with its canonical map, and the
+    # value (and reference range) stay polymorphic
     by_label = {f.label: f for f in RESULT_FIELDS}
     assert by_label["Test"].kind == "concept"  # clinical: display (System code)
-    assert by_label["Interpretation"].kind == "coded"  # HL7 admin: display-only
+    assert by_label["Interpretation"].kind == "interp"  # HL7 flag: display-only
     assert by_label["Outcome"].kind == "typed"  # polymorphic (PQ/CD/ST)
+    assert by_label["Reference Range"].kind == "typed"  # IVL_PQ interval
 
 
 class TestCompactReconstructionReferences:
