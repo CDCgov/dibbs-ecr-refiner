@@ -156,14 +156,15 @@ def lambda_handler(event, context) -> dict:
 
     try:
         batch_item_failures = []
-        logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
+        logger.info("Received SQS event", record_count=len(event.get("Records", [])))
         s3_config_bucket_name = S3_BUCKET_CONFIG
 
         # Process each SQS record
         for record in event["Records"]:
             record_id = record.get("messageId")
             logger.append_keys(record_id=record_id)
-            logger.info(f"Processing record: {record_id}")
+
+            logger.info(f"Processing record with ID: {record_id}")
 
             persistence_id = None
 
@@ -180,8 +181,12 @@ def lambda_handler(event, context) -> dict:
             s3_object_key = s3_event["detail"]["object"]["key"]
             s3_bucket_name = s3_event["detail"]["bucket"]["name"]
 
-            logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
             logger.append_keys(s3_bucket_name=s3_bucket_name)
+
+            logger.info(
+                f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}",
+                key=s3_object_key,
+            )
 
             try:
                 # Extract persistence_id from the RR object key
@@ -197,21 +202,30 @@ def lambda_handler(event, context) -> dict:
 
             try:
                 # S3 GET RR
-                logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
+                logger.info(
+                    f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}",
+                    key=s3_object_key,
+                )
                 rr_content = get_s3_object_content(
                     s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
                 )
-                logger.info("Retrieved RR from s3")
+                logger.info(
+                    "Retrieved RR from S3",
+                    key=s3_object_key,
+                )
 
                 # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistence_id>
                 eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
-                logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
+                logger.info(
+                    f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}",
+                    key=eicr_key,
+                )
 
                 # S3 GET eICR
                 eicr_content = get_s3_object_content(
                     s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
                 )
-                logger.info("Retrieved eICR from s3")
+                logger.info("Retrieved eICR from S3", key=eicr_key)
 
                 # Create XMLFiles container
                 xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
@@ -240,7 +254,8 @@ def lambda_handler(event, context) -> dict:
 
                 # PUT RefinerCompleteFile
                 logger.info(
-                    f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
+                    f"Writing completion file to s3://{s3_bucket_name}/{complete_key}",
+                    key=complete_key,
                 )
                 s3_client.put_object(
                     Bucket=s3_bucket_name,
@@ -249,8 +264,10 @@ def lambda_handler(event, context) -> dict:
                     ContentType="application/json",
                 )
 
+                refined_output_count = len(result.output_file_keys)
                 logger.info(
-                    f"Successfully processed {len(result.output_file_keys)} refined outputs"
+                    f"Successfully processed {refined_output_count} refined outputs",
+                    refined_output_count=refined_output_count,
                 )
 
             except Exception as e:
@@ -269,7 +286,9 @@ def lambda_handler(event, context) -> dict:
                         Body=json.dumps(error_payload, indent=2),
                         ContentType="application/json",
                     )
-                    logger.info(f"Wrote fatal error signal to {complete_key}")
+                    logger.info(
+                        f"Wrote fatal error signal to {complete_key}", key=complete_key
+                    )
                 except Exception as s3_err:
                     logger.error(
                         "Failed to write error signal to S3",
