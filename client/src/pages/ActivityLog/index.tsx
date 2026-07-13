@@ -7,6 +7,7 @@ import { Pagination } from '@components/Pagination';
 import { Select, SelectContainer } from '@components/Select';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { Button } from '@components/Button';
 
 export function ActivityLog() {
   const ALL_CONDITIONS_LITERAL = 'All conditions';
@@ -106,12 +107,11 @@ function ExportLink({ canonicalUrl }: ExportLinkProps) {
   }
 
   return (
-    <a
-      className="text-blue-cool-60 font-bold hover:cursor-pointer hover:underline"
+    <Button
       href={`/api/v1/events/export?${params.toString()}`}
-      download
+      anchorProps={{ download: true }}
     >
       Export configuration
-    </a>
+    </Button>
   );
 }
