@@ -51,6 +51,22 @@ ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
 
 
+class LogOperation:
+    """
+    All possible log `operation` values. The goal is to keep operation values standardized.
+
+    Please add a new operation here and then reference it.
+    """
+
+    INPUT_ANALYSIS = "input_analysis"
+    DISCOVERED_REPORTABILITY = "discovered_reportability"
+    ACTIVATION_FILE_READ = "activation_file_read"
+    CONDITION_REFINEMENT_COMPLETE = "condition_refinement_complete"
+    REMAINDER_RR_WRITTEN = "remainder_rr_written"
+    REMAINDER_RR_SKIPPED = "remainder_rr_skipped"
+    SKIPPED = "skipped"
+
+
 class RefinerCompleteSuccess(TypedDict):
     """
     Represents a successful completion file written after all refinement is done.
@@ -487,14 +503,14 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
     logger.info(
         "Analyzing input eICR",
         eicr_size_mib=get_file_size_in_mib(file_content=input.xml_files.eicr),
-        operation="input_analysis",
+        operation=LogOperation.INPUT_ANALYSIS,
     )
 
     reportable_groups = discover_reportable_conditions(input.xml_files)
     logger.info(
         "Discovered reportable conditions from RR",
         reportable_group_payload=reportable_groups,
-        operation="discovered_reportability",
+        operation=LogOperation.DISCOVERED_REPORTABILITY,
     )
 
     # TODO:
@@ -699,7 +715,7 @@ def mark_condition_skipped(
         jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
         reason=reason,
-        operation="skipped",
+        operation=LogOperation.SKIPPED,
         **kwargs,
     )
 
@@ -762,7 +778,7 @@ def load_active_configuration(
         canonical_url=cg_metadata.canonical_url,
         rsg_code=rsg_metadata.code,
         config_version=config_version_to_use,
-        operation="activation_file_read",
+        operation=LogOperation.ACTIVATION_FILE_READ,
     )
 
     return ActiveConfiguration(
@@ -814,7 +830,7 @@ def write_refined_outputs(
         eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
         jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
-        operation="condition_refinement_complete",
+        operation=LogOperation.CONDITION_REFINEMENT_COMPLETE,
     )
 
 
@@ -864,7 +880,7 @@ def write_remainder_rrs(
                 jurisdiction_code=jurisdiction_code,
                 refined_count=len(refined_codes),
                 skipped_count=len(skipped_codes),
-                operation="remainder_rr_skipped",
+                operation=LogOperation.REMAINDER_RR_SKIPPED,
             )
             continue
 
@@ -893,5 +909,5 @@ def write_remainder_rrs(
             condition_codes=list(remainder.skipped_codes),
             original_rr_doc_id=remainder.augmented_result.original_doc_id,
             augmented_rr_doc_id=remainder.augmented_result.augmented_doc_id,
-            operation="remainder_rr_written",
+            operation=LogOperation.REMAINDER_RR_WRITTEN,
         )
