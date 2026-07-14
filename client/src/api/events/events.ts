@@ -256,7 +256,7 @@ export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof g
  * Generate a CSV export of all events within a jurisdiction.
  *
  * Args:
- *     timezone (str): The user's timezone as a string
+ *     timezone (str): The user's IANA timezone
  *     user (DbUser): The logged-in user
  *     db (AsyncDatabaseConnection): The database connection
  *     canonical_url (str | None): An optional canonical URL to filter the export by condition
