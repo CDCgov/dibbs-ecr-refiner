@@ -25,7 +25,7 @@ class CsvEvent:
     configuration_name: str
     configuration_version: int
     action_text: str
-    created_at: str
+    created_at: datetime
     custom_code_uploads: str
 
 
