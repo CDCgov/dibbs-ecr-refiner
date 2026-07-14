@@ -16,6 +16,20 @@ from .model import EventInput
 
 
 @dataclass(frozen=True)
+class CsvEvent:
+    """
+    Model for a CSV export row.
+    """
+
+    username: str
+    configuration_name: str
+    configuration_version: int
+    action_text: str
+    created_at: str
+    custom_code_uploads: str
+
+
+@dataclass(frozen=True)
 class AuditEvent:
     """
     An event returned by the DB function.
@@ -189,7 +203,7 @@ async def get_all_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> AsyncIterator[AuditEvent]:
+) -> AsyncIterator[CsvEvent]:
     """
     Streams all events for a jurisdiction.
 
@@ -199,30 +213,34 @@ async def get_all_events_by_jd_db(
     """
     query = """
         SELECT
-            e.id,
             u.username,
             c.name AS configuration_name,
             c.version AS configuration_version,
-            cond.id AS condition_id,
             e.action_text,
             e.created_at,
-            EXISTS (
-                SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
-            ) AS has_custom_code_upload_events
+            COALESCE(
+                STRING_AGG(
+                    ecu.system || ' | ' || ecu.code || ' | ' || ecu.name,
+                    '; '
+                ),
+                ''
+            ) AS custom_code_uploads
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
         LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
         LEFT JOIN conditions cond ON cond.id = cc.condition_id
                                 AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
+        LEFT JOIN events_custom_code_uploads ecu ON ecu.event_id = e.id
         WHERE e.jurisdiction_id = %s
         AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
+        GROUP BY e.id, u.username, c.name, c.version, cond.id, e.action_text, e.created_at
         ORDER BY e.created_at DESC;
     """
     params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
+        async with conn.cursor(row_factory=class_row(CsvEvent)) as cur:
             await cur.execute(query, params)
             while chunk := await cur.fetchmany(500):
                 for row in chunk:

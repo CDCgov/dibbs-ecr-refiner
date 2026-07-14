@@ -241,6 +241,33 @@ def _get_exported_file_name() -> str:
     return f"Activity_Log_Export_{get_export_timestamp()}.csv"
 
 
+def _format_action_text(action_text: str, custom_code_uploads: str) -> str:
+    """
+    Takes the action text and custom code upload events to produce a string with all info.
+
+    If `custom_code_uploads` has a value, a string like this will be produced:
+    ```
+    Added 6 custom codes from CSV
+    SNOMED | 1115565 | SNOMED Example
+    Other | 1431534 | Other Example
+    ICD-10 | 6789 | ICD-10 Example
+    LOINC | 99999A | LOINC Example
+    CVX | 143 | CVX Example
+    RxNorm | 198440 | RxNorm Example
+    ```
+
+    Args:
+        action_text (str): A CsvEvent's `action_text` string
+        custom_code_uploads (str): A CsvEvent's `custom_code_uploads` string
+
+    Returns:
+        str: The formatted action text, including custom code upload info
+    """
+    if not custom_code_uploads:
+        return action_text
+    return action_text + "\n" + custom_code_uploads.replace("; ", "\n")
+
+
 @router.get("/export", tags=["events"], response_class=Response)
 async def get_events_export(
     timezone: str = Depends(_validate_timezone),
@@ -262,7 +289,7 @@ async def get_events_export(
     """
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Name", "Condition", "Action", "Date"])  # headers
+    writer.writerow(["Name", "Condition", "Action", "Date"])  # CSV file headers
 
     async for event in get_all_events_by_jd_db(
         jurisdiction_id=user.jurisdiction_id, canonical_url=canonical_url, db=db
@@ -271,7 +298,10 @@ async def get_events_export(
             [
                 event.username,
                 f"{event.configuration_name} (Version {event.configuration_version})",
-                event.action_text,
+                _format_action_text(
+                    action_text=event.action_text,
+                    custom_code_uploads=event.custom_code_uploads,
+                ),
                 _format_timestamp(dt=event.created_at, timezone=timezone),
             ]
         )
