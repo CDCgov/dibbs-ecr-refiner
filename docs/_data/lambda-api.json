@@ -1,42 +1,501 @@
 {
   "modules": [
     {
+      "name": "app.lambda.test_lambda.MockLambdaContext",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 20,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "methods": []
+    },
+    {
+      "name": "app.lambda.test_lambda.aws_mock",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 29,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "aws_mock()",
+      "parameters": []
+    },
+    {
+      "name": "app.lambda.test_lambda.config_lambda_env",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 35,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "config_lambda_env(monkeypatch) -> dict[str, str]",
+      "parameters": [
+        {
+          "name": "monkeypatch",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "dict[str, str]"
+    },
+    {
+      "name": "app.lambda.test_lambda.lambda_event",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 51,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "lambda_event() -> dict",
+      "parameters": [],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.test_lambda.sample_xml_files",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 58,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "sample_xml_files() -> dict[str, bytes]",
+      "parameters": [],
+      "return_annotation": "dict[str, bytes]"
+    },
+    {
+      "name": "app.lambda.test_lambda.s3_client",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 74,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "s3_client(aws_mock)",
+      "parameters": [
+        {
+          "name": "aws_mock",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.data_bucket",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 79,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "data_bucket(s3_client) -> str",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "str"
+    },
+    {
+      "name": "app.lambda.test_lambda.config_bucket",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 85,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "config_bucket(s3_client) -> str",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "str"
+    },
+    {
+      "name": "app.lambda.test_lambda.s3_input_objects",
+      "docstring": "",
+      "parsed_docstring": {
+        "summary": "",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 91,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "s3_input_objects(s3_client, data_bucket, sample_xml_files)",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "sample_xml_files",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.collect_lambda_output_keys",
+      "docstring": "Returns a list of all keys written to the S3 bucket.",
+      "parsed_docstring": {
+        "summary": "Returns a list of all keys written to the S3 bucket.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 114,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "collect_lambda_output_keys(s3_client, bucket) -> list[str]",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "list[str]"
+    },
+    {
+      "name": "app.lambda.test_lambda.get_refiner_complete_content",
+      "docstring": "Returns the content of the RefinerComplete file as a dict",
+      "parsed_docstring": {
+        "summary": "Returns the content of the RefinerComplete file as a dict",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 121,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "persistance_id",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "return_annotation": "dict"
+    },
+    {
+      "name": "app.lambda.test_lambda.test_lambda_inactive",
+      "docstring": "Test that a file with two reportable conditions works when configurations are not present for either condition.",
+      "parsed_docstring": {
+        "summary": "Test that a file with two reportable conditions works when configurations are not present for either condition.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 131,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "test_lambda_inactive(lambda_event, s3_client, data_bucket, config_lambda_env, s3_input_objects)",
+      "parameters": [
+        {
+          "name": "lambda_event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_lambda_env",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_input_objects",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.test_lambda_one_active",
+      "docstring": "Test that a file with two reportable conditions works when a configuration is active for only one of those conditions.",
+      "parsed_docstring": {
+        "summary": "Test that a file with two reportable conditions works when a configuration is active for only one of those conditions.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 205,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "test_lambda_one_active(lambda_event, s3_client, data_bucket, config_bucket, config_lambda_env, s3_input_objects)",
+      "parameters": [
+        {
+          "name": "lambda_event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_lambda_env",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_input_objects",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "app.lambda.test_lambda.test_lambda_all_active",
+      "docstring": "Test that a file with two reportable conditions works when a configuration is active for both of those conditions.",
+      "parsed_docstring": {
+        "summary": "Test that a file with two reportable conditions works when a configuration is active for both of those conditions.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 340,
+      "stage": null,
+      "role": null,
+      "source_type": "test",
+      "signature": "test_lambda_all_active(lambda_event, s3_client, data_bucket, config_bucket, config_lambda_env, s3_input_objects)",
+      "parameters": [
+        {
+          "name": "lambda_event",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "data_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_bucket",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "config_lambda_env",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "s3_input_objects",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
       "name": "app.lambda.lambda_function.RefinerCompleteSuccess",
-      "docstring": "Represents a successful completion file written after all refinement is done.\n\nRequired by AIMS infrastructure.",
+      "docstring": "Represents a successful completion file written after all refinement is done.\n\nRequired by AIMS infrastructure.\n\nAttributes:\n    RefinerMetadata: A dict of JurisdictionCode and ConditionCode\n    RefinerSkip: whether the refiner skipped this file or not\n    RefinerOutputFiles: a list of paths where the refiner put the files\n\nStage:\n    Types\nRole:\n    Data Type",
       "parsed_docstring": {
         "summary": "Represents a successful completion file written after all refinement is done.",
         "description": "Required by AIMS infrastructure.",
-        "params": [],
+        "params": [
+          {
+            "name": "RefinerMetadata",
+            "type": "",
+            "description": "A dict of JurisdictionCode and ConditionCode",
+            "default": ""
+          },
+          {
+            "name": "RefinerSkip",
+            "type": "",
+            "description": "whether the refiner skipped this file or not",
+            "default": ""
+          },
+          {
+            "name": "RefinerOutputFiles",
+            "type": "",
+            "description": "a list of paths where the refiner put the files",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
       "lineno": 54,
+      "stage": "Types",
+      "role": "Data Type",
+      "source_type": "production",
       "methods": []
     },
     {
       "name": "app.lambda.lambda_function.RefinerCompleteError",
-      "docstring": "Represents a fatal error completion file written despite of failure.\n\nRequired by AIMS infrastructure.",
+      "docstring": "Represents a fatal error completion file written despite of failure.\n\nRequired by AIMS infrastructure.\n\nAttributes:\n    RefinerSkip: a boolean representing that it was skipped, always `True`\n    Error: a string of the error that occurred\n\nStage:\n    Types\nRole:\n    Data Type",
       "parsed_docstring": {
         "summary": "Represents a fatal error completion file written despite of failure.",
         "description": "Required by AIMS infrastructure.",
-        "params": [],
+        "params": [
+          {
+            "name": "RefinerSkip",
+            "type": "",
+            "description": "a boolean representing that it was skipped, always `True`",
+            "default": ""
+          },
+          {
+            "name": "Error",
+            "type": "",
+            "description": "a string of the error that occurred",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 66,
+      "lineno": 76,
+      "stage": "Types",
+      "role": "Data Type",
+      "source_type": "production",
       "methods": []
     },
     {
       "name": "app.lambda.lambda_function.RefinementState",
-      "docstring": "Internal mutable state accumulated during refinement processing.\n\nTracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).",
+      "docstring": "Internal mutable state accumulated during refinement processing.\n\nTracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).\n\nAttributes:\n    output_files: a set of output file keys\n    metadata: AIMS-facing metadata dict\n    skipped_condition_codes_by_jurisdiction: A dict of codes per\n    jurisdiction that were not refined\n\nStage:\n    Types\nRole:\n    Data Type",
       "parsed_docstring": {
         "summary": "Internal mutable state accumulated during refinement processing.",
         "description": "Tracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).",
-        "params": [],
+        "params": [
+          {
+            "name": "output_files",
+            "type": "",
+            "description": "a set of output file keys",
+            "default": ""
+          },
+          {
+            "name": "metadata",
+            "type": "",
+            "description": "AIMS-facing metadata dict",
+            "default": ""
+          },
+          {
+            "name": "skipped_condition_codes_by_jurisdiction",
+            "type": "",
+            "description": "A dict of codes per jurisdiction that were not refined",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 77,
+      "lineno": 96,
+      "stage": "Types",
+      "role": "Data Type",
+      "source_type": "production",
       "methods": [
         {
           "name": "__init__",
@@ -77,15 +536,49 @@
     },
     {
       "name": "app.lambda.lambda_function.RefinementInput",
-      "docstring": "Information required as an input by the refinement process.",
+      "docstring": "Information required as an input by the refinement process.\n\nAttributes:\n    xml_files: a container for eICR and RR XML documents\n    s3_client: An instance of the S3 client\n    config_bucket_name: The name of the config bucket\n    output_bucket_name: The name of the output bucket\n    persistence_id: an identifier that persists across all refinement\n\nStage:\n    Types\nRole:\n    Data Type",
       "parsed_docstring": {
         "summary": "Information required as an input by the refinement process.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "xml_files",
+            "type": "",
+            "description": "a container for eICR and RR XML documents",
+            "default": ""
+          },
+          {
+            "name": "s3_client",
+            "type": "",
+            "description": "An instance of the S3 client",
+            "default": ""
+          },
+          {
+            "name": "config_bucket_name",
+            "type": "",
+            "description": "The name of the config bucket",
+            "default": ""
+          },
+          {
+            "name": "output_bucket_name",
+            "type": "",
+            "description": "The name of the output bucket",
+            "default": ""
+          },
+          {
+            "name": "persistence_id",
+            "type": "",
+            "description": "an identifier that persists across all refinement",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 95,
+      "lineno": 125,
+      "stage": "Types",
+      "role": "Data Type",
+      "source_type": "production",
       "methods": [
         {
           "name": "__init__",
@@ -136,15 +629,31 @@
     },
     {
       "name": "app.lambda.lambda_function.RefinementOutput",
-      "docstring": "All metadata required by AIMS post-refinement.",
+      "docstring": "All metadata required by AIMS post-refinement.\n\nAttributes:\n    output_file_keys: A list of keys for output files\n    metadata: AIMS-facing metadata dict\n\nStage:\n    Types\nRole:\n    Data Type",
       "parsed_docstring": {
         "summary": "All metadata required by AIMS post-refinement.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "output_file_keys",
+            "type": "",
+            "description": "A list of keys for output files",
+            "default": ""
+          },
+          {
+            "name": "metadata",
+            "type": "",
+            "description": "AIMS-facing metadata dict",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 108,
+      "lineno": 150,
+      "stage": "Types",
+      "role": "Data Type",
+      "source_type": "production",
       "methods": [
         {
           "name": "__init__",
@@ -180,31 +689,18 @@
     },
     {
       "name": "app.lambda.lambda_function.lambda_handler",
-      "docstring": "Main Lambda handler function.\n\nProcesses S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each record.body contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key\n\nParameters:\n    event: Dict containing the Lambda function event data from SQS\n    context: Lambda runtime context\n\nReturns:\n    Dict containing status message",
+      "docstring": "Main Lambda handler function.\n\nProcesses S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each `record.body` contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key\n\nStage:\n    Entry\nRole:\n    Handler\n\nParameters:\n    event: Dict containing the Lambda function event data from SQS\n    context: Lambda runtime context\n\nReturns:\n    Dict containing status message",
       "parsed_docstring": {
         "summary": "Main Lambda handler function.",
-        "description": "Processes S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each record.body contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key",
-        "params": [
-          {
-            "name": "event",
-            "type": "",
-            "description": "Dict containing the Lambda function event data from SQS",
-            "default": ""
-          },
-          {
-            "name": "context",
-            "type": "",
-            "description": "Lambda runtime context",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "",
-          "description": "Dict containing status message"
-        },
+        "description": "Processes S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each `record.body` contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key",
+        "params": [],
+        "returns": null,
         "raises": []
       },
-      "lineno": 121,
+      "lineno": 172,
+      "stage": "Entry",
+      "role": "Handler",
+      "source_type": "production",
       "signature": "lambda_handler(event, context) -> dict",
       "parameters": [
         {
@@ -222,31 +718,18 @@
     },
     {
       "name": "app.lambda.lambda_function.extract_persistence_id",
-      "docstring": "Extract the persistence_id from an S3 object key.\n\n```\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n```\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
+      "docstring": "Extract the `persistence_id` from an S3 object key.\n\n- **Object key format**: `<pipeline-step>/<persistance_id>`\n- **Example**: `RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n- **Returns**: `2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
       "parsed_docstring": {
-        "summary": "Extract the persistence_id from an S3 object key.",
-        "description": "```\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n```",
-        "params": [
-          {
-            "name": "object_key",
-            "type": "",
-            "description": "The S3 object key",
-            "default": ""
-          },
-          {
-            "name": "input_prefix",
-            "type": "",
-            "description": "The pipeline step prefix (e.g., \"RefinerInput/\")",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "str",
-          "description": "The persistence_id portion of the key"
-        },
+        "summary": "Extract the `persistence_id` from an S3 object key.",
+        "description": "- **Object key format**: `<pipeline-step>/<persistance_id>`\n- **Example**: `RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n- **Returns**: `2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`",
+        "params": [],
+        "returns": null,
         "raises": []
       },
-      "lineno": 274,
+      "lineno": 330,
+      "stage": "S3 Retrieval",
+      "role": "S3 I/O",
+      "source_type": "production",
       "signature": "extract_persistence_id(object_key: str, input_prefix: str) -> str",
       "parameters": [
         {
@@ -264,37 +747,18 @@
     },
     {
       "name": "app.lambda.lambda_function.get_s3_object_content",
-      "docstring": "Retrieve and decode an S3 object as UTF-8 string.\n\nArgs:\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    key: S3 object key\n\nReturns:\n    str: The object content as a UTF-8 string",
+      "docstring": "Retrieve and decode an S3 object as UTF-8 string.\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    key: S3 object key\n\nReturns:\n    str: The object content as a UTF-8 string",
       "parsed_docstring": {
         "summary": "Retrieve and decode an S3 object as UTF-8 string.",
         "description": "",
-        "params": [
-          {
-            "name": "s3_client",
-            "type": "",
-            "description": "Boto3 S3 client",
-            "default": ""
-          },
-          {
-            "name": "bucket",
-            "type": "",
-            "description": "S3 bucket name",
-            "default": ""
-          },
-          {
-            "name": "key",
-            "type": "",
-            "description": "S3 object key",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "str",
-          "description": "The object content as a UTF-8 string"
-        },
+        "params": [],
+        "returns": null,
         "raises": []
       },
-      "lineno": 299,
+      "lineno": 358,
+      "stage": "S3 Retrieval",
+      "role": "S3 I/O",
+      "source_type": "production",
       "signature": "get_s3_object_content(s3_client, bucket: str, key: str) -> str",
       "parameters": [
         {
@@ -317,42 +781,18 @@
     },
     {
       "name": "app.lambda.lambda_function.check_s3_object_exists",
-      "docstring": "Check whether an object exists in S3 using a HEAD request.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key.\n\nReturns:\n    bool: True if the object exists, False if not found.\n\nRaises:\n    Exception: If the S3 request fails with an error other than 404/NoSuchKey.",
+      "docstring": "Check whether an object exists in S3 using a HEAD request.\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key.\n\nReturns:\n    bool: True if the object exists, False if not found.\n\nRaises:\n    Exception: If the S3 request fails with an error other than 404/NoSuchKey.",
       "parsed_docstring": {
         "summary": "Check whether an object exists in S3 using a HEAD request.",
         "description": "",
-        "params": [
-          {
-            "name": "s3_client",
-            "type": "",
-            "description": "Boto3 S3 client.",
-            "default": ""
-          },
-          {
-            "name": "bucket",
-            "type": "",
-            "description": "S3 bucket name.",
-            "default": ""
-          },
-          {
-            "name": "key",
-            "type": "",
-            "description": "S3 object key.",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "bool",
-          "description": "True if the object exists, False if not found."
-        },
-        "raises": [
-          {
-            "type": "Exception",
-            "description": "If the S3 request fails with an error other than 404/NoSuchKey."
-          }
-        ]
+        "params": [],
+        "returns": null,
+        "raises": []
       },
-      "lineno": 316,
+      "lineno": 380,
+      "stage": "S3 Retrieval",
+      "role": "S3 I/O",
+      "source_type": "production",
       "signature": "check_s3_object_exists(s3_client, bucket: str, key: str) -> bool",
       "parameters": [
         {
@@ -375,30 +815,18 @@
     },
     {
       "name": "app.lambda.lambda_function.parse_s3_content_to_dict",
-      "docstring": "Parse a JSON string into a dictionary.\n\nArgs:\n    body: A JSON-encoded string, typically read from an S3 object.\n\nReturns:\n    dict: The parsed dictionary.\n\nRaises:\n    json.JSONDecodeError: If the string is not valid JSON.",
+      "docstring": "Parse a JSON string into a dictionary.\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    body: A JSON-encoded string, typically read from an S3 object.\n\nReturns:\n    dict: The parsed dictionary.\n\nRaises:\n    json.JSONDecodeError: If the string is not valid JSON.",
       "parsed_docstring": {
         "summary": "Parse a JSON string into a dictionary.",
         "description": "",
-        "params": [
-          {
-            "name": "body",
-            "type": "",
-            "description": "A JSON-encoded string, typically read from an S3 object.",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "dict",
-          "description": "The parsed dictionary."
-        },
-        "raises": [
-          {
-            "type": "json.JSONDecodeError",
-            "description": "If the string is not valid JSON."
-          }
-        ]
+        "params": [],
+        "returns": null,
+        "raises": []
       },
-      "lineno": 344,
+      "lineno": 413,
+      "stage": "S3 Retrieval",
+      "role": "S3 I/O",
+      "source_type": "production",
       "signature": "parse_s3_content_to_dict(body: str) -> dict",
       "parameters": [
         {
@@ -411,37 +839,18 @@
     },
     {
       "name": "app.lambda.lambda_function.read_rsg_cg_mapping_file",
-      "docstring": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.\n\nThis file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the mapping file.\n\nReturns:\n    dict | None: The mapping data as a dictionary, or None if the file\n        does not exist or is empty.",
+      "docstring": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.\n\nThis file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the mapping file.\n\nReturns:\n    dict | None: The mapping data as a dictionary, or None if the file\n        does not exist or is empty.",
       "parsed_docstring": {
         "summary": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.",
         "description": "This file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.",
-        "params": [
-          {
-            "name": "s3_client",
-            "type": "",
-            "description": "Boto3 S3 client.",
-            "default": ""
-          },
-          {
-            "name": "bucket",
-            "type": "",
-            "description": "S3 bucket name.",
-            "default": ""
-          },
-          {
-            "name": "key",
-            "type": "",
-            "description": "S3 object key for the mapping file.",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "",
-          "description": "dict | None: The mapping data as a dictionary, or None if the file\ndoes not exist or is empty."
-        },
+        "params": [],
+        "returns": null,
         "raises": []
       },
-      "lineno": 366,
+      "lineno": 440,
+      "stage": "Configuration Loading",
+      "role": "Configuration",
+      "source_type": "production",
       "signature": "read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None",
       "parameters": [
         {
@@ -464,18 +873,18 @@
     },
     {
       "name": "app.lambda.lambda_function.read_current_version",
-      "docstring": "Fetches the current active configuration version from `current.json` in the\nconfiguration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;\n\nReturns:\n    int | None: Active configuration version as an int, or None if no active version exists",
+      "docstring": "Fetches the current active configuration version from `current.json` in the\nconfiguration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nReturns:\n    int | None: Active configuration version as an int, or None if no active version exists",
       "parsed_docstring": {
         "summary": "Fetches the current active configuration version from `current.json` in the",
         "description": "configuration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;",
         "params": [],
-        "returns": {
-          "type": "",
-          "description": "int | None: Active configuration version as an int, or None if no active version exists"
-        },
+        "returns": null,
         "raises": []
       },
-      "lineno": 400,
+      "lineno": 479,
+      "stage": "Configuration Loading",
+      "role": "Configuration",
+      "source_type": "production",
       "signature": "read_current_version(s3_client, bucket: str, key: str) -> int | None",
       "parameters": [
         {
@@ -498,42 +907,18 @@
     },
     {
       "name": "app.lambda.lambda_function.read_configuration_file",
-      "docstring": "Read an activated configuration file (active.json) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system code_system_sets, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
+      "docstring": "Read an activated configuration file (`active.json`) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
       "parsed_docstring": {
-        "summary": "Read an activated configuration file (active.json) from S3.",
-        "description": "This file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system code_system_sets, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.",
-        "params": [
-          {
-            "name": "s3_client",
-            "type": "",
-            "description": "Boto3 S3 client.",
-            "default": ""
-          },
-          {
-            "name": "bucket",
-            "type": "",
-            "description": "S3 bucket name.",
-            "default": ""
-          },
-          {
-            "name": "key",
-            "type": "",
-            "description": "S3 object key for the configuration file.",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "dict",
-          "description": "The configuration data as a dictionary."
-        },
-        "raises": [
-          {
-            "type": "Exception",
-            "description": "If the file does not exist. This indicates a mismatch between\ncurrent.json (which pointed to this version) and the actual files on S3."
-          }
-        ]
+        "summary": "Read an activated configuration file (`active.json`) from S3.",
+        "description": "This file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.",
+        "params": [],
+        "returns": null,
+        "raises": []
       },
-      "lineno": 428,
+      "lineno": 512,
+      "stage": "Configuration Loading",
+      "role": "Configuration",
+      "source_type": "production",
       "signature": "read_configuration_file(s3_client, bucket: str, key: str) -> dict",
       "parameters": [
         {
@@ -556,49 +941,18 @@
     },
     {
       "name": "app.lambda.lambda_function.run_refinement",
-      "docstring": "Process eICR and RR through the refiner for all jurisdictions and conditions.\n\nThis function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed\n\nArgs:\n    xml_files: Container with eICR and RR XML strings\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    config_bucket: S3 configuration bucket name\n    persistence_id: The persistence ID for constructing output paths\n\nReturns:\n    ProcessedResult: the result of the refinement process",
+      "docstring": "Process eICR and RR through the refiner for all jurisdictions and conditions.\n\nThis function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed\n\nStage:\n    Refinement Pipeline\nRole:\n    Orchestrator\n\nArgs:\n    xml_files: Container with eICR and RR XML strings\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    config_bucket: S3 configuration bucket name\n    persistence_id: The persistence ID for constructing output paths\n\nReturns:\n    ProcessedResult: the result of the refinement process",
       "parsed_docstring": {
         "summary": "Process eICR and RR through the refiner for all jurisdictions and conditions.",
-        "description": "This function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed",
-        "params": [
-          {
-            "name": "xml_files",
-            "type": "",
-            "description": "Container with eICR and RR XML strings",
-            "default": ""
-          },
-          {
-            "name": "s3_client",
-            "type": "",
-            "description": "Boto3 S3 client",
-            "default": ""
-          },
-          {
-            "name": "bucket",
-            "type": "",
-            "description": "S3 bucket name",
-            "default": ""
-          },
-          {
-            "name": "config_bucket",
-            "type": "",
-            "description": "S3 configuration bucket name",
-            "default": ""
-          },
-          {
-            "name": "persistence_id",
-            "type": "",
-            "description": "The persistence ID for constructing output paths",
-            "default": ""
-          }
-        ],
-        "returns": {
-          "type": "ProcessedResult",
-          "description": "the result of the refinement process"
-        },
+        "description": "This function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata indicating which jurisdiction/condition combinations were processed",
+        "params": [],
+        "returns": null,
         "raises": []
       },
-      "lineno": 465,
+      "lineno": 554,
+      "stage": "Refinement Pipeline",
+      "role": "Orchestrator",
+      "source_type": "production",
       "signature": "run_refinement(input: RefinementInput) -> RefinementOutput",
       "parameters": [
         {
@@ -611,7 +965,7 @@
     },
     {
       "name": "app.lambda.lambda_function.process_jurisdiction",
-      "docstring": "Process all reportable conditions for a given jurisdiction.",
+      "docstring": "Process all reportable conditions for a given jurisdiction.\n\nStage:\n    Refinement Pipeline\nRole:\n    Orchestrator",
       "parsed_docstring": {
         "summary": "Process all reportable conditions for a given jurisdiction.",
         "description": "",
@@ -619,7 +973,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 531,
+      "lineno": 625,
+      "stage": "Refinement Pipeline",
+      "role": "Orchestrator",
+      "source_type": "production",
       "signature": "process_jurisdiction(jurisdiction_group: JurisdictionReportableConditions, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
       "parameters": [
         {
@@ -647,7 +1004,7 @@
     },
     {
       "name": "app.lambda.lambda_function.process_condition",
-      "docstring": "Process a single reportable condition for a jurisdiction.",
+      "docstring": "Process a single reportable condition for a jurisdiction.\n\nStage:\n    Refinement Pipeline\nRole:\n    Orchestrator",
       "parsed_docstring": {
         "summary": "Process a single reportable condition for a jurisdiction.",
         "description": "",
@@ -655,7 +1012,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 568,
+      "lineno": 667,
+      "stage": "Refinement Pipeline",
+      "role": "Orchestrator",
+      "source_type": "production",
       "signature": "process_condition(jurisdiction_code: str, reportable_condition: ReportableCondition, rsg_cg_payload: ConditionMappingPayload, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
       "parameters": [
         {
@@ -693,7 +1053,7 @@
     },
     {
       "name": "app.lambda.lambda_function.load_condition_mapping_for_jurisdiction",
-      "docstring": "Load the RSG -> CG mapping payload for a jurisdiction.",
+      "docstring": "Load the RSG -> CG mapping payload for a jurisdiction.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration",
       "parsed_docstring": {
         "summary": "Load the RSG -> CG mapping payload for a jurisdiction.",
         "description": "",
@@ -701,7 +1061,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 648,
+      "lineno": 752,
+      "stage": "Configuration Loading",
+      "role": "Configuration",
+      "source_type": "production",
       "signature": "load_condition_mapping_for_jurisdiction(s3_client, config_bucket: str, jurisdiction_code: str) -> ConditionMappingPayload | None",
       "parameters": [
         {
@@ -724,7 +1087,7 @@
     },
     {
       "name": "app.lambda.lambda_function.skip_all_conditions_for_missing_mapping",
-      "docstring": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.",
+      "docstring": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
       "parsed_docstring": {
         "summary": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.",
         "description": "",
@@ -732,7 +1095,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 677,
+      "lineno": 786,
+      "stage": "Skip/Error Handling",
+      "role": "Error Handling",
+      "source_type": "production",
       "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
       "parameters": [
         {
@@ -755,7 +1121,7 @@
     },
     {
       "name": "app.lambda.lambda_function.mark_condition_skipped",
-      "docstring": "Helper to mark a condition as \"skipped\" during refinement.",
+      "docstring": "Helper to mark a condition as \"skipped\" during refinement.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
       "parsed_docstring": {
         "summary": "Helper to mark a condition as \"skipped\" during refinement.",
         "description": "",
@@ -763,7 +1129,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 699,
+      "lineno": 813,
+      "stage": "Skip/Error Handling",
+      "role": "Error Handling",
+      "source_type": "production",
       "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState) -> None",
       "parameters": [
         {
@@ -791,15 +1160,31 @@
     },
     {
       "name": "app.lambda.lambda_function.ActiveConfiguration",
-      "docstring": "",
+      "docstring": "Active configuration for a jurisdiction-condition pair.\n\nAttributes:\n    configuration: The ProcessedConfiguration data coming from an\n    `active.json` S3 file\n    version: An int representing the version number\n\nStage:\n    Types\nRole:\n    Data Type",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Active configuration for a jurisdiction-condition pair.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "configuration",
+            "type": "",
+            "description": "The ProcessedConfiguration data coming from an `active.json` S3 file",
+            "default": ""
+          },
+          {
+            "name": "version",
+            "type": "",
+            "description": "An int representing the version number",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 720,
+      "lineno": 839,
+      "stage": "Types",
+      "role": "Data Type",
+      "source_type": "production",
       "methods": [
         {
           "name": "__init__",
@@ -835,7 +1220,7 @@
     },
     {
       "name": "app.lambda.lambda_function.load_active_configuration",
-      "docstring": "Attempts to find and load the active configuration.",
+      "docstring": "Attempts to find and load the active configuration.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration",
       "parsed_docstring": {
         "summary": "Attempts to find and load the active configuration.",
         "description": "",
@@ -843,7 +1228,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 726,
+      "lineno": 859,
+      "stage": "Configuration Loading",
+      "role": "Configuration",
+      "source_type": "production",
       "signature": "load_active_configuration(s3_client, config_bucket: str, jurisdiction_code: str, cg_metadata: ConditionMapValue, rsg_metadata: ReportableCondition) -> ActiveConfiguration | None",
       "parameters": [
         {
@@ -876,7 +1264,7 @@
     },
     {
       "name": "app.lambda.lambda_function.write_refined_outputs",
-      "docstring": "Write refined eICR and RR artifacts to S3.",
+      "docstring": "Write refined eICR and RR artifacts to S3.\n\nStage:\n    Output Writing\nRole:\n    Output",
       "parsed_docstring": {
         "summary": "Write refined eICR and RR artifacts to S3.",
         "description": "",
@@ -884,7 +1272,10 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 785,
+      "lineno": 923,
+      "stage": "Output Writing",
+      "role": "Output",
+      "source_type": "production",
       "signature": "write_refined_outputs(refiner_input: RefinementInput, jurisdiction_code: str, condition_code: str, condition_grouper_name: str, result: RefinementResult, state: RefinementState) -> None",
       "parameters": [
         {
@@ -922,15 +1313,18 @@
     },
     {
       "name": "app.lambda.lambda_function.write_remainder_rrs",
-      "docstring": "Write augmented remainder RR outputs for jurisdictions that need them.\n\nFor each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
+      "docstring": "Write augmented remainder RR outputs for jurisdictions that need them.\n\nFor each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nStage:\n    Output Writing\nRole:\n    Output\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
       "parsed_docstring": {
         "summary": "Write augmented remainder RR outputs for jurisdictions that need them.",
-        "description": "For each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
+        "description": "For each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.",
         "params": [],
         "returns": null,
         "raises": []
       },
-      "lineno": 832,
+      "lineno": 975,
+      "stage": "Output Writing",
+      "role": "Output",
+      "source_type": "production",
       "signature": "write_remainder_rrs(refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
       "parameters": [
         {

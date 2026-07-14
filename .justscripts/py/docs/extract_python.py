@@ -5,6 +5,17 @@ import griffe
 from docstring_parser import parse as parse_docstring, Style
 
 
+def _fold_continuation_lines(text: str) -> str:
+    lines = text.split("\n")
+    result = []
+    for line in lines:
+        if result and line.strip() and line[0] in (" ", "\t") and ":" not in line:
+            result[-1] += " " + line.strip()
+        else:
+            result.append(line)
+    return "\n".join(result)
+
+
 def _parse_google_docstring(raw: str) -> dict:
     """Parse a Google-style docstring into structured data."""
     if not raw:
@@ -17,6 +28,7 @@ def _parse_google_docstring(raw: str) -> dict:
         }
 
     try:
+        raw = _fold_continuation_lines(raw)
         parsed = parse_docstring(raw, style=Style.GOOGLE)
     except Exception:
         return {

@@ -56,6 +56,16 @@ class RefinerCompleteSuccess(TypedDict):
     Represents a successful completion file written after all refinement is done.
 
     Required by AIMS infrastructure.
+
+    Attributes:
+        RefinerMetadata: A dict of JurisdictionCode and ConditionCode
+        RefinerSkip: whether the refiner skipped this file or not
+        RefinerOutputFiles: a list of paths where the refiner put the files
+
+    Stage:
+        Types
+    Role:
+        Data Type
     """
 
     RefinerMetadata: RefinerMetadata
@@ -68,6 +78,15 @@ class RefinerCompleteError(TypedDict):
     Represents a fatal error completion file written despite of failure.
 
     Required by AIMS infrastructure.
+
+    Attributes:
+        RefinerSkip: a boolean representing that it was skipped, always `True`
+        Error: a string of the error that occurred
+
+    Stage:
+        Types
+    Role:
+        Data Type
     """
 
     RefinerSkip: bool
@@ -83,6 +102,17 @@ class RefinementState:
     jurisdiction/per-condition refinement traces, the AIMS-facing
     metadata dict, and the set of codes per jurisdiction that were
     NOT refined (used to drive remainder RR production).
+
+    Attributes:
+        output_files: a set of output file keys
+        metadata: AIMS-facing metadata dict
+        skipped_condition_codes_by_jurisdiction: A dict of codes per
+        jurisdiction that were not refined
+
+    Stage:
+        Types
+    Role:
+        Data Type
     """
 
     output_files: set[str] = field(default_factory=set)
@@ -96,6 +126,18 @@ class RefinementState:
 class RefinementInput:
     """
     Information required as an input by the refinement process.
+
+    Attributes:
+        xml_files: a container for eICR and RR XML documents
+        s3_client: An instance of the S3 client
+        config_bucket_name: The name of the config bucket
+        output_bucket_name: The name of the output bucket
+        persistence_id: an identifier that persists across all refinement
+
+    Stage:
+        Types
+    Role:
+        Data Type
     """
 
     xml_files: XMLFiles
@@ -109,6 +151,15 @@ class RefinementInput:
 class RefinementOutput:
     """
     All metadata required by AIMS post-refinement.
+
+    Attributes:
+        output_file_keys: A list of keys for output files
+        metadata: AIMS-facing metadata dict
+
+    Stage:
+        Types
+    Role:
+        Data Type
     """
 
     output_file_keys: list[str]
@@ -127,8 +178,13 @@ def lambda_handler(event, context) -> dict:
 
     Event structure:
     - Records: List of SQS records
-    - Each record.body contains an EventBridge S3 event JSON string
+    - Each `record.body` contains an EventBridge S3 event JSON string
     - The S3 event detail contains bucket name and object key
+
+    Stage:
+        Entry
+    Role:
+        Handler
 
     Parameters:
         event: Dict containing the Lambda function event data from SQS
@@ -273,13 +329,16 @@ def lambda_handler(event, context) -> dict:
 
 def extract_persistence_id(object_key: str, input_prefix: str) -> str:
     """
-    Extract the persistence_id from an S3 object key.
+    Extract the `persistence_id` from an S3 object key.
 
-    ```
-    Object key format: <pipeline-step>/<persistance_id>
-    Example: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
-    Returns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
-    ```
+    - **Object key format**: `<pipeline-step>/<persistance_id>`
+    - **Example**: `RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`
+    - **Returns**: `2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`
+
+    Stage:
+        S3 Retrieval
+    Role:
+        S3 I/O
 
     Args:
         object_key: The S3 object key
@@ -300,6 +359,11 @@ def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
     """
     Retrieve and decode an S3 object as UTF-8 string.
 
+    Stage:
+        S3 Retrieval
+    Role:
+        S3 I/O
+
     Args:
         s3_client: Boto3 S3 client
         bucket: S3 bucket name
@@ -316,6 +380,11 @@ def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
 def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
     """
     Check whether an object exists in S3 using a HEAD request.
+
+    Stage:
+        S3 Retrieval
+    Role:
+        S3 I/O
 
     Args:
         s3_client: Boto3 S3 client.
@@ -345,6 +414,11 @@ def parse_s3_content_to_dict(body: str) -> dict:
     """
     Parse a JSON string into a dictionary.
 
+    Stage:
+        S3 Retrieval
+    Role:
+        S3 I/O
+
     Args:
         body: A JSON-encoded string, typically read from an S3 object.
 
@@ -371,6 +445,11 @@ def read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None:
     name, TES version). Lambda uses it to determine which condition grouper an
     RSG code from the RR belongs to, and where to find the corresponding
     configuration files.
+
+    Stage:
+        Configuration Loading
+    Role:
+        Configuration
 
     Args:
         s3_client: Boto3 S3 client.
@@ -403,6 +482,11 @@ def read_current_version(s3_client, bucket: str, key: str) -> int | None:
     configuration bucket if one exists. If the version is `null` or the file does not exist,
     returns None;
 
+    Stage:
+        Configuration Loading
+    Role:
+        Configuration
+
     Returns:
         int | None: Active configuration version as an int, or None if no active version exists
     """
@@ -427,12 +511,17 @@ def read_current_version(s3_client, bucket: str, key: str) -> int | None:
 
 def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     """
-    Read an activated configuration file (active.json) from S3.
+    Read an activated configuration file (`active.json`) from S3.
 
     This file contains the serialized configuration data needed for refinement,
-    including the flat codes set, per-system code_system_sets, section processing
+    including the flat codes set, per-system `code_system_sets`, section processing
     rules, and included condition RSG codes. It is written during activation by
     the webapp and read by Lambda at refinement time.
+
+    Stage:
+        Configuration Loading
+    Role:
+        Configuration
 
     Args:
         s3_client: Boto3 S3 client.
@@ -473,6 +562,11 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
     4. For conditions without active configs, produces unrefined condition RRs
     5. Returns a list of S3 paths for the refined output files and metadata
        indicating which jurisdiction/condition combinations were processed
+
+    Stage:
+        Refinement Pipeline
+    Role:
+        Orchestrator
 
     Args:
         xml_files: Container with eICR and RR XML strings
@@ -536,6 +630,11 @@ def process_jurisdiction(
 ) -> None:
     """
     Process all reportable conditions for a given jurisdiction.
+
+    Stage:
+        Refinement Pipeline
+    Role:
+        Orchestrator
     """
     jurisdiction_code = jurisdiction_group.jurisdiction.upper()
     state.metadata.setdefault(jurisdiction_code, {})
@@ -575,6 +674,11 @@ def process_condition(
 ) -> None:
     """
     Process a single reportable condition for a jurisdiction.
+
+    Stage:
+        Refinement Pipeline
+    Role:
+        Orchestrator
     """
     rsg_code = reportable_condition.code
 
@@ -652,6 +756,11 @@ def load_condition_mapping_for_jurisdiction(
 ) -> ConditionMappingPayload | None:
     """
     Load the RSG -> CG mapping payload for a jurisdiction.
+
+    Stage:
+        Configuration Loading
+    Role:
+        Configuration
     """
     rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(
         jurisdiction_id=jurisdiction_code
@@ -681,6 +790,11 @@ def skip_all_conditions_for_missing_mapping(
 ) -> None:
     """
     Mark every condition in a jurisdiction as skipped when the mapping file is missing.
+
+    Stage:
+        Skip/Error Handling
+    Role:
+        Error Handling
     """
     for condition in jurisdiction_group.conditions:
         logger.info(
@@ -704,6 +818,11 @@ def mark_condition_skipped(
 ) -> None:
     """
     Helper to mark a condition as "skipped" during refinement.
+
+    Stage:
+        Skip/Error Handling
+    Role:
+        Error Handling
     """
     logger.info(
         "Refiner skipped condition.",
@@ -719,6 +838,20 @@ def mark_condition_skipped(
 
 @dataclass
 class ActiveConfiguration:
+    """
+    Active configuration for a jurisdiction-condition pair.
+
+    Attributes:
+        configuration: The ProcessedConfiguration data coming from an
+        `active.json` S3 file
+        version: An int representing the version number
+
+    Stage:
+        Types
+    Role:
+        Data Type
+    """
+
     configuration: ProcessedConfiguration
     version: int
 
@@ -732,6 +865,11 @@ def load_active_configuration(
 ) -> ActiveConfiguration | None:
     """
     Attempts to find and load the active configuration.
+
+    Stage:
+        Configuration Loading
+    Role:
+        Configuration
     """
     current_file_key = get_current_file_key(
         jurisdiction_id=jurisdiction_code,
@@ -792,6 +930,11 @@ def write_refined_outputs(
 ) -> None:
     """
     Write refined eICR and RR artifacts to S3.
+
+    Stage:
+        Output Writing
+    Role:
+        Output
     """
     output_key = (
         f"{REFINER_OUTPUT_PREFIX}"
@@ -842,6 +985,11 @@ def write_remainder_rrs(
     enforces the if-and-only-if rule: returns None for jurisdictions
     where nothing was refined (the original RR moves forward untouched
     instead) or where nothing was skipped.
+
+    Stage:
+        Output Writing
+    Role:
+        Output
 
     TODO(s3-path): the output path segment is "unrefined_rr" for
     backwards compatibility with AIMS-side consumers. Renaming

@@ -1,0 +1,278 @@
+# Lambda Domain Glossary
+# Terms used in Lambda docstrings, cross-referenced by validation script.
+
+[[terms]]
+term = "AIMS"
+definition = """
+The external AWS infrastructure platform that owns the S3 bucket and triggers the
+Lambda via the S3 → EventBridge → SQS pipeline. AIMS consumes `RefinerComplete`
+manifests (both success and error shapes) to determine per-condition refinement
+outcomes, and reads refined output files from the `RefinerOutput/` prefix.
+Because AIMS is the sole downstream consumer, output path names (e.g.
+`unrefined_rr`) and metadata shapes cannot change without AIMS-side coordination.
+
+**Related:** `RefinerComplete`, `RefinerOutputFiles`, `persistence_id`, EventBridge
+"""
+
+[[terms]]
+term = "ConditionCode"
+definition = """
+In the Lambda pipeline, a SNOMED CT code string (e.g., "840539006") that
+uniquely identifies a reportable condition within a jurisdiction's
+configuration. Used as a key in `RefinerMetadata` to track whether that
+condition was refined or skipped for a given jurisdiction. In the broader DB/API
+context, a coded medical terminology entry (code + system + description) drawn
+from LOINC, SNOMED, ICD-10, RxNorm, or CVX systems that identifies a condition
+tracked by public health.
+
+**Related:** `RefinerMetadata`, `JurisdictionCode`, `ProcessedConfiguration`
+"""
+
+[[terms]]
+term = "JurisdictionCode"
+definition = """
+A string identifier extracted from the RR7 `participantRole/id/@extension`
+attribute in the CDA XML that identifies the public health agency or routing
+entity (e.g., "CA", "NY", "SDDH"). A single eICR/RR pair can be reportable to up
+to four jurisdictions. Uppercased and used as a key in `RefinerMetadata`, S3
+output paths (`RefinerOutput/<persistence_id>/<jd>/...`), and configuration
+bucket lookups (`configurations/<jd>/...`).
+
+**Related:** `RefinerMetadata`, `ActiveConfiguration`, `persistence_id`, augmented output
+"""
+
+[[terms]]
+term = "ProcessedConfiguration"
+definition = """
+An immutable dataclass representing the fully resolved set of codes, code system
+sets, and section-processing rules for a specific jurisdiction condition
+grouper. Constructed by validating an `active.json` S3 payload through Pydantic,
+then flattening all code system codes into a universal set and building
+`CodeSystemSets` for system-aware matching. The primary input to
+`create_eicr_refinement_plan()` and `create_rr_refinement_plan()`. Fields:
+`codes`, `code_system_sets`, `section_processing`, and
+`included_condition_rsg_codes`.
+
+**Related:** `ActiveConfiguration`, condition grouper, `ConditionCode`
+"""
+
+[[terms]]
+term = "persistence_id"
+definition = """
+A unique identifier extracted from the S3 object key by stripping the
+`RefinerInput/` prefix from the RR's key. This identifier survives across all
+refinement steps for one eICR/RR pair, serving as the correlation key across all
+S3 objects in a single refinement run. Used to construct the eICR S3 key
+(`eCRMessageV2/<persistence_id>`), all output paths
+(`RefinerOutput/<persistence_id>/<jd>/...`), and the `RefinerComplete` manifest
+path (`RefinerComplete/<persistence_id>`). Format: `<date-path>/<uuid>` (e.g.,
+`2026/01/01/0026b704-`...).
+
+**Related:** `RefinerInput`, `RefinerComplete`, eICR, RR, `RefinerOutputFiles`
+"""
+
+[[terms]]
+term = "RefinerComplete"
+definition = """
+A JSON manifest file written by the Lambda to S3 after processing. Has two
+shapes: `RefinerCompleteSuccess` (`RefinerMetadata: dict`, `RefinerSkip: false`,
+`RefinerOutputFiles: list[str]`) and `RefinerCompleteError` (`RefinerSkip: true`,
+`Error: string`). AIMS consumes this manifest as its primary interface for
+determining the per-condition refinement outcome and locating output artifacts.
+Path format: `RefinerComplete/<persistence_id>`.
+
+**Related:** AIMS, `RefinerMetadata`, `RefinerSkip`, `RefinerOutputFiles`, `persistence_id`
+"""
+
+[[terms]]
+term = "RefinerInput"
+definition = """
+The S3 prefix under which input RR documents are stored. A `PutObject` event
+under this prefix is the Lambda trigger — no RR object means no refinement
+starts. The Lambda reads RR files from `RefinerInput/<persistence_id>` and
+constructs the eICR path by using the `EICR_INPUT_PREFIX` (usually
+`eCRMessageV2/`). The prefix often carries a trailing `/` in environment
+variables (e.g., `RefinerInput/`).
+
+**Related:** `persistence_id`, eICR, RR, EventBridge
+"""
+
+[[terms]]
+term = "RefinerMetadata"
+definition = """
+A nested dictionary in the RefinerComplete file mapping each jurisdiction code
+to a dict of condition codes and their refinement status (`true = refined`,
+`false = skipped`). Example: `{"SDDH": {"840539006": true, "772828001":
+false}}`. Built by the pipeline as it iterates over jurisdictions and conditions,
+recording which were refined successfully and which were skipped (e.g., due to
+missing configuration).
+
+**Related:** RefinerComplete, JurisdictionCode, ConditionCode
+"""
+
+[[terms]]
+term = "RefinerSkip"
+definition = """
+A boolean field in the `RefinerComplete` file. When `true`, indicates a fatal
+error (unhandled exception) occurred and no refinement was performed — the
+`RefinerCompleteError` shape is written instead. When `false`, indicates the
+Lambda completed processing normally; individual conditions may still have been
+skipped (missing mapping or configuration) and that is tracked via
+`RefinerMetadata` per-condition booleans rather than by setting `RefinerSkip`.
+A value of `false` does not guarantee everything was refined, only that
+processing finished without an unhandled exception.
+
+**Related:** `RefinerComplete`, `RefinerMetadata`, `mark_condition_skipped`
+"""
+
+[[terms]]
+term = "remainder RR"
+definition = """
+An augmented Reportability Response (RR) produced for a jurisdiction where some
+conditions were refined and others were skipped. Carries the reportability
+information for the skipped conditions. Only produced when the if-and-only-if
+rule is satisfied: at least one condition was refined AND at least one was
+skipped for that jurisdiction. Written to
+`RefinerOutput/<persistence_id>/<jd>/unrefined_rr/refined_RR.xml`. The
+augmentation scope for remainder RRs uses the `REMAINDER_SCOPE` constant
+(`"remainder"`).
+
+**Related:** if-and-only-if rule, RR, augmented output, `persistence_id`, `JurisdictionCode`
+"""
+
+[[terms]]
+term = "if-and-only-if rule"
+definition = """
+A rule enforced by the pipeline per-jurisdiction when producing remainder RRs: a
+remainder RR is only produced for a jurisdiction if at least one condition was
+refined **AND** at least one condition was skipped. If nothing was refined, the
+original RR moves forward untouched. If nothing was skipped, no remainder is
+needed. This gate is evaluated independently for each jurisdiction in the
+processing loop.
+
+**Related:** remainder RR, JurisdictionCode
+"""
+
+[[terms]]
+term = "RSG-to-CG mapping"
+definition = """
+A JSON file in the configuration bucket that maps SNOMED RSG codes to Condition
+Grouper (CG) metadata: `canonical_url`, `name`, and `tes_version`. The Lambda
+uses this mapping to: (1) determine which condition grouper an RSG code from the
+RR belongs to, (2) build the S3 configuration path via the canonical URL's
+extracted UUID, and (3) produce filesystem-safe output directory names via the
+normalized CG name. Stored at
+`configurations/<jurisdiction>/rsg_cg_mapping.json`. When the file is missing,
+all conditions for that jurisdiction are skipped.
+
+**Related:** condition grouper, `JurisdictionCode`, `ActiveConfiguration`
+"""
+
+[[terms]]
+term = "augmented output"
+definition = """
+A refined eICR or RR document that has been processed by the augmentation
+pipeline — the final stage after XML refinement. Augmentation performs 8
+document-header stamping steps per the eCR Data Augmentation Implementation
+Guide v4: (1) capture original id/setId/versionNumber, (2) insert augmentation
+header templateId, (3) deterministically generate a UUIDv5-based id seeded from
+`(jurisdiction_id, scope, original_id_root)`, (4) set effectiveTime to the
+shared `AugmentationRun` timestamp, (5) generate a UUIDv5 setId, (6) inherit
+versionNumber from the source, (7) add an author with
+`softwareName="ecr-refiner"`, and (8) restructure relatedDocument elements into
+v4-shaped siblings. Both the eICR and RR are augmented. After augmentation, the
+RR's eICR External Document Reference is updated to point at the refined eICR's
+id/setId/versionNumber.
+
+**Related:** eICR, RR, remainder RR, condition grouper, `JurisdictionCode`, `persistence_id`
+"""
+
+[[terms]]
+term = "eICR"
+definition = """
+Electronic Initial Case Report — the input XML document containing the initial
+case report data that the Lambda refines. Retrieved from S3 at
+`eCRMessageV2/<persistence_id>`. After refinement, the eICR is augmented with
+provenance headers (see augmented output). The eICR and RR are always refined as
+a pair, sharing the same `persistence_id`.
+
+**Related:** RR, augmented output, `persistence_id`, `RefinerInput`
+"""
+
+[[terms]]
+term = "RR"
+definition = """
+Reportability Response — the input XML document containing reportability
+information about which conditions are reportable for the given eICR. Retrieved
+from S3 at `RefinerInput/<persistence_id>`. The RR is the source of both
+jurisdiction codes (from `participantRole/id/@extension`) and RSG codes (the
+SNOMED CT reportable-condition codes). The Lambda refines both the eICR and RR
+together. For jurisdictions with mixed refined/skipped conditions, a remainder RR
+is produced alongside the refined RR.
+
+**Related:** eICR, remainder RR, augmented output, `RefinerInput`,
+`JurisdictionCode`, `ConditionCode`, `persistence_id`
+"""
+
+[[terms]]
+term = "condition grouper"
+definition = """
+An entity that groups related reportable conditions together, identified by a
+canonical URL of the form
+`https://tes.tools.aimsplatform.org/api/fhir/ValueSet/<uuid>`. The Lambda
+resolves the condition grouper for each RSG code via the RSG-to-CG mapping,
+extracts the UUID from the canonical URL (via
+`extract_uuid_from_canonical_url()`) for use in S3 configuration paths and as
+the deterministic ID scope during augmentation, and normalizes the CG name (via
+`get_computed_condition_name()`) for filesystem-safe output directory names.
+
+**Related:** RSG-to-CG mapping, `ActiveConfiguration`, `ProcessedConfiguration`,
+augmented output, `JurisdictionCode`
+"""
+
+[[terms]]
+term = "ActiveConfiguration"
+definition = """
+A dataclass representing the resolved configuration for a specific
+jurisdiction-condition pair. Contains a `ProcessedConfiguration` object and a
+version number. In the Lambda path, loaded exclusively from S3 (not the
+database): reads `current.json` to find the active version, then reads the
+corresponding `active.json`. When `current.json` is missing or version is null,
+loading returns `None`, which triggers `mark_condition_skipped()` — this is the
+mechanism by which conditions without an active configuration are silently
+skipped. The API/webapp path loads configurations from the database and
+serializes them to S3 via the "activation bridge" (`convert_config_to_storage_payload`).
+
+**Related:** `ProcessedConfiguration`, `JurisdictionCode`, condition grouper, `NoSuchKey`
+"""
+
+[[terms]]
+term = "EventBridge"
+definition = """
+AWS EventBridge is the event bus service that completes the pipeline: `S3
+PutObject (RefinerInput/<persistence_id>) → EventBridge rule (Object Created,
+source: aws.s3) → SQS queue → Lambda invocation`. The Lambda receives
+EventBridge-wrapped S3 events in the SQS message body, extracting the object key
+from `detail.object.key` and bucket name from `detail.bucket.name`. The SQS
+event source mapping enables `batchItemFailures` tracking for partial batch
+processing.
+
+**Related:** `RefinerInput`, `persistence_id`, AIMS
+"""
+
+[[terms]]
+term = "NoSuchKey"
+definition = """
+An AWS S3 error code returned when a `HEAD` or `GET` request targets an object
+key that does not exist in the bucket. The Lambda treats `NoSuchKey` (and `HTTP
+404`) as a non-fatal "object not found" signal via `check_s3_object_exists()`,
+returning `False` rather than raising. This graceful handling is the mechanism
+by which skipped conditions are detected: `NoSuchKey` on `current.json` causes
+`read_current_version()` to return `None`, which causes
+`load_active_configuration()` to return `None`, which triggers
+`mark_condition_skipped()`. In contrast, the webapp/API S3 service raises
+`FileNotFoundError` on `NoSuchKey`, since the file is expected to exist after
+activation.
+
+**Related:** `ActiveConfiguration,` `mark_condition_skipped`, RSG-to-CG mapping
+"""

@@ -1,6 +1,8 @@
 const { EleventyRenderPlugin } = require("@11ty/eleventy");
 const markdownIt = require("markdown-it");
 const sanitize = require("sanitize-html");
+const fs = require("fs");
+const path = require("path");
 const md = new markdownIt({ html: true, breaks: false, linkify: false });
 
 module.exports = function(eleventyConfig) {
@@ -20,6 +22,49 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addFilter("renderMarkdown", (value) => {
     if (!value) return "";
     return md.render(String(value));
+  });
+
+  // Render root README.md for the onboarding page:
+  //   - strips the first # Title line
+  //   - rewrites relative URLs to GitHub absolute URLs
+  //   - converts GitHub admonitions to styled HTML
+  //   - renders remaining markdown through markdown-it
+  eleventyConfig.addFilter("renderReadme", (value) => {
+    if (!value) return "";
+    const GITHUB_BASE = "https://github.com/CDCgov/dibbs-ecr-refiner/blob/main";
+    let content = String(value);
+
+    // 1. Rewrite relative URLs in markdown links and images
+    content = content.replace(
+      /(!?\[[^\]]*\]\()([^)]+)(\))/g,
+      (match, prefix, url, suffix) => {
+        if (url.startsWith("http") || url.startsWith("#") || url.startsWith("mailto:")) {
+          return match;
+        }
+        const clean = url.replace(/^[.\/]+/, "");
+        return `${prefix}${GITHUB_BASE}/${clean}${suffix}`;
+      }
+    );
+
+    // 2. Convert GitHub admonitions to styled HTML
+    content = content.replace(
+      /^> \[!(\w+)\]\n((?:^> .*\n?)*)/gm,
+      (match, type, inner) => {
+        const rendered = md.render(inner.replace(/^> /gm, ""));
+        const colors = {
+          NOTE: "border-blue-500 bg-blue-50",
+          TIP: "border-green-500 bg-green-50",
+          IMPORTANT: "border-purple-500 bg-purple-50",
+          WARNING: "border-yellow-500 bg-yellow-50",
+          CAUTION: "border-red-500 bg-red-50",
+        };
+        const cls = colors[type.toUpperCase()] || "border-gray-500 bg-gray-50";
+        return `<div class="border-l-4 ${cls} px-4 py-3 my-4"><p class="font-bold text-sm uppercase tracking-wide mb-1">${type}</p>${rendered}</div>\n`;
+      }
+    );
+
+    // 3. Render remaining markdown
+    return md.render(content);
   });
 
   // Render parsed Google-style docstring JSON to HTML
@@ -77,7 +122,7 @@ module.exports = function(eleventyConfig) {
       allowedTags: [
         'p', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'br', 'code',
         'dd', 'dl', 'dt', 'detail', 'pre', 'span', 'div', 'h1', 'h2', 'h3',
-        'h4', 'h5', 'h6', 'summary',
+        'h4', 'h5', 'h6', 'summary', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
       ],
       allowedAttributes: {
         'a': ['href', 'title', 'target', 'class'],
@@ -85,6 +130,66 @@ module.exports = function(eleventyConfig) {
       },
       allowedTargetBlank: true,
       disallowedTagsMode: 'discard',
+    });
+  });
+
+  // Filter an array by a property value. Usage: items | where: "prop", "value"
+  eleventyConfig.addFilter("where", (array, key, value) => {
+    if (!Array.isArray(array)) return [];
+    return array.filter(item => item[key] === value);
+  });
+
+  // Collection of ADR files with parsed metadata (title, date, number, status)
+  eleventyConfig.addCollection("decisions", function(collectionApi) {
+    return collectionApi.getFilteredByGlob("decisions/*.md").map(function(item) {
+      var fullPath = path.join(__dirname, item.inputPath);
+      var content = fs.readFileSync(fullPath, "utf-8");
+      var lines = content.split("\n");
+
+      // Parse "# N: Title" or "# N. Title"
+      var titleMatch = lines[0].match(/^#\s+\d+[\.:]\s*(.+)/);
+      var title = titleMatch ? titleMatch[1].trim() : "Unknown";
+
+      // Parse date (supports "Date:" and "**Date:**" formats)
+      var dateMatch = null;
+      for (var di = 1; di < Math.min(lines.length, 6); di++) {
+        dateMatch = lines[di].match(/(?:\*{2})?Date(?:\*{2})?:(?:\*{2})?\s*(.+)/);
+        if (dateMatch) break;
+      }
+      var date = dateMatch ? dateMatch[1].trim() : "";
+
+      // Parse status (supports "## Status" and "**Status:**" formats)
+      var status = "";
+      for (var i = 1; i < Math.min(lines.length, 12); i++) {
+        var trimmed = lines[i].trim();
+        // Inline format: "**Status:** Accepted"
+        var inlineMatch = trimmed.match(/^\*\*Status:\*?\*?\s+(.+)/);
+        if (inlineMatch) {
+          status = inlineMatch[1].trim();
+          break;
+        }
+        // Section format: "## Status" then next non-empty line
+        if (trimmed === "## Status") {
+          for (var j = i + 1; j < Math.min(lines.length, 14); j++) {
+            if (lines[j].trim()) {
+              status = lines[j].trim();
+              break;
+            }
+          }
+          break;
+        }
+      }
+
+      return {
+        url: item.url,
+        title: title,
+        date: date,
+        number: parseInt(item.fileSlug.split("_")[0], 10),
+        status: status,
+      };
+    }).sort(function(a, b) {
+      // Sort descending by number (newest first)
+      return b.number - a.number;
     });
   });
 

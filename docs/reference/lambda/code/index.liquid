@@ -1,0 +1,132 @@
+---
+title: Lambda Handlers — Function Reference
+layout: layout.liquid
+---
+
+{% include "lambda-stage-data" %}
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">
+  <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
+  Function Reference
+</h1>
+
+<p class="text-gray-60 mb-6">Functions grouped by pipeline stage with role badges.</p>
+
+{% for stage in stageOrder %}
+  {% assign stageModules = lambdaApiArray.modules | where: "stage", stage | where: "source_type", "production" %}
+  {% assign stageModulesWithRole = lambdaApiArray.modules | where: "stage", stage %}
+  {% assign idx = 0 %}
+  {% for s in stageOrder %}
+    {% if s == stage %}{% assign roleColorsIdx = idx %}{% endif %}
+    {% assign idx = idx | plus: 1 %}
+  {% endfor %}
+
+  {% if stageModules.size > 0 or stageModulesWithRole.size > 0 %}
+  <div class="mb-10">
+    <h3 id="stage-{{ stage | slugify }}" class="font-merriweather text-xl font-bold mb-2 flex items-center gap-3 scroll-mt-4">
+      <span class="text-gray-900">{{ stage }}</span>
+      <span class="text-xs font-medium px-2.5 py-0.5 rounded-full
+        {% if roleColorsIdx == 0 %}bg-blue-100 text-blue-800
+        {% elsif roleColorsIdx == 1 %}bg-cyan-100 text-cyan-800
+        {% elsif roleColorsIdx == 2 %}bg-teal-100 text-teal-800
+        {% elsif roleColorsIdx == 3 %}bg-green-100 text-green-800
+        {% elsif roleColorsIdx == 4 %}bg-orange-100 text-orange-800
+        {% elsif roleColorsIdx == 5 %}bg-red-100 text-red-800
+        {% elsif roleColorsIdx == 6 %}bg-purple-100 text-purple-800
+        {% endif %}">
+        {{ stageModulesWithRole[0].role }}
+      </span>
+      <a href="#stage-{{ stage | slugify }}" class="ml-2 text-gray-40 hover:text-gray-60 opacity-0 group-hover:opacity-100 transition-opacity text-sm" aria-label="Link to {{ stage }}">#</a>
+    </h3>
+
+    <div class="space-y-4">
+    {% for module in stageModules %}
+      <div id="{{ module.name }}" class="border rounded-lg p-6 border-gray-cool-4 scroll-mt-4 max-w-3xl">
+        <h4 class="font-merriweather text-lg font-semibold mb-2 group">
+          <code>{{ module.name }}</code>
+          <a href="#{{ module.name }}" class="ml-2 text-gray-40 hover:text-gray-60 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Link to {{ module.name }}">#</a>
+        </h4>
+
+        {% assign has_parsed = false %}
+        {% if module.parsed_docstring.summary != "" or module.parsed_docstring.description != "" %}
+          {% assign has_parsed = true %}
+        {% endif %}
+        {% if has_parsed %}
+          {{ module.parsed_docstring | renderDocstring }}
+        {% elsif module.docstring %}
+          <div class="prose max-w-none mb-3">
+            {{ module.docstring | renderMarkdown | sanitize }}
+          </div>
+        {% endif %}
+
+        {% if module.signature %}
+        <div class="bg-gray-2 rounded p-3 font-mono text-sm mb-3">
+          {{ module.signature }}
+        </div>
+        {% endif %}
+
+        {% if module.parameters and module.parameters.size > 0 %}
+        <h4 class="text-sm font-medium text-gray-60 mb-2 mt-3">Parameters</h4>
+        <table class="text-sm">
+          <thead>
+            <tr class="border-b border-gray-cool-4">
+              <th class="text-left py-1 pr-4">Name</th>
+              <th class="text-left py-1 pr-4">Type</th>
+              <th class="text-left py-1">Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for param in module.parameters %}
+            <tr class="border-b border-gray-cool-3">
+              <td class="py-1 pr-4 font-mono text-sm">{{ param.name }}</td>
+              <td class="py-1 pr-4 font-mono text-sm text-gray-60">{{ param.annotation }}</td>
+              <td class="py-1 font-mono text-sm text-gray-60">{{ param.default }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+
+        {% if module.return_annotation %}
+        <div class="text-sm text-gray-60 mt-2">
+          Returns: <code>{{ module.return_annotation }}</code>
+        </div>
+        {% endif %}
+
+        {% if module.methods and module.methods.size > 0 %}
+        <h4 class="text-sm font-medium text-gray-60 mt-4 mb-2">Methods</h4>
+        <div class="space-y-3">
+          {% for method in module.methods %}
+          <div id="{{ module.name }}.{{ method.name }}" class="border-l-2 border-gray-cool-4 pl-4 scroll-mt-4 group">
+            <div class="font-mono text-sm">
+              <span class="text-gray-60">{{ method.name }}</span>
+              <a href="#{{ module.name }}.{{ method.name }}" class="ml-2 text-gray-40 hover:text-gray-60 opacity-0 group-hover:opacity-100 transition-opacity text-xs" aria-label="Link to {{ module.name }}.{{ method.name }}">#</a>
+            </div>
+
+            {% assign has_method_parsed = false %}
+            {% if method.parsed_docstring.summary != "" or method.parsed_docstring.description != "" %}
+              {% assign has_method_parsed = true %}
+            {% endif %}
+            {% if has_method_parsed %}
+              {{ method.parsed_docstring | renderDocstring }}
+            {% elsif method.docstring %}
+              <div class="text-sm text-gray-60 mt-1 prose max-w-none">
+                {{ method.docstring | renderMarkdown | sanitize }}
+              </div>
+            {% endif %}
+
+            {% if method.signature %}
+            <div class="bg-gray-2 rounded p-2 font-mono text-xs mt-1">
+              {{ method.signature }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}

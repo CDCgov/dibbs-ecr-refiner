@@ -22,6 +22,7 @@ install:
 sync: install _venv
     refiner/.venv/bin/python3 .justscripts/py/docs/extract_python.py
     refiner/.venv/bin/python3 .justscripts/py/docs/extract_lambda.py
+    refiner/.venv/bin/python3 .justscripts/py/docs/validate_lambda_docs.py
 
 [doc('Build the documentation site')]
 [group('build')]

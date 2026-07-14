@@ -65,6 +65,15 @@ class PythonDocsHandler(FileSystemEventHandler):
             )
             print(result.stdout, end="")
 
+            # Run Lambda doc validation
+            result = subprocess.run(
+                [str(venv_python), ".justscripts/py/docs/validate_lambda_docs.py"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            print(result.stdout, end="")
+
             print("✅ Docs synced successfully\n")
             self.last_sync = time.time()
             self.pending_sync = False

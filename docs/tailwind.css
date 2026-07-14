@@ -1,8 +1,9 @@
 @import "../client/src/tailwind.css";
 
 @theme {
-  --font-merriweather: 'Merriweather', 'serif';
-  --font-public-sans: 'Public Sans', 'sans-serif';
+  --font-merriweather: "Merriweather", "serif";
+  --font-public-sans: "Public Sans", "sans-serif";
+  --content-max-width: 900px;
 }
 
 @plugin "@tailwindcss/typography";
@@ -11,4 +12,18 @@
 
 @layer base {
   /* docs-specific overrides below */
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
 }
+
+/*
+  Safelist: admonition colors used in renderReadme filter.
+  These classes are generated dynamically and must appear in scanned sources.
+  bg-green-50 border-green-500 bg-blue-50 border-blue-500
+  bg-purple-50 border-purple-500 bg-yellow-50 border-yellow-500
+  bg-red-50 border-red-500
+*/

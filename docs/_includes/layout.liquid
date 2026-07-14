@@ -15,19 +15,27 @@
     </a>
   </header>
   <div class="flex min-h-[calc(100vh-72px)]">
-    <aside class="w-64 shrink-0 border-r border-gray-cool-4 bg-gray-1 p-6 overflow-y-auto">
+    {% assign is_lambda = page.url contains "/reference/lambda/" %}
+    <aside class="w-64 shrink-0 border-r border-gray-cool-4 bg-gray-1 p-6 overflow-y-auto sticky top-0 self-start max-h-[calc(100vh-72px)]">
       <nav class="mt-4 space-y-1">
         <a href="/" class="block rounded px-2 py-1 text-sm {% if page.url == '/' %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Home</a>
         <a href="/reference/python-api/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Python API</a>
-        <a href="/reference/lambda/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Lambda</a>
+        <a href="/reference/lambda/" class="block rounded px-2 py-1 text-sm {% if is_lambda %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Lambda</a>
+        {% if is_lambda %}
+        <div class="ml-4 space-y-1 mt-1">
+          <a href="/reference/lambda/diagram/" class="block rounded px-2 py-1 text-sm {% if page.url contains '/reference/lambda/diagram/' %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Pipeline Diagram</a>
+          <a href="/reference/lambda/code/" class="block rounded px-2 py-1 text-sm {% if page.url contains '/reference/lambda/code/' %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Function Reference</a>
+          <a href="/reference/lambda/scenarios/" class="block rounded px-2 py-1 text-sm {% if page.url contains '/reference/lambda/scenarios/' %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Processing Scenarios</a>
+          <a href="/reference/lambda/glossary/" class="block rounded px-2 py-1 text-sm {% if page.url contains '/reference/lambda/glossary/' %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Glossary of Terms</a>
+        </div>
+        {% endif %}
       </nav>
       <nav class="mt-4 space-y-1">
-        <a href="/onboarding/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Onboarding</a>
-        <a href="/business-logic/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Business Logic</a>
-        <a href="/decisions/" class="block rounded px-2 py-1 text-sm text-gray-60 hover:bg-gray-2">Decisions</a>
+        <a href="/onboarding/" class="block rounded px-2 py-1 text-sm {% if page.url contains "/onboarding/" %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Onboarding</a>
+        <a href="/decisions/" class="block rounded px-2 py-1 text-sm {% if page.url contains "/decisions/" %}bg-gray-4 font-medium{% else %}text-gray-60 hover:bg-gray-2{% endif %}">Decisions</a>
       </nav>
     </aside>
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 max-w-[--content-max-width]{% if is_adr or page.url contains "/onboarding/" %} prose {% endif %}">
       {{ content | sanitize }}
     </main>
   </div>

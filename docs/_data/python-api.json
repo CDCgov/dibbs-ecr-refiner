@@ -1165,11 +1165,30 @@
         {
           "name": "RefinerCompleteSuccess",
           "type": "class",
-          "docstring": "Represents a successful completion file written after all refinement is done.\n\nRequired by AIMS infrastructure.",
+          "docstring": "Represents a successful completion file written after all refinement is done.\n\nRequired by AIMS infrastructure.\n\nAttributes:\n    RefinerMetadata: A dict of JurisdictionCode and ConditionCode\n    RefinerSkip: whether the refiner skipped this file or not\n    RefinerOutputFiles: a list of paths where the refiner put the files\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
             "summary": "Represents a successful completion file written after all refinement is done.",
             "description": "Required by AIMS infrastructure.",
-            "params": [],
+            "params": [
+              {
+                "name": "RefinerMetadata",
+                "type": "",
+                "description": "A dict of JurisdictionCode and ConditionCode",
+                "default": ""
+              },
+              {
+                "name": "RefinerSkip",
+                "type": "",
+                "description": "whether the refiner skipped this file or not",
+                "default": ""
+              },
+              {
+                "name": "RefinerOutputFiles",
+                "type": "",
+                "description": "a list of paths where the refiner put the files",
+                "default": ""
+              }
+            ],
             "returns": null,
             "raises": []
           },
@@ -1179,29 +1198,61 @@
         {
           "name": "RefinerCompleteError",
           "type": "class",
-          "docstring": "Represents a fatal error completion file written despite of failure.\n\nRequired by AIMS infrastructure.",
+          "docstring": "Represents a fatal error completion file written despite of failure.\n\nRequired by AIMS infrastructure.\n\nAttributes:\n    RefinerSkip: a boolean representing that it was skipped, always `True`\n    Error: a string of the error that occurred\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
             "summary": "Represents a fatal error completion file written despite of failure.",
             "description": "Required by AIMS infrastructure.",
-            "params": [],
+            "params": [
+              {
+                "name": "RefinerSkip",
+                "type": "",
+                "description": "a boolean representing that it was skipped, always `True`",
+                "default": ""
+              },
+              {
+                "name": "Error",
+                "type": "",
+                "description": "a string of the error that occurred",
+                "default": ""
+              }
+            ],
             "returns": null,
             "raises": []
           },
-          "lineno": 66,
+          "lineno": 76,
           "methods": []
         },
         {
           "name": "RefinementState",
           "type": "class",
-          "docstring": "Internal mutable state accumulated during refinement processing.\n\nTracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).",
+          "docstring": "Internal mutable state accumulated during refinement processing.\n\nTracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).\n\nAttributes:\n    output_files: a set of output file keys\n    metadata: AIMS-facing metadata dict\n    skipped_condition_codes_by_jurisdiction: A dict of codes per\n    jurisdiction that were not refined\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
             "summary": "Internal mutable state accumulated during refinement processing.",
             "description": "Tracks output file keys for the RefinerComplete manifest, per-\njurisdiction/per-condition refinement traces, the AIMS-facing\nmetadata dict, and the set of codes per jurisdiction that were\nNOT refined (used to drive remainder RR production).",
-            "params": [],
+            "params": [
+              {
+                "name": "output_files",
+                "type": "",
+                "description": "a set of output file keys",
+                "default": ""
+              },
+              {
+                "name": "metadata",
+                "type": "",
+                "description": "AIMS-facing metadata dict",
+                "default": ""
+              },
+              {
+                "name": "skipped_condition_codes_by_jurisdiction",
+                "type": "",
+                "description": "A dict of codes per jurisdiction that were not refined",
+                "default": ""
+              }
+            ],
             "returns": null,
             "raises": []
           },
-          "lineno": 77,
+          "lineno": 96,
           "methods": [
             {
               "name": "__init__",
@@ -1243,15 +1294,46 @@
         {
           "name": "RefinementInput",
           "type": "class",
-          "docstring": "Information required as an input by the refinement process.",
+          "docstring": "Information required as an input by the refinement process.\n\nAttributes:\n    xml_files: a container for eICR and RR XML documents\n    s3_client: An instance of the S3 client\n    config_bucket_name: The name of the config bucket\n    output_bucket_name: The name of the output bucket\n    persistence_id: an identifier that persists across all refinement\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
             "summary": "Information required as an input by the refinement process.",
             "description": "",
-            "params": [],
+            "params": [
+              {
+                "name": "xml_files",
+                "type": "",
+                "description": "a container for eICR and RR XML documents",
+                "default": ""
+              },
+              {
+                "name": "s3_client",
+                "type": "",
+                "description": "An instance of the S3 client",
+                "default": ""
+              },
+              {
+                "name": "config_bucket_name",
+                "type": "",
+                "description": "The name of the config bucket",
+                "default": ""
+              },
+              {
+                "name": "output_bucket_name",
+                "type": "",
+                "description": "The name of the output bucket",
+                "default": ""
+              },
+              {
+                "name": "persistence_id",
+                "type": "",
+                "description": "an identifier that persists across all refinement",
+                "default": ""
+              }
+            ],
             "returns": null,
             "raises": []
           },
-          "lineno": 95,
+          "lineno": 125,
           "methods": [
             {
               "name": "__init__",
@@ -1303,15 +1385,28 @@
         {
           "name": "RefinementOutput",
           "type": "class",
-          "docstring": "All metadata required by AIMS post-refinement.",
+          "docstring": "All metadata required by AIMS post-refinement.\n\nAttributes:\n    output_file_keys: A list of keys for output files\n    metadata: AIMS-facing metadata dict\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
             "summary": "All metadata required by AIMS post-refinement.",
             "description": "",
-            "params": [],
+            "params": [
+              {
+                "name": "output_file_keys",
+                "type": "",
+                "description": "A list of keys for output files",
+                "default": ""
+              },
+              {
+                "name": "metadata",
+                "type": "",
+                "description": "AIMS-facing metadata dict",
+                "default": ""
+              }
+            ],
             "returns": null,
             "raises": []
           },
-          "lineno": 108,
+          "lineno": 150,
           "methods": [
             {
               "name": "__init__",
@@ -1348,10 +1443,10 @@
         {
           "name": "lambda_handler",
           "type": "function",
-          "docstring": "Main Lambda handler function.\n\nProcesses S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each record.body contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key\n\nParameters:\n    event: Dict containing the Lambda function event data from SQS\n    context: Lambda runtime context\n\nReturns:\n    Dict containing status message",
+          "docstring": "Main Lambda handler function.\n\nProcesses S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each `record.body` contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key\n\nStage:\n    Entry\nRole:\n    Handler\n\nParameters:\n    event: Dict containing the Lambda function event data from SQS\n    context: Lambda runtime context\n\nReturns:\n    Dict containing status message",
           "parsed_docstring": {
             "summary": "Main Lambda handler function.",
-            "description": "Processes S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each record.body contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key",
+            "description": "Processes S3 events from SQS to refine eICR documents.\n\nEvent structure:\n- Records: List of SQS records\n- Each `record.body` contains an EventBridge S3 event JSON string\n- The S3 event detail contains bucket name and object key\n\nStage: Entry\nRole: Handler",
             "params": [
               {
                 "name": "event",
@@ -1366,13 +1461,10 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "Dict containing status message"
-            },
+            "returns": null,
             "raises": []
           },
-          "lineno": 121,
+          "lineno": 172,
           "signature": "lambda_handler(event, context) -> dict",
           "parameters": [
             {
@@ -1391,10 +1483,10 @@
         {
           "name": "extract_persistence_id",
           "type": "function",
-          "docstring": "Extract the persistence_id from an S3 object key.\n\n```\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n```\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
+          "docstring": "Extract the `persistence_id` from an S3 object key.\n\n- **Object key format**: `<pipeline-step>/<persistance_id>`\n- **Example**: `RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n- **Returns**: `2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
           "parsed_docstring": {
-            "summary": "Extract the persistence_id from an S3 object key.",
-            "description": "```\nObject key format: <pipeline-step>/<persistance_id>\nExample: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\nReturns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e\n```",
+            "summary": "Extract the `persistence_id` from an S3 object key.",
+            "description": "- **Object key format**: `<pipeline-step>/<persistance_id>`\n- **Example**: `RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n- **Returns**: `2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n\nStage: S3 Retrieval\nRole: S3 I/O",
             "params": [
               {
                 "name": "object_key",
@@ -1415,7 +1507,7 @@
             },
             "raises": []
           },
-          "lineno": 274,
+          "lineno": 330,
           "signature": "extract_persistence_id(object_key: str, input_prefix: str) -> str",
           "parameters": [
             {
@@ -1434,10 +1526,10 @@
         {
           "name": "get_s3_object_content",
           "type": "function",
-          "docstring": "Retrieve and decode an S3 object as UTF-8 string.\n\nArgs:\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    key: S3 object key\n\nReturns:\n    str: The object content as a UTF-8 string",
+          "docstring": "Retrieve and decode an S3 object as UTF-8 string.\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    key: S3 object key\n\nReturns:\n    str: The object content as a UTF-8 string",
           "parsed_docstring": {
             "summary": "Retrieve and decode an S3 object as UTF-8 string.",
-            "description": "",
+            "description": "Stage: S3 Retrieval\nRole: S3 I/O",
             "params": [
               {
                 "name": "s3_client",
@@ -1464,7 +1556,7 @@
             },
             "raises": []
           },
-          "lineno": 299,
+          "lineno": 358,
           "signature": "get_s3_object_content(s3_client, bucket: str, key: str) -> str",
           "parameters": [
             {
@@ -1488,10 +1580,10 @@
         {
           "name": "check_s3_object_exists",
           "type": "function",
-          "docstring": "Check whether an object exists in S3 using a HEAD request.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key.\n\nReturns:\n    bool: True if the object exists, False if not found.\n\nRaises:\n    Exception: If the S3 request fails with an error other than 404/NoSuchKey.",
+          "docstring": "Check whether an object exists in S3 using a HEAD request.\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key.\n\nReturns:\n    bool: True if the object exists, False if not found.\n\nRaises:\n    Exception: If the S3 request fails with an error other than 404/NoSuchKey.",
           "parsed_docstring": {
             "summary": "Check whether an object exists in S3 using a HEAD request.",
-            "description": "",
+            "description": "Stage: S3 Retrieval\nRole: S3 I/O",
             "params": [
               {
                 "name": "s3_client",
@@ -1523,7 +1615,7 @@
               }
             ]
           },
-          "lineno": 316,
+          "lineno": 380,
           "signature": "check_s3_object_exists(s3_client, bucket: str, key: str) -> bool",
           "parameters": [
             {
@@ -1547,10 +1639,10 @@
         {
           "name": "parse_s3_content_to_dict",
           "type": "function",
-          "docstring": "Parse a JSON string into a dictionary.\n\nArgs:\n    body: A JSON-encoded string, typically read from an S3 object.\n\nReturns:\n    dict: The parsed dictionary.\n\nRaises:\n    json.JSONDecodeError: If the string is not valid JSON.",
+          "docstring": "Parse a JSON string into a dictionary.\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    body: A JSON-encoded string, typically read from an S3 object.\n\nReturns:\n    dict: The parsed dictionary.\n\nRaises:\n    json.JSONDecodeError: If the string is not valid JSON.",
           "parsed_docstring": {
             "summary": "Parse a JSON string into a dictionary.",
-            "description": "",
+            "description": "Stage: S3 Retrieval\nRole: S3 I/O",
             "params": [
               {
                 "name": "body",
@@ -1570,7 +1662,7 @@
               }
             ]
           },
-          "lineno": 344,
+          "lineno": 413,
           "signature": "parse_s3_content_to_dict(body: str) -> dict",
           "parameters": [
             {
@@ -1584,10 +1676,10 @@
         {
           "name": "read_rsg_cg_mapping_file",
           "type": "function",
-          "docstring": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.\n\nThis file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the mapping file.\n\nReturns:\n    dict | None: The mapping data as a dictionary, or None if the file\n        does not exist or is empty.",
+          "docstring": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.\n\nThis file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the mapping file.\n\nReturns:\n    dict | None: The mapping data as a dictionary, or None if the file\n        does not exist or is empty.",
           "parsed_docstring": {
             "summary": "Read the RSG-to-condition-grouper mapping file for a jurisdiction from S3.",
-            "description": "This file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.",
+            "description": "This file maps RSG SNOMED codes to condition grouper metadata (canonical URL,\nname, TES version). Lambda uses it to determine which condition grouper an\nRSG code from the RR belongs to, and where to find the corresponding\nconfiguration files.\n\nStage: Configuration Loading\nRole: Configuration",
             "params": [
               {
                 "name": "s3_client",
@@ -1610,11 +1702,11 @@
             ],
             "returns": {
               "type": "",
-              "description": "dict | None: The mapping data as a dictionary, or None if the file\ndoes not exist or is empty."
+              "description": "dict | None: The mapping data as a dictionary, or None if the file does not exist or is empty."
             },
             "raises": []
           },
-          "lineno": 366,
+          "lineno": 440,
           "signature": "read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None",
           "parameters": [
             {
@@ -1638,10 +1730,10 @@
         {
           "name": "read_current_version",
           "type": "function",
-          "docstring": "Fetches the current active configuration version from `current.json` in the\nconfiguration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;\n\nReturns:\n    int | None: Active configuration version as an int, or None if no active version exists",
+          "docstring": "Fetches the current active configuration version from `current.json` in the\nconfiguration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nReturns:\n    int | None: Active configuration version as an int, or None if no active version exists",
           "parsed_docstring": {
             "summary": "Fetches the current active configuration version from `current.json` in the",
-            "description": "configuration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;",
+            "description": "configuration bucket if one exists. If the version is `null` or the file does not exist,\nreturns None;\n\nStage: Configuration Loading\nRole: Configuration",
             "params": [],
             "returns": {
               "type": "",
@@ -1649,7 +1741,7 @@
             },
             "raises": []
           },
-          "lineno": 400,
+          "lineno": 479,
           "signature": "read_current_version(s3_client, bucket: str, key: str) -> int | None",
           "parameters": [
             {
@@ -1673,10 +1765,10 @@
         {
           "name": "read_configuration_file",
           "type": "function",
-          "docstring": "Read an activated configuration file (active.json) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system code_system_sets, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
+          "docstring": "Read an activated configuration file (`active.json`) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
           "parsed_docstring": {
-            "summary": "Read an activated configuration file (active.json) from S3.",
-            "description": "This file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system code_system_sets, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.",
+            "summary": "Read an activated configuration file (`active.json`) from S3.",
+            "description": "This file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nStage: Configuration Loading\nRole: Configuration",
             "params": [
               {
                 "name": "s3_client",
@@ -1704,11 +1796,11 @@
             "raises": [
               {
                 "type": "Exception",
-                "description": "If the file does not exist. This indicates a mismatch between\ncurrent.json (which pointed to this version) and the actual files on S3."
+                "description": "If the file does not exist. This indicates a mismatch between current.json (which pointed to this version) and the actual files on S3."
               }
             ]
           },
-          "lineno": 428,
+          "lineno": 512,
           "signature": "read_configuration_file(s3_client, bucket: str, key: str) -> dict",
           "parameters": [
             {
@@ -1732,10 +1824,10 @@
         {
           "name": "run_refinement",
           "type": "function",
-          "docstring": "Process eICR and RR through the refiner for all jurisdictions and conditions.\n\nThis function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed\n\nArgs:\n    xml_files: Container with eICR and RR XML strings\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    config_bucket: S3 configuration bucket name\n    persistence_id: The persistence ID for constructing output paths\n\nReturns:\n    ProcessedResult: the result of the refinement process",
+          "docstring": "Process eICR and RR through the refiner for all jurisdictions and conditions.\n\nThis function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed\n\nStage:\n    Refinement Pipeline\nRole:\n    Orchestrator\n\nArgs:\n    xml_files: Container with eICR and RR XML strings\n    s3_client: Boto3 S3 client\n    bucket: S3 bucket name\n    config_bucket: S3 configuration bucket name\n    persistence_id: The persistence ID for constructing output paths\n\nReturns:\n    ProcessedResult: the result of the refinement process",
           "parsed_docstring": {
             "summary": "Process eICR and RR through the refiner for all jurisdictions and conditions.",
-            "description": "This function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata\n   indicating which jurisdiction/condition combinations were processed",
+            "description": "This function:\n1. Uses the shared pipeline to discover reportable conditions from the RR\n2. For each jurisdiction, resolves configurations from S3\n3. For each condition with an active config, uses the shared pipeline to refine\n4. For conditions without active configs, produces unrefined condition RRs\n5. Returns a list of S3 paths for the refined output files and metadata indicating which jurisdiction/condition combinations were processed\n\nStage: Refinement Pipeline\nRole: Orchestrator",
             "params": [
               {
                 "name": "xml_files",
@@ -1774,7 +1866,7 @@
             },
             "raises": []
           },
-          "lineno": 465,
+          "lineno": 554,
           "signature": "run_refinement(input: RefinementInput) -> RefinementOutput",
           "parameters": [
             {
@@ -1788,15 +1880,15 @@
         {
           "name": "process_jurisdiction",
           "type": "function",
-          "docstring": "Process all reportable conditions for a given jurisdiction.",
+          "docstring": "Process all reportable conditions for a given jurisdiction.\n\nStage:\n    Refinement Pipeline\nRole:\n    Orchestrator",
           "parsed_docstring": {
             "summary": "Process all reportable conditions for a given jurisdiction.",
-            "description": "",
+            "description": "Stage: Refinement Pipeline\nRole: Orchestrator",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 531,
+          "lineno": 625,
           "signature": "process_jurisdiction(jurisdiction_group: JurisdictionReportableConditions, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1825,15 +1917,15 @@
         {
           "name": "process_condition",
           "type": "function",
-          "docstring": "Process a single reportable condition for a jurisdiction.",
+          "docstring": "Process a single reportable condition for a jurisdiction.\n\nStage:\n    Refinement Pipeline\nRole:\n    Orchestrator",
           "parsed_docstring": {
             "summary": "Process a single reportable condition for a jurisdiction.",
-            "description": "",
+            "description": "Stage: Refinement Pipeline\nRole: Orchestrator",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 568,
+          "lineno": 667,
           "signature": "process_condition(jurisdiction_code: str, reportable_condition: ReportableCondition, rsg_cg_payload: ConditionMappingPayload, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1872,15 +1964,15 @@
         {
           "name": "load_condition_mapping_for_jurisdiction",
           "type": "function",
-          "docstring": "Load the RSG -> CG mapping payload for a jurisdiction.",
+          "docstring": "Load the RSG -> CG mapping payload for a jurisdiction.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration",
           "parsed_docstring": {
             "summary": "Load the RSG -> CG mapping payload for a jurisdiction.",
-            "description": "",
+            "description": "Stage: Configuration Loading\nRole: Configuration",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 648,
+          "lineno": 752,
           "signature": "load_condition_mapping_for_jurisdiction(s3_client, config_bucket: str, jurisdiction_code: str) -> ConditionMappingPayload | None",
           "parameters": [
             {
@@ -1904,15 +1996,15 @@
         {
           "name": "skip_all_conditions_for_missing_mapping",
           "type": "function",
-          "docstring": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.",
+          "docstring": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
           "parsed_docstring": {
             "summary": "Mark every condition in a jurisdiction as skipped when the mapping file is missing.",
-            "description": "",
+            "description": "Stage: Skip/Error Handling\nRole: Error Handling",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 677,
+          "lineno": 786,
           "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
           "parameters": [
             {
@@ -1936,15 +2028,15 @@
         {
           "name": "mark_condition_skipped",
           "type": "function",
-          "docstring": "Helper to mark a condition as \"skipped\" during refinement.",
+          "docstring": "Helper to mark a condition as \"skipped\" during refinement.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
           "parsed_docstring": {
             "summary": "Helper to mark a condition as \"skipped\" during refinement.",
-            "description": "",
+            "description": "Stage: Skip/Error Handling\nRole: Error Handling",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 699,
+          "lineno": 813,
           "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState) -> None",
           "parameters": [
             {
@@ -1973,15 +2065,28 @@
         {
           "name": "ActiveConfiguration",
           "type": "class",
-          "docstring": "",
+          "docstring": "Active configuration for a jurisdiction-condition pair.\n\nAttributes:\n    configuration: The ProcessedConfiguration data coming from an\n    `active.json` S3 file\n    version: An int representing the version number\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
-            "summary": "",
+            "summary": "Active configuration for a jurisdiction-condition pair.",
             "description": "",
-            "params": [],
+            "params": [
+              {
+                "name": "configuration",
+                "type": "",
+                "description": "The ProcessedConfiguration data coming from an `active.json` S3 file",
+                "default": ""
+              },
+              {
+                "name": "version",
+                "type": "",
+                "description": "An int representing the version number",
+                "default": ""
+              }
+            ],
             "returns": null,
             "raises": []
           },
-          "lineno": 720,
+          "lineno": 839,
           "methods": [
             {
               "name": "__init__",
@@ -2018,15 +2123,15 @@
         {
           "name": "load_active_configuration",
           "type": "function",
-          "docstring": "Attempts to find and load the active configuration.",
+          "docstring": "Attempts to find and load the active configuration.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration",
           "parsed_docstring": {
             "summary": "Attempts to find and load the active configuration.",
-            "description": "",
+            "description": "Stage: Configuration Loading\nRole: Configuration",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 726,
+          "lineno": 859,
           "signature": "load_active_configuration(s3_client, config_bucket: str, jurisdiction_code: str, cg_metadata: ConditionMapValue, rsg_metadata: ReportableCondition) -> ActiveConfiguration | None",
           "parameters": [
             {
@@ -2060,15 +2165,15 @@
         {
           "name": "write_refined_outputs",
           "type": "function",
-          "docstring": "Write refined eICR and RR artifacts to S3.",
+          "docstring": "Write refined eICR and RR artifacts to S3.\n\nStage:\n    Output Writing\nRole:\n    Output",
           "parsed_docstring": {
             "summary": "Write refined eICR and RR artifacts to S3.",
-            "description": "",
+            "description": "Stage: Output Writing\nRole: Output",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 785,
+          "lineno": 923,
           "signature": "write_refined_outputs(refiner_input: RefinementInput, jurisdiction_code: str, condition_code: str, condition_grouper_name: str, result: RefinementResult, state: RefinementState) -> None",
           "parameters": [
             {
@@ -2107,15 +2212,15 @@
         {
           "name": "write_remainder_rrs",
           "type": "function",
-          "docstring": "Write augmented remainder RR outputs for jurisdictions that need them.\n\nFor each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
+          "docstring": "Write augmented remainder RR outputs for jurisdictions that need them.\n\nFor each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nStage:\n    Output Writing\nRole:\n    Output\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
           "parsed_docstring": {
             "summary": "Write augmented remainder RR outputs for jurisdictions that need them.",
-            "description": "For each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
+            "description": "For each jurisdiction with at least one skipped condition, produces\nthe augmented remainder RR carrying the skipped codes. The pipeline\nenforces the if-and-only-if rule: returns None for jurisdictions\nwhere nothing was refined (the original RR moves forward untouched\ninstead) or where nothing was skipped.\n\nStage: Output Writing\nRole: Output\n\nTODO(s3-path): the output path segment is \"unrefined_rr\" for\nbackwards compatibility with AIMS-side consumers. Renaming\nto \"remainder_rr\" requires coordinating with AIMS first.",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 832,
+          "lineno": 975,
           "signature": "write_remainder_rrs(refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -2262,7 +2367,7 @@
             ],
             "returns": {
               "type": "TesResponse",
-              "description": "A bundle with a list of TesUpdates, including\n- The version\n- The when it was created"
+              "description": "A bundle with a list of TesUpdates, including - The version - The when it was created"
             },
             "raises": []
           },
@@ -2437,7 +2542,7 @@
             ],
             "returns": {
               "type": "EventResponse",
-              "description": "A bundle with\n- Total page count\n- The list of AuditEvents relevant for the (optional) filter\n- The list of condition information with potentially filter-able data"
+              "description": "A bundle with - Total page count - The list of AuditEvents relevant for the (optional) filter - The list of condition information with potentially filter-able data"
             },
             "raises": []
           },
@@ -2663,12 +2768,9 @@
           "docstring": "Returns a list of supported code systems.\n\nReturns:\n    List of code system.",
           "parsed_docstring": {
             "summary": "Returns a list of supported code systems.",
-            "description": "",
+            "description": "Returns: List of code system.",
             "params": [],
-            "returns": {
-              "type": "",
-              "description": "List of code system."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 24,
@@ -3493,7 +3595,7 @@
           "docstring": "Handles the simulator upload workflow for eICR refinement.\n\nSteps:\n1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in\n    refiner/assets/demo/mon-mothma-covid-influenza.zip).\n2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).\n3. Call the service layer (`simulator`) to orchestrate the refinement workflow.\n4. For each unique reportable condition code found in the RR (and having a configuration),\n    build a refined XML document and collect metadata. The code used is the actual code\n    from the RR that triggered the match, not a canonical or database code.\n5. Package all refined and original files into a ZIP.\n6. Upload the ZIP to S3 and get a download URL.\n7. Construct and return the response model for the frontend, including per-condition\n    refinement results and a link to the ZIP of outputs.\n\nAny exceptions during file processing or workflow execution are caught and mapped to HTTP errors.",
           "parsed_docstring": {
             "summary": "Handles the simulator upload workflow for eICR refinement.",
-            "description": "Steps:\n1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in\n    refiner/assets/demo/mon-mothma-covid-influenza.zip).\n2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).\n3. Call the service layer (`simulator`) to orchestrate the refinement workflow.\n4. For each unique reportable condition code found in the RR (and having a configuration),\n    build a refined XML document and collect metadata. The code used is the actual code\n    from the RR that triggered the match, not a canonical or database code.\n5. Package all refined and original files into a ZIP.\n6. Upload the ZIP to S3 and get a download URL.\n7. Construct and return the response model for the frontend, including per-condition\n    refinement results and a link to the ZIP of outputs.\n\nAny exceptions during file processing or workflow execution are caught and mapped to HTTP errors.",
+            "description": "Steps:\n1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in refiner/assets/demo/mon-mothma-covid-influenza.zip).\n2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).\n3. Call the service layer (`simulator`) to orchestrate the refinement workflow.\n4. For each unique reportable condition code found in the RR (and having a configuration), build a refined XML document and collect metadata. The code used is the actual code from the RR that triggered the match, not a canonical or database code.\n5. Package all refined and original files into a ZIP.\n6. Upload the ZIP to S3 and get a download URL.\n7. Construct and return the response model for the frontend, including per-condition refinement results and a link to the ZIP of outputs.\n\nAny exceptions during file processing or workflow execution are caught and mapped to HTTP errors.",
             "params": [],
             "returns": null,
             "raises": []
@@ -3665,7 +3767,7 @@
             "params": [],
             "returns": {
               "type": "StarletteOAuth2App",
-              "description": "The configured OAuth client used to initiate\nauthentication flows."
+              "description": "The configured OAuth client used to initiate authentication flows."
             },
             "raises": []
           },
@@ -4185,8 +4287,8 @@
           "type": "function",
           "docstring": "Returns the current logged-in user's information.\n\nReads user info from the session or token.\n\nReturns:\n    JSON object with user claims if authenticated.\n\nRaises:\n    HTTPException 401 if user not authenticated.",
           "parsed_docstring": {
-            "summary": "",
-            "description": "",
+            "summary": "Returns the current logged-in user's information.",
+            "description": "Reads user info from the session or token.\n\nReturns: JSON object with user claims if authenticated.\n\nRaises: HTTPException 401 if user not authenticated.",
             "params": [],
             "returns": null,
             "raises": []
@@ -4519,10 +4621,20 @@
           "type": "function",
           "docstring": "Formats the `refined_eicr` and `refined_rr` of a single RefinedDocument.\n\nArgs:\n    doc (RefinedDocument): A RefinedDocument\n\nReturns:\n    RefinedDocument: A RefinedDocument with formatted `refined_eicr` and `refined_rr`\n\nRaises:\n    422 if `refined_eicr` or `refined_rr` are not valid XML documents",
           "parsed_docstring": {
-            "summary": "",
+            "summary": "Formats the `refined_eicr` and `refined_rr` of a single RefinedDocument.",
             "description": "",
-            "params": [],
-            "returns": null,
+            "params": [
+              {
+                "name": "doc",
+                "type": "RefinedDocument",
+                "description": "A RefinedDocument",
+                "default": ""
+              }
+            ],
+            "returns": {
+              "type": "RefinedDocument",
+              "description": "A RefinedDocument with formatted `refined_eicr` and `refined_rr`"
+            },
             "raises": []
           },
           "lineno": 36,
@@ -4541,10 +4653,20 @@
           "type": "function",
           "docstring": "Given a list of RefinedDocument objects, formats their `refined_eicr` and `refined_rr` data.\n\nArgs:\n    docs (list[RefinedDocument]): List of RefinedDocuments\n\nReturns:\n    list[RefinedDocument]: List of RefinedDocuments with formatted `refined_eicr` and `refined_rr`\n\nRaises:\n    422 if `refined_eicr` or `refined_rr` are not valid XML documents",
           "parsed_docstring": {
-            "summary": "",
+            "summary": "Given a list of RefinedDocument objects, formats their `refined_eicr` and `refined_rr` data.",
             "description": "",
-            "params": [],
-            "returns": null,
+            "params": [
+              {
+                "name": "docs",
+                "type": "list[RefinedDocument]",
+                "description": "List of RefinedDocuments",
+                "default": ""
+              }
+            ],
+            "returns": {
+              "type": "list[RefinedDocument]",
+              "description": "List of RefinedDocuments with formatted `refined_eicr` and `refined_rr`"
+            },
             "raises": []
           },
           "lineno": 63,
@@ -4777,7 +4899,7 @@
               {
                 "name": "logger",
                 "type": "Logger | None",
-                "description": "Logger used to emit a warning per\ncoercion. None silences the messages but still applies\nnormalization.",
+                "description": "Logger used to emit a warning per coercion. None silences the messages but still applies normalization.",
                 "default": ""
               }
             ],
@@ -5070,7 +5192,7 @@
           "docstring": "Pretty-print an XML document for display.\n\nDoes not modify content. Only normalizes inter-element whitespace so\nthat the same function can be applied to both sides of a diff (the\noriginal and the refined document) and have them line up visually\nwithout introducing semantic drift.\n\nSpecifically:\n    - Comments are preserved (eCR Refiner provenance comments are\n      part of the audit trail and intentionally part of the output).\n    - Element text and tail content is left untouched.\n    - Inter-element whitespace is normalized via\n      remove_blank_text=True + pretty_print=True so indentation is\n      consistent regardless of how the input was originally\n      serialized.\n\nArgs:\n    text: An XML document as a string.\n\nReturns:\n    The pretty-printed XML as a string.\n\nRaises:\n    etree.XMLSyntaxError: If the input is not well-formed XML.",
           "parsed_docstring": {
             "summary": "Pretty-print an XML document for display.",
-            "description": "Does not modify content. Only normalizes inter-element whitespace so\nthat the same function can be applied to both sides of a diff (the\noriginal and the refined document) and have them line up visually\nwithout introducing semantic drift.\n\nSpecifically:\n    - Comments are preserved (eCR Refiner provenance comments are\n      part of the audit trail and intentionally part of the output).\n    - Element text and tail content is left untouched.\n    - Inter-element whitespace is normalized via\n      remove_blank_text=True + pretty_print=True so indentation is\n      consistent regardless of how the input was originally\n      serialized.",
+            "description": "Does not modify content. Only normalizes inter-element whitespace so\nthat the same function can be applied to both sides of a diff (the\noriginal and the refined document) and have them line up visually\nwithout introducing semantic drift.\n\nSpecifically: - Comments are preserved (eCR Refiner provenance comments are part of the audit trail and intentionally part of the output). - Element text and tail content is left untouched. - Inter-element whitespace is normalized via remove_blank_text=True + pretty_print=True so indentation is consistent regardless of how the input was originally serialized.",
             "params": [
               {
                 "name": "text",
@@ -5079,10 +5201,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The pretty-printed XML as a string."
-            },
+            "returns": null,
             "raises": [
               {
                 "type": "etree.XMLSyntaxError",
@@ -5294,7 +5413,7 @@
               },
               {
                 "type": "ValueError",
-                "description": "If the input eICR is missing setId or\nversionNumber."
+                "description": "If the input eICR is missing setId or versionNumber."
               }
             ]
           },
@@ -5559,10 +5678,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "All reportable condition groups extracted from the RR."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 176,
@@ -5643,7 +5759,7 @@
               {
                 "name": "processed_configuration",
                 "type": "",
-                "description": "The fully resolved configuration. Must\nhave the same fidelity regardless of source \u2014 codes organized\nby system with display names, section processing rules, and\nincluded RSG codes.",
+                "description": "The fully resolved configuration. Must have the same fidelity regardless of source \u2014 codes organized by system with display names, section processing rules, and included RSG codes.",
                 "default": ""
               },
               {
@@ -5655,14 +5771,11 @@
               {
                 "name": "run",
                 "type": "",
-                "description": "The session-scoped AugmentationRun. Built once by the\ncaller via create_augmentation_run_from_xml_files and\nthreaded through every pipeline call in the session so\nall augmented outputs share a timestamp.",
+                "description": "The session-scoped AugmentationRun. Built once by the caller via create_augmentation_run_from_xml_files and threaded through every pipeline call in the session so all augmented outputs share a timestamp.",
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "RefinementResult containing the refined eICR and RR XML strings\nand the completed trace."
-            },
+            "returns": null,
             "raises": [
               {
                 "type": "XMLValidationError",
@@ -5674,7 +5787,7 @@
               },
               {
                 "type": "ValueError",
-                "description": "If trace.canonical_url is None or doesn't end with\na valid UUID."
+                "description": "If trace.canonical_url is None or doesn't end with a valid UUID."
               }
             ]
           },
@@ -5760,43 +5873,40 @@
           "docstring": "Produce an augmented remainder RR for a jurisdiction.\n\nThe remainder RR exists as the RR-side complement to per-condition\nrefined outputs. It carries forward the reportability information\nfor conditions reportable to the jurisdiction that the Refiner\ndid NOT refine (no matching active configuration), so each\ncondition's reportability appears exactly once across the full\noutput package.\n\nReturns None when the if-and-only-if rule is not satisfied:\n- refined_condition_codes is empty: the remainder is a\n  complement of refinement; if nothing was refined for this\n  jurisdiction, the original RR moves forward untouched and\n  there is no remainder to produce.\n- skipped_condition_codes is empty: every condition was\n  refined, so there is nothing for the remainder to carry.\n\nTodo:\n* the if-and-only-if rule is enforced here as a None return\n  rather than expressed structurally by the caller\n* both callers compute refined/skipped code sets independently\n  to pass in\n\nArgs:\n    xml_files: The eICR/RR pair. Only the RR is mutated; the\n        eICR has already been read by the caller to build the\n        shared AugmentationRun.\n    jurisdiction_id: The jurisdiction code this remainder is\n        scoped to.\n    refined_condition_codes: The set of RSG SNOMED codes for\n        conditions that were refined for this jurisdiction in\n        the current refinement session.\n    skipped_condition_codes: The set of RSG SNOMED codes for\n        conditions that were NOT refined for this jurisdiction\n        in the current refinement session (no mapping, no\n        configuration, no active configuration). The returned\n        remainder RR will retain only these condition\n        observations.\n    run: The session-scoped AugmentationRun, shared with the\n        per-condition refine_for_condition calls so the\n        remainder's effectiveTime matches.\n\nReturns:\n    RemainderRRResult containing the augmented remainder RR XML\n    and the augmented_result describing the id transition. None\n    when the if-and-only-if rule is not satisfied.\n\nRaises:\n    XMLValidationError: If the RR XML is malformed.",
           "parsed_docstring": {
             "summary": "Produce an augmented remainder RR for a jurisdiction.",
-            "description": "The remainder RR exists as the RR-side complement to per-condition\nrefined outputs. It carries forward the reportability information\nfor conditions reportable to the jurisdiction that the Refiner\ndid NOT refine (no matching active configuration), so each\ncondition's reportability appears exactly once across the full\noutput package.\n\nReturns None when the if-and-only-if rule is not satisfied:\n- refined_condition_codes is empty: the remainder is a\n  complement of refinement; if nothing was refined for this\n  jurisdiction, the original RR moves forward untouched and\n  there is no remainder to produce.\n- skipped_condition_codes is empty: every condition was\n  refined, so there is nothing for the remainder to carry.\n\nTodo:\n* the if-and-only-if rule is enforced here as a None return\n  rather than expressed structurally by the caller\n* both callers compute refined/skipped code sets independently\n  to pass in",
+            "description": "The remainder RR exists as the RR-side complement to per-condition\nrefined outputs. It carries forward the reportability information\nfor conditions reportable to the jurisdiction that the Refiner\ndid NOT refine (no matching active configuration), so each\ncondition's reportability appears exactly once across the full\noutput package.\n\nReturns None when the if-and-only-if rule is not satisfied:\n- refined_condition_codes is empty: the remainder is a complement of refinement; if nothing was refined for this jurisdiction, the original RR moves forward untouched and there is no remainder to produce.\n- skipped_condition_codes is empty: every condition was refined, so there is nothing for the remainder to carry.\n\nTodo:\n* the if-and-only-if rule is enforced here as a None return rather than expressed structurally by the caller\n* both callers compute refined/skipped code sets independently to pass in",
             "params": [
               {
                 "name": "xml_files",
                 "type": "",
-                "description": "The eICR/RR pair. Only the RR is mutated; the\neICR has already been read by the caller to build the\nshared AugmentationRun.",
+                "description": "The eICR/RR pair. Only the RR is mutated; the eICR has already been read by the caller to build the shared AugmentationRun.",
                 "default": ""
               },
               {
                 "name": "jurisdiction_id",
                 "type": "",
-                "description": "The jurisdiction code this remainder is\nscoped to.",
+                "description": "The jurisdiction code this remainder is scoped to.",
                 "default": ""
               },
               {
                 "name": "refined_condition_codes",
                 "type": "",
-                "description": "The set of RSG SNOMED codes for\nconditions that were refined for this jurisdiction in\nthe current refinement session.",
+                "description": "The set of RSG SNOMED codes for conditions that were refined for this jurisdiction in the current refinement session.",
                 "default": ""
               },
               {
                 "name": "skipped_condition_codes",
                 "type": "",
-                "description": "The set of RSG SNOMED codes for\nconditions that were NOT refined for this jurisdiction\nin the current refinement session (no mapping, no\nconfiguration, no active configuration). The returned\nremainder RR will retain only these condition\nobservations.",
+                "description": "The set of RSG SNOMED codes for conditions that were NOT refined for this jurisdiction in the current refinement session (no mapping, no configuration, no active configuration). The returned remainder RR will retain only these condition observations.",
                 "default": ""
               },
               {
                 "name": "run",
                 "type": "",
-                "description": "The session-scoped AugmentationRun, shared with the\nper-condition refine_for_condition calls so the\nremainder's effectiveTime matches.",
+                "description": "The session-scoped AugmentationRun, shared with the per-condition refine_for_condition calls so the remainder's effectiveTime matches.",
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "RemainderRRResult containing the augmented remainder RR XML\nand the augmented_result describing the id transition. None\nwhen the if-and-only-if rule is not satisfied."
-            },
+            "returns": null,
             "raises": [
               {
                 "type": "XMLValidationError",
@@ -5852,7 +5962,7 @@
               {
                 "name": "*paths",
                 "type": "",
-                "description": "Variable number of path segments to join after 'assets'\ne.g., get_asset_path('demo', 'monmothma.zip')\nor get_asset_path('refiner_details.json')",
+                "description": "Variable number of path segments to join after 'assets' e.g., get_asset_path('demo', 'monmothma.zip') or get_asset_path('refiner_details.json')",
                 "default": ""
               }
             ],
@@ -6306,10 +6416,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "(filename, buffer)"
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 161,
@@ -6500,10 +6607,7 @@
                     "default": ""
                   }
                 ],
-                "returns": {
-                  "type": "",
-                  "description": "The matching Coding if found, or None."
-                },
+                "returns": null,
                 "raises": []
               },
               "lineno": 116,
@@ -6565,7 +6669,7 @@
                 "params": [],
                 "returns": {
                   "type": "dict",
-                  "description": "A dictionary with system names as keys and lists of\nCoding dicts as values."
+                  "description": "A dictionary with system names as keys and lists of Coding dicts as values."
                 },
                 "raises": []
               },
@@ -6601,7 +6705,7 @@
                 ],
                 "returns": {
                   "type": "CodeSystemSets",
-                  "description": "A fully populated CodeSystemSets with codes\nrouted to the correct system dictionaries."
+                  "description": "A fully populated CodeSystemSets with codes routed to the correct system dictionaries."
                 },
                 "raises": []
               },
@@ -6691,7 +6795,7 @@
           "docstring": "Represents the processed set of codes from a configuration, ready for refinement.\n\nThis model supports both flat-code matching and code-system-aware matching:\n\n   - codes: Flat set of all code strings, derived from code_system_sets at read time\n     and used for fallback matching when no specific entry matching rules are in place.\n   - code_system_sets: Structured per-system lookup used by the section-aware matching path.\n\n\nBoth fields are populated from the same source data. When the IG does not prescribe strict **SHALL**\nentry matching rules then we can fall back to using `codes`, whereas sections that have strict **SHALL**\nentry matching rules they can use `code_system_sets`.",
           "parsed_docstring": {
             "summary": "Represents the processed set of codes from a configuration, ready for refinement.",
-            "description": "This model supports both flat-code matching and code-system-aware matching:\n\n   - codes: Flat set of all code strings, derived from code_system_sets at read time\n     and used for fallback matching when no specific entry matching rules are in place.\n   - code_system_sets: Structured per-system lookup used by the section-aware matching path.\n\n\nBoth fields are populated from the same source data. When the IG does not prescribe strict **SHALL**\nentry matching rules then we can fall back to using `codes`, whereas sections that have strict **SHALL**\nentry matching rules they can use `code_system_sets`.",
+            "description": "This model supports both flat-code matching and code-system-aware matching:\n\n   - codes: Flat set of all code strings, derived from code_system_sets at read time and used for fallback matching when no specific entry matching rules are in place.\n   - code_system_sets: Structured per-system lookup used by the section-aware matching path.\n\n\nBoth fields are populated from the same source data. When the IG does not prescribe strict **SHALL**\nentry matching rules then we can fall back to using `codes`, whereas sections that have strict **SHALL**\nentry matching rules they can use `code_system_sets`.",
             "params": [],
             "returns": null,
             "raises": []
@@ -7104,7 +7208,7 @@
               {
                 "name": "conditions_without_config",
                 "type": "",
-                "description": "The conditions that do not have a matching config.\nThis is used for shadow RR generation.",
+                "description": "The conditions that do not have a matching config. This is used for shadow RR generation.",
                 "default": ""
               },
               {
@@ -7120,10 +7224,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A SimulatorResult dictionary containing refined documents and a list of non-matches."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 200,
@@ -7168,7 +7269,7 @@
           "docstring": "Orchestrates the full inline testing workflow for eICR refinement using an already-fetched configuration and primary condition.\n\nThis function performs a validation-focused pipeline:\n1. Receives the configuration and primary condition as arguments (ensured non-None by the route/controller).\n2. Extracts all reportable condition codes from the provided RR file for the given jurisdiction.\n3. Validates that at least one of the primary condition's `child_rsg_snomed_codes`\n   is present in the reportable codes from the RR; if not, returns an error.\n4. If valid, builds a ProcessedConfiguration object using the configuration and its primary condition.\n5. Use the ProcessedConfiguration to create a final set of instructions for refinement\n   and execute the plan via the shared refinement pipeline.\n6. Constructs and returns the InlineTestingResult, containing the refined document or an error message if validation failed.\n\nArgs:\n    xml_files: XMLFiles object containing eICR and RR XML strings.\n    configuration: The configuration to test (must not be None).\n    primary_condition: The primary condition associated with the configuration (must not be None).\n    all_conditions: If the configuration has included additional conditions, this will be the list[DbCondition]\n      of the primary and secondary conditions.\n    jurisdiction_id: The jurisdiction code to filter reportable conditions.\n    logger: we're passing the logger from the route to the service.\n    db: The database connection\n\nReturns:\n    An InlineTestingResult dictionary containing either the refined document or a validation error.",
           "parsed_docstring": {
             "summary": "Orchestrates the full inline testing workflow for eICR refinement using an already-fetched configuration and primary condition.",
-            "description": "This function performs a validation-focused pipeline:\n1. Receives the configuration and primary condition as arguments (ensured non-None by the route/controller).\n2. Extracts all reportable condition codes from the provided RR file for the given jurisdiction.\n3. Validates that at least one of the primary condition's `child_rsg_snomed_codes`\n   is present in the reportable codes from the RR; if not, returns an error.\n4. If valid, builds a ProcessedConfiguration object using the configuration and its primary condition.\n5. Use the ProcessedConfiguration to create a final set of instructions for refinement\n   and execute the plan via the shared refinement pipeline.\n6. Constructs and returns the InlineTestingResult, containing the refined document or an error message if validation failed.",
+            "description": "This function performs a validation-focused pipeline:\n1. Receives the configuration and primary condition as arguments (ensured non-None by the route/controller).\n2. Extracts all reportable condition codes from the provided RR file for the given jurisdiction.\n3. Validates that at least one of the primary condition's `child_rsg_snomed_codes` is present in the reportable codes from the RR; if not, returns an error.\n4. If valid, builds a ProcessedConfiguration object using the configuration and its primary condition.\n5. Use the ProcessedConfiguration to create a final set of instructions for refinement and execute the plan via the shared refinement pipeline.\n6. Constructs and returns the InlineTestingResult, containing the refined document or an error message if validation failed.",
             "params": [
               {
                 "name": "xml_files",
@@ -7191,7 +7292,7 @@
               {
                 "name": "all_conditions",
                 "type": "",
-                "description": "If the configuration has included additional conditions, this will be the list[DbCondition]\nof the primary and secondary conditions.",
+                "description": "If the configuration has included additional conditions, this will be the list[DbCondition] of the primary and secondary conditions.",
                 "default": ""
               },
               {
@@ -7213,10 +7314,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "An InlineTestingResult dictionary containing either the refined document or a validation error."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 391,
@@ -7545,7 +7643,7 @@
           "docstring": "These sections are preserved intact in every refined document.\n\nThey sit outside the normal refinement workflow not because the\nrefiner needs to protect them, but because we don't yet have a\nreal-world authoring contract to refine against:\n\n- Reportability Response Information (88085-6) is defined by the\n  eICR STU 3.1.1 IG as a section the PHA populates after eICR\n  receipt, as part of internal data integration -- not something\n  the HCO authors at eICR generation time. It's sketched in the\n  IG but is not part of eICRs flowing through AIMS today.\n\n- Emergency Outbreak Information (83910-0) has a defined section\n  template and a deliberately generic Observation structure\n  (\"unknown until the time of the outbreak,\" per the IG). There\n  is no settled EHR implementation pattern, and the next outbreak\n  will likely shape how this section actually appears in\n  production.\n\nSkipping is the easier path for now and produces Schematron-valid\noutput. We can revisit -- per section, independently -- if and\nwhen either becomes something we actually see in real documents.\n\nThe Enum is the single source of truth: used at runtime to derive\nSECTION_PROCESSING_SKIP, and at the API boundary so Orval ships\nthe concrete LOINC codes to the frontend as const values rather\nthan as plain `string[]`.",
           "parsed_docstring": {
             "summary": "These sections are preserved intact in every refined document.",
-            "description": "They sit outside the normal refinement workflow not because the\nrefiner needs to protect them, but because we don't yet have a\nreal-world authoring contract to refine against:\n\n- Reportability Response Information (88085-6) is defined by the\n  eICR STU 3.1.1 IG as a section the PHA populates after eICR\n  receipt, as part of internal data integration -- not something\n  the HCO authors at eICR generation time. It's sketched in the\n  IG but is not part of eICRs flowing through AIMS today.\n\n- Emergency Outbreak Information (83910-0) has a defined section\n  template and a deliberately generic Observation structure\n  (\"unknown until the time of the outbreak,\" per the IG). There\n  is no settled EHR implementation pattern, and the next outbreak\n  will likely shape how this section actually appears in\n  production.\n\nSkipping is the easier path for now and produces Schematron-valid\noutput. We can revisit -- per section, independently -- if and\nwhen either becomes something we actually see in real documents.\n\nThe Enum is the single source of truth: used at runtime to derive\nSECTION_PROCESSING_SKIP, and at the API boundary so Orval ships\nthe concrete LOINC codes to the frontend as const values rather\nthan as plain `string[]`.",
+            "description": "They sit outside the normal refinement workflow not because the\nrefiner needs to protect them, but because we don't yet have a\nreal-world authoring contract to refine against:\n\n- Reportability Response Information (88085-6) is defined by the eICR STU 3.1.1 IG as a section the PHA populates after eICR receipt, as part of internal data integration -- not something the HCO authors at eICR generation time. It's sketched in the IG but is not part of eICRs flowing through AIMS today.\n\n- Emergency Outbreak Information (83910-0) has a defined section template and a deliberately generic Observation structure (\"unknown until the time of the outbreak,\" per the IG). There is no settled EHR implementation pattern, and the next outbreak will likely shape how this section actually appears in production.\n\nSkipping is the easier path for now and produces Schematron-valid\noutput. We can revisit -- per section, independently -- if and\nwhen either becomes something we actually see in real documents.\n\nThe Enum is the single source of truth: used at runtime to derive\nSECTION_PROCESSING_SKIP, and at the API boundary so Orval ships\nthe concrete LOINC codes to the frontend as const values rather\nthan as plain `string[]`.",
             "params": [],
             "returns": null,
             "raises": []
@@ -7727,12 +7825,9 @@
           "docstring": "Coerce an `(action, narrative)` pair into a valid combination.\n\nUsed by non-user-initiated paths (the clone path during config\nactivation, and one-shot data backfill migrations) that cannot\nraise on a stale invalid combo without disrupting unrelated work.\nUser-initiated paths (the PATCH section endpoint) raise via the\nsibling validators in `api/v1/configurations/sections.py` instead.\n\nRules applied in order:\n\n  1. Narrative-only sections must have action=\"retain\".\n  2. Disabled sections must have action=\"retain\" (they are always\n     system-skipped at refinement; storing anything else is\n     misleading).\n  3. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires\n     action=\"refine\". When action is not \"refine\" after the\n     earlier coercions, narrative is downgraded to \"retain\".\n  4. `narrative == \"reconstruct\"` is only valid on\n     `ReconstructableSection` codes. Otherwise narrative is\n     downgraded to \"retain\".\n\nReturns:\n    Tuple of `(coerced_action, coerced_narrative, notes)`. `notes`\n    is a list of human-readable strings describing each coercion\n    applied \u2014 empty when the input was already valid. Callers\n    should log non-empty notes so jurisdictions can audit what\n    the system fixed up.",
           "parsed_docstring": {
             "summary": "Coerce an `(action, narrative)` pair into a valid combination.",
-            "description": "Used by non-user-initiated paths (the clone path during config\nactivation, and one-shot data backfill migrations) that cannot\nraise on a stale invalid combo without disrupting unrelated work.\nUser-initiated paths (the PATCH section endpoint) raise via the\nsibling validators in `api/v1/configurations/sections.py` instead.\n\nRules applied in order:\n\n  1. Narrative-only sections must have action=\"retain\".\n  2. Disabled sections must have action=\"retain\" (they are always\n     system-skipped at refinement; storing anything else is\n     misleading).\n  3. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires\n     action=\"refine\". When action is not \"refine\" after the\n     earlier coercions, narrative is downgraded to \"retain\".\n  4. `narrative == \"reconstruct\"` is only valid on\n     `ReconstructableSection` codes. Otherwise narrative is\n     downgraded to \"retain\".",
+            "description": "Used by non-user-initiated paths (the clone path during config\nactivation, and one-shot data backfill migrations) that cannot\nraise on a stale invalid combo without disrupting unrelated work.\nUser-initiated paths (the PATCH section endpoint) raise via the\nsibling validators in `api/v1/configurations/sections.py` instead.\n\nRules applied in order:\n 1. Narrative-only sections must have action=\"retain\". 2. Disabled sections must have action=\"retain\" (they are always system-skipped at refinement; storing anything else is misleading). 3. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires action=\"refine\". When action is not \"refine\" after the earlier coercions, narrative is downgraded to \"retain\". 4. `narrative == \"reconstruct\"` is only valid on `ReconstructableSection` codes. Otherwise narrative is downgraded to \"retain\".\n\nReturns: Tuple of `(coerced_action, coerced_narrative, notes)`. `notes` is a list of human-readable strings describing each coercion applied \u2014 empty when the input was already valid. Callers should log non-empty notes so jurisdictions can audit what the system fixed up.",
             "params": [],
-            "returns": {
-              "type": "",
-              "description": "Tuple of `(coerced_action, coerced_narrative, notes)`. `notes`\nis a list of human-readable strings describing each coercion\napplied \u2014 empty when the input was already valid. Callers\nshould log non-empty notes so jurisdictions can audit what\nthe system fixed up."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 150,
@@ -7853,7 +7948,7 @@
               {
                 "name": "processed_configuration",
                 "type": "",
-                "description": "The processed configuration containing terminology\nand section processing rules.",
+                "description": "The processed configuration containing terminology and section processing rules.",
                 "default": ""
               },
               {
@@ -7865,20 +7960,17 @@
               {
                 "name": "augmentation_timestamp",
                 "type": "",
-                "description": "The HL7 V3 timestamp from the\nAugmentationContext shared across this refinement run. Used\nto stamp the IDs on per-section provenance footnotes so they\ntie back to the augmentation author's <time> value.",
+                "description": "The HL7 V3 timestamp from the AugmentationContext shared across this refinement run. Used to stamp the IDs on per-section provenance footnotes so they tie back to the augmentation author's <time> value.",
                 "default": ""
               },
               {
                 "name": "config_version",
                 "type": "",
-                "description": "The version number of the activated configuration.\nPassed through to each SectionProvenanceRecord for audit trail.\nOptional for backward compatibility with callers that do not yet\nsupply it (defaults to None).",
+                "description": "The version number of the activated configuration. Passed through to each SectionProvenanceRecord for audit trail. Optional for backward compatibility with callers that do not yet supply it (defaults to None).",
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "An EICRRefinementPlan containing the exact instructions for `refine_eicr`."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 247,
@@ -7913,7 +8005,7 @@
           "docstring": "Refine an eICR by executing a provided RefinementPlan.\n\nMutates `eicr_root` in place. The caller is responsible for parsing\nbeforehand and serializing afterward.\n\nThis function is a \"pure executor.\" It does not make decisions; it only\ncarries out the instructions given to it in the plan. Version detection\nand specification loading are performed during plan creation, so this\nfunction receives a fully resolved plan with no document introspection.\n\nProcessing behavior:\n- It iterates through the instructions in the plan.\n- For each section, it executes one of four branches based on the\n  configured (include, action, narrative) combination and whether\n  the section is narrative-only in the eICR spec:\n\n    - `include=False`                              -> remove (stub)\n    - `include=True, narrative-only section`       -> narrative-only branch\n    - `include=True, action=\"retain\", refinable`   -> retain branch\n    - `include=True, action=\"refine\", refinable`   -> refine via `process_section`\n\n- The narrative-only branch is reached when the section has no\n  entry match rules in the spec. There is no coded data to\n  refine, so the only decision is what to do with the narrative.\n  The outcome is `NARRATIVE_ONLY_RETAINED` or `NARRATIVE_ONLY_REMOVED`\n  depending on the configured narrative setting \u2014 distinct from\n  the configured-retain outcomes below because this reflects the\n  spec's structural reality, not a jurisdiction choice.\n- The retain branch honors the narrative setting: when the\n  jurisdiction has configured narrative removal on a retained\n  section, the narrative is replaced with the removal notice\n  while the entries are left untouched.\n- The refine branch delegates to process_section, which dispatches\n  to the section-aware or generic matching engine based on the\n  section specification. The engine returns a `SectionRunResult`\n  which is then interpreted into a `SectionOutcome` via\n  `_interpret_run_result`.\n- After each branch, the section's provenance record is finalized\n  with the runtime outcome via `dataclasses.replace`, and an\n  unanchored provenance footnote is appended to the section's\n  `<text>` element. The footnote ID is built from the section's\n  LOINC code and the plan's augmentation_timestamp, tying it to\n  the augmentation author's `<time>` value for forensic\n  traceability.\n\nArgs:\n    eicr_root: The parsed eICR root element.\n    plan: A complete, actionable plan for refining the eICR.\n\nRaises:\n    StructureValidationError: If the document structure is invalid.",
           "parsed_docstring": {
             "summary": "Refine an eICR by executing a provided RefinementPlan.",
-            "description": "Mutates `eicr_root` in place. The caller is responsible for parsing\nbeforehand and serializing afterward.\n\nThis function is a \"pure executor.\" It does not make decisions; it only\ncarries out the instructions given to it in the plan. Version detection\nand specification loading are performed during plan creation, so this\nfunction receives a fully resolved plan with no document introspection.\n\nProcessing behavior:\n- It iterates through the instructions in the plan.\n- For each section, it executes one of four branches based on the\n  configured (include, action, narrative) combination and whether\n  the section is narrative-only in the eICR spec:\n\n    - `include=False`                              -> remove (stub)\n    - `include=True, narrative-only section`       -> narrative-only branch\n    - `include=True, action=\"retain\", refinable`   -> retain branch\n    - `include=True, action=\"refine\", refinable`   -> refine via `process_section`\n\n- The narrative-only branch is reached when the section has no\n  entry match rules in the spec. There is no coded data to\n  refine, so the only decision is what to do with the narrative.\n  The outcome is `NARRATIVE_ONLY_RETAINED` or `NARRATIVE_ONLY_REMOVED`\n  depending on the configured narrative setting \u2014 distinct from\n  the configured-retain outcomes below because this reflects the\n  spec's structural reality, not a jurisdiction choice.\n- The retain branch honors the narrative setting: when the\n  jurisdiction has configured narrative removal on a retained\n  section, the narrative is replaced with the removal notice\n  while the entries are left untouched.\n- The refine branch delegates to process_section, which dispatches\n  to the section-aware or generic matching engine based on the\n  section specification. The engine returns a `SectionRunResult`\n  which is then interpreted into a `SectionOutcome` via\n  `_interpret_run_result`.\n- After each branch, the section's provenance record is finalized\n  with the runtime outcome via `dataclasses.replace`, and an\n  unanchored provenance footnote is appended to the section's\n  `<text>` element. The footnote ID is built from the section's\n  LOINC code and the plan's augmentation_timestamp, tying it to\n  the augmentation author's `<time>` value for forensic\n  traceability.",
+            "description": "Mutates `eicr_root` in place. The caller is responsible for parsing\nbeforehand and serializing afterward.\n\nThis function is a \"pure executor.\" It does not make decisions; it only\ncarries out the instructions given to it in the plan. Version detection\nand specification loading are performed during plan creation, so this\nfunction receives a fully resolved plan with no document introspection.\n\nProcessing behavior:\n- It iterates through the instructions in the plan.\n- For each section, it executes one of four branches based on the configured (include, action, narrative) combination and whether\n  the section is narrative-only in the eICR spec:\n - `include=False`                              -> remove (stub) - `include=True, narrative-only section`       -> narrative-only branch - `include=True, action=\"retain\", refinable`   -> retain branch - `include=True, action=\"refine\", refinable`   -> refine via `process_section`\n\n- The narrative-only branch is reached when the section has no entry match rules in the spec. There is no coded data to refine, so the only decision is what to do with the narrative. The outcome is `NARRATIVE_ONLY_RETAINED` or `NARRATIVE_ONLY_REMOVED` depending on the configured narrative setting \u2014 distinct from the configured-retain outcomes below because this reflects the spec's structural reality, not a jurisdiction choice.\n- The retain branch honors the narrative setting: when the jurisdiction has configured narrative removal on a retained section, the narrative is replaced with the removal notice while the entries are left untouched.\n- The refine branch delegates to process_section, which dispatches to the section-aware or generic matching engine based on the section specification. The engine returns a `SectionRunResult` which is then interpreted into a `SectionOutcome` via `_interpret_run_result`.\n- After each branch, the section's provenance record is finalized with the runtime outcome via `dataclasses.replace`, and an unanchored provenance footnote is appended to the section's `<text>` element. The footnote ID is built from the section's LOINC code and the plan's augmentation_timestamp, tying it to the augmentation author's `<time>` value for forensic traceability.",
             "params": [
               {
                 "name": "eicr_root",
@@ -7990,7 +8082,7 @@
           "docstring": "Refine an RR by filtering out conditions not reportable to the jurisdiction.\n\nMutates `rr_root` in place. The caller is responsible for parsing\nbeforehand and serializing afterward.\n\nProcessing behavior:\n- It iterates through the RR and removes information common to all RR's.\n- It loops through all the condition observations in the reportability RC\n    - Anything that isn't RRSVS1 reportable is filtered out\n    - Of the remaining reportable observations, anything that isn't specified\n      in the refinement configurations are filtered out\n    - For anything remaining, any codes that aren't specified within the\n      in the configuration RSG or custom codes are filtered out.\n\nArgs:\n    rr_root: The parsed RR root element.\n    plan: The RRRefinementPlan for the corresponding eICR.\n\nRaises:\n    StructureValidationError: If the document structure is invalid.",
           "parsed_docstring": {
             "summary": "Refine an RR by filtering out conditions not reportable to the jurisdiction.",
-            "description": "Mutates `rr_root` in place. The caller is responsible for parsing\nbeforehand and serializing afterward.\n\nProcessing behavior:\n- It iterates through the RR and removes information common to all RR's.\n- It loops through all the condition observations in the reportability RC\n    - Anything that isn't RRSVS1 reportable is filtered out\n    - Of the remaining reportable observations, anything that isn't specified\n      in the refinement configurations are filtered out\n    - For anything remaining, any codes that aren't specified within the\n      in the configuration RSG or custom codes are filtered out.",
+            "description": "Mutates `rr_root` in place. The caller is responsible for parsing\nbeforehand and serializing afterward.\n\nProcessing behavior:\n- It iterates through the RR and removes information common to all RR's.\n- It loops through all the condition observations in the reportability RC - Anything that isn't RRSVS1 reportable is filtered out - Of the remaining reportable observations, anything that isn't specified in the refinement configurations are filtered out - For anything remaining, any codes that aren't specified within the in the configuration RSG or custom codes are filtered out.",
             "params": [
               {
                 "name": "rr_root",
@@ -8035,7 +8127,7 @@
           "docstring": "Create an RR filtered to only the reportable conditions that were not refined.\n\nThis is a convenience function for callers outside the pipeline (e.g., the\nlambda handler) that need a self-contained parse \u2192 filter \u2192 serialize path.\nThe pipeline itself uses reportability directly on a parsed tree.\n\nWhen the RR contains multiple reportable conditions for a jurisdiction but\nonly some have active refiner configurations, the conditions that go through\nfull refinement get their own refined RR (produced by `refine_for_condition`\nvia the pipeline). The remaining conditions \u2014 those without active\nconfigurations \u2014 still need their reportability information preserved.\n\nThis function produces that \"remainder\" RR. It filters the original RR down\nto just the condition observations matching the provided codes, removing\neverything else. This prevents duplication: when the jurisdiction receives\nthe full output package (original files + refined outputs), each condition's\nreportability information appears exactly once.\n\nExample scenario:\n- SDDH has two reportable conditions: COVID (840539006) and Influenza\n  (772828001). Only COVID has an active configuration.\n    - COVID goes through refine_for_condition \u2192 produces refined_eICR.xml + refined_RR.xml\n    - Influenza has no config \u2192 this function produces an RR with only the\n      Influenza reportability observation, written to unrefined_rr/refined_RR.xml\n\nThe jurisdiction receives both and can process each condition without\nseeing COVID reported twice.\n\nArgs:\n    xml_files: The eICR/RR pair. Only the RR is used.\n    condition_codes: The set of RSG SNOMED codes for conditions that\n        were NOT refined (i.e., had no active configuration). The\n        returned RR will retain only these condition observations.\n\nReturns:\n    str: The filtered RR XML as a string, containing only the\n        reportability observations for the specified condition codes.",
           "parsed_docstring": {
             "summary": "Create an RR filtered to only the reportable conditions that were not refined.",
-            "description": "This is a convenience function for callers outside the pipeline (e.g., the\nlambda handler) that need a self-contained parse \u2192 filter \u2192 serialize path.\nThe pipeline itself uses reportability directly on a parsed tree.\n\nWhen the RR contains multiple reportable conditions for a jurisdiction but\nonly some have active refiner configurations, the conditions that go through\nfull refinement get their own refined RR (produced by `refine_for_condition`\nvia the pipeline). The remaining conditions \u2014 those without active\nconfigurations \u2014 still need their reportability information preserved.\n\nThis function produces that \"remainder\" RR. It filters the original RR down\nto just the condition observations matching the provided codes, removing\neverything else. This prevents duplication: when the jurisdiction receives\nthe full output package (original files + refined outputs), each condition's\nreportability information appears exactly once.\n\nExample scenario:\n- SDDH has two reportable conditions: COVID (840539006) and Influenza\n  (772828001). Only COVID has an active configuration.\n    - COVID goes through refine_for_condition \u2192 produces refined_eICR.xml + refined_RR.xml\n    - Influenza has no config \u2192 this function produces an RR with only the\n      Influenza reportability observation, written to unrefined_rr/refined_RR.xml\n\nThe jurisdiction receives both and can process each condition without\nseeing COVID reported twice.",
+            "description": "This is a convenience function for callers outside the pipeline (e.g., the\nlambda handler) that need a self-contained parse \u2192 filter \u2192 serialize path.\nThe pipeline itself uses reportability directly on a parsed tree.\n\nWhen the RR contains multiple reportable conditions for a jurisdiction but\nonly some have active refiner configurations, the conditions that go through\nfull refinement get their own refined RR (produced by `refine_for_condition`\nvia the pipeline). The remaining conditions \u2014 those without active\nconfigurations \u2014 still need their reportability information preserved.\n\nThis function produces that \"remainder\" RR. It filters the original RR down\nto just the condition observations matching the provided codes, removing\neverything else. This prevents duplication: when the jurisdiction receives\nthe full output package (original files + refined outputs), each condition's\nreportability information appears exactly once.\n\nExample scenario:\n- SDDH has two reportable conditions: COVID (840539006) and Influenza (772828001). Only COVID has an active configuration. - COVID goes through refine_for_condition \u2192 produces refined_eICR.xml + refined_RR.xml - Influenza has no config \u2192 this function produces an RR with only the Influenza reportability observation, written to unrefined_rr/refined_RR.xml\n\nThe jurisdiction receives both and can process each condition without\nseeing COVID reported twice.",
             "params": [
               {
                 "name": "xml_files",
@@ -8046,13 +8138,13 @@
               {
                 "name": "condition_codes",
                 "type": "",
-                "description": "The set of RSG SNOMED codes for conditions that\nwere NOT refined (i.e., had no active configuration). The\nreturned RR will retain only these condition observations.",
+                "description": "The set of RSG SNOMED codes for conditions that were NOT refined (i.e., had no active configuration). The returned RR will retain only these condition observations.",
                 "default": ""
               }
             ],
             "returns": {
               "type": "str",
-              "description": "The filtered RR XML as a string, containing only the\nreportability observations for the specified condition codes."
+              "description": "The filtered RR XML as a string, containing only the reportability observations for the specified condition codes."
             },
             "raises": []
           },
@@ -8329,7 +8421,7 @@
             "raises": [
               {
                 "type": "ValueError",
-                "description": "If the input eICR is missing setId or versionNumber\n(both required by eICR STU 3.1.1 and the augmentation IG\nv4 \u2014 CONF:5573-15, CONF:5573-16)."
+                "description": "If the input eICR is missing setId or versionNumber (both required by eICR STU 3.1.1 and the augmentation IG\nv4 \u2014 CONF:5573-15, CONF:5573-16)."
               }
             ]
           },
@@ -8495,7 +8587,7 @@
             "raises": [
               {
                 "type": "ValueError",
-                "description": "If the RR lacks the eICR External Document Reference\n(it is 1..1 SHALL in a conformant RR), or if the refined\neICR is missing id/setId/versionNumber (augment_eicr\nguarantees all three)."
+                "description": "If the RR lacks the eICR External Document Reference (it is 1..1 SHALL in a conformant RR), or if the refined eICR is missing id/setId/versionNumber (augment_eicr guarantees all three)."
               }
             ]
           },
@@ -8806,49 +8898,49 @@
               {
                 "name": "code_xpath",
                 "type": "",
-                "description": "XPath expression (relative to <entry>) targeting the primary\ncode-bearing elements for this rule. Should be scoped to a\nspecific C-CDA templateId predicate where possible so that\nstructural precedence operates at the template level rather\nthan the element level.",
+                "description": "XPath expression (relative to <entry>) targeting the primary code-bearing elements for this rule. Should be scoped to a specific C-CDA templateId predicate where possible so that structural precedence operates at the template level rather than the element level.",
                 "default": ""
               },
               {
                 "name": "code_system_oid",
                 "type": "",
-                "description": "OID of the expected code system for primary code matches.\nWhen set, only codes whose configured code system matches\nthis OID are considered matches. When None, any code system\nis accepted \u2014 use None when vendor coding practice is too\nvaried to rely on the codeSystem attribute, and document\nthe intent with a comment at the call site.\n\nFor rules where the OID encodes semantic meaning (e.g.\nSNOMED_OID on observation/value means \"organism/substance\nresult codes specifically\"), retain the OID and document\nwhy. For rules where the OID is a validity guard on a\nstructurally unambiguous location (e.g. RxNorm on\nmanufacturedMaterial/code), None is acceptable because the\nXPath already constrains the match location sufficiently.",
+                "description": "OID of the expected code system for primary code matches. When set, only codes whose configured code system matches this OID are considered matches. When None, any code system is accepted \u2014 use None when vendor coding practice is too varied to rely on the codeSystem attribute, and document the intent with a comment at the call site.\nFor rules where the OID encodes semantic meaning (e.g. SNOMED_OID on observation/value means \"organism/substance result codes specifically\"), retain the OID and document why. For rules where the OID is a validity guard on a structurally unambiguous location (e.g. RxNorm on manufacturedMaterial/code), None is acceptable because the XPath already constrains the match location sufficiently.",
                 "default": ""
               },
               {
                 "name": "translation_xpath",
                 "type": "",
-                "description": "XPath expression targeting translation elements to check\nwhen the primary code_xpath produces no match. Handles the\ncommon real-world pattern where the IG-expected code system\nappears in <translation> rather than at the primary\nlocation (e.g. local code as primary, LOINC in translation).",
+                "description": "XPath expression targeting translation elements to check when the primary code_xpath produces no match. Handles the common real-world pattern where the IG-expected code system appears in <translation> rather than at the primary location (e.g. local code as primary, LOINC in translation).",
                 "default": ""
               },
               {
                 "name": "translation_code_system_oid",
                 "type": "",
-                "description": "OID for translation code matching. Same semantics as\ncode_system_oid. When None, any code system in the\ntranslation is accepted.",
+                "description": "OID for translation code matching. Same semantics as code_system_oid. When None, any code system in the translation is accepted.",
                 "default": ""
               },
               {
                 "name": "prune_container_xpath",
                 "type": "",
-                "description": "XPath expression (relative to <entry>) identifying the\ncontainer elements to prune within a matched entry. When\nset, only containers that contain a matched code element\nare kept; the rest are removed. When None, the matched\nentry is kept whole \u2014 no intra-entry pruning is performed.\n\nUsed for sections where entries contain panels of\nsub-observations (Results organizer/component, Vital Signs\norganizer/component) and each sub-observation should be\nindividually retained or removed.",
+                "description": "XPath expression (relative to <entry>) identifying the container elements to prune within a matched entry. When set, only containers that contain a matched code element are kept; the rest are removed. When None, the matched entry is kept whole \u2014 no intra-entry pruning is performed.\nUsed for sections where entries contain panels of sub-observations (Results organizer/component, Vital Signs organizer/component) and each sub-observation should be individually retained or removed.",
                 "default": ""
               },
               {
                 "name": "require_value_set_attr",
                 "type": "",
-                "description": "When True, a code element only qualifies as a match\ncandidate if it also carries an sdtc:valueSet attribute.\n\nThis guard is specifically for result observation value\nelements where the presence of sdtc:valueSet is the\nstructural indicator that a code was placed there as an\nRCTC trigger code rather than as a plain clinical finding\nvalue. Per CONF:4527-443 (STU 3.1.1), sdtc:valueSet SHALL\nbe present on genuine trigger code values.\n\nWithout this guard, generic SNOMED qualifier codes like\n260373001 \"Detected (qualifier value)\" \u2014 which appear as\nplain observation values on any positive test \u2014 would match\nthe organism/substance rule and cause unrelated result\nentries to be retained. The sdtc:valueSet attribute is\nabsent on those elements, so the guard correctly filters\nthem out while still matching codes like 5247005 \"Bordetella\npertussis (organism)\" that are genuine RCTC trigger values\nand do carry sdtc:valueSet.\n\nDefault False. Only set to True on rules targeting\nobservation/value where this distinction matters.",
+                "description": "When True, a code element only qualifies as a match\ncandidate if it also carries an sdtc:valueSet attribute.\nThis guard is specifically for result observation value\n       elements where the presence of sdtc:valueSet is the structural indicator that a code was placed there as an RCTC trigger code rather than as a plain clinical finding\n       value. Per CONF:4527-443 (STU 3.1.1), sdtc:valueSet SHALL be present on genuine trigger code values.\nWithout this guard, generic SNOMED qualifier codes like 260373001 \"Detected (qualifier value)\" \u2014 which appear as plain observation values on any positive test \u2014 would match the organism/substance rule and cause unrelated result\n       entries to be retained. The sdtc:valueSet attribute is absent on those elements, so the guard correctly filters them out while still matching codes like 5247005 \"Bordetella pertussis (organism)\" that are genuine RCTC trigger values\n       and do carry sdtc:valueSet.\nDefault False. Only set to True on rules targeting observation/value where this distinction matters.",
                 "default": ""
               },
               {
                 "name": "tier",
                 "type": "",
-                "description": "IG conformance tier for this rule. Used in match provenance\ncomments to indicate how the rule relates to the spec:\n\n1. SHALL: directly mandated by the IG. The primary conformant path.\nIf a sender follows the spec, this rule matches.\n\n2. SHOULD/MAY: permitted by the IG but not required. Handles\noptional patterns (translations, alternate code locations) that\nconformant senders may or may not use.\n\n3. HEURISTIC: not IG-conformant but observed in real EHR output.\nAccommodates vendor variance. Each tier 3 rule should carry a\ncomment explaining what real-world pattern it was written for.\n\nSurfaces in XML match comments as (T1), (T2), or (T3) so\nreaders can immediately tell whether a match fired on a\nspec-mandated path or a heuristic accommodation.\n\nDefault 1.",
+                "description": "IG conformance tier for this rule. Used in match provenance\ncomments to indicate how the rule relates to the spec:\n\n       1. SHALL: directly mandated by the IG. The primary conformant path. If a sender follows the spec, this rule matches.\n\n       2. SHOULD/MAY: permitted by the IG but not required. Handles optional patterns (translations, alternate code locations) that conformant senders may or may not use.\n\n       3. HEURISTIC: not IG-conformant but observed in real EHR output. Accommodates vendor variance. Each tier 3 rule should carry a comment explaining what real-world pattern it was written for.\nSurfaces in XML match comments as (T1), (T2), or (T3) so readers can immediately tell whether a match fired on a spec-mandated path or a heuristic accommodation.\nDefault 1.",
                 "default": ""
               },
               {
                 "name": "preserve_whole_entry",
                 "type": "",
-                "description": "When True, a matched entry is kept entirely intact \u2014\nall child elements including entryRelationship chains,\nperformers, authors, participants, and nested clinical\nstatements are preserved without pruning.\n\nUse this for clinical acts where the entry is the natural\nunit of preservation and intra-entry pruning would destroy\nclinical meaning. The canonical cases are:\n\n  - Medication Activity: entryRelationship[@typeCode='CAUS']\n    carries Reaction Observation (V2) \u2014 adverse event\n    information that belongs with the medication record\n    per CONF:1098-7552 (MAY, Medication Activity V2).\n  - Procedure Activity: entryRelationship[@typeCode='COMP']\n    carries Reaction Observation (V2) per CONF:1098-32475\n    (MAY, Procedure Activity Procedure V2).\n  - Immunization Activity: entryRelationship carries\n    Reaction Observation (V2) per the Immunization Activity\n    V3 template context table.\n  - Social History structured entries (Travel History,\n    Exposure, Occupation): all meaningful content lives in\n    <participant> and nested entryRelationships, not in the\n    top-level coded elements. Preserving only the match path\n    would strip the location, employer, or agent information\n    that makes the entry useful to the PHA.\n\nWhen True, prune_container_xpath is ignored \u2014 there is no\nintra-entry pruning to perform. The match fires, the entry\nis kept whole.\n\nDefault False.",
+                "description": "When True, a matched entry is kept entirely intact \u2014 all child elements including entryRelationship chains, performers, authors, participants, and nested clinical statements are preserved without pruning.\nUse this for clinical acts where the entry is the natural unit of preservation and intra-entry pruning would destroy\n       clinical meaning. The canonical cases are:\n\n         - Medication Activity: entryRelationship[@typeCode='CAUS'] carries Reaction Observation (V2) \u2014 adverse event information that belongs with the medication record\n           per CONF:1098-7552 (MAY, Medication Activity V2).\n         - Procedure Activity: entryRelationship[@typeCode='COMP']\n           carries Reaction Observation (V2) per CONF:1098-32475 (MAY, Procedure Activity Procedure V2).\n         - Immunization Activity: entryRelationship carries Reaction Observation (V2) per the Immunization Activity V3 template context table. - Social History structured entries (Travel History,\n           Exposure, Occupation): all meaningful content lives in <participant> and nested entryRelationships, not in the top-level coded elements. Preserving only the match path would strip the location, employer, or agent information that makes the entry useful to the PHA.\nWhen True, prune_container_xpath is ignored \u2014 there is no intra-entry pruning to perform. The match fires, the entry is kept whole.\nDefault False.",
                 "default": ""
               }
             ],
@@ -9030,7 +9122,7 @@
           "docstring": "Describes how a section's processing instructions were determined.\n\nUsed in SectionProvenanceRecord to explain why a section in the refined\neICR looks the way it does.\n\nValues:\n- CONFIGURED:   The jurisdiction explicitly configured this section in\n                the application. Instructions reflect their choices.\n- SYSTEM_SKIP:  The section is in SECTION_PROCESSING_SKIP \u2014 a hardcoded\n                set of sections that are always retained regardless of\n                jurisdiction configuration (e.g., emergency outbreak info,\n                reportability response info).\n- UNCONFIGURED: The section was present in the source document but absent\n                from the jurisdiction's configuration. Falls back to\n                SKIP_SECTION_INSTRUCTIONS (include=True, retain) so the\n                section is preserved intact.",
           "parsed_docstring": {
             "summary": "Describes how a section's processing instructions were determined.",
-            "description": "Used in SectionProvenanceRecord to explain why a section in the refined\neICR looks the way it does.\n\nValues:\n- CONFIGURED:   The jurisdiction explicitly configured this section in\n                the application. Instructions reflect their choices.\n- SYSTEM_SKIP:  The section is in SECTION_PROCESSING_SKIP \u2014 a hardcoded\n                set of sections that are always retained regardless of\n                jurisdiction configuration (e.g., emergency outbreak info,\n                reportability response info).\n- UNCONFIGURED: The section was present in the source document but absent\n                from the jurisdiction's configuration. Falls back to\n                SKIP_SECTION_INSTRUCTIONS (include=True, retain) so the\n                section is preserved intact.",
+            "description": "Used in SectionProvenanceRecord to explain why a section in the refined\neICR looks the way it does.\n\nValues:\n- CONFIGURED:   The jurisdiction explicitly configured this section in the application. Instructions reflect their choices.\n- SYSTEM_SKIP:  The section is in SECTION_PROCESSING_SKIP \u2014 a hardcoded set of sections that are always retained regardless of jurisdiction configuration (e.g., emergency outbreak info, reportability response info).\n- UNCONFIGURED: The section was present in the source document but absent from the jurisdiction's configuration. Falls back to SKIP_SECTION_INSTRUCTIONS (include=True, retain) so the section is preserved intact.",
             "params": [],
             "returns": null,
             "raises": []
@@ -9044,7 +9136,7 @@
           "docstring": "Describes what the refiner actually did to a section at runtime.\n\nDistinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG:\n    include=False. Section reduced to a minimal stub regardless\n    of action/narrative settings.\n\n- RETAINED:\n    include=True, action=\"retain\", narrative=\"retain\". Section\n    with coded entries left untouched because the jurisdiction\n    asked us to.\n\n- RETAINED_NARRATIVE_REMOVED:\n    include=True, action=\"retain\", narrative=\"remove\". Coded\n    entries kept as provided, narrative replaced with the\n    removal notice.\n\n- NARRATIVE_ONLY_RETAINED:\n    include=True, narrative=\"retain\", section is narrative-only\n    (the eICR spec defines no entry match rules for it). There\n    was no coded data to refine \u2014 the section is conveyed\n    entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED:\n    this is the spec's structural reality, not a configuration\n    choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED:\n    include=True, narrative=\"remove\", section is narrative-only.\n    Narrative replaced with the removal notice; there are no\n    coded entries to preserve. Distinct from\n    RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" with matches). Entries filtered to those\n    matching the configuration, original narrative preserved\n    for context.\n\n- REFINED_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative=\"remove\". Entries\n    filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED:\n    include=True, action=\"refine\", narrative=\"refine\" (future).\n    Entries filtered, narrative reconstructed from surviving\n    entries. Not yet reachable \u2014 depends on narrative\n    reconstruction work landing.\n\n- REFINED_RECONSTRUCT_FALLBACK_RETAINED:\n    include=True, action=\"refine\", narrative=\"reconstruct\".\n    The jurisdiction asked for narrative reconstruction but\n    the engine couldn't produce one \u2014 either no entries\n    survived to rebuild from (no-match) or the section has\n    no registered reconstructor and the matched-path\n    fallback fired. Rather than discard the most informative\n    state available, the engine keeps the original narrative\n    in place. Distinct from the plain RETAINED / REFINED_*\n    outcomes so the provenance footnote can tell a reviewer\n    \"you asked for reconstruct; we couldn't, so we kept the\n    original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" without matches \u2192 narrative removed; see\n    sibling outcome). Matching produced nothing, but the\n    jurisdiction asked us to keep the original narrative \u2014\n    entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative in\n    (\"remove\" / \"keep_on_match\"). Matching produced nothing;\n    entries are pruned and the narrative is replaced with\n    the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
           "parsed_docstring": {
             "summary": "Describes what the refiner actually did to a section at runtime.",
-            "description": "Distinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG:\n    include=False. Section reduced to a minimal stub regardless\n    of action/narrative settings.\n\n- RETAINED:\n    include=True, action=\"retain\", narrative=\"retain\". Section\n    with coded entries left untouched because the jurisdiction\n    asked us to.\n\n- RETAINED_NARRATIVE_REMOVED:\n    include=True, action=\"retain\", narrative=\"remove\". Coded\n    entries kept as provided, narrative replaced with the\n    removal notice.\n\n- NARRATIVE_ONLY_RETAINED:\n    include=True, narrative=\"retain\", section is narrative-only\n    (the eICR spec defines no entry match rules for it). There\n    was no coded data to refine \u2014 the section is conveyed\n    entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED:\n    this is the spec's structural reality, not a configuration\n    choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED:\n    include=True, narrative=\"remove\", section is narrative-only.\n    Narrative replaced with the removal notice; there are no\n    coded entries to preserve. Distinct from\n    RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" with matches). Entries filtered to those\n    matching the configuration, original narrative preserved\n    for context.\n\n- REFINED_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative=\"remove\". Entries\n    filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED:\n    include=True, action=\"refine\", narrative=\"refine\" (future).\n    Entries filtered, narrative reconstructed from surviving\n    entries. Not yet reachable \u2014 depends on narrative\n    reconstruction work landing.\n\n- REFINED_RECONSTRUCT_FALLBACK_RETAINED:\n    include=True, action=\"refine\", narrative=\"reconstruct\".\n    The jurisdiction asked for narrative reconstruction but\n    the engine couldn't produce one \u2014 either no entries\n    survived to rebuild from (no-match) or the section has\n    no registered reconstructor and the matched-path\n    fallback fired. Rather than discard the most informative\n    state available, the engine keeps the original narrative\n    in place. Distinct from the plain RETAINED / REFINED_*\n    outcomes so the provenance footnote can tell a reviewer\n    \"you asked for reconstruct; we couldn't, so we kept the\n    original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" without matches \u2192 narrative removed; see\n    sibling outcome). Matching produced nothing, but the\n    jurisdiction asked us to keep the original narrative \u2014\n    entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative in\n    (\"remove\" / \"keep_on_match\"). Matching produced nothing;\n    entries are pruned and the narrative is replaced with\n    the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
+            "description": "Distinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG: include=False. Section reduced to a minimal stub regardless of action/narrative settings.\n\n- RETAINED: include=True, action=\"retain\", narrative=\"retain\". Section with coded entries left untouched because the jurisdiction asked us to.\n\n- RETAINED_NARRATIVE_REMOVED: include=True, action=\"retain\", narrative=\"remove\". Coded entries kept as provided, narrative replaced with the removal notice.\n\n- NARRATIVE_ONLY_RETAINED: include=True, narrative=\"retain\", section is narrative-only (the eICR spec defines no entry match rules for it). There was no coded data to refine \u2014 the section is conveyed entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED: this is the spec's structural reality, not a configuration choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED: include=True, narrative=\"remove\", section is narrative-only. Narrative replaced with the removal notice; there are no coded entries to preserve. Distinct from RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES: include=True, action=\"refine\", narrative=\"retain\" (or \"keep_on_match\" with matches). Entries filtered to those matching the configuration, original narrative preserved for context.\n\n- REFINED_NARRATIVE_REMOVED: include=True, action=\"refine\", narrative=\"remove\". Entries filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED: include=True, action=\"refine\", narrative=\"refine\" (future). Entries filtered, narrative reconstructed from surviving entries. Not yet reachable \u2014 depends on narrative reconstruction work landing.\n\n- REFINED_RECONSTRUCT_FALLBACK_RETAINED: include=True, action=\"refine\", narrative=\"reconstruct\". The jurisdiction asked for narrative reconstruction but the engine couldn't produce one \u2014 either no entries survived to rebuild from (no-match) or the section has no registered reconstructor and the matched-path fallback fired. Rather than discard the most informative state available, the engine keeps the original narrative in place. Distinct from the plain RETAINED / REFINED_* outcomes so the provenance footnote can tell a reviewer \"you asked for reconstruct; we couldn't, so we kept the original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED: include=True, action=\"refine\", narrative=\"retain\" (or \"keep_on_match\" without matches \u2192 narrative removed; see sibling outcome). Matching produced nothing, but the jurisdiction asked us to keep the original narrative \u2014 entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED: include=True, action=\"refine\", narrative in (\"remove\" / \"keep_on_match\"). Matching produced nothing; entries are pruned and the narrative is replaced with the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
             "params": [],
             "returns": null,
             "raises": []
@@ -9069,13 +9161,13 @@
               {
                 "name": "display_name",
                 "type": "",
-                "description": "  Human-readable section name. For configured sections,\nthis is the jurisdiction's name from the configuration\n(what they see in the UI). For system_skip and\nunconfigured sections, this is the IG canonical name\nfrom the section catalog.",
+                "description": "  Human-readable section name. For configured sections, this is the jurisdiction's name from the configuration (what they see in the UI). For system_skip and unconfigured sections, this is the IG canonical name from the section catalog.",
                 "default": ""
               },
               {
                 "name": "include",
                 "type": "",
-                "description": "       Whether the section was configured for inclusion.\nFalse means the section was configured for wholesale\nremoval regardless of action.",
+                "description": "       Whether the section was configured for inclusion. False means the section was configured for wholesale removal regardless of action.",
                 "default": ""
               },
               {
@@ -9087,25 +9179,25 @@
               {
                 "name": "narrative",
                 "type": "",
-                "description": "     Whether the original narrative <text> was configured\nto be preserved. Currently a three-way enum\n(\"retain\"/\"remove\"/\"reconstruct\").",
+                "description": "     Whether the original narrative <text> was configured to be preserved. Currently a three-way enum (\"retain\"/\"remove\"/\"reconstruct\").",
                 "default": ""
               },
               {
                 "name": "config_version",
                 "type": "",
-                "description": "The version number of the activated configuration used\nfor this refinement run. None if not available (e.g.,\nlegacy S3 configs that predate version tracking).",
+                "description": "The version number of the activated configuration used for this refinement run. None if not available (e.g., legacy S3 configs that predate version tracking).",
                 "default": ""
               },
               {
                 "name": "source",
                 "type": "",
-                "description": "        How the processing instructions were determined \u2014\nconfigured by the jurisdiction, held by a system rule,\nor unconfigured (fell back to retain).",
+                "description": "        How the processing instructions were determined \u2014 configured by the jurisdiction, held by a system rule, or unconfigured (fell back to retain).",
                 "default": ""
               },
               {
                 "name": "outcome",
                 "type": "",
-                "description": "       What the refiner actually did to this section at\nruntime. Distinct from the configured action\nbecause no-match handling can diverge from the\nconfigured narrative setting (notably for\n\"keep_on_match\"). Set during refine_eicr after\nsection processing completes; defaults to a\nsentinel that should never appear in a rendered\nfootnote.",
+                "description": "       What the refiner actually did to this section at runtime. Distinct from the configured action because no-match handling can diverge from the configured narrative setting (notably for \"keep_on_match\"). Set during refine_eicr after section processing completes; defaults to a sentinel that should never appear in a rendered footnote.",
                 "default": ""
               }
             ],
@@ -9187,43 +9279,43 @@
               {
                 "name": "codes_to_check",
                 "type": "",
-                "description": "Flat set of all condition codes used by the generic\nfallback matching path.",
+                "description": "Flat set of all condition codes used by the generic fallback matching path.",
                 "default": ""
               },
               {
                 "name": "code_system_sets",
                 "type": "",
-                "description": "Structured per-system lookup used by the section-aware\nmatching path. Carries display names for enrichment.",
+                "description": "Structured per-system lookup used by the section-aware matching path. Carries display names for enrichment.",
                 "default": ""
               },
               {
                 "name": "section_instructions",
                 "type": "",
-                "description": "Per-section processing instructions keyed by\nLOINC code. Drives the branch logic in refine_eicr (refine,\nretain, remove, narrative-removed).",
+                "description": "Per-section processing instructions keyed by LOINC code. Drives the branch logic in refine_eicr (refine, retain, remove, narrative-removed).",
                 "default": ""
               },
               {
                 "name": "section_provenance",
                 "type": "",
-                "description": "Per-section provenance records keyed by LOINC\ncode. Consumed by the footnote appender after each section is\nprocessed. Records have placeholder `outcome` fields at plan\ncreation time; refine_eicr finalizes the outcome before\nrendering each footnote.",
+                "description": "Per-section provenance records keyed by LOINC code. Consumed by the footnote appender after each section is processed. Records have placeholder `outcome` fields at plan creation time; refine_eicr finalizes the outcome before rendering each footnote.",
                 "default": ""
               },
               {
                 "name": "specification",
                 "type": "",
-                "description": "The fully resolved eICR specification for the\ndocument's version. Provides section catalog and entry match\nrules to the section-aware processing path.",
+                "description": "The fully resolved eICR specification for the document's version. Provides section catalog and entry match rules to the section-aware processing path.",
                 "default": ""
               },
               {
                 "name": "config_version",
                 "type": "",
-                "description": "The version number of the activated configuration\nused for this refinement run. None for legacy configurations\nthat predate version tracking.",
+                "description": "The version number of the activated configuration used for this refinement run. None for legacy configurations that predate version tracking.",
                 "default": ""
               },
               {
                 "name": "augmentation_timestamp",
                 "type": "",
-                "description": "The HL7 V3 timestamp (format\n\"YYYYMMDDHHMMSS\u00b1ZZZZ\") from the AugmentationContext shared\nacross this refinement run. Used to stamp both the augmentation\nauthor's <time> value and the IDs on per-section provenance\nfootnotes, giving the two a structural consistency a consumer\ncan verify. Required \u2014 every refinement run has a timestamp.",
+                "description": "The HL7 V3 timestamp (format \"YYYYMMDDHHMMSS\u00b1ZZZZ\") from the AugmentationContext shared across this refinement run. Used to stamp both the augmentation author's <time> value and the IDs on per-section provenance footnotes, giving the two a structural consistency a consumer can verify. Required \u2014 every refinement run has a timestamp.",
                 "default": ""
               }
             ],
@@ -9340,13 +9432,13 @@
               {
                 "name": "matches_found",
                 "type": "",
-                "description": "True if the matching step found at least one\nentry to keep. False when filtering removed everything;\nthe engine still resolves the narrative according to the\nconfigured setting (notably \"keep_on_match\", which removes\nthe narrative on the no-match branch).",
+                "description": "True if the matching step found at least one entry to keep. False when filtering removed everything; the engine still resolves the narrative according to the configured setting (notably \"keep_on_match\", which removes the narrative on the no-match branch).",
                 "default": ""
               },
               {
                 "name": "narrative_disposition",
                 "type": "",
-                "description": "What the engine did with the section's\n<text> element.\n\n  - \"retained\":      original narrative left in place\n  - \"removed\":       narrative replaced with the removal notice\n  - \"reconstructed\": narrative rebuilt from surviving entries\n  - \"reconstruct_fallback_retained\": the jurisdiction asked\n    for reconstruction but the engine couldn't run it (no\n    entries to build from, or no registered reconstructor),\n    so the original narrative was kept instead \u2014 see\n    SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED.\n\nThe orchestrator uses this together with `matches_found`\nto choose the user-facing `SectionOutcome`.",
+                "description": "What the engine did with the section's <text> element.\n         - \"retained\":      original narrative left in place\n         - \"removed\":       narrative replaced with the removal notice\n         - \"reconstructed\": narrative rebuilt from surviving entries\n         - \"reconstruct_fallback_retained\": the jurisdiction asked for reconstruction but the engine couldn't run it (no entries to build from, or no registered reconstructor), so the original narrative was kept instead \u2014 see SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED.\nThe orchestrator uses this together with `matches_found` to choose the user-facing `SectionOutcome`.",
                 "default": ""
               }
             ],
@@ -9399,7 +9491,7 @@
           "docstring": "Traverse the RR11 Coded Information Organizer in a Reportability Response (RR) CDA document to extract all SNOMED-coded reportable conditions, grouped by jurisdiction/routing agency.\n\nSteps performed:\n1. Locate the single RR11 Coded Information Organizer within the Summary Section\n   (LOINC code 55112-7). This organizer contains the context for routing and conditions.\n2. Prepare a mapping from jurisdiction code (RR7 Routing Entity extension) to a dictionary\n   of unique SNOMED-coded reportable conditions.\n3. For each SNOMED-coded condition observation (templateId 2.16.840.1.113883.10.20.15.2.3.12):\n    1. Extract the SNOMED code and display name from its <value> element.\n    2. For each entryRelationship/component/organizer beneath the condition:\n        1. Identify RR7 Routing Entity participantRole and extract its jurisdiction code (extension attribute).\n        2. Confirm this context contains a reportability determination (RR1 observation with value RRVS1).\n        3. If reportable, associate the SNOMED code with the jurisdiction in the mapping, deduplicating by code.\n4. Build and return a list of JurisdictionReportableConditions instances, each containing the jurisdiction code and its unique list of reportable conditions.\n\nArgs:\n    root (_Element): Parsed lxml root of the RR CDA document.\n\nReturns:\n    list[JurisdictionReportableConditions]: List of jurisdiction \u2192 reportable condition groupings.",
           "parsed_docstring": {
             "summary": "Traverse the RR11 Coded Information Organizer in a Reportability Response (RR) CDA document to extract all SNOMED-coded reportable conditions, grouped by jurisdiction/routing agency.",
-            "description": "Steps performed:\n1. Locate the single RR11 Coded Information Organizer within the Summary Section\n   (LOINC code 55112-7). This organizer contains the context for routing and conditions.\n2. Prepare a mapping from jurisdiction code (RR7 Routing Entity extension) to a dictionary\n   of unique SNOMED-coded reportable conditions.\n3. For each SNOMED-coded condition observation (templateId 2.16.840.1.113883.10.20.15.2.3.12):\n    1. Extract the SNOMED code and display name from its <value> element.\n    2. For each entryRelationship/component/organizer beneath the condition:\n        1. Identify RR7 Routing Entity participantRole and extract its jurisdiction code (extension attribute).\n        2. Confirm this context contains a reportability determination (RR1 observation with value RRVS1).\n        3. If reportable, associate the SNOMED code with the jurisdiction in the mapping, deduplicating by code.\n4. Build and return a list of JurisdictionReportableConditions instances, each containing the jurisdiction code and its unique list of reportable conditions.",
+            "description": "Steps performed:\n1. Locate the single RR11 Coded Information Organizer within the Summary Section (LOINC code 55112-7). This organizer contains the context for routing and conditions.\n2. Prepare a mapping from jurisdiction code (RR7 Routing Entity extension) to a dictionary of unique SNOMED-coded reportable conditions.\n3. For each SNOMED-coded condition observation (templateId 2.16.840.1.113883.10.20.15.2.3.12): 1. Extract the SNOMED code and display name from its <value> element.\n    2. For each entryRelationship/component/organizer beneath the condition: 1. Identify RR7 Routing Entity participantRole and extract its jurisdiction code (extension attribute). 2. Confirm this context contains a reportability determination (RR1 observation with value RRVS1). 3. If reportable, associate the SNOMED code with the jurisdiction in the mapping, deduplicating by code.\n4. Build and return a list of JurisdictionReportableConditions instances, each containing the jurisdiction code and its unique list of reportable conditions.",
             "params": [
               {
                 "name": "root",
@@ -9492,12 +9584,9 @@
           "docstring": "Process a section using IG-driven entry match rules.\n\nThis is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot\n   interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or\n   whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving\n   entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this\n                     honors the user's preference for the most\n                     informative state available rather than\n                     swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice\n                     (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or\n`REFINED_RECONSTRUCT_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.\n\nReturns:\n    SectionRunResult reporting whether matches were found and\n    what the engine did with the narrative.",
           "parsed_docstring": {
             "summary": "Process a section using IG-driven entry match rules.",
-            "description": "This is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot\n   interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or\n   whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving\n   entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this\n                     honors the user's preference for the most\n                     informative state available rather than\n                     swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice\n                     (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or\n`REFINED_RECONSTRUCT_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.",
+            "description": "This is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this honors the user's preference for the most informative state available rather than swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or\n`REFINED_RECONSTRUCT_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.\n\nReturns: SectionRunResult reporting whether matches were found and what the engine did with the narrative.",
             "params": [],
-            "returns": {
-              "type": "",
-              "description": "SectionRunResult reporting whether matches were found and\nwhat the engine did with the narrative."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 71,
@@ -9569,10 +9658,7 @@
                 "default": "hl7"
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The section element, or `None` if no top-level section with that\nLOINC code is present."
-            },
+            "returns": null,
             "raises": [
               {
                 "type": "XMLParsingError",
@@ -9622,10 +9708,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A list of LOINC code strings for the top-level sections found\nin the document. Order matches document order. Duplicates are\npreserved; callers that need deduplication should convert to\na set."
-            },
+            "returns": null,
             "raises": [
               {
                 "type": "XMLParsingError",
@@ -9707,7 +9790,7 @@
               {
                 "name": "code_system_sets",
                 "type": "",
-                "description": "Structured per-system lookup from the\nconfiguration.",
+                "description": "Structured per-system lookup from the configuration.",
                 "default": ""
               },
               {
@@ -9747,7 +9830,7 @@
           "docstring": "Build the comment text for a rule-matched entry's match provenance.\n\nUsed by `entry_matching._inject_entry_match_comments`. Accepts a\nlist of EntryMatch objects (typed as `list` to avoid importing the\ndataclass here; callers are responsible for passing the correct type).\n\n- Comment format (single match):\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n\n- Comment format (multiple matches):\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n    - ...\n\nReturns a string suitable for passing to etree.Comment(). Leading/trailing\nspacing is included for readability.",
           "parsed_docstring": {
             "summary": "Build the comment text for a rule-matched entry's match provenance.",
-            "description": "Used by `entry_matching._inject_entry_match_comments`. Accepts a\nlist of EntryMatch objects (typed as `list` to avoid importing the\ndataclass here; callers are responsible for passing the correct type).\n\n- Comment format (single match):\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n\n- Comment format (multiple matches):\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n    - ...\n\nReturns a string suitable for passing to etree.Comment(). Leading/trailing\nspacing is included for readability.",
+            "description": "Used by `entry_matching._inject_entry_match_comments`. Accepts a\nlist of EntryMatch objects (typed as `list` to avoid importing the\ndataclass here; callers are responsible for passing the correct type).\n\n- Comment format (single match):\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n\n- Comment format (multiple matches):\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem)\n    - eCR Refiner: rule N (TN) [xpath_tail] \u2014 element[code] \"display\" (CodeSystem) - ...\n\nReturns a string suitable for passing to etree.Comment(). Leading/trailing\nspacing is included for readability.",
             "params": [],
             "returns": null,
             "raises": []
@@ -9797,7 +9880,7 @@
               {
                 "name": "path_from_entry",
                 "type": "",
-                "description": "Slash-separated path from the entry root to\nthe matched element (e.g. \"act/observation/value\").\nUsed to show where in the entry the match landed.",
+                "description": "Slash-separated path from the entry root to the matched element (e.g. \"act/observation/value\"). Used to show where in the entry the match landed.",
                 "default": ""
               }
             ],
@@ -9847,7 +9930,7 @@
               {
                 "name": "comment_text",
                 "type": "",
-                "description": "Text for the comment node. Passed directly to\netree.Comment(). Include a leading and trailing\nspace for readability within the comment delimiters.",
+                "description": "Text for the comment node. Passed directly to etree.Comment(). Include a leading and trailing space for readability within the comment delimiters.",
                 "default": ""
               }
             ],
@@ -9882,12 +9965,9 @@
           "docstring": "Process a section using the generic matching logic.\n\nUsed for sections without IG-verified entry match rules. These are\nsections where the entry structure is either narrative-only,\ncontains non-condition-specific content, or has not yet been\ncharacterized with specific match rules.\n\nMatching is unscoped \u2014 any code/value/translation element with a\n`@code` in `codes_to_match` is considered a hit. Pruning is\nentry-level only. `displayName` enrichment runs post-prune when\n`code_system_sets` is available.\n\nThe generic path neutralizes the section's `<code>` and\n`<text>` elements before searching to prevent false matches.\nBoth are saved as deep copies and restored after processing \u2014\n`<code>` unconditionally in the finally block (to avoid\ncorrupting the tree on error), and `<text>` whenever the\n`narrative` action may end up preserving the original\n(\"retain\", \"keep_on_match\", or the \"reconstruct\" fallback\nbranch \u2014 see Step 5 below).\n\nSource document XML comments are stripped before matching begins.\nMatch provenance comments (`eCR Refiner: generic match \u2014 ...`)\nare injected above each surviving entry after pruning; these\nsurvive because they are added after the source comment cleanup.\n\nIf no entries match (or `codes_to_match` is empty), all <entry>\nchildren are pruned and the section's <text> is handled per the\n`narrative` setting:\n\n  - \"retain\"           \u2192 narrative restored intact\n  - \"remove\"           \u2192 narrative replaced with the removal notice\n  - \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                         (nothing to rebuild from)\n  - \"keep_on_match\"    \u2192 narrative replaced with the removal notice\n                         (no matches means the negative branch)\n\n`nullFlavor=\"NI\"` is applied at the section level so the document\ncontinues to satisfy CDA schematron rules that require `SHALL\ncontain at least one entry` for refinable sections. See\n`refine._interpret_run_result` for outcome mapping.\n\nReturns:\n    SectionRunResult reporting whether matches were found and\n    what the engine did with the narrative.",
           "parsed_docstring": {
             "summary": "Process a section using the generic matching logic.",
-            "description": "Used for sections without IG-verified entry match rules. These are\nsections where the entry structure is either narrative-only,\ncontains non-condition-specific content, or has not yet been\ncharacterized with specific match rules.\n\nMatching is unscoped \u2014 any code/value/translation element with a\n`@code` in `codes_to_match` is considered a hit. Pruning is\nentry-level only. `displayName` enrichment runs post-prune when\n`code_system_sets` is available.\n\nThe generic path neutralizes the section's `<code>` and\n`<text>` elements before searching to prevent false matches.\nBoth are saved as deep copies and restored after processing \u2014\n`<code>` unconditionally in the finally block (to avoid\ncorrupting the tree on error), and `<text>` whenever the\n`narrative` action may end up preserving the original\n(\"retain\", \"keep_on_match\", or the \"reconstruct\" fallback\nbranch \u2014 see Step 5 below).\n\nSource document XML comments are stripped before matching begins.\nMatch provenance comments (`eCR Refiner: generic match \u2014 ...`)\nare injected above each surviving entry after pruning; these\nsurvive because they are added after the source comment cleanup.\n\nIf no entries match (or `codes_to_match` is empty), all <entry>\nchildren are pruned and the section's <text> is handled per the\n`narrative` setting:\n\n  - \"retain\"           \u2192 narrative restored intact\n  - \"remove\"           \u2192 narrative replaced with the removal notice\n  - \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                         (nothing to rebuild from)\n  - \"keep_on_match\"    \u2192 narrative replaced with the removal notice\n                         (no matches means the negative branch)\n\n`nullFlavor=\"NI\"` is applied at the section level so the document\ncontinues to satisfy CDA schematron rules that require `SHALL\ncontain at least one entry` for refinable sections. See\n`refine._interpret_run_result` for outcome mapping.",
+            "description": "Used for sections without IG-verified entry match rules. These are\nsections where the entry structure is either narrative-only,\ncontains non-condition-specific content, or has not yet been\ncharacterized with specific match rules.\n\nMatching is unscoped \u2014 any code/value/translation element with a\n`@code` in `codes_to_match` is considered a hit. Pruning is\nentry-level only. `displayName` enrichment runs post-prune when\n`code_system_sets` is available.\n\nThe generic path neutralizes the section's `<code>` and\n`<text>` elements before searching to prevent false matches.\nBoth are saved as deep copies and restored after processing \u2014\n`<code>` unconditionally in the finally block (to avoid\ncorrupting the tree on error), and `<text>` whenever the\n`narrative` action may end up preserving the original\n(\"retain\", \"keep_on_match\", or the \"reconstruct\" fallback\nbranch \u2014 see Step 5 below).\n\nSource document XML comments are stripped before matching begins.\nMatch provenance comments (`eCR Refiner: generic match \u2014 ...`)\nare injected above each surviving entry after pruning; these\nsurvive because they are added after the source comment cleanup.\n\nIf no entries match (or `codes_to_match` is empty), all <entry>\nchildren are pruned and the section's <text> is handled per the\n`narrative` setting:\n - \"retain\"           \u2192 narrative restored intact - \"remove\"           \u2192 narrative replaced with the removal notice - \"reconstruct\"      \u2192 falls back to RETAIN the original narrative (nothing to rebuild from) - \"keep_on_match\"    \u2192 narrative replaced with the removal notice (no matches means the negative branch)\n\n`nullFlavor=\"NI\"` is applied at the section level so the document\ncontinues to satisfy CDA schematron rules that require `SHALL\ncontain at least one entry` for refinable sections. See\n`refine._interpret_run_result` for outcome mapping.\n\nReturns: SectionRunResult reporting whether matches were found and what the engine did with the narrative.",
             "params": [],
-            "returns": {
-              "type": "",
-              "description": "SectionRunResult reporting whether matches were found and\nwhat the engine did with the narrative."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 36,
@@ -9954,19 +10034,19 @@
               {
                 "name": "provenance",
                 "type": "",
-                "description": "The SectionProvenanceRecord built during plan\ncreation and finalized by refine_eicr.",
+                "description": "The SectionProvenanceRecord built during plan creation and finalized by refine_eicr.",
                 "default": ""
               },
               {
                 "name": "augmentation_timestamp",
                 "type": "",
-                "description": "The augmentation run's `<time>` value,\nshared across all footnotes in this refinement run.",
+                "description": "The augmentation run's `<time>` value, shared across all footnotes in this refinement run.",
                 "default": ""
               },
               {
                 "name": "occurrence_index",
                 "type": "",
-                "description": "Disambiguator for repeated-LOINC sections;\nzero for the normal case.",
+                "description": "Disambiguator for repeated-LOINC sections; zero for the normal case.",
                 "default": ""
               }
             ],
@@ -10061,10 +10141,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The formatted date/time, the input unchanged if not a TS, or \"\"."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 95,
@@ -10093,10 +10170,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A human-readable display string, or \"\"."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 167,
@@ -10125,10 +10199,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The rendered concept string, or \"\"."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 220,
@@ -10157,10 +10228,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A human-readable string, or \"\" when there is nothing to render."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 271,
@@ -10209,10 +10277,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A label -> value mapping; missing fields render as \"\"."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 354,
@@ -10254,14 +10319,11 @@
               {
                 "name": "augmentation_timestamp",
                 "type": "",
-                "description": "The run's HL7 V3 time value; its digits\nstamp the row IDs to the same run as the provenance footnote.",
+                "description": "The run's HL7 V3 time value; its digits stamp the row IDs to the same run as the provenance footnote.",
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A detached, namespace-qualified `<text>`."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 492,
@@ -10391,10 +10453,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "One Block per organizer that has surviving result observations."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 619,
@@ -10423,10 +10482,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "One Block per concern act that has surviving problem observations."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 663,
@@ -10455,10 +10511,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A single flat Block, or [] when no substanceAdministration survived."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 733,
@@ -10487,10 +10540,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A single flat Block, or [] when no substanceAdministration survived."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 751,
@@ -10534,14 +10584,11 @@
               {
                 "name": "augmentation_timestamp",
                 "type": "",
-                "description": "The refinement run's HL7 V3 time value,\nused to stamp the minted row IDs to the same run as the\nsection's provenance footnote.",
+                "description": "The refinement run's HL7 V3 time value, used to stamp the minted row IDs to the same run as the section's provenance footnote.",
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A detached `<text>`, or None."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 784,
@@ -10594,10 +10641,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The leading digit run, or \"\" when the input has no leading digits."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 20,
@@ -10626,10 +10670,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The document with reconstruction references in compact form."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 51,
@@ -10884,7 +10925,7 @@
           "docstring": "Reduce a section to a minimal stub with an explanation message.\n\nUpdates the `<text>` element with a single-row status table, removes\nall `<entry>` elements, and sets nullFlavor=\"NI\" on the section. The\nmessage displayed in the stub varies based on why the section was\nreduced:\n\n  - \"no_match\":   No clinical information matched the configured\n                  code sets. Uses MINIMAL_SECTION_MESSAGE.\n  - \"configured\": Jurisdiction configured the section to be removed.\n                  Uses REMOVE_SECTION_MESSAGE.\n\nThe stub table uses proper `<thead>`/`<th>` header semantics and\n`<tbody>`/`<tr>`/`<td>` body rows rather than the HTML-invalid\n``<thead>`/`<tr>`/`<td>`` structure the previous implementation used.\n\nIf the section has no `<text>` element at all, one is created via\n`_ensure_text_element`, which inserts it in the correct xs:sequence\nposition.\n\nArgs:\n    section: The section element to reduce.\n    removal_reason: Which message to display in the stub.",
           "parsed_docstring": {
             "summary": "Reduce a section to a minimal stub with an explanation message.",
-            "description": "Updates the `<text>` element with a single-row status table, removes\nall `<entry>` elements, and sets nullFlavor=\"NI\" on the section. The\nmessage displayed in the stub varies based on why the section was\nreduced:\n\n  - \"no_match\":   No clinical information matched the configured\n                  code sets. Uses MINIMAL_SECTION_MESSAGE.\n  - \"configured\": Jurisdiction configured the section to be removed.\n                  Uses REMOVE_SECTION_MESSAGE.\n\nThe stub table uses proper `<thead>`/`<th>` header semantics and\n`<tbody>`/`<tr>`/`<td>` body rows rather than the HTML-invalid\n``<thead>`/`<tr>`/`<td>`` structure the previous implementation used.\n\nIf the section has no `<text>` element at all, one is created via\n`_ensure_text_element`, which inserts it in the correct xs:sequence\nposition.",
+            "description": "Updates the `<text>` element with a single-row status table, removes\nall `<entry>` elements, and sets nullFlavor=\"NI\" on the section. The\nmessage displayed in the stub varies based on why the section was\nreduced:\n\n  - \"no_match\":   No clinical information matched the configured code sets. Uses MINIMAL_SECTION_MESSAGE.\n  - \"configured\": Jurisdiction configured the section to be removed. Uses REMOVE_SECTION_MESSAGE.\n\nThe stub table uses proper `<thead>`/`<th>` header semantics and\n`<tbody>`/`<tr>`/`<td>` body rows rather than the HTML-invalid\n``<thead>`/`<tr>`/`<td>`` structure the previous implementation used.\n\nIf the section has no `<text>` element at all, one is created via\n`_ensure_text_element`, which inserts it in the correct xs:sequence\nposition.",
             "params": [
               {
                 "name": "section",
@@ -11102,14 +11143,11 @@
               {
                 "name": "xml_root",
                 "type": "",
-                "description": "The root element of an eICR document\n(the <ClinicalDocument>).",
+                "description": "The root element of an eICR document (the <ClinicalDocument>).",
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "The detected EicrVersion, or \"1.1\" as a fallback."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 20,
@@ -11129,7 +11167,7 @@
           "docstring": "Assemble the specification for a specific eICR version.\n\nMerges the stable section catalog with version-specific trigger\ncodes to produce a fully-resolved ``EICRSpecification``. The\ncatalog provides invariant C-CDA structural data (templateIds,\ndisplay names, entry match rules); the version manifest provides\nwhich sections exist in this version and which trigger code OIDs\napply per section.\n\nFor each section in the version's section list:\n\n  1. Look up the catalog entry by LOINC code.\n  2. If the version has trigger codes for that section, build a\n     new `SectionSpecification` with the trigger codes added.\n     `SectionSpecification` is frozen, so this is a rebuild\n     rather than a mutation.\n  3. If the version has no trigger codes for that section, use\n     the catalog entry as-is.\n\nIf the requested version is not in `_VERSION_SECTIONS` (e.g.,\na future version not yet supported), falls back to \"1.1\" \u2014 the\nsame conservative default as `detect_eicr_version`.\n\nArgs:\n    version: The eICR version to load.\n\nReturns:\n    A fully-resolved EICRSpecification with all sections present\n    in the version, each with their version-appropriate trigger\n    codes overlaid.",
           "parsed_docstring": {
             "summary": "Assemble the specification for a specific eICR version.",
-            "description": "Merges the stable section catalog with version-specific trigger\ncodes to produce a fully-resolved ``EICRSpecification``. The\ncatalog provides invariant C-CDA structural data (templateIds,\ndisplay names, entry match rules); the version manifest provides\nwhich sections exist in this version and which trigger code OIDs\napply per section.\n\nFor each section in the version's section list:\n\n  1. Look up the catalog entry by LOINC code.\n  2. If the version has trigger codes for that section, build a\n     new `SectionSpecification` with the trigger codes added.\n     `SectionSpecification` is frozen, so this is a rebuild\n     rather than a mutation.\n  3. If the version has no trigger codes for that section, use\n     the catalog entry as-is.\n\nIf the requested version is not in `_VERSION_SECTIONS` (e.g.,\na future version not yet supported), falls back to \"1.1\" \u2014 the\nsame conservative default as `detect_eicr_version`.",
+            "description": "Merges the stable section catalog with version-specific trigger\ncodes to produce a fully-resolved ``EICRSpecification``. The\ncatalog provides invariant C-CDA structural data (templateIds,\ndisplay names, entry match rules); the version manifest provides\nwhich sections exist in this version and which trigger code OIDs\napply per section.\n\nFor each section in the version's section list:\n 1. Look up the catalog entry by LOINC code. 2. If the version has trigger codes for that section, build a new `SectionSpecification` with the trigger codes added. `SectionSpecification` is frozen, so this is a rebuild rather than a mutation. 3. If the version has no trigger codes for that section, use the catalog entry as-is.\n\nIf the requested version is not in `_VERSION_SECTIONS` (e.g.,\na future version not yet supported), falls back to \"1.1\" \u2014 the\nsame conservative default as `detect_eicr_version`.",
             "params": [
               {
                 "name": "version",
@@ -11138,10 +11176,7 @@
                 "default": ""
               }
             ],
-            "returns": {
-              "type": "",
-              "description": "A fully-resolved EICRSpecification with all sections present\nin the version, each with their version-appropriate trigger\ncodes overlaid."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 61,
@@ -11161,12 +11196,9 @@
           "docstring": "Build a section LOINC -> sorted list of versions mapping.\n\nInverts `_VERSION_SECTIONS` so that the resulting dict is keyed\nby section LOINC and each value is the sorted list of eICR versions\nthat include that section. Used by the configuration service to\ntag sections with their version availability when presenting them\nto jurisdiction reviewers in the application UI.\n\nReturns:\n    Dictionary mapping each section LOINC code to a sorted list\n    of EicrVersion strings that include the section.",
           "parsed_docstring": {
             "summary": "Build a section LOINC -> sorted list of versions mapping.",
-            "description": "Inverts `_VERSION_SECTIONS` so that the resulting dict is keyed\nby section LOINC and each value is the sorted list of eICR versions\nthat include that section. Used by the configuration service to\ntag sections with their version availability when presenting them\nto jurisdiction reviewers in the application UI.",
+            "description": "Inverts `_VERSION_SECTIONS` so that the resulting dict is keyed\nby section LOINC and each value is the sorted list of eICR versions\nthat include that section. Used by the configuration service to\ntag sections with their version availability when presenting them\nto jurisdiction reviewers in the application UI.\n\nReturns: Dictionary mapping each section LOINC code to a sorted list of EicrVersion strings that include the section.",
             "params": [],
-            "returns": {
-              "type": "",
-              "description": "Dictionary mapping each section LOINC code to a sorted list\nof EicrVersion strings that include the section."
-            },
+            "returns": null,
             "raises": []
           },
           "lineno": 135,

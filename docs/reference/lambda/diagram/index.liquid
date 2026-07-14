@@ -1,0 +1,88 @@
+---
+title: Lambda Handlers — Pipeline Diagram
+layout: layout.liquid
+---
+
+{% include "lambda-stage-data" %}
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">
+  <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
+  Pipeline Diagram
+</h1>
+
+<p class="text-gray-60 mb-8">End-to-end processing flow through the Lambda stages.</p>
+
+<div class="bg-gray-2 rounded-lg p-6 mb-8 overflow-x-auto">
+  <pre class="text-sm leading-relaxed font-mono">
+                    ┌──────────────┐
+                    │   SQS Event  │
+                    │   (Trigger)  │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────────┐
+                    │     Entry        │
+                    │   (Handler)      │
+                    │  lambda_handler  │
+                    └──────┬───────────┘
+                           │
+                    ┌──────▼────────────────────────┐
+                    │    S3 Retrieval               │
+                    │     (S3 I/O)                  │
+                    │   extract_persistence_id →    │
+                    │   get_s3_object_content →     │
+                    │   parse_s3_content_to_dict    │
+                    └──────┬────────────────────────┘
+                           │
+                    ┌──────▼─────────────────────────┐
+                    │ Configuration Loading          │
+                    │  (Configuration)               │
+                    │ read_rsg_cg_mapping_file →     │
+                    │ read_current_version →         │
+                    │ read_configuration_file →      │
+                    │ load_active_configuration      │
+                    └───────────────┬────────────────┘
+                           │
+                    ┌──────▼─────────────────────┐
+                    │ Refinement Pipeline        │
+                    │  (Orchestrator)            │
+                    │ run_refinement →           │
+                    │ process_jurisdiction →     │
+                    │ process_condition          │
+                    └──────┬─────────────────────┘
+                           │
+                    ┌──────▼─────────────────┐
+                    │  Output Writing        │
+                    │    (Output)            │
+                    │ write_refined_outputs  │
+                    │ write_remainder_rrs    │
+                    └──────┬─────────────────┘
+                           │
+                    ┌──────▼──────────┐
+                    │ RefinerComplete │
+                    │    Manifest     │
+                    │  → AIMS (S3)    │
+                    └─────────────────┘</pre>
+</div>
+
+<h2 class="font-merriweather text-xl font-bold mb-4">Role Legend</h2>
+
+<div class="flex flex-wrap gap-3 mb-8">
+  {% for role in roleColors %}
+    {% assign idx = 0 %}
+    {% for r in roleColors %}
+      {% if r == role %}{% assign roleIdx = idx %}{% endif %}
+      {% assign idx = idx | plus: 1 %}
+    {% endfor %}
+    <span class="text-xs font-medium px-2.5 py-0.5 rounded-full
+      {% if roleIdx == 0 %}bg-blue-100 text-blue-800
+      {% elsif roleIdx == 1 %}bg-cyan-100 text-cyan-800
+      {% elsif roleIdx == 2 %}bg-teal-100 text-teal-800
+      {% elsif roleIdx == 3 %}bg-green-100 text-green-800
+      {% elsif roleIdx == 4 %}bg-orange-100 text-orange-800
+      {% elsif roleIdx == 5 %}bg-red-100 text-red-800
+      {% elsif roleIdx == 6 %}bg-purple-100 text-purple-800
+      {% endif %}">
+      {{ role }}
+    </span>
+  {% endfor %}
+</div>

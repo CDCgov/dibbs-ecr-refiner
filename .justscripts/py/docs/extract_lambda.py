@@ -1,8 +1,20 @@
 import json
+import re
 import sys
 from pathlib import Path
 import griffe
 from docstring_parser import parse as parse_docstring, Style
+
+
+def _fold_continuation_lines(text: str) -> str:
+    lines = text.split("\n")
+    result = []
+    for line in lines:
+        if result and line.strip() and line[0] in (" ", "\t") and ":" not in line:
+            result[-1] += " " + line.strip()
+        else:
+            result.append(line)
+    return "\n".join(result)
 
 
 def _parse_google_docstring(raw: str) -> dict:
@@ -17,6 +29,7 @@ def _parse_google_docstring(raw: str) -> dict:
         }
 
     try:
+        raw = _fold_continuation_lines(raw)
         parsed = parse_docstring(raw, style=Style.GOOGLE)
     except Exception:
         return {
@@ -64,6 +77,30 @@ def _parse_google_docstring(raw: str) -> dict:
     }
 
 
+def _strip_stage_role(raw: str) -> str:
+    """Remove Stage and Role sections from a raw docstring."""
+    return re.split(r"\nStage:", raw)[0].strip()
+
+
+def _extract_stage_role(raw: str) -> dict:
+    """Extract Stage and Role from a raw docstring using regex."""
+    if not raw:
+        return {"stage": None, "role": None}
+
+    stage = None
+    role = None
+
+    stage_match = re.search(r"Stage:\s*\n?\s*(.+?)(?:\n\s*\n|\n\s*Role:|\Z)", raw, re.DOTALL)
+    if stage_match:
+        stage = stage_match.group(1).strip()
+
+    role_match = re.search(r"Role:\s*\n?\s*(.+?)(?:\n\s*\n|\Z)", raw, re.DOTALL)
+    if role_match:
+        role = role_match.group(1).strip()
+
+    return {"stage": stage, "role": role}
+
+
 def _get_docstring(member):
     """Safely get docstring value, avoiding alias resolution crashes."""
     if member.is_alias:
@@ -86,6 +123,67 @@ def _get_annotation(annotation):
         return str(annotation) if hasattr(annotation, 'name') else None
 
 
+def _build_member_info(sub_member, source_type: str = "production") -> dict:
+    """Build a member info dict with stage, role, and source_type."""
+    docstring = _get_docstring(sub_member)
+    stage_role = _extract_stage_role(docstring)
+    clean_docstring = _strip_stage_role(docstring)
+
+    member_info = {
+        "name": sub_member.path,
+        "docstring": docstring,
+        "parsed_docstring": _parse_google_docstring(clean_docstring),
+        "lineno": sub_member.lineno,
+        "stage": stage_role["stage"],
+        "role": stage_role["role"],
+        "source_type": source_type,
+    }
+
+    if sub_member.kind == "function" and sub_member.signature:
+        member_info["signature"] = sub_member.signature()
+        member_info["parameters"] = [
+            {
+                "name": p.name,
+                "annotation": _get_annotation(p.annotation),
+                "default": str(p.default) if p.default else None,
+            }
+            for p in sub_member.parameters
+        ]
+        if sub_member.returns:
+            member_info["return_annotation"] = _get_annotation(sub_member.returns)
+
+    if sub_member.kind == "class":
+        member_info["methods"] = []
+        for method_name, method in sub_member.members.items():
+            if method.is_alias:
+                continue
+            if method_name.startswith("_") and method_name != "__init__":
+                continue
+            if method.kind not in ("function", "class"):
+                continue
+
+            method_docstring = _get_docstring(method)
+            method_info = {
+                "name": method_name,
+                "docstring": method_docstring,
+                "parsed_docstring": _parse_google_docstring(method_docstring),
+                "lineno": method.lineno,
+            }
+            if method.signature:
+                method_info["signature"] = method.signature()
+                method_info["parameters"] = [
+                    {
+                        "name": p.name,
+                        "annotation": _get_annotation(p.annotation),
+                        "default": str(p.default) if p.default else None,
+                    }
+                    for p in method.parameters
+                ]
+            member_info["methods"].append(method_info)
+
+    return member_info
+
+
 def extract_lambda_docs(search_path: str) -> dict:
     """Extract Lambda function docs using griffe."""
     api_data: dict = {"modules": []}
@@ -104,9 +202,9 @@ def extract_lambda_docs(search_path: str) -> dict:
             continue
         if member_name.startswith("_"):
             continue
-        # Skip test modules
-        if member_name.startswith("test_"):
-            continue
+
+        # Determine source type
+        source_type = "test" if member_name.startswith("test_") else "production"
 
         # If it's a submodule, recurse into it
         if member.kind == "module":
@@ -119,80 +217,14 @@ def extract_lambda_docs(search_path: str) -> dict:
                 if sub_member.kind not in ("function", "class"):
                     continue
 
-                member_info = {
-                    "name": sub_member.path,
-                    "docstring": _get_docstring(sub_member),
-                    "parsed_docstring": _parse_google_docstring(_get_docstring(sub_member)),
-                    "lineno": sub_member.lineno,
-                }
-
-                if sub_member.kind == "function" and sub_member.signature:
-                    member_info["signature"] = sub_member.signature()
-                    member_info["parameters"] = [
-                        {
-                            "name": p.name,
-                            "annotation": _get_annotation(p.annotation),
-                            "default": str(p.default) if p.default else None,
-                        }
-                        for p in sub_member.parameters
-                    ]
-                    if sub_member.returns:
-                        member_info["return_annotation"] = _get_annotation(sub_member.returns)
-
-                if sub_member.kind == "class":
-                    member_info["methods"] = []
-                    for method_name, method in sub_member.members.items():
-                        if method.is_alias:
-                            continue
-                        if method_name.startswith("_") and method_name != "__init__":
-                            continue
-                        # Only process functions/classes, skip attributes
-                        if method.kind not in ("function", "class"):
-                            continue
-                        method_info = {
-                            "name": method_name,
-                            "docstring": _get_docstring(method),
-                            "parsed_docstring": _parse_google_docstring(_get_docstring(method)),
-                            "lineno": method.lineno,
-                        }
-                        if method.signature:
-                            method_info["signature"] = method.signature()
-                            method_info["parameters"] = [
-                                {
-                                    "name": p.name,
-                                    "annotation": _get_annotation(p.annotation),
-                                    "default": str(p.default) if p.default else None,
-                                }
-                                for p in method.parameters
-                            ]
-                        member_info["methods"].append(method_info)
-
+                member_info = _build_member_info(sub_member, source_type)
                 api_data["modules"].append(member_info)
         else:
             # Only process functions and classes at top level
             if member.kind not in ("function", "class"):
                 continue
 
-            member_info = {
-                "name": member.path,
-                "docstring": _get_docstring(member),
-                "parsed_docstring": _parse_google_docstring(_get_docstring(member)),
-                "lineno": member.lineno,
-            }
-
-            if member.kind == "function" and member.signature:
-                member_info["signature"] = member.signature()
-                member_info["parameters"] = [
-                    {
-                        "name": p.name,
-                        "annotation": _get_annotation(p.annotation),
-                        "default": str(p.default) if p.default else None,
-                    }
-                    for p in member.parameters
-                ]
-                if member.returns:
-                    member_info["return_annotation"] = _get_annotation(member.returns)
-
+            member_info = _build_member_info(member, source_type)
             api_data["modules"].append(member_info)
 
     return api_data
