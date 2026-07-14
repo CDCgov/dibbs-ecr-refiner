@@ -14,6 +14,8 @@ import { Spinner } from '@components/Spinner';
 import { SessionRedirect } from './pages/SessionRedirect';
 import { ActivityLog } from './pages/ActivityLog';
 import { AppUpdates } from './pages/AppUpdates';
+import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
+import { TesUpdates } from './pages/TesUpdates';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -39,6 +41,7 @@ export function App() {
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
         <Route path="/activity" element={<ActivityLog />} />
+        <Route path="/tes-updates" element={<TesUpdates />} />
         <Route
           path="/configurations"
           element={<Configurations user={user} refreshUser={refreshUser} />}
@@ -48,6 +51,10 @@ export function App() {
         <Route
           path="/configurations/:id/activate"
           element={<ConfigActivate />}
+        />
+        <Route
+          path="/configurations/:id/serialized"
+          element={<ConfigSerialized />}
         />
         <Route path="/app-updates" element={<AppUpdates />} />
         <Route path="/simulator" element={<Simulator />} />

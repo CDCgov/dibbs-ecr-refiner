@@ -41,6 +41,7 @@ import type {
   GetConfigurationsResponse,
   HTTPValidationError,
   SectionUpdateInput,
+  SerializedFiles,
   UpdateCustomCodeInput,
   UpdateSectionProcessingResponse,
   UploadCustomCodesCsvInput,
@@ -226,6 +227,112 @@ export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
       return useMutation(getCreateConfigurationMutationOptions(options), queryClient);
     }
     /**
+ * Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
+ *
+ * Args:
+ *     configuration_id (UUID): The active configuration ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *     logger (Logger): The standard app logger
+ *
+ * Raises:
+ *     HTTPException: 403 if not running locally
+ *     HTTPException: 404 if configuration cannot be found in the user's jurisdiction
+ *     HTTPException: 400 if the configuration's status is not `active`
+ *     HTTPException: 404 if the configuration's primary condition is not found
+ *
+ * Returns:
+ *     Response: The serialized configuration file content
+ * @summary Get Serialized Configuration
+ */
+export const getSerializedConfiguration = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<SerializedFiles>> => {
+
+
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/serialized`,options
+    );
+  }
+
+
+
+
+export const getGetSerializedConfigurationQueryKey = (configurationId: string,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/serialized`
+    ] as const;
+    }
+
+
+export const getGetSerializedConfigurationQueryOptions = <TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSerializedConfigurationQueryKey(configurationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSerializedConfiguration>>> = ({ signal }) => getSerializedConfiguration(configurationId, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSerializedConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof getSerializedConfiguration>>>
+export type GetSerializedConfigurationQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSerializedConfiguration>>,
+          TError,
+          Awaited<ReturnType<typeof getSerializedConfiguration>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSerializedConfiguration>>,
+          TError,
+          Awaited<ReturnType<typeof getSerializedConfiguration>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Serialized Configuration
+ */
+
+export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSerializedConfigurationQueryOptions(configurationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
  * Get a single configuration by its ID including all associated conditions.
  * @summary Get Configuration
  */

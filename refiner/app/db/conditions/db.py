@@ -3,6 +3,7 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
+from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
@@ -12,25 +13,6 @@ from .model import (
     DbConditionBase,
     DbConditionsContextGrouper,
 )
-
-
-async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
-    """
-    Queries the database for all TES versions available for use.
-    """
-
-    query = """
-        SELECT
-            DISTINCT(version)
-        FROM tes
-        ORDER BY version
-    """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
-
-    return [row["version"] for row in rows]
 
 
 async def _get_conditions_by_canonical_urls_and_version_db(
@@ -100,9 +82,9 @@ async def get_latest_tes_condition_db(
         DbCondition: The latest version of the condition
     """
     tes_versions = await get_loaded_tes_versions_db(db=db)
-    latest_version = get_latest_tes_version(available_versions=tes_versions)
+    latest_tes = get_latest_tes_version(available_versions=tes_versions)
     condition = await _get_condition_by_canonical_url_and_version_db(
-        canonical_url=condition.canonical_url, version=latest_version, db=db
+        canonical_url=condition.canonical_url, version=latest_tes.version, db=db
     )
     return condition
 
@@ -123,7 +105,7 @@ async def get_latest_tes_condition_ids_db(
 
     # get the latest TES version
     tes_versions = await get_loaded_tes_versions_db(db=db)
-    latest_version = get_latest_tes_version(available_versions=tes_versions)
+    latest_tes = get_latest_tes_version(available_versions=tes_versions)
 
     # get the condition objects for IDs passed in
     given_conditions = await get_conditions_by_ids(ids=ids, db=db)
@@ -133,7 +115,7 @@ async def get_latest_tes_condition_ids_db(
 
     # get the latest conditions by the canonical URL and most recent TES version
     latest_conditions = await _get_conditions_by_canonical_urls_and_version_db(
-        canonical_urls=canonical_urls, version=latest_version, db=db
+        canonical_urls=canonical_urls, version=latest_tes.version, db=db
     )
 
     return [lc.id for lc in latest_conditions]
@@ -181,7 +163,12 @@ async def get_condition_by_id_db(
                 c.canonical_url,
                 c.display_name,
                 t.version,
-                c.child_rsg_snomed_codes,
+                ARRAY(
+                    SELECT codes.code
+                    FROM conditions_rsg_codes crc
+                    JOIN codes ON crc.code_id = codes.id
+                    WHERE crc.condition_id = c.id
+                ) as child_rsg_snomed_codes,
                 c.snomed_codes,
                 c.loinc_codes,
                 c.icd10_codes,
@@ -309,7 +296,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     Finds all conditions that are associated with the given list of child RSG SNOMED codes
     for any potential version of that condition data.
 
-    This uses the GIN index on the `child_rsg_snomed_codes` array column for performance.
+    This queries the `conditions_rsg_codes` join table and `codes` table.
 
     Args:
         db: The database connection.
@@ -328,7 +315,12 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.display_name,
             c.canonical_url,
             t.version,
-            c.child_rsg_snomed_codes,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
             c.snomed_codes,
             c.loinc_codes,
             c.icd10_codes,
@@ -339,7 +331,13 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
-        WHERE child_rsg_snomed_codes && %s::text[];
+        WHERE EXISTS (
+            SELECT 1
+            FROM conditions_rsg_codes crc
+            JOIN codes ON crc.code_id = codes.id
+            WHERE crc.condition_id = c.id
+            AND codes.code = ANY(%s)
+        );
     """
 
     params = (codes,)
@@ -363,7 +361,25 @@ async def get_conditions_by_ids(
         return []
 
     query = """
-        SELECT c.*, t.version
+        SELECT
+            c.id,
+            c.canonical_url,
+            c.display_name,
+            t.version,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s);
@@ -387,10 +403,29 @@ async def get_primary_conditions_for_configurations_db(
     Given a list of configuration IDs, return a mapping of configuration ID to primary condition.
     """
     query = """
-        SELECT cc.configuration_id, cond.*, t.version
-        FROM conditions cond
-        JOIN configurations_conditions cc ON cc.condition_id = cond.id
-        JOIN tes t ON t.id = cond.tes_id
+        SELECT
+            cc.configuration_id,
+            c.id,
+            c.canonical_url,
+            c.display_name,
+            t.version,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
+        FROM conditions c
+        JOIN configurations_conditions cc ON cc.condition_id = c.id
+        JOIN tes t ON t.id = c.tes_id
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
     """
@@ -430,7 +465,25 @@ async def get_included_conditions_db(
     """
 
     query = """
-        SELECT c.*, t.version
+        SELECT
+            c.id,
+            c.canonical_url,
+            c.display_name,
+            t.version,
+            ARRAY(
+                SELECT codes.code
+                FROM conditions_rsg_codes crc
+                JOIN codes ON crc.code_id = codes.id
+                WHERE crc.condition_id = c.id
+            ) as child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes,
+            c.cvx_codes,
+            c.coverage_level,
+            c.coverage_level_reason,
+            c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
@@ -500,8 +553,8 @@ async def get_conditions_with_rsg_codes_db(
             c.display_name
         ORDER BY LOWER(c.display_name);
     """
-    version = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
-    params = (version,)
+    latest_tes = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
+    params = (latest_tes.version,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)

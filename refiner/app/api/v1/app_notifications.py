@@ -42,4 +42,4 @@ async def update_user_notifications(
         db=db,
     )
 
-    return UserResponse.from_db_user(updated_user)
+    return await UserResponse.from_db_user(user=updated_user, db=db)
