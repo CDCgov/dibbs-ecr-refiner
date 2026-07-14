@@ -301,6 +301,32 @@ async def get_condition_id(db_pool):
     return _get
 
 
+@pytest_asyncio.fixture(scope="session")
+async def get_event_by_id(db_pool):
+    """
+    Returns a function that fetches an event object when given an ID.
+
+    event = await get_event_by_id("f2547fb4-f159-4407-b9cd-5673c8b66c44")
+    """
+
+    async def _get(id: UUID):
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT *
+                    FROM events
+                    WHERE id = %s
+                    """,
+                    (id,),
+                )
+                result = await cur.fetchone()
+                assert result, f"Event with ID '{id}' not found"
+                return result
+
+    return _get
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def reset_db(db_pool):
     """
