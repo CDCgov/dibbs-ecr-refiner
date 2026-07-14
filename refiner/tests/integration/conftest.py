@@ -13,6 +13,7 @@ from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
+from app.api.v1.configurations.model import UploadCustomCodesInput
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbNarrativeAction,
@@ -68,6 +69,25 @@ TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
 DEFAULT_TES_VERSION = "6.0.0"
+
+
+@pytest_asyncio.fixture
+async def upload_custom_codes(authed_client):
+    """
+    Returns a function that uploads custom codes for a specific configuration.
+
+    result = await upload_custom_codes(config_id, [UploadCustomCodesInput(code="123", system_key="icd10", name="ICD-10 Example")])
+    """
+
+    async def _get(config_id: UUID, codes: list[UploadCustomCodesInput]):
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/custom-codes/confirm",
+            json={"custom_codes": [c.model_dump() for c in codes]},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
 
 
 @pytest_asyncio.fixture

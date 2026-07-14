@@ -7,6 +7,7 @@ import pytest
 from fastapi import status
 from psycopg.rows import dict_row
 
+from app.api.v1.configurations.model import UploadCustomCodesInput
 from app.api.v1.events import _format_timestamp
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
@@ -130,8 +131,45 @@ class TestEventsCsvExport:
         # check the datetime format since we have this info
         assert rows[0]["Date"] == expected_datetime
 
-    async def test_csv_upload_event_has_codes_in_action(self, setup):
-        pass
+    async def test_csv_upload_event_has_codes_in_action(
+        self, setup, upload_custom_codes, get_condition_id, create_config, authed_client
+    ):
+        """
+        A custom codes upload event should display the code information directly below the
+        action text.
+
+        The format will look like this:
+        ```
+        Added 2 custom codes from CSV
+        SNOMED | tc0 | tc0-name
+        ICD-10 | tc1 | tc1-name
+        ```
+        """
+        covid_id = await get_condition_id("COVID-19")
+        config = await create_config(covid_id)
+        await upload_custom_codes(
+            config["id"],
+            [
+                UploadCustomCodesInput(
+                    code="tc0", system_key="snomed", name="tc0-name"
+                ),
+                UploadCustomCodesInput(code="tc1", system_key="icd10", name="tc1-name"),
+            ],
+        )
+
+        expected_action_text = "Added 2 custom codes from CSV\n"
+        expected_tc0_formatted = "SNOMED | tc0 | tc0-name"
+        expected_tc1_formatted = "ICD-10 | tc1 | tc1-name"
+
+        response = await authed_client.get(get_url())
+        assert response.status_code == status.HTTP_200_OK
+
+        rows = parse_csv(response.text)
+        assert len(rows) == 2  # create config, upload codes
+
+        assert expected_action_text in rows[0]["Action"]
+        assert expected_tc0_formatted in rows[0]["Action"]
+        assert expected_tc1_formatted in rows[0]["Action"]
 
     async def test_csv_is_filtered_by_canonical_url(
         self,
