@@ -64,6 +64,13 @@ class TestEventsCsvExport:
         headers = response.text.splitlines()[0].split(",")
         assert headers == ["Name", "Condition", "Action", "Date"]
 
+    async def test_invalid_timezone_returns_400(self, setup, authed_client):
+        """
+        Client providing an invalid timezone should return a 400.
+        """
+        response = await authed_client.get(get_url(tz="Incorrect/Timezone"))
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     @pytest.mark.parametrize(
         "timezone",
         [
