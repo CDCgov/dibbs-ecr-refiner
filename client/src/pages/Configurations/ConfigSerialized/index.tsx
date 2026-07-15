@@ -32,15 +32,15 @@ export function ConfigSerialized() {
 
   return (
     <Container id={id}>
-      <details>
+      <details className="w-full">
         <summary>{`current.json (${response.data.current.key})`}</summary>
         <CodeBlock>{response.data.current.content}</CodeBlock>
       </details>
-      <details>
+      <details className="w-full">
         <summary>{`metadata.json (${response.data.metadata.key})`}</summary>
         <CodeBlock>{response.data.metadata.content}</CodeBlock>
       </details>
-      <details open>
+      <details open className="w-full">
         <summary>{`active.json (${response.data.active.key})`}</summary>
         <CodeBlock>{response.data.active.content}</CodeBlock>
       </details>
@@ -69,28 +69,30 @@ function CodeBlock({ children }: { children: string }) {
     <div
       ref={parentRef}
       className="border-gray-1 w-full overflow-auto border border-dashed p-2"
-      style={{ height: '700px', width: '1280px' }}
     >
-      <pre
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          position: 'relative',
-        }}
-      >
-        {virtualizer.getVirtualItems().map((item) => (
-          <span
-            key={item.key}
-            style={{
-              position: 'absolute',
-              top: 0,
-              transform: `translateY(${item.start}px)`,
-              display: 'block',
-            }}
-          >
-            {lines[item.index]}
-          </span>
-        ))}
-      </pre>
+      <div style={{ height: '700px', minWidth: 'max-content', width: '100%' }}>
+        <pre
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            position: 'relative',
+          }}
+        >
+          {virtualizer.getVirtualItems().map((item) => (
+            <span
+              key={item.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                transform: `translateY(${item.start}px)`,
+                display: 'block',
+                whiteSpace: 'pre',
+              }}
+            >
+              {lines[item.index]}
+            </span>
+          ))}
+        </pre>
+      </div>
     </div>
   );
 }
