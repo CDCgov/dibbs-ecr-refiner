@@ -70,22 +70,19 @@ function CodeBlock({ children }: { children: string }) {
       ref={parentRef}
       className="border-gray-1 w-full overflow-auto border border-dashed p-2"
     >
-      <div style={{ height: '700px', minWidth: 'max-content', width: '100%' }}>
+      <div className="h-175 w-full min-w-max">
         <pre
+          className="relative"
           style={{
             height: `${virtualizer.getTotalSize()}px`,
-            position: 'relative',
           }}
         >
           {virtualizer.getVirtualItems().map((item) => (
             <span
+              className="absolute top-0 block whitespace-pre"
               key={item.key}
               style={{
-                position: 'absolute',
-                top: 0,
                 transform: `translateY(${item.start}px)`,
-                display: 'block',
-                whiteSpace: 'pre',
               }}
             >
               {lines[item.index]}
