@@ -3,6 +3,8 @@ import { useGetSerializedConfiguration } from '../../../api/configurations/confi
 import { Button } from '@components/Button';
 import { Spinner } from '@components/Spinner';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useRef, useMemo } from 'react';
 
 export function ConfigSerialized() {
   const { id } = useParams<{ id: string }>();
@@ -46,9 +48,50 @@ export function ConfigSerialized() {
   );
 }
 
-function CodeBlock({ children }: { children: React.ReactNode }) {
+function CodeBlock({ children }: { children: string }) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const lines = useMemo(() => children.split('\n'), [children]);
+
+  /**
+   * TODO: Known issue
+   * See: https://github.com/TanStack/virtual/issues/1119
+   */
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: lines.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 20, // estimated line height in px
+    overscan: 10,
+  });
+
   return (
-    <pre className="border-gray-1 border border-dashed p-2">{children}</pre>
+    <div
+      ref={parentRef}
+      className="border-gray-1 w-full overflow-auto border border-dashed p-2"
+      style={{ height: '700px', width: '1280px' }}
+    >
+      <pre
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((item) => (
+          <span
+            key={item.key}
+            style={{
+              position: 'absolute',
+              top: 0,
+              transform: `translateY(${item.start}px)`,
+              display: 'block',
+            }}
+          >
+            {lines[item.index]}
+          </span>
+        ))}
+      </pre>
+    </div>
   );
 }
 
