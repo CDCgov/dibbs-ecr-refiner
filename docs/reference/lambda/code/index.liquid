@@ -10,6 +10,29 @@ layout: layout.liquid
   Function Reference
 </h1>
 
+<p class="text-gray-60 mb-8">Role badges</p>
+
+<div class="flex flex-wrap gap-3 mb-8">
+  {% for role in roleColors %}
+    {% assign idx = 0 %}
+    {% for r in roleColors %}
+      {% if r == role %}{% assign roleIdx = idx %}{% endif %}
+      {% assign idx = idx | plus: 1 %}
+    {% endfor %}
+    <span class="text-xs font-medium px-2.5 py-0.5 rounded-full
+      {% if roleIdx == 0 %}bg-blue-100 text-blue-800
+      {% elsif roleIdx == 1 %}bg-cyan-100 text-cyan-800
+      {% elsif roleIdx == 2 %}bg-teal-100 text-teal-800
+      {% elsif roleIdx == 3 %}bg-green-100 text-green-800
+      {% elsif roleIdx == 4 %}bg-orange-100 text-orange-800
+      {% elsif roleIdx == 5 %}bg-red-100 text-red-800
+      {% elsif roleIdx == 6 %}bg-purple-100 text-purple-800
+      {% endif %}">
+      {{ role }}
+    </span>
+  {% endfor %}
+</div>
+
 <p class="text-gray-60 mb-6">Functions grouped by pipeline stage with role badges.</p>
 
 {% for stage in stageOrder %}

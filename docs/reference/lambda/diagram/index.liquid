@@ -5,66 +5,13 @@ layout: layout.liquid
 
 {% include "lambda-stage-data" %}
 
+
 <h1 class="font-merriweather text-3xl font-bold mb-6">
   <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
-  Pipeline Diagram
+  Pipeline roles & diagram
 </h1>
 
-<p class="text-gray-60 mb-8">End-to-end processing flow through the Lambda stages.</p>
-
-<div class="bg-gray-2 rounded-lg p-6 mb-8 overflow-x-auto">
-  <pre class="text-sm leading-relaxed font-mono">
-                    ┌──────────────┐
-                    │   SQS Event  │
-                    │   (Trigger)  │
-                    └──────┬───────┘
-                           │
-                    ┌──────▼───────────┐
-                    │     Entry        │
-                    │   (Handler)      │
-                    │  lambda_handler  │
-                    └──────┬───────────┘
-                           │
-                    ┌──────▼────────────────────────┐
-                    │    S3 Retrieval               │
-                    │     (S3 I/O)                  │
-                    │   extract_persistence_id →    │
-                    │   get_s3_object_content →     │
-                    │   parse_s3_content_to_dict    │
-                    └──────┬────────────────────────┘
-                           │
-                    ┌──────▼─────────────────────────┐
-                    │ Configuration Loading          │
-                    │  (Configuration)               │
-                    │ read_rsg_cg_mapping_file →     │
-                    │ read_current_version →         │
-                    │ read_configuration_file →      │
-                    │ load_active_configuration      │
-                    └───────────────┬────────────────┘
-                           │
-                    ┌──────▼─────────────────────┐
-                    │ Refinement Pipeline        │
-                    │  (Orchestrator)            │
-                    │ run_refinement →           │
-                    │ process_jurisdiction →     │
-                    │ process_condition          │
-                    └──────┬─────────────────────┘
-                           │
-                    ┌──────▼─────────────────┐
-                    │  Output Writing        │
-                    │    (Output)            │
-                    │ write_refined_outputs  │
-                    │ write_remainder_rrs    │
-                    └──────┬─────────────────┘
-                           │
-                    ┌──────▼──────────┐
-                    │ RefinerComplete │
-                    │    Manifest     │
-                    │  → AIMS (S3)    │
-                    └─────────────────┘</pre>
-</div>
-
-<h2 class="font-merriweather text-xl font-bold mb-4">Role Legend</h2>
+<p class="text-gray-60 mb-8 prose">Role badges shown under <a href="/reference/lambda/code/">Lambda > Function Reference</a> and in the diagram.</p>
 
 <div class="flex flex-wrap gap-3 mb-8">
   {% for role in roleColors %}
@@ -85,4 +32,37 @@ layout: layout.liquid
       {{ role }}
     </span>
   {% endfor %}
+</div>
+
+<h2 class="font-merriweather text-xl font-bold mb-4">Pipeline Diagram</h2>
+
+<p class="text-gray-60 mb-8">End-to-end processing flow through the Lambda stages.</p>
+
+<div class="bg-gray-2 rounded-lg p-6 mb-8 overflow-x-auto not-prose">
+  <pre class="text-sm leading-relaxed font-mono">
+             +-------------+                    +-----------------------------------------+
+             |  SQS Event  |        +----------->   Configuration Loading                 |
+      +------+  (Trigger)  |        |           |      (Configuration)                    |
+      |      +-------------+        |           | `read_rsg_cg_mapping_file` →            |
+      |    +------------------+     |           |     `read_current_version` →            |
+      +---->      Entry       |     |           |         `read_configuration_file` →     |
+           |    (Handler)     |     |           |             `load_active_configuration` |
++----------+ `lambda_handler` |     |           +--+--------------------------------------+
+|          +------------------+     |              |
+| +---------------------------------+-----+        |  +------------------------------+
+| |         S3 Retrieval                  |        |  |   Refinement Pipeline        |
++->           (S3 I/O)                    |        +-->     (Orchestrator)           +-----+
+  |  `extract_persistence_id` →           |           | `run_refinement` →           |     |
+  |      `get_s3_object_content` →        |           |     `process_jurisdiction` → |     |
+  |           `parse_s3_content_to_dict`  |           |         `process_condition`  |     |
+  +---------------------------------------+           +------------------------------+     |
+                                                                                           |                   |
+                                                        +---------------------------+      |
+                       +--------------------------------+    Output Writing         <------+
+                       |                                |       (Output)            |
+                     +-v----------------------+         | `write_refined_outputs` → |
+                     |   `RefinerComplete`    |         |     `write_remainder_rrs` |
+                     |  Manifest → AIMS (S3)  |         +---------------------------+
+                     +------------------------+
+  </pre>
 </div>
