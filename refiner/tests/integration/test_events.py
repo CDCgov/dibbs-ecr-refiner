@@ -55,7 +55,7 @@ class TestEventsCsvExport:
             cd_header,
         ), f"Unexpected Content-Disposition: {cd_header!r}"
 
-    async def test_export_has_expected_headers(self, setup, authed_client):
+    async def test_export_has_expected_csv_headers(self, setup, authed_client):
         """
         CSV should have only the expected headers.
         """
@@ -171,6 +171,51 @@ class TestEventsCsvExport:
         assert expected_tc0_formatted in rows[0]["Action"]
         assert expected_tc1_formatted in rows[0]["Action"]
 
+    async def test_csv_is_not_filtered_when_canonical_url_missing(
+        self,
+        setup,
+        get_condition_id,
+        create_config,
+        authed_client,
+        test_username,
+        activate_config,
+    ):
+        """
+        CSV contains events for all conditions when no canonical URL is provided for filtering.
+        """
+        # create covid draft
+        covid_id = await get_condition_id("COVID-19")
+        await create_config(covid_id)
+
+        # create flu draft
+        flu_id = await get_condition_id("Influenza")
+        flu_config = await create_config(flu_id)
+
+        # activate flu
+        await activate_config(flu_config["id"])
+
+        # create flu v2 draft
+        await create_config(flu_id)
+
+        # filter by flu
+        response = await authed_client.get(get_url())
+        assert response.status_code == status.HTTP_200_OK
+
+        rows = parse_csv(response.text)
+
+        # COVID creation, flu creation, flu activation, flu creation v2
+        assert len(rows) == 4
+
+        assert rows[0]["Name"] == test_username
+        assert rows[0]["Condition"] == "Influenza (Version 2)"
+        assert rows[0]["Action"] == "Created configuration"
+        assert rows[0]["Date"]
+
+        assert rows[3]["Name"] == test_username
+        assert rows[3]["Condition"] == "COVID-19 (Version 1)"
+        assert rows[3]["Action"] == "Created configuration"
+        assert rows[3]["Date"]
+
     async def test_csv_is_filtered_by_canonical_url(
         self,
         setup,
@@ -180,6 +225,10 @@ class TestEventsCsvExport:
         authed_client,
         test_username,
     ):
+        """
+        CSV should be filtered to a specific condition when provided with the condition's
+        canonical URL.
+        """
         covid_id = await get_condition_id("COVID-19")
         await create_config(covid_id)
 
