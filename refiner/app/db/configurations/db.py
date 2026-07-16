@@ -279,14 +279,12 @@ async def insert_configuration_db(
         jurisdiction_id,
         name,
         created_by,
-        custom_codes,
         version
     )
     VALUES (
         %s,
         %s,
         %s,
-        %s::jsonb,
         %s
     )
     RETURNING
@@ -308,13 +306,14 @@ async def insert_configuration_db(
                     config_to_clone.name,
                     # cloned by this user
                     user_id,
+                    # TODO: UPDATE CLONING FOR CUSTOM CODES
                     # custom_codes
-                    Jsonb(
-                        [
-                            {"name": c.name, "code": c.code, "system_key": c.system_key}
-                            for c in config_to_clone.custom_codes
-                        ]
-                    ),
+                    # Jsonb(
+                    #     [
+                    #         {"name": c.name, "code": c.code, "system_key": c.system_key}
+                    #         for c in config_to_clone.custom_codes
+                    #     ]
+                    # ),
                     next_version,
                 )
             else:
@@ -324,8 +323,6 @@ async def insert_configuration_db(
                     latest_condition.display_name,
                     # created by this user
                     user_id,
-                    # custom_codes
-                    EMPTY_JSONB,
                     next_version,
                 )
 
@@ -1258,7 +1255,7 @@ def _get_configurations_core_query() -> str:
         c.status,
         c.jurisdiction_id,
         cc_primary.condition_id,
-        c.custom_codes,
+        COALESCE(codes.custom_codes, '[]'::jsonb) AS custom_codes,
 
         COALESCE(conds.included_conditions, '{}') AS included_conditions,
         COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
@@ -1270,6 +1267,18 @@ def _get_configurations_core_query() -> str:
         c.s3_url
     FROM configurations c
     JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
+    LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+                   jsonb_build_object(
+                       'code', cc.code,
+                       'name', cc.display,
+                       'system_key', s.key
+                   )
+               ) AS custom_codes
+        FROM custom_codes cc
+        JOIN systems s ON s.id = cc.system_id
+        WHERE cc.configuration_id = c.id
+    ) codes ON TRUE
     LEFT JOIN LATERAL (
         SELECT array_agg(cc.condition_id) AS included_conditions
         FROM configurations_conditions cc
