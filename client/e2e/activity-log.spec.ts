@@ -139,4 +139,19 @@ test.describe('Activity log', () => {
     ).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
+
+  test('Export button downloads a CSV file', async ({
+    page,
+    activityLogPage,
+  }) => {
+    await activityLogPage.goto();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('link', { name: 'Export as CSV' }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(
+      /^Activity_Log_Export_\d{6}_\d{2}_\d{2}_\d{2}\.csv$/
+    );
+  });
 });
