@@ -47,6 +47,7 @@ export * from './getConditionsResponse';
 export * from './getConfigurationResponse';
 export * from './getConfigurationResponseVersion';
 export * from './getConfigurationsResponse';
+export * from './getEventsExportApiV1EventsExportGetParams';
 export * from './getEventsParams';
 export * from './hTTPValidationError';
 export * from './includedCondition';
