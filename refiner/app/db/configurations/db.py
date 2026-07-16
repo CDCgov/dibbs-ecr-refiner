@@ -1009,6 +1009,13 @@ async def update_configuration_section_db(
         "retain": "Keep original",
     }
 
+    # Map internal narrative → display label
+    NARRATIVE_LABELS = {
+        "retain": "Keep original",
+        "keep_on_match": "Keep on match",
+        "remove": "Exclude",
+    }
+
     # Validate input actions
     valid_actions: set[DbSectionAction] = {"retain", "refine"}
     if section_update.action not in valid_actions:
@@ -1053,7 +1060,9 @@ async def update_configuration_section_db(
         (
             prev_section.narrative,
             section_update.narrative,
-            lambda old, new: f"narrative from '{old}' to '{new}'",
+            lambda old, new: (
+                f"narrative from '{NARRATIVE_LABELS.get(old, old)}' to '{NARRATIVE_LABELS.get(new, new)}'"
+            ),
         ),
     ]
 
