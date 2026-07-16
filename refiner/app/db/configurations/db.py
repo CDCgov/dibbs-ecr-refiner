@@ -22,6 +22,8 @@ from app.services.logger import get_logger
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
+    SECTION_ACTION_LABELS,
+    SECTION_NARRATIVE_ACTION_LABELS,
     BulkAddCustomCodesResult,
     DbConfiguration,
     DbConfigurationCustomCode,
@@ -1003,18 +1005,6 @@ async def update_configuration_section_db(
     Returns:
         Updated DbConfiguration or None if the update fails
     """
-    # Map internal action → display label
-    ACTION_LABELS = {
-        "refine": "Refine",
-        "retain": "Keep original",
-    }
-
-    # Map internal narrative → display label
-    NARRATIVE_LABELS = {
-        "retain": "Keep original",
-        "keep_on_match": "Keep on match",
-        "remove": "Exclude",
-    }
 
     # Validate input actions
     valid_actions: set[DbSectionAction] = {"retain", "refine"}
@@ -1036,8 +1026,8 @@ async def update_configuration_section_db(
             prev_section.action,
             section_update.action,
             lambda old, new: (
-                f"coded data selection from '{ACTION_LABELS.get(old, old)}' "
-                f"to '{ACTION_LABELS.get(new, new)}'"
+                f"coded data selection from '{SECTION_ACTION_LABELS.get(old, old)}' "
+                f"to '{SECTION_ACTION_LABELS.get(new, new)}'"
             ),
         ),
         (
@@ -1061,7 +1051,7 @@ async def update_configuration_section_db(
             prev_section.narrative,
             section_update.narrative,
             lambda old, new: (
-                f"narrative from '{NARRATIVE_LABELS.get(old, old)}' to '{NARRATIVE_LABELS.get(new, new)}'"
+                f"narrative from '{SECTION_NARRATIVE_ACTION_LABELS.get(old, old)}' to '{SECTION_NARRATIVE_ACTION_LABELS.get(new, new)}'"
             ),
         ),
     ]

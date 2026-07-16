@@ -5,7 +5,20 @@ from uuid import UUID
 
 type DbSectionAction = Literal["retain", "refine"]
 
+SECTION_ACTION_LABELS: dict[DbSectionAction, str] = {
+    "retain": "Keep original",
+    "refine": "Refine",
+}
+
 type DbNarrativeAction = Literal["retain", "remove", "reconstruct", "keep_on_match"]
+
+SECTION_NARRATIVE_ACTION_LABELS: dict[DbNarrativeAction, str] = {
+    "retain": "Keep original",
+    "remove": "Exclude",
+    "reconstruct": "Reconstruct",
+    "keep_on_match": "Keep on match",
+}
+
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
