@@ -1005,8 +1005,8 @@ async def update_configuration_section_db(
     """
     # Map internal action → display label
     ACTION_LABELS = {
-        "refine": "Refine & optimize",
-        "retain": "Preserve & retain all data",
+        "refine": "Refine",
+        "retain": "Keep original",
     }
 
     # Validate input actions
@@ -1029,7 +1029,7 @@ async def update_configuration_section_db(
             prev_section.action,
             section_update.action,
             lambda old, new: (
-                f"data handling approach from '{ACTION_LABELS.get(old, old)}' "
+                f"coded data selection from '{ACTION_LABELS.get(old, old)}' "
                 f"to '{ACTION_LABELS.get(new, new)}'"
             ),
         ),
