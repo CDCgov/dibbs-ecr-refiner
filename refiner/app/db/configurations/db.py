@@ -535,7 +535,7 @@ async def associate_condition_codeset_with_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="add_code",
-                    action_text=f"Associated '{condition.display_name}' code set",
+                    action_text=f"Added '{condition.display_name}' code set",
                 ),
                 cursor=cur,
             )
