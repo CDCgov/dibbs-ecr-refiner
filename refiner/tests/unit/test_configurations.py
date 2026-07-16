@@ -1,3 +1,4 @@
+import typing
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
@@ -11,9 +12,13 @@ from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
+    SECTION_ACTION_LABELS,
+    SECTION_NARRATIVE_ACTION_LABELS,
     DbConfiguration,
     DbConfigurationCustomCode,
     DbConfigurationSummary,
+    DbNarrativeAction,
+    DbSectionAction,
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
@@ -517,3 +522,30 @@ async def test_inline_allow_custom_zip(
     )
 
     test_app.dependency_overrides.clear()
+
+
+def test_all_actions_have_labels():
+    """
+    All defined section actions must have an associated label.
+    """
+    assert set(SECTION_ACTION_LABELS) == _get_literal_values(DbSectionAction), (
+        f"Missing labels: {_get_literal_values(DbSectionAction) - set(SECTION_ACTION_LABELS)}"
+    )
+
+
+def test_all_narrative_actions_have_labels():
+    """
+    All defined section narrative actions must have an associated label.
+    """
+    assert set(SECTION_NARRATIVE_ACTION_LABELS) == _get_literal_values(
+        DbNarrativeAction
+    ), (
+        f"Missing labels: {_get_literal_values(DbNarrativeAction) - set(SECTION_NARRATIVE_ACTION_LABELS)}"
+    )
+
+
+def _get_literal_values(t) -> set[str]:
+    """
+    Helper to get a set of Literal values.
+    """
+    return set(typing.get_args(t.__value__))
