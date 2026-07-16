@@ -10,6 +10,10 @@ from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
 )
+from app.db.configurations.labels import (
+    CODED_DATA_LABELS,
+    NARRATIVE_DATA_LABELS,
+)
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.services.code_systems import get_all_code_systems_by_key
@@ -22,8 +26,6 @@ from app.services.logger import get_logger
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
-    SECTION_ACTION_LABELS,
-    SECTION_NARRATIVE_ACTION_LABELS,
     BulkAddCustomCodesResult,
     DbConfiguration,
     DbConfigurationCustomCode,
@@ -1026,8 +1028,8 @@ async def update_configuration_section_db(
             prev_section.action,
             section_update.action,
             lambda old, new: (
-                f"coded data selection from '{SECTION_ACTION_LABELS.get(old, old)}' "
-                f"to '{SECTION_ACTION_LABELS.get(new, new)}'"
+                f"coded data selection from '{CODED_DATA_LABELS.get(old, old)}' "
+                f"to '{CODED_DATA_LABELS.get(new, new)}'"
             ),
         ),
         (
@@ -1051,7 +1053,7 @@ async def update_configuration_section_db(
             prev_section.narrative,
             section_update.narrative,
             lambda old, new: (
-                f"narrative from '{SECTION_NARRATIVE_ACTION_LABELS.get(old, old)}' to '{SECTION_NARRATIVE_ACTION_LABELS.get(new, new)}'"
+                f"narrative from '{NARRATIVE_DATA_LABELS.get(old, old)}' to '{NARRATIVE_DATA_LABELS.get(new, new)}'"
             ),
         ),
     ]

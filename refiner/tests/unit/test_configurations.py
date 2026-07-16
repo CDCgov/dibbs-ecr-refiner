@@ -11,9 +11,11 @@ from fastapi import status
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.labels import (
+    CODED_DATA_LABELS,
+    NARRATIVE_DATA_LABELS,
+)
 from app.db.configurations.model import (
-    SECTION_ACTION_LABELS,
-    SECTION_NARRATIVE_ACTION_LABELS,
     DbConfiguration,
     DbConfigurationCustomCode,
     DbConfigurationSummary,
@@ -524,12 +526,12 @@ async def test_inline_allow_custom_zip(
     test_app.dependency_overrides.clear()
 
 
-def test_all_actions_have_labels():
+def test_all_coded_data_actions_have_labels():
     """
-    All defined section actions must have an associated label.
+    All defined section coded data actions must have an associated label.
     """
-    assert set(SECTION_ACTION_LABELS) == _get_literal_values(DbSectionAction), (
-        f"Missing labels: {_get_literal_values(DbSectionAction) - set(SECTION_ACTION_LABELS)}"
+    assert set(CODED_DATA_LABELS) == _get_literal_values(DbSectionAction), (
+        f"Missing labels: {_get_literal_values(DbSectionAction) - set(CODED_DATA_LABELS)}"
     )
 
 
@@ -537,10 +539,8 @@ def test_all_narrative_actions_have_labels():
     """
     All defined section narrative actions must have an associated label.
     """
-    assert set(SECTION_NARRATIVE_ACTION_LABELS) == _get_literal_values(
-        DbNarrativeAction
-    ), (
-        f"Missing labels: {_get_literal_values(DbNarrativeAction) - set(SECTION_NARRATIVE_ACTION_LABELS)}"
+    assert set(NARRATIVE_DATA_LABELS) == _get_literal_values(DbNarrativeAction), (
+        f"Missing labels: {_get_literal_values(DbNarrativeAction) - set(NARRATIVE_DATA_LABELS)}"
     )
 
 
