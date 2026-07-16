@@ -85,14 +85,14 @@ function CustomCodeForm({
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
 
-  const [selectedSystem, setSelectedSystem] = useState(
-    selectedCustomCode?.system_key ?? ''
+  const [selectedSystemId, setSelectedSystemId] = useState(
+    selectedCustomCode?.system_id ?? ''
   );
 
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isButtonEnabled = code && selectedSystem && name && !error;
+  const isButtonEnabled = code && selectedSystemId && name && !error;
 
   const handleCodeUpdate = (code: string) => {
     setCode(code);
@@ -138,10 +138,10 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: selectedCustomCode.code,
-            system_key: selectedCustomCode.system_key,
+            system_id: selectedCustomCode.system_id,
             name: selectedCustomCode.name,
             new_code: code.trim(),
-            new_system_key: selectedSystem,
+            new_system_id: selectedSystemId,
             new_name: name.trim(),
           },
         },
@@ -169,7 +169,7 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: code.trim(),
-            system_key: selectedSystem,
+            system_id: selectedSystemId,
             name: name.trim(),
           },
         },
@@ -215,14 +215,14 @@ function CustomCodeForm({
         <Field>
           <Label>Code system</Label>
           <Select
-            value={selectedSystem}
-            onChange={(e) => setSelectedSystem(e.target.value)}
+            value={selectedSystemId}
+            onChange={(e) => setSelectedSystemId(e.target.value)}
           >
             <option value="" disabled>
               Select system
             </option>
             {codeSystems.data.map((s) => (
-              <option key={s.id} value={s.key}>
+              <option key={s.id} value={s.id}>
                 {s.display_name}
               </option>
             ))}

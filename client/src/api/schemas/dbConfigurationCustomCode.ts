@@ -3,7 +3,8 @@
  * Custom code associated with a Configuration.
  */
 export interface DbConfigurationCustomCode {
+  id: string;
   code: string;
-  system_key: string;
   name: string;
+  system_id: string;
 }

@@ -77,6 +77,43 @@ async def get_code_system_by_key_db(
             return row
 
 
+async def get_code_system_by_id_db(
+    id: UUID,
+    db: AsyncDatabaseConnection,
+) -> DbCodeSystem | None:
+    """
+    Get code system by its ID.
+
+    Args:
+        id (str): The code system's UUID
+        db (AsyncDatabaseConnection): A database connection
+
+    Returns:
+        DbCodeSystem | None: Matched code system if found, none otherwise.
+    """
+
+    query = """
+    SELECT
+        id,
+        display_name,
+        oid,
+        key
+    FROM systems
+    WHERE id = %s;
+    """
+    params = (id,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
+            await cur.execute(query=query, params=params)
+            row = await cur.fetchone()
+
+            if not row:
+                return None
+
+            return row
+
+
 async def get_code_system_by_display_name_db(
     name: str, db: AsyncDatabaseConnection
 ) -> DbCodeSystem | None:

@@ -22,7 +22,7 @@ export * from './configurationTestResponse';
 export * from './confirmUploadCustomCodesInput';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
-export * from './customCodes';
+export * from './customCodeResponse';
 export * from './customCodeUploadEventResponse';
 export * from './dbCode';
 export * from './dbCodeSystem';

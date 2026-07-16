@@ -678,29 +678,13 @@ async def add_custom_code_to_configuration_db(
     """
 
     query = """
-            UPDATE configurations
-            SET custom_codes = %s::jsonb
-            WHERE id = %s
-            RETURNING
-                id;
-            """
+            INSERT INTO custom_codes (configuration_id, display, code, system_id)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (configuration_id, system_id, code) DO NOTHING
+            RETURNING id;
+        """
 
-    custom_codes = config.custom_codes
-
-    exists = any(
-        (c.code == custom_code.code and c.system_key == custom_code.system_key)
-        for c in custom_codes
-    )
-
-    if not exists:
-        custom_codes.append(custom_code)
-
-    json = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in custom_codes
-    ]
-
-    params = (Jsonb(json), config.id)
+    params = (config.id, custom_code.name, custom_code.code, custom_code.system_id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -801,30 +785,21 @@ async def add_bulk_custom_codes_to_configuration_db(
 
 async def delete_custom_code_from_configuration_db(
     config: DbConfiguration,
-    system_key: str,
-    code: str,
+    id: UUID,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
-    Given a config, system_key, and custom code, deletes the custom code from the configuration.
+    Given a config and custom code ID, deletes the custom code from the configuration.
     """
 
     query = """
-            UPDATE configurations
-            SET custom_codes = %s::jsonb
+            DELETE FROM custom_codes
             WHERE id = %s
             RETURNING
-                id;
+                code;
             """
-
-    updated_custom_codes = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in config.custom_codes
-        if not (cc.system_key == system_key and cc.code == code)
-    ]
-
-    params = (Jsonb(updated_custom_codes), config.id)
+    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -840,7 +815,7 @@ async def delete_custom_code_from_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="delete_code",
-                    action_text=f"Removed custom code '{code}'",
+                    action_text=f"Removed custom code '{row['code']}'",
                 ),
                 cursor=cur,
             )
@@ -1270,13 +1245,13 @@ def _get_configurations_core_query() -> str:
     LEFT JOIN LATERAL (
         SELECT jsonb_agg(
                    jsonb_build_object(
+                       'id', cc.id::text,
                        'code', cc.code,
                        'name', cc.display,
-                       'system_key', s.key
+                       'system_id', cc.system_id::text
                    )
                ) AS custom_codes
         FROM custom_codes cc
-        JOIN systems s ON s.id = cc.system_id
         WHERE cc.configuration_id = c.id
     ) codes ON TRUE
     LEFT JOIN LATERAL (

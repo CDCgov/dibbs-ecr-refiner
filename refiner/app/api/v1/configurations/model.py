@@ -3,7 +3,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import IndexedCodeSystem
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
@@ -70,13 +69,12 @@ class LockedByUser(UserInfoBase):
 
 
 @dataclass(frozen=True)
-class CustomCodes:
+class CustomCodeResponse(DbConfigurationCustomCode):
     """
-    Model for custom codes response, with systems bundled alongside codes for frontend display.
+    Custom code object to return to the client.
     """
 
-    codes: list[DbConfigurationCustomCode]
-    code_systems: IndexedCodeSystem
+    system_name: str
 
 
 @dataclass(frozen=True)
@@ -94,7 +92,7 @@ class GetConfigurationResponse:
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
-    custom_codes: CustomCodes
+    custom_codes: list[CustomCodeResponse]
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
     rsg_codes: list[DbCode]
@@ -143,8 +141,8 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system_key: str
     name: str
+    system_id: UUID
 
 
 @dataclass(frozen=True)

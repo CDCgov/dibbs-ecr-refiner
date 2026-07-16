@@ -18,6 +18,7 @@ from app.api.v1.configurations.model import (
 from app.db.code_systems.db import (
     DbCodeSystem,
     IndexedCodeSystem,
+    get_code_system_by_id_db,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
@@ -52,10 +53,10 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "code" is missing.',
         )
-    if not input.system_key:
+    if not input.system_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_key" is missing.',
+            detail='Required field "system_id" is missing.',
         )
     if not input.name:
         raise HTTPException(
@@ -109,6 +110,7 @@ async def add_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,
@@ -124,17 +126,18 @@ async def add_custom_code(
         )
 
     # Create a custom code object
-    selected_code_system = await get_code_system_by_key_db(key=body.system_key, db=db)
-    if not selected_code_system:
+    system = await get_code_system_by_id_db(id=body.system_id, db=db)
+    if not system:
         allowed_keys = await get_allowed_code_system_keys(db=db)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"System must be one of [{allowed_keys}]",
         )
+
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system_key=selected_code_system.key,
         name=body.name,
+        system_id=system.id,
     )
 
     updated_config = await add_custom_code_to_configuration_db(
@@ -467,15 +470,14 @@ async def confirm_upload_custom_codes_csv(
 
 
 @router.delete(
-    "/{system_key}/{code}",
+    "/{id}",
     response_model=ConfigurationCustomCodeResponse,
     tags=["configurations"],
     operation_id="deleteCustomCodeFromConfiguration",
 )
 async def delete_custom_code(
+    id: UUID,
     configuration_id: UUID,
-    system_key: str,
-    code: str,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationCustomCodeResponse:
@@ -484,14 +486,12 @@ async def delete_custom_code(
 
     Args:
         configuration_id (UUID): The ID of the configuration to modify.
-        system_key (str): System of the custom code.
-        code (str): Code of the custom code.
+        id (str): The ID of the custom code.
         user (dict[str, Any]): The logged-in user.
         db (AsyncDatabaseConnection): The database connection.
 
     Raises:
-        HTTPException: 400 if system_key is not provided
-        HTTPException: 400 if code is not provided
+        HTTPException: 400 if id is not provided
         HTTPException: 404 if configuration can't be found
         HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if configuration can't be updated
@@ -500,14 +500,10 @@ async def delete_custom_code(
         ConfigurationCustomCodeResponse: The updated configuration
     """
 
-    if not system_key:
+    if not id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="System must be provided."
-        )
-
-    if not code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Code must be provided."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Custom code ID must be provided.",
         )
 
     # get user jurisdiction
@@ -537,7 +533,7 @@ async def delete_custom_code(
         )
 
     updated_config = await delete_custom_code_from_configuration_db(
-        config=config, system_key=system_key, code=code, user_id=user.id, db=db
+        config=config, id=id, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -564,11 +560,11 @@ class UpdateCustomCodeInput(BaseModel):
     Input model when updating a config's custom code.
     """
 
-    system_key: str
+    system_id: UUID
     code: str
     name: str
     new_code: str | None
-    new_system_key: str | None
+    new_system_id: UUID | None
     new_name: str | None
 
 
