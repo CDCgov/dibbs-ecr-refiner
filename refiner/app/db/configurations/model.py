@@ -11,6 +11,9 @@ type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
 type DbSectionType = Literal["standard", "custom"]
 
+## Placeholder for schema version - TODO put in DB
+CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION = 2
+
 
 @dataclass(frozen=True)
 class GetConfigurationResponseVersion:
@@ -199,9 +202,11 @@ class ConfigurationStoragePayload:
     The model for a configuration that is being written to S3.
 
     Contains the enriched code_system_sets required for refinement,
-    along with section processing and included condition RSG codes.
+    along with section processing and included condition RSG code, and
+    the active payload schema version.
     """
 
+    schema_version: int
     sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
     code_system_sets: dict[str, list[dict[str, str]]]
@@ -215,6 +220,7 @@ class ConfigurationStoragePayload:
         """
 
         result = {
+            "schema_version": self.schema_version,
             "code_system_sets": self.code_system_sets,
             "sections": self.sections,
             "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),

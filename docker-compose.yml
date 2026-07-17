@@ -61,7 +61,7 @@ services:
     environment:
       <<: *refiner-environment
       SSL_MODE: disable
-      ACTIVE_CONFIG_MIGRATION_LIMIT: "1"
+      ACTIVE_CONFIG_MIGRATION_LIMIT: "0"
       LAMBDA_DRAIN_SECONDS: "5"
       MAINTENANCE_LOCK_EXPIRATION_MINUTES: "60"
     profiles: ["ops"]
