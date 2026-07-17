@@ -11,9 +11,7 @@ type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
 type DbSectionType = Literal["standard", "custom"]
 
-## Placeholder for schema version - TODO put in DB
 CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION = 2
-
 
 @dataclass(frozen=True)
 class GetConfigurationResponseVersion:
