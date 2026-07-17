@@ -276,9 +276,8 @@ function checkCode(codeSystemName: string, exists = true) {
     (s) => s.display_name === codeSystemName
   );
 
-  const mockCode = mockPreviewItems.find(
-    (i) => i.system_key === codeSystem?.key
-  )?.code as string;
+  const mockCode = mockPreviewItems.find((i) => i.system_id === codeSystem?.id)
+    ?.code as string;
 
   const matcher = exists ? 'getByText' : 'queryByText';
 
@@ -326,7 +325,8 @@ const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
     return {
       id: crypto.randomUUID(),
       code: row['code'],
-      system_key: row['code_system'],
+      system_id: row['code_system'],
+      system_name: row['system_name'],
       display: row['display_name'],
       row: i,
     };

@@ -1,12 +1,17 @@
-import { DbCodeSystem, DbTotalConditionCodeCount } from '../../../api/schemas';
-import { DbConfigurationCustomCode } from '../../../api/schemas/dbConfigurationCustomCode';
+import {
+  CustomCodeResponse,
+  DbCodeSystem,
+  DbTotalConditionCodeCount,
+} from '../../../api/schemas';
 
 export const MOCK_CONFIG_DRAFT_ID = 'b8f96556-2567-48c1-9d1a-cf3e202e5fdb';
-export const mockCustomCodes: DbConfigurationCustomCode[] = [
+export const mockCustomCodes: CustomCodeResponse[] = [
   {
+    id: 'cc-test-id',
     code: 'custom-code1',
     name: 'test-custom-code1',
-    system_key: 'icd10',
+    system_id: '375d4fd5-81f8-4b9e-abd9-979c7987691f',
+    system_name: 'ICD-10',
   },
 ];
 
