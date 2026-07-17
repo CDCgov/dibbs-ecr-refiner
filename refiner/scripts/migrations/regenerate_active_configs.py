@@ -25,6 +25,7 @@ import logging
 import os
 import time
 from datetime import UTC, datetime, timedelta
+from typing import TypedDict
 
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
@@ -50,6 +51,16 @@ REACTIVATION_NAME = "active-payload-schema-v2"
 
 DEFAULT_LAMBDA_DRAIN_SECONDS = 60
 DEFAULT_LOCK_EXPIRATION_MINUTES = 60
+
+
+class MaintenanceLock(TypedDict):
+    """Maintenance lock payload written to S3 during active config reactivation."""
+
+    reason: str
+    reactivation: str
+    owner: str
+    started_at: str
+    expires_at: str
 
 
 def configure_logging() -> None:
@@ -101,23 +112,18 @@ def get_integer_environment_variable(
         ) from exc
 
 
-def get_lock_expiration(lock: dict[str, object]) -> datetime | None:
-    """Parse the expiration time from an existing maintenance lock."""
+def get_lock_expiration(lock: MaintenanceLock) -> datetime | None:
+    """Return the parsed lock expiration time, if present and valid."""
 
-    raw_expiration = lock.get("expires_at")
+    expires_at = lock.get("expires_at")
 
-    if not isinstance(raw_expiration, str):
+    if not expires_at:
         return None
 
     try:
-        expiration = datetime.fromisoformat(raw_expiration)
+        return datetime.fromisoformat(expires_at)
     except ValueError:
         return None
-
-    if expiration.tzinfo is None:
-        expiration = expiration.replace(tzinfo=UTC)
-
-    return expiration
 
 
 def delete_maintenance_lock() -> None:
@@ -205,7 +211,7 @@ def create_maintenance_lock(
 
     now = datetime.now(UTC)
 
-    lock_payload = {
+    lock_payload: MaintenanceLock = {
         "reason": "active_configuration_reactivation",
         "reactivation": REACTIVATION_NAME,
         "owner": "ops-container",
