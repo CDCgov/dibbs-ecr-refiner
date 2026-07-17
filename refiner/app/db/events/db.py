@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -12,6 +13,20 @@ from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCo
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
+
+
+@dataclass(frozen=True)
+class CsvEvent:
+    """
+    Model for a CSV export row.
+    """
+
+    username: str
+    configuration_name: str
+    configuration_version: int
+    action_text: str
+    created_at: datetime
+    custom_code_uploads: str
 
 
 @dataclass(frozen=True)
@@ -139,7 +154,9 @@ async def get_events_by_jd_db(
     canonical_url: str | None = None,
 ) -> list[AuditEvent]:
     """
-    Fetches all events for a given jurisdiction and condition.
+    Fetches paginated event results for a jurisdiction.
+
+    Intended to be displayed in the client.
     """
     offset = (page - 1) * page_size
 
@@ -180,6 +197,54 @@ async def get_events_by_jd_db(
             await cur.execute(query, params)
             events_rows = await cur.fetchall()
             return events_rows
+
+
+async def get_all_events_by_jd_db(
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+    canonical_url: str | None = None,
+) -> AsyncIterator[CsvEvent]:
+    """
+    Streams all events for a jurisdiction.
+
+    Optionally filters by canonical_url if provided.
+
+    Intended for CSV export.
+    """
+    query = """
+        SELECT
+            u.username,
+            c.name AS configuration_name,
+            c.version AS configuration_version,
+            e.action_text,
+            e.created_at,
+            COALESCE(
+                STRING_AGG(
+                    ecu.system || ' | ' || ecu.code || ' | ' || ecu.name,
+                    '; '
+                ),
+                ''
+            ) AS custom_code_uploads
+        FROM events e
+        LEFT JOIN users u ON e.user_id = u.id
+        LEFT JOIN configurations c ON e.configuration_id = c.id
+        LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        LEFT JOIN conditions cond ON cond.id = cc.condition_id
+                                AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
+        LEFT JOIN events_custom_code_uploads ecu ON ecu.event_id = e.id
+        WHERE e.jurisdiction_id = %s
+        AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
+        GROUP BY e.id, u.username, c.name, c.version, cond.id, e.action_text, e.created_at
+        ORDER BY e.created_at DESC;
+    """
+    params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(CsvEvent)) as cur:
+            await cur.execute(query, params)
+            while chunk := await cur.fetchmany(500):
+                for row in chunk:
+                    yield row
 
 
 async def get_custom_code_upload_events_by_event_id(

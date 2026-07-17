@@ -23,6 +23,7 @@ import type {
 import type {
   CustomCodeUploadEventResponse,
   EventsResponse,
+  GetEventsExportApiV1EventsExportGetParams,
   GetEventsParams,
   HTTPValidationError
 } from '../schemas';
@@ -251,3 +252,99 @@ export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof g
 
 
 
+/**
+ * Generate a CSV export of all events within a jurisdiction.
+ *
+ * Args:
+ *     timezone (str): The user's IANA timezone
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *     canonical_url (str | None): An optional canonical URL to filter the export by condition
+ *
+ * Returns:
+ *     Response: The generated CSV file
+ * @summary Get Events Export
+ */
+export const getEventsExportApiV1EventsExportGet = (
+    params?: GetEventsExportApiV1EventsExportGetParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+
+
+    return axios.default.get(
+      `/api/v1/events/export`,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+
+export const getGetEventsExportApiV1EventsExportGetQueryKey = (params?: GetEventsExportApiV1EventsExportGetParams,) => {
+    return [
+    `/api/v1/events/export`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetEventsExportApiV1EventsExportGetQueryOptions = <TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEventsExportApiV1EventsExportGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>> = ({ signal }) => getEventsExportApiV1EventsExportGet(params, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEventsExportApiV1EventsExportGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>>
+export type GetEventsExportApiV1EventsExportGetQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ params: undefined |  GetEventsExportApiV1EventsExportGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Events Export
+ */
+
+export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEventsExportApiV1EventsExportGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
