@@ -154,7 +154,7 @@ describe('Custom codes upload', () => {
     ).toBeInTheDocument();
   });
 
-  test.only('filters appropriately when search string is supplied', async () => {
+  test('filters appropriately when search string is supplied', async () => {
     const user = userEvent.setup();
     await renderAndUploadCsv(user);
 
