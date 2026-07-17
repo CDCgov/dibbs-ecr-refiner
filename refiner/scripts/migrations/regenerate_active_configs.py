@@ -46,14 +46,14 @@ from app.services.configurations import (
 logger = logging.getLogger(__name__)
 
 MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
-MIGRATION_NAME = "active-payload-schema-v2"
+REACTIVATION_NAME = "active-payload-schema-v2"
 
 DEFAULT_LAMBDA_DRAIN_SECONDS = 60
 DEFAULT_LOCK_EXPIRATION_MINUTES = 60
 
 
 def configure_logging() -> None:
-    """Configure logging for the migration script."""
+    """Configure logging for the reactivation script."""
 
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", "INFO").upper(),
@@ -196,7 +196,7 @@ def create_maintenance_lock(
     """
     Create the active configuration maintenance lock in S3.
 
-    The conditional write prevents multiple migrations from acquiring
+    The conditional write prevents multiple reactivations from acquiring
     the lock at the same time.
 
     If an existing lock has expired, it is removed and creation is
@@ -206,8 +206,8 @@ def create_maintenance_lock(
     now = datetime.now(UTC)
 
     lock_payload = {
-        "reason": "active_configuration_migration",
-        "migration": MIGRATION_NAME,
+        "reason": "active_configuration_reactivation",
+        "reactivation": REACTIVATION_NAME,
         "owner": "ops-container",
         "started_at": now.isoformat(),
         "expires_at": (now + timedelta(minutes=expiration_minutes)).isoformat(),
@@ -239,7 +239,7 @@ def create_maintenance_lock(
         if not expired_lock_removed:
             raise RuntimeError(
                 "The active configuration maintenance lock already exists. "
-                "Another migration may already be running."
+                "Another reactivation may already be running."
             ) from exc
 
         try:
@@ -254,7 +254,7 @@ def create_maintenance_lock(
             }:
                 raise RuntimeError(
                     "The maintenance lock was acquired by another process "
-                    "before this migration could retry."
+                    "before this reactivation could retry."
                 ) from retry_exc
 
             raise
@@ -264,14 +264,14 @@ def create_maintenance_lock(
         extra={
             "bucket": S3_CONFIGURATION_BUCKET_NAME,
             "key": MAINTENANCE_LOCK_KEY,
-            "migration": MIGRATION_NAME,
+            "reactivation": REACTIVATION_NAME,
             "expires_at": lock_payload["expires_at"],
         },
     )
 
 
 def remove_maintenance_lock() -> None:
-    """Remove the maintenance lock after a successful migration."""
+    """Remove the maintenance lock after a successful reactivation."""
 
     delete_maintenance_lock()
 
@@ -308,7 +308,7 @@ async def get_active_jurisdiction_ids_db(
     """
     Return jurisdiction IDs that currently have active configurations.
 
-    This allows the migration to reuse get_configurations_db(), which
+    This allows the reactivation to reuse get_configurations_db(), which
     expects a jurisdiction ID.
     """
 
@@ -509,7 +509,7 @@ async def regenerate_active_configs(
 
 
 async def main() -> None:
-    """Run the complete active configuration migration."""
+    """Run the complete active configuration reactivation."""
 
     load_dotenv()
     configure_logging()
@@ -527,15 +527,15 @@ async def main() -> None:
         DEFAULT_LOCK_EXPIRATION_MINUTES,
     )
 
-    migration_limit = get_integer_environment_variable(
-        "ACTIVE_CONFIG_MIGRATION_LIMIT",
+    reactivation_limit = get_integer_environment_variable(
+        "ACTIVE_CONFIG_REACTIVATION_LIMIT",
         0,
     )
 
-    if migration_limit <= 0:
-        migration_limit_value: int | None = None
+    if reactivation_limit <= 0:
+        reactivation_limit_value: int | None = None
     else:
-        migration_limit_value = migration_limit
+        reactivation_limit_value = reactivation_limit
 
     db = create_db(
         db_url=db_url,
@@ -558,11 +558,11 @@ async def main() -> None:
 
         await regenerate_active_configs(
             db=db,
-            limit=migration_limit_value,
+            limit=reactivation_limit_value,
         )
     except Exception:
         logger.exception(
-            "Active configuration migration failed. "
+            "Active configuration reactivation failed. "
             "The maintenance lock was not removed."
         )
         raise
@@ -570,13 +570,13 @@ async def main() -> None:
         remove_maintenance_lock()
         lock_created = False
 
-        logger.info("Active configuration migration completed successfully.")
+        logger.info("Active configuration reactivation completed successfully.")
     finally:
         await db.close()
 
         if lock_created:
             logger.error(
-                "The migration failed while the maintenance lock was active. "
+                "The reactivation failed while the maintenance lock was active. "
                 "The lock remains in S3 and must be reviewed before processing "
                 "is resumed.",
                 extra={
