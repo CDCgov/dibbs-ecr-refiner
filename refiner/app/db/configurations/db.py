@@ -669,7 +669,9 @@ async def get_total_condition_code_counts_by_configuration_db(
 
 async def add_custom_code_to_configuration_db(
     config: DbConfiguration,
-    custom_code: DbConfigurationCustomCode,
+    display_name: str,
+    code: str,
+    system_id: str,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -684,7 +686,7 @@ async def add_custom_code_to_configuration_db(
             RETURNING id;
         """
 
-    params = (config.id, custom_code.name, custom_code.code, custom_code.system_id)
+    params = (config.id, display_name, code, system_id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -700,7 +702,7 @@ async def add_custom_code_to_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="add_code",
-                    action_text=f"Added custom code '{custom_code.code}'",
+                    action_text=f"Added custom code '{code}'",
                 ),
                 cursor=cur,
             )

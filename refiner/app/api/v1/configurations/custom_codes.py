@@ -134,14 +134,13 @@ async def add_custom_code(
             detail=f"System must be one of [{allowed_keys}]",
         )
 
-    custom_code = DbConfigurationCustomCode(
-        code=body.code.strip(),
-        name=body.name,
-        system_id=system.id,
-    )
-
     updated_config = await add_custom_code_to_configuration_db(
-        config=config, custom_code=custom_code, user_id=user.id, db=db
+        config=config,
+        code=body.code,
+        display_name=body.name,
+        system_id=body.system_id,
+        user_id=user.id,
+        db=db,
     )
 
     if not updated_config:
