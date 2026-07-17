@@ -338,81 +338,119 @@ async def regenerate_active_configuration(
     The existing configuration version and S3 path remain unchanged.
     """
 
-    started_at = time.perf_counter()
+    for attempt in range(1, REACTIVATION_MAX_ATTEMPTS + 1):
+        started_at = time.perf_counter()
 
-    logger.info(
-        "Regenerating active configuration.",
-        extra={
-            "configuration_id": str(configuration.id),
-            "configuration_version": configuration.version,
-            "jurisdiction_id": configuration.jurisdiction_id,
-        },
-    )
-
-    payload_started_at = time.perf_counter()
-
-    config_payload = await convert_config_to_storage_payload(
-        configuration=configuration,
-        db=db,
-    )
-
-    payload_finished_at = time.perf_counter()
-
-    if config_payload is None:
-        raise RuntimeError(
-            "Configuration payload could not be created for "
-            f"configuration {configuration.id}."
+        logger.info(
+            "Regenerating active configuration.",
+            extra={
+                "configuration_id": str(configuration.id),
+                "configuration_version": configuration.version,
+                "jurisdiction_id": configuration.jurisdiction_id,
+                "attempt": attempt,
+                "max_attempts": REACTIVATION_MAX_ATTEMPTS,
+            },
         )
 
-    config_metadata = await get_config_payload_metadata(
-        configuration=configuration,
-        logger=logger,
-        db=db,
-    )
+        try:
+            payload_started_at = time.perf_counter()
 
-    metadata_finished_at = time.perf_counter()
+            config_payload = await convert_config_to_storage_payload(
+                configuration=configuration,
+                db=db,
+            )
 
-    if config_metadata is None:
-        raise RuntimeError(
-            "Configuration metadata could not be created for "
-            f"configuration {configuration.id}."
-        )
+            payload_finished_at = time.perf_counter()
 
-    # upload_configuration_payload() is synchronous. The normal activation
-    # endpoint runs it in a thread pool, so asyncio.to_thread() is used here.
-    await asyncio.to_thread(
-        upload_configuration_payload,
-        config_payload,
-        config_metadata,
-        logger,
-    )
+            if config_payload is None:
+                raise RuntimeError(
+                    "Configuration payload could not be created for "
+                    f"configuration {configuration.id}."
+                )
 
-    upload_finished_at = time.perf_counter()
+            config_metadata = await get_config_payload_metadata(
+                configuration=configuration,
+                logger=logger,
+                db=db,
+            )
 
-    logger.info(
-        "Regenerated active configuration.",
-        extra={
-            "configuration_id": str(configuration.id),
-            "configuration_version": configuration.version,
-            "jurisdiction_id": configuration.jurisdiction_id,
-            "payload_generation_ms": round(
-                (payload_finished_at - payload_started_at) * 1000,
-                2,
-            ),
-            "metadata_generation_ms": round(
-                (metadata_finished_at - payload_finished_at) * 1000,
-                2,
-            ),
-            "upload_ms": round(
-                (upload_finished_at - metadata_finished_at) * 1000,
-                2,
-            ),
-            "total_ms": round(
-                (upload_finished_at - started_at) * 1000,
-                2,
-            ),
-        },
-    )
+            metadata_finished_at = time.perf_counter()
+
+            if config_metadata is None:
+                raise RuntimeError(
+                    "Configuration metadata could not be created for "
+                    f"configuration {configuration.id}."
+                )
+
+            # upload_configuration_payload() is synchronous. The normal activation
+            # endpoint runs it in a thread pool, so asyncio.to_thread() is used here.
+            await asyncio.to_thread(
+                upload_configuration_payload,
+                config_payload,
+                config_metadata,
+                logger,
+            )
+
+            upload_finished_at = time.perf_counter()
+
+            logger.info(
+                "Regenerated active configuration.",
+                extra={
+                    "configuration_id": str(configuration.id),
+                    "configuration_version": configuration.version,
+                    "jurisdiction_id": configuration.jurisdiction_id,
+                    "attempt": attempt,
+                    "payload_generation_ms": round(
+                        (payload_finished_at - payload_started_at) * 1000,
+                        2,
+                    ),
+                    "metadata_generation_ms": round(
+                        (metadata_finished_at - payload_finished_at) * 1000,
+                        2,
+                    ),
+                    "upload_ms": round(
+                        (upload_finished_at - metadata_finished_at) * 1000,
+                        2,
+                    ),
+                    "total_ms": round(
+                        (upload_finished_at - started_at) * 1000,
+                        2,
+                    ),
+                },
+            )
+
+            return
+
+        except Exception:
+            if attempt == REACTIVATION_MAX_ATTEMPTS:
+                logger.exception(
+                    "Active configuration regeneration failed after retries.",
+                    extra={
+                        "configuration_id": str(configuration.id),
+                        "configuration_version": configuration.version,
+                        "jurisdiction_id": configuration.jurisdiction_id,
+                        "attempt": attempt,
+                        "max_attempts": REACTIVATION_MAX_ATTEMPTS,
+                    },
+                )
+                raise
+
+            delay_seconds = REACTIVATION_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
+
+            logger.warning(
+                "Active configuration regeneration failed; retrying.",
+                extra={
+                    "configuration_id": str(configuration.id),
+                    "configuration_version": configuration.version,
+                    "jurisdiction_id": configuration.jurisdiction_id,
+                    "attempt": attempt,
+                    "max_attempts": REACTIVATION_MAX_ATTEMPTS,
+                    "retry_delay_seconds": delay_seconds,
+                },
+                exc_info=True,
+            )
+
+            await asyncio.sleep(delay_seconds)
 
 
 async def regenerate_active_configs(
@@ -500,10 +538,14 @@ async def main() -> None:
     try:
         await db.connect()
 
-        create_maintenance_lock()
+        create_maintenance_lock(
+            expiration_minutes=LOCK_EXPIRATION_MINUTES,
+        )
         lock_created = True
 
-        await wait_for_lambda_to_drain()
+        await wait_for_lambda_to_drain(
+            drain_seconds=LAMBDA_DRAIN_SECONDS,
+        )
 
         await regenerate_active_configs(db=db)
     except Exception:
