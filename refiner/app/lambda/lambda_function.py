@@ -18,6 +18,7 @@ from botocore.exceptions import ClientError
 from app.core.models.types import XMLFiles
 from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
+from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.aws.s3_keys import (
     get_active_file_key,
     get_current_file_key,
@@ -95,6 +96,10 @@ class RefinerCompleteError(TypedDict):
 
 class MaintenanceModeError(Exception):
     """Raised when active configuration maintenance is in progress."""
+
+
+class IncompatibleActiveConfigurationError(Exception):
+    """Raised when an active configuration file uses an unsupported schema version."""
 
 
 @dataclass
@@ -563,9 +568,9 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     Read an activated configuration file (active.json) from S3.
 
     This file contains the serialized configuration data needed for refinement,
-    including the flat codes set, per-system code_system_sets, section processing
-    rules, and included condition RSG codes. It is written during activation by
-    the webapp and read by Lambda at refinement time.
+    including the active payload schema version, per-system code_system_sets,
+    section processing rules, and included condition RSG codes. It is written
+    during activation by the webapp and read by Lambda at refinement time.
 
     Args:
         s3_client: Boto3 S3 client.
@@ -577,22 +582,37 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
 
     Raises:
         Exception: If the file does not exist. This indicates a mismatch between
-            current.json (which pointed to this version) and the actual files on S3.
+            current.json, which pointed to this version, and the actual files on S3.
+        IncompatibleActiveConfigurationError: If the active configuration schema
+            version is missing or unsupported.
     """
 
-    # Check that configuration file exists
     config_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
 
     if not config_exists:
-        # It should exist because we've already checked the active version by this point
         raise Exception(f"Activated configuration file could not be read at: {key}")
 
-    # Read the file content and ensure required data is present
     config_file_content = get_s3_object_content(
         s3_client=s3_client, bucket=bucket, key=key
     )
 
-    return parse_s3_content_to_dict(config_file_content)
+    configuration = parse_s3_content_to_dict(config_file_content)
+    schema_version = configuration.get("schema_version")
+
+    if schema_version != CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION:
+        logger.error(
+            "Active configuration schema version is incompatible.",
+            operation="active_configuration_schema_mismatch",
+            key=key,
+            expected_schema_version=CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+            actual_schema_version=schema_version,
+        )
+        raise IncompatibleActiveConfigurationError(
+            "Active configuration schema version is incompatible. "
+            f"Expected {CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}, got {schema_version}."
+        )
+
+    return configuration
 
 
 def run_refinement(input: RefinementInput) -> RefinementOutput:

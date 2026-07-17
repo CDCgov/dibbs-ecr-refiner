@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
 REACTIVATION_NAME = "active-payload-schema-v2"
 
-LAMBDA_DRAIN_SECONDS = 60
+LAMBDA_DRAIN_SECONDS = 30
 LOCK_EXPIRATION_MINUTES = 15
 
 # Set to None to process all active configurations.
