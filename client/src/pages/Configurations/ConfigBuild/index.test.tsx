@@ -552,7 +552,9 @@ describe('Config builder page', () => {
     expect(screen.getByLabelText('Display name')).toHaveValue(
       'test-custom-code1'
     );
-    expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
+    expect(screen.getByLabelText('Code system')).toHaveValue(
+      mockCustomCodes[0].system_id
+    );
 
     await user.type(screen.getByLabelText('Code'), '12345');
 
