@@ -58,7 +58,7 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "system_id" is missing.',
         )
-    if not input.name:
+    if not input.display:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "name" is missing.',
@@ -137,7 +137,7 @@ async def add_custom_code(
     updated_config = await add_custom_code_to_configuration_db(
         config=config,
         code=body.code,
-        display_name=body.name,
+        display_name=body.display,
         system_id=body.system_id,
         user_id=user.id,
         db=db,

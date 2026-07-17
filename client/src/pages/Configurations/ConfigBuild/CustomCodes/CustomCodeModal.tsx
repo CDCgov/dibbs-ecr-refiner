@@ -168,7 +168,7 @@ function CustomCodeForm({
           data: {
             code: code.trim(),
             system_id: selectedSystemId,
-            name: name.trim(),
+            display: name.trim(),
           },
         },
         {

@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
 
@@ -7,6 +6,7 @@ from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import (
+    AddCustomCodeInput,
     AddSectionInput,
     DeleteSectionInput,
 )
@@ -717,22 +717,9 @@ async def add_custom_code_to_configuration_db(
     )
 
 
-@dataclass
-class BulkAddCustomCode:
-    """
-    Model for bulk adding custom codes.
-
-    TODO: Reuse existing "add" model
-    """
-
-    code: str
-    display: str
-    system_id: UUID
-
-
 async def add_bulk_custom_codes_to_configuration_db(
     config: DbConfiguration,
-    custom_codes: list[BulkAddCustomCode],
+    custom_codes: list[AddCustomCodeInput],
     code_systems: list[DbCodeSystem],
     user_id: UUID,
     db: AsyncDatabaseConnection,

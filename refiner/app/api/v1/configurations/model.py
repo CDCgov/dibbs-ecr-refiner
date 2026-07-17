@@ -141,7 +141,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    name: str
+    display: str
     system_id: UUID
 
 
