@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
 
@@ -5,7 +6,11 @@ from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
+from app.api.v1.configurations.model import (
+    AddSectionInput,
+    DeleteSectionInput,
+)
+from app.db.code_systems.db import DbCodeSystem
 from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
@@ -13,7 +18,6 @@ from app.db.conditions.db import (
 from app.db.custom_codes.model import DbCustomCode
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
-from app.services.code_systems import get_all_code_systems_by_key
 from app.services.configurations import (
     clone_section_processing_instructions,
     get_default_sections,
@@ -713,9 +717,23 @@ async def add_custom_code_to_configuration_db(
     )
 
 
+@dataclass
+class BulkAddCustomCode:
+    """
+    Model for bulk adding custom codes.
+
+    TODO: Reuse existing "add" model
+    """
+
+    code: str
+    display: str
+    system_id: UUID
+
+
 async def add_bulk_custom_codes_to_configuration_db(
     config: DbConfiguration,
-    custom_codes: list[DbConfigurationCustomCode],
+    custom_codes: list[BulkAddCustomCode],
+    code_systems: list[DbCodeSystem],
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> BulkAddCustomCodesResult | None:
@@ -726,49 +744,36 @@ async def add_bulk_custom_codes_to_configuration_db(
         BulkAddCustomCodesResult | None
     """
 
-    query = """
-        UPDATE configurations
-        SET custom_codes = %s::jsonb
-        WHERE id = %s
-        RETURNING
-            id;
+    placeholders = ", ".join(["(%s, %s, %s, %s)"] * len(custom_codes))
+    query = f"""
+        INSERT INTO custom_codes (configuration_id, display, code, system_id)
+        VALUES {placeholders}
+        ON CONFLICT DO NOTHING
+        RETURNING *;
     """
 
-    existing_codes = config.custom_codes or []
-
-    # Build a set of (code, system_key) for fast lookup
-    existing_keys = {(c.code, c.system_key) for c in existing_codes}
-
-    new_codes_added: list[DbConfigurationCustomCode] = []
-    code_systems = await get_all_code_systems_by_key(db=db)
-
-    for code in custom_codes:
-        key = (code.code, code.system_key)
-        if key not in existing_keys:
-            existing_codes.append(code)
-            existing_keys.add(key)
-            new_codes_added.append(code)
-
-    json_payload = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in existing_codes
+    params = [
+        val for c in custom_codes for val in (config.id, c.display, c.code, c.system_id)
     ]
-
-    params = (Jsonb(json_payload), config.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            row = await cur.fetchone()
-
-            if not row:
-                return None
+            new_codes_added = await cur.fetchall()
 
             # Insert a single audit event if codes were added
             await insert_custom_code_upload_events_db(
                 configuration=config,
                 user_id=user_id,
-                custom_codes=new_codes_added,
+                custom_codes=[
+                    DbConfigurationCustomCode(
+                        id=str(cc["id"]),
+                        code=cc["code"],
+                        name=cc["display"],
+                        system_id=cc["system_id"],
+                    )
+                    for cc in new_codes_added
+                ],
                 code_systems=code_systems,
                 cursor=cur,
             )

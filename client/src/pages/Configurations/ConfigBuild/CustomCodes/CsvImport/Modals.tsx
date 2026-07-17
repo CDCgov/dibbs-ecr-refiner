@@ -141,8 +141,8 @@ export function PreviewEditModal({
     error != null ||
     !previewEditForm ||
     !previewEditForm.code ||
-    !previewEditForm.name ||
-    !previewEditForm.system_key;
+    !previewEditForm.display ||
+    !previewEditForm.system_name;
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
@@ -188,8 +188,8 @@ export function PreviewEditModal({
           <Field>
             <Label>Code system</Label>
             <Select
-              value={previewEditForm.system_key}
-              onChange={(e) => handlePreviewEditChange('system_key', e)}
+              value={previewEditForm.system_id}
+              onChange={(e) => handlePreviewEditChange('system_id', e)}
             >
               {Object.values(codeSystems).map((s) => (
                 <option key={s.id} value={s.key}>
@@ -203,8 +203,8 @@ export function PreviewEditModal({
           <Label>Display name</Label>
           <TextInput
             type="text"
-            value={previewEditForm.name}
-            onChange={(e) => handlePreviewEditChange('name', e)}
+            value={previewEditForm.display}
+            onChange={(e) => handlePreviewEditChange('display', e)}
           />
         </Field>
       </ModalBody>

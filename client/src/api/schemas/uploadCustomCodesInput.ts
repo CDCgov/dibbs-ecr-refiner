@@ -4,6 +4,6 @@
  */
 export interface UploadCustomCodesInput {
   code: string;
-  system_key: string;
-  name: string;
+  system_id: string;
+  display: string;
 }

@@ -327,7 +327,7 @@ const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
       id: crypto.randomUUID(),
       code: row['code'],
       system_key: row['code_system'],
-      name: row['display_name'],
+      display: row['display_name'],
       row: i,
     };
   }

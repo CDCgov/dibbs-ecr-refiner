@@ -477,7 +477,6 @@ function PreviewEditTable({
             previewDisplayItems.map((previewItem) => (
               <PreviewRow
                 previewItem={previewItem}
-                codeSystems={codeSystems}
                 openPreviewEditModal={openPreviewEditModal}
                 handleRowDelete={handleRowDelete}
                 key={previewItem.item.id}
@@ -503,13 +502,11 @@ function PreviewEditTable({
 
 interface PreviewRowProps {
   previewItem: FuseResult<UploadCustomCodesPreviewItem>;
-  codeSystems: IndexedCodeSystem;
   openPreviewEditModal: (itemId: string) => void;
   handleRowDelete: (itemToDelete: UploadCustomCodesPreviewItem) => void;
 }
 function PreviewRow({
   previewItem,
-  codeSystems,
   openPreviewEditModal,
   handleRowDelete,
 }: PreviewRowProps) {
@@ -520,9 +517,9 @@ function PreviewRow({
       <td className="px-2 py-1">
         {highlightMatches(item.code, matches, 'code')}
       </td>
-      <td className="px-2 py-1">{codeSystems[item.system_key].display_name}</td>
+      <td className="px-2 py-1">{item.system_name}</td>
       <td className="px-2 py-1">
-        {highlightMatches(item.name, matches, 'name')}
+        {highlightMatches(item.display, matches, 'display')}
       </td>
       <td className="px-2 py-1 text-right text-sm">
         <Button

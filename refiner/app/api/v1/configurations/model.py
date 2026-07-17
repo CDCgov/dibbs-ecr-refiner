@@ -216,8 +216,8 @@ class UploadCustomCodesInput(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system_key: str
-    name: str
+    system_id: UUID
+    display: str
 
 
 class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
@@ -225,8 +225,9 @@ class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
 
     id: UUID
     code: str
-    system_key: str
-    name: str
+    system_id: UUID
+    system_name: str
+    display: str
     row: int | None = None
 
 

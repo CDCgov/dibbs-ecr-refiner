@@ -30,9 +30,6 @@ from app.db.configurations.db import (
     get_configuration_by_id_db,
     get_total_condition_code_counts_by_configuration_db,
 )
-from app.db.configurations.model import (
-    DbConfigurationCustomCode,
-)
 from app.db.custom_codes.db import (
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
@@ -350,8 +347,9 @@ async def upload_custom_codes_csv(
             UploadCustomCodesPreviewItem(
                 id=uuid4(),
                 code=code,
-                system_key=row_system.key,
-                name=name,
+                system_id=row_system.id,
+                system_name=row_system.display_name,
+                display=name,
                 row=row_number,
             )
         )
@@ -395,18 +393,19 @@ async def confirm_upload_custom_codes_csv(
     """
     Confirm and save custom codes from preview list.
     """
+
     if not body.custom_codes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No custom codes to confirm.",
         )
 
-    jd = user.jurisdiction_id
     config = await get_configuration_by_id_db(
         id=configuration_id,
-        jurisdiction_id=jd,
+        jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
+
     if not config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -427,17 +426,13 @@ async def confirm_upload_custom_codes_csv(
             detail="Trying to update a non-draft configuration",
         )
 
+    code_systems = await get_code_systems(db=db)
+
     try:
         result = await add_bulk_custom_codes_to_configuration_db(
             config=config,
-            custom_codes=[
-                DbConfigurationCustomCode(
-                    code=item.code,
-                    system_key=item.system_key,
-                    name=item.name,
-                )
-                for item in body.custom_codes
-            ],
+            code_systems=code_systems,
+            custom_codes=body.custom_codes,
             user_id=user.id,
             db=db,
         )
