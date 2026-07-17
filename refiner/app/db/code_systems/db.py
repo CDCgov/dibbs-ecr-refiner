@@ -22,6 +22,21 @@ class DbCodeSystem:
 type IndexedCodeSystem = dict[CodeSystemKey, DbCodeSystem]
 
 
+async def get_code_systems(db: AsyncDatabaseConnection) -> list[DbCodeSystem]:
+    """
+    Fetches all available code systems.
+    """
+    query = """
+    SELECT id, display_name, oid, key FROM systems;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
+            await cur.execute(query)
+            rows = await cur.fetchall()
+            return rows
+
+
 async def get_all_code_systems_db(
     db: AsyncDatabaseConnection,
 ) -> dict[UUID, DbCodeSystem]:

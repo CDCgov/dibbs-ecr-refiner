@@ -19,6 +19,7 @@ from app.db.code_systems.db import (
     DbCodeSystem,
     IndexedCodeSystem,
     get_code_system_by_id_db,
+    get_code_systems,
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
@@ -32,7 +33,10 @@ from app.db.configurations.db import (
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
 )
-from app.db.custom_codes.db import get_custom_code_by_id_db
+from app.db.custom_codes.db import (
+    get_custom_code_by_id_db,
+    get_custom_codes_by_configuration_id_db,
+)
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
@@ -219,27 +223,21 @@ async def _get_requested_config_or_raise(
     return config
 
 
-def _get_row_code_system(
-    code_system_raw: str,
-    supported_systems_by_key: IndexedCodeSystem,
-):
-    supported_systems_by_name = {
-        s.display_name: s for s in supported_systems_by_key.values()
-    }
-    return supported_systems_by_key.get(
-        code_system_raw
-    ) or supported_systems_by_name.get(code_system_raw)
-
-
 def _validate_csv_upload_row(
-    row: dict, supported_systems: IndexedCodeSystem
+    row: dict, supported_systems: list[DbCodeSystem]
 ) -> tuple[str, DbCodeSystem, str] | list[str]:
     code = (row.get("code") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
     name = (row.get("display_name") or "").strip()
 
-    row_errors = []
-    row_system = None
+    system_names = [s.display_name for s in supported_systems]
+
+    # get the DbCodeSystem that matches CSV system
+    matching_system = next(
+        (s for s in supported_systems if s.display_name == code_system_raw), None
+    )
+
+    row_errors: list[str] = []
 
     if not code:
         row_errors.append("Missing code")
@@ -247,25 +245,17 @@ def _validate_csv_upload_row(
         row_errors.append("Missing display_name")
     if not code_system_raw:
         row_errors.append("Missing code_system")
-    else:
-        row_system = _get_row_code_system(
-            code_system_raw=code_system_raw, supported_systems_by_key=supported_systems
+    elif not matching_system:
+        allowed_systems_str = ", ".join(system_names)
+        row_errors.append(
+            f"Invalid system: {code_system_raw}. "
+            f"[code_system] must be one of [{allowed_systems_str}]"
         )
-        if row_system is None:
-            allowed_systems_str = ", ".join(
-                [s.display_name for s in supported_systems.values()]
-            )
-            row_errors.append(
-                f"Invalid system: {code_system_raw}. "
-                f"[code_system] must be one of [{allowed_systems_str}]"
-            )
 
-    if row_errors:
+    if row_errors or not matching_system:
         return row_errors
 
-    # get the type checker to recognize that santized_system will be defined here
-    assert row_system is not None
-    return (code, row_system, name)
+    return (code, matching_system, name)
 
 
 def _check_row_response_for_duplicates(
@@ -314,17 +304,22 @@ async def upload_custom_codes_csv(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be a CSV.",
         )
+
     csv_reader = _create_csv_reader(body)
     _validate_required_columns_or_raise(csv_reader)
 
     config = await _get_requested_config_or_raise(
         configuration_id=configuration_id, db=db, user=user
     )
-    supported_systems = await get_all_code_systems_by_key(db=db)
+
+    supported_systems = await get_code_systems(db=db)
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
-    custom_codes = [(cc.code, cc.system_key) for cc in config.custom_codes]
+
+    custom_codes = await get_custom_codes_by_configuration_id_db(
+        configuration_id=config.id, db=db
+    )
     codes_seen_so_far: set[tuple[str, CodeSystemKey]] = set()
 
     for row_number, row in enumerate(csv_reader, start=2):
