@@ -49,8 +49,15 @@ logger = logging.getLogger(__name__)
 MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
 REACTIVATION_NAME = "active-payload-schema-v2"
 
-DEFAULT_LAMBDA_DRAIN_SECONDS = 60
-DEFAULT_LOCK_EXPIRATION_MINUTES = 60
+LAMBDA_DRAIN_SECONDS = 60
+LOCK_EXPIRATION_MINUTES = 15
+
+# Set to None to process all active configurations.
+# Set to an integer, such as 1 or 100, for local testing.
+REACTIVATION_LIMIT: int | None = None
+
+REACTIVATION_MAX_ATTEMPTS = 3
+REACTIVATION_RETRY_BASE_DELAY_SECONDS = 1.0
 
 
 class MaintenanceLock(TypedDict):
@@ -70,46 +77,6 @@ def configure_logging() -> None:
         level=os.getenv("LOG_LEVEL", "INFO").upper(),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
-
-
-def get_required_environment_variable(name: str) -> str:
-    """
-    Return a required environment variable.
-
-    Raises:
-        RuntimeError: If the environment variable is missing.
-    """
-
-    value = os.getenv(name)
-
-    if not value:
-        raise RuntimeError(f"{name} environment variable must be set.")
-
-    return value
-
-
-def get_integer_environment_variable(
-    name: str,
-    default: int,
-) -> int:
-    """
-    Return an integer environment variable or its default value.
-
-    Raises:
-        RuntimeError: If the environment variable is not a valid integer.
-    """
-
-    raw_value = os.getenv(name)
-
-    if raw_value is None:
-        return default
-
-    try:
-        return int(raw_value)
-    except ValueError as exc:
-        raise RuntimeError(
-            f"{name} must be a valid integer. Received: {raw_value}"
-        ) from exc
 
 
 def get_lock_expiration(lock: MaintenanceLock) -> datetime | None:
@@ -520,28 +487,8 @@ async def main() -> None:
     load_dotenv()
     configure_logging()
 
-    db_url = get_required_environment_variable("DB_URL")
-    db_password = get_required_environment_variable("DB_PASSWORD")
-
-    drain_seconds = get_integer_environment_variable(
-        "LAMBDA_DRAIN_SECONDS",
-        DEFAULT_LAMBDA_DRAIN_SECONDS,
-    )
-
-    lock_expiration_minutes = get_integer_environment_variable(
-        "MAINTENANCE_LOCK_EXPIRATION_MINUTES",
-        DEFAULT_LOCK_EXPIRATION_MINUTES,
-    )
-
-    reactivation_limit = get_integer_environment_variable(
-        "ACTIVE_CONFIG_REACTIVATION_LIMIT",
-        0,
-    )
-
-    if reactivation_limit <= 0:
-        reactivation_limit_value: int | None = None
-    else:
-        reactivation_limit_value = reactivation_limit
+    db_url = os.environ["DB_URL"]
+    db_password = os.environ["DB_PASSWORD"]
 
     db = create_db(
         db_url=db_url,
@@ -553,19 +500,12 @@ async def main() -> None:
     try:
         await db.connect()
 
-        create_maintenance_lock(
-            expiration_minutes=lock_expiration_minutes,
-        )
+        create_maintenance_lock()
         lock_created = True
 
-        await wait_for_lambda_to_drain(
-            drain_seconds=drain_seconds,
-        )
+        await wait_for_lambda_to_drain()
 
-        await regenerate_active_configs(
-            db=db,
-            limit=reactivation_limit_value,
-        )
+        await regenerate_active_configs(db=db)
     except Exception:
         logger.exception(
             "Active configuration reactivation failed. "
