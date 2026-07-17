@@ -7,6 +7,7 @@ import { Pagination } from '@components/Pagination';
 import { Select, SelectContainer } from '@components/Select';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { Button } from '@components/Button';
 
 export function ActivityLog() {
   const ALL_CONDITIONS_LITERAL = 'All conditions';
@@ -37,29 +38,38 @@ export function ActivityLog() {
         <p className="mt-2">
           Review activity in eCR Refiner from yourself and others on the team.
         </p>
-        <SelectContainer className="mt-6">
-          <Field>
-            <Label>Condition</Label>
-            <Select
-              value={conditionFilter}
-              onChange={(e) => {
-                setSelectedPage(1);
-                setConditionFilter(e.target.value);
-              }}
-            >
-              <option value={ALL_CONDITIONS_LITERAL}>
-                {ALL_CONDITIONS_LITERAL}
-              </option>
-              {configuration_options.map(({ canonical_url, name }) => {
-                return (
-                  <option value={canonical_url} key={canonical_url}>
-                    {name}
-                  </option>
-                );
-              })}
-            </Select>
-          </Field>
-        </SelectContainer>
+        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+          <SelectContainer className="mt-6">
+            <Field>
+              <Label>Condition</Label>
+              <Select
+                value={conditionFilter}
+                onChange={(e) => {
+                  setSelectedPage(1);
+                  setConditionFilter(e.target.value);
+                }}
+              >
+                <option value={ALL_CONDITIONS_LITERAL}>
+                  {ALL_CONDITIONS_LITERAL}
+                </option>
+                {configuration_options.map(({ canonical_url, name }) => {
+                  return (
+                    <option value={canonical_url} key={canonical_url}>
+                      {name}
+                    </option>
+                  );
+                })}
+              </Select>
+            </Field>
+          </SelectContainer>
+          <ExportLink
+            canonicalUrl={
+              conditionFilter === ALL_CONDITIONS_LITERAL
+                ? null
+                : conditionFilter
+            }
+          />
+        </div>
       </div>
       <div className="mt-6 flex flex-col">
         <ActivityLogEntries
@@ -78,5 +88,30 @@ export function ActivityLog() {
         />
       </div>
     </section>
+  );
+}
+
+interface ExportLinkProps {
+  canonicalUrl: string | null;
+}
+
+function ExportLink({ canonicalUrl }: ExportLinkProps) {
+  // Send user's IANA time zone name to the server so it can generate timestamps in their local time
+  // See here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/resolvedOptions#timezone
+  const params = new URLSearchParams({
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+
+  if (canonicalUrl) {
+    params.set('canonical_url', canonicalUrl);
+  }
+
+  return (
+    <Button
+      href={`/api/v1/events/export?${params.toString()}`}
+      anchorProps={{ download: true }}
+    >
+      Export as CSV
+    </Button>
   );
 }

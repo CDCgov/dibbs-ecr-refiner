@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, LinkProps } from 'react-router';
 import classNames from 'classnames';
 import {
   Button as HeadlessButton,
@@ -13,6 +13,8 @@ interface ButtonProps extends HeadlessButtonProps {
   variant?: ButtonVariant;
   to?: string;
   href?: string;
+  anchorProps?: React.AnchorHTMLAttributes<HTMLAnchorElement>;
+  linkProps?: Omit<LinkProps, 'to'>;
 }
 
 const sharedStyles =
@@ -53,6 +55,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       onClick,
       className,
       disabled,
+      linkProps,
+      anchorProps,
       ...props
     },
     ref
@@ -65,7 +69,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (href) {
       return (
-        <a href={href} className={variantClass}>
+        <a href={href} className={variantClass} {...anchorProps}>
           {children}
         </a>
       );
@@ -79,6 +83,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>
           }
           className={variantClass}
+          {...linkProps}
         >
           {children}
         </Link>

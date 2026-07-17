@@ -417,8 +417,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -429,8 +429,8 @@
                     <td>18776-5</td>
                     <td>Plan of Treatment Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -627,8 +627,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -639,8 +639,8 @@
                     <td>46240-8</td>
                     <td>Encounters Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -774,8 +774,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -786,8 +786,8 @@
                     <td>10164-2</td>
                     <td>History of Present Illness Section</td>
                     <td>No</td>
-                    <td>retain</td>
-                    <td>Yes</td>
+                    <td>Keep original</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Removed by configuration</td>
@@ -816,8 +816,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -828,8 +828,8 @@
                     <td>11348-0</td>
                     <td>Past Medical History Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found, narrative retained</td>
@@ -876,8 +876,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -888,8 +888,8 @@
                     <td>29549-3</td>
                     <td>Medications Administered Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -1161,7 +1161,7 @@
           <title>MEDICATIONS</title>
           <text>
             Narrative Text
-          <footnote ID="ecr-refiner-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <footnote ID="ecr-refiner-10160-0-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10160-0</td><td>Medications Section</td><td>Yes</td><td>Refine</td><td>Keep original</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <substanceAdministration classCode="SBADM" moodCode="EVN">
@@ -1215,7 +1215,7 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
           <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           <title>Admission Medications</title>
-          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>Refine</td><td>Keep original</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1301,7 +1301,7 @@
             <translation code="42347-5" codeSystem="2.16.840.1.113883.6.1" displayName="Admission Diagnosis"/>
           </code>
           <title>HOSPITAL ADMISSION DIAGNOSIS</title>
-          <text>Appendicitis<footnote ID="ecr-refiner-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Appendicitis<footnote ID="ecr-refiner-46241-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46241-6</td><td>Admission Diagnosis Section</td><td>Yes</td><td>Refine</td><td>Keep original</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1374,7 +1374,7 @@
             <translation code="78375-3" displayName="Discharge Diagnosis" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           </code>
           <title>Discharge Diagnosis</title>
-          <text>Some text here<footnote ID="ecr-refiner-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Action</th><th>Retain Narrative</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>refine</td><td>Yes</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
+          <text>Some text here<footnote ID="ecr-refiner-11535-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11535-2</td><td>Discharge Diagnosis Section</td><td>Yes</td><td>Refine</td><td>Keep original</td><td>v4</td><td>Configured by jurisdiction</td><td>Refined; matches found</td></tr></tbody></table></footnote></text>
           <!-- eCR Refiner matched: value[1017214008] 'Viremia caused by severe acute respiratory syndrome coronavirus 2 (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
           <entry>
             <act classCode="ACT" moodCode="EVN">
@@ -1461,8 +1461,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1473,8 +1473,8 @@
                     <td>10187-3</td>
                     <td>Review of Systems Section</td>
                     <td>Yes</td>
-                    <td>retain</td>
-                    <td>Yes</td>
+                    <td>Keep original</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Narrative-only section; narrative retained</td>
@@ -1566,8 +1566,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1578,8 +1578,8 @@
                     <td>11450-4</td>
                     <td>Problem Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -1648,8 +1648,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1660,8 +1660,8 @@
                     <td>10154-3</td>
                     <td>Chief Complaint Section</td>
                     <td>No</td>
-                    <td>retain</td>
-                    <td>Yes</td>
+                    <td>Keep original</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Removed by configuration</td>
@@ -1702,8 +1702,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1714,8 +1714,8 @@
                     <td>29299-5</td>
                     <td>Reason for Visit Section</td>
                     <td>No</td>
-                    <td>retain</td>
-                    <td>Yes</td>
+                    <td>Keep original</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Removed by configuration</td>
@@ -1747,8 +1747,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1759,8 +1759,8 @@
                     <td>30954-2</td>
                     <td>Results Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>No</td>
+                    <td>Refine</td>
+                    <td>Exclude</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; narrative removed</td>
@@ -1830,8 +1830,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1842,8 +1842,8 @@
                     <td>47519-4</td>
                     <td>Procedures Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; no matches found, narrative retained</td>
@@ -1922,8 +1922,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -1934,8 +1934,8 @@
                     <td>11369-6</td>
                     <td>Immunizations Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -2175,8 +2175,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -2187,8 +2187,8 @@
                     <td>29762-2</td>
                     <td>Social History Section</td>
                     <td>Yes</td>
-                    <td>retain</td>
-                    <td>Yes</td>
+                    <td>Keep original</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Retained as-is</td>
@@ -2929,8 +2929,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -2941,8 +2941,8 @@
                     <td>90767-5</td>
                     <td>Pregnancy Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -3065,8 +3065,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -3077,8 +3077,8 @@
                     <td>8716-3</td>
                     <td>Vital Signs Section</td>
                     <td>Yes</td>
-                    <td>refine</td>
-                    <td>Yes</td>
+                    <td>Refine</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>Configured by jurisdiction</td>
                     <td>Refined; matches found</td>
@@ -3190,8 +3190,8 @@
                     <th>Section (LOINC)</th>
                     <th>Section Name</th>
                     <th>Included</th>
-                    <th>Action</th>
-                    <th>Retain Narrative</th>
+                    <th>Coded data</th>
+                    <th>Narrative data</th>
                     <th>Config Version</th>
                     <th>Source</th>
                     <th>Outcome</th>
@@ -3202,8 +3202,8 @@
                     <td>83910-0</td>
                     <td>Emergency Outbreak Information Section</td>
                     <td>Yes</td>
-                    <td>retain</td>
-                    <td>Yes</td>
+                    <td>Keep original</td>
+                    <td>Keep original</td>
                     <td>v4</td>
                     <td>System rule — always retained</td>
                     <td>Retained as-is</td>

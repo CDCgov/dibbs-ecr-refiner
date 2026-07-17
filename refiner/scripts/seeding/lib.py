@@ -128,11 +128,6 @@ class ConditionData:
     Codes from all sibling 'Additional Context Grouper' ValueSets.
     """
 
-    child_rsg_snomed_codes: set[str] = field(init=False, default_factory=set)
-    """
-    SNOMED codes extracted directly from the URLs of child RSG ValueSets.
-    """
-
     context_groupers: list[ContextGrouperInfo] = field(init=False, default_factory=list)
     """
     Metadata for each resolved Additional Context Grouper.
@@ -158,9 +153,6 @@ class ConditionData:
         """
 
         for child_vs in get_child_rsg_valuesets(self.parent_vs, self.all_vs_map):
-            if snomed_code := parse_snomed_from_url(child_vs.get("url", "")):
-                self.child_rsg_snomed_codes.add(snomed_code)
-
             self.child_codes.update(extract_codes_from_compose(child_vs))
 
     def _aggregate_sibling_codes(self):
@@ -225,7 +217,6 @@ class ConditionData:
             "canonical_url": self.parent_vs.get("url"),
             "version": self.parent_vs.get("version"),
             "display_name": self.parent_vs.get("title"),
-            "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
             "loinc_codes": Jsonb(self._sort_codes(categorized["loinc_codes"])),
             "snomed_codes": Jsonb(self._sort_codes(categorized["snomed_codes"])),
             "icd10_codes": Jsonb(self._sort_codes(categorized["icd10_codes"])),

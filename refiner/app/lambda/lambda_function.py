@@ -54,6 +54,22 @@ ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
 
 
+class LogOperation:
+    """
+    All possible log `operation` values. The goal is to keep operation values standardized.
+
+    Please add a new operation here and then reference it.
+    """
+
+    INPUT_ANALYSIS = "input_analysis"
+    DISCOVERED_REPORTABILITY = "discovered_reportability"
+    ACTIVATION_FILE_READ = "activation_file_read"
+    CONDITION_REFINEMENT_COMPLETE = "condition_refinement_complete"
+    REMAINDER_RR_WRITTEN = "remainder_rr_written"
+    REMAINDER_RR_SKIPPED = "remainder_rr_skipped"
+    SKIPPED = "skipped"
+
+
 class RefinerCompleteSuccess(TypedDict):
     """
     Represents a successful completion file written after all refinement is done.
@@ -147,14 +163,15 @@ def lambda_handler(event, context) -> dict:
 
     try:
         batch_item_failures = []
-        logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
+        logger.info("Received SQS event", record_count=len(event.get("Records", [])))
         s3_config_bucket_name = S3_BUCKET_CONFIG
 
         # Process each SQS record
         for record in event["Records"]:
             record_id = record.get("messageId")
             logger.append_keys(record_id=record_id)
-            logger.info(f"Processing record: {record_id}")
+
+            logger.info(f"Processing record with ID: {record_id}")
 
             persistence_id = None
 
@@ -171,7 +188,12 @@ def lambda_handler(event, context) -> dict:
             s3_object_key = s3_event["detail"]["object"]["key"]
             s3_bucket_name = s3_event["detail"]["bucket"]["name"]
 
-            logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
+            logger.append_keys(s3_bucket_name=s3_bucket_name)
+
+            logger.info(
+                f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}",
+                key=s3_object_key,
+            )
 
             try:
                 # Extract persistence_id from the RR object key
@@ -179,8 +201,9 @@ def lambda_handler(event, context) -> dict:
                     s3_object_key, REFINER_INPUT_PREFIX
                 )
                 logger.info(f"Extracted persistence_id: {persistence_id}")
+                logger.append_keys(persistence_id=persistence_id)
             except ValueError as e:
-                logger.error(f"Malformed S3 object key, skipping record: {str(e)}")
+                logger.error("Malformed S3 object key, skipping record", exception=e)
                 batch_item_failures.append({"itemIdentifier": record_id})
                 continue
 
@@ -204,21 +227,30 @@ def lambda_handler(event, context) -> dict:
                         "Active configuration maintenance is in progress."
                     )
                 # S3 GET RR
-                logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
+                logger.info(
+                    f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}",
+                    key=s3_object_key,
+                )
                 rr_content = get_s3_object_content(
                     s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
                 )
-                logger.info("Retrieved RR from s3")
+                logger.info(
+                    "Retrieved RR from S3",
+                    key=s3_object_key,
+                )
 
-                # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
+                # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistence_id>
                 eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
-                logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
+                logger.info(
+                    f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}",
+                    key=eicr_key,
+                )
 
                 # S3 GET eICR
                 eicr_content = get_s3_object_content(
                     s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
                 )
-                logger.info("Retrieved eICR from s3")
+                logger.info("Retrieved eICR from S3", key=eicr_key)
 
                 # Create XMLFiles container
                 xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
@@ -242,12 +274,13 @@ def lambda_handler(event, context) -> dict:
                     "RefinerOutputFiles": result.output_file_keys,
                 }
 
-                # Construct RefinerComplete path: RefinerComplete/<persistance_id>
+                # Construct RefinerComplete path: RefinerComplete/<persistence_id>
                 complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
 
                 # PUT RefinerCompleteFile
                 logger.info(
-                    f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
+                    f"Writing completion file to s3://{s3_bucket_name}/{complete_key}",
+                    key=complete_key,
                 )
                 s3_client.put_object(
                     Bucket=s3_bucket_name,
@@ -256,8 +289,10 @@ def lambda_handler(event, context) -> dict:
                     ContentType="application/json",
                 )
 
+                refined_output_count = len(result.output_file_keys)
                 logger.info(
-                    f"Successfully processed {len(result.output_file_keys)} refined outputs"
+                    f"Successfully processed {refined_output_count} refined outputs",
+                    refined_output_count=refined_output_count,
                 )
 
             except MaintenanceModeError as e:
@@ -273,7 +308,7 @@ def lambda_handler(event, context) -> dict:
                 batch_item_failures.append({"itemIdentifier": record_id})
 
             except Exception as e:
-                logger.error(f"Fatal error processing record: {str(e)}", exception=e)
+                logger.error("Fatal error processing record", exception=e)
 
                 # Attempt to write a skip file
                 try:
@@ -288,10 +323,12 @@ def lambda_handler(event, context) -> dict:
                         Body=json.dumps(error_payload, indent=2),
                         ContentType="application/json",
                     )
-                    logger.info(f"Wrote fatal error signal to {complete_key}")
+                    logger.info(
+                        f"Wrote fatal error signal to {complete_key}", key=complete_key
+                    )
                 except Exception as s3_err:
                     logger.error(
-                        f"Failed to write error signal to S3: {str(s3_err)}",
+                        "Failed to write error signal to S3",
                         exception=s3_err,
                     )
                 batch_item_failures.append({"itemIdentifier": record_id})
@@ -299,7 +336,7 @@ def lambda_handler(event, context) -> dict:
         return {"batchItemFailures": batch_item_failures}
 
     except Exception as e:
-        logger.error(f"Error processing: {str(e)}", exception=e)
+        logger.error("Error processing", exception=e)
         raise
 
 
@@ -373,7 +410,7 @@ def extract_persistence_id(object_key: str, input_prefix: str) -> str:
     """
     Extract the persistence_id from an S3 object key.
 
-    Object key format: <pipeline-step>/<persistance_id>
+    Object key format: <pipeline-step>/<persistence_id>
     Example: RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
     Returns: 2026/01/01/0026b704-f510-4494-8d21-11d27217d96e
 
@@ -455,7 +492,7 @@ def parse_s3_content_to_dict(body: str) -> dict:
         data = json.loads(body)
         return data
     except json.JSONDecodeError as e:
-        logger.error("Decoding S3 string to JSON failed", e)
+        logger.error("Decoding S3 string to JSON failed", exception=e)
         raise
 
 
@@ -583,14 +620,14 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
     logger.info(
         "Analyzing input eICR",
         eicr_size_mib=get_file_size_in_mib(file_content=input.xml_files.eicr),
-        operation="input_analysis",
+        operation=LogOperation.INPUT_ANALYSIS,
     )
 
     reportable_groups = discover_reportable_conditions(input.xml_files)
     logger.info(
         "Discovered reportable conditions from RR",
         reportable_group_payload=reportable_groups,
-        operation="discovered_reportability",
+        operation=LogOperation.DISCOVERED_REPORTABILITY,
     )
 
     # TODO:
@@ -677,18 +714,12 @@ def process_condition(
     cg_metadata = rsg_cg_payload.mappings.get(rsg_code)
 
     if cg_metadata is None:
-        logger.info(
-            "RSG code isn't in the CG map, skipping.",
-            rsg_code=rsg_code,
-            rsg_cg_payload=rsg_cg_payload.to_dict(),
-            jurisdiction_code=jurisdiction_code,
-            operation="skipped",
-        )
         mark_condition_skipped(
             jurisdiction_code=jurisdiction_code,
             condition_code=rsg_code,
             reason="rsg_not_in_mapping",
             state=state,
+            rsg_cg_payload=rsg_cg_payload.to_dict(),
         )
         return
 
@@ -733,8 +764,8 @@ def process_condition(
 
     logger.info(
         "Refinement complete for condition.",
-        rsg_code=rsg_code,
         jurisidiction_code=jurisdiction_code,
+        condition_code=rsg_code,
         metrics=asdict(result.metrics),
         report=asdict(result.report),
         operation="log_summary",
@@ -763,7 +794,6 @@ def load_condition_mapping_for_jurisdiction(
             "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
             key=rsg_cg_mapping_file_key,
             jurisdiction_code=jurisdiction_code,
-            operation="skipped",
         )
         return None
 
@@ -779,17 +809,12 @@ def skip_all_conditions_for_missing_mapping(
     Mark every condition in a jurisdiction as skipped when the mapping file is missing.
     """
     for condition in jurisdiction_group.conditions:
-        logger.info(
-            "Mapping file not found for condition",
+        mark_condition_skipped(
             jurisdiction_code=jurisdiction_code,
-            rsg_code=condition.code,
-            refinement_outcome="skipped",
+            condition_code=condition.code,
             reason="no_mapping_file",
+            state=state,
         )
-        state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(
-            condition.code
-        )
-        state.metadata[jurisdiction_code][condition.code] = False
 
 
 def mark_condition_skipped(
@@ -797,16 +822,18 @@ def mark_condition_skipped(
     condition_code: str,
     reason: str,
     state: RefinementState,
+    **kwargs,
 ) -> None:
     """
     Helper to mark a condition as "skipped" during refinement.
     """
     logger.info(
         "Refiner skipped condition.",
-        jurisdiction=jurisdiction_code,
+        jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
         reason=reason,
-        operation="skipped",
+        operation=LogOperation.SKIPPED,
+        **kwargs,
     )
 
     state.metadata[jurisdiction_code][condition_code] = False
@@ -846,7 +873,6 @@ def load_active_configuration(
             key=current_file_key,
             jurisdiction_code=jurisdiction_code,
             rsg_metadata=rsg_metadata,
-            operation="skipped",
         )
         return None
 
@@ -866,10 +892,10 @@ def load_active_configuration(
         "Using activated configuration file",
         key=serialized_configuration_key,
         jurisdiction_code=jurisdiction_code,
+        condition_code=rsg_metadata.code,
         canonical_url=cg_metadata.canonical_url,
-        rsg_code=rsg_metadata.code,
         config_version=config_version_to_use,
-        operation="activation_file_read",
+        operation=LogOperation.ACTIVATION_FILE_READ,
     )
 
     return ActiveConfiguration(
@@ -921,7 +947,7 @@ def write_refined_outputs(
         eicr_size_reduction_percentage=result.metrics.eicr.size_reduction_percentage,
         jurisdiction_code=jurisdiction_code,
         condition_code=condition_code,
-        operation="condition_refinement_complete",
+        operation=LogOperation.CONDITION_REFINEMENT_COMPLETE,
     )
 
 
@@ -971,7 +997,7 @@ def write_remainder_rrs(
                 jurisdiction_code=jurisdiction_code,
                 refined_count=len(refined_codes),
                 skipped_count=len(skipped_codes),
-                operation="remainder_rr_skipped",
+                operation=LogOperation.REMAINDER_RR_SKIPPED,
             )
             continue
 
@@ -1000,5 +1026,5 @@ def write_remainder_rrs(
             condition_codes=list(remainder.skipped_codes),
             original_rr_doc_id=remainder.augmented_result.original_doc_id,
             augmented_rr_doc_id=remainder.augmented_result.augmented_doc_id,
-            operation="remainder_rr_written",
+            operation=LogOperation.REMAINDER_RR_WRITTEN,
         )

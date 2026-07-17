@@ -7,4 +7,5 @@ export type NotificationKeys = typeof NotificationKeys[keyof typeof Notification
 
 export const NotificationKeys = {
   most_recent_app_update: 'most_recent_app_update',
+  most_recent_tes_update: 'most_recent_tes_update',
 } as const;

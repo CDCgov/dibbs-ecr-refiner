@@ -1,5 +1,6 @@
 import json
 import os
+from dataclasses import dataclass
 from datetime import date
 from io import BytesIO
 from logging import Logger
@@ -21,6 +22,7 @@ from app.db.users.model import DbUser
 from ...core.config import ENVIRONMENT
 from .s3_keys import (
     get_active_file_key,
+    get_current_file_key,
     get_metadata_file_key,
     get_parent_directory_key,
     get_rsg_cg_mapping_file_key,
@@ -44,6 +46,86 @@ def _build_s3_client_kwargs() -> dict[str, Any]:
 
 
 s3_client = boto3.client("s3", **_build_s3_client_kwargs())
+
+
+@dataclass
+class SerializedFile:
+    """
+    An individual serialized file.
+    """
+
+    key: str
+    content: str
+
+
+@dataclass
+class SerializedFiles:
+    """
+    Dataclass for serialized file data.
+    """
+
+    active: SerializedFile
+    current: SerializedFile
+    metadata: SerializedFile
+
+
+def get_serialized_files(
+    jurisdiction_id: str, canonical_url: str, version: int, logger: Logger
+) -> SerializedFiles:
+    """
+    Fetches the serialized files for a given configuration from S3.
+
+    Args:
+        jurisdiction_id (str): The jurisdiction ID
+        canonical_url (str): Canonical URL of the configuration's primary condition
+        version (int): The active configuration version
+        logger (Logger): The standard logger
+
+    Returns:
+        SerializedFiles: The content of the configuration's serialized files
+    """
+    active_key = get_active_file_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url, version=version
+    )
+    metadata_key = get_metadata_file_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url, version=version
+    )
+    current_key = get_current_file_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url
+    )
+
+    logger.info(
+        "Fetching serialized configuration file data from S3",
+        extra={
+            "active_key": active_key,
+            "metadata_key": metadata_key,
+            "current_key": current_key,
+        },
+    )
+
+    def fetch(key: str) -> str:
+        try:
+            resp = s3_client.get_object(
+                Bucket=S3_CONFIGURATION_BUCKET_NAME,
+                Key=key,
+            )
+            return resp["Body"].read().decode("utf-8")
+        except ClientError as e:
+            code = e.response["Error"]["Code"]
+            if code == "NoSuchKey":
+                logger.error("S3 file not found", extra={"key": key})
+                raise FileNotFoundError(f"S3 file not found: {key}") from e
+            logger.error("S3 error fetching file", extra={"key": key, "error": str(e)})
+            raise
+
+    return SerializedFiles(
+        active=SerializedFile(key=active_key, content=fetch(active_key)),
+        metadata=SerializedFile(
+            key=metadata_key,
+            content=fetch(metadata_key),
+        ),
+        current=SerializedFile(key=current_key, content=fetch(current_key)),
+    )
 
 
 def upload_current_version_file(

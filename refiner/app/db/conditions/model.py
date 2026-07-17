@@ -89,7 +89,7 @@ class DbCondition(DbConditionBase):
             display_name=row["display_name"],
             canonical_url=row["canonical_url"],
             version=row["version"],
-            child_rsg_snomed_codes=row["child_rsg_snomed_codes"],
+            child_rsg_snomed_codes=row.get("child_rsg_snomed_codes") or [],
             snomed_codes=[DbConditionCoding(**c) for c in row["snomed_codes"]],
             loinc_codes=[DbConditionCoding(**c) for c in row["loinc_codes"]],
             icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],

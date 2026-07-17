@@ -10,6 +10,51 @@ test.describe('Configuration detail flow', () => {
     await deleteAllConfigurations();
   });
 
+  test('Check serialization page (local only) renders as expected', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'COVID-19';
+    const conditionCanonicalUuid = '07221093-b8a1-4b1d-8678-259277bfba64';
+    await configurationsPage.createConfiguration(condition);
+    const link = page.getByRole('link', {
+      name: 'View serialized configuration (local only)',
+    });
+    await expect(link).not.toBeVisible();
+
+    await configurationPage.goToActivateTab();
+    await configurationPage.activateConfiguration();
+    await configurationPage.goToBuildTab();
+    await expect(link).toBeVisible();
+    await link.click();
+    const backToBuildPageLink = page.getByRole('link', {
+      name: 'back to build page',
+    });
+    await expect(backToBuildPageLink).toBeVisible();
+
+    // basic content check
+    await expect(
+      page.getByText(
+        `configurations/SDDH/${conditionCanonicalUuid}/current.json`
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        `configurations/SDDH/${conditionCanonicalUuid}/1/metadata.json`
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        `configurations/SDDH/${conditionCanonicalUuid}/1/active.json`
+      )
+    ).toBeVisible();
+    await backToBuildPageLink.click();
+    await expect(
+      page.getByRole('heading', { name: 'Build configuration', level: 2 })
+    ).toBeVisible();
+  });
+
   test('Validate code set table appearance', async ({
     page,
     configurationsPage,
@@ -634,7 +679,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     page,
     makeAxeBuilder,
   }) => {
-    // 1. Reconstructable Section - 3 options (Results)
+    // 1. Reconstructable Section - 4 options (Results)
     // TODO: Update this test when more LOINCs are enabled for reconstruction in the backend
     const reconstructableRow = page
       .getByRole('row')
@@ -643,30 +688,30 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     const reconstructableSelect = reconstructableRow.getByRole('combobox');
 
     const reconstructableOptions = reconstructableSelect.getByRole('option');
-    await expect(reconstructableOptions).toHaveCount(3);
+    await expect(reconstructableOptions).toHaveCount(4);
     await expect(
       reconstructableOptions.filter({ hasText: 'Reconstruct' })
     ).toBeAttached();
 
-    // 2. Non-Reconstructable Standard Section - 2 options (Admission Diagnosis)
+    // 2. Non-Reconstructable Standard Section - 3 options (Admission Diagnosis)
     const standardRow = page
       .getByRole('row')
       .filter({ hasText: 'Admission Diagnosis' });
     const standardSelect = standardRow.getByRole('combobox');
 
     const standardOptions = standardSelect.getByRole('option');
-    await expect(standardOptions).toHaveCount(2);
+    await expect(standardOptions).toHaveCount(3);
     await expect(
       standardOptions.filter({ hasText: 'Reconstruct' })
     ).not.toBeAttached();
 
-    // 3. Narrative-Only Section - 2 options
+    // 3. Narrative-Only Section - 3 options
     const narrativeOnlyRow = page
       .getByRole('row')
       .filter({ hasText: 'Chief Complaint' });
     const narrativeOnlySelect = narrativeOnlyRow.getByRole('combobox');
     const narrativeOnlyOptions = narrativeOnlySelect.getByRole('option');
-    await expect(narrativeOnlyOptions).toHaveCount(2);
+    await expect(narrativeOnlyOptions).toHaveCount(3);
     await expect(
       narrativeOnlyOptions.filter({ hasText: 'Reconstruct' })
     ).not.toBeAttached();
@@ -733,11 +778,140 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     await expect(errorAlert).toBeVisible();
 
     // 4. Persistence via Internal Click
-    await sectionRow.getByRole('switch').setChecked(true);
+    await sectionRow.getByRole('switch').click();
+    await expect(sectionRow.getByRole('switch')).toBeChecked();
     await expect(errorAlert).toBeVisible();
 
     // 5. Dismiss via Input Change
     await narrativeSelect.selectOption('retain');
     await expect(errorAlert).not.toBeVisible();
+  });
+
+  test('should display and manage Keep on match option', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    // 1. Verify "Keep on match" present in all three section types
+    const reconstructableRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Results' });
+    const reconstructableSelect = reconstructableRow.getByRole('combobox');
+    const reconstructableOptions = reconstructableSelect.getByRole('option');
+    await expect(
+      reconstructableOptions.filter({ hasText: 'Keep on match' })
+    ).toBeAttached();
+
+    const standardRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Admission Diagnosis' });
+    const standardSelect = standardRow.getByRole('combobox');
+    const standardOptions = standardSelect.getByRole('option');
+    await expect(
+      standardOptions.filter({ hasText: 'Keep on match' })
+    ).toBeAttached();
+
+    const narrativeOnlyRow = page
+      .getByRole('row')
+      .filter({ hasText: 'Chief Complaint' });
+    const narrativeOnlySelect = narrativeOnlyRow.getByRole('combobox');
+    const narrativeOnlyOptions = narrativeOnlySelect.getByRole('option');
+    await expect(
+      narrativeOnlyOptions.filter({ hasText: 'Keep on match' })
+    ).toBeAttached();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 2. Enabled when Coded Data is 'Refine' (Results row)
+    const sectionRow = reconstructableRow;
+    const codedDataSwitch = sectionRow.getByRole('switch');
+    await expect(codedDataSwitch).toBeChecked();
+    const keepOnMatchOption = sectionRow
+      .getByRole('combobox')
+      .getByRole('option')
+      .filter({ hasText: 'Keep on match' });
+    await expect(keepOnMatchOption).toBeEnabled();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 3. Disabled when Coded Data is 'Keep original'
+    await codedDataSwitch.click();
+    await expect(keepOnMatchOption).toBeDisabled();
+
+    // 4. Enabled when Coded Data is 'Refine' again
+    await codedDataSwitch.click();
+    await expect(keepOnMatchOption).toBeEnabled();
+  });
+
+  test('should handle validation error lifecycle for Keep on match', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const sectionRow = page.getByRole('row').filter({ hasText: 'Results' });
+
+    const includeCheckbox = sectionRow.getByRole('checkbox');
+    await includeCheckbox.setChecked(true);
+
+    const narrativeSelect = sectionRow.getByRole('combobox');
+    const codedDataSwitch = sectionRow.getByRole('switch');
+
+    // Setup: Set Narrative to 'Keep on match'
+    await narrativeSelect.selectOption('keep_on_match');
+    await expect(narrativeSelect).toHaveValue('keep_on_match');
+
+    // 1. Trigger Error: Switch to 'Keep original'
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
+    const resultsCheckbox = sectionRow.getByRole('checkbox');
+    await resultsCheckbox.setChecked(true);
+    const errorAlert = sectionRow.getByRole('alert');
+    await expect(errorAlert).toBeVisible();
+    await expect(errorAlert).toHaveText(
+      /To keep narrative on match, refine must be selected/
+    );
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 2. Dismiss via External Click
+    await page.getByRole('heading', { level: 1 }).first().click();
+    await expect(errorAlert).not.toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 3. Re-trigger Error
+    await expect(codedDataSwitch).toBeChecked();
+    await codedDataSwitch.click();
+    await expect(errorAlert).toBeVisible();
+
+    // 4. Persistence via Internal Click
+    await sectionRow.getByRole('switch').click();
+    await expect(sectionRow.getByRole('switch')).toBeChecked();
+    await expect(errorAlert).toBeVisible();
+
+    // 5. Dismiss via Input Change
+    await narrativeSelect.selectOption('retain');
+    await expect(errorAlert).not.toBeVisible();
+  });
+
+  test('should open narrative info modal', async ({ page }) => {
+    // Click the ? button in the narrative data column header
+    const infoButtons = page.getByRole('button', { name: 'More information' });
+    await infoButtons.nth(1).click();
+
+    // Verify modal dialog appears
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeAttached();
+    await expect(
+      modal.getByRole('heading', { name: 'Narrative data' })
+    ).toBeVisible();
+
+    // Verify modal body contains option descriptions
+    await expect(modal.getByText('Keep original')).toBeVisible();
+    await expect(modal.getByText('Keep on match')).toBeVisible();
+    await expect(modal.getByText('Reconstruct')).toBeVisible();
+    await expect(modal.getByText('Exclude')).toBeVisible();
+
+    // Close via close button
+    await modal.getByRole('button', { name: 'Close this window' }).click();
+    await expect(
+      modal.getByRole('heading', { name: 'Narrative data' })
+    ).not.toBeVisible();
   });
 });

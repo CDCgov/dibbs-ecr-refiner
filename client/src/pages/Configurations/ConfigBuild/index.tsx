@@ -34,6 +34,7 @@ import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
+import { SerializedContentButton } from '../SerializedContentButton';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -90,8 +91,12 @@ export function ConfigBuild() {
             rsgCodes={configuration.data.rsg_codes}
           />
         </div>
-
-        <Status version={configuration.data.active_version} />
+        <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
+          <Status version={configuration.data.active_version} />
+          {configuration.data.active_version === configuration.data.version && (
+            <SerializedContentButton configurationId={configuration.data.id} />
+          )}
+        </div>
       </TitleContainer>
       <NavigationContainer>
         <VersionMenu

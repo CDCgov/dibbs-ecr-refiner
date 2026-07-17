@@ -1,5 +1,4 @@
 import csv
-from datetime import UTC, datetime
 from io import StringIO
 from logging import Logger
 from typing import Literal
@@ -15,6 +14,7 @@ from app.db.conditions.db import (
 )
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -25,6 +25,7 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import get_all_code_systems_by_key
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
+from app.services.file_exports import get_export_timestamp
 from app.services.file_io import ZipFileItem, ZipFilePackage
 from app.services.logger import get_logger
 
@@ -66,7 +67,7 @@ async def get_configuration_export(
     )
     sections_csv_content = _build_sections_csv(sections=config.section_processing)
 
-    timestamp = _get_timestamp()
+    timestamp = get_export_timestamp()
 
     zip_package = ZipFilePackage(
         name=_build_export_filename(
@@ -149,26 +150,14 @@ def _get_coded_data_value(loinc: str, action: DbSectionAction, included: bool) -
     if loinc in NARRATIVE_ONLY_SECTIONS:
         return "N/A"
 
-    if action == "retain":
-        return "Keep original"
-
-    if action == "refine":
-        return "Refine"
-
-    return "N/A"
+    return CODED_DATA_LABELS.get(action, "N/A")
 
 
 def _get_narrative_data_value(narrative: DbNarrativeAction, included: bool) -> str:
     if not included:
         return "N/A"
 
-    if narrative == "retain":
-        return "Keep original"
-
-    if narrative == "remove":
-        return "Exclude"
-
-    return "Reconstruct"
+    return NARRATIVE_DATA_LABELS.get(narrative, "N/A")
 
 
 async def _build_config_csv(
@@ -220,12 +209,6 @@ async def _build_config_csv(
             )
 
         return csv_text.getvalue()
-
-
-def _get_timestamp() -> str:
-    now = datetime.now(UTC)
-    timestamp = now.strftime("%m%d%y_%H_%M_%S")
-    return timestamp
 
 
 def _build_export_filename(
