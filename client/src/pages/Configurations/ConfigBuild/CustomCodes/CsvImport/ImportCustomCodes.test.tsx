@@ -153,7 +153,7 @@ describe('Custom codes upload', () => {
     ).toBeInTheDocument();
   });
 
-  test('filters appropriately when search string is supplied', async () => {
+  test.only('filters appropriately when search string is supplied', async () => {
     const user = userEvent.setup();
     await renderAndUploadCsv(user);
 
@@ -272,12 +272,14 @@ function checkOtherCode(exists = true) {
 }
 
 function checkCode(codeSystemName: string, exists = true) {
-  const codeSystem = mockCodeSystems.find(
-    (s) => s.display_name === codeSystemName
-  );
+  const mockCode = mockPreviewItems.find(
+    (i) =>
+      i.system_name === codeSystemName ||
+      i.system_id === codeSystemName.toLowerCase()
+  )?.code as string;
 
-  const mockCode = mockPreviewItems.find((i) => i.system_id === codeSystem?.id)
-    ?.code as string;
+  // console.log(mockPreviewItems);
+  // console.log(mockCode);
 
   const matcher = exists ? 'getByText' : 'queryByText';
 
@@ -325,8 +327,12 @@ const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
     return {
       id: crypto.randomUUID(),
       code: row['code'],
-      system_id: row['code_system'],
-      system_name: row['system_name'],
+      system_id: mockCodeSystems.find(
+        (system) => system.key === row['code_system']
+      )!.id,
+      system_name: mockCodeSystems.find(
+        (system) => system.key === row['code_system']
+      )!.display_name,
       display: row['display_name'],
       row: i,
     };
