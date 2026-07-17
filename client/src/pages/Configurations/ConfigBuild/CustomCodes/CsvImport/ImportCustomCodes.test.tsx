@@ -76,6 +76,7 @@ async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
 
   await user.upload(fileInput, file);
 }
+
 beforeEach(() => {
   (useUploadCustomCodesCsv as unknown as Mock).mockReturnValue({
     mutate: vi.fn((variables, options) => {
@@ -277,9 +278,6 @@ function checkCode(codeSystemName: string, exists = true) {
       i.system_name === codeSystemName ||
       i.system_id === codeSystemName.toLowerCase()
   )?.code as string;
-
-  // console.log(mockPreviewItems);
-  // console.log(mockCode);
 
   const matcher = exists ? 'getByText' : 'queryByText';
 

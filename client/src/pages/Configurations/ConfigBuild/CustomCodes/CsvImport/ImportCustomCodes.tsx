@@ -86,7 +86,7 @@ export function ImportCustomCodes({
   } = useSearch(previewItems, {
     keys: [
       { name: 'code', weight: 0.6 },
-      { name: 'name', weight: 0.4 },
+      { name: 'display', weight: 0.4 },
     ],
     includeMatches: true,
     threshold: 0.3,
