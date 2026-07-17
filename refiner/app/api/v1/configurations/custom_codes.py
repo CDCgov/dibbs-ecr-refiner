@@ -19,7 +19,6 @@ from app.db.code_systems.db import (
     DbCodeSystem,
     IndexedCodeSystem,
     get_code_system_by_id_db,
-    get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
@@ -31,9 +30,9 @@ from app.db.configurations.db import (
     get_total_condition_code_counts_by_configuration_db,
 )
 from app.db.configurations.model import (
-    DbConfiguration,
     DbConfigurationCustomCode,
 )
+from app.db.custom_codes.db import get_custom_code_by_id_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
@@ -559,100 +558,10 @@ class UpdateCustomCodeInput(BaseModel):
     Input model when updating a config's custom code.
     """
 
+    id: UUID
     system_id: UUID
     code: str
-    name: str
-    new_code: str | None
-    new_system_id: UUID | None
-    new_name: str | None
-
-
-async def _get_modified_custom_codes(
-    config: DbConfiguration,
-    updateInput: UpdateCustomCodeInput,
-    db: AsyncDatabaseConnection,
-    logger: Logger,
-) -> list[DbConfigurationCustomCode]:
-    # Get list of current codes
-    custom_codes = config.custom_codes
-
-    # find the code to modify
-    sanitized_system = await get_code_system_by_key_db(
-        key=updateInput.system_key, db=db
-    )
-    if sanitized_system is None:
-        raise ValueError(
-            f"System of name {updateInput.system_key} doesn't match supported systems"
-        )
-    code_to_edit = [
-        cc
-        for cc in custom_codes
-        if cc.system_key == sanitized_system.key
-        and cc.code == updateInput.code
-        and cc.name == updateInput.name
-    ]
-
-    # We expect exactly 1 code
-    if len(code_to_edit) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find custom code with specified system/code pair.",
-        )
-    if len(code_to_edit) > 1:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Multiple custom codes with system/code pair found.",
-        )
-
-    # get the code
-    existing_code = code_to_edit[0]
-
-    # remove the code from the list
-    custom_codes.remove(existing_code)
-
-    # create a new code using the changes provided by the user.
-    # use the old values as fallbacks.
-    if not updateInput.new_system_key:
-        logger.warning(
-            f"No new system_key information found in updateInput, falling back to existing system_key {existing_code.system_key}"
-        )
-    system_key = (
-        updateInput.new_system_key
-        if updateInput.new_system_key
-        else existing_code.system_key
-    )
-
-    new_system = await get_code_system_by_key_db(key=system_key, db=db)
-    if new_system is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"System of name {system_key} doesn't match supported systems",
-        )
-    updated_code = DbConfigurationCustomCode(
-        code=updateInput.new_code or existing_code.code,
-        name=updateInput.new_name or existing_code.name,
-        system_key=new_system.key,
-    )
-
-    # check for duplicates
-    if any(
-        cc.code == updated_code.code
-        and cc.system_key == updated_code.system_key
-        and cc.name == updated_code.name
-        for cc in custom_codes
-    ):
-        # put the original code back so the list is unchanged
-        custom_codes.append(existing_code)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A custom code with the same system/code already exists for this configuration.",
-        )
-
-    # add the updated code
-    custom_codes.append(updated_code)
-
-    # return the full set of custom codes
-    return custom_codes
+    display: str
 
 
 def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
@@ -661,10 +570,10 @@ def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "code" is missing.',
         )
-    if not input.system_key:
+    if not input.system_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_key" is missing.',
+            detail='Required field "system_id" is missing.',
         )
 
 
@@ -799,6 +708,7 @@ async def edit_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,
@@ -813,20 +723,21 @@ async def edit_custom_code(
             detail="Trying to update a non-draft configuration",
         )
 
-    custom_codes = await _get_modified_custom_codes(
-        config=config, updateInput=body, db=db, logger=logger
-    )
+    custom_code = await get_custom_code_by_id_db(id=body.id, db=db)
+
+    if not custom_code:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not find custom code with ID {body.id}",
+        )
 
     updated_config = await edit_custom_code_from_configuration_db(
         config=config,
-        updated_custom_codes=custom_codes,
+        custom_code=custom_code,
         user_id=user.id,
-        prev_code=body.code,
-        prev_system_key=body.system_key,
-        prev_name=body.name,
-        new_code=body.new_code,
-        new_system_key=body.new_system_key,
-        new_name=body.new_name,
+        code=body.code,
+        system_id=body.system_id,
+        display=body.display,
         db=db,
     )
 

@@ -137,12 +137,10 @@ function CustomCodeForm({
         {
           configurationId,
           data: {
-            code: selectedCustomCode.code,
-            system_id: selectedCustomCode.system_id,
-            name: selectedCustomCode.name,
-            new_code: code.trim(),
-            new_system_id: selectedSystemId,
-            new_name: name.trim(),
+            id: selectedCustomCode.id,
+            code: code.trim() || selectedCustomCode.code,
+            system_id: selectedSystemId || selectedCustomCode.system_id,
+            display: name.trim() || selectedCustomCode.name,
           },
         },
         {

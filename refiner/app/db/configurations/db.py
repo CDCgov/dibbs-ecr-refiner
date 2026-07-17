@@ -10,6 +10,7 @@ from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
 )
+from app.db.custom_codes.model import DbCustomCode
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.services.code_systems import get_all_code_systems_by_key
@@ -829,14 +830,11 @@ async def delete_custom_code_from_configuration_db(
 
 async def edit_custom_code_from_configuration_db(
     config: DbConfiguration,
-    updated_custom_codes: list[DbConfigurationCustomCode],
+    custom_code: DbCustomCode,
     user_id: UUID,
-    prev_code: str,
-    prev_system_key: str,
-    prev_name: str,
-    new_code: str | None,
-    new_system_key: str | None,
-    new_name: str | None,
+    display: str,
+    code: str,
+    system_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -844,64 +842,65 @@ async def edit_custom_code_from_configuration_db(
     """
 
     query = """
-            UPDATE configurations
-            SET custom_codes = %s::jsonb
+            UPDATE custom_codes
+            SET display = %s,
+                code = %s,
+                system_id = %s
             WHERE id = %s
-            RETURNING
-                id;
+            RETURNING *;
             """
 
-    json_codes = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in updated_custom_codes
-    ]
-
-    params = (Jsonb(json_codes), config.id)
+    params = (
+        display,
+        code,
+        system_id,
+        custom_code.id,
+    )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-            if not row:
+            if row is None:  # TODO: is this right?
                 return None
 
             # Collect all event messages
             events_to_insert = []
 
             # 1. Code changed
-            if new_code is not None and new_code != prev_code:
+            if code != custom_code.code:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated custom code from '{prev_code}' to '{new_code}'",
+                        action_text=f"Updated custom code from '{custom_code.code}' to '{code}'",
                     )
                 )
 
             # 2. Name changed
-            if new_name is not None and new_name != prev_name:
+            if display != custom_code.display:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated name for custom code '{prev_code}' from '{prev_name}' to '{new_name}'",
+                        action_text=f"Updated name for custom code '{custom_code.code}' from '{custom_code.display}' to '{display}'",
                     )
                 )
 
             # 3. System changed
-            if new_system_key is not None and new_system_key != prev_system_key:
+            if system_id != custom_code.system_id:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated system for custom code '{prev_code}' from '{prev_system_key}' to '{new_system_key}'",
+                        action_text=f"Updated system for custom code '{custom_code.code}' from '{custom_code.system_id}' to '{system_id}'",  # TODO: Use system name instead
                     )
                 )
 
