@@ -187,12 +187,6 @@ async def remove_condition_codeset_from_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
         )
 
-    if condition.display_name == config.name:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Cannot remove initial condition.",
-        )
-
     updated_config = await disassociate_condition_codeset_with_configuration_db(
         config=config, condition=condition, user_id=user.id, db=db
     )
