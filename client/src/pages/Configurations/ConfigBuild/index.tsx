@@ -186,6 +186,7 @@ function Builder({
   code_sets,
   custom_codes,
   included_conditions,
+  all_conditions,
   section_processing,
   display_name: default_condition_name,
   disabled,
@@ -533,20 +534,23 @@ function DeleteCodeSetButton({
     return null;
   }
 
-  return index === 0 ? (
-    <span className="text-gray-cool-50 mr-2 hidden italic group-hover:block">
-      Default
-    </span>
-  ) : (
-    <Button
-      variant="unstyled"
-      className="text-gray-cool-50 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
-      aria-label={`Delete code set ${conditionName}`}
-      onClick={() => handleDisassociateCondition(conditionId)}
-      disabled={disabled}
-    >
-      <DeleteIcon />
-    </Button>
+  return (
+    <div className="flex items-center">
+      {index === 0 && (
+        <span className="text-gray-cool-50 mr-2 hidden italic group-hover:block">
+          Default
+        </span>
+      )}
+      <Button
+        variant="unstyled"
+        className="text-gray-cool-50 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+        aria-label={`Delete code set ${conditionName}`}
+        onClick={() => handleDisassociateCondition(conditionId)}
+        disabled={disabled}
+      >
+        <DeleteIcon />
+      </Button>
+    </div>
   );
 }
 
