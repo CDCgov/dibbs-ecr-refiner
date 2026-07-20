@@ -193,7 +193,7 @@ def edit_custom_code(authed_client):
     from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
 
     async def _get(config_id: UUID, body: UpdateCustomCodeInput):
-        payload = vars(body)
+        payload = body.model_dump(mode="json")
         response = await authed_client.put(
             f"/api/v1/configurations/{config_id}/custom-codes", json=payload
         )
