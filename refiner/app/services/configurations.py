@@ -3,9 +3,11 @@ from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
+from uuid import UUID
 
 from app.db.code_systems.db import (
     CodeSystemKey,
+    get_all_code_systems_db,
     get_code_system_by_key_db,
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
@@ -19,7 +21,6 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.code_systems import (
-    get_all_code_systems_by_key,
     get_allowed_code_system_keys,
 )
 from app.services.ecr.policy import (
@@ -216,14 +217,15 @@ async def convert_config_to_storage_payload(
 
     # build per-system code dicts for CodeSystemSets
     coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-    code_systems = await get_all_code_systems_by_key(db)
+    code_systems = await get_all_code_systems_db(db=db)
+
     # custom codes
     for cc in configuration.custom_codes:
-        cur_code_system = code_systems[cc.system_key]
+        cur_code_system = code_systems[UUID(cc.system_id)]
 
         if cur_code_system is None:
             raise ValueError(
-                f"System with key {cc.system_key} doesn't match supported systems"
+                f"System with ID {cc.system_id} doesn't match supported systems"
             )
 
         system_to_extend = cur_code_system.key

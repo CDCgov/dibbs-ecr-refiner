@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 
 @dataclass(frozen=True)
@@ -102,11 +103,28 @@ class ScenarioBuilder:
             )
             self._validate_response(resp)
 
+        resp = await self.client.get("/code-systems")
+        self._validate_response(resp)
+        systems = resp.json()
+
+        def _get_system_id(system_key: str) -> UUID:
+            matching_system = next(
+                (s for s in systems if s["key"] == system_key),
+                None,
+            )
+            if matching_system is None:
+                raise ValueError(f"Could not find system matching key: {system_key}")
+            return matching_system["id"]
+
         # 4. Add custom codes
         for cc in scenario.custom_codes:
             resp = await self.client.post(
                 f"/configurations/{config_id}/custom-codes",
-                json={"code": cc.code, "system": cc.system, "name": cc.name},
+                json={
+                    "code": cc.code,
+                    "system_id": _get_system_id(cc.system),
+                    "display": cc.name,
+                },
             )
             self._validate_response(resp)
 
