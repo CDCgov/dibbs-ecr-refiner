@@ -8,15 +8,17 @@ import {
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
 import { IncludedCondition } from '../../../../api/schemas';
+import { GetConditionsResponse } from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
 
 interface ConditionCodeSetListItemProps {
-  condition: IncludedCondition;
+  condition: IncludedCondition | GetConditionsResponse;
   configurationId: string;
   highlight?: React.ReactNode;
   reportable_condition_display_name: string;
   disabled: boolean;
+  isAssociated?: boolean;
 }
 
 export function ConditionCodeSetListItem({
@@ -25,6 +27,7 @@ export function ConditionCodeSetListItem({
   highlight,
   reportable_condition_display_name,
   disabled,
+  isAssociated,
 }: ConditionCodeSetListItemProps) {
   const { mutate: associateMutation } =
     useAssociateConditionWithConfiguration();
@@ -36,6 +39,15 @@ export function ConditionCodeSetListItem({
   const formatError = useApiErrorFormatter();
 
   const [showButton, setShowButton] = useState(false);
+  console.log(
+    '[ListItem] received isAssociated prop:',
+    isAssociated,
+    'for condition:',
+    condition.display_name
+  );
+
+  const associated = isAssociated;
+  console.log('[ListItem] computed associated:', associated);
 
   function handleAssociate() {
     associateMutation(
@@ -123,22 +135,23 @@ export function ConditionCodeSetListItem({
       }}
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
-      {isDefault ? (
-        <span className="text-bold mr-3 text-black">Default</span>
-      ) : (
+      <div className="flex items-center">
+        {isDefault && (
+          <span className="text-bold mr-3 text-black">Default</span>
+        )}
         <Button
-          variant={condition.associated ? 'secondary' : 'primary'}
-          aria-pressed={condition.associated}
-          aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
+          variant={associated ? 'secondary' : 'primary'}
+          aria-pressed={associated}
+          aria-label={`${associated ? 'Remove' : 'Add'} ${condition.display_name}`}
           className={classNames('mr-0! w-20!', {
-            'sr-only!': !showButton && !condition.associated,
+            'sr-only!': !showButton && !associated,
           })}
-          onClick={() => onClick(condition.associated)}
+          onClick={() => onClick(!!associated)}
           disabled={disabled}
         >
-          {condition.associated ? 'Remove' : 'Add'}
+          {associated ? 'Remove' : 'Add'}
         </Button>
-      )}
+      </div>
     </li>
   );
 }

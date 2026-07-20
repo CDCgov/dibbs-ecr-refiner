@@ -55,47 +55,61 @@ export function AddConditionCodeSetsDrawer({
     >
       <div className="flex h-full flex-col">
         <ol className="grow overflow-y-auto">
-          {filteredConditions.map((condition: IncludedCondition, i: number) => {
-            const highlight = searchTerm
-              ? highlightMatches(
-                  condition.display_name,
-                  [
-                    {
-                      indices: [
-                        [
-                          condition.display_name
-                            .toLowerCase()
-                            .indexOf(searchTerm.toLowerCase()),
-                          condition.display_name
-                            .toLowerCase()
-                            .indexOf(searchTerm.toLowerCase()) +
-                            searchTerm.length -
-                            1,
+          {filteredConditions.map(
+            (condition: GetConditionsResponse, i: number) => {
+              const highlight = searchTerm
+                ? highlightMatches(
+                    condition.display_name,
+                    [
+                      {
+                        indices: [
+                          [
+                            condition.display_name
+                              .toLowerCase()
+                              .indexOf(searchTerm.toLowerCase()),
+                            condition.display_name
+                              .toLowerCase()
+                              .indexOf(searchTerm.toLowerCase()) +
+                              searchTerm.length -
+                              1,
+                          ],
                         ],
-                      ],
-                      key: 'display_name',
-                      value: condition.display_name,
-                    },
-                  ],
-                  'display_name'
-                )
-              : undefined;
-            const key = condition.id
-              ? condition.id
-              : `${condition.display_name}-${i}`;
-            return (
-              <ConditionCodeSetListItem
-                key={key}
-                condition={condition}
-                configurationId={configurationId}
-                highlight={highlight}
-                reportable_condition_display_name={
-                  reportable_condition_display_name
-                }
-                disabled={disabled}
-              />
-            );
-          })}
+                        key: 'display_name',
+                        value: condition.display_name,
+                      },
+                    ],
+                    'display_name'
+                  )
+                : undefined;
+              const key = condition.id
+                ? condition.id
+                : `${condition.display_name}-${i}`;
+              const isAssoc = included_conditions.some(
+                (ic) => ic.id === condition.id
+              );
+              console.log(
+                '[Drawer] condition:',
+                condition.display_name,
+                'id:',
+                condition.id,
+                'isAssociated:',
+                isAssoc
+              );
+              return (
+                <ConditionCodeSetListItem
+                  key={key}
+                  condition={condition}
+                  configurationId={configurationId}
+                  highlight={highlight}
+                  reportable_condition_display_name={
+                    reportable_condition_display_name
+                  }
+                  disabled={disabled}
+                  isAssociated={isAssoc}
+                />
+              );
+            }
+          )}
         </ol>
       </div>
     </Drawer>
