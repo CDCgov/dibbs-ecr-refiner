@@ -5,7 +5,6 @@ from uuid import uuid4
 import pytest
 from fastapi import status
 from psycopg.rows import dict_row
-from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
 from app.api.v1.configurations.model import AddCustomCodeInput
@@ -151,15 +150,14 @@ class TestConfigurations:
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
                     """
-                    INSERT INTO configurations (jurisdiction_id, name, created_by, custom_codes, version)
-                    VALUES (%s, %s, %s, %s::jsonb, %s)
+                    INSERT INTO configurations (jurisdiction_id, name, created_by, version)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
                     (
                         test_user_jurisdiction_id,
                         PRIMARY_CONDITION,
                         test_user_id,
-                        Jsonb([]),
                         1,
                     ),
                 )

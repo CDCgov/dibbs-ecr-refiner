@@ -349,6 +349,19 @@ async def insert_configuration_db(
                     ),
                     cursor=cur,
                 )
+
+                # Clone custom codes
+                if config_to_clone.custom_codes:
+                    await cur.executemany(
+                        """
+                        INSERT INTO custom_codes (configuration_id, code, display, system_id)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        [
+                            (config_id, cc.code, cc.name, cc.system_id)
+                            for cc in config_to_clone.custom_codes
+                        ],
+                    )
             else:
                 await _insert_configuration_sections_db(
                     configuration_id=config_id,
