@@ -103,7 +103,7 @@ class ScenarioBuilder:
             )
             self._validate_response(resp)
 
-        resp = await self.client.get("/code-systems")
+        resp = await self.client.get("/code-systems/")
         self._validate_response(resp)
         systems = resp.json()
 
