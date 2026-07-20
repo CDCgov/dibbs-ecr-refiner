@@ -19,7 +19,7 @@ from app.db.code_systems.db import (
     DbCodeSystem,
     IndexedCodeSystem,
     get_code_system_by_id_db,
-    get_code_systems,
+    get_code_systems_db,
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
@@ -312,7 +312,7 @@ async def upload_custom_codes_csv(
         configuration_id=configuration_id, db=db, user=user
     )
 
-    supported_systems = await get_code_systems(db=db)
+    supported_systems = await get_code_systems_db(db=db)
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
@@ -429,7 +429,7 @@ async def confirm_upload_custom_codes_csv(
             detail="Trying to update a non-draft configuration",
         )
 
-    code_systems = await get_code_systems(db=db)
+    code_systems = await get_code_systems_db(db=db)
 
     try:
         result = await add_bulk_custom_codes_to_configuration_db(

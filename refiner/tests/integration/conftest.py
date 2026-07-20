@@ -12,7 +12,7 @@ from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
-from app.api.v1.configurations.model import AddCustomCodeInput, UploadCustomCodesInput
+from app.api.v1.configurations.model import AddCustomCodeInput
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbNarrativeAction,
@@ -75,13 +75,13 @@ async def upload_custom_codes(authed_client):
     """
     Returns a function that uploads custom codes for a specific configuration.
 
-    result = await upload_custom_codes(config_id, [UploadCustomCodesInput(code="123", system_key="icd10", name="ICD-10 Example")])
+    result = await upload_custom_codes(config_id, [AddCustomCodeInput(code="123", system_id="cf176e7a-71fa-4f97-8bd3-6ec4fe06600d", name="ICD-10 Example")])
     """
 
-    async def _get(config_id: UUID, codes: list[UploadCustomCodesInput]):
+    async def _get(config_id: UUID, codes: list[AddCustomCodeInput]):
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/custom-codes/confirm",
-            json={"custom_codes": [c.model_dump() for c in codes]},
+            json={"custom_codes": [c.model_dump(mode="json") for c in codes]},
         )
         assert response.status_code == status.HTTP_200_OK
         return response.json()
