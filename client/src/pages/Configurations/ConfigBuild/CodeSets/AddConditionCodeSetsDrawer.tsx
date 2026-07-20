@@ -28,7 +28,6 @@ export function AddConditionCodeSetsDrawer({
   reportable_condition_display_name,
   disabled,
 }: AddConditionCodeSetsDrawerProps) {
-  console.log('[Drawer] included_conditions:', included_conditions);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Search and highlight logic
@@ -86,14 +85,6 @@ export function AddConditionCodeSetsDrawer({
                 : `${condition.display_name}-${i}`;
               const isAssoc = included_conditions.some(
                 (ic) => ic.id === condition.id
-              );
-              console.log(
-                '[Drawer] condition:',
-                condition.display_name,
-                'id:',
-                condition.id,
-                'isAssociated:',
-                isAssoc
               );
               return (
                 <ConditionCodeSetListItem

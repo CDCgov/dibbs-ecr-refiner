@@ -39,15 +39,8 @@ export function ConditionCodeSetListItem({
   const formatError = useApiErrorFormatter();
 
   const [showButton, setShowButton] = useState(false);
-  console.log(
-    '[ListItem] received isAssociated prop:',
-    isAssociated,
-    'for condition:',
-    condition.display_name
-  );
 
   const associated = isAssociated;
-  console.log('[ListItem] computed associated:', associated);
 
   function handleAssociate() {
     associateMutation(
