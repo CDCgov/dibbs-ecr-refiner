@@ -293,6 +293,7 @@ async def test_add_custom_code_to_configuration(
 async def test_delete_custom_code_from_configuration(
     authed_client, mock_configuration, monkeypatch
 ):
+    custom_code_id = "08dbbbfe-402e-462a-bf6e-04cedaf1961b"
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
@@ -308,11 +309,10 @@ async def test_delete_custom_code_from_configuration(
     )
 
     config_id = str(mock_configuration.id)
-    system = "LOINC"
-    code = "test-code"
 
+    # TODO: Start with a code and then delete
     response = await authed_client.delete(
-        f"/api/v1/configurations/{config_id}/custom-codes/{system}/{code}"
+        f"/api/v1/configurations/{config_id}/custom-codes/{custom_code_id}"
     )
     assert response.status_code == 200
     data = response.json()
