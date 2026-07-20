@@ -13,6 +13,7 @@ type DbSectionType = Literal["standard", "custom"]
 
 CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION = 2
 
+
 @dataclass(frozen=True)
 class GetConfigurationResponseVersion:
     """
