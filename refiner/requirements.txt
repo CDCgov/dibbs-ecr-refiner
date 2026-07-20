@@ -1,4 +1,4 @@
-boto3==1.43.42
+boto3==1.43.48
 Authlib==1.7.2
 fastapi==0.139.0
 chardet==7.4.3
