@@ -512,14 +512,17 @@ async def associate_condition_codeset_with_configuration_db(
         DbConfiguration: The updated configuration
     """
 
+    # Determine if this is the first condition being added (no primary condition exists)
+    is_primary = config.primary_condition_id is None
+
     query = """
-        INSERT INTO configurations_conditions (configuration_id, condition_id)
-        VALUES (%s, %s)
+        INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
+        VALUES (%s, %s, %s)
         ON CONFLICT DO NOTHING
         RETURNING configuration_id;
     """
 
-    params = (config.id, condition.id)
+    params = (config.id, condition.id, is_primary)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -528,6 +531,9 @@ async def associate_condition_codeset_with_configuration_db(
 
             if not row:
                 return None
+
+            # If this is the first condition, the is_primary flag is already set
+            # via the INSERT statement above. No additional update needed.
 
             await insert_event_db(
                 event=EventInput(
