@@ -309,51 +309,72 @@ async def get_configuration(
         configuration_id=config.id, db=db
     )
 
-    if not primary_condition:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Could not find primary condition associated with configuration.",
-        )
-
     # fetch all conditions from the db based on the primary condition's version
-    all_conditions = await get_conditions_by_version_db(
-        version=primary_condition.version,
-        db=db,
-    )
+    # if no primary condition exists, we still return the configuration
+    all_conditions = []
+    latest_config = None
+    included_conditions = []
+    all_versions = []
+    active_config = None
+    draft_config = None
+    draft_id = None
+    is_draft = False
+    active_version = None
+    active_configuration_id = None
+    latest_version = 0
+    condition_id = None
+    condition_canonical_url = None
+    rsg_codes = []
 
-    latest_config = await get_latest_config_db(
-        jurisdiction_id=jd,
-        condition_canonical_url=primary_condition.canonical_url,
-        db=db,
-    )
-
-    # Build IncludedCondition objects, marking which are associated
-    included_conditions = [
-        IncludedCondition(
-            id=condition.id,
-            display_name=condition.display_name,
-            canonical_url=condition.canonical_url,
-            version=condition.version,
-            associated=condition.id in included_ids
-            or condition.id == primary_condition.id,
+    if primary_condition:
+        all_conditions = await get_conditions_by_version_db(
+            version=primary_condition.version,
+            db=db,
         )
-        for condition in all_conditions
-    ]
 
-    all_versions = await get_configuration_versions_db(
-        jurisdiction_id=jd,
-        condition_canonical_url=primary_condition.canonical_url,
-        db=db,
-    )
+        latest_config = await get_latest_config_db(
+            jurisdiction_id=jd,
+            condition_canonical_url=primary_condition.canonical_url,
+            db=db,
+        )
 
-    active_config = next((v for v in all_versions if v.status == "active"), None)
-    draft_config = next((v for v in all_versions if v.status == "draft"), None)
+        # Build IncludedCondition objects for ONLY associated conditions
+        included_conditions = [
+            IncludedCondition(
+                id=condition.id,
+                display_name=condition.display_name,
+                canonical_url=condition.canonical_url,
+                version=condition.version,
+                associated=True,
+            )
+            for condition in all_conditions
+            if condition.id in included_ids or condition.id == primary_condition.id
+        ]
 
-    draft_id = draft_config.id if draft_config is not None else None
-    is_draft = draft_id == config.id
-    active_version = active_config.version if active_config is not None else None
-    active_configuration_id = active_config.id if active_config is not None else None
-    latest_version = latest_config.version if latest_config is not None else 0
+        all_versions = await get_configuration_versions_db(
+            jurisdiction_id=jd,
+            condition_canonical_url=primary_condition.canonical_url,
+            db=db,
+        )
+
+        active_config = next((v for v in all_versions if v.status == "active"), None)
+        draft_config = next((v for v in all_versions if v.status == "draft"), None)
+
+        draft_id = draft_config.id if draft_config is not None else None
+        is_draft = draft_id == config.id
+        active_version = active_config.version if active_config is not None else None
+        active_configuration_id = (
+            active_config.id if active_config is not None else None
+        )
+        latest_version = latest_config.version if latest_config is not None else 0
+
+        condition_id = primary_condition.id
+        condition_canonical_url = primary_condition.canonical_url
+
+        rsg_codes = await get_rsg_codes_by_condition_id_db(
+            condition_id=primary_condition.id,
+            db=db,
+        )
 
     is_locked = locked_by is not None and locked_by.id != user.id
     code_systems = await get_all_code_systems_by_key(db=db)
@@ -368,17 +389,12 @@ async def get_configuration(
         ],
         code_systems=code_systems,
     )
-
-    rsg_codes = await get_rsg_codes_by_condition_id_db(
-        condition_id=primary_condition.id,
-        db=db,
-    )
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
         is_draft=is_draft,
-        condition_id=primary_condition.id,
-        condition_canonical_url=primary_condition.canonical_url,
+        condition_id=condition_id,
+        condition_canonical_url=condition_canonical_url,
         display_name=config.name,
         status=config.status,
         code_sets=config_condition_info,

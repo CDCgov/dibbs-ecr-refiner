@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { Drawer } from './Drawer';
 
 import { highlightMatches } from '../../../../utils';
-import { IncludedCondition } from '../../../../api/schemas';
+import {
+  IncludedCondition,
+  GetConditionsResponse,
+} from '../../../../api/schemas';
 import { TesLink } from '../../TesLink';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
 
 interface AddConditionCodeSetsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  conditions: IncludedCondition[];
+  conditions: GetConditionsResponse[];
+  included_conditions: IncludedCondition[];
   configurationId: string;
   reportable_condition_display_name: string;
   disabled: boolean;
@@ -20,9 +24,11 @@ export function AddConditionCodeSetsDrawer({
   onClose,
   configurationId,
   conditions,
+  included_conditions,
   reportable_condition_display_name,
   disabled,
 }: AddConditionCodeSetsDrawerProps) {
+  console.log('[Drawer] included_conditions:', included_conditions);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Search and highlight logic

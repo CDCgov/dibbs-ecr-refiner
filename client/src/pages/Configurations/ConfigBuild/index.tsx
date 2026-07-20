@@ -17,6 +17,7 @@ import {
   useDisassociateConditionWithConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
+import { useGetConditions } from '../../../api/conditions/conditions';
 import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
@@ -57,9 +58,12 @@ export function ConfigBuild() {
     isError,
   } = useGetConfiguration(id ?? '');
 
+  const { data: allConditions, isPending: conditionsPending } =
+    useGetConditions();
+
   const [isRsgDetailsModalOpen, setIsRsgDetailsModalOpen] = useState(false);
 
-  if (isPending) return <Spinner variant="centered" />;
+  if (isPending || conditionsPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
   const { is_locked: disabledForConcurrency } = configuration.data;
@@ -137,6 +141,7 @@ export function ConfigBuild() {
           id={configuration.data.id}
           code_sets={sortedCodeSets}
           included_conditions={configuration.data.included_conditions}
+          all_conditions={allConditions?.data ?? []}
           custom_codes={configuration.data.custom_codes}
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
@@ -171,7 +176,10 @@ type BuilderProps = Pick<
   | 'included_conditions'
   | 'section_processing'
   | 'display_name'
-> & { disabled: boolean };
+> & {
+  disabled: boolean;
+  all_conditions: any[];
+};
 
 function Builder({
   id,
@@ -402,7 +410,8 @@ function Builder({
       <AddConditionCodeSetsDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        conditions={included_conditions}
+        conditions={all_conditions}
+        included_conditions={included_conditions}
         configurationId={id}
         reportable_condition_display_name={default_condition_name}
         disabled={disabled}
