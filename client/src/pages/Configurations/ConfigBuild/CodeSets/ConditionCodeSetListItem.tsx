@@ -65,6 +65,9 @@ export function ConditionCodeSetListItem({
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
+          await queryClient.invalidateQueries({
+            queryKey: ['/api/v1/conditions/'],
+          });
         },
         onError: (error) => {
           const errorDetail =
@@ -95,6 +98,9 @@ export function ConditionCodeSetListItem({
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
+          await queryClient.invalidateQueries({
+            queryKey: ['/api/v1/conditions/'],
+          });
         },
         onError: (error) => {
           const errorDetail =
@@ -109,9 +115,9 @@ export function ConditionCodeSetListItem({
     );
   }
 
-  function onClick(associated: boolean) {
+  function onClick(isAssoc: boolean) {
     if (disabled) return;
-    if (associated) {
+    if (isAssoc) {
       handleDisassociate();
     } else {
       handleAssociate();
