@@ -170,7 +170,7 @@ async def get_config_payload_metadata(
         ConfigurationStorageMetadata | None: A configuration metadata object that can be written to a file system, or None if operation can't be completed.
     """
     primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id, db=db
+        id=configuration.primary_condition_id, db=db
     )
 
     if not primary_condition:

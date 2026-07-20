@@ -43,7 +43,9 @@ async def get_info(
             "version": config.version,
             "condition_tes_version": condition.version
             if (
-                condition := await get_condition_by_id_db(id=config.condition_id, db=db)
+                condition := await get_condition_by_id_db(
+                    id=config.primary_condition_id, db=db
+                )
             )
             else "",
         }

@@ -1257,7 +1257,7 @@ def _get_configurations_core_query() -> str:
         c.name,
         c.status,
         c.jurisdiction_id,
-        cc_primary.condition_id,
+        cc_primary.condition_id AS condition_id,
         c.custom_codes,
 
         COALESCE(conds.included_conditions, '{}') AS included_conditions,
@@ -1269,7 +1269,7 @@ def _get_configurations_core_query() -> str:
         c.created_by,
         c.s3_url
     FROM configurations c
-    JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
+    LEFT JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
     LEFT JOIN LATERAL (
         SELECT array_agg(cc.condition_id) AS included_conditions
         FROM configurations_conditions cc
