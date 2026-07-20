@@ -205,7 +205,7 @@ function Builder({
   );
 
   // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
-  if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+  if (tableView === 'none' && code_sets?.[0] && code_sets[0].condition_id) {
     onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
   }
 
@@ -239,9 +239,10 @@ function Builder({
      * This shouldn't happen since we can't delete the primary condition code set.
      * Just in case 🙂
      */
-    if (deletedItemIndex <= 0) return;
+    if (deletedItemIndex < 0) return;
 
-    const previousCodeSetId = code_sets[deletedItemIndex - 1].condition_id;
+    const previousCodeSetId = code_sets[deletedItemIndex - 1]?.condition_id;
+    if (!previousCodeSetId) return;
 
     codeSetButtonRefs.current[previousCodeSetId]?.click();
   }
