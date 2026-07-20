@@ -218,6 +218,14 @@ def create_mock_systems() -> list[DbCodeSystem]:
 
 
 @pytest.fixture
+def get_mock_system(mock_all_systems: list[DbCodeSystem]):
+    def _get(key: str) -> DbCodeSystem:
+        return next(s for s in mock_all_systems if s.key == key)
+
+    return _get
+
+
+@pytest.fixture
 def mock_all_systems():
     return create_mock_systems()
 

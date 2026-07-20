@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import pytest
 
-from app.db.code_systems.db import DbCodeSystem
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
@@ -78,20 +77,16 @@ def mock_db_functions(monkeypatch, mock_all_systems):
     )
 
 
-def get_mock_system(key: str, systems: list[DbCodeSystem]) -> DbCodeSystem:
-    return next(s for s in systems if s.key == key)
-
-
 @pytest.mark.asyncio
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(
-        self, mock_all_systems
+        self, get_mock_system
     ):
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
 
-        loinc = get_mock_system("loinc", mock_all_systems)
+        loinc = get_mock_system("loinc")
 
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
@@ -106,14 +101,14 @@ class TestTerminologyService:
         processed = await create_processed_config(config=config, conditions=[cond1])
         assert processed.codes == {"A", "B"}
 
-    async def test_processed_configuration_duplicate_codes(self, mock_all_systems):
+    async def test_processed_configuration_duplicate_codes(self, get_mock_system):
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
         cond2: DbCondition = make_condition(
             loinc_codes=[make_db_condition_coding("DUP", "LOINC")]
         )
-        loinc = get_mock_system("loinc", mock_all_systems)
+        loinc = get_mock_system("loinc")
 
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
