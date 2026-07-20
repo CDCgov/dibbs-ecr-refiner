@@ -676,7 +676,7 @@ async def add_custom_code_to_configuration_db(
     config: DbConfiguration,
     display_name: str,
     code: str,
-    system_id: str,
+    system_id: UUID,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:

@@ -135,16 +135,6 @@ class AssociateCodesetResponse:
     condition_name: str
 
 
-class AddCustomCodeInput(BaseModel):
-    """
-    Input model for adding a custom code to a configuration.
-    """
-
-    code: str
-    display: str
-    system_id: UUID
-
-
 @dataclass(frozen=True)
 class ConfigurationTestResponse:
     """
@@ -212,15 +202,17 @@ class UploadCustomCodesCsvInput(BaseModel):
     filename: str | None = None
 
 
-class UploadCustomCodesInput(BaseModel):
-    """Validated CSV row ready for confirmation."""
+class AddCustomCodeInput(BaseModel):
+    """
+    Input model for adding a custom code to a configuration.
+    """
 
     code: str
-    system_id: UUID
     display: str
+    system_id: UUID
 
 
-class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
+class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     id: UUID
@@ -234,4 +226,4 @@ class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
 class ConfirmUploadCustomCodesInput(BaseModel):
     """Payload used to confirm a previously validated CSV import."""
 
-    custom_codes: list[UploadCustomCodesInput]
+    custom_codes: list[AddCustomCodeInput]

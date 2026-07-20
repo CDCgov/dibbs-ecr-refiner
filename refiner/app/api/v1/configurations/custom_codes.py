@@ -34,6 +34,7 @@ from app.db.custom_codes.db import (
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
 )
+from app.db.custom_codes.model import DbCustomCode
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
@@ -258,12 +259,14 @@ def _validate_csv_upload_row(
 def _check_row_response_for_duplicates(
     code: str,
     system: DbCodeSystem,
-    custom_codes: list[tuple[str, str]],
+    custom_codes: list[DbCustomCode],
     codes_seen_so_far: set,
 ) -> tuple[str, CodeSystemKey] | list[str]:
     row_errors = []
-    code_key = (code, system.key)
-    if code_key in custom_codes:
+    custom_code_keys = [(cc.code, str(cc.system_id)) for cc in custom_codes]
+    code_key = (code, str(system.id))
+
+    if code_key in custom_code_keys:
         row_errors.append("Duplicate: matches existing custom code")
     if code_key in codes_seen_so_far:
         row_errors.append("Duplicate: matches uploaded batch code")

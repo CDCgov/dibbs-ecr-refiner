@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.db import (
     get_condition_codes_by_condition_id_db,
     get_included_conditions_db,
@@ -23,7 +24,6 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
-from app.services.code_systems import get_all_code_systems_by_key
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
 from app.services.file_exports import get_export_timestamp
 from app.services.file_io import ZipFileItem, ZipFilePackage
@@ -168,7 +168,7 @@ async def _build_config_csv(
 ) -> str:
     """Build the CSV export content for a configuration."""
 
-    code_systems = await get_all_code_systems_by_key(db=db)
+    code_systems = await get_all_code_systems_db(db=db)
 
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)
@@ -190,11 +190,11 @@ async def _build_config_csv(
                 )
 
         for cc in config.custom_codes or []:
-            code_system = code_systems.get(cc.system_key)
+            code_system = code_systems.get(UUID(cc.system_id))
             if code_system is None:
                 logger.warning(
                     "Could not find code system for custom code, skipping",
-                    extra={"system_key": cc.system_key, "code": cc.code},
+                    extra={"id": cc.id, "system_id": cc.system_id, "code": cc.code},
                 )
                 continue
 

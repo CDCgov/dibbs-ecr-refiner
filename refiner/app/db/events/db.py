@@ -283,7 +283,7 @@ async def insert_custom_code_upload_events_db(
     Helper function to insert a bulk custom code upload event and its subevents.
     """
 
-    def _get_system_name(id: UUID) -> str:
+    def _get_system_name(id: str) -> str:
         system = next((s for s in code_systems if s.id == id), None)
         if system is None:
             raise ValueError(f"Unable to determine code system by ID: {id}")
