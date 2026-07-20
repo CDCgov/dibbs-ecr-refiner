@@ -201,8 +201,8 @@ def _build_section_provenance(
         rules_map_with_skips: Merged map including system skip rules.
         specification: The eICR spec for this document's version.
         section_name_lookup: LOINC → jurisdiction-configured name.
-        config_version: The version of the activated configuration, or None
-            if not available (e.g., legacy S3 configs without version).
+        config_version: The version of the activated configuration, or None if
+        not available (e.g., legacy S3 configs without version).
 
     Returns:
         dict[str, SectionProvenanceRecord]: One record per present section,
@@ -253,6 +253,9 @@ def create_eicr_refinement_plan(
     """
     Create an EICRRefinementPlan by combining configuration rules and the sections present in the parsed eICR document.
 
+    NOTE: The system currently supports zero code sets as an unrefined pass-through.
+    This behavior may be replaced by a specific error in the future.
+
     Detects the eICR version and loads the specification once here so that
     refine_eicr receives a fully resolved plan and does not need to
     re-inspect the document. The specification is also used by
@@ -261,7 +264,7 @@ def create_eicr_refinement_plan(
 
     Args:
         processed_configuration: The processed configuration containing terminology
-                                 and section processing rules.
+                                  and section processing rules.
         eicr_root: The parsed eICR root element.
         augmentation_timestamp: The HL7 V3 timestamp from the
             AugmentationContext shared across this refinement run. Used
@@ -566,7 +569,8 @@ def create_rr_refinement_plan(
     Given a ProcessedConfiguration, creates and returns an RRRefinementPlan.
 
     Args:
-        processed_configuration (ProcessedConfiguration): ProcessedConfiguration to build the plan from.
+        processed_configuration (ProcessedConfiguration): ProcessedConfiguration
+        to build the plan from.
 
     Returns:
         RRRefinementPlan: The newly created RRRefinement plan.
@@ -747,8 +751,8 @@ def refine_rr_for_unconfigured_conditions(
             returned RR will retain only these condition observations.
 
     Returns:
-        str: The filtered RR XML as a string, containing only the
-            reportability observations for the specified condition codes.
+        str: The filtered RR XML as a string, containing only the reportability
+        observations for the specified condition codes.
     """
 
     plan = RRRefinementPlan(
