@@ -189,10 +189,20 @@ export function PreviewEditModal({
             <Label>Code system</Label>
             <Select
               value={previewEditForm.system_id}
-              onChange={(e) => handlePreviewEditChange('system_id', e)}
+              onChange={(e) => {
+                // TODO: Do this a different way
+                const system = Object.values(codeSystems).find(
+                  (s) => s.id === e.target.value
+                );
+                setPreviewEditForm((prev) => ({
+                  ...prev,
+                  system_id: e.target.value,
+                  system_name: system?.display_name ?? prev.system_name,
+                }));
+              }}
             >
               {Object.values(codeSystems).map((s) => (
-                <option key={s.id} value={s.key}>
+                <option key={s.id} value={s.id}>
                   {s.display_name}
                 </option>
               ))}
