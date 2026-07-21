@@ -3,7 +3,6 @@ from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
-from uuid import UUID
 
 from app.db.code_systems.db import (
     CodeSystemKey,
@@ -221,7 +220,7 @@ async def convert_config_to_storage_payload(
 
     # custom codes
     for cc in configuration.custom_codes:
-        cur_code_system = code_systems[UUID(cc.system_id)]
+        cur_code_system = code_systems[cc.system_id]
 
         if cur_code_system is None:
             raise ValueError(

@@ -264,7 +264,7 @@ async def test_add_custom_code_to_configuration(
                 id="test-code-id",
                 code="test-code",
                 name="test-name",
-                system_id=str(code_system.id),
+                system_id=code_system.id,
             )
         ],
     )
@@ -329,7 +329,7 @@ async def test_edit_custom_code_from_configuration(
     get_mock_system,
 ):
     # Mock editing a custom code from a config
-    custom_code_id = "efb17339-bd8a-477d-a710-4c6b05272576"
+    custom_code_id = UUID("efb17339-bd8a-477d-a710-4c6b05272576")
     custom_code_edit_mock = replace(
         mock_configuration,
         custom_codes=[
@@ -337,7 +337,7 @@ async def test_edit_custom_code_from_configuration(
                 id=custom_code_id,
                 code="test-code",
                 name="updated-name",
-                system_id=str(get_mock_system("snomed").id),
+                system_id=get_mock_system("snomed").id,
             )
         ],
     )
@@ -360,7 +360,7 @@ async def test_edit_custom_code_from_configuration(
                 id=custom_code_id,
                 code="test-code",
                 name="test-name",
-                system_id=str(get_mock_system("loinc").id),
+                system_id=get_mock_system("loinc").id,
             )
         ],
         section_processing=[],

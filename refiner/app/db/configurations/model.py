@@ -50,10 +50,10 @@ class DbConfigurationCustomCode:
     Custom code associated with a Configuration.
     """
 
-    id: str  # TODO: Switch to UUID?
+    id: UUID
     code: str
     name: str
-    system_id: str  # TODO: Switch to UUID?
+    system_id: UUID
 
 
 @dataclass(frozen=True)
@@ -167,7 +167,10 @@ class DbConfiguration:
             included_conditions=row.get("included_conditions") or [],
             custom_codes=[
                 DbConfigurationCustomCode(
-                    id=c["id"], system_id=c["system_id"], code=c["code"], name=c["name"]
+                    id=UUID(c["id"]),
+                    system_id=UUID(c["system_id"]),
+                    code=c["code"],
+                    name=c["name"],
                 )
                 for c in row["custom_codes"]
             ],

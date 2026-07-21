@@ -190,7 +190,7 @@ async def _build_config_csv(
                 )
 
         for cc in config.custom_codes or []:
-            code_system = code_systems.get(UUID(cc.system_id))
+            code_system = code_systems.get(cc.system_id)
             if code_system is None:
                 logger.warning(
                     "Could not find code system for custom code, skipping",

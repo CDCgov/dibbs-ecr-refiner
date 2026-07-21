@@ -767,7 +767,7 @@ async def add_bulk_custom_codes_to_configuration_db(
                 user_id=user_id,
                 custom_codes=[
                     DbConfigurationCustomCode(
-                        id=str(cc["id"]),
+                        id=cc["id"],
                         code=cc["code"],
                         name=cc["display"],
                         system_id=cc["system_id"],

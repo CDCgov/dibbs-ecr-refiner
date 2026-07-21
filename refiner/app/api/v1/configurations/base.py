@@ -359,7 +359,7 @@ async def get_configuration(
             code=cc.code,
             name=cc.name,
             system_id=cc.system_id,
-            system_name=systems[UUID(cc.system_id)].display_name,
+            system_name=systems[cc.system_id].display_name,
         )
         for cc in config.custom_codes
     ]

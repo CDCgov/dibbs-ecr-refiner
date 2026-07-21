@@ -94,7 +94,7 @@ class TestTerminologyService:
                     id="test-code",
                     code="B",
                     name="Custom LOINC",
-                    system_id=str(loinc.id),
+                    system_id=loinc.id,
                 )
             ]
         )
@@ -116,7 +116,7 @@ class TestTerminologyService:
                     id="test-code",
                     code="DUP",
                     name="Custom",
-                    system_id=str(loinc.id),
+                    system_id=loinc.id,
                 )
             ]
         )
