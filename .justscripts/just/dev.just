@@ -30,3 +30,8 @@ show_tbl := 'table {{.Names}}\t{{.Ports}}\t{{.ID}}'
 [group('docker')]
 show:
     {{ docker }} container ls --filter 'name=refiner' --format "{{ show_tbl }}"
+
+[doc('Analyze logger calls in the refiner/ directory')]
+[group('dev')]
+analyze-logging:
+    ./refiner/.venv/bin/python ./.justscripts/py/analyze_logging.py
