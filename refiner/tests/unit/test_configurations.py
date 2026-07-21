@@ -301,26 +301,47 @@ async def test_add_custom_code_to_configuration(
 
 @pytest.mark.asyncio
 async def test_delete_custom_code_from_configuration(
-    authed_client, mock_configuration, monkeypatch
+    authed_client, mock_configuration, monkeypatch, get_mock_system
 ):
-    custom_code_id = "08dbbbfe-402e-462a-bf6e-04cedaf1961b"
+    custom_code_id = uuid4()
+
+    custom_code_to_delete = DbCustomCode(
+        id=custom_code_id,
+        display="delete me",
+        code="deleted soon",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        configuration_id=mock_configuration.id,
+        system_id=get_mock_system("loinc"),
+    )
+
+    original_config = replace(
+        mock_configuration,
+        custom_codes=[custom_code_to_delete],
+    )
+
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
-        AsyncMock(return_value=mock_configuration),
+        AsyncMock(return_value=original_config),
     )
+
     # Mock deleting a custom code from a config
     custom_code_deletion_mock = replace(
-        mock_configuration,
+        original_config,
         custom_codes=[],
     )
+
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.delete_custom_code_from_configuration_db",
         AsyncMock(return_value=custom_code_deletion_mock),
     )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_custom_code_by_id_db",
+        AsyncMock(return_value=custom_code_to_delete),
+    )
 
-    config_id = str(mock_configuration.id)
+    config_id = str(original_config.id)
 
-    # TODO: Start with a code and then delete
     response = await authed_client.delete(
         f"/api/v1/configurations/{config_id}/custom-codes/{custom_code_id}"
     )
