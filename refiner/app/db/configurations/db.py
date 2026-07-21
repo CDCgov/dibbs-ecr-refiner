@@ -1238,8 +1238,8 @@ async def get_configurations_summary_db(
                         c.version DESC
                 ) AS rn
             FROM configurations c
-            JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
-            JOIN conditions cond ON cond.id = cc.condition_id
+            LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+            LEFT JOIN conditions cond ON cond.id = cc.condition_id
             WHERE c.jurisdiction_id = %s
         )
         SELECT id, name, status
