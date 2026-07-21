@@ -18,7 +18,11 @@ import {
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import { useGetConditions } from '../../../api/conditions/conditions';
-import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
+import {
+  DbCode,
+  GetConditionsResponse,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
@@ -178,7 +182,7 @@ type BuilderProps = Pick<
   | 'display_name'
 > & {
   disabled: boolean;
-  all_conditions: any[];
+  all_conditions: GetConditionsResponse[];
 };
 
 function Builder({

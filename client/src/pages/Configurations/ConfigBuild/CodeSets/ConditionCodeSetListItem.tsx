@@ -7,8 +7,10 @@ import {
   useDisassociateConditionWithConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { IncludedCondition } from '../../../../api/schemas';
-import { GetConditionsResponse } from '../../../../api/schemas';
+import {
+  IncludedCondition,
+  GetConditionsResponse,
+} from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
 
