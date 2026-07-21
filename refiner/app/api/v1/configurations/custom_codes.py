@@ -505,13 +505,6 @@ async def delete_custom_code(
     Returns:
         ConfigurationCustomCodeResponse: The updated configuration
     """
-
-    if not id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Custom code ID must be provided.",
-        )
-
     # get user jurisdiction
     jd = user.jurisdiction_id
 
@@ -524,6 +517,7 @@ async def delete_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,
@@ -536,6 +530,14 @@ async def delete_custom_code(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Trying to update a non-draft configuration",
+        )
+
+    custom_code = await get_custom_code_by_id_db(id=id, db=db)
+
+    if not custom_code:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to find custom code to delete with ID: {id}",
         )
 
     updated_config = await delete_custom_code_from_configuration_db(
