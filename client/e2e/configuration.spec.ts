@@ -172,13 +172,13 @@ test.describe('Configuration detail flow', () => {
 
     const customCode1 = {
       code: '12-! 345#',
-      system: 'other',
+      system: 'Other',
       name: 'original code 1~',
     };
 
     const customCode2 = {
       code: '123-456',
-      system: 'loinc',
+      system: 'LOINC',
       name: 'original code 2+ =',
     };
 
@@ -253,7 +253,7 @@ test.describe('Configuration detail flow', () => {
       await expect(addNewCustomCodeButton).toBeEnabled();
       await addNewCustomCodeButton.click();
 
-      const newSystem = 'cvx';
+      const newSystem = 'CVX';
       const newCode = 'random-code12';
 
       const expectedError = page.getByText(
@@ -263,14 +263,16 @@ test.describe('Configuration detail flow', () => {
 
       // fill in form
       await page.getByLabel('Code', { exact: true }).fill(customCode2.code);
-      await page.getByLabel('Code system').selectOption(customCode2.system);
+      await page
+        .getByLabel('Code system')
+        .selectOption({ label: customCode2.system });
       await page.getByLabel('Display name').fill(customCode2.name);
 
       await expect(expectedError).toBeVisible();
       await expect(addButton).not.toBeEnabled();
 
       await page.getByLabel('Code', { exact: true }).fill(newCode);
-      await page.getByLabel('Code system').selectOption(newSystem);
+      await page.getByLabel('Code system').selectOption({ label: newSystem });
       await page.getByLabel('Display name').click();
       await expect(expectedError).not.toBeVisible();
       await expect(addButton).toBeEnabled();
@@ -317,7 +319,7 @@ test.describe('Configuration detail flow', () => {
     const condition = 'COVID-19';
 
     const customCodeName = 'my-custom code!';
-    const customCodeSystem = 'snomed';
+    const customCodeSystem = 'SNOMED';
     const customCode = '123-! #-$$$';
 
     const customSectionName = 'My custom section!';
@@ -348,7 +350,7 @@ test.describe('Configuration detail flow', () => {
         page.getByRole('heading', { name: condition, level: 1 })
       ).toBeVisible();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
-      await page.getByLabel('Code system').selectOption('SNOMED');
+      await page.getByLabel('Code system').selectOption({ label: 'SNOMED' });
       await configurationPage.addCodeSet('agri', additionalCodeSetName);
     });
 
@@ -592,7 +594,7 @@ test.describe('Configuration detail flow', () => {
       ).toBeVisible();
       const testCode = 'test code ~';
       await page.getByLabel('Code', { exact: true }).fill(testCode);
-      await page.getByLabel('Code system').selectOption('CVX');
+      await page.getByLabel('Code system').selectOption({ label: 'CVX' });
       await page.getByLabel('Display name').fill('test display_name');
       await page.getByRole('button', { name: 'Save changes' }).click();
       await page
