@@ -12,6 +12,7 @@ from app.api.v1.configurations.model import (
     AddCustomCodeInput,
     ConfigurationCustomCodeResponse,
     ConfirmUploadCustomCodesInput,
+    CustomCodeResponse,
     UploadCustomCodesCsvInput,
     UploadCustomCodesPreviewItem,
 )
@@ -40,6 +41,7 @@ from app.db.users.model import DbUser
 from app.services.code_systems import (
     get_all_code_systems_by_key,
     get_allowed_code_system_keys,
+    get_code_system_by_id_or_raise,
 )
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
@@ -155,11 +157,24 @@ async def add_custom_code(
         config_id=config.id, db=db
     )
 
+    systems = await get_code_systems_db(db=db)
+
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
-        custom_codes=updated_config.custom_codes,
+        custom_codes=[
+            CustomCodeResponse(
+                id=cc.id,
+                display=cc.display,
+                code=cc.code,
+                system_id=cc.system_id,
+                system_name=get_code_system_by_id_or_raise(
+                    id=cc.system_id, systems=systems
+                ).display_name,
+            )
+            for cc in updated_config.custom_codes
+        ],
     )
 
 
@@ -538,11 +553,24 @@ async def delete_custom_code(
         config_id=config.id, db=db
     )
 
+    systems = await get_code_systems_db(db=db)
+
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
-        custom_codes=updated_config.custom_codes,
+        custom_codes=[
+            CustomCodeResponse(
+                id=cc.id,
+                display=cc.display,
+                code=cc.code,
+                system_id=cc.system_id,
+                system_name=get_code_system_by_id_or_raise(
+                    id=cc.system_id, systems=systems
+                ).display_name,
+            )
+            for cc in updated_config.custom_codes
+        ],
     )
 
 
@@ -745,9 +773,22 @@ async def edit_custom_code(
         config_id=config.id, db=db
     )
 
+    systems = await get_code_systems_db(db=db)
+
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
-        custom_codes=updated_config.custom_codes,
+        custom_codes=[
+            CustomCodeResponse(
+                id=cc.id,
+                display=cc.display,
+                code=cc.code,
+                system_id=cc.system_id,
+                system_name=get_code_system_by_id_or_raise(
+                    id=cc.system_id, systems=systems
+                ).display_name,
+            )
+            for cc in updated_config.custom_codes
+        ],
     )

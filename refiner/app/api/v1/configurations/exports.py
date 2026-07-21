@@ -204,7 +204,7 @@ async def _build_config_csv(
                     "",
                     code_system.display_name,
                     cc.code,
-                    cc.name,
+                    cc.display,
                 ]
             )
 

@@ -4,8 +4,8 @@
  */
 export interface CustomCodeResponse {
   id: string;
+  display: string;
   code: string;
-  name: string;
   system_id: string;
   system_name: string;
 }

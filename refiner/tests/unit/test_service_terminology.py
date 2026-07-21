@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -6,8 +7,8 @@ import pytest
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCustomCode,
 )
+from app.db.custom_codes.model import DbCustomCode
 from tests.unit.helpers.configuration import create_processed_config
 
 
@@ -88,15 +89,20 @@ class TestTerminologyService:
 
         loinc = get_mock_system("loinc")
 
+        mock_config_id = uuid4()
         config: DbConfiguration = make_dbconfiguration(
+            id=mock_config_id,
             custom_codes=[
-                DbConfigurationCustomCode(
+                DbCustomCode(
                     id="test-code",
                     code="B",
-                    name="Custom LOINC",
+                    display="Custom LOINC",
                     system_id=loinc.id,
+                    updated_at=datetime.now(),
+                    created_at=datetime.now(),
+                    configuration_id=mock_config_id,
                 )
-            ]
+            ],
         )
         processed = await create_processed_config(config=config, conditions=[cond1])
         assert processed.codes == {"A", "B"}
@@ -110,13 +116,17 @@ class TestTerminologyService:
         )
         loinc = get_mock_system("loinc")
 
+        mock_config_id = uuid4()
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
-                DbConfigurationCustomCode(
+                DbCustomCode(
                     id="test-code",
                     code="DUP",
-                    name="Custom",
+                    display="Custom",
                     system_id=loinc.id,
+                    updated_at=datetime.now(),
+                    created_at=datetime.now(),
+                    configuration_id=mock_config_id,
                 )
             ]
         )

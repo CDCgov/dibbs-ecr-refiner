@@ -9,7 +9,7 @@ export const mockCustomCodes: CustomCodeResponse[] = [
   {
     id: 'cc-test-id',
     code: 'custom-code1',
-    name: 'test-custom-code1',
+    display: 'test-custom-code1',
     system_id: '375d4fd5-81f8-4b9e-abd9-979c7987691f',
     system_name: 'ICD-10',
   },

@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
-    DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
     DbNarrativeAction,
@@ -69,11 +68,15 @@ class LockedByUser(UserInfoBase):
 
 
 @dataclass(frozen=True)
-class CustomCodeResponse(DbConfigurationCustomCode):
+class CustomCodeResponse:
     """
     Custom code object to return to the client.
     """
 
+    id: UUID
+    display: str
+    code: str
+    system_id: UUID
     system_name: str
 
 
@@ -113,7 +116,7 @@ class ConfigurationCustomCodeResponse:
     id: UUID
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
-    custom_codes: list[DbConfigurationCustomCode]
+    custom_codes: list[CustomCodeResponse]
 
 
 class AssociateCodesetInput(BaseModel):

@@ -29,7 +29,6 @@ from ..pool import AsyncDatabaseConnection
 from .model import (
     BulkAddCustomCodesResult,
     DbConfiguration,
-    DbConfigurationCustomCode,
     DbConfigurationSection,
     DbConfigurationSectionProcessing,
     DbConfigurationSummary,
@@ -358,7 +357,7 @@ async def insert_configuration_db(
                         VALUES (%s, %s, %s, %s)
                         """,
                         [
-                            (config_id, cc.code, cc.name, cc.system_id)
+                            (config_id, cc.code, cc.display, cc.system_id)
                             for cc in config_to_clone.custom_codes
                         ],
                     )
@@ -766,11 +765,15 @@ async def add_bulk_custom_codes_to_configuration_db(
                 configuration=config,
                 user_id=user_id,
                 custom_codes=[
-                    DbConfigurationCustomCode(
+                    # TODO: add `from_db_row`?
+                    DbCustomCode(
                         id=cc["id"],
                         code=cc["code"],
-                        name=cc["display"],
+                        display=cc["display"],
                         system_id=cc["system_id"],
+                        created_at=cc["created_at"],
+                        updated_at=cc["updated_at"],
+                        configuration_id=cc["configuration_id"],
                     )
                     for cc in new_codes_added
                 ],
@@ -1253,8 +1256,11 @@ def _get_configurations_core_query() -> str:
                    jsonb_build_object(
                        'id', cc.id::text,
                        'code', cc.code,
-                       'name', cc.display,
-                       'system_id', cc.system_id::text
+                       'display', cc.display,
+                       'system_id', cc.system_id::text,
+                       'created_at', cc.created_at,
+                       'updated_at', cc.updated_at,
+                       'configuration_id', cc.configuration_id::text
                    )
                ) AS custom_codes
         FROM custom_codes cc

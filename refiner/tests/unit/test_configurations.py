@@ -12,10 +12,10 @@ from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCustomCode,
     DbConfigurationSummary,
     GetConfigurationResponseVersion,
 )
+from app.db.custom_codes.model import DbCustomCode
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 from tests.unit.conftest import create_mock_systems
@@ -256,15 +256,25 @@ async def test_add_custom_code_to_configuration(
         "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_code_systems_db",
+        AsyncMock(return_value=[code_system]),
+    )
+
     # Mock adding custom code to a config
+    mock_custom_code_id = uuid4()
     custom_code_config_mock = replace(
         mock_configuration,
         custom_codes=[
-            DbConfigurationCustomCode(
-                id="test-code-id",
+            DbCustomCode(
+                id=mock_custom_code_id,
                 code="test-code",
-                name="test-name",
+                display="test-name",
                 system_id=code_system.id,
+                updated_at=datetime.now(),
+                created_at=datetime.now(),
+                configuration_id=mock_configuration.id,
             )
         ],
     )
@@ -333,11 +343,14 @@ async def test_edit_custom_code_from_configuration(
     custom_code_edit_mock = replace(
         mock_configuration,
         custom_codes=[
-            DbConfigurationCustomCode(
+            DbCustomCode(
                 id=custom_code_id,
                 code="test-code",
-                name="updated-name",
+                display="updated-name",
                 system_id=get_mock_system("snomed").id,
+                updated_at=datetime.now(),
+                created_at=datetime.now(),
+                configuration_id=mock_configuration.id,
             )
         ],
     )
@@ -356,11 +369,14 @@ async def test_edit_custom_code_from_configuration(
         condition_id=mock_condition.id,
         included_conditions=[],
         custom_codes=[
-            DbConfigurationCustomCode(
+            DbCustomCode(
                 id=custom_code_id,
                 code="test-code",
-                name="test-name",
+                display="test-name",
                 system_id=get_mock_system("loinc").id,
+                updated_at=datetime.now(),
+                created_at=datetime.now(),
+                configuration_id=mock_configuration.id,
             )
         ],
         section_processing=[],
@@ -381,11 +397,16 @@ async def test_edit_custom_code_from_configuration(
         AsyncMock(return_value=mock_config.custom_codes[0]),
     )
 
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_code_systems_db",
+        AsyncMock(return_value=[get_mock_system("snomed")]),
+    )
+
     payload = {
         "id": str(custom_code_id),
+        "display": "updated-name",
         "code": "test-code",
         "system_id": str(get_mock_system("snomed").id),
-        "display": "updated-name",
     }
 
     response = await authed_client.put(
@@ -397,7 +418,7 @@ async def test_edit_custom_code_from_configuration(
     assert len(data["custom_codes"]) == 1
     assert data["custom_codes"][0]["code"] == "test-code"
     assert data["custom_codes"][0]["system_id"] == str(get_mock_system("snomed").id)
-    assert data["custom_codes"][0]["name"] == "updated-name"
+    assert data["custom_codes"][0]["display"] == "updated-name"
 
 
 @pytest.mark.asyncio

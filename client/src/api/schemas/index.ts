@@ -26,7 +26,6 @@ export * from './customCodeResponse';
 export * from './customCodeUploadEventResponse';
 export * from './dbCode';
 export * from './dbCodeSystem';
-export * from './dbConfigurationCustomCode';
 export * from './dbConfigurationSectionProcessing';
 export * from './dbConfigurationStatus';
 export * from './dbNarrativeAction';

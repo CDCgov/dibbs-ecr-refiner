@@ -234,7 +234,7 @@ async def convert_config_to_storage_payload(
             asdict(
                 Coding(
                     code=cc.code,
-                    display=cc.name,
+                    display=cc.display,
                     system_oid=cur_code_system.oid,
                 )
             )

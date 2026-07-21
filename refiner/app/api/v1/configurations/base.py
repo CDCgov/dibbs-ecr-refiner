@@ -356,8 +356,8 @@ async def get_configuration(
     custom_codes = [
         CustomCodeResponse(
             id=cc.id,
+            display=cc.display,
             code=cc.code,
-            name=cc.name,
             system_id=cc.system_id,
             system_name=systems[cc.system_id].display_name,
         )

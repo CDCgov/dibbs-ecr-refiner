@@ -7,7 +7,6 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { DbConfigurationCustomCode } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
@@ -16,12 +15,13 @@ import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 import { Select, SelectContainer } from '@components/Select';
 import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 import { Spinner } from '@components/Spinner';
+import { CustomCodeResponse } from '../../../../api/schemas';
 
 interface CustomCodeModalProps {
   configurationId: string;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedCustomCode: DbConfigurationCustomCode | null;
+  selectedCustomCode: CustomCodeResponse | null;
   onClose: () => void;
 }
 
@@ -82,7 +82,7 @@ function CustomCodeForm({
 
   const { data: codeSystems, isPending, isError } = useGetCodeSystems();
 
-  const [name, setName] = useState(selectedCustomCode?.name ?? '');
+  const [name, setName] = useState(selectedCustomCode?.display ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
 
   const [selectedSystemId, setSelectedSystemId] = useState(
@@ -140,7 +140,7 @@ function CustomCodeForm({
             id: selectedCustomCode.id,
             code: code.trim() || selectedCustomCode.code,
             system_id: selectedSystemId || selectedCustomCode.system_id,
-            display: name.trim() || selectedCustomCode.name,
+            display: name.trim() || selectedCustomCode.display,
           },
         },
         {

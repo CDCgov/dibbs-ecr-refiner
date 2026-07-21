@@ -14,7 +14,6 @@ from testcontainers.compose import DockerCompose
 
 from app.api.v1.configurations.model import AddCustomCodeInput
 from app.db.configurations.model import (
-    DbConfigurationCustomCode,
     DbNarrativeAction,
     DbSectionAction,
 )
@@ -139,9 +138,9 @@ async def deactivate_config(authed_client):
 
 @pytest_asyncio.fixture
 async def delete_custom_code(authed_client):
-    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
+    async def _get(config_id: UUID, custom_code_id: UUID):
         response = await authed_client.delete(
-            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code.system_key}/{custom_code.code}"
+            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code_id}"
         )
         assert response.status_code == status.HTTP_200_OK
         return response.json()

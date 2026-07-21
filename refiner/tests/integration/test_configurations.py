@@ -592,9 +592,9 @@ class TestConfigurations:
         else:
             assert edited_custom_code["system_id"] == str(initial_system.id)
         if new_name:
-            assert edited_custom_code["name"] == new_name
+            assert edited_custom_code["display"] == new_name
         else:
-            assert edited_custom_code["name"] == initial_display_name
+            assert edited_custom_code["display"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,

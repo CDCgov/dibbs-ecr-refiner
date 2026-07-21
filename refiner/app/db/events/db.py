@@ -9,7 +9,8 @@ from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import DatabaseQueryError
 from app.db.code_systems.db import DbCodeSystem
-from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from app.db.configurations.model import DbConfiguration
+from app.db.custom_codes.model import DbCustomCode
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
@@ -275,7 +276,7 @@ async def get_custom_code_upload_events_by_event_id(
 async def insert_custom_code_upload_events_db(
     configuration: DbConfiguration,
     user_id: UUID,
-    custom_codes: list[DbConfigurationCustomCode],
+    custom_codes: list[DbCustomCode],
     code_systems: list[DbCodeSystem],
     cursor: AsyncCursor[Any],
 ) -> None:
@@ -310,7 +311,7 @@ async def insert_custom_code_upload_events_db(
         VALUES (%s, %s, %s, %s)
         """,
         [
-            (event_id, _get_system_name(cc.system_id), cc.code, cc.name)
+            (event_id, _get_system_name(cc.system_id), cc.code, cc.display)
             for cc in custom_codes
         ],
     )

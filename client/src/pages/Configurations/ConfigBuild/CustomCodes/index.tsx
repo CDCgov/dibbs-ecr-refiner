@@ -55,7 +55,7 @@ export function CustomCodesDetail({
               <td className="text-gray-cool-60 w-1/6 pb-6">
                 {customCode.system_name}
               </td>
-              <td className="w-1/6 pb-6">{customCode.name}</td>
+              <td className="w-1/6 pb-6">{customCode.display}</td>
 
               <td className="flex w-1/2 justify-end pb-6 whitespace-nowrap">
                 {!disabled && (
@@ -67,14 +67,14 @@ export function CustomCodesDetail({
                         setSelectedCustomCode(customCode);
                         setIsOpen(true);
                       }}
-                      aria-label={`Edit custom code ${customCode.name}`}
+                      aria-label={`Edit custom code ${customCode.display}`}
                       disabled={disabled}
                     >
                       Edit
                     </Button>
                     <Button
                       variant="tertiary"
-                      aria-label={`Delete custom code ${customCode.name}`}
+                      aria-label={`Delete custom code ${customCode.display}`}
                       onClick={() => {
                         if (disabled) return;
                         deleteCode(
