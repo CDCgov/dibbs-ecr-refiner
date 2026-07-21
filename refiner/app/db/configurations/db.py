@@ -10,7 +10,7 @@ from app.api.v1.configurations.model import (
     AddSectionInput,
     DeleteSectionInput,
 )
-from app.db.code_systems.db import DbCodeSystem
+from app.db.code_systems.db import DbCodeSystem, get_code_system_by_id_db
 from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
@@ -842,7 +842,7 @@ async def edit_custom_code_from_configuration_db(
     user_id: UUID,
     display: str,
     code: str,
-    system_id: UUID,
+    system: DbCodeSystem,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -861,7 +861,7 @@ async def edit_custom_code_from_configuration_db(
     params = (
         display,
         code,
-        system_id,
+        system.id,
         custom_code.id,
     )
 
@@ -901,14 +901,14 @@ async def edit_custom_code_from_configuration_db(
                 )
 
             # 3. System changed
-            if system_id != custom_code.system_id:
+            if system.id != custom_code.system_id:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated system for custom code '{custom_code.code}' from '{custom_code.system_id}' to '{system_id}'",  # TODO: Use system name instead
+                        action_text=f"Updated system for custom code '{custom_code.code}' from '{(await get_code_system_by_id_db(id=custom_code.system_id, db=db)).display_name}' to '{system.display_name}'",
                     )
                 )
 

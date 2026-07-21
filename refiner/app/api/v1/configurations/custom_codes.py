@@ -752,12 +752,17 @@ async def edit_custom_code(
             detail=f"Could not find custom code with ID {body.id}",
         )
 
+    systems = await get_code_systems_db(db=db)
+    custom_code_system = get_code_system_by_id_or_raise(
+        id=body.system_id, systems=systems
+    )
+
     updated_config = await edit_custom_code_from_configuration_db(
         config=config,
         custom_code=custom_code,
         user_id=user.id,
         code=body.code,
-        system_id=body.system_id,
+        system=custom_code_system,
         display=body.display,
         db=db,
     )
@@ -772,8 +777,6 @@ async def edit_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
-
-    systems = await get_code_systems_db(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
