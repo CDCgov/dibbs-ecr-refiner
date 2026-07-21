@@ -15,6 +15,10 @@ from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
 )
+from app.db.configurations.labels import (
+    CODED_DATA_LABELS,
+    NARRATIVE_DATA_LABELS,
+)
 from app.db.custom_codes.model import DbCustomCode
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
@@ -549,7 +553,7 @@ async def associate_condition_codeset_with_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="add_code",
-                    action_text=f"Associated '{condition.display_name}' code set",
+                    action_text=f"Added '{condition.display_name}' code set",
                 ),
                 cursor=cur,
             )
@@ -992,11 +996,6 @@ async def update_configuration_section_db(
     Returns:
         Updated DbConfiguration or None if the update fails
     """
-    # Map internal action → display label
-    ACTION_LABELS = {
-        "refine": "Refine & optimize",
-        "retain": "Preserve & retain all data",
-    }
 
     # Validate input actions
     valid_actions: set[DbSectionAction] = {"retain", "refine"}
@@ -1018,8 +1017,8 @@ async def update_configuration_section_db(
             prev_section.action,
             section_update.action,
             lambda old, new: (
-                f"data handling approach from '{ACTION_LABELS.get(old, old)}' "
-                f"to '{ACTION_LABELS.get(new, new)}'"
+                f"coded data selection from '{CODED_DATA_LABELS.get(old, old)}' "
+                f"to '{CODED_DATA_LABELS.get(new, new)}'"
             ),
         ),
         (
@@ -1042,7 +1041,9 @@ async def update_configuration_section_db(
         (
             prev_section.narrative,
             section_update.narrative,
-            lambda old, new: f"narrative from '{old}' to '{new}'",
+            lambda old, new: (
+                f"narrative from '{NARRATIVE_DATA_LABELS.get(old, old)}' to '{NARRATIVE_DATA_LABELS.get(new, new)}'"
+            ),
         ),
     ]
 
