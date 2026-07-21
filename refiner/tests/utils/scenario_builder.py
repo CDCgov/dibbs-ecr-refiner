@@ -58,7 +58,7 @@ class ScenarioBuilder:
         """
         response.raise_for_status()
 
-    async def build_and_activate(self, scenario: Scenario, jurisdiction_id: str):
+    async def build_and_activate(self, scenario: Scenario):
         """
         Builds the configuration via the API and activates it.
         """

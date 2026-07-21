@@ -6,9 +6,9 @@ from io import BytesIO, StringIO
 import pytest
 from fastapi import status
 
-from app.db.code_systems.db import get_all_code_systems_db
+from app.api.v1.configurations.model import AddCustomCodeInput
+from app.db.code_systems.db import get_all_code_systems_db, get_code_system_by_key_db
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
-from app.db.configurations.model import DbConfigurationCustomCode
 from app.services.configurations import get_default_sections
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
 
@@ -190,12 +190,15 @@ class TestConfigurationExportCodesCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc
+
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code="MOCK-CODE-001",
-                system_key="loinc",
-                name="Mock custom code",
+                system_id=loinc.id,
+                display="Mock custom code",
             ),
         )
 
@@ -220,6 +223,7 @@ class TestConfigurationExportCodesCsv:
         get_condition_id,
         create_config,
         add_custom_code,
+        db_pool,
     ):
         """
         Custom code rows should have a blank "Condition" column.
@@ -228,12 +232,15 @@ class TestConfigurationExportCodesCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
+        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc
+
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code="MOCK-CODE-001",
-                system_key="loinc",
-                name="Mock custom code",
+                system_id=loinc.id,
+                display="Mock custom code",
             ),
         )
 

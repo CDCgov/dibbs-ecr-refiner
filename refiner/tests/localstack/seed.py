@@ -97,9 +97,7 @@ def seed_localstack(s3_client):
         async with httpx.AsyncClient(base_url="http://localhost:8080/api/v1") as client:
             client.cookies.set("refiner-session", TEST_SESSION_TOKEN)
             builder = ScenarioBuilder(client)
-            return await builder.build_and_activate(
-                BASELINE_SCENARIO, jurisdiction_id="SDDH"
-            )
+            return await builder.build_and_activate(scenario=BASELINE_SCENARIO)
 
     try:
         asyncio.run(build_config())
