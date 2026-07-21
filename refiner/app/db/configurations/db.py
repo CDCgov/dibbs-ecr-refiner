@@ -902,13 +902,21 @@ async def edit_custom_code_from_configuration_db(
 
             # 3. System changed
             if system.id != custom_code.system_id:
+                prev_system = await get_code_system_by_id_db(
+                    id=custom_code.system_id, db=db
+                )
+                if prev_system is None:
+                    raise ValueError(
+                        f"Could not find code system with ID {custom_code.system_id}"
+                    )
+
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated system for custom code '{custom_code.code}' from '{(await get_code_system_by_id_db(id=custom_code.system_id, db=db)).display_name}' to '{system.display_name}'",
+                        action_text=f"Updated system for custom code '{custom_code.code}' from '{prev_system.display_name}' to '{system.display_name}'",
                     )
                 )
 
