@@ -18,9 +18,15 @@ interface Condition {
 
 interface CustomCode {
   code: string;
-  system_key: string;
-  system_display_name: string;
-  name: string;
+  system_id: string;
+  display: string;
+}
+
+interface System {
+  id: string;
+  key: string;
+  display_name: string;
+  oid: string;
 }
 
 export class Api {
@@ -94,6 +100,13 @@ export class Api {
         errors: null,
       })
     );
+  }
+
+  async getSystems(): Promise<System[]> {
+    const systemsReq = await this.request.get(`/api/v1/code-systems/`);
+    expect(systemsReq.ok()).toBeTruthy();
+    const json = await systemsReq.json();
+    return json as System[];
   }
 
   async updateConfigurationStatus(

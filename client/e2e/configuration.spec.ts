@@ -1,13 +1,13 @@
 import { test, expect } from './fixtures';
-import { deleteAllConfigurations } from './db';
+import { clearDb } from './db';
 
 test.describe('Configuration detail flow', () => {
   test.beforeEach(async ({ configurationsPage }) => {
-    await deleteAllConfigurations();
+    await clearDb();
     await configurationsPage.goto();
   });
   test.afterEach(async () => {
-    await deleteAllConfigurations();
+    await clearDb();
   });
 
   test('Check serialization page (local only) renders as expected', async ({
@@ -668,7 +668,7 @@ test.describe('Configuration detail flow', () => {
 
 test.describe('Sections Validation and Error Lifecycle', () => {
   test.beforeEach(async ({ page, configurationsPage }) => {
-    await deleteAllConfigurations();
+    await clearDb();
     await configurationsPage.goto();
     const condition = 'COVID-19';
     await configurationsPage.createConfiguration(condition);
