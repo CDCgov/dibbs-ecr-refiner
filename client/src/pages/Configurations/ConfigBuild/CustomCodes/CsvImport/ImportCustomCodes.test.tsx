@@ -274,9 +274,7 @@ function checkOtherCode(exists = true) {
 
 function checkCode(codeSystemName: string, exists = true) {
   const mockCode = mockPreviewItems.find(
-    (i) =>
-      i.system_name === codeSystemName ||
-      i.system_id === codeSystemName.toLowerCase()
+    (i) => i.system_name === codeSystemName
   )?.code as string;
 
   const matcher = exists ? 'getByText' : 'queryByText';
