@@ -314,14 +314,6 @@ async def insert_configuration_db(
                     config_to_clone.name,
                     # cloned by this user
                     user_id,
-                    # TODO: UPDATE CLONING FOR CUSTOM CODES
-                    # custom_codes
-                    # Jsonb(
-                    #     [
-                    #         {"name": c.name, "code": c.code, "system_key": c.system_key}
-                    #         for c in config_to_clone.custom_codes
-                    #     ]
-                    # ),
                     next_version,
                 )
             else:
