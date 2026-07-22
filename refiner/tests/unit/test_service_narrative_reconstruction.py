@@ -1066,7 +1066,7 @@ class TestCompactReconstructionReferences:
 # LAYER 3 — the Trigger Code Result Organizer's three permitted components
 # =============================================================================
 # CONF:4527-441/442 (Result Observation), 4527-443/444 (Laboratory Result
-# Status …4.418), 4527-450/451 (Specimen Collection Procedure ...4.415). the
+# Status ...4.418), 4527-450/451 (Specimen Collection Procedure ...4.415). the
 # prune carve-out keeps all three alive; reconstruction must place each in the
 # right part of the block, and only the first becomes a table row
 
@@ -1114,7 +1114,7 @@ _THREE_COMPONENT_ORGANIZER = f"""
 
 def test_lab_result_status_is_context_not_a_result_row():
     """
-    Laboratory Result Status (…4.418) must not render as a result row.
+    Laboratory Result Status (...4.418) must not render as a result row.
 
     It is an <observation> under organizer/component, exactly like a real
     result, and the shared-context prune carve-out deliberately keeps it

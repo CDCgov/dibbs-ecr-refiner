@@ -179,7 +179,7 @@ class EntryMatchRule:
 
             The guard is deliberately specific to the match target
             (Result Observation V3), not "any observation": Laboratory
-            Result Status (…4.418) is itself an <observation> under a
+            Result Status (...4.418) is itself an <observation> under a
             sibling component and must also survive as shared context.
             Keying the guard on the Result Observation V3 templateId
             retains those siblings while still pruning non-matching

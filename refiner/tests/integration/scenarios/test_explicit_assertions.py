@@ -22,7 +22,7 @@ PROCEDURES_LOINC: Final[str] = "47519-4"
 VITAL_SIGNS_LOINC: Final[str] = "8716-3"
 RESULTS_LOINC: Final[str] = "30954-2"
 
-# Specimen Collection Procedure (ID) …4.415: fixed SNOMED code, organizer-scoped
+# Specimen Collection Procedure (ID) ...4.415: fixed SNOMED code, organizer-scoped
 # shared context that must survive the Results component prune
 SPECIMEN_COLLECTION_CODE: Final[str] = "17636008"
 
@@ -769,7 +769,7 @@ async def test_reconstruction_reference_pointers_have_no_surrounding_whitespace(
 # NOTE:
 # RESULTS SPECIMEN COLLECTION PROCEDURE -- shared-context carve-out
 # =============================================================================
-# the Specimen Collection Procedure (…4.415) is an organizer-scoped sibling
+# the Specimen Collection Procedure (...4.415) is an organizer-scoped sibling
 # component carrying the specimen collection date / body site / source. it has
 # no matchable trigger code, so the component-level prune used to drop it even
 # when a result in the same organizer was retained -- silently losing the
@@ -796,7 +796,7 @@ async def test_results_specimen_collection_procedure_survives_refinement(
     A retained reportable result keeps its Specimen Collection Procedure.
 
     covid_baseline's Results section has an organizer with a matched COVID
-    result and a sibling Specimen Collection Procedure (…4.415). After
+    result and a sibling Specimen Collection Procedure (...4.415). After
     refinement the procedure -- with its collection date and target site --
     must survive rather than being pruned as non-matching.
 

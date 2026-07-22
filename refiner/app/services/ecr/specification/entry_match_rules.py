@@ -677,8 +677,8 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # SHARED-CONTEXT CARVE-OUT (all three rules):
 #   the Trigger Code Result Organizer (V2) permits sibling components that
 #   are **not** result observations--the Specimen Collection Procedure (ID)
-#   …4.415 (SHOULD 0..1, CONF:4527-450/451: collection date, body site,
-#   source) and the Laboratory Result Status (ID) …4.418 (MAY 0..1,
+#   ...4.415 (SHOULD 0..1, CONF:4527-450/451: collection date, body site,
+#   source) and the Laboratory Result Status (ID) ...4.418 (MAY 0..1,
 #   CONF:4527-443/444). these
 #   are organizer-scoped context applying to every result in the battery and
 #   are unmatchable by construction (their codes are never configured

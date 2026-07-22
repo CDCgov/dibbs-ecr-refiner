@@ -285,7 +285,7 @@ def render_coded_concept(el: _Element | None) -> str:
         - nullFlavor / missing code -> display-only (no empty parens)
 
     Args:
-        el: A clinical coded element (<code>, <value xsi:type="CD">, …), or None.
+        el: A clinical coded element (<code>, <value xsi:type="CD">, ...), or None.
 
     Returns:
         The rendered concept string, or "".
@@ -731,13 +731,13 @@ _PERFORMING_ORG_NAME = (
     ".//hl7:performer/hl7:assignedEntity/hl7:representedOrganization/hl7:name"
 )
 
-# - Laboratory Result Status (…4.418, CONF:4527-443/444) is a MAY component of the
+# - Laboratory Result Status (...4.418, CONF:4527-443/444) is a MAY component of the
 # Trigger Code Result Organizer carrying the status of the WHOLE battery (<- OBR-25)
 # - it is organizer-scoped context, not a result: it is matched on @root only,
 # because the organizer cites it as extension 2018-06-11 while its own template
 # definition requires 2018-09-01 (CONF:3378-373) and the published schematron
 # inherits the contradiction
-# - **not** to be confused with Laboratory Observation Result Status (…4.419), which
+# - **not** to be confused with Laboratory Observation Result Status (...4.419), which
 # is per-observation and hangs off an entryRelationship inside the result
 _LAB_RESULT_STATUS_VALUE = (
     f"hl7:component/hl7:observation[hl7:templateId[@root='{LABORATORY_RESULT_STATUS_ID}']]"

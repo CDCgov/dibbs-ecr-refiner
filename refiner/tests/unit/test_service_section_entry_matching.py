@@ -699,9 +699,9 @@ def test_results_rule_matches_snomed_on_value(spec_v1_1) -> None:
 # RESULTS SHARED-CONTEXT CARVE-OUT (prune_container_guard_xpath)
 # =============================================================================
 # a Result Organizer may carry sibling components that are NOT result
-# observations — the Specimen Collection Procedure (…4.415, the specimen
+# observations — the Specimen Collection Procedure (...4.415, the specimen
 # collection date / body site / source) and the Laboratory Result Status
-# (…4.418). They are organizer-scoped shared context and unmatchable by
+# (...4.418). They are organizer-scoped shared context and unmatchable by
 # construction. The guard on the Results rules exempts any component that does
 # not itself contain a Result Observation V3, so those siblings survive
 # alongside a retained result instead of being pruned as non-matching
@@ -709,7 +709,7 @@ def test_results_rule_matches_snomed_on_value(spec_v1_1) -> None:
 
 def _results_organizer_with_specimen() -> str:
     # one organizer: a MATCHED result, a NON-matching result, a Specimen
-    # Collection Procedure (…4.415), and a Laboratory Result Status (…4.418)
+    # Collection Procedure (...4.415), and a Laboratory Result Status (...4.418)
     return """
         <section xmlns="urn:hl7-org:v3">
             <code code="30954-2"/>
@@ -793,12 +793,12 @@ def test_results_specimen_and_labstatus_survive_with_matched_result(
     # matched result kept; non-matching Result Observation still pruned
     assert _result_codes(section) == ["94533-7"]
 
-    # specimen collection procedure (…4.415) survives as shared context
+    # specimen collection procedure (...4.415) survives as shared context
     assert section.xpath(
         ".//hl7:procedure[hl7:code/@code='17636008']", namespaces=HL7_NS
     ), "Specimen Collection Procedure was pruned — the specimen data-loss bug"
 
-    # laboratory result status (…4.418) survives too
+    # laboratory result status (...4.418) survives too
     assert section.xpath(
         ".//hl7:observation[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.418']]",
         namespaces=HL7_NS,
