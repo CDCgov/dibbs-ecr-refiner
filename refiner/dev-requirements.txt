@@ -16,3 +16,7 @@ rich==15.0.0
 types-Authlib
 types-requests
 watchdog==6.0.0
+
+# Local-dev documentation site
+griffe==2.1.0
+docstring-parser==0.18.0

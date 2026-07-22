@@ -16,6 +16,7 @@ _venv:
 install:
     {{ npm }} --prefix docs install
     {{ npm }} --prefix docs run build:css
+    just server::install-dev
 
 [doc('Extract Python API docs using griffe')]
 [group('extraction')]
