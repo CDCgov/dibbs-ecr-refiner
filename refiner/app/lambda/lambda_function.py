@@ -784,7 +784,7 @@ def process_condition(
 
     logger.info(
         "Refinement complete for condition.",
-        jurisidiction_code=jurisdiction_code,
+        jurisdiction_code=jurisdiction_code,
         condition_code=rsg_code,
         metrics=asdict(result.metrics),
         report=asdict(result.report),

@@ -6,6 +6,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.assets import get_asset_path
 
 COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
@@ -118,17 +119,16 @@ def collect_lambda_output_keys(s3_client, bucket) -> list[str]:
     return [obj["Key"] for obj in s3_client.list_objects_v2(Bucket=bucket)["Contents"]]
 
 
-def get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict:
+def get_refiner_complete_content(s3_client, bucket, persistence_id) -> dict:
     """
     Returns the content of the RefinerComplete file as a dict
     """
     resp = s3_client.get_object(
-        Bucket=bucket, Key=f"{REFINER_COMPLETE_PREFIX}/{persistance_id}"
+        Bucket=bucket, Key=f"{REFINER_COMPLETE_PREFIX}/{persistence_id}"
     )
     return json.loads(resp["Body"].read().decode("utf-8"))
 
 
-@mock_aws
 def test_lambda_inactive(
     lambda_event,
     s3_client,
@@ -186,7 +186,7 @@ def test_lambda_inactive(
 
     # Load RefinerComplete/persistence/id and ensure it contains expected paths
     complete_json = get_refiner_complete_content(
-        s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
+        s3_client=s3_client, bucket=data_bucket, persistence_id=s3_input_objects
     )
 
     # Neither condition was refined
@@ -203,7 +203,6 @@ def test_lambda_inactive(
     assert full_covid_path not in complete_json["RefinerOutputFiles"]
 
 
-@mock_aws
 def test_lambda_one_active(
     lambda_event,
     s3_client,
@@ -232,6 +231,7 @@ def test_lambda_one_active(
 
     # Create activation for COVID
     covid_activation = {
+        "schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
         "code_system_sets": {
@@ -313,7 +313,7 @@ def test_lambda_one_active(
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
-        s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
+        s3_client=s3_client, bucket=data_bucket, persistence_id=s3_input_objects
     )
 
     # Only COVID should be marked as refined for SDDH, since we don't have
@@ -339,7 +339,6 @@ def test_lambda_one_active(
     )
 
 
-@mock_aws
 def test_lambda_all_active(
     lambda_event,
     s3_client,
@@ -367,6 +366,7 @@ def test_lambda_all_active(
     )
     # Create activation for COVID
     covid_activation = {
+        "schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
         "code_system_sets": {
@@ -396,6 +396,7 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
+        "schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
         "code_system_sets": {
@@ -424,6 +425,7 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
+        "schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
         "code_system_sets": {
@@ -516,7 +518,7 @@ def test_lambda_all_active(
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
-        s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
+        s3_client=s3_client, bucket=data_bucket, persistence_id=s3_input_objects
     )
 
     # Both COVID and Flu should be marked as refined for SDDH,
