@@ -139,7 +139,7 @@ async def add_custom_code(
 
     updated_config = await add_custom_code_to_configuration_db(
         config=config,
-        code=body.code,
+        code=body.code.strip(),
         display_name=body.display,
         system_id=body.system_id,
         user_id=user.id,
