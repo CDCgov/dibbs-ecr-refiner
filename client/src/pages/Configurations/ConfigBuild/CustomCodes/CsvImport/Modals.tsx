@@ -142,7 +142,7 @@ export function PreviewEditModal({
     !previewEditForm ||
     !previewEditForm.code ||
     !previewEditForm.display ||
-    !previewEditForm.system_name;
+    !previewEditForm.system_id;
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
@@ -190,7 +190,6 @@ export function PreviewEditModal({
             <Select
               value={previewEditForm.system_id}
               onChange={(e) => {
-                // TODO: Do this a different way
                 const system = Object.values(codeSystems).find(
                   (s) => s.id === e.target.value
                 );
