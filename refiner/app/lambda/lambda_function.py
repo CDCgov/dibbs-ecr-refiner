@@ -587,11 +587,14 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
             version is missing or unsupported.
     """
 
+    # Check that configuration file exists
     config_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
 
     if not config_exists:
+        # It should exist because we've already checked the active version by this point
         raise Exception(f"Activated configuration file could not be read at: {key}")
 
+    # Read the file content and ensure required data is present
     config_file_content = get_s3_object_content(
         s3_client=s3_client, bucket=bucket, key=key
     )
