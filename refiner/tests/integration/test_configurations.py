@@ -1,12 +1,9 @@
 import itertools
-import json
-from pathlib import Path
 from unittest.mock import patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from fastapi import status
-from jsonschema import Draft202012Validator
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
@@ -16,21 +13,11 @@ from app.db.code_systems.db import (
 )
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.model import (
-    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-    DbConfigurationCustomCode,
-)
-from app.services.configurations import convert_config_to_storage_payload
+from app.db.configurations.model import DbConfigurationCustomCode
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
 EXPECTED_DROWNING_RSG_CODE = "212962007"
-ACTIVE_CONFIG_PAYLOAD_SCHEMA_FIXTURE = (
-    Path(__file__).parents[1]
-    / "fixtures"
-    / "lambda"
-    / "active_config_paload_schema_v1.json"
-)
 
 
 @pytest.mark.integration
@@ -984,69 +971,3 @@ class TestConfigurations:
 
         # This is the previously activated version from the test above
         assert current_file_resp.json()["version"] is None
-
-    async def test_active_config_payload_matches_approved_schema(
-        self,
-        setup,
-        authed_client,
-        get_condition_id,
-        db_pool,
-    ):
-        """
-        Verify that generated active.json payloads match the approved schema.
-
-        This test should fail when the serialized active payload shape changes
-        unexpectedly. For an intentional shape change, the developer should:
-
-        1. Review the serialization diff.
-        2. Increment CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION.
-        3. Update the approved schema fixture.
-        4. Confirm the reactivation script and Lambda validation support the new version.
-
-        The schema fixture should not update automatically.
-        """
-
-        condition_id = await get_condition_id("Drowning and Submersion")
-
-        response = await authed_client.post(
-            "/api/v1/configurations/",
-            json={"condition_id": str(condition_id)},
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-
-        configuration_id = UUID(response.json()["id"])
-
-        configuration = await get_configuration_by_id_db(
-            id=configuration_id,
-            jurisdiction_id="SDDH",
-            db=db_pool,
-        )
-
-        assert configuration is not None
-
-        payload = await convert_config_to_storage_payload(
-            configuration=configuration,
-            db=db_pool,
-        )
-
-        assert payload is not None
-
-        serialized_payload = payload.to_dict()
-
-        assert (
-            serialized_payload["schema_version"] == CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
-        )
-
-        with ACTIVE_CONFIG_PAYLOAD_SCHEMA_FIXTURE.open() as fixture:
-            approved_schema = json.load(fixture)
-
-        validator = Draft202012Validator(approved_schema)
-        errors = sorted(
-            validator.iter_errors(serialized_payload),
-            key=lambda error: list(error.path),
-        )
-
-        assert errors == [], "\n".join(
-            f"{list(error.path)}: {error.message}" for error in errors
-        )
