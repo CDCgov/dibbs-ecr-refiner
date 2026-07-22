@@ -53,6 +53,9 @@ configuration identity from mapping logic.
 **Cons**: Requires schema/API changes and more extensive testing of constraints.
 Need to update `seed_db.py` to ensure deletions persist across redeploys.
 
+> [!TIP]
+> These changes can be viewed at [CDCgov/dibbs-ecr-refiner#1525](https://github.com/CDCGov/dibbs-ecr-refiner/issues/1525).
+
 ### 2. Toggle approach (Soft Disable)
 
 - **Design**: Add a boolean flag `ignore_associated_sets` to the configuration
@@ -102,6 +105,10 @@ These mitigations directly address the cons:
   associated sets are visible but not active, eliminating the contradictory
   appearance.
 
+> [!TIP]
+> This prototype has not been built out, but tickets could be made for this work
+> if we decide to go down this pathway.
+
 ### 3. Do Nothing
 
 - Maintain current behavior.
@@ -109,6 +116,11 @@ These mitigations directly address the cons:
 **Pros**: No effort.
 
 **Cons**: Feature remains impossible.
+
+> [!TIP]
+> Not sure if we wanted to include this, but I thought we should since APHL has
+> expressed hesitation around allowing jurisdictions to delete any code sets
+> that come from the TES.
 
 ## Decision Outcome
 
