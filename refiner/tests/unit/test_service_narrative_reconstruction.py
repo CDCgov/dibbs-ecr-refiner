@@ -254,52 +254,6 @@ def test_render_typed_cd_resolves_through_original_text():
     assert render_typed_value(el) == "Dark stools (finding) (SNOMED CT 35064005)"
 
 
-def test_code_display_generic_snomed_placeholder_prefers_original_text():
-    # SNOMED 410942007 "Drug or medicament" is a non-specific placeholder; its
-    # displayName must not shadow the real product parked in originalText
-    el = _el(
-        f'<code {_NSDECL} code="410942007" '
-        'codeSystem="2.16.840.1.113883.6.96" displayName="Drug or medicament">'
-        "<originalText>Multivitamin infusion (RxNorm cuvee)</originalText>"
-        "</code>"
-    )
-    assert render_code_display(el) == "Multivitamin infusion (RxNorm cuvee)"
-
-
-def test_code_display_generic_snomed_placeholder_prefers_translation():
-    # with no originalText, the placeholder still yields to a translation display
-    el = _el(
-        f'<code {_NSDECL} code="410942007" '
-        'codeSystem="2.16.840.1.113883.6.96" displayName="Drug or medicament">'
-        '<translation code="311354" codeSystem="2.16.840.1.113883.6.88" '
-        'displayName="Sodium Chloride 0.9% IV Solution"/>'
-        "</code>"
-    )
-    assert render_code_display(el) == "Sodium Chloride 0.9% IV Solution"
-
-
-def test_code_display_generic_placeholder_falls_back_to_its_own_display():
-    # when nothing more specific exists, the generic text is still better than
-    # a bare code
-    el = _el(
-        f'<code {_NSDECL} code="410942007" '
-        'codeSystem="2.16.840.1.113883.6.96" displayName="Drug or medicament"/>'
-    )
-    assert render_code_display(el) == "Drug or medicament"
-
-
-def test_code_display_placeholder_code_in_other_system_is_not_treated_special():
-    # the placeholder set is SNOMED-scoped; the same digits under another system
-    # keep the normal "displayName wins" behavior
-    el = _el(
-        f'<code {_NSDECL} code="410942007" '
-        'codeSystem="2.16.840.1.113883.6.1" displayName="Some LOINC concept">'
-        "<originalText>should not be preferred</originalText>"
-        "</code>"
-    )
-    assert render_code_display(el) == "Some LOINC concept"
-
-
 # NOTE:
 # LAYER 1 — render_interpretation (HL7 ObservationInterpretation flag display)
 # =============================================================================
@@ -564,6 +518,7 @@ def test_reconstruct_results_context_is_per_block_not_repeated_on_rows():
         "Panel": "CBC panel (LOINC 58410-2)",
         "Date(s)": "",  # no organizer effectiveTime in the fixture
         "Performer": "Acme Reference Lab",
+        "Result Status": "",  # no Laboratory Result Status component
         "Specimen": "Blood specimen",
         "Target Site": "",
     }
@@ -654,6 +609,49 @@ def test_reconstruct_problems_concern_context_and_problem_rows():
         "Problem": "Paroxysmal cough (finding) (SNOMED CT 409586006)",
         "Date(s)": "2025-11-04 to 2025-11-10",
     }
+
+
+def test_reconstruct_problems_ignores_priority_preference_refr():
+    # a Problem Concern Act permits a Priority Preference (...22.4.143) under
+    # entryRelationship[@typeCode='REFR']. it is an <observation>, so an
+    # unfiltered row anchor renders it as a phantom problem. only the SUBJ
+    # Problem Observation is a real row
+    section = _el(
+        f"""
+    <section {_NSDECL}>
+      <code code="11450-4" codeSystem="2.16.840.1.113883.6.1"/>
+      <entry>
+        <act classCode="ACT" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+          <statusCode code="active"/>
+          <entryRelationship typeCode="SUBJ">
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+              <code code="75322-8" displayName="Complaint"/>
+              <value xsi:type="CD" code="35064005"
+                     codeSystem="2.16.840.1.113883.6.96"
+                     displayName="Dark stools (finding)"/>
+            </observation>
+          </entryRelationship>
+          <entryRelationship typeCode="REFR">
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.143"/>
+              <code code="63161005" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Principal"/>
+            </observation>
+          </entryRelationship>
+        </act>
+      </entry>
+    </section>
+    """
+    )
+
+    blocks = reconstruct_problems(section)
+    assert len(blocks) == 1
+    problems = [row.values["Problem"] for row in blocks[0].rows]
+    assert problems == ["Dark stools (finding) (SNOMED CT 35064005)"], (
+        "the Priority Preference REFR observation leaked in as a problem row"
+    )
 
 
 # NOTE:
@@ -761,8 +759,9 @@ def test_reconstruct_immunizations_relink_places_text_validly():
 # LAYER 3 — reconstruct_medications (FLAT, twin of immunizations)
 # =============================================================================
 
-# one med with a dose + a periodic frequency; values humanize via the typed
-# renderer (dose "1 g", route "ORAL"), matching the v3 narrative convention
+# one med carrying BOTH effectiveTimes a Medication Activity may have: an
+# IVL_TS administration window and a PIVL_TS dosing frequency. values humanize
+# via the typed renderer (dose "1 g", route "ORAL"), matching the v3 convention
 _MEDICATIONS_SECTION = f"""
 <section {_NSDECL}>
   <code code="29549-3" codeSystem="2.16.840.1.113883.6.1"
@@ -774,6 +773,7 @@ _MEDICATIONS_SECTION = f"""
       <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
       <id root="00000000-0000-0000-0000-0000000000aa"/>
       <statusCode code="completed"/>
+      <effectiveTime xsi:type="IVL_TS"><low value="20120318"/></effectiveTime>
       <effectiveTime xsi:type="PIVL_TS"><period value="8" unit="h"/></effectiveTime>
       <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1"
                  displayName="ORAL"/>
@@ -797,13 +797,83 @@ def test_reconstruct_medications_is_flat_with_convention_columns():
 
     assert len(blocks) == 1
     assert blocks[0].context == {}
-    assert blocks[0].columns == ["Medication", "Dose", "Duration", "Route"]
+    assert blocks[0].columns == [
+        "Medication",
+        "Dose",
+        "Duration",
+        "Frequency",
+        "Route",
+    ]
+    # the two effectiveTimes land in distinct columns: the IVL_TS window as
+    # Duration, the PIVL_TS as Frequency (unreachable before the split)
     assert blocks[0].rows[0].values == {
         "Medication": "oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)",
         "Dose": "1 g",
-        "Duration": "every 8 h",
+        "Duration": "2012-03-18",
+        "Frequency": "every 8 h",
         "Route": "ORAL (NCI Thesaurus C38288)",
     }
+
+
+# NOTE:
+# negationInd — "No Known Medications" (eICR STU 3.1.1 Vol 2 Figure 75)
+# =============================================================================
+# the ONLY appearance of SNOMED 410942007 in either eICR IG: a Medication
+# Activity with @negationInd="true", a nullFlavor="OTH" material code, and the
+# generic "drug or medication" carried in a translation. rendered as an ordinary
+# row it reads "drug or medication" for a patient who HAS no medications--a
+# false clinical assertion. negation is a property of the ROW, so the flag is
+# read off the anchor and surfaced in the leading cell
+
+# verbatim from Figure 75 (nullFlavor code + 410942007 translation)
+_NO_KNOWN_MEDICATIONS_SECTION = f"""
+<section {_NSDECL}>
+  <code code="29549-3" codeSystem="2.16.840.1.113883.6.1"
+        displayName="Medications Administered"/>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="true">
+      <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
+      <id root="072f00fc-4f9d-4516-8d6f-ed00ed523fe0"/>
+      <statusCode code="active"/>
+      <effectiveTime xsi:type="IVL_TS"><low value="20110103"/></effectiveTime>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
+          <manufacturedMaterial>
+            <code nullFlavor="OTH" codeSystem="2.16.840.1.113883.6.88">
+              <translation code="410942007" displayName="drug or medication"
+                           codeSystem="2.16.840.1.113883.6.96"
+                           codeSystemName="SNOMED CT"/>
+            </code>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>
+"""
+
+
+def test_no_known_medications_row_is_flagged_negated():
+    blocks = reconstruct_medications(_el(_NO_KNOWN_MEDICATIONS_SECTION))
+
+    assert len(blocks) == 1
+    assert blocks[0].rows[0].negated is True
+
+
+def test_no_known_medications_renders_as_a_negative_not_a_product():
+    section = _el(_NO_KNOWN_MEDICATIONS_SECTION)
+    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+    assert text is not None
+
+    cells = [
+        td.text for td in text.xpath(".//hl7:tbody/hl7:tr/hl7:td", namespaces=HL7_NS)
+    ]
+    # the leading cell reads as a negative; the bare "drug or medication" that
+    # would falsely assert an administered product never stands alone
+    assert cells[0] == "Not administered: drug or medication"
+    assert "drug or medication" not in cells[1:]
 
 
 # NOTE:
@@ -852,6 +922,85 @@ def test_reconstruct_narrative_marks_entries_derived():
 
     type_codes = section.xpath("hl7:entry/@typeCode", namespaces=HL7_NS)
     assert type_codes == ["DRIV", "DRIV"]
+
+
+def test_reconstruct_narrative_inlines_coding_originaltext_reference():
+    # a surviving value carries its label as originalText-BY-REFERENCE into the
+    # narrative. reconstruction strips the stale row-level references, but the
+    # coding-level originalText must survive as INLINE text — not be emptied,
+    # which would destroy the sender's coding provenance in the shipped data
+    section = _el(
+        f"""
+    <section {_NSDECL}>
+      <code code="30954-2" codeSystem="2.16.840.1.113883.6.1"/>
+      <text>
+        <table><tbody>
+          <tr><td><content ID="cough1">Paroxysmal cough (finding)</content></td></tr>
+        </tbody></table>
+      </text>
+      <entry>
+        <organizer classCode="BATTERY" moodCode="EVN">
+          <code code="58410-2" codeSystem="2.16.840.1.113883.6.1"
+                displayName="CBC panel"/>
+          <component>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+              <code code="409586006" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Cough assay"/>
+              <value xsi:type="CD" code="409586006"
+                     codeSystem="2.16.840.1.113883.6.96">
+                <originalText><reference value="#cough1"/></originalText>
+              </value>
+            </observation>
+          </component>
+        </organizer>
+      </entry>
+    </section>
+    """
+    )
+
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    original_text = section.xpath(".//hl7:value/hl7:originalText", namespaces=HL7_NS)[0]
+    # the by-reference form became by-value: label inlined, <reference> gone
+    assert original_text.xpath("normalize-space(.)") == "Paroxysmal cough (finding)"
+    assert original_text.find("hl7:reference", HL7_NS) is None
+
+
+def test_reconstruct_narrative_dangling_coding_reference_leaves_no_reference():
+    # an originalText/reference pointing at an id absent from the narrative has
+    # nothing to inline; the dangling reference is removed and no text fabricated
+    section = _el(
+        f"""
+    <section {_NSDECL}>
+      <code code="30954-2" codeSystem="2.16.840.1.113883.6.1"/>
+      <text><table><tbody><tr><td>unrelated</td></tr></tbody></table></text>
+      <entry>
+        <organizer classCode="BATTERY" moodCode="EVN">
+          <code code="58410-2" codeSystem="2.16.840.1.113883.6.1"
+                displayName="CBC panel"/>
+          <component>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+              <code code="1" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="x"/>
+              <value xsi:type="CD" code="1"
+                     codeSystem="2.16.840.1.113883.6.96">
+                <originalText><reference value="#missing"/></originalText>
+              </value>
+            </observation>
+          </component>
+        </organizer>
+      </entry>
+    </section>
+    """
+    )
+
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    original_text = section.xpath(".//hl7:value/hl7:originalText", namespaces=HL7_NS)[0]
+    assert original_text.find("hl7:reference", HL7_NS) is None
+    assert original_text.xpath("normalize-space(.)") == ""
 
 
 def test_reconstruct_narrative_marks_flat_entries_derived():
@@ -911,3 +1060,102 @@ class TestCompactReconstructionReferences:
             "</observation>\n"
         )
         assert compact_reconstruction_references(pretty) == pretty
+
+
+# NOTE:
+# LAYER 3 — the Trigger Code Result Organizer's three permitted components
+# =============================================================================
+# CONF:4527-441/442 (Result Observation), 4527-443/444 (Laboratory Result
+# Status …4.418), 4527-450/451 (Specimen Collection Procedure ...4.415). the
+# prune carve-out keeps all three alive; reconstruction must place each in the
+# right part of the block, and only the first becomes a table row
+
+
+_THREE_COMPONENT_ORGANIZER = f"""
+<section {_NSDECL}>
+  <code code="30954-2" codeSystem="2.16.840.1.113883.6.1"/>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1"
+            displayName="CBC panel"/>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+          <code code="718-7" codeSystem="2.16.840.1.113883.6.1"
+                displayName="Hemoglobin"/>
+          <value xsi:type="PQ" value="13.2" unit="g/dL"/>
+        </observation>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.418"
+                      extension="2018-06-11"/>
+          <code code="92235-1" codeSystem="2.16.840.1.113883.6.1"
+                displayName="Lab order result status"/>
+          <value xsi:type="CD" code="final"
+                 codeSystem="2.16.840.1.113883.5.83" displayName="Final"/>
+        </observation>
+      </component>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.415"
+                      extension="2018-09-01"/>
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96"/>
+          <targetSiteCode code="368208006"
+                          codeSystem="2.16.840.1.113883.6.96"
+                          displayName="Left upper arm structure"/>
+        </procedure>
+      </component>
+    </organizer>
+  </entry>
+</section>
+"""
+
+
+def test_lab_result_status_is_context_not_a_result_row():
+    """
+    Laboratory Result Status (…4.418) must not render as a result row.
+
+    It is an <observation> under organizer/component, exactly like a real
+    result, and the shared-context prune carve-out deliberately keeps it
+    alive. Unfiltered it renders a row reading "Lab order result status" beside
+    the actual analytes. It belongs in the block context.
+    """
+
+    blocks = reconstruct_results(_el(_THREE_COMPONENT_ORGANIZER))
+    assert len(blocks) == 1
+
+    rows = [row.values["Test"] for row in blocks[0].rows]
+    assert rows == ["Hemoglobin (LOINC 718-7)"], (
+        "Laboratory Result Status leaked into the result table as a row"
+    )
+
+    assert blocks[0].context["Result Status"] == "Final"
+    # and the specimen procedure still lands in context, not as a row
+    assert blocks[0].context["Target Site"] == (
+        "Left upper arm structure (SNOMED CT 368208006)"
+    )
+
+
+def test_result_row_without_a_templateid_still_renders():
+    """
+    A result observation missing its templateId is still a row.
+
+    The row filter excludes the known non-result template rather than
+    requireing the Result Observation V3 one. Requiring it would blank the whole
+    table for any sender that omits the templateId, which would make the DRIV
+    assertion ("narrative is clinically equivalent to the entries") false--a
+    worse failure than one spurious row.
+    """
+
+    section = _el(
+        _THREE_COMPONENT_ORGANIZER.replace(
+            '<templateId root="2.16.840.1.113883.10.20.22.4.2"/>', ""
+        )
+    )
+    blocks = reconstruct_results(section)
+
+    assert len(blocks) == 1
+    assert [row.values["Test"] for row in blocks[0].rows] == [
+        "Hemoglobin (LOINC 718-7)"
+    ], "a result observation with no templateId was dropped from the table"

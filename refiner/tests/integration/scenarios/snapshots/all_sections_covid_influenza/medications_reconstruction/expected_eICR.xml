@@ -846,6 +846,7 @@
                   <th>Medication</th>
                   <th>Dose</th>
                   <th>Duration</th>
+                  <th>Frequency</th>
                   <th>Route</th>
                 </tr>
               </thead>
@@ -853,12 +854,14 @@
                 <tr ID="ecr-refiner-29549-3-20260101000000-row1">
                   <td>oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)</td>
                   <td>1 g</td>
+                  <td/>
                   <td>2020-11-07 11:59 -07:00</td>
                   <td>ORAL (NCI Thesaurus C38288)</td>
                 </tr>
                 <tr ID="ecr-refiner-29549-3-20260101000000-row2">
                   <td>ritonavir Oral Product (RxNorm 1165486)</td>
                   <td>1 g</td>
+                  <td/>
                   <td>2020-11-07 11:59 -07:00</td>
                   <td>ORAL (NCI Thesaurus C38288)</td>
                 </tr>

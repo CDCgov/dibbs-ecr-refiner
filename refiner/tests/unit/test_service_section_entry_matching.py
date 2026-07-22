@@ -1471,3 +1471,84 @@ def test_real_v3_1_1_problems_section_is_processable(
         namespaces=HL7_NS,
     )
     assert result.matches_found is False
+
+
+# NOTE:
+# INVARIANT: a matched entry is never removed
+# =============================================================================
+# container-level pruning ends by deleting an entry that has no containers
+# left. that test cannot, on its own, tell "we pruned every container away"
+# apart from "this entry never had containers at that path"--and the second
+# case is reachable on live data, because every code_xpath is unanchored
+# (`.//`) while every prune_container_xpath assumes a specific shape. the two
+# tests below pin the distinction from both sides
+
+
+def test_matched_entry_without_containers_survives_results(spec_v1_1) -> None:
+    """
+    A bare Result Observation under <entry>, with no organizer, is retained.
+
+    The Results code_xpath is unanchored, so it matches an observation sitting
+    directly under <entry>. prune_container_xpath ("hl7:organizer/hl7:component")
+    then finds nothing--which must read as "this rule's container model does
+    not describe this entry", not as "we pruned it to nothing".
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="30954-2"/>
+            <entry>
+                <observation classCode="OBS" moodCode="EVN">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                    <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+                </observation>
+            </entry>
+        </section>
+        """
+    )
+
+    # precondition: the entry really has no organizer/component containers
+    assert not section.xpath(
+        ".//hl7:entry/hl7:organizer/hl7:component", namespaces=HL7_NS
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+
+    assert result.matches_found is True
+    assert _result_codes(section) == ["94533-7"], (
+        "a matched entry was deleted because it carried no containers at "
+        "prune_container_xpath"
+    )
+
+
+def test_matched_entry_with_containers_pruned_to_nothing_is_removed(
+    spec_v1_1,
+) -> None:
+    """
+    The other side of the invariant: pruning every container does delete.
+
+    Guards against "fixing" the case above by never removing an emptied entry.
+    Here the organizer holds only non-matching Result Observations, so every
+    container is legitimately pruned and the husk goes with them.
+    """
+
+    section = _build_section(_results_organizer_with_specimen())
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+
+    # the matched organizer survives; nothing else to assert here beyond the
+    # entry still being present with its one retained result
+    assert section.xpath(".//hl7:entry/hl7:organizer", namespaces=HL7_NS)
+    assert _result_codes(section) == ["94533-7"]

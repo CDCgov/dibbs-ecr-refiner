@@ -43,6 +43,7 @@ def enrich_surviving_entries(
     section: _Element,
     code_system_sets: "CodeSystemSets",
     namespaces: NamespaceMap,
+    narrative_index: dict[str, str] | None = None,
 ) -> None:
     """
     Enrich `displayName` on all surviving code-bearing elements.
@@ -64,10 +65,16 @@ def enrich_surviving_entries(
     Because the enrichment lands on the structured entry itself, every
     downstream consumer benefits: the shipped coded data is more
     complete AND narrative reconstruction (which reads `@displayName`
-    first) renders the label instead of a bare code. The narrative
-    fallback runs while the ORIGINAL <text> is still present — before
-    the caller reconstructs or removes it — so the reference still
-    resolves.
+    first) renders the label instead of a bare code.
+
+    The narrative fallback only works while the original <text> is still
+    readable. `entry_matching` calls this before touching the narrative,
+    so it can build its own index. `generic_matching` clears <text>
+    *before* matching, so by the time it calls here the narrative is
+    gone--it captures the index up front and passes it in via
+    `narrative_index`. Order of operations, not an optional extra: with
+    no index and an already-cleared <text>, the fallback silently does
+    nothing.
 
     This is how the refiner surfaces human-readable labels on code
     elements that the structural match rules didn't directly target
@@ -83,6 +90,9 @@ def enrich_surviving_entries(
         code_system_sets: Structured per-system lookup from the
             configuration.
         namespaces: XML namespaces for element search.
+        narrative_index: A pre-built `ID` -> text map, for callers that
+            have already cleared the section narrative. When omitted,
+            one is built from the section's current <text>.
     """
 
     code_bearing_tags: set[str] = {
@@ -91,7 +101,8 @@ def enrich_surviving_entries(
         "{urn:hl7-org:v3}translation",
     }
 
-    narrative_index = _index_narrative_display_ids(section, namespaces)
+    if narrative_index is None:
+        narrative_index = _index_narrative_display_ids(section, namespaces)
 
     for entry in section.findall("hl7:entry", namespaces):
         for element in entry.iter():

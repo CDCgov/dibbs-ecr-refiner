@@ -1,6 +1,6 @@
 import re
 from collections.abc import Callable
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -11,9 +11,10 @@ from app.services.format import remove_element
 from ..model import HL7_NS, HL7_XSI_NS
 from ..specification.constants import (
     CODE_SYSTEM_DISPLAY_NAMES,
-    NON_SPECIFIC_SNOMED_CODES,
     OBSERVATION_INTERPRETATION_DISPLAY,
-    SNOMED_OID,
+)
+from ..specification.template_oids import (
+    LABORATORY_RESULT_STATUS_ID,
 )
 from .elements import _make_element, _sub_element
 from .identifiers import REFINER_ID_PREFIX, run_id_digits
@@ -24,12 +25,23 @@ class DetailRow(NamedTuple):
     One detail-table row plus a handle to the entry it represents.
 
     `source` is retained so the assembler can mint an `xs:ID` for the
-    row and relink the surviving entry to it (see ADR 0011); per-section
-    reconstructors never mutate it.
+    row and relink the surviving entry to it; per-section reconstructors
+    never mutate it.
+
+    `negated` carries the anchor's `@negationInd`. A negated
+    `substanceAdministration` is a statement that the act did NOT happen--
+    "No Known Medications", a refused or contraindicated vaccine--so the
+    row must read as a negative, not as an administered product. The flag
+    is annotated onto the row rather than dropped: the entry survived
+    pruning, and under `DRIV` a surviving entry must have a narrative
+    representation. Only the flat `substanceAdministration` reconstructors
+    set it today; the trigger-template matcher half that would also drop
+    retracted Problem trigger observations is not yet developed.
     """
 
     source: _Element
     values: dict[str, str]
+    negated: bool = False
 
 
 class Block(NamedTuple):
@@ -184,12 +196,6 @@ def render_code_display(el: _Element | None) -> str:
     CVX). Resolving translation @displayName *and* @code keeps those rows from
     rendering blank.
 
-    One exception to "@displayName wins": a generic SNOMED placeholder
-    (`NON_SPECIFIC_SNOMED_CODES`, e.g. "Drug or medicament") carries a
-    displayName that says nothing specific. When the element is one of these,
-    its displayName is skipped in favor of the real product parked in
-    <originalText> / <translation>, and used only as the last resort.
-
     Args:
         el: A coded element (<code>, <value xsi:type="CD">, etc.), or None.
 
@@ -200,15 +206,7 @@ def render_code_display(el: _Element | None) -> str:
     if el is None:
         return ""
 
-    display = _normalize(el.get("displayName"))
-
-    # a generic SNOMED placeholder displayName must not shadow the specific
-    # product the sender carried in originalText/translation
-    is_placeholder = (
-        el.get("code") in NON_SPECIFIC_SNOMED_CODES
-        and el.get("codeSystem") == SNOMED_OID
-    )
-    if display and not is_placeholder:
+    if display := _normalize(el.get("displayName")):
         return display
 
     original_text = el.find("hl7:originalText", HL7_NS)
@@ -218,11 +216,10 @@ def render_code_display(el: _Element | None) -> str:
         if text := str(original_text.xpath("normalize-space(.)")):
             return text
 
-    if translation_display := _first_xpath_str(el, "hl7:translation/@displayName"):
-        return translation_display
+    if display := _first_xpath_str(el, "hl7:translation/@displayName"):
+        return display
 
-    # a placeholder display is still better than a bare code as a last resort
-    return display or el.get("code") or _first_xpath_str(el, "hl7:translation/@code")
+    return el.get("code") or _first_xpath_str(el, "hl7:translation/@code")
 
 
 # NOTE:
@@ -454,7 +451,10 @@ def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, st
 
     row: dict[str, str] = {}
     for spec in field_map:
-        results = anchor.xpath(spec.xpath, namespaces=HL7_NS)
+        # HL7_XSI_NS (not HL7_NS) so a field-map xpath may discriminate on
+        # @xsi:type--e.g. splitting a medication's two effectiveTimes into
+        # the IVL_TS duration and the PIVL_TS frequency
+        results = anchor.xpath(spec.xpath, namespaces=HL7_XSI_NS)
         if not isinstance(results, list) or not results:
             row[spec.label] = ""
             continue
@@ -490,37 +490,115 @@ def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, st
 # NOTE:
 # LAYER 1 — SHARED PRIMITIVE: per-organizer block assembler
 # =============================================================================
-# emits the section <text> as one self-contained block per grouping entry
-# (ADR 0011): a context table (panel/concern + specimen, rendered once) plus a
-# detail table whose rows carry minted xs:IDs. it is the only place that
-# MUTATES surviving entries--it relinks each row to the entry it represents,
-# so the entry↔narrative round-trip survives the narrative swap. namespace-
-# aware element helpers keep the output NarrativeBlock.xsd-valid
+# emits the section <text> as one self-contained block per grouping entry:
+# * a context table (panel/concern + specimen, rendered once) plus a
+#   detail table whose rows carry minted xs:IDs. it is the only place that
+#   MUTATES surviving entries--it relinks each row to the entry it represents,
+#   so the entry↔narrative round-trip survives the narrative swap. namespace-
+#   aware element helpers keep the output NarrativeBlock.xsd-valid
 # * the block-level "machine-derived" marker goes HERE, on the whole <text>;
 #   not smeared across individual fields
 # * this is the seam that later grows into <author> participation provenance
+#   we won't be implementing this until we have more user driven feedback
+#   **but** we can still develop the provenance content as comments
 
 _RECONSTRUCTION_MARKER: str = (
     " Narrative reconstructed by the eCR Refiner from surviving clinical "
     "entries: machine-derived, not clinician-attested. "
 )
 
+# prepended to a negated substanceAdministration's leading cell so the row reads
+# as the negative it is (a not-administered / "no known" statement) rather than
+# as an administered product
+_NEGATED_PREFIX: str = "Not administered: "
+
 
 def _strip_entry_references(section: _Element) -> None:
     """
-    Remove every narrative <reference> living inside the section's entries.
+    Clear the entry references that the swapped-in narrative will strand.
 
-    Replacing the narrative deletes the IDs those references targeted, so
-    they would dangle. Stripping wholesale (rather than hunting each) is the
-    robust move; the assembler then re-adds one canonical row-level reference
-    per surviving observation.
+    Replacing the section narrative deletes the `xs:ID`s these references
+    point at, so every `#id` under an entry is about to dangle. Two kinds
+    live there and they are handled differently:
+
+      - a row-level `<text><reference/>`: the observation/act's link to
+        its narrative row. Removed wholesale; the assembler re-adds one
+        canonical `<text><reference>` per surviving row (see
+        `_relink_source`).
+      - a coding-level `<originalText><reference/>`: the sender's own
+        `originalText`-by-reference (CDA permits `originalText` by value
+        **or** by reference). Blanking it would leave an empty `<originalText/>`
+        and destroy the sender's coding provenance in the **shipped**
+        structured data. Instead the referenced narrative label is
+        resolved and inlined as `originalText` text--a lossless,
+        conformant by-reference -> by-value conversion that also lets
+        `render_code_display` read the label on any later pass.
+
+    Runs while the **original** narrative is still in place (the caller swaps
+    in the reconstruction afterward), so the `#id`s still resolve.
     """
 
+    narrative_index = _index_narrative_ids(section)
+
     refs = section.xpath(".//hl7:entry//hl7:reference", namespaces=HL7_NS)
-    if isinstance(refs, list):
-        for ref in refs:
-            if isinstance(ref, _Element):
-                remove_element(ref)
+    if not isinstance(refs, list):
+        return
+
+    for ref in refs:
+        if not isinstance(ref, _Element):
+            continue
+
+        parent = ref.getparent()
+        if parent is not None and etree.QName(parent).localname == "originalText":
+            _inline_original_text(parent, ref, narrative_index)
+        else:
+            remove_element(ref)
+
+
+def _index_narrative_ids(section: _Element) -> dict[str, str]:
+    """
+    Map every `@ID` in the section narrative to its collapsed text.
+
+    Scoped to the section's own <text>; returns {} when there is none.
+    A local twin of `section.utils._index_narrative_display_ids` — the
+    section layer sits ABOVE narrative and imports from it, so narrative
+    cannot import back without a cycle.
+    """
+
+    text = section.find("hl7:text", HL7_NS)
+    if text is None:
+        return {}
+
+    index: dict[str, str] = {}
+    for element in text.iter():
+        node_id = element.get("ID")
+        if node_id:
+            index[node_id] = str(element.xpath("normalize-space(.)"))
+    return index
+
+
+def _inline_original_text(
+    original_text: _Element,
+    reference: _Element,
+    narrative_index: dict[str, str],
+) -> None:
+    """
+    Replace an `originalText`-by-reference with the resolved label inline.
+
+    Resolves the reference's `#id` against the section narrative and sets
+    it as `original_text.text`, then removes the now-redundant <reference>.
+    When the id does not resolve (a dangling pointer), only the reference
+    is removed — there is nothing to inline, and leaving it would strand a
+    broken `#id`.
+    """
+
+    value = reference.get("value")
+    resolved = (
+        narrative_index.get(value[1:]) if value and value.startswith("#") else None
+    )
+    remove_element(reference)
+    if resolved:
+        original_text.text = resolved
 
 
 def _mark_entries_derived(section: _Element) -> None:
@@ -620,8 +698,14 @@ def render_section_text(
             row_seq += 1
             row_id = f"{REFINER_ID_PREFIX}{loinc}-{digits}-row{row_seq}"
             tr = _sub_element(detail_body, "tr", ID=row_id)
-            for col in block.columns:
-                _sub_element(tr, "td").text = row.values.get(col, "") or ""
+            for index, col in enumerate(block.columns):
+                value = row.values.get(col, "") or ""
+                # a negated row is marked in its leading (concept) cell, so the
+                # negative reads at the front of the row instead of the product
+                # rendering as if it were administered
+                if row.negated and index == 0:
+                    value = f"{_NEGATED_PREFIX}{value}" if value else _NEGATED_PREFIX
+                _sub_element(tr, "td").text = value
             _relink_source(row.source, row_id)
 
     return text
@@ -647,10 +731,24 @@ _PERFORMING_ORG_NAME = (
     ".//hl7:performer/hl7:assignedEntity/hl7:representedOrganization/hl7:name"
 )
 
+# - Laboratory Result Status (…4.418, CONF:4527-443/444) is a MAY component of the
+# Trigger Code Result Organizer carrying the status of the WHOLE battery (<- OBR-25)
+# - it is organizer-scoped context, not a result: it is matched on @root only,
+# because the organizer cites it as extension 2018-06-11 while its own template
+# definition requires 2018-09-01 (CONF:3378-373) and the published schematron
+# inherits the contradiction
+# - **not** to be confused with Laboratory Observation Result Status (…4.419), which
+# is per-observation and hangs off an entryRelationship inside the result
+_LAB_RESULT_STATUS_VALUE = (
+    f"hl7:component/hl7:observation[hl7:templateId[@root='{LABORATORY_RESULT_STATUS_ID}']]"
+    "/hl7:value"
+)
+
 PANEL_FIELDS: list[FieldSpec] = [
     FieldSpec("Panel", "hl7:code", "concept"),
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),
     FieldSpec("Performer", _PERFORMING_ORG_NAME, "text"),
+    FieldSpec("Result Status", _LAB_RESULT_STATUS_VALUE, "coded"),
 ]
 
 # context anchor: <procedure> (the specimen, a sibling of the observations)
@@ -685,9 +783,10 @@ CONCERN_FIELDS: list[FieldSpec] = [
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),  # noted date (low)
 ]
 
-# detail anchor: <observation> (the Problem Observation). Problem Type is an
-# HL7-style assertion code (Symptom/Complaint) left display-only; the Problem
-# itself is the clinical concept that surfaces code + system
+# detail anchor: <observation> (the Problem Observation)
+# - Problem Type is a LOINC code from the Problem Type value set (75322-8 "Complaint",
+# 75323-6 "Condition", ...)--a row-type LABEL, not the clinical concept--so it is left
+# display-only; the Problem itself (hl7:value) is the concept that surfaces code + system
 PROBLEM_FIELDS: list[FieldSpec] = [
     FieldSpec("Problem Type", "hl7:code", "coded"),
     FieldSpec("Problem", "hl7:value", "concept"),  # CD by the IG
@@ -709,10 +808,17 @@ IMMUNIZATION_FIELDS: list[FieldSpec] = [
     FieldSpec("Status", "hl7:statusCode/@code", "attr"),
 ]
 
+# Medication Activity carries TWO effectiveTimes (CONF:1098-7513/7514): an
+# IVL_TS for the administration window and a PIVL_TS for the dosing frequency
+# ("every 12 h"). extract_fields takes results[0], so a single
+# "hl7:effectiveTime" spec would render the window and silently drop the
+# frequency — the render_typed_value PIVL_TS branch was unreachable for
+# medications. split them by @xsi:type so each lands in its own column
 MEDICATION_FIELDS: list[FieldSpec] = [
     FieldSpec("Medication", _MANUFACTURED_MATERIAL_CODE, "concept"),
     FieldSpec("Dose", "hl7:doseQuantity", "typed"),  # monomorphic PQ
-    FieldSpec("Duration", "hl7:effectiveTime", "typed"),  # IVL_TS / PIVL_TS / bare
+    FieldSpec("Duration", "hl7:effectiveTime[not(@xsi:type='PIVL_TS')]", "typed"),
+    FieldSpec("Frequency", "hl7:effectiveTime[@xsi:type='PIVL_TS']", "typed"),
     FieldSpec("Route", "hl7:routeCode", "concept"),
 ]
 
@@ -750,9 +856,32 @@ def reconstruct_results(section: _Element) -> list[Block]:
             else {spec.label: "" for spec in SPECIMEN_FIELDS}
         )
 
+        # an organizer/component may hold a Laboratory Result Status (...4.418),
+        # which IS an <observation> and which the shared-context prune carve-out
+        # deliberately keeps alive. unfiltered it renders as a result row
+        # reading "Lab order result status"; it belongs in the block context
+        # (PANEL_FIELDS), not the table
+        #
+        # this **excludes** the known non-result template rather than **requiring**
+        # the Result Observation V3 one, and the direction is deliberate. requiring
+        # ...4.2 would blank the whole table for any sender that omits the
+        # templateId — turning the DRIV assertion ("narrative is clinically
+        # equivalent to the structured entries") into a lie, which is a far
+        # worse outcome than one spurious row. the prune guard in
+        # entry_match_rules is inclusive for the mirror-image reason: there,
+        # "no result templateId" means **retain** as context, so erring toward the
+        # template keeps more. here it would show less
+        result_observations = cast(
+            list[_Element],
+            organizer.xpath(
+                "hl7:component/hl7:observation"
+                f"[not(hl7:templateId[@root='{LABORATORY_RESULT_STATUS_ID}'])]",
+                namespaces=HL7_NS,
+            ),
+        )
         rows = [
             DetailRow(source=obs, values=extract_fields(obs, RESULT_FIELDS))
-            for obs in organizer.findall("hl7:component/hl7:observation", HL7_NS)
+            for obs in result_observations
         ]
         if rows:
             blocks.append(
@@ -787,9 +916,23 @@ def reconstruct_problems(section: _Element) -> list[Block]:
     for act in section.findall("hl7:entry/hl7:act", HL7_NS):
         context = extract_fields(act, CONCERN_FIELDS)
 
+        # only the Problem Observation is a problem row. a Problem Concern Act
+        # also permits entryRelationship[@typeCode='REFR'] carrying a Priority
+        # Preference (...22.4.143), itself an <observation>; unfiltered it renders
+        # as a phantom problem row. the Problem Observation SHALL sit under
+        # typeCode='SUBJ' (CONF:1198-9035), so require it
+        #
+        # - this requires the expected discriminator, the opposite of the Results
+        # row filter's exclude-the-known-noise stance--and deliberately.
+        # - there the discriminator is a templateId senders frequently omit, so
+        # requiring it would blank the table (a DRIV lie)
+        # - here it is a positional SHALL conformant senders reliably emit,
+        # so requiring it drops the noise without that risk
         rows = [
             DetailRow(source=obs, values=extract_fields(obs, PROBLEM_FIELDS))
-            for obs in act.findall("hl7:entryRelationship/hl7:observation", HL7_NS)
+            for obs in act.findall(
+                "hl7:entryRelationship[@typeCode='SUBJ']/hl7:observation", HL7_NS
+            )
         ]
         if rows:
             blocks.append(
@@ -827,7 +970,11 @@ def _reconstruct_flat(
     """
 
     rows = [
-        DetailRow(source=anchor, values=extract_fields(anchor, fields))
+        DetailRow(
+            source=anchor,
+            values=extract_fields(anchor, fields),
+            negated=anchor.get("negationInd") == "true",
+        )
         for anchor in section.findall(anchor_xpath, HL7_NS)
     ]
     if not rows:

@@ -639,7 +639,7 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #
 # > the LOINC-in-translation rule (rule 2) handles the additional pattern
 # > where a sender uses a local/proprietary code as the primary code and
-# > puts the LOINC trigger code in translation, per CONF:4527-466/467.
+# > puts the LOINC trigger code in translation, per CONF:4411-462/463.
 #
 # rule 1 — TIER 1: LOINC test name on observation/code
 #   primary code: observation/code SHOULD be LOINC (CONF:1198-7133)
@@ -647,7 +647,11 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #
 # rule 2 — TIER 2: LOINC trigger code in translation
 #   IG: code/translation SHOULD carry RCTC trigger when local code
-#     used as primary (CONF:4527-466, CONF:4527-467)
+#     used as primary (CONF:4411-462, CONF:4411-463)
+#     — these are the OBSERVATION-scoped numbers. the near-identical
+#     CONF:4527-466/467 say the same thing about the ORGANIZER's own
+#     code/translation; this rule targets the observation, so 4411 is
+#     the right series
 #   prune level:  organizer/component
 #   note: structural precedence ensures this only fires on entries
 #     where rule 1 found no LOINC at the primary code location
@@ -660,7 +664,11 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #     organism/substance codes specifically, not generic SNOMED
 #     qualifiers (e.g. 260373001 "Detected (qualifier value)")
 #   require_value_set_attr: sdtc:valueSet SHALL be present on genuine
-#     RCTC trigger code values (CONF:4527-443). Elements without it
+#     RCTC trigger code values (CONF:4411-302 — a CONDITIONAL SHALL,
+#     "if the contained value/@code is an RCTC trigger code"). treating
+#     its absence as disqualifying is therefore stricter than the IG:
+#     a policy call made for the "Detected" case below, not a
+#     conformance requirement. Elements without it
 #     are plain clinical finding values, not trigger codes. This guard
 #     prevents 260373001 "Detected" (no sdtc:valueSet) from matching
 #     while still matching 5247005 "Bordetella pertussis" (has
@@ -670,7 +678,8 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   the Trigger Code Result Organizer (V2) permits sibling components that
 #   are **not** result observations--the Specimen Collection Procedure (ID)
 #   …4.415 (SHOULD 0..1, CONF:4527-450/451: collection date, body site,
-#   source) and the Laboratory Result Status (ID) …4.418 (MAY 0..1). these
+#   source) and the Laboratory Result Status (ID) …4.418 (MAY 0..1,
+#   CONF:4527-443/444). these
 #   are organizer-scoped context applying to every result in the battery and
 #   are unmatchable by construction (their codes are never configured
 #   triggers). because they contain no Result Observation, the plain
@@ -683,6 +692,22 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   template) is treated as shared context rather than a prunable candidate.
 #   an organizer with zero result matches is still removed wholesale (its
 #   procedure goes with it)--the carve-out only fires within a matched entry
+#
+#   version trap: the organizer cites ...4.418 as extension 2018-06-11
+#   (CONF:4527-444) while the template's own definition requires
+#   extension 2018-09-01 (CONF:3378-373). the published schematron
+#   inherits the contradiction--its rule context matches 2018-06-11 and
+#   the assert inside it demands 2018-09-01, so it can never pass. match
+#   on @root only
+#
+# VERIFYING A CONF NUMBER:
+#   the .sch files under scripts/validation/ encode only machine-testable
+#   constraints, so "MAY contain zero or one component" and friends never
+#   appear there. absence from a schematron is NOT absence from the IG--
+#   CONF:4527-443/444 above was once wrongly called unsubstantiated on
+#   exactly that basis. the Vol 2 markdown under scripts/oid_catalog_builder/
+#   is the authority for cardinality; use the .sch only to confirm the
+#   machine-testable asserts
 
 # only prune organizer components that actually carry a Result Observation;
 # non-result siblings (Specimen Collection Procedure, Lab Result Status) are

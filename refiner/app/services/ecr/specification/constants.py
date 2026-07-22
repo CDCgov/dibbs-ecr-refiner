@@ -76,22 +76,6 @@ OBSERVATION_INTERPRETATION_DISPLAY: Final[dict[str, str]] = {
     "E": "Equivocal",
 }
 
-# SNOMED "non-specific" placeholder codes: generic parents a sender drops in
-# when it has no specific product code. their displayName ("Drug or medicament")
-# says nothing a reader couldn't get from the section header, yet it would
-# otherwise shadow the real product the sender parked in <originalText> or a
-# <translation> (an IV admixture's sig, a compound's RxNorm cuvee). A coded
-# element carrying one of these is treated as display-uninformative so resolution
-# looks past it (see render_code_display). Keyed to SNOMED only; grows by evidence
-# TODO:
-# try to get some sample data of this pattern to better understand where the fix should live,
-# e.g., here or a fallback entry matching rule
-NON_SPECIFIC_SNOMED_CODES: Final[frozenset[str]] = frozenset(
-    {
-        "410942007",  # drug or medicament
-    }
-)
-
 OID_TO_SYSTEM_KEY_MAP: Final[dict[str, str]] = {
     LOINC_OID: "loinc",
     SNOMED_OID: "snomed",
