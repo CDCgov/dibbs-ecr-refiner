@@ -866,7 +866,7 @@ async def edit_custom_code_from_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-            if row is None:  # TODO: is this right?
+            if not row:
                 return None
 
             # Collect all event messages
