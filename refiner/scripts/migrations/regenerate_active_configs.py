@@ -25,14 +25,17 @@ import logging
 import os
 import time
 from datetime import UTC, datetime, timedelta
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
 
 from app.db.configurations.db import get_configurations_db
-from app.db.configurations.model import DbConfiguration
+from app.db.configurations.model import (
+    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+    DbConfiguration,
+)
 from app.db.pool import AsyncDatabaseConnection, create_db
 from app.services.aws.s3 import (
     S3_CONFIGURATION_BUCKET_NAME,
@@ -68,6 +71,22 @@ class MaintenanceLock(TypedDict):
     owner: str
     started_at: str
     expires_at: str
+
+
+ReactivationStatus = Literal[
+    "IN_PROGRESS",
+    "COMPLETE",
+    "PARTIAL_FAILURE",
+    "FAILED",
+]
+
+
+class RegenerationResult(TypedDict):
+    """Summary of active configuration regeneration results."""
+
+    total: int
+    successful: int
+    failures: list[str]
 
 
 def configure_logging() -> None:
@@ -327,6 +346,106 @@ async def get_all_active_configurations_db(
     return active_configurations
 
 
+async def get_latest_complete_reactivation_schema_version_db(
+    *,
+    db: AsyncDatabaseConnection,
+) -> int | None:
+    """
+    Return the latest active payload schema version that was completely applied.
+
+    Only COMPLETE records count as successfully applied. Failed or partial records
+    should not prevent another reactivation attempt.
+    """
+
+    query = """
+        SELECT target_schema_version
+        FROM active_payload_schema_reactivations
+        WHERE status = 'COMPLETE'
+        ORDER BY completed_at DESC, created_at DESC
+        LIMIT 1;
+    """
+
+    async with db.get_connection() as connection:
+        async with connection.cursor(row_factory=dict_row) as cursor:
+            await cursor.execute(query)
+            row = await cursor.fetchone()
+
+    if row is None:
+        return None
+
+    return row["target_schema_version"]
+
+
+async def create_reactivation_tracking_record_db(
+    *,
+    db: AsyncDatabaseConnection,
+    target_schema_version: int,
+) -> str:
+    """
+    Create an IN_PROGRESS tracking record for active payload schema reactivation.
+    """
+
+    query = """
+        INSERT INTO active_payload_schema_reactivations (
+            target_schema_version,
+            status,
+            started_at,
+            success_count,
+            failure_count
+        )
+        VALUES (%s, 'IN_PROGRESS', NOW(), 0, 0)
+        RETURNING id;
+    """
+
+    async with db.get_connection() as connection:
+        async with connection.cursor(row_factory=dict_row) as cursor:
+            await cursor.execute(query, (target_schema_version,))
+            row = await cursor.fetchone()
+            await connection.commit()
+
+    return str(row["id"])
+
+
+async def update_reactivation_tracking_record_db(
+    *,
+    db: AsyncDatabaseConnection,
+    reactivation_id: str,
+    status: ReactivationStatus,
+    success_count: int,
+    failure_count: int,
+) -> None:
+    """
+    Update the active payload schema reactivation tracking record.
+
+    COMPLETE is the only status treated as successfully applying the target
+    schema version.
+    """
+
+    query = """
+        UPDATE active_payload_schema_reactivations
+        SET
+            status = %s,
+            completed_at = NOW(),
+            success_count = %s,
+            failure_count = %s,
+            updated_at = NOW()
+        WHERE id = %s;
+    """
+
+    async with db.get_connection() as connection:
+        async with connection.cursor() as cursor:
+            await cursor.execute(
+                query,
+                (
+                    status,
+                    success_count,
+                    failure_count,
+                    reactivation_id,
+                ),
+            )
+            await connection.commit()
+
+
 async def regenerate_active_configuration(
     *,
     configuration: DbConfiguration,
@@ -457,13 +576,16 @@ async def regenerate_active_configs(
     *,
     db: AsyncDatabaseConnection,
     limit: int | None = None,
-) -> None:
+) -> RegenerationResult:
     """
     Query Postgres and regenerate all currently active configurations.
 
     Args:
         db: Open application database pool.
         limit: Optional number of configurations to process for testing.
+
+    Returns:
+        RegenerationResult: Counts and failure IDs from regeneration.
     """
 
     active_configurations = await get_all_active_configurations_db(db=db)
@@ -480,6 +602,7 @@ async def regenerate_active_configs(
         extra={
             "configuration_count": total,
             "limit": limit,
+            "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         },
     )
 
@@ -510,13 +633,130 @@ async def regenerate_active_configs(
             "total": total,
             "successful": successful,
             "failed": len(failures),
+            "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         },
     )
 
-    if failures:
-        raise RuntimeError(
-            "Failed to regenerate active configurations: " + ", ".join(failures)
+    return {
+        "total": total,
+        "successful": successful,
+        "failures": failures,
+    }
+
+
+async def run_active_config_reactivation(
+    *,
+    db: AsyncDatabaseConnection,
+    limit: int | None = None,
+) -> None:
+    """
+    Run active configuration reactivation using an existing database connection.
+
+    This is separated from main() so integration tests can exercise the
+    reactivation tracking behavior without creating a new DB connection from env.
+    """
+
+    latest_complete_schema_version = (
+        await get_latest_complete_reactivation_schema_version_db(db=db)
+    )
+
+    if latest_complete_schema_version == CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION:
+        logger.info(
+            "Active payload schema version already applied; skipping reactivation.",
+            extra={
+                "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+                "latest_complete_schema_version": latest_complete_schema_version,
+            },
         )
+        return
+
+    reactivation_id = await create_reactivation_tracking_record_db(
+        db=db,
+        target_schema_version=CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+    )
+
+    lock_created = False
+    tracking_record_finalized = False
+
+    try:
+        create_maintenance_lock(
+            expiration_minutes=LOCK_EXPIRATION_MINUTES,
+        )
+        lock_created = True
+
+        await wait_for_lambda_to_drain(
+            drain_seconds=LAMBDA_DRAIN_SECONDS,
+        )
+
+        result = await regenerate_active_configs(
+            db=db,
+            limit=limit,
+        )
+
+        failure_count = len(result["failures"])
+
+        if failure_count > 0:
+            await update_reactivation_tracking_record_db(
+                db=db,
+                reactivation_id=reactivation_id,
+                status="PARTIAL_FAILURE",
+                success_count=result["successful"],
+                failure_count=failure_count,
+            )
+            tracking_record_finalized = True
+
+            raise RuntimeError(
+                "Failed to regenerate active configurations: "
+                + ", ".join(result["failures"])
+            )
+
+        await update_reactivation_tracking_record_db(
+            db=db,
+            reactivation_id=reactivation_id,
+            status="COMPLETE",
+            success_count=result["successful"],
+            failure_count=0,
+        )
+        tracking_record_finalized = True
+
+    except Exception:
+        if not tracking_record_finalized:
+            await update_reactivation_tracking_record_db(
+                db=db,
+                reactivation_id=reactivation_id,
+                status="FAILED",
+                success_count=0,
+                failure_count=0,
+            )
+
+        logger.exception(
+            "Active configuration reactivation failed. "
+            "The maintenance lock was not removed."
+        )
+        raise
+
+    else:
+        remove_maintenance_lock()
+        lock_created = False
+
+        logger.info(
+            "Active configuration reactivation completed successfully.",
+            extra={
+                "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+            },
+        )
+
+    finally:
+        if lock_created:
+            logger.error(
+                "The reactivation failed while the maintenance lock was active. "
+                "The lock remains in S3 and must be reviewed before processing "
+                "is resumed.",
+                extra={
+                    "bucket": S3_CONFIGURATION_BUCKET_NAME,
+                    "key": MAINTENANCE_LOCK_KEY,
+                },
+            )
 
 
 async def main() -> None:
@@ -533,45 +773,15 @@ async def main() -> None:
         db_password=db_password,
     )
 
-    lock_created = False
-
     try:
         await db.connect()
 
-        create_maintenance_lock(
-            expiration_minutes=LOCK_EXPIRATION_MINUTES,
+        await run_active_config_reactivation(
+            db=db,
+            limit=REACTIVATION_LIMIT,
         )
-        lock_created = True
-
-        await wait_for_lambda_to_drain(
-            drain_seconds=LAMBDA_DRAIN_SECONDS,
-        )
-
-        await regenerate_active_configs(db=db)
-    except Exception:
-        logger.exception(
-            "Active configuration reactivation failed. "
-            "The maintenance lock was not removed."
-        )
-        raise
-    else:
-        remove_maintenance_lock()
-        lock_created = False
-
-        logger.info("Active configuration reactivation completed successfully.")
     finally:
         await db.close()
-
-        if lock_created:
-            logger.error(
-                "The reactivation failed while the maintenance lock was active. "
-                "The lock remains in S3 and must be reviewed before processing "
-                "is resumed.",
-                extra={
-                    "bucket": S3_CONFIGURATION_BUCKET_NAME,
-                    "key": MAINTENANCE_LOCK_KEY,
-                },
-            )
 
 
 if __name__ == "__main__":
