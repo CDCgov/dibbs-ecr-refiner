@@ -926,7 +926,5 @@ def write_remainder_rrs(
             output_key=rr_output_key,
             jurisdiction_code=jurisdiction_code,
             condition_codes=list(remainder.skipped_codes),
-            original_rr_doc_id=remainder.augmented_result.original_doc_id,
-            augmented_rr_doc_id=remainder.augmented_result.augmented_doc_id,
             operation=LogOperation.REMAINDER_RR_WRITTEN,
         )
