@@ -122,7 +122,8 @@ module.exports = function(eleventyConfig) {
       allowedTags: [
         'p', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'br', 'code',
         'dd', 'dl', 'dt', 'detail', 'pre', 'span', 'div', 'h1', 'h2', 'h3',
-        'h4', 'h5', 'h6', 'summary', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'h4', 'h5', 'h6', `hr`, 'summary', 'table', 'thead', 'tbody', 'tr',
+        'th', 'td',
       ],
       allowedAttributes: {
         'a': ['href', 'title', 'target', 'class'],
