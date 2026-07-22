@@ -367,7 +367,7 @@ async def test_edit_custom_code_from_configuration(
     get_mock_system,
 ):
     # Mock editing a custom code from a config
-    custom_code_id = UUID("efb17339-bd8a-477d-a710-4c6b05272576")
+    custom_code_id = uuid4()
     custom_code_edit_mock = replace(
         mock_configuration,
         custom_codes=[
@@ -427,7 +427,7 @@ async def test_edit_custom_code_from_configuration(
 
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_code_systems_db",
-        AsyncMock(return_value=[get_mock_system("snomed")]),
+        AsyncMock(return_value=[get_mock_system("snomed"), get_mock_system("loinc")]),
     )
 
     payload = {
