@@ -541,7 +541,7 @@ async def delete_custom_code(
         )
 
     updated_config = await delete_custom_code_from_configuration_db(
-        config=config, id=id, user_id=user.id, db=db
+        config=config, id=custom_code.id, user_id=user.id, db=db
     )
 
     if not updated_config:
