@@ -756,7 +756,7 @@ async def edit_custom_code(
 
     systems = await get_code_systems_db(db=db)
     custom_code_system = get_code_system_by_id_or_raise(
-        id=custom_code.system_id, systems=systems
+        id=body.system_id, systems=systems
     )
 
     updated_config = await edit_custom_code_from_configuration_db(
