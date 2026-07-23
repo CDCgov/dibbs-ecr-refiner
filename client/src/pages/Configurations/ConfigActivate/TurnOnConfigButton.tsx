@@ -13,11 +13,13 @@ interface TurnOnConfigButtonProps {
   handleActivation: () => void;
   disabled: boolean;
   isLoading: boolean;
+  hasPrimaryCondition: boolean;
 }
 export function TurnOnConfigButton({
   handleActivation,
   disabled,
   isLoading,
+  hasPrimaryCondition,
 }: TurnOnConfigButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -36,6 +38,7 @@ export function TurnOnConfigButton({
         onClose={() => setIsOpen(false)}
         handleActivation={handleActivation}
         isLoading={isLoading}
+        hasPrimaryCondition={hasPrimaryCondition}
       />
     </div>
   );
@@ -43,7 +46,7 @@ export function TurnOnConfigButton({
 
 type TurnOnConfigModalProps = Pick<
   TurnOnConfigButtonProps,
-  'handleActivation' | 'isLoading'
+  'handleActivation' | 'isLoading' | 'hasPrimaryCondition'
 > & {
   isOpen: boolean;
   onClose: () => void;
@@ -54,7 +57,44 @@ function TurnOnConfigModal({
   onClose,
   handleActivation,
   isLoading,
+  hasPrimaryCondition,
 }: TurnOnConfigModalProps) {
+  if (!hasPrimaryCondition) {
+    return (
+      <Modal open={isOpen} onClose={onClose} position="top">
+        <ModalHeader>
+          <ModalTitle>Activate Zero-Code-Set Configuration?</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-4">
+            <p>
+              This configuration has no primary condition. Activating it will
+              cause the refiner to skip all code-set mapping loops. Are you sure
+              you want to proceed?
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter align="right">
+          <Button
+            className="min-w-58.75 mr-2"
+            onClick={onClose}
+            disabled={isLoading}
+            variant="ghost"
+          >
+            Cancel
+          </Button>
+          <Button
+            className="min-w-58.75"
+            onClick={() => handleActivation()}
+            disabled={isLoading}
+          >
+            {isLoading ? <Spinner size="20px" /> : 'Activate'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    );
+  }
+
   return (
     <Modal open={isOpen} onClose={onClose} position="top">
       <ModalHeader>

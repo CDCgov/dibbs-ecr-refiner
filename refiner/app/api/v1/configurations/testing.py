@@ -50,7 +50,7 @@ async def _get_primary_condition_for_configuration_or_raise(
     db: AsyncDatabaseConnection,
 ) -> DbCondition:
     primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id,
+        id=configuration.primary_condition_id,
         db=db,
     )
 

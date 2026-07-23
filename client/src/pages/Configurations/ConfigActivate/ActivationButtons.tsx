@@ -99,6 +99,7 @@ export function ActivationButtons({
         handleActivation={handleActivation}
         disabled={isLocked}
         isLoading={isLoading}
+        hasPrimaryCondition={!!configurationData.condition_id}
       />
     );
   }

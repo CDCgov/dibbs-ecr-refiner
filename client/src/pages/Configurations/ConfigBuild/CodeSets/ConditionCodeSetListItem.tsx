@@ -7,6 +7,7 @@ import {
   useDisassociateConditionWithConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
+import { getGetConditionsQueryKey } from '../../../../api/conditions/conditions';
 import {
   IncludedCondition,
   GetConditionsResponse,
@@ -61,7 +62,7 @@ export function ConditionCodeSetListItem({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           await queryClient.invalidateQueries({
-            queryKey: ['/api/v1/conditions/'],
+            queryKey: getGetConditionsQueryKey(),
           });
         },
         onError: (error) => {
@@ -94,7 +95,7 @@ export function ConditionCodeSetListItem({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           await queryClient.invalidateQueries({
-            queryKey: ['/api/v1/conditions/'],
+            queryKey: getGetConditionsQueryKey(),
           });
         },
         onError: (error) => {

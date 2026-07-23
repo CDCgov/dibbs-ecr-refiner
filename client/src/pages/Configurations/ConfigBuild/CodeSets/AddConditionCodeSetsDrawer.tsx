@@ -83,7 +83,7 @@ export function AddConditionCodeSetsDrawer({
               const key = condition.id
                 ? condition.id
                 : `${condition.display_name}-${i}`;
-              const isAssoc = included_conditions.some(
+              const isAssoc = (included_conditions ?? []).some(
                 (ic) => ic.id === condition.id
               );
               return (

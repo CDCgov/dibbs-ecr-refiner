@@ -314,6 +314,11 @@ def create_eicr_refinement_plan(
         config_version=config_version,
     )
 
+    # passthrough for zero-code-set configurations:
+    # when codes_to_check is empty (no primary condition), the refinement
+    # engine will skip all mapping loops and proceed with narrative-only
+    # processing. This enables configurations without primary conditions
+    # to pass through without raising 400 errors.
     return EICRRefinementPlan(
         codes_to_check=processed_configuration.codes,
         code_system_sets=processed_configuration.code_system_sets,
@@ -452,6 +457,13 @@ def refine_eicr(
           LOINC code and the plan's augmentation_timestamp, tying it to
           the augmentation author's <time> value for forensic
           traceability.
+
+    Passthrough for zero-code-set configurations:
+        - When codes_to_check is empty (no primary condition), the
+          refinement engine skips all mapping loops and proceeds with
+          narrative-only processing. This enables configurations
+          without primary conditions to pass through without raising
+          400 errors.
 
     Args:
         eicr_root: The parsed eICR root element.

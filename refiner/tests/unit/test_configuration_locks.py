@@ -122,7 +122,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         id=UUID("33333333-3333-3333-3333-333333333333"),
         name="New Config",
         jurisdiction_id="JD-1",
-        condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+        primary_condition_id=UUID("22222222-2222-2222-2222-222222222222"),
         included_conditions=[assoc_condition],
         custom_codes=[],
         section_processing=[],

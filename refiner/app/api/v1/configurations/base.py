@@ -326,6 +326,15 @@ async def get_configuration(
     condition_canonical_url = None
     rsg_codes = []
 
+    rsg_codes = (
+        await get_rsg_codes_by_condition_id_db(
+            condition_id=primary_condition.id,
+            db=db,
+        )
+        if primary_condition
+        else []
+    )
+
     if primary_condition:
         all_conditions = await get_conditions_by_version_db(
             version=primary_condition.version,
@@ -370,11 +379,6 @@ async def get_configuration(
 
         condition_id = primary_condition.id
         condition_canonical_url = primary_condition.canonical_url
-
-        rsg_codes = await get_rsg_codes_by_condition_id_db(
-            condition_id=primary_condition.id,
-            db=db,
-        )
 
     is_locked = locked_by is not None and locked_by.id != user.id
     code_systems = await get_all_code_systems_by_key(db=db)

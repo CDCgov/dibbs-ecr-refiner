@@ -126,7 +126,7 @@ def mock_db_functions(
         id=new_config_id,
         name="New Config",
         jurisdiction_id="JD-1",
-        condition_id=mock_condition.id,
+        primary_condition_id=mock_condition.id,
         included_conditions=[assoc_condition],
         custom_codes=[],
         section_processing=[],
@@ -342,7 +342,7 @@ async def test_edit_custom_code_from_configuration(
         id=UUID(config_id),
         name="test config",
         jurisdiction_id="SDDH",
-        condition_id=mock_condition.id,
+        primary_condition_id=mock_condition.id,
         included_conditions=[],
         custom_codes=[
             DbConfigurationCustomCode(
