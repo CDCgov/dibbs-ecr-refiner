@@ -34,7 +34,7 @@ class CreateConfigInput(BaseModel):
     Body required to create a new configuration.
     """
 
-    condition_id: UUID
+    condition_id: UUID | None = None
 
 
 @dataclass(frozen=True)

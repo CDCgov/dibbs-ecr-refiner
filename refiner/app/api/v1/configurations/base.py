@@ -10,6 +10,7 @@ from app.core.config import ENVIRONMENT
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
+    get_condition_display_name_by_id_db,
     get_conditions_by_version_db,
     get_primary_condition_db,
 )
@@ -95,46 +96,57 @@ async def create_configuration(
     Create a new configuration for a jurisdiction.
     """
 
-    # get the condition by the ID we are provided with by the client
-    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
+    condition = None
+    if body.condition_id is not None:
+        condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
-    if not condition:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Condition with ID {body.condition_id} could not be found or does not exist.",
+        if not condition:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Condition with ID {body.condition_id} could not be found or does not exist.",
+            )
+
+        # get user jurisdiction
+        jd = user.jurisdiction_id
+
+        # check that there isn't already a draft config for the condition + JD
+        if not await is_config_valid_to_insert_db(
+            condition_canonical_url=condition.canonical_url, jurisdiction_id=jd, db=db
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Can't create configuration because a draft configuration for the condition already exists.",
+            )
+
+        latest_config = await get_latest_config_db(
+            jurisdiction_id=jd, condition_canonical_url=condition.canonical_url, db=db
         )
 
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
-    # check that there isn't already a draft config for the condition + JD
-    if not await is_config_valid_to_insert_db(
-        condition_canonical_url=condition.canonical_url, jurisdiction_id=jd, db=db
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Can't create configuration because a draft configuration for the condition already exists.",
-        )
-
-    latest_config = await get_latest_config_db(
-        jurisdiction_id=jd, condition_canonical_url=condition.canonical_url, db=db
-    )
-
-    if not latest_config:
-        logger.info(
-            "Creating fresh draft config",
-            extra={
-                "condition": condition.display_name,
-                "canonical_url": condition.canonical_url,
-            },
-        )
+        if not latest_config:
+            logger.info(
+                "Creating fresh draft config",
+                extra={
+                    "condition": condition.display_name,
+                    "canonical_url": condition.canonical_url,
+                },
+            )
+        else:
+            logger.info(
+                "Creating cloned draft config",
+                extra={
+                    "condition": condition.display_name,
+                    "canonical_url": condition.canonical_url,
+                    "cloned_configuration_id": latest_config.id,
+                },
+            )
     else:
+        # Zero-code-set configuration
+        jd = user.jurisdiction_id
+        latest_config = None
         logger.info(
-            "Creating cloned draft config",
+            "Creating zero-code-set configuration",
             extra={
-                "condition": condition.display_name,
-                "canonical_url": condition.canonical_url,
-                "cloned_configuration_id": latest_config.id,
+                "jurisdiction_id": jd,
             },
         )
 
@@ -393,13 +405,24 @@ async def get_configuration(
         ],
         code_systems=code_systems,
     )
+
+    # Determine the display name for the configuration
+    # Priority: primary_condition.display_name > original_condition.display_name > "Untitled Configuration"
+    display_name = config.name
+    if not primary_condition and config.original_condition_id:
+        original_condition_name = await get_condition_display_name_by_id_db(
+            id=config.original_condition_id, db=db
+        )
+        if original_condition_name:
+            display_name = original_condition_name
+
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
         is_draft=is_draft,
         condition_id=condition_id,
         condition_canonical_url=condition_canonical_url,
-        display_name=config.name,
+        display_name=display_name,
         status=config.status,
         code_sets=config_condition_info,
         included_conditions=included_conditions,

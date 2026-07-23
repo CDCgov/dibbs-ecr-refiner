@@ -157,7 +157,7 @@ def clone_section_processing_instructions(
 
 async def get_config_payload_metadata(
     configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection
-) -> ConfigurationStorageMetadata | None:
+) -> ConfigurationStorageMetadata:
     """
     Creates a minimal ConfigurationStorageMetadata object from a DbConfiguration.
 
@@ -167,21 +167,21 @@ async def get_config_payload_metadata(
         db (AsyncDatabaseConnection): The async database connection
 
     Returns:
-        ConfigurationStorageMetadata | None: A configuration metadata object that can be written to a file system, or None if operation can't be completed.
+        ConfigurationStorageMetadata: A configuration metadata object that can be written to a file system.
     """
     primary_condition = await get_condition_by_id_db(
         id=configuration.primary_condition_id, db=db
     )
 
     if not primary_condition:
-        logger.error(
-            "Configuration metadata could not be created due to missing primary condition ID.",
-            extra={
-                "configuration_id": configuration.id,
-                "jurisdiction_id": configuration.jurisdiction_id,
-            },
+        return ConfigurationStorageMetadata(
+            condition_name="No Primary Condition",
+            canonical_url="N/A",
+            tes_version="0",
+            jurisdiction_id=configuration.jurisdiction_id,
+            configuration_version=configuration.version,
+            child_rsg_snomed_codes=[],
         )
-        return None
 
     return ConfigurationStorageMetadata(
         condition_name=primary_condition.display_name,
