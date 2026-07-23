@@ -136,6 +136,7 @@ class DbConfiguration:
     status: DbConfigurationStatus
     jurisdiction_id: str
     primary_condition_id: UUID | None
+    original_condition_id: UUID | None
     included_conditions: list[UUID]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
@@ -163,6 +164,7 @@ class DbConfiguration:
             status=row["status"],
             jurisdiction_id=row["jurisdiction_id"],
             primary_condition_id=row.get("condition_id"),
+            original_condition_id=row.get("original_condition_id"),
             included_conditions=row.get("included_conditions") or [],
             custom_codes=[
                 DbConfigurationCustomCode(
