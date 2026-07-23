@@ -10,7 +10,7 @@ import { Button } from '@components/Button';
 import { Spinner } from '@components/Spinner';
 
 interface TurnOnConfigButtonProps {
-  handleActivation: () => void;
+  handleActivation: () => Promise<<voidvoid>;
   disabled: boolean;
   isLoading: boolean;
   hasPrimaryCondition: boolean;
