@@ -38,6 +38,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "name": "Test Config",
         "jurisdiction_id": "JD-1",
         "primary_condition_id": uuid4(),
+        "original_condition_id": uuid4(),
         "included_conditions": [],
         "custom_codes": [],
         "section_processing": [],

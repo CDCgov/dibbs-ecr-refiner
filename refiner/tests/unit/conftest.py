@@ -136,6 +136,7 @@ def mock_configuration(mock_user):
         name="test config",
         jurisdiction_id="SDDH",
         primary_condition_id=MOCK_CONDITION_ID,
+        original_condition_id=MOCK_CONDITION_ID,
         included_conditions=[MOCK_CONDITION_ID],
         custom_codes=[],
         section_processing=[],
