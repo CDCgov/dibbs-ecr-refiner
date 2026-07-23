@@ -114,7 +114,7 @@ async def _deactivate_configuration_db(
 async def activate_configuration_db(
     configuration_id: UUID,
     activated_by_user_id: UUID,
-    canonical_url: str,
+    canonical_url: str | None,
     jurisdiction_id: str,
     s3_url: str,
     db: AsyncDatabaseConnection,
@@ -127,45 +127,37 @@ async def activate_configuration_db(
     active configuration.
     """
 
-    current_active_config = await get_active_config_db(
-        jurisdiction_id=jurisdiction_id,
-        condition_canonical_url=canonical_url,
-        db=db,
-    )
-
     activated_config_id = None
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            if not current_active_config:
-                # just activate the configuration without deactivating
-                activated_config_id = await _activate_configuration_db(
-                    configuration_id=configuration_id,
-                    activated_by_user_id=activated_by_user_id,
+            if canonical_url:
+                current_active_config = await get_active_config_db(
                     jurisdiction_id=jurisdiction_id,
-                    s3_url=s3_url,
-                    cur=cur,
+                    condition_canonical_url=canonical_url,
+                    db=db,
                 )
-            else:
-                # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
-                deactivated_config = await _deactivate_configuration_db(
-                    configuration_id=current_active_config.id,
-                    user_id=activated_by_user_id,
-                    jurisdiction_id=jurisdiction_id,
-                    cur=cur,
-                )
-                if not deactivated_config:
-                    raise Exception(
-                        "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
-                    )
 
-                activated_config_id = await _activate_configuration_db(
-                    configuration_id=configuration_id,
-                    activated_by_user_id=activated_by_user_id,
-                    jurisdiction_id=jurisdiction_id,
-                    s3_url=s3_url,
-                    cur=cur,
-                )
+                if current_active_config:
+                    # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
+                    deactivated_config = await _deactivate_configuration_db(
+                        configuration_id=current_active_config.id,
+                        user_id=activated_by_user_id,
+                        jurisdiction_id=jurisdiction_id,
+                        cur=cur,
+                    )
+                    if not deactivated_config:
+                        raise Exception(
+                            "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
+                        )
+
+            activated_config_id = await _activate_configuration_db(
+                configuration_id=configuration_id,
+                activated_by_user_id=activated_by_user_id,
+                jurisdiction_id=jurisdiction_id,
+                s3_url=s3_url,
+                cur=cur,
+            )
     if not activated_config_id:
         return None
 

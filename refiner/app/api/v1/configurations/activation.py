@@ -134,12 +134,6 @@ async def activate_configuration(
         configuration_id=config_to_activate.id, db=db
     )
 
-    if not primary_condition:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Could not find primary condition associated with configuration.",
-        )
-
     # Write the config data to S3 and get the URL back
     s3_url = await run_in_threadpool(
         upload_configuration_payload, config_payload, config_metadata, logger
@@ -149,7 +143,7 @@ async def activate_configuration(
     active_config = await activate_configuration_db(
         configuration_id=config_to_activate.id,
         activated_by_user_id=user.id,
-        canonical_url=primary_condition.canonical_url,
+        canonical_url=primary_condition.canonical_url if primary_condition else None,
         jurisdiction_id=user.jurisdiction_id,
         s3_url=s3_url,
         db=db,
