@@ -195,6 +195,34 @@ async def get_condition_by_id_db(
     return DbCondition.from_db_row(row)
 
 
+async def get_condition_display_name_by_id_db(
+    id: UUID, db: AsyncDatabaseConnection
+) -> str | None:
+    """
+    Gets the display name of a condition by its ID.
+
+    Args:
+        id (UUID): The condition ID
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        str | None: The display name, or None if not found
+    """
+    query = """
+        SELECT display_name
+        FROM conditions
+        WHERE id = %s
+    """
+    params = (id,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+    return row["display_name"] if row else None
+
+
 # TODO:
 # this is a candidate for a uniform Coding model
 # that represents the combination of either:
