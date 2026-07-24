@@ -51,6 +51,31 @@ CODE_SYSTEM_DISPLAY_NAMES: Final[dict[str, str]] = {
     CPT4_OID: "CPT-4",
 }
 
+# HL7 ObservationInterpretation (codeSystem 2.16.840.1.113883.5.83): the
+# result-flag vocabulary a lab stamps on an observation (and on a reference
+# range). Senders often carry only the bare @code ("A", "H", "L") with no
+# @displayName, which reads as a cryptic letter to a PHA. This maps the clinical
+# subset that actually shows up in eICR lab results to its canonical display;
+# unknown codes fall back to the raw @code (see render_interpretation).
+OBSERVATION_INTERPRETATION_DISPLAY: Final[dict[str, str]] = {
+    "N": "Normal",
+    "A": "Abnormal",
+    "AA": "Critically abnormal",
+    "H": "High",
+    "HH": "Critically high",
+    "L": "Low",
+    "LL": "Critically low",
+    "HU": "Significantly high",
+    "LU": "Significantly low",
+    "I": "Intermediate",
+    "R": "Resistant",
+    "S": "Susceptible",
+    "POS": "Positive",
+    "NEG": "Negative",
+    "IND": "Indeterminate",
+    "E": "Equivocal",
+}
+
 OID_TO_SYSTEM_KEY_MAP: Final[dict[str, str]] = {
     LOINC_OID: "loinc",
     SNOMED_OID: "snomed",

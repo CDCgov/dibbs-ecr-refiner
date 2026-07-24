@@ -1709,6 +1709,8 @@
                 <tr>
                   <th>Panel</th>
                   <th>Date(s)</th>
+                  <th>Performer</th>
+                  <th>Result Status</th>
                   <th>Specimen</th>
                   <th>Target Site</th>
                 </tr>
@@ -1719,6 +1721,8 @@
                   <td>2020-11-07</td>
                   <td/>
                   <td/>
+                  <td>Blood specimen (specimen) (SNOMED CT 119297000)</td>
+                  <td>Left upper arm structure (body structure) (SNOMED CT 368208006)</td>
                 </tr>
               </tbody>
             </table>
@@ -1728,6 +1732,7 @@
                   <th>Test</th>
                   <th>Outcome</th>
                   <th>Interpretation</th>
+                  <th>Reference Range</th>
                   <th>Date(s)</th>
                 </tr>
               </thead>
@@ -1736,6 +1741,7 @@
                   <td>SARS-CoV+SARS-CoV-2 (COVID-19) Ag [Presence] in Specimen (LOINC 105066-5)</td>
                   <td>Detected (qualifier value) (SNOMED CT 260373001)</td>
                   <td>Abnormal</td>
+                  <td/>
                   <td>2020-11-07</td>
                 </tr>
               </tbody>
@@ -1799,6 +1805,25 @@
                   <value code="260373001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Detected (qualifier value)" xsi:type="CD"/>
                   <interpretationCode code="A" codeSystem="2.16.840.1.113883.5.83" displayName="Abnormal"/>
                 </observation>
+              </component>
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.415" extension="2018-09-01"/>
+                  <code code="17636008" displayName="Specimen collection (procedure)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+                  <effectiveTime>
+                    <low value="20200309"/>
+                  </effectiveTime>
+                  <targetSiteCode code="368208006" displayName="Left upper arm structure (body structure)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+                  <participant typeCode="PRD">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.310" extension="2020-09-01"/>
+                    <participantRole classCode="SPEC">
+                      <id root="44fd0410-6115-4b8e-8ee9-a51b3817df66"/>
+                      <playingEntity>
+                        <code code="119297000" displayName="Blood specimen (specimen)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                </procedure>
               </component>
             </organizer>
           </entry>
