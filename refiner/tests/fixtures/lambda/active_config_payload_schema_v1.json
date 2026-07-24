@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Active configuration payload schema v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sections",
+    "included_condition_rsg_codes",
+    "code_system_sets"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "code",
+          "name",
+          "action",
+          "narrative",
+          "include"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "narrative": {
+            "type": "string"
+          },
+          "include": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "included_condition_rsg_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "code_system_sets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "display",
+            "system"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "display": {
+              "type": "string"
+            },
+            "system": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

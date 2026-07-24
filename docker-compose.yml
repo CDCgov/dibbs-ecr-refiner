@@ -1,21 +1,25 @@
 # Base configuration used by both docker-compose.override.yml and docker-compose.ci.yml
 
+x-refiner-environment: &refiner-environment
+  DB_URL: postgresql://postgres@db:5432/refiner
+  DB_PASSWORD: refiner
+  SESSION_SECRET_KEY: super-secret-key
+  AUTH_PROVIDER: keycloak
+  AUTH_CLIENT_ID: refinerclient
+  AUTH_CLIENT_SECRET: 5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
+  AUTH_ISSUER: http://localhost:8082/realms/refiner
+  AUTH_ISSUER_INTERNAL: http://auth:8082/realms/refiner
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: refiner
+  AWS_SECRET_ACCESS_KEY: refiner
+  S3_ENDPOINT_URL: http://localstack:4566
+  S3_BUCKET_CONFIG: local-config-bucket
+  ENV: local
+
 services:
   server:
-    environment: &refiner-environment
-      - DB_URL=postgresql://postgres@db:5432/refiner
-      - DB_PASSWORD=refiner
-      - SESSION_SECRET_KEY=super-secret-key
-      - AUTH_PROVIDER=keycloak
-      - AUTH_CLIENT_ID=refinerclient
-      - AUTH_CLIENT_SECRET=5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
-      - AUTH_ISSUER=http://localhost:8082/realms/refiner
-      - AUTH_ISSUER_INTERNAL=http://auth:8082/realms/refiner
-      - AWS_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=refiner
-      - AWS_SECRET_ACCESS_KEY=refiner
-      - S3_ENDPOINT_URL=http://localstack:4566
-      - S3_BUCKET_CONFIG=local-config-bucket
+    environment:
+      <<: *refiner-environment
 
   lambda:
     build:
@@ -40,6 +44,27 @@ services:
       - ./refiner/app/services:/var/task/app/services
       - ./refiner/app/db:/var/task/app/db
       - ./refiner/assets:/var/task/assets
+
+  ops:
+    build:
+      context: .
+      dockerfile: Dockerfile.ops
+      args:
+        VERSION: ${VERSION:-0.0.0}
+    working_dir: /app
+    entrypoint: ["./entrypoint.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    environment:
+      <<: *refiner-environment
+      SSL_MODE: disable
+      ACTIVE_CONFIG_MIGRATION_LIMIT: "0"
+      LAMBDA_DRAIN_SECONDS: "5"
+      MAINTENANCE_LOCK_EXPIRATION_MINUTES: "60"
+    profiles: ["ops"]
 
   db:
     image: postgres:alpine

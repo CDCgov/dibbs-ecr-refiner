@@ -6,6 +6,7 @@ import pytest_asyncio
 from botocore.exceptions import ClientError
 from lxml import etree
 
+from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from tests.integration.conftest import assert_schematron_valid, validate_refined_xml
 from tests.localstack.seed import (
     create_s3_client,
@@ -320,6 +321,58 @@ class TestLambda:
 
         resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
         assert resp.status_code == 200
+
+    async def test_lambda_rejects_incompatible_active_config_schema_version(
+        self, http_client, s3_client, default_setup
+    ):
+        """
+        Lambda should fail clearly when active.json uses an unsupported schema
+        version.
+
+        This prevents old or future active payload shapes from failing later with
+        a generic Pydantic/config parsing error.
+        """
+
+        bucket = default_setup["bucket"]
+
+        active_response = s3_client.get_object(
+            Bucket=bucket,
+            Key=default_setup["activation_key"],
+        )
+        active_payload = json.loads(active_response["Body"].read().decode("utf-8"))
+
+        unsupported_schema_version = CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION + 1
+        active_payload["schema_version"] = unsupported_schema_version
+
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=default_setup["activation_key"],
+            Body=json.dumps(active_payload, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
+
+        assert resp.status_code == 200
+
+        resp_json = resp.json()
+        assert "batchItemFailures" in resp_json
+        assert len(resp_json["batchItemFailures"]) == 1
+        assert "itemIdentifier" in resp_json["batchItemFailures"][0]
+
+        complete_response = s3_client.get_object(
+            Bucket=bucket,
+            Key=default_setup["complete_key"],
+        )
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+
+        assert complete_body["RefinerSkip"] is True
+        assert (
+            "Active configuration schema version is incompatible"
+            in complete_body["Error"]
+        )
+        assert str(CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION) in complete_body["Error"]
+        assert str(unsupported_schema_version) in complete_body["Error"]
 
     async def test_lambda_current_file_missing_activation_file(
         self, http_client, s3_client, default_setup

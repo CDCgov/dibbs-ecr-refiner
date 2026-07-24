@@ -11,6 +11,7 @@ from app.db.code_systems.db import (
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.model import (
+    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
     DbConfiguration,
@@ -285,6 +286,7 @@ async def convert_config_to_storage_payload(
     )
 
     return ConfigurationStoragePayload(
+        schema_version=CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         sections=sections,
         included_condition_rsg_codes=included_condition_rsg_codes,
         code_system_sets=code_system_sets.to_dict(),
