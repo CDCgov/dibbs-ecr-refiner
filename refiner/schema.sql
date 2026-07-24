@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -211,7 +211,8 @@ CREATE TABLE public.configurations (
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
     created_by uuid NOT NULL,
-    s3_url text
+    s3_url text,
+    original_condition_id uuid
 );
 
 
@@ -797,6 +798,14 @@ ALTER TABLE ONLY public.configurations_locks
 
 
 --
+-- Name: configurations configurations_original_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations
+    ADD CONSTRAINT configurations_original_condition_id_fkey FOREIGN KEY (original_condition_id) REFERENCES public.conditions(id);
+
+
+--
 -- Name: configurations_sections configurations_sections_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -895,4 +904,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260625154206'),
     ('20260630173611'),
     ('20260701151910'),
-    ('20260709201220');
+    ('20260709201220'),
+    ('20260723182328');

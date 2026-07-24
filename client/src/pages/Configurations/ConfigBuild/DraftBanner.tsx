@@ -15,7 +15,7 @@ import { InfoIcon } from '@components/Icons/InfoIcon';
 
 interface DraftBannerProps {
   draftId: string | null;
-  conditionId: string;
+  conditionId: string | null;
   latestVersion: number;
   step: 'build' | 'test' | 'activate';
 }
@@ -63,7 +63,7 @@ export function DraftBanner({
 interface NewDraftModalProps {
   isOpen: boolean;
   onClose: () => void;
-  conditionId: string;
+  conditionId: string | null;
   version: number;
 }
 function NewDraftModal({

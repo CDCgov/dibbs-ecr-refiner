@@ -201,8 +201,8 @@ def _build_section_provenance(
         rules_map_with_skips: Merged map including system skip rules.
         specification: The eICR spec for this document's version.
         section_name_lookup: LOINC → jurisdiction-configured name.
-        config_version: The version of the activated configuration, or None
-            if not available (e.g., legacy S3 configs without version).
+        config_version: The version of the activated configuration, or None if
+        not available (e.g., legacy S3 configs without version).
 
     Returns:
         dict[str, SectionProvenanceRecord]: One record per present section,
@@ -253,6 +253,11 @@ def create_eicr_refinement_plan(
     """
     Create an EICRRefinementPlan by combining configuration rules and the sections present in the parsed eICR document.
 
+    Zero-code-set (ZCS) handling:
+        - When processed_configuration.codes is empty (no primary condition configured),
+          the function returns a passthrough plan that preserves the original eICR.
+          This is an explicit guard to avoid 400 errors for ZCS configurations.
+
     Detects the eICR version and loads the specification once here so that
     refine_eicr receives a fully resolved plan and does not need to
     re-inspect the document. The specification is also used by
@@ -261,7 +266,7 @@ def create_eicr_refinement_plan(
 
     Args:
         processed_configuration: The processed configuration containing terminology
-                                 and section processing rules.
+                                  and section processing rules.
         eicr_root: The parsed eICR root element.
         augmentation_timestamp: The HL7 V3 timestamp from the
             AugmentationContext shared across this refinement run. Used
@@ -310,6 +315,21 @@ def create_eicr_refinement_plan(
         section_name_lookup=section_name_lookup,
         config_version=config_version,
     )
+
+    # EXPLICIT GUARD: Zero-code-set (ZCS) passthrough
+    # When codes is empty (no primary condition configured), return a passthrough
+    # plan that preserves the original eICR without attempting condition-based
+    # refinement. This prevents 400 errors for ZCS configurations.
+    if not processed_configuration.codes:
+        return EICRRefinementPlan(
+            codes_to_check=set(),
+            code_system_sets=processed_configuration.code_system_sets,
+            section_instructions=section_instructions,
+            section_provenance=section_provenance,
+            specification=specification,
+            augmentation_timestamp=augmentation_timestamp,
+            config_version=config_version,
+        )
 
     return EICRRefinementPlan(
         codes_to_check=processed_configuration.codes,
@@ -450,6 +470,13 @@ def refine_eicr(
           the augmentation author's <time> value for forensic
           traceability.
 
+    Passthrough for zero-code-set configurations:
+        - When codes_to_check is empty (no primary condition), the
+          refinement engine skips all mapping loops and proceeds with
+          narrative-only processing. This enables configurations
+          without primary conditions to pass through without raising
+          400 errors.
+
     Args:
         eicr_root: The parsed eICR root element.
         plan: A complete, actionable plan for refining the eICR.
@@ -566,7 +593,8 @@ def create_rr_refinement_plan(
     Given a ProcessedConfiguration, creates and returns an RRRefinementPlan.
 
     Args:
-        processed_configuration (ProcessedConfiguration): ProcessedConfiguration to build the plan from.
+        processed_configuration (ProcessedConfiguration): ProcessedConfiguration
+        to build the plan from.
 
     Returns:
         RRRefinementPlan: The newly created RRRefinement plan.
@@ -747,8 +775,8 @@ def refine_rr_for_unconfigured_conditions(
             returned RR will retain only these condition observations.
 
     Returns:
-        str: The filtered RR XML as a string, containing only the
-            reportability observations for the specified condition codes.
+        str: The filtered RR XML as a string, containing only the reportability
+        observations for the specified condition codes.
     """
 
     plan = RRRefinementPlan(

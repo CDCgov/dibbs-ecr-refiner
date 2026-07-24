@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from uuid import UUID, uuid5
 
 from lxml import etree
 
+from app.db.configurations.model import NO_CONDITION_SENTINEL
 from app.services.conditions.parsing import extract_uuid_from_canonical_url
 
 from ..core.exceptions import RefinementException, XMLValidationError
@@ -288,11 +290,22 @@ def refine_for_condition(
         # the AugmentationRun was built by the caller and is shared
         # across the session — see create_augmentation_run_from_xml_files
         #
-        # _extract_uuid_from_canonical_url returns a validated UUID
-        # (raises if the trailing segment isn't UUID-shaped), which is
-        # exactly the type augment_eicr/augment_rr now require — the
-        # type is the validator, no separate shape check needed
-        condition_grouper_uuid = extract_uuid_from_canonical_url(context.canonical_url)
+        # extract_uuid_from_canonical_url returns a string UUID or NO_CONDITION_SENTINEL
+        # for zero-code-set configurations. Convert to UUID for augmentation,
+        # or use a placeholder UUID if no condition grouper is available.
+        uuid_str = extract_uuid_from_canonical_url(context.canonical_url)
+        condition_grouper_uuid: UUID
+        if uuid_str == NO_CONDITION_SENTINEL:
+            # Zero-code-set configuration: use a placeholder UUID for eICR
+            # and RR augmentation. The placeholder is derived from
+            # jurisdiction_id to ensure deterministic output for the same
+            # jurisdiction.
+            condition_grouper_uuid = uuid5(
+                UUID("00000000-0000-0000-0000-000000000000"),
+                f"{context.jurisdiction_id}_no_condition",
+            )
+        else:
+            condition_grouper_uuid = UUID(uuid_str)
 
         # plan -> refine -> augment -> output (eICR)
         eicr_plan = create_eicr_refinement_plan(

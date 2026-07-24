@@ -136,7 +136,7 @@ async def discover_configurations_for_conditions(
     )
 
     configured_primary_condition_ids = {
-        config.condition_id for config in all_jurisdiction_configs
+        config.primary_condition_id for config in all_jurisdiction_configs
     }
 
     conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
@@ -154,7 +154,7 @@ async def discover_configurations_for_conditions(
             [
                 c
                 for c in all_jurisdiction_configs
-                if c.condition_id in all_condition_ids
+                if c.primary_condition_id in all_condition_ids
             ],
             key=lambda c: c.version,
             reverse=True,

@@ -17,13 +17,10 @@ from app.db.configurations.labels import (
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.services.code_systems import get_all_code_systems_by_key
-from app.services.configurations import (
-    clone_section_processing_instructions,
-    get_default_sections,
-)
 from app.services.logger import get_logger
 
 from ..conditions.model import DbCondition
+from ..configurations.model import NO_CONDITION_SENTINEL
 from ..pool import AsyncDatabaseConnection
 from .model import (
     BulkAddCustomCodesResult,
@@ -234,13 +231,33 @@ async def _insert_configuration_sections_db(
 
 
 async def _get_next_configuration_version_db(
-    canonical_url: str,
+    canonical_url: str | None,
     jurisdiction_id: str,
     cursor: AsyncCursor[CursorType],
+    original_condition_id: UUID | None = None,
 ) -> int:
     """
     Given a condition canonical URL and jurisdiction ID, determines the next version a configuration should use.
     """
+    if canonical_url is None and original_condition_id is None:
+        return 1
+
+    if canonical_url is None and original_condition_id is not None:
+        await cursor.execute(
+            """
+            SELECT MAX(c.version) AS max_version
+            FROM configurations c
+            WHERE c.original_condition_id = %s
+              AND c.jurisdiction_id = %s
+            """,
+            (original_condition_id, jurisdiction_id),
+        )
+        row = await cursor.fetchone()
+        max_version = (
+            0 if (not row or row["max_version"] is None) else row["max_version"]
+        )
+        return max_version + 1
+
     await cursor.execute(
         """
         SELECT MAX(c.version) AS max_version
@@ -257,8 +274,40 @@ async def _get_next_configuration_version_db(
     return max_version + 1
 
 
+def _build_insert_params(
+    jurisdiction_id: str,
+    name: str,
+    user_id: UUID,
+    custom_codes: list[dict],
+    version: int,
+    original_condition_id: UUID | None,
+) -> tuple:
+    """
+    Build the INSERT params tuple for configurations.
+
+    Args:
+        jurisdiction_id: The jurisdiction ID
+        name: The configuration name
+        user_id: The user ID
+        custom_codes: List of custom code dicts
+        version: The configuration version
+        original_condition_id: The original condition ID or None
+
+    Returns:
+        tuple: The params tuple for the INSERT statement
+    """
+    return (
+        jurisdiction_id,
+        name,
+        user_id,
+        Jsonb(custom_codes) if custom_codes else EMPTY_JSONB,
+        version,
+        original_condition_id,
+    )
+
+
 async def insert_configuration_db(
-    condition: DbCondition,
+    condition: DbCondition | None,
     user_id: UUID,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
@@ -274,23 +323,21 @@ async def insert_configuration_db(
     - Inserts condition relation info
     """
 
-    # always use the latest version of the given condition when creating a new config
-    # this applies to both a "fresh" config and cloning from an old config
-    latest_condition = await get_latest_tes_condition_db(condition=condition, db=db)
-
     query = """
     INSERT INTO configurations (
         jurisdiction_id,
         name,
         created_by,
         custom_codes,
-        version
+        version,
+        original_condition_id
     )
     VALUES (
         %s,
         %s,
         %s,
         %s::jsonb,
+        %s,
         %s
     )
     RETURNING
@@ -299,38 +346,78 @@ async def insert_configuration_db(
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            next_version = await _get_next_configuration_version_db(
-                canonical_url=latest_condition.canonical_url,
-                jurisdiction_id=jurisdiction_id,
-                cursor=cur,
-            )
+            if condition is None:
+                next_version = await _get_next_configuration_version_db(
+                    canonical_url=None,
+                    jurisdiction_id=jurisdiction_id,
+                    cursor=cur,
+                    original_condition_id=config_to_clone.original_condition_id
+                    if config_to_clone
+                    else None,
+                )
 
-            if config_to_clone:
-                params = (
-                    jurisdiction_id,
-                    # always set name to condition display name
-                    config_to_clone.name,
-                    # cloned by this user
-                    user_id,
-                    # custom_codes
-                    Jsonb(
-                        [
-                            {"name": c.name, "code": c.code, "system_key": c.system_key}
-                            for c in config_to_clone.custom_codes
-                        ]
-                    ),
-                    next_version,
+                custom_codes = (
+                    [
+                        {
+                            "name": c.name,
+                            "code": c.code,
+                            "system_key": c.system_key,
+                        }
+                        for c in config_to_clone.custom_codes
+                    ]
+                    if config_to_clone
+                    else []
+                )
+
+                params = _build_insert_params(
+                    jurisdiction_id=jurisdiction_id,
+                    name=config_to_clone.name
+                    if config_to_clone
+                    else "Untitled Configuration",
+                    user_id=user_id,
+                    custom_codes=custom_codes,
+                    version=next_version,
+                    original_condition_id=config_to_clone.original_condition_id
+                    if config_to_clone
+                    else None,
                 )
             else:
-                params = (
-                    jurisdiction_id,
-                    # always set name to condition display name
-                    latest_condition.display_name,
-                    # created by this user
-                    user_id,
-                    # custom_codes
-                    EMPTY_JSONB,
-                    next_version,
+                # always use the latest version of the given condition when creating a new config
+                # this applies to both a "fresh" config and cloning from an old config
+                latest_condition = await get_latest_tes_condition_db(
+                    condition=condition, db=db
+                )
+
+                next_version = await _get_next_configuration_version_db(
+                    canonical_url=latest_condition.canonical_url,
+                    jurisdiction_id=jurisdiction_id,
+                    cursor=cur,
+                )
+
+                custom_codes = (
+                    [
+                        {
+                            "name": c.name,
+                            "code": c.code,
+                            "system_key": c.system_key,
+                        }
+                        for c in config_to_clone.custom_codes
+                    ]
+                    if config_to_clone
+                    else []
+                )
+
+                params = _build_insert_params(
+                    jurisdiction_id=jurisdiction_id,
+                    name=config_to_clone.name
+                    if config_to_clone
+                    else latest_condition.display_name,
+                    user_id=user_id,
+                    custom_codes=custom_codes,
+                    version=next_version,
+                    original_condition_id=config_to_clone.original_condition_id
+                    if config_to_clone
+                    else latest_condition.id,
                 )
 
             await cur.execute(query, params)
@@ -341,6 +428,12 @@ async def insert_configuration_db(
             config_id = row["id"]
 
             # Insert either cloned sections or brand new sections as part of the same transaction
+            # Import here to avoid circular import
+            from app.services.configurations import (
+                clone_section_processing_instructions,
+                get_default_sections,
+            )
+
             if config_to_clone:
                 await _insert_configuration_sections_db(
                     configuration_id=config_id,
@@ -369,30 +462,31 @@ async def insert_configuration_db(
                 cursor=cur,
             )
 
-            if config_to_clone:
-                included_condition_ids = await get_latest_tes_condition_ids_db(
-                    ids=config_to_clone.included_conditions, db=db
-                )
-                condition_ids_to_insert = included_condition_ids
-                if latest_condition.id not in condition_ids_to_insert:
-                    condition_ids_to_insert = [
-                        latest_condition.id,
-                        *condition_ids_to_insert,
-                    ]
-            else:
-                condition_ids_to_insert = [latest_condition.id]
+            if condition is not None:
+                if config_to_clone:
+                    included_condition_ids = await get_latest_tes_condition_ids_db(
+                        ids=config_to_clone.included_conditions, db=db
+                    )
+                    condition_ids_to_insert = included_condition_ids
+                    if latest_condition.id not in condition_ids_to_insert:
+                        condition_ids_to_insert = [
+                            latest_condition.id,
+                            *condition_ids_to_insert,
+                        ]
+                else:
+                    condition_ids_to_insert = [latest_condition.id]
 
-            await cur.executemany(
-                """
-                INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
-                VALUES (%s, %s, %s)
-                ON CONFLICT DO NOTHING
-                """,
-                [
-                    (config_id, cond_id, cond_id == latest_condition.id)
-                    for cond_id in condition_ids_to_insert
-                ],
-            )
+                await cur.executemany(
+                    """
+                    INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT DO NOTHING
+                    """,
+                    [
+                        (config_id, cond_id, cond_id == latest_condition.id)
+                        for cond_id in condition_ids_to_insert
+                    ],
+                )
 
     return await get_configuration_by_id_db(
         id=row["id"], jurisdiction_id=jurisdiction_id, db=db
@@ -516,14 +610,17 @@ async def associate_condition_codeset_with_configuration_db(
         DbConfiguration: The updated configuration
     """
 
+    # Determine if this is the first condition being added (no primary condition exists)
+    is_primary = config.primary_condition_id is None
+
     query = """
-        INSERT INTO configurations_conditions (configuration_id, condition_id)
-        VALUES (%s, %s)
+        INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
+        VALUES (%s, %s, %s)
         ON CONFLICT DO NOTHING
         RETURNING configuration_id;
     """
 
-    params = (config.id, condition.id)
+    params = (config.id, condition.id, is_primary)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -1173,32 +1270,65 @@ async def get_active_config_db(
 
 
 async def get_configuration_versions_db(
-    jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
+    jurisdiction_id: str,
+    condition_canonical_url: str,
+    db: AsyncDatabaseConnection,
+    original_condition_id: UUID | None = None,
 ) -> list[GetConfigurationResponseVersion]:
     """
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
-    """
-    query = """
-        SELECT
-            c.id,
-            c.version,
-            c.status,
-            cond.canonical_url AS condition_canonical_url,
-            c.last_activated_at,
-            la.username AS last_activated_by,
-            c.created_at,
-            u.username AS created_by
-        FROM configurations c
-        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
-        JOIN conditions cond ON cond.id = cc.condition_id
-        JOIN users u ON u.id = c.created_by
-        LEFT JOIN users la ON la.id = c.last_activated_by
-        WHERE c.jurisdiction_id = %s
-        AND cond.canonical_url = %s
-        ORDER BY c.version DESC;
-    """
 
-    params = (jurisdiction_id, condition_canonical_url)
+    For condition-based configs (condition_canonical_url is not NO_CONDITION_SENTINEL),
+    returns versions scoped to that canonical URL.
+
+    For ZCS configs (condition_canonical_url is NO_CONDITION_SENTINEL), returns versions
+    scoped to the given original_condition_id.
+    """
+    if condition_canonical_url == NO_CONDITION_SENTINEL:
+        # ZCS config: scope by original_condition_id
+        query = """
+            SELECT
+                c.id,
+                c.version,
+                c.status,
+                COALESCE(cond.canonical_url, 'no-condition') AS condition_canonical_url,
+                c.last_activated_at,
+                la.username AS last_activated_by,
+                c.created_at,
+                u.username AS created_by
+            FROM configurations c
+            LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+            LEFT JOIN conditions cond ON cond.id = cc.condition_id
+            JOIN users u ON u.id = c.created_by
+            LEFT JOIN users la ON la.id = c.last_activated_by
+            WHERE c.jurisdiction_id = %s
+            AND c.original_condition_id = %s
+            ORDER BY c.version DESC;
+        """
+        params: tuple[str, ...] = (jurisdiction_id, original_condition_id)  # type: ignore
+    else:
+        # Condition-based config: scope by canonical URL only
+        query = """
+            SELECT
+                c.id,
+                c.version,
+                c.status,
+                COALESCE(cond.canonical_url, 'no-condition') AS condition_canonical_url,
+                c.last_activated_at,
+                la.username AS last_activated_by,
+                c.created_at,
+                u.username AS created_by
+            FROM configurations c
+            JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+            JOIN conditions cond ON cond.id = cc.condition_id
+            JOIN users u ON u.id = c.created_by
+            LEFT JOIN users la ON la.id = c.last_activated_by
+            WHERE c.jurisdiction_id = %s
+            AND cond.canonical_url = %s
+            ORDER BY c.version DESC;
+        """
+        params = (jurisdiction_id, condition_canonical_url)
+
     async with db.get_connection() as conn:
         async with conn.cursor(
             row_factory=class_row(GetConfigurationResponseVersion)
@@ -1233,8 +1363,8 @@ async def get_configurations_summary_db(
                         c.version DESC
                 ) AS rn
             FROM configurations c
-            JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
-            JOIN conditions cond ON cond.id = cc.condition_id
+            LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+            LEFT JOIN conditions cond ON cond.id = cc.condition_id
             WHERE c.jurisdiction_id = %s
         )
         SELECT id, name, status
@@ -1258,7 +1388,8 @@ def _get_configurations_core_query() -> str:
         c.name,
         c.status,
         c.jurisdiction_id,
-        cc_primary.condition_id,
+        cc_primary.condition_id AS condition_id,
+        c.original_condition_id,
         c.custom_codes,
 
         COALESCE(conds.included_conditions, '{}') AS included_conditions,
@@ -1270,7 +1401,7 @@ def _get_configurations_core_query() -> str:
         c.created_by,
         c.s3_url
     FROM configurations c
-    JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
+    LEFT JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
     LEFT JOIN LATERAL (
         SELECT array_agg(cc.condition_id) AS included_conditions
         FROM configurations_conditions cc

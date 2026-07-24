@@ -17,7 +17,12 @@ import {
   useDisassociateConditionWithConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
+import { useGetConditions } from '../../../api/conditions/conditions';
+import {
+  DbCode,
+  GetConditionsResponse,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
@@ -57,9 +62,12 @@ export function ConfigBuild() {
     isError,
   } = useGetConfiguration(id ?? '');
 
+  const { data: allConditions, isPending: conditionsPending } =
+    useGetConditions();
+
   const [isRsgDetailsModalOpen, setIsRsgDetailsModalOpen] = useState(false);
 
-  if (isPending) return <Spinner variant="centered" />;
+  if (isPending || conditionsPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
   const { is_locked: disabledForConcurrency } = configuration.data;
@@ -137,6 +145,7 @@ export function ConfigBuild() {
           id={configuration.data.id}
           code_sets={sortedCodeSets}
           included_conditions={configuration.data.included_conditions}
+          all_conditions={allConditions?.data ?? []}
           custom_codes={configuration.data.custom_codes}
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
@@ -171,13 +180,17 @@ type BuilderProps = Pick<
   | 'included_conditions'
   | 'section_processing'
   | 'display_name'
-> & { disabled: boolean };
+> & {
+  disabled: boolean;
+  all_conditions: GetConditionsResponse[];
+};
 
 function Builder({
   id,
   code_sets,
   custom_codes,
   included_conditions,
+  all_conditions,
   section_processing,
   display_name: default_condition_name,
   disabled,
@@ -197,7 +210,7 @@ function Builder({
   );
 
   // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
-  if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+  if (tableView === 'none' && code_sets?.[0] && code_sets[0].condition_id) {
     onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
   }
 
@@ -231,9 +244,10 @@ function Builder({
      * This shouldn't happen since we can't delete the primary condition code set.
      * Just in case 🙂
      */
-    if (deletedItemIndex <= 0) return;
+    if (deletedItemIndex < 0) return;
 
-    const previousCodeSetId = code_sets[deletedItemIndex - 1].condition_id;
+    const previousCodeSetId = code_sets[deletedItemIndex - 1]?.condition_id;
+    if (!previousCodeSetId) return;
 
     codeSetButtonRefs.current[previousCodeSetId]?.click();
   }
@@ -402,7 +416,8 @@ function Builder({
       <AddConditionCodeSetsDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        conditions={included_conditions}
+        conditions={all_conditions}
+        included_conditions={included_conditions}
         configurationId={id}
         reportable_condition_display_name={default_condition_name}
         disabled={disabled}
@@ -523,20 +538,23 @@ function DeleteCodeSetButton({
     return null;
   }
 
-  return index === 0 ? (
-    <span className="text-gray-cool-50 mr-2 hidden italic group-hover:block">
-      Default
-    </span>
-  ) : (
-    <Button
-      variant="unstyled"
-      className="text-gray-cool-50 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
-      aria-label={`Delete code set ${conditionName}`}
-      onClick={() => handleDisassociateCondition(conditionId)}
-      disabled={disabled}
-    >
-      <DeleteIcon />
-    </Button>
+  return (
+    <div className="flex items-center">
+      {index === 0 && (
+        <span className="text-gray-cool-50 mr-2 hidden italic group-hover:block">
+          Default
+        </span>
+      )}
+      <Button
+        variant="unstyled"
+        className="text-gray-cool-50 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+        aria-label={`Delete code set ${conditionName}`}
+        onClick={() => handleDisassociateCondition(conditionId)}
+        disabled={disabled}
+      >
+        <DeleteIcon />
+      </Button>
+    </div>
   );
 }
 

@@ -34,7 +34,7 @@ class CreateConfigInput(BaseModel):
     Body required to create a new configuration.
     """
 
-    condition_id: UUID
+    condition_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -88,8 +88,8 @@ class GetConfigurationResponse:
     id: UUID
     draft_id: UUID | None
     is_draft: bool
-    condition_id: UUID
-    condition_canonical_url: str
+    condition_id: UUID | None
+    condition_canonical_url: str | None
     display_name: str
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]

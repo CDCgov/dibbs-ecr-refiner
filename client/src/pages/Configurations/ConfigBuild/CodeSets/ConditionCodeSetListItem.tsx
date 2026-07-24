@@ -7,16 +7,21 @@ import {
   useDisassociateConditionWithConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { IncludedCondition } from '../../../../api/schemas';
+import { getGetConditionsQueryKey } from '../../../../api/conditions/conditions';
+import {
+  IncludedCondition,
+  GetConditionsResponse,
+} from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
 
 interface ConditionCodeSetListItemProps {
-  condition: IncludedCondition;
+  condition: IncludedCondition | GetConditionsResponse;
   configurationId: string;
   highlight?: React.ReactNode;
   reportable_condition_display_name: string;
   disabled: boolean;
+  isAssociated?: boolean;
 }
 
 export function ConditionCodeSetListItem({
@@ -25,6 +30,7 @@ export function ConditionCodeSetListItem({
   highlight,
   reportable_condition_display_name,
   disabled,
+  isAssociated,
 }: ConditionCodeSetListItemProps) {
   const { mutate: associateMutation } =
     useAssociateConditionWithConfiguration();
@@ -52,6 +58,9 @@ export function ConditionCodeSetListItem({
 
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetConditionsQueryKey(),
           });
         },
         onError: (error) => {
@@ -83,6 +92,9 @@ export function ConditionCodeSetListItem({
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
+          await queryClient.invalidateQueries({
+            queryKey: getGetConditionsQueryKey(),
+          });
         },
         onError: (error) => {
           const errorDetail =
@@ -97,9 +109,9 @@ export function ConditionCodeSetListItem({
     );
   }
 
-  function onClick(associated: boolean) {
+  function onClick(isAssoc: boolean) {
     if (disabled) return;
-    if (associated) {
+    if (isAssoc) {
       handleDisassociate();
     } else {
       handleAssociate();
@@ -123,22 +135,23 @@ export function ConditionCodeSetListItem({
       }}
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
-      {isDefault ? (
-        <span className="text-bold mr-3 text-black">Default</span>
-      ) : (
+      <div className="flex items-center">
+        {isDefault && (
+          <span className="text-bold mr-3 text-black">Default</span>
+        )}
         <Button
-          variant={condition.associated ? 'secondary' : 'primary'}
-          aria-pressed={condition.associated}
-          aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
+          variant={isAssociated ? 'secondary' : 'primary'}
+          aria-pressed={isAssociated}
+          aria-label={`${isAssociated ? 'Remove' : 'Add'} ${condition.display_name}`}
           className={classNames('mr-0! w-20!', {
-            'sr-only!': !showButton && !condition.associated,
+            'sr-only!': !showButton && !isAssociated,
           })}
-          onClick={() => onClick(condition.associated)}
+          onClick={() => onClick(!!isAssociated)}
           disabled={disabled}
         >
-          {condition.associated ? 'Remove' : 'Add'}
+          {isAssociated ? 'Remove' : 'Add'}
         </Button>
-      )}
+      </div>
     </li>
   );
 }

@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+NO_CONDITION_SENTINEL = "no-condition"
+
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbNarrativeAction = Literal["retain", "remove", "reconstruct", "keep_on_match"]
@@ -120,11 +122,11 @@ class DbConfiguration:
     """
     Model for a database Configuration object (row).
 
-    A Configuration is explicitly tied to a primary condition through condition_id,
-    while included_conditions tracks both the primary and any secondary conditions
-    using their canonical URLs and versions. At the time of creation, condition.name
-    will also be added to configuration.name for a more human readable way to see the
-    condition -> configuration connection.
+    A Configuration is explicitly tied to a primary condition through the
+    configurations_conditions join table (is_primary = true), while included_conditions
+    tracks both the primary and any secondary conditions. At the time of creation,
+    condition.name will also be added to configuration.name for a more human readable
+    way to see the condition -> configuration connection.
 
     NOTE: family_id is present in the database, but intentionally omitted here.
     It may be used in the future to support configuration "families" or advanced versioning.
@@ -135,7 +137,8 @@ class DbConfiguration:
     name: str
     status: DbConfigurationStatus
     jurisdiction_id: str
-    condition_id: UUID
+    primary_condition_id: UUID | None
+    original_condition_id: UUID | None
     included_conditions: list[UUID]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
@@ -162,7 +165,8 @@ class DbConfiguration:
             name=row["name"],
             status=row["status"],
             jurisdiction_id=row["jurisdiction_id"],
-            condition_id=row["condition_id"],
+            primary_condition_id=row.get("condition_id"),
+            original_condition_id=row.get("original_condition_id"),
             included_conditions=row.get("included_conditions") or [],
             custom_codes=[
                 DbConfigurationCustomCode(

@@ -174,6 +174,13 @@ export function ConditionCodeTable({
         <div className="pt-10">
           <p>No codes match the search criteria.</p>
         </div>
+      ) : visibleCodes.length === 0 ? (
+        <div className="flex h-full w-full flex-col items-center justify-center p-10 text-center">
+          <p className="text-lg text-gray-600">
+            No codes associated with this configuration. Please add one to begin
+            refinement.
+          </p>
+        </div>
       ) : (
         <div
           ref={parentRef}

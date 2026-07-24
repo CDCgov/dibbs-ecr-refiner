@@ -49,8 +49,14 @@ async def _get_primary_condition_for_configuration_or_raise(
     configuration: DbConfiguration,
     db: AsyncDatabaseConnection,
 ) -> DbCondition:
+    if configuration.primary_condition_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Primary condition not found for configuration.",
+        )
+
     primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id,
+        id=configuration.primary_condition_id,
         db=db,
     )
 

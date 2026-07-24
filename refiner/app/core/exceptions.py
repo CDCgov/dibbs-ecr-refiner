@@ -190,6 +190,14 @@ class ConfigurationError(BaseApplicationException):
     pass
 
 
+class ConfigurationActivationError(ConfigurationError):
+    """
+    Raised when configuration activation fails.
+    """
+
+    pass
+
+
 # database-specific exceptions
 class DatabaseError(BaseApplicationException):
     """
