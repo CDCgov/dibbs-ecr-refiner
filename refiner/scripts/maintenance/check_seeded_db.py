@@ -38,7 +38,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "query": """
             SELECT COUNT(*) AS count
             FROM conditions c
-            WHERE NOT EXISTS (SELECT 1 FROM conditions_rsg_codes crc WHERE crc.condition_id = c.id);
+            WHERE NOT EXISTS (SELECT 1 FROM conditions_codes crc WHERE crc.condition_id = c.id);
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
         "failure_message": "Found conditions with no child SNOMED codes, indicating an aggregation error.",
@@ -51,8 +51,8 @@ DB_CHECKS: list[dict[str, Any]] = [
                 SELECT
                     code_id,
                     COUNT(DISTINCT c.canonical_url) as url_count
-                FROM conditions_rsg_codes crc
-                JOIN conditions c ON crc.condition_id = c.id
+                FROM conditions_codes crc
+                JOIN conditions c ON crc.condition_id = c.id AND crc.is_child_rsg
                 GROUP BY code_id
                 HAVING COUNT(DISTINCT c.canonical_url) > 1
             ) as duplicates;

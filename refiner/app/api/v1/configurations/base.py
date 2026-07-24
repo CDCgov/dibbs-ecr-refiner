@@ -371,6 +371,7 @@ async def get_configuration(
         condition_id=primary_condition.id,
         db=db,
     )
+
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
