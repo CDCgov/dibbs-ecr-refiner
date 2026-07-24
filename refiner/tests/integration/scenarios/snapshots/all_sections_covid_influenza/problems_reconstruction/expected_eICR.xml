@@ -1897,6 +1897,25 @@
                   <interpretationCode code="A" codeSystem="2.16.840.1.113883.5.83" displayName="Abnormal"/>
                 </observation>
               </component>
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.415" extension="2018-09-01"/>
+                  <code code="17636008" displayName="Specimen collection (procedure)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+                  <effectiveTime>
+                    <low value="20200309"/>
+                  </effectiveTime>
+                  <targetSiteCode code="368208006" displayName="Left upper arm structure (body structure)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+                  <participant typeCode="PRD">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.310" extension="2020-09-01"/>
+                    <participantRole classCode="SPEC">
+                      <id root="44fd0410-6115-4b8e-8ee9-a51b3817df66"/>
+                      <playingEntity>
+                        <code code="119297000" displayName="Blood specimen (specimen)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                </procedure>
+              </component>
             </organizer>
           </entry>
         </section>
