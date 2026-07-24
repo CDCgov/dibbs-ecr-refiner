@@ -14,7 +14,7 @@ import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { Status } from '../ConfigBuild/Status';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { ActivationButtons } from './ActivationButtons';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
+import { useConfigLock } from '../../../hooks/useConfigLock';
 
 export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
@@ -25,8 +25,8 @@ export function ConfigActivate() {
     isError,
   } = useGetConfiguration(id ?? '');
 
-  // release lock on beforeunload
-  useConfigLockRelease(id);
+  // acquire lock on mount, schedule release on unmount
+  useConfigLock(id);
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
