@@ -9,7 +9,7 @@ describe('TurnOnConfigButton', () => {
     vi.clearAllMocks();
   });
 
-  it('should show Zero-Code-Set warning when hasPrimaryCondition is false', async () => {
+  it('should show Zero-Code-Set warning when hasPrimaryCondition is false', () => {
     render(
       <TurnOnConfigButton
         handleActivation={mockHandleActivation}
@@ -22,11 +22,15 @@ describe('TurnOnConfigButton', () => {
     const activateBtn = screen.getByText('Turn on configuration');
     fireEvent.click(activateBtn);
 
-    expect(screen.getByText('Activate Zero-Code-Set Configuration?')).toBeInTheDocument();
-    expect(screen.getByText(/This configuration has no primary condition/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('Activate Zero-Code-Set Configuration?')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/This configuration has no primary condition/i)
+    ).toBeInTheDocument();
   });
 
-  it('should show standard confirmation when hasPrimaryCondition is true', async () => {
+  it('should show standard confirmation when hasPrimaryCondition is true', () => {
     render(
       <TurnOnConfigButton
         handleActivation={mockHandleActivation}
@@ -43,10 +47,12 @@ describe('TurnOnConfigButton', () => {
     expect(screen.getByText(/Refiner will/i)).toBeInTheDocument();
     expect(screen.getByText(/immediately/i)).toBeInTheDocument();
     expect(screen.getByText(/start to refine the eCRs/i)).toBeInTheDocument();
-    expect(screen.queryByText('Activate Zero-Code-Set Configuration?')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Activate Zero-Code-Set Configuration?')
+    ).not.toBeInTheDocument();
   });
 
-  it('should trigger handleActivation when clicking Activate in Zero-Code-Set modal', async () => {
+  it('should trigger handleActivation when clicking Activate in Zero-Code-Set modal', () => {
     render(
       <TurnOnConfigButton
         handleActivation={mockHandleActivation}
@@ -79,7 +85,7 @@ describe('TurnOnConfigButton', () => {
     expect(activateBtn).toBeDisabled();
   });
 
-  it('should show spinner and disable buttons when isLoading is true', async () => {
+  it('should show spinner and disable buttons when isLoading is true', () => {
     render(
       <TurnOnConfigButton
         handleActivation={mockHandleActivation}
@@ -97,6 +103,8 @@ describe('TurnOnConfigButton', () => {
     expect(cancelBtn).toBeDisabled();
 
     // The modal should show the Zero-Code-Set warning
-    expect(screen.getByText(/This configuration has no primary condition/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/This configuration has no primary condition/i)
+    ).toBeInTheDocument();
   });
 });

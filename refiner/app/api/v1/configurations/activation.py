@@ -53,7 +53,11 @@ async def _get_conditions_with_active_config_db(
     )
 
     # Get the conditions from the active configs
-    active_config_ids = [active.primary_condition_id for active in active_configs_in_jd]
+    active_config_ids = [
+        active.primary_condition_id
+        for active in active_configs_in_jd
+        if active.primary_condition_id is not None
+    ]
     return await get_conditions_by_ids(ids=active_config_ids, db=db)
 
 
@@ -147,6 +151,7 @@ async def activate_configuration(
         jurisdiction_id=user.jurisdiction_id,
         s3_url=s3_url,
         db=db,
+        original_condition_id=config_to_activate.original_condition_id,
     )
 
     if not active_config:

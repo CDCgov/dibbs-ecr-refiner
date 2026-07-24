@@ -289,9 +289,6 @@ class ProcessedConfiguration:
         """
         Creates a ProcessedConfiguration from a validated dictionary.
 
-        NOTE: The system currently supports zero code sets as an unrefined pass-through.
-        This behavior may be replaced by a specific error in the future.
-
         code_system_sets is required in active.json. The runtime flat codes set
         is derived from all coding objects across all code systems.
 

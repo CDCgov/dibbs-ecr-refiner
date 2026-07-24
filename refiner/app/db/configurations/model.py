@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+NO_CONDITION_SENTINEL = "no-condition"
+
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbNarrativeAction = Literal["retain", "remove", "reconstruct", "keep_on_match"]

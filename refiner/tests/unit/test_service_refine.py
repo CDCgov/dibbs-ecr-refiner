@@ -1116,3 +1116,54 @@ class TestRefiningService:
         doc_string = etree.tostring(rr_root_v3_1_1, encoding="unicode")
 
         assert "3928002" in doc_string
+
+    # NOTE:
+    # ZERO-CODE-SET (ZCS) PASSTHROUGH TESTS
+    # =============================================================================
+
+    async def test_zcs_passthrough_no_error(self, eicr_root_v1_1: etree._Element):
+        """
+        Tests that a zero-code-set (ZCS) configuration (no primary condition codes)
+        returns a passthrough plan without raising an error.
+
+        This is the explicit guard for issue #6: refinement must NOT 400 for ZCS.
+        The condition used to detect ZCS is: not processed_configuration.codes
+        (i.e., codes is an empty set).
+        """
+
+        # Create a condition with NO codes (empty snomed_codes, loinc_codes, etc.)
+        zcs_condition = _make_condition_v1_1(
+            snomed_codes=[],
+            loinc_codes=[],
+            icd10_codes=[],
+            rxnorm_codes=[],
+            cvx_codes=[],
+        )
+        config = _make_db_configuration_v1_1()
+
+        processed_configuration = await create_processed_config(
+            config=config, conditions=[zcs_condition]
+        )
+
+        # Verify codes is empty (ZCS detection condition)
+        assert processed_configuration.codes == set()
+
+        # create_eicr_refinement_plan should NOT raise an error for ZCS
+        from app.services.ecr.refine import create_eicr_refinement_plan
+
+        plan = create_eicr_refinement_plan(
+            processed_configuration=processed_configuration,
+            eicr_root=eicr_root_v1_1,
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        # Verify passthrough: codes_to_check should be empty
+        assert plan.codes_to_check == set()
+
+        # refine_eicr should complete without error (passthrough behavior)
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        # The eICR should remain unchanged (passthrough)
+        # Verify at least one section is still present
+        sections = eicr_root_v1_1.xpath(".//hl7:section", namespaces=HL7_NS)
+        assert len(sections) > 0

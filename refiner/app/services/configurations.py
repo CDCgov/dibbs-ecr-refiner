@@ -3,19 +3,28 @@ from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
+from uuid import UUID
 
+from app.api.v1.configurations.model import IncludedCondition
 from app.db.code_systems.db import (
     CodeSystemKey,
     get_code_system_by_key_db,
 )
-from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
+from app.db.codes.db import get_rsg_codes_by_condition_id_db
+from app.db.codes.model import DbCode
+from app.db.conditions.db import (
+    get_condition_by_id_db,
+    get_included_conditions_db,
+)
 from app.db.conditions.model import DbConditionCoding
+from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
     DbConfiguration,
     DbConfigurationSectionProcessing,
     DbSectionAction,
+    GetConfigurationResponseVersion,
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.code_systems import (
@@ -161,6 +170,12 @@ async def get_config_payload_metadata(
     """
     Creates a minimal ConfigurationStorageMetadata object from a DbConfiguration.
 
+    When a primary condition exists, returns its display name, canonical URL,
+    TES version, and child RSG SNOMED codes. When no primary condition exists
+    (zero-code-set configuration), fabricates fallback metadata with
+    condition_name="No Primary Condition", canonical_url="N/A", tes_version="0",
+    and an empty child RSG SNOMED codes list.
+
     Args:
         configuration (DbConfiguration): The configuration from the database
         logger (Logger): The standard logger
@@ -169,11 +184,21 @@ async def get_config_payload_metadata(
     Returns:
         ConfigurationStorageMetadata: A configuration metadata object that can be written to a file system.
     """
-    primary_condition = await get_condition_by_id_db(
-        id=configuration.primary_condition_id, db=db
-    )
+    primary_condition = None
+    if configuration.primary_condition_id:
+        primary_condition = await get_condition_by_id_db(
+            id=configuration.primary_condition_id, db=db
+        )
 
     if not primary_condition:
+        logger.warning(
+            "No primary condition found for configuration; using fallback metadata",
+            extra={
+                "configuration_id": configuration.id,
+                "jurisdiction_id": configuration.jurisdiction_id,
+                "version": configuration.version,
+            },
+        )
         return ConfigurationStorageMetadata(
             condition_name="No Primary Condition",
             canonical_url="N/A",
@@ -312,3 +337,290 @@ def format_section_naming(
         r"\s+section\s*$", "", section.name, flags=re.IGNORECASE
     )
     return replace(section, name=name_without_section.strip().title())
+
+
+async def create_configuration_service(
+    condition_id: UUID | None,
+    user_id: UUID,
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+    logger: Logger,
+) -> DbConfiguration:
+    """
+    Create a new configuration with zero-code-set branching logic extracted from routes.
+
+    Handles both condition-based configurations (with branching for latest config cloning)
+    and zero-code-set configurations (no condition).
+
+    Args:
+        condition_id (UUID | None): The condition ID to base the configuration on, or None for zero-code-set
+        user_id (UUID): The ID of the user creating the configuration
+        jurisdiction_id (str): The jurisdiction ID
+        db (AsyncDatabaseConnection): The async database connection
+        logger (Logger): The standard logger
+
+    Returns:
+        DbConfiguration: The created configuration
+
+    Raises:
+        HTTPException: 404 if condition not found
+        HTTPException: 409 if draft config already exists for condition + jurisdiction
+        HTTPException: 500 if configuration creation fails
+    """
+    from app.db.conditions.db import get_condition_by_id_db
+    from app.db.configurations.db import (
+        get_latest_config_db,
+        insert_configuration_db,
+        is_config_valid_to_insert_db,
+    )
+
+    condition = None
+    latest_config = None
+
+    if condition_id is not None:
+        condition = await get_condition_by_id_db(id=condition_id, db=db)
+
+        if not condition:
+            from fastapi import HTTPException, status
+
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Condition with ID {condition_id} could not be found or does not exist.",
+            )
+
+        # check that there isn't already a draft config for the condition + JD
+        if not await is_config_valid_to_insert_db(
+            condition_canonical_url=condition.canonical_url,
+            jurisdiction_id=jurisdiction_id,
+            db=db,
+        ):
+            from fastapi import HTTPException, status
+
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Can't create configuration because a draft configuration for the condition already exists.",
+            )
+
+        latest_config = await get_latest_config_db(
+            jurisdiction_id=jurisdiction_id,
+            condition_canonical_url=condition.canonical_url,
+            db=db,
+        )
+
+        if not latest_config:
+            logger.info(
+                "Creating fresh draft config",
+                extra={
+                    "condition": condition.display_name,
+                    "canonical_url": condition.canonical_url,
+                },
+            )
+        else:
+            logger.info(
+                "Creating cloned draft config",
+                extra={
+                    "condition": condition.display_name,
+                    "canonical_url": condition.canonical_url,
+                    "cloned_configuration_id": latest_config.id,
+                },
+            )
+    else:
+        # Zero-code-set configuration
+        latest_config = None
+        logger.info(
+            "Creating zero-code-set configuration",
+            extra={
+                "jurisdiction_id": jurisdiction_id,
+            },
+        )
+
+    config = await insert_configuration_db(
+        condition=condition,
+        user_id=user_id,
+        jurisdiction_id=jurisdiction_id,
+        config_to_clone=latest_config,
+        db=db,
+    )
+
+    if config is None:
+        from fastapi import HTTPException, status
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create configuration",
+        )
+
+    return config
+
+
+async def get_configuration_service(
+    configuration_id: UUID,
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+    logger: Logger,
+) -> tuple[
+    DbConfiguration,
+    list[DbCode],
+    list[IncludedCondition],
+    list[GetConfigurationResponseVersion],
+    int | None,
+    UUID | None,
+    int,
+    UUID | None,
+    str | None,
+    bool,
+    UUID | None,
+]:
+    """
+    Get configuration with zero-code-set branching logic extracted from routes.
+
+    Handles primary condition existence branching: when primary condition exists,
+    fetches all conditions by version, builds included conditions list, retrieves
+    all versions, and determines active/draft/active configuration IDs. When no
+    primary condition exists, returns empty/zero values for condition-related fields.
+
+    Args:
+        configuration_id (UUID): The configuration ID
+        jurisdiction_id (str): The jurisdiction ID
+        db (AsyncDatabaseConnection): The async database connection
+        logger (Logger): The standard logger
+
+    Returns:
+        tuple: (config, rsg_codes, included_conditions, all_versions,
+                active_version, active_configuration_id, latest_version,
+                condition_id, condition_canonical_url, is_draft, draft_id)
+    """
+    from app.db.conditions.db import (
+        get_conditions_by_version_db,
+        get_primary_condition_db,
+    )
+    from app.db.configurations.db import (
+        get_configuration_versions_db,
+        get_latest_config_db,
+    )
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jurisdiction_id, db=db
+    )
+
+    if not config:
+        from fastapi import HTTPException, status
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+
+    primary_condition = await get_primary_condition_db(
+        configuration_id=config.id, db=db
+    )
+
+    # fetch all conditions from the db based on the primary condition's version
+    # if no primary condition exists, we still return the configuration
+    all_conditions = []
+    latest_config = None
+    included_conditions = []
+    all_versions = []
+    active_config = None
+    draft_config = None
+    draft_id = None
+    is_draft = False
+    active_version = None
+    active_configuration_id = None
+    latest_version = 0
+    condition_id = None
+    condition_canonical_url = None
+    rsg_codes = []
+
+    rsg_codes = (
+        await get_rsg_codes_by_condition_id_db(
+            condition_id=primary_condition.id,
+            db=db,
+        )
+        if primary_condition
+        else []
+    )
+
+    if primary_condition:
+        all_conditions = await get_conditions_by_version_db(
+            version=primary_condition.version,
+            db=db,
+        )
+
+        latest_config = await get_latest_config_db(
+            jurisdiction_id=jurisdiction_id,
+            condition_canonical_url=primary_condition.canonical_url,
+            db=db,
+        )
+
+        # Build IncludedCondition objects for ONLY associated conditions
+        included_ids = set(config.included_conditions)
+        included_conditions = [
+            IncludedCondition(
+                id=condition.id,
+                display_name=condition.display_name,
+                canonical_url=condition.canonical_url,
+                version=condition.version,
+                associated=True,
+            )
+            for condition in all_conditions
+            if condition.id in included_ids or condition.id == primary_condition.id
+        ]
+
+        all_versions = await get_configuration_versions_db(
+            jurisdiction_id=jurisdiction_id,
+            condition_canonical_url=primary_condition.canonical_url,
+            db=db,
+        )
+
+        active_config = next((v for v in all_versions if v.status == "active"), None)
+        draft_config = next((v for v in all_versions if v.status == "draft"), None)
+
+        draft_id = draft_config.id if draft_config is not None else None
+        is_draft = draft_id == config.id
+        active_version = active_config.version if active_config is not None else None
+        active_configuration_id = (
+            active_config.id if active_config is not None else None
+        )
+        latest_version = latest_config.version if latest_config is not None else 0
+
+        condition_id = primary_condition.id
+        condition_canonical_url = primary_condition.canonical_url
+    else:
+        # ZCS config: scope versions by original_condition_id
+        from app.db.configurations.model import NO_CONDITION_SENTINEL
+
+        all_versions = await get_configuration_versions_db(
+            jurisdiction_id=jurisdiction_id,
+            condition_canonical_url=NO_CONDITION_SENTINEL,
+            db=db,
+            original_condition_id=config.original_condition_id,
+        )
+
+        active_config = next((v for v in all_versions if v.status == "active"), None)
+        draft_config = next((v for v in all_versions if v.status == "draft"), None)
+
+        draft_id = draft_config.id if draft_config is not None else None
+        is_draft = draft_id == config.id
+        active_version = active_config.version if active_config is not None else None
+        active_configuration_id = (
+            active_config.id if active_config is not None else None
+        )
+        latest_version = 0
+
+        condition_id = None
+        condition_canonical_url = None
+
+    return (
+        config,
+        rsg_codes,
+        included_conditions,
+        all_versions,
+        active_version,
+        active_configuration_id,
+        latest_version,
+        condition_id,
+        condition_canonical_url,
+        is_draft,
+        draft_id,
+    )

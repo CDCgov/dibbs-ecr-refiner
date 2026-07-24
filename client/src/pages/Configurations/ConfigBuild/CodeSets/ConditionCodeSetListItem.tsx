@@ -43,8 +43,6 @@ export function ConditionCodeSetListItem({
 
   const [showButton, setShowButton] = useState(false);
 
-  const associated = isAssociated;
-
   function handleAssociate() {
     associateMutation(
       {
@@ -142,16 +140,16 @@ export function ConditionCodeSetListItem({
           <span className="text-bold mr-3 text-black">Default</span>
         )}
         <Button
-          variant={associated ? 'secondary' : 'primary'}
-          aria-pressed={associated}
-          aria-label={`${associated ? 'Remove' : 'Add'} ${condition.display_name}`}
+          variant={isAssociated ? 'secondary' : 'primary'}
+          aria-pressed={isAssociated}
+          aria-label={`${isAssociated ? 'Remove' : 'Add'} ${condition.display_name}`}
           className={classNames('mr-0! w-20!', {
-            'sr-only!': !showButton && !associated,
+            'sr-only!': !showButton && !isAssociated,
           })}
-          onClick={() => onClick(!!associated)}
+          onClick={() => onClick(!!isAssociated)}
           disabled={disabled}
         >
-          {associated ? 'Remove' : 'Add'}
+          {isAssociated ? 'Remove' : 'Add'}
         </Button>
       </div>
     </li>

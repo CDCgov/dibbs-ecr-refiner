@@ -10,7 +10,7 @@ import { Button } from '@components/Button';
 import { Spinner } from '@components/Spinner';
 
 interface TurnOnConfigButtonProps {
-  handleActivation: () => Promise<<voidvoid>;
+  handleActivation: () => Promise<void>;
   disabled: boolean;
   isLoading: boolean;
   hasPrimaryCondition: boolean;
@@ -59,71 +59,71 @@ function TurnOnConfigModal({
   isLoading,
   hasPrimaryCondition,
 }: TurnOnConfigModalProps) {
-  if (!hasPrimaryCondition) {
-    return (
-      <Modal open={isOpen} onClose={onClose} position="top">
-        <ModalHeader>
-          <ModalTitle>Activate Zero-Code-Set Configuration?</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <div className="flex flex-col gap-4">
-            <p>
-              This configuration has no primary condition. Activating it will
-              cause the refiner to skip all code-set mapping loops. Are you sure
-              you want to proceed?
-            </p>
-          </div>
-        </ModalBody>
-        <ModalFooter align="right">
-          <Button
-            className="min-w-58.75 mr-2"
-            onClick={onClose}
-            disabled={isLoading}
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-          <Button
-            className="min-w-58.75"
-            onClick={() => handleActivation()}
-            disabled={isLoading}
-          >
-            {isLoading ? <Spinner size="20px" /> : 'Activate'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-    );
-  }
+  const isZeroCodeSet = !hasPrimaryCondition;
+
+  const modalTitle = isZeroCodeSet
+    ? 'Activate Zero-Code-Set Configuration?'
+    : 'Turn on configuration?';
+
+  const modalBody = isZeroCodeSet ? (
+    <div className="flex flex-col gap-4">
+      <p>
+        This configuration has no primary condition. Activating it will cause
+        the refiner to skip all code-set mapping loops. Are you sure you want to
+        proceed?
+      </p>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-4">
+      <ul className="list-inside">
+        <li>
+          Refiner will <span className="text-bold">immediately</span> start to
+          refine the eCRs
+        </li>
+        <li>
+          You <span className="text-bold">cannot</span> edit this version after
+          you activate it
+        </li>
+      </ul>
+      <p>Are you sure you want to turn on the configuration?</p>
+    </div>
+  );
+
+  const footerButtons = isZeroCodeSet ? (
+    <>
+      <Button
+        className="mr-2 min-w-58.75"
+        onClick={onClose}
+        disabled={isLoading}
+        variant="tertiary"
+      >
+        Cancel
+      </Button>
+      <Button
+        className="min-w-58.75"
+        onClick={() => handleActivation()}
+        disabled={isLoading}
+      >
+        {isLoading ? <Spinner size="20px" /> : 'Activate'}
+      </Button>
+    </>
+  ) : (
+    <Button
+      className="min-w-58.75"
+      onClick={() => handleActivation()}
+      disabled={isLoading}
+    >
+      {isLoading ? <Spinner size="20px" /> : 'Yes, turn on configuration'}
+    </Button>
+  );
 
   return (
     <Modal open={isOpen} onClose={onClose} position="top">
       <ModalHeader>
-        <ModalTitle>Turn on configuration?</ModalTitle>
+        <ModalTitle>{modalTitle}</ModalTitle>
       </ModalHeader>
-      <ModalBody>
-        <div className="flex flex-col gap-4">
-          <ul className="list-inside">
-            <li>
-              Refiner will <span className="text-bold">immediately</span> start
-              to refine the eCRs
-            </li>
-            <li>
-              You <span className="text-bold">cannot</span> edit this version
-              after you activate it
-            </li>
-          </ul>
-          <p>Are you sure you want to turn on the configuration?</p>
-        </div>
-      </ModalBody>
-      <ModalFooter align="right">
-        <Button
-          className="min-w-58.75"
-          onClick={() => handleActivation()}
-          disabled={isLoading}
-        >
-          {isLoading ? <Spinner size="20px" /> : 'Yes, turn on configuration'}
-        </Button>
-      </ModalFooter>
+      <ModalBody>{modalBody}</ModalBody>
+      <ModalFooter align="right">{footerButtons}</ModalFooter>
     </Modal>
   );
 }

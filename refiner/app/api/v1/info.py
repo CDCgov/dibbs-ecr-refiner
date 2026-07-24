@@ -36,21 +36,21 @@ async def get_info(
     total_active_config_count = len([c for c in configs if c.status == "active"])
 
     # minimal response to send to the client
-    config_details = [
-        {
-            "name": config.name,
-            "status": config.status,
-            "version": config.version,
-            "condition_tes_version": condition.version
-            if (
-                condition := await get_condition_by_id_db(
-                    id=config.primary_condition_id, db=db
-                )
+    config_details = []
+    for config in configs:
+        condition = None
+        if config.primary_condition_id is not None:
+            condition = await get_condition_by_id_db(
+                id=config.primary_condition_id, db=db
             )
-            else "",
-        }
-        for config in configs
-    ]
+        config_details.append(
+            {
+                "name": config.name,
+                "status": config.status,
+                "version": config.version,
+                "condition_tes_version": condition.version if condition else "",
+            }
+        )
 
     tes_versions = await get_loaded_tes_versions_db(db=db)
     latest_tes_version = get_latest_tes_version(tes_versions)

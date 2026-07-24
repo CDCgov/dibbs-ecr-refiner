@@ -61,17 +61,17 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_conditions_by_version_db",
+        "app.db.conditions.db.get_conditions_by_version_db",
         AsyncMock(return_value=[fake_condition]),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_configuration_by_id_db",
+        "app.db.configurations.db.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_latest_config_db",
+        "app.db.configurations.db.get_latest_config_db",
         AsyncMock(return_value=mock_configuration),
     )
 
@@ -89,18 +89,18 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
     ]
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_configuration_versions_db",
+        "app.db.configurations.db.get_configuration_versions_db",
         AsyncMock(return_value=versions_mock),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_configurations_summary_db",
+        "app.db.configurations.db.get_configurations_summary_db",
         AsyncMock(return_value=[fake_config_summary]),
     )
 
     # Mock is_config_valid_to_insert_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.is_config_valid_to_insert_db",
+        "app.db.configurations.db.is_config_valid_to_insert_db",
         AsyncMock(return_value=True),
     )
 
@@ -111,7 +111,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         status="draft",
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.insert_configuration_db",
+        "app.db.configurations.db.insert_configuration_db",
         AsyncMock(return_value=new_config_mock),
     )
 
@@ -123,6 +123,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         name="New Config",
         jurisdiction_id="JD-1",
         primary_condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+        original_condition_id=UUID("22222222-2222-2222-2222-222222222222"),
         included_conditions=[assoc_condition],
         custom_codes=[],
         section_processing=[],

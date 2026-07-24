@@ -24,7 +24,6 @@ def seed_database(db_url: str, db_password: str) -> None:
                 "conditions_context_groupers",
                 "conditions",
                 "jurisdictions",
-                "configurations",
                 "sessions",
                 "users",
                 "systems",

@@ -253,8 +253,10 @@ def create_eicr_refinement_plan(
     """
     Create an EICRRefinementPlan by combining configuration rules and the sections present in the parsed eICR document.
 
-    NOTE: The system currently supports zero code sets as an unrefined pass-through.
-    This behavior may be replaced by a specific error in the future.
+    Zero-code-set (ZCS) handling:
+        - When processed_configuration.codes is empty (no primary condition configured),
+          the function returns a passthrough plan that preserves the original eICR.
+          This is an explicit guard to avoid 400 errors for ZCS configurations.
 
     Detects the eICR version and loads the specification once here so that
     refine_eicr receives a fully resolved plan and does not need to
@@ -314,11 +316,21 @@ def create_eicr_refinement_plan(
         config_version=config_version,
     )
 
-    # passthrough for zero-code-set configurations:
-    # when codes_to_check is empty (no primary condition), the refinement
-    # engine will skip all mapping loops and proceed with narrative-only
-    # processing. This enables configurations without primary conditions
-    # to pass through without raising 400 errors.
+    # EXPLICIT GUARD: Zero-code-set (ZCS) passthrough
+    # When codes is empty (no primary condition configured), return a passthrough
+    # plan that preserves the original eICR without attempting condition-based
+    # refinement. This prevents 400 errors for ZCS configurations.
+    if not processed_configuration.codes:
+        return EICRRefinementPlan(
+            codes_to_check=set(),
+            code_system_sets=processed_configuration.code_system_sets,
+            section_instructions=section_instructions,
+            section_provenance=section_provenance,
+            specification=specification,
+            augmentation_timestamp=augmentation_timestamp,
+            config_version=config_version,
+        )
+
     return EICRRefinementPlan(
         codes_to_check=processed_configuration.codes,
         code_system_sets=processed_configuration.code_system_sets,
