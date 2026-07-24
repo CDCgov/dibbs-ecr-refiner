@@ -268,9 +268,9 @@ async def get_condition_by_id(db_pool):
                         t.version,
                         ARRAY(
                             SELECT codes.code
-                            FROM conditions_rsg_codes crc
+                            FROM conditions_codes crc
                             JOIN codes ON crc.code_id = codes.id
-                            WHERE crc.condition_id = c.id
+                            WHERE crc.condition_id = c.id AND crc.is_child_rsg
                         ) as child_rsg_snomed_codes,
                         c.snomed_codes,
                         c.loinc_codes,

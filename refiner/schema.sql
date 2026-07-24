@@ -1,7 +1,7 @@
 \restrict dbmate
 
 -- Dumped from database version 18.4
--- Dumped by pg_dump version 18.3
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -169,6 +169,17 @@ CREATE TABLE public.conditions (
 
 
 --
+-- Name: conditions_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conditions_codes (
+    condition_id uuid CONSTRAINT conditions_rsg_codes_condition_id_not_null NOT NULL,
+    code_id uuid CONSTRAINT conditions_rsg_codes_code_id_not_null NOT NULL,
+    is_child_rsg boolean DEFAULT false
+);
+
+
+--
 -- Name: conditions_context_groupers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -182,16 +193,6 @@ CREATE TABLE public.conditions_context_groupers (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     completeness text
-);
-
-
---
--- Name: conditions_rsg_codes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.conditions_rsg_codes (
-    condition_id uuid NOT NULL,
-    code_id uuid NOT NULL
 );
 
 
@@ -420,10 +421,10 @@ ALTER TABLE ONLY public.conditions
 
 
 --
--- Name: conditions_rsg_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_rsg_codes
+ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
@@ -604,6 +605,13 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: codes_upsert_constraint_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX codes_upsert_constraint_idx ON public.codes USING btree (system_id, version, code);
+
+
+--
 -- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -717,18 +725,18 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 
 --
--- Name: conditions_rsg_codes conditions_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes conditions_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_rsg_codes
+ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
 
 
 --
--- Name: conditions_rsg_codes conditions_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes conditions_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_rsg_codes
+ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
@@ -895,4 +903,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260625154206'),
     ('20260630173611'),
     ('20260701151910'),
-    ('20260709201220');
+    ('20260709201220'),
+    ('20260713183905');

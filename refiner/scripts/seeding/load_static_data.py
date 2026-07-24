@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from typing import TypedDict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
@@ -12,11 +12,15 @@ from lib import (
     SNOMED_OID,
     CodeRow,
     ConditionData,
+    FhirCodeTuple,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
+    categorize_codes_by_system_oid,
+    extract_codes_from_compose,
     get_child_rsg_valuesets,
     get_db_connection,
+    get_sibling_context_valuesets,
     is_condition_grouper,
     load_valuesets_from_all_files,
     parse_child_rsg_details_from_use_context,
@@ -76,6 +80,10 @@ class ProcessedCondition(TypedDict):
 
 type SystemDbId = str
 type SystemOid = str
+type CodeVersion = str
+
+type CodeValue = str
+type SystemCodeTuple = tuple[SystemDbId, CodeVersion, CodeValue]
 
 
 class ConditionToCodeRelationshipTrace(TypedDict):
@@ -85,7 +93,8 @@ class ConditionToCodeRelationshipTrace(TypedDict):
 
     condition_id: UUID
     condition_display_name: str
-    child_rsg_snomed_code_ids: list[UUID]
+    child_rsg_codes: set[SystemCodeTuple]
+    non_child_rsg_codes: set[SystemCodeTuple]
     version: str
 
 
@@ -95,7 +104,14 @@ type ConditionToCodeRelationshipIndex = dict[
     ConditionUniqueIndex, ConditionToCodeRelationshipTrace
 ]
 
-type ConditionIndexedCodeRow = dict[ConditionUniqueIndex, CodeRow]
+
+class ProcessedCodePayload(TypedDict):
+    """
+    Information processed from the TES with information ready for database insertion.
+    """
+
+    condition_relationships: ConditionToCodeRelationshipIndex
+    codes_to_insert: list[CodeRow]
 
 
 def _upsert_tes_data(
@@ -142,37 +158,107 @@ def _upsert_tes_data(
     return version_to_tes_id
 
 
-def _build_rsg_codes(
+def _build_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
-    system_data: dict[SystemOid, SystemDbId],
+    oid_indexed_system_db_ids: dict[SystemOid, SystemDbId],
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
-) -> tuple[list[ConditionIndexedCodeRow], ConditionToCodeRelationshipIndex]:
-    snomed_db_id = system_data[SNOMED_OID]
-    rsg_codes: list[ConditionIndexedCodeRow] = []
+) -> ProcessedCodePayload:
 
-    for parent in condition_groupers:
-        cond_canonical_url = parent.get("url", "")
-        cond_version = parent.get("version", "")
+    snomed_db_id = oid_indexed_system_db_ids[SNOMED_OID]
+    codes_seen_so_far: set[tuple[str, str, str]] = set()
+    codes_for_codes_table: list[CodeRow] = []
+
+    for condition in condition_groupers:
+        cond_canonical_url = condition.get("url", "")
+        cond_version = condition.get("version", "")
         cond_index = (cond_canonical_url, cond_version)
 
+        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+
+        child_tuples: set[FhirCodeTuple] = set()
+
         for child_vs in get_child_rsg_valuesets(
-            parent=parent, all_vs_map=valuesets_map
+            parent=condition, all_vs_map=valuesets_map
         ):
-            if snomed_code := parse_snomed_from_url(child_vs.get("url", "")):
+            if child_rsg_code := parse_snomed_from_url(child_vs.get("url", "")):
                 display = parse_child_rsg_details_from_use_context(
                     child_vs.get("useContext", "")
                 )
-                code_data = CodeRow(
-                    code=snomed_code,
-                    version=cond_version,
-                    display=display,
-                    system_id=snomed_db_id,
+                code_index = (snomed_db_id, cond_version, child_rsg_code)
+                if code_index not in codes_seen_so_far:
+                    codes_seen_so_far.add(code_index)
+                    code_row = CodeRow(
+                        id=uuid4(),
+                        code=child_rsg_code,
+                        version=cond_version,
+                        display=display,
+                        system_id=snomed_db_id,
+                    )
+                    codes_for_codes_table.append(code_row)
+                system_code_tuple = (
+                    snomed_db_id,
+                    cond_version,
+                    child_rsg_code,
                 )
 
-                rsg_codes.append({cond_index: code_data})
+                if system_code_tuple not in condition_child_rsg_snomed_codes:
+                    condition_child_rsg_snomed_codes.add(system_code_tuple)
 
-    return (rsg_codes, condition_to_code_relationships)
+            child_codes = extract_codes_from_compose(child_vs)
+            child_tuples.update(set(child_codes))
+
+        condition_to_code_relationships[cond_index]["child_rsg_codes"] = (
+            condition_child_rsg_snomed_codes
+        )
+
+        sibling_tuples = set()
+        for sibling_vs in get_sibling_context_valuesets(condition, valuesets_map):
+            sibling_tuples.update(extract_codes_from_compose(sibling_vs))
+
+        all_tuples = sibling_tuples | child_tuples
+        system_sorted_codes = categorize_codes_by_system_oid(set(all_tuples))
+
+        for system_oid, code_list in system_sorted_codes.items():
+            system_id = oid_indexed_system_db_ids.get(system_oid)
+            if not system_id:
+                continue
+
+            for c in code_list:
+                code = c.get("code")
+                if not code:
+                    continue
+
+                code_index = (system_id, cond_version, code)
+                if code_index not in codes_seen_so_far:
+                    codes_seen_so_far.add(code_index)
+                    code_row = CodeRow(
+                        id=uuid4(),
+                        code=code,
+                        version=cond_version,
+                        display=c.get("display") or "",
+                        system_id=system_id,
+                    )
+                    codes_for_codes_table.append(code_row)
+                system_code_tuple = (system_id, cond_version, code)
+                if (
+                    # skip code if already marked in child_rsgs so we don't try to
+                    # upsert the same code twice in the same transaction and run into
+                    # cardinality violations
+                    system_code_tuple not in condition_child_rsg_snomed_codes
+                    and system_code_tuple not in condition_non_child_rsg_snomed_codes
+                ):
+                    condition_non_child_rsg_snomed_codes.add(system_code_tuple)
+
+        condition_to_code_relationships[cond_index]["non_child_rsg_codes"] = (
+            condition_non_child_rsg_snomed_codes
+        )
+
+    return ProcessedCodePayload(
+        codes_to_insert=codes_for_codes_table,
+        condition_relationships=condition_to_code_relationships,
+    )
 
 
 def _build_processed_conditions(
@@ -326,7 +412,8 @@ def _upsert_conditions_and_groupers(
         condition_payload = ConditionToCodeRelationshipTrace(
             condition_id=cond_id,
             condition_display_name=condition_name,
-            child_rsg_snomed_code_ids=[],
+            child_rsg_codes=set(),
+            non_child_rsg_codes=set(),
             version=condition_version,
         )
 
@@ -353,109 +440,128 @@ def _upsert_conditions_and_groupers(
     return condition_to_code_relationships
 
 
-def _insert_condition_to_child_rsg_relationships(
-    cursor: Cursor, data: ConditionToCodeRelationshipIndex
+def _upsert_relationships(
+    cursor: Cursor,
+    condition_to_code_relationships: ConditionToCodeRelationshipIndex,
 ) -> None:
-    logger.info("⏳ Upserting code <> child RSG relationships...")
-    relationship_upsert_query = """
-        INSERT INTO conditions_rsg_codes (
-            condition_id,
-            code_id
-        )
-        VALUES (
-            %(condition_id)s,
-            %(code_id)s
-        )
-        ON CONFLICT (condition_id, code_id) DO NOTHING
-    """
-    params = [
-        {
-            "condition_id": condition.get("condition_id"),
-            "code_id": child_rsg_code_id,
-        }
-        for condition in data.values()
-        for child_rsg_code_id in condition.get("child_rsg_snomed_code_ids", [])
-    ]
+    logger.info("⏳ Refreshing relationships table...")
 
-    cursor.executemany(relationship_upsert_query, params)
-    return
+    cursor.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS stage_relationships (
+            condition_id UUID NOT NULL,
+            system_id UUID NOT NULL,
+            version TEXT NOT NULL,
+            code TEXT NOT NULL,
+            is_child_rsg BOOLEAN NOT NULL
+        ) ON COMMIT DROP
+    """)
+    cursor.execute("TRUNCATE stage_relationships")
+
+    child_rsg_key = "child_rsg"
+    non_child_rsg_key = "non_child_rsg"
+    staged_counts = {child_rsg_key: 0, non_child_rsg_key: 0}
+
+    def relationship_generator():
+        for cond in condition_to_code_relationships.values():
+            cond_id = cond["condition_id"]
+            if not cond_id:
+                continue
+
+            for system_id, version, code in cond["child_rsg_codes"]:
+                staged_counts[child_rsg_key] += 1
+                yield (cond_id, system_id, version, code, True)
+
+            for system_id, version, code in cond["non_child_rsg_codes"]:
+                staged_counts[non_child_rsg_key] += 1
+                yield (cond_id, system_id, version, code, False)
+
+    logger.info("🚀 Streaming relationships into stage table...")
+    with cursor.copy(
+        """COPY stage_relationships (condition_id, system_id, version, code, is_child_rsg) FROM STDIN"""
+    ) as copy:
+        for row in relationship_generator():
+            copy.write_row(row)
+
+    cursor.execute("ANALYZE stage_relationships;")
+    cursor.execute("TRUNCATE conditions_codes;")
+
+    logger.info("🔗 Linking codes table to relationship joins...")
+
+    cursor.execute("""
+        INSERT INTO conditions_codes (condition_id, code_id, is_child_rsg)
+        SELECT
+            sr.condition_id,
+            c.id AS code_id,
+            sr.is_child_rsg
+        FROM stage_relationships sr
+        JOIN codes c
+            ON  c.system_id = sr.system_id
+            AND c.version = sr.version
+            AND c.code = sr.code;
+    """)
+
+    inserted_count = cursor.rowcount
+    logger.info(
+        f"📥 Inserted {inserted_count:,} total relationships "
+        f"({staged_counts[child_rsg_key]:,} child_rsg, {staged_counts[non_child_rsg_key]:,} non_child_rsg)."
+    )
+
+    cursor.execute("ANALYZE conditions_codes;")
 
 
 def _upsert_codes(
     cursor: Cursor,
-    data: list[ConditionIndexedCodeRow],
-    condition_to_code_relationships: ConditionToCodeRelationshipIndex,
-):
-    """
-    Upserts code rows.
-    """
+    data: ProcessedCodePayload,
+) -> None:
+    logger.info("⏳ Starting codes upsert process...")
 
-    logger.info("⏳ Upserting code records...")
+    cursor.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS stage_codes (
+            id UUID NOT NULL,
+            system_id UUID NOT NULL,
+            version TEXT NOT NULL,
+            code TEXT NOT NULL,
+            display TEXT
+        ) ON COMMIT DROP
+    """)
+    cursor.execute("TRUNCATE stage_codes")
 
-    code_upsert_query = """
-        WITH upsert_code AS (
-            INSERT INTO codes (
-                display,
-                code,
-                version,
-                system_id
+    def code_generator():
+        for code in data["codes_to_insert"]:
+            yield (
+                code["id"],
+                code["system_id"],
+                code["version"],
+                code["code"],
+                code["display"],
             )
-            values (
-                %(display)s,
-                %(code)s,
-                %(version)s,
-                %(system_id)s
-            )
-            ON CONFLICT (code, system_id, version)
-            DO UPDATE SET
-                display = EXCLUDED.display,
-                code = EXCLUDED.code,
-                version = EXCLUDED.version
-            WHERE
-                codes.display IS DISTINCT FROM EXCLUDED.display
-                OR codes.code IS DISTINCT FROM EXCLUDED.code
-                OR codes.version IS DISTINCT FROM EXCLUDED.version
-            RETURNING id
-        )
-        SELECT id FROM upsert_code
 
-        UNION ALL
+    logger.info("🚀 Streaming codes into stage table...")
+    with cursor.copy(
+        "COPY stage_codes (id, system_id, version, code, display) FROM STDIN"
+    ) as copy:
+        for record in code_generator():
+            copy.write_row(record)
 
-        SELECT id
-        FROM codes
-        WHERE code = %(code)s
-            AND system_id = %(system_id)s
-            AND version = %(version)s
-            AND NOT EXISTS (SELECT 1 FROM upsert_code)
+    logger.info(f"📥 Staged {len(data['codes_to_insert'])} unique code rows.")
+    cursor.execute("ANALYZE stage_codes;")
+    # bump up local memory to help with the large joins
+    cursor.execute("SET LOCAL work_mem = '128MB'")
 
-        LIMIT 1
-    """
-    joins_to_update = 0
-    for code in data:
-        for condition_index, code in code.items():
-            params = {
-                "display": code.get("display"),
-                "code": code.get("code"),
-                "version": code.get("version"),
-                "system_id": code.get("system_id"),
-            }
+    cursor.execute("""
+        INSERT INTO codes (id, system_id, version, code, display)
+        SELECT s.id, s.system_id, s.version, s.code, s.display
+        FROM stage_codes s
+        LEFT JOIN codes c
+            ON  s.system_id = c.system_id
+            AND s.code = c.code
+            AND s.version = c.version
+        WHERE c.id IS NULL
+        ORDER BY s.system_id, s.version, s.code
+        ON CONFLICT (system_id, version, code) DO NOTHING;
+    """)
 
-            cursor.execute(code_upsert_query, params)
-            code_response = cursor.fetchone()
-
-            if code_response is None or not code_response[0]:
-                raise ValueError(
-                    f"Code upsert for code with params {params} did not return ID"
-                )
-
-            condition_to_code_relationships[condition_index].get(
-                "child_rsg_snomed_code_ids"
-            ).append(code_response[0])
-            joins_to_update += 1
-
-    logger.info(f"🛠️  Total condition <> RSG joins to update: {joins_to_update}")
-
-    return condition_to_code_relationships
+    logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in codes table.")
 
 
 def _build_condition_groupers(
@@ -578,21 +684,20 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
 
     # # seed codes, eventually this will replace the entirety
     # # of the jsonb-forward functionality
-    (rsg_codes, condition_to_code_relationships) = _build_rsg_codes(
+    condition_to_code_relationships = _build_codes(
         valuesets_map=all_valuesets_map,
-        system_data=system_data,
+        oid_indexed_system_db_ids=system_data,
         condition_to_code_relationships=condition_to_code_relationships,
         condition_groupers=condition_groupers,
     )
-    logger.info(f"⬆️  Total RSG codes to upsert: {len(rsg_codes)}")
 
-    condition_to_code_relationships = _upsert_codes(
+    _upsert_codes(cursor=cursor, data=condition_to_code_relationships)
+
+    _upsert_relationships(
         cursor=cursor,
-        data=rsg_codes,
-        condition_to_code_relationships=condition_to_code_relationships,
-    )
-    _insert_condition_to_child_rsg_relationships(
-        cursor=cursor, data=condition_to_code_relationships
+        condition_to_code_relationships=condition_to_code_relationships[
+            "condition_relationships"
+        ],
     )
 
 
