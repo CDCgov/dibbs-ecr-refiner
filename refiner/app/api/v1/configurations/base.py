@@ -7,6 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import ENVIRONMENT
+from app.db.code_systems.db import get_all_code_systems_db
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
@@ -22,14 +23,10 @@ from app.db.configurations.db import (
     insert_configuration_db,
     is_config_valid_to_insert_db,
 )
-from app.db.configurations.model import (
-    DbConfigurationCustomCode,
-)
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import SerializedFiles, get_serialized_files
-from app.services.code_systems import get_all_code_systems_by_key
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
     format_section_naming,
@@ -39,7 +36,7 @@ from app.services.logger import get_logger
 from .model import (
     CreateConfigInput,
     CreateConfigurationResponse,
-    CustomCodes,
+    CustomCodeResponse,
     GetConfigurationResponse,
     GetConfigurationsResponse,
     IncludedCondition,
@@ -354,18 +351,18 @@ async def get_configuration(
     latest_version = latest_config.version if latest_config is not None else 0
 
     is_locked = locked_by is not None and locked_by.id != user.id
-    code_systems = await get_all_code_systems_by_key(db=db)
-    custom_codes = CustomCodes(
-        codes=[
-            DbConfigurationCustomCode(
-                code=c.code,
-                name=c.name,
-                system_key=c.system_key,
-            )
-            for c in config.custom_codes
-        ],
-        code_systems=code_systems,
-    )
+
+    systems = await get_all_code_systems_db(db=db)
+    custom_codes = [
+        CustomCodeResponse(
+            id=cc.id,
+            display=cc.display,
+            code=cc.code,
+            system_id=cc.system_id,
+            system_name=systems[cc.system_id].display_name,
+        )
+        for cc in config.custom_codes
+    ]
 
     rsg_codes = await get_rsg_codes_by_condition_id_db(
         condition_id=primary_condition.id,

@@ -219,13 +219,15 @@ def mock_db_functions(monkeypatch, mock_all_systems):
     """
     monkeypatch.setattr(
         "app.services.code_systems.get_all_code_systems_db",
-        AsyncMock(return_value=mock_all_systems),
+        AsyncMock(return_value={m.id: m for m in mock_all_systems}),
     )
 
     monkeypatch.setattr(
         "app.services.configurations.get_code_system_by_key_db",
         AsyncMock(
-            side_effect=lambda key, db: mock_all_systems[key],
+            side_effect=lambda key, db: next(
+                m for m in mock_all_systems if m.key == key
+            ),
         ),
     )
 

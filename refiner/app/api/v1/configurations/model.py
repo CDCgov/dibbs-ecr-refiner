@@ -3,10 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import IndexedCodeSystem
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
-    DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
     DbNarrativeAction,
@@ -70,13 +68,16 @@ class LockedByUser(UserInfoBase):
 
 
 @dataclass(frozen=True)
-class CustomCodes:
+class CustomCodeResponse:
     """
-    Model for custom codes response, with systems bundled alongside codes for frontend display.
+    Custom code object to return to the client.
     """
 
-    codes: list[DbConfigurationCustomCode]
-    code_systems: IndexedCodeSystem
+    id: UUID
+    display: str
+    code: str
+    system_id: UUID
+    system_name: str
 
 
 @dataclass(frozen=True)
@@ -94,7 +95,7 @@ class GetConfigurationResponse:
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
-    custom_codes: CustomCodes
+    custom_codes: list[CustomCodeResponse]
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
     rsg_codes: list[DbCode]
@@ -115,7 +116,7 @@ class ConfigurationCustomCodeResponse:
     id: UUID
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
-    custom_codes: list[DbConfigurationCustomCode]
+    custom_codes: list[CustomCodeResponse]
 
 
 class AssociateCodesetInput(BaseModel):
@@ -135,16 +136,6 @@ class AssociateCodesetResponse:
     id: UUID
     included_conditions: list[UUID]
     condition_name: str
-
-
-class AddCustomCodeInput(BaseModel):
-    """
-    Input model for adding a custom code to a configuration.
-    """
-
-    code: str
-    system_key: str
-    name: str
 
 
 @dataclass(frozen=True)
@@ -214,25 +205,28 @@ class UploadCustomCodesCsvInput(BaseModel):
     filename: str | None = None
 
 
-class UploadCustomCodesInput(BaseModel):
-    """Validated CSV row ready for confirmation."""
+class AddCustomCodeInput(BaseModel):
+    """
+    Input model for adding a custom code to a configuration.
+    """
 
     code: str
-    system_key: str
-    name: str
+    display: str
+    system_id: UUID
 
 
-class UploadCustomCodesPreviewItem(UploadCustomCodesInput):
+class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     id: UUID
     code: str
-    system_key: str
-    name: str
+    system_id: UUID
+    system_name: str
+    display: str
     row: int | None = None
 
 
 class ConfirmUploadCustomCodesInput(BaseModel):
     """Payload used to confirm a previously validated CSV import."""
 
-    custom_codes: list[UploadCustomCodesInput]
+    custom_codes: list[AddCustomCodeInput]

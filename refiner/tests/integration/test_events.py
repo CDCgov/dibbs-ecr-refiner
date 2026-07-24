@@ -7,8 +7,9 @@ import pytest
 from fastapi import status
 from psycopg.rows import dict_row
 
-from app.api.v1.configurations.model import UploadCustomCodesInput
+from app.api.v1.configurations.model import AddCustomCodeInput
 from app.api.v1.events import _format_timestamp
+from app.db.code_systems.db import get_code_systems_db
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 
@@ -139,7 +140,13 @@ class TestEventsCsvExport:
         assert rows[0]["Date"] == expected_datetime
 
     async def test_csv_upload_event_has_codes_in_action(
-        self, setup, upload_custom_codes, get_condition_id, create_config, authed_client
+        self,
+        setup,
+        upload_custom_codes,
+        get_condition_id,
+        create_config,
+        authed_client,
+        db_pool,
     ):
         """
         A custom codes upload event should display the code information directly below the
@@ -154,13 +161,19 @@ class TestEventsCsvExport:
         """
         covid_id = await get_condition_id("COVID-19")
         config = await create_config(covid_id)
+
+        systems = await get_code_systems_db(db=db_pool)
+        snomed = next((s for s in systems if s.key == "snomed"), None)
+        assert snomed, "Could not find system with key 'snomed'"
+
+        icd_10 = next((s for s in systems if s.key == "icd10"), None)
+        assert icd_10, "Could not find system with key 'icd10'"
+
         await upload_custom_codes(
             config["id"],
             [
-                UploadCustomCodesInput(
-                    code="tc0", system_key="snomed", name="tc0-name"
-                ),
-                UploadCustomCodesInput(code="tc1", system_key="icd10", name="tc1-name"),
+                AddCustomCodeInput(code="tc0", system_id=snomed.id, display="tc0-name"),
+                AddCustomCodeInput(code="tc1", system_id=icd_10.id, display="tc1-name"),
             ],
         )
 

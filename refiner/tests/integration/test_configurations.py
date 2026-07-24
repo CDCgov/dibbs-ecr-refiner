@@ -5,15 +5,14 @@ from uuid import uuid4
 import pytest
 from fastapi import status
 from psycopg.rows import dict_row
-from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+from app.api.v1.configurations.model import AddCustomCodeInput
 from app.db.code_systems.db import (
     get_code_system_by_key_db,
 )
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.model import DbConfigurationCustomCode
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -151,15 +150,14 @@ class TestConfigurations:
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
                     """
-                    INSERT INTO configurations (jurisdiction_id, name, created_by, custom_codes, version)
-                    VALUES (%s, %s, %s, %s::jsonb, %s)
+                    INSERT INTO configurations (jurisdiction_id, name, created_by, version)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
                     (
                         test_user_jurisdiction_id,
                         PRIMARY_CONDITION,
                         test_user_id,
-                        Jsonb([]),
                         1,
                     ),
                 )
@@ -559,25 +557,28 @@ class TestConfigurations:
         initial_display_name = "Mock code"
         initial_system = await get_code_system_by_key_db(key="loinc", db=db_pool)
         assert initial_system
-        await add_custom_code(
+
+        custom_code = await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=initial_code,
-                system_key=initial_system.key,
-                name=initial_display_name,
+                display=initial_display_name,
+                system_id=initial_system.id,
             ),
         )
 
+        new_system = await get_code_system_by_key_db(key=new_system_key, db=db_pool)
+        assert new_system, f"Couldn't get system by key '{new_system_key}'"
+
         edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
-            system_key=initial_system.key,
-            code=initial_code,
-            name=initial_display_name,
-            new_code=new_code,
-            new_name=new_name,
-            new_system_key=new_system_key,
+            id=custom_code["custom_codes"][0]["id"],
+            code=new_code if new_code else initial_code,
+            display=new_name if new_name else initial_display_name,
+            system_id=new_system.id if new_system else initial_system.id,
         )
 
         edit_response = await edit_custom_code(config_id, edit_payload)
+
         assert len(edit_response["custom_codes"]) == 1
         edited_custom_code = edit_response["custom_codes"][0]
 
@@ -587,13 +588,13 @@ class TestConfigurations:
             assert edited_custom_code["code"] == initial_code
 
         if new_system_key:
-            assert edited_custom_code["system_key"] == new_system_key
+            assert edited_custom_code["system_id"] == str(new_system.id)
         else:
-            assert edited_custom_code["system_key"] == initial_system.key
+            assert edited_custom_code["system_id"] == str(initial_system.id)
         if new_name:
-            assert edited_custom_code["name"] == new_name
+            assert edited_custom_code["display"] == new_name
         else:
-            assert edited_custom_code["name"] == initial_display_name
+            assert edited_custom_code["display"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
@@ -648,14 +649,14 @@ class TestConfigurations:
 
         config_id = config["id"]
         same_code = "VERY-FAKE-CODE-00000"
-        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
-        assert loinc_info
+        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=same_code,
-                system_key=loinc_info.key,
-                name="Mock code",
+                display="Mock code",
+                system_id=loinc.id,
             ),
         )
 
@@ -684,28 +685,28 @@ class TestConfigurations:
         config_id = config["id"]
 
         desired_code = "FAKE-DESIRED-CODE-99999"
-        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
-        assert loinc_info
+        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc
 
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=desired_code,
-                system_key=loinc_info.key,
-                name="Mock code",
+                display="Mock code",
+                system_id=loinc.id,
             ),
         )
 
         code_to_edit = "FAKE-CODE-TO-EDIT-111"
-        rxnorm_info = await get_code_system_by_key_db(key="rxnorm", db=db_pool)
-        assert rxnorm_info
+        rxnorm = await get_code_system_by_key_db(key="rxnorm", db=db_pool)
+        assert rxnorm
 
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=code_to_edit,
-                system_key=rxnorm_info.key,
-                name="edit me",
+                display="edit me",
+                system_id=rxnorm.id,
             ),
         )
 

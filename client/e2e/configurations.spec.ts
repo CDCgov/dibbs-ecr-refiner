@@ -1,13 +1,13 @@
 import { test, expect } from './fixtures';
-import { deleteAllConfigurations } from './db';
+import { clearDb } from './db';
 
 test.describe('Configurations screen', () => {
   test.beforeEach(async ({ configurationsPage }) => {
-    await deleteAllConfigurations();
+    await clearDb();
     await configurationsPage.goto();
   });
 
-  test.afterEach(async () => await deleteAllConfigurations());
+  test.afterEach(async () => await clearDb());
 
   test('Check empty page state', async ({ page, makeAxeBuilder }) => {
     await expect(

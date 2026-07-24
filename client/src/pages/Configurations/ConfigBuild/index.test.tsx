@@ -552,7 +552,9 @@ describe('Config builder page', () => {
     expect(screen.getByLabelText('Display name')).toHaveValue(
       'test-custom-code1'
     );
-    expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
+    expect(screen.getByLabelText('Code system')).toHaveValue(
+      mockCustomCodes[0].system_id
+    );
 
     await user.type(screen.getByLabelText('Code'), '12345');
 
@@ -747,23 +749,7 @@ const baseMockConfig: GetConfigurationResponse = {
       system_id: MOCK_SNOMED_DB_ID,
     },
   ],
-  custom_codes: {
-    codes: mockCustomCodes,
-    code_systems: {
-      icd10: {
-        key: 'icd10',
-        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
-        display_name: 'ICD-10',
-        oid: '2.16.840.1.113883.6.90',
-      },
-      snomed: {
-        key: 'snomed',
-        id: MOCK_SNOMED_DB_ID,
-        display_name: 'SNOMED',
-        oid: '2.16.840.1.113883.6.96',
-      },
-    },
-  },
+  custom_codes: mockCustomCodes,
   section_processing: [
     {
       name: 'Encounters Section',

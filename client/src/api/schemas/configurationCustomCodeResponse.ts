@@ -1,4 +1,4 @@
-import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
+import type { CustomCodeResponse } from './customCodeResponse';
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 
 /**
@@ -8,5 +8,5 @@ export interface ConfigurationCustomCodeResponse {
   id: string;
   display_name: string;
   code_sets: DbTotalConditionCodeCount[];
-  custom_codes: DbConfigurationCustomCode[];
+  custom_codes: CustomCodeResponse[];
 }

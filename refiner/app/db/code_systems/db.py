@@ -22,6 +22,21 @@ class DbCodeSystem:
 type IndexedCodeSystem = dict[CodeSystemKey, DbCodeSystem]
 
 
+async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[DbCodeSystem]:
+    """
+    Fetches all available code systems.
+    """
+    query = """
+    SELECT id, display_name, oid, key FROM systems;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
+            await cur.execute(query)
+            rows = await cur.fetchall()
+            return rows
+
+
 async def get_all_code_systems_db(
     db: AsyncDatabaseConnection,
 ) -> dict[UUID, DbCodeSystem]:
@@ -65,6 +80,43 @@ async def get_code_system_by_key_db(
     SELECT id, display_name, oid, key FROM systems WHERE key = %s;
     """
     params = (key,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
+            await cur.execute(query=query, params=params)
+            row = await cur.fetchone()
+
+            if not row:
+                return None
+
+            return row
+
+
+async def get_code_system_by_id_db(
+    id: UUID,
+    db: AsyncDatabaseConnection,
+) -> DbCodeSystem | None:
+    """
+    Get code system by its ID.
+
+    Args:
+        id (str): The code system's UUID
+        db (AsyncDatabaseConnection): A database connection
+
+    Returns:
+        DbCodeSystem | None: Matched code system if found, none otherwise.
+    """
+
+    query = """
+    SELECT
+        id,
+        display_name,
+        oid,
+        key
+    FROM systems
+    WHERE id = %s;
+    """
+    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:

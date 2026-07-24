@@ -131,9 +131,3 @@ export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-

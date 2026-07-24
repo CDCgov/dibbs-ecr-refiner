@@ -4,60 +4,31 @@ import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import {
-  DbCodeSystem,
-  DbConfigurationCustomCode,
-} from '../../../../api/schemas';
+import { CustomCodeResponse } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
 import { CustomCodeModal } from './CustomCodeModal';
 
 interface CustomCodesDetailProps {
   configurationId: string;
-  customCodes: DbConfigurationCustomCode[];
-  codeSystems: { [key: string]: DbCodeSystem };
+  customCodes: CustomCodeResponse[];
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-type ConfigurationCustomCodeDisplay = DbConfigurationCustomCode & {
-  codeSystemDisplayName: string;
-};
-
-function enrichCustomCodeWithSystemDisplay(
-  customCodes: DbConfigurationCustomCode[],
-  codeSystems: { [key: string]: DbCodeSystem } | null
-): ConfigurationCustomCodeDisplay[] {
-  return customCodes.map((c) => {
-    return {
-      ...c,
-      codeSystemDisplayName:
-        codeSystems && Object.keys(codeSystems).includes(c.system_key)
-          ? codeSystems[c.system_key].display_name
-          : c.system_key,
-    };
-  });
-}
-
 export function CustomCodesDetail({
   configurationId,
   customCodes,
-  codeSystems,
   disabled,
   isOpen,
   setIsOpen,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
-    useState<ConfigurationCustomCodeDisplay | null>(null);
+    useState<CustomCodeResponse | null>(null);
   const queryClient = useQueryClient();
   const showToast = useToast();
-
-  const displayCustomCodes = enrichCustomCodeWithSystemDisplay(
-    customCodes,
-    codeSystems
-  );
 
   const resetModal = () => {
     setSelectedCustomCode(null);
@@ -75,16 +46,16 @@ export function CustomCodesDetail({
           </tr>
         </thead>
         <tbody>
-          {displayCustomCodes.map((customCode) => (
+          {customCodes.map((customCode) => (
             <tr
-              key={customCode.code + customCode.system_key}
+              key={customCode.code + customCode.system_id}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
-                {customCode.codeSystemDisplayName}
+                {customCode.system_name}
               </td>
-              <td className="w-1/6 pb-6">{customCode.name}</td>
+              <td className="w-1/6 pb-6">{customCode.display}</td>
 
               <td className="flex w-1/2 justify-end pb-6 whitespace-nowrap">
                 {!disabled && (
@@ -96,22 +67,20 @@ export function CustomCodesDetail({
                         setSelectedCustomCode(customCode);
                         setIsOpen(true);
                       }}
-                      aria-label={`Edit custom code ${customCode.name}`}
+                      aria-label={`Edit custom code ${customCode.display}`}
                       disabled={disabled}
                     >
                       Edit
                     </Button>
                     <Button
                       variant="tertiary"
-                      aria-label={`Delete custom code ${customCode.name}`}
+                      aria-label={`Delete custom code ${customCode.display}`}
                       onClick={() => {
                         if (disabled) return;
                         deleteCode(
                           {
-                            // encode to prevent special characters from breaking the action
-                            code: encodeURIComponent(customCode.code),
-                            systemKey: customCode.system_key,
                             configurationId: configurationId,
+                            id: customCode.id,
                           },
                           {
                             onSuccess: async () => {
