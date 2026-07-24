@@ -13,11 +13,13 @@ from app.services.ecr.narrative.reconstruction import (
     reconstruct_immunizations,
     reconstruct_medications,
     reconstruct_narrative,
+    reconstruct_plan_of_treatment,
     reconstruct_problems,
     reconstruct_results,
     render_code_display,
     render_coded_concept,
     render_interpretation,
+    render_performer,
     render_section_text,
     render_typed_value,
 )
@@ -1159,3 +1161,343 @@ def test_result_row_without_a_templateid_still_renders():
     assert [row.values["Test"] for row in blocks[0].rows] == [
         "Hemoglobin (LOINC 718-7)"
     ], "a result observation with no templateId was dropped from the table"
+
+
+# NOTE:
+# LAYER 1 — render_performer (the person-or-organization shape)
+# =============================================================================
+
+
+def test_performer_none_is_empty():
+    assert render_performer(None) == ""
+
+
+def test_performer_prefers_the_assigned_person():
+    """
+    A person and an organization on the same performer: the person wins.
+
+    A planned act's intended performer is the clinician; the organization
+    is the coarser answer to the same question.
+    """
+
+    performer = _el(f"""
+    <performer {_NSDECL}>
+      <assignedEntity>
+        <assignedPerson>
+          <name><given>Patricia</given><family>Primary</family></name>
+        </assignedPerson>
+        <representedOrganization>
+          <name>The DoctorsTogether Physician Group</name>
+        </representedOrganization>
+      </assignedEntity>
+    </performer>
+    """)
+
+    assert render_performer(performer) == "Patricia Primary"
+
+
+def test_performer_falls_back_to_the_organization():
+    performer = _el(f"""
+    <performer {_NSDECL}>
+      <assignedEntity>
+        <representedOrganization>
+          <name>Community Health and Hospitals</name>
+        </representedOrganization>
+      </assignedEntity>
+    </performer>
+    """)
+
+    assert render_performer(performer) == "Community Health and Hospitals"
+
+
+def test_performer_name_parts_join_without_source_whitespace():
+    """
+    A compactly serialized name must not run its parts together.
+
+    The parts are CHILDREN of <name>, so taking the element's string-value
+    would render "JaneDoe" for a document with no whitespace between the
+    tags -- and senders do emit that.
+    """
+
+    performer = _el(
+        f"<performer {_NSDECL}><assignedEntity><assignedPerson>"
+        "<name><given>Jane</given><family>Doe</family></name>"
+        "</assignedPerson></assignedEntity></performer>"
+    )
+
+    assert render_performer(performer) == "Jane Doe"
+
+
+def test_performer_drops_the_call_me_given_name():
+    """
+    qualifier="CL" is a nickname ALONGSIDE the legal given name.
+
+    Rendering it inline turns Patricia Primary into "Patricia Patty Primary".
+    """
+
+    performer = _el(f"""
+    <performer {_NSDECL}>
+      <assignedEntity>
+        <assignedPerson>
+          <name>
+            <given>Patricia</given>
+            <given qualifier="CL">Patty</given>
+            <family>Primary</family>
+            <suffix qualifier="AC">M.D.</suffix>
+          </name>
+        </assignedPerson>
+      </assignedEntity>
+    </performer>
+    """)
+
+    assert render_performer(performer) == "Patricia Primary M.D."
+
+
+def test_performer_with_no_resolvable_name_is_empty():
+    performer = _el(
+        f"<performer {_NSDECL}><assignedEntity>"
+        '<id root="2.16.840.1.113883.19"/></assignedEntity></performer>'
+    )
+
+    assert render_performer(performer) == ""
+
+
+# NOTE:
+# PLAN OF TREATMENT — the heterogeneous section
+# =============================================================================
+
+_PLAN_OF_TREATMENT = """
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="18776-5" codeSystem="2.16.840.1.113883.6.1"/>
+  <text><table><tbody><tr ID="stale1"><td>stale narrative</td></tr></tbody></table></text>
+  <entry>
+    <observation classCode="OBS" moodCode="RQO">
+      <templateId root="2.16.840.1.113883.10.20.22.4.44" extension="2014-06-09"/>
+      <code code="105066-5" codeSystem="2.16.840.1.113883.6.1"
+            displayName="SARS-CoV-2 Ag [Presence] in Specimen"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+      <performer>
+        <assignedEntity>
+          <representedOrganization><name>Community Health</name></representedOrganization>
+        </assignedEntity>
+      </performer>
+    </observation>
+  </entry>
+  <entry>
+    <procedure classCode="PROC" moodCode="RQO">
+      <templateId root="2.16.840.1.113883.10.20.22.4.41" extension="2014-06-09"/>
+      <code code="233573008" codeSystem="2.16.840.1.113883.6.96"
+            displayName="Extracorporeal membrane oxygenation"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+      <methodCode code="16310003" codeSystem="2.16.840.1.113883.6.96"
+                  displayName="Diagnostic ultrasonography"/>
+      <targetSiteCode code="416949008" codeSystem="2.16.840.1.113883.6.96"
+                      displayName="Abdomen and pelvis"/>
+    </procedure>
+  </entry>
+  <entry>
+    <act classCode="ACT" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.39" extension="2014-06-09"/>
+      <code code="409524006" codeSystem="2.16.840.1.113883.6.96"
+            displayName="Airborne precautions"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+    </act>
+  </entry>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.42" extension="2014-06-09"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201107"/>
+      <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="ORAL"/>
+      <doseQuantity value="1" unit="g"/>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <manufacturedMaterial>
+            <code code="248656" codeSystem="2.16.840.1.113883.6.88"
+                  displayName="Azithromycin 500 MG Oral Tablet"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.120"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201110"/>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <manufacturedMaterial>
+            <code code="207" codeSystem="2.16.840.1.113883.12.292"
+                  displayName="COVID-19 mRNA vaccine"/>
+            <lotNumberText>LOT-1234</lotNumberText>
+          </manufacturedMaterial>
+          <manufacturerOrganization><name>Moderna</name></manufacturerOrganization>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>
+"""
+
+
+def test_plan_of_treatment_emits_one_captioned_block_per_entry_kind():
+    """
+    Five unlike clinical statements share this section; each gets its own
+    table, captioned, in spreadsheet order rather than document order.
+    """
+
+    blocks = reconstruct_plan_of_treatment(_el(_PLAN_OF_TREATMENT))
+
+    assert [block.caption for block in blocks] == [
+        "Planned Observations",
+        "Planned Procedures",
+        "Planned Activities",
+        "Planned Medications",
+        "Planned Immunizations",
+    ]
+    assert all(len(block.rows) == 1 for block in blocks)
+    # unlike shapes are never collapsed into a shared grid
+    assert blocks[0].columns != blocks[1].columns
+
+
+def test_plan_of_treatment_splits_substance_administration_by_template():
+    """
+    Medication and immunization are the SAME element; only the templateId
+    tells them apart -- mirroring how the section's match rules discriminate.
+    """
+
+    blocks = reconstruct_plan_of_treatment(_el(_PLAN_OF_TREATMENT))
+    medications, immunizations = blocks[3], blocks[4]
+
+    assert medications.rows[0].values["Planned Medication"] == (
+        "Azithromycin 500 MG Oral Tablet (RxNorm 248656)"
+    )
+    assert medications.rows[0].values["Dose"] == "1 g"
+    assert medications.rows[0].values["Route"] == "ORAL (NCI Thesaurus C38288)"
+
+    assert immunizations.rows[0].values["Planned Immunization"] == (
+        "COVID-19 mRNA vaccine (CVX 207)"
+    )
+    assert immunizations.rows[0].values["Lot"] == "LOT-1234"
+    assert immunizations.rows[0].values["Manufacturer"] == "Moderna"
+
+
+def test_plan_of_treatment_unknown_substance_administration_reads_as_medication():
+    """
+    A substanceAdministration bearing neither immunization template still
+    renders. Dropping it would leave a surviving entry with no narrative
+    row, making the section's typeCode="DRIV" a lie.
+    """
+
+    section = _el(
+        _PLAN_OF_TREATMENT.replace(
+            '<templateId root="2.16.840.1.113883.10.20.22.4.120"/>', ""
+        )
+    )
+    blocks = reconstruct_plan_of_treatment(section)
+
+    captions = [block.caption for block in blocks]
+    assert "Planned Immunizations" not in captions
+    assert len(blocks[-1].rows) == 2, (
+        "the untemplated substanceAdministration was dropped instead of "
+        "falling back to the medication table"
+    )
+
+
+def test_plan_of_treatment_renders_procedure_site_and_method():
+    blocks = reconstruct_plan_of_treatment(_el(_PLAN_OF_TREATMENT))
+    procedure = blocks[1].rows[0].values
+
+    assert procedure["Planned Procedure"] == (
+        "Extracorporeal membrane oxygenation (SNOMED CT 233573008)"
+    )
+    assert procedure["Target Site"] == "Abdomen and pelvis (SNOMED CT 416949008)"
+    assert procedure["Method"] == "Diagnostic ultrasonography (SNOMED CT 16310003)"
+    assert procedure["Date"] == "2020-11-08"
+    assert procedure["Status"] == "active"
+
+
+def test_plan_of_treatment_carries_performer_per_row():
+    blocks = reconstruct_plan_of_treatment(_el(_PLAN_OF_TREATMENT))
+
+    assert blocks[0].rows[0].values["Performer"] == "Community Health"
+    # a planned item with no performer leaves the cell empty rather than
+    # reaching for the author, who is not the responsible party
+    assert blocks[1].rows[0].values["Performer"] == ""
+
+
+def test_plan_of_treatment_empty_section_reconstructs_to_nothing():
+    """
+    Nothing survived pruning -> no blocks, so reconstruct_narrative returns
+    None and the caller falls back to retaining the original narrative.
+    """
+
+    section = _el(
+        '<section xmlns="urn:hl7-org:v3">'
+        '<code code="18776-5" codeSystem="2.16.840.1.113883.6.1"/>'
+        "</section>"
+    )
+
+    assert reconstruct_plan_of_treatment(section) == []
+    assert reconstruct_narrative(section, augmentation_timestamp=_RUN_TS) is None
+
+
+def test_plan_of_treatment_dispatches_and_renders_captioned_tables():
+    """
+    End to end through the public entry: the section LOINC dispatches to the
+    heterogeneous reconstructor and <caption> lands FIRST inside <table>,
+    where StrucDoc.Table requires it.
+    """
+
+    section = _el(_PLAN_OF_TREATMENT)
+    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    assert text is not None
+    tables = text.findall("hl7:table", HL7_NS)
+    assert len(tables) == 5
+    for table in tables:
+        assert etree.QName(table[0]).localname == "caption"
+
+    captions = [table.find("hl7:caption", HL7_NS).text for table in tables]
+    assert captions[0] == "Planned Observations"
+
+
+def test_plan_of_treatment_relinks_every_surviving_entry():
+    """
+    Each planned entry points at the row that represents it, and the stale
+    narrative references are gone.
+    """
+
+    section = _el(_PLAN_OF_TREATMENT)
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    references = section.xpath(".//hl7:entry//hl7:reference/@value", namespaces=HL7_NS)
+    assert len(references) == 5
+    assert all(str(ref).startswith("#ecr-refiner-18776-5-") for ref in references)
+    assert all(
+        entry.get("typeCode") == "DRIV"
+        for entry in section.findall("hl7:entry", HL7_NS)
+    )
+
+
+def test_negated_planned_entry_reads_as_not_planned():
+    """
+    Negation wording follows moodCode: an EVN statement that did not happen
+    was "Not administered"; a planned one that will not happen is "Not
+    planned" -- a contraindication or cancelled order, not a missing dose.
+    """
+
+    section = _el(_PLAN_OF_TREATMENT)
+    vaccine = section.findall("hl7:entry/hl7:substanceAdministration", HL7_NS)[-1]
+    vaccine.set("negationInd", "true")
+
+    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    assert text is not None
+    rendered = etree.tostring(text, encoding="unicode")
+    assert "Not planned: COVID-19 mRNA vaccine (CVX 207)" in rendered
+    assert "Not administered:" not in rendered

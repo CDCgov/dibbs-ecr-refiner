@@ -14,7 +14,9 @@ from ..specification.constants import (
     OBSERVATION_INTERPRETATION_DISPLAY,
 )
 from ..specification.template_oids import (
+    IMMUNIZATION_ACTIVITY_V3,
     LABORATORY_RESULT_STATUS_ID,
+    PLANNED_IMMUNIZATION_ACTIVITY,
 )
 from .elements import _make_element, _sub_element
 from .identifiers import REFINER_ID_PREFIX, run_id_digits
@@ -52,11 +54,18 @@ class Block(NamedTuple):
     panel/concern + specimen lines; rows are the child observations). A
     flat section emits a single block with empty context and one row per
     entry. Unlike patterns are never collapsed into a shared grid.
+
+    `caption` names the detail table. It stays empty for the sections whose
+    blocks are all the same kind of thing (the section title already says
+    what they are) and is set by a **heterogeneous** section, where consecutive
+    tables carry different columns and a reader would otherwise have no way
+    to tell a planned procedure from a planned act.
     """
 
     context: dict[str, str]
     columns: list[str]
     rows: list[DetailRow]
+    caption: str = ""
 
 
 # a section reconstructor takes a post-prune section and returns one
@@ -260,6 +269,80 @@ def render_interpretation(el: _Element | None) -> str:
 
 
 # NOTE:
+# LAYER 1 — SHARED PRIMITIVE: performer renderer
+# =============================================================================
+# "who is/was responsible for this act" arrives in two shapes under the same
+# <performer>: a person (<assignedPerson><name> with given/family **children**) or
+# an organization (<representedOrganization><name> with simple text). a field
+# map cannot express that with a plain xpath--kind "text" reads .text and
+# returns "" for the structured person name--so the choice lives here. person
+# wins when both are present: a planned act's intended performer is the
+# clinician, and the organization is the coarser answer
+
+
+def _render_name(name: _Element) -> str:
+    """
+    Render an HL7 `EN` name element to a display string.
+
+    A person name carries its parts as CHILDREN (`<given>`, `<family>`,
+    `<suffix>`, ...); they are joined with single spaces in document order,
+    so a name carrying parts this function does not enumerate still renders.
+    Joining explicitly (rather than taking the element's string-value) is
+    what keeps a compactly serialized `<name><given>Jane</given><family>Doe
+    </family></name>` from rendering as "JaneDoe". An organization name is
+    simple text and falls through to its own content.
+
+    A `qualifier="CL"` part is dropped: that is HL7's "call me" name, an
+    additional nickname alongside the legal given name rather than a part
+    of it.
+
+    Args:
+        name: The `<name>` element.
+
+    Returns:
+        The rendered name, or "".
+    """
+
+    parts = [
+        part
+        for child in name
+        if isinstance(child.tag, str)
+        and child.get("qualifier") != "CL"
+        and (part := _normalize(child.text))
+    ]
+    return " ".join(parts) if parts else _normalize(name.text)
+
+
+def render_performer(el: _Element | None) -> str:
+    """
+    Render a `<performer>` to the responsible party's display name.
+
+    Prefers the assigned person's name and falls back to the represented
+    organization's: a planned act's intended performer is the clinician,
+    and the organization is the coarser answer to the same question.
+
+    Args:
+        el: A `<performer>` element, or None.
+
+    Returns:
+        The performer's display name, or "".
+    """
+
+    if el is None:
+        return ""
+
+    for xpath in (
+        "hl7:assignedEntity/hl7:assignedPerson/hl7:name",
+        "hl7:assignedEntity/hl7:representedOrganization/hl7:name",
+    ):
+        name = el.find(xpath, HL7_NS)
+        if name is not None and (rendered := _render_name(name)):
+            return rendered
+
+    return ""
+
+
+# NOTE:
 # LAYER 1 — SHARED PRIMITIVE: clinical coded-concept renderer
 # =============================================================================
 # clinical-terminology concepts (LOINC panels, SNOMED findings, RxNorm/CVX
@@ -420,6 +503,7 @@ def render_typed_value(el: _Element | None) -> str:
 #                hand it to render_coded_concept
 #   "typed"   -> a polymorphic value element; hand it to render_typed_value
 #                (decides PQ/CD/ST/IVL/PIVL; CD values render as concepts)
+#   "perf"    -> a <performer>; hand it to render_performer (person, else org)
 #   "text"    -> xpath ends at an element; take its text content
 
 
@@ -430,7 +514,7 @@ class FieldSpec(NamedTuple):
 
     label: str  # becomes the column header
     xpath: str  # RELATIVE to the anchor element passed to extract_fields
-    kind: Literal["attr", "coded", "interp", "concept", "typed", "text"]
+    kind: Literal["attr", "coded", "interp", "concept", "typed", "perf", "text"]
 
 
 def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, str]:
@@ -478,6 +562,10 @@ def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, st
             row[spec.label] = (
                 render_typed_value(first) if isinstance(first, _Element) else ""
             )
+        elif spec.kind == "perf":
+            row[spec.label] = (
+                render_performer(first) if isinstance(first, _Element) else ""
+            )
         elif spec.kind == "text":
             row[spec.label] = (
                 _normalize(first.text) if isinstance(first, _Element) else ""
@@ -508,9 +596,24 @@ _RECONSTRUCTION_MARKER: str = (
 )
 
 # prepended to a negated substanceAdministration's leading cell so the row reads
-# as the negative it is (a not-administered / "no known" statement) rather than
-# as an administered product
+# as the negative it is rather than as a product. the wording follows moodCode:
+# negating an EVN statement says the act did NOT happen ("No Known Medications",
+# a refused vaccine); negating a planned one says it is NOT going to be done --
+# a contraindication or a cancelled order, not a missing administration
 _NEGATED_PREFIX: str = "Not administered: "
+_NEGATED_PLANNED_PREFIX: str = "Not planned: "
+
+
+def _negated_prefix(source: _Element) -> str:
+    """
+    Return the negation prefix appropriate to an anchor's moodCode.
+
+    Absent `@moodCode` is treated as EVN: it is the CDA default for the
+    clinical statements the flat reconstructors anchor on.
+    """
+
+    mood = source.get("moodCode") or "EVN"
+    return _NEGATED_PREFIX if mood == "EVN" else _NEGATED_PLANNED_PREFIX
 
 
 def _strip_entry_references(section: _Element) -> None:
@@ -643,12 +746,18 @@ def _relink_source(source: _Element, row_id: str) -> None:
     _sub_element(text_element, "reference", value=f"#{row_id}")
 
 
-def _append_table(parent: _Element, columns: list[str]) -> _Element:
+def _append_table(parent: _Element, columns: list[str], caption: str = "") -> _Element:
     """
     Append a bordered <table> with a header row; return its <tbody>.
+
+    A non-empty `caption` is emitted as the table's <caption>, which
+    StrucDoc.Table requires FIRST — before <thead> — so it is written
+    before anything else is appended.
     """
 
     table = _sub_element(parent, "table", border="1")
+    if caption:
+        _sub_element(table, "caption").text = caption
     thead = _sub_element(table, "thead")
     header_row = _sub_element(thead, "tr")
     for col in columns:
@@ -693,7 +802,7 @@ def render_section_text(
             for label in block.context:
                 _sub_element(context_row, "td").text = block.context[label] or ""
 
-        detail_body = _append_table(text, block.columns)
+        detail_body = _append_table(text, block.columns, block.caption)
         for row in block.rows:
             row_seq += 1
             row_id = f"{REFINER_ID_PREFIX}{loinc}-{digits}-row{row_seq}"
@@ -704,7 +813,8 @@ def render_section_text(
                 # negative reads at the front of the row instead of the product
                 # rendering as if it were administered
                 if row.negated and index == 0:
-                    value = f"{_NEGATED_PREFIX}{value}" if value else _NEGATED_PREFIX
+                    prefix = _negated_prefix(row.source)
+                    value = f"{prefix}{value}" if value else prefix
                 _sub_element(tr, "td").text = value
             _relink_source(row.source, row_id)
 
@@ -723,13 +833,11 @@ def render_section_text(
 # keyed by templateId and fold in unchanged
 
 # context anchor: <organizer> (the panel). Performer answers "which lab ran
-# this?"--the performing organization. CDA allows performer on the organizer OR
-# on the child observations, so we reach for the first one anywhere under the
-# panel rather than assume a level (scoped to performer so it never picks up an
-# author's organization)
-_PERFORMING_ORG_NAME = (
-    ".//hl7:performer/hl7:assignedEntity/hl7:representedOrganization/hl7:name"
-)
+# this?"--CDA allows performer on the organizer OR on the child observations,
+# so we reach for the first one anywhere under the panel rather than assume a
+# level (scoped to performer so it never picks up an author's organization).
+# render_performer resolves the person-or-organization shape
+_PANEL_PERFORMER = ".//hl7:performer"
 
 # - Laboratory Result Status (...4.418, CONF:4527-443/444) is a MAY component of the
 # Trigger Code Result Organizer carrying the status of the WHOLE battery (<- OBR-25)
@@ -747,7 +855,7 @@ _LAB_RESULT_STATUS_VALUE = (
 PANEL_FIELDS: list[FieldSpec] = [
     FieldSpec("Panel", "hl7:code", "concept"),
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),
-    FieldSpec("Performer", _PERFORMING_ORG_NAME, "text"),
+    FieldSpec("Performer", _PANEL_PERFORMER, "perf"),
     FieldSpec("Result Status", _LAB_RESULT_STATUS_VALUE, "coded"),
 ]
 
@@ -820,6 +928,87 @@ MEDICATION_FIELDS: list[FieldSpec] = [
     FieldSpec("Duration", "hl7:effectiveTime[not(@xsi:type='PIVL_TS')]", "typed"),
     FieldSpec("Frequency", "hl7:effectiveTime[@xsi:type='PIVL_TS']", "typed"),
     FieldSpec("Route", "hl7:routeCode", "concept"),
+]
+
+# plan of treatment is the first heterogeneous section: five unrelated clinical
+# statements share one <section>, so it needs five field maps rather than one.
+# each is a planned-mood mirror of a statement the refiner already renders
+# somewhere else, which is why they repeat rather than share--a planned
+# medication is not a Medications Administered row with a different label:
+# it carries no administration window, and its Date is the date the
+# medication is planned **for**
+#
+# performer is on every map. It is the one field the source spreadsheet
+# deliberately left out ("you could add performer if present but I did not add
+# to each as it complicates the structure"); for a **plan**, "who is expected to do
+# this" is exactly the question a reviewer asks, so the complication is worth
+# absorbing here (see render_performer) rather than pushing onto the reader.
+# status likewise goes on every map: statusCode is SHALL on all five templates,
+# and "active" vs "aborted" is the difference between a plan and a plan that
+# was called off
+_STATUS = FieldSpec("Status", "hl7:statusCode/@code", "attr")
+_PERFORMER = FieldSpec("Performer", "hl7:performer", "perf")
+
+PLANNED_OBSERVATION_FIELDS: list[FieldSpec] = [
+    FieldSpec("Planned Observation", "hl7:code", "concept"),
+    FieldSpec("Date", "hl7:effectiveTime", "typed"),
+    _STATUS,
+    _PERFORMER,
+]
+
+PLANNED_PROCEDURE_FIELDS: list[FieldSpec] = [
+    FieldSpec("Planned Procedure", "hl7:code", "concept"),
+    FieldSpec("Date", "hl7:effectiveTime", "typed"),
+    FieldSpec("Target Site", "hl7:targetSiteCode", "concept"),
+    FieldSpec("Method", "hl7:methodCode", "concept"),
+    _STATUS,
+    _PERFORMER,
+]
+
+PLANNED_ACT_FIELDS: list[FieldSpec] = [
+    FieldSpec("Planned Activity", "hl7:code", "concept"),
+    FieldSpec("Date", "hl7:effectiveTime", "typed"),
+    _STATUS,
+    _PERFORMER,
+]
+
+# unlike MEDICATION_FIELDS this does NOT split effectiveTime into an
+# administration window and a dosing frequency. a Medications Administered row
+# describes a course that ran; a planned medication carries the single date the
+# medication is planned for (the spreadsheet's "Planned medication date",
+# xsi:type="IVL_TS"). the PIVL_TS split earns its keep there and would only add
+# a perpetually empty column here
+PLANNED_MEDICATION_FIELDS: list[FieldSpec] = [
+    FieldSpec("Planned Medication", _MANUFACTURED_MATERIAL_CODE, "concept"),
+    FieldSpec("Date", "hl7:effectiveTime", "typed"),
+    FieldSpec("Dose", "hl7:doseQuantity", "typed"),  # monomorphic PQ
+    FieldSpec("Route", "hl7:routeCode", "concept"),
+    _STATUS,
+    _PERFORMER,
+]
+
+# lot and manufacturer are unique to the immunization map: they are how a PHA
+# ties a planned vaccine to a supply. repeatNumber is in the spreadsheet but
+# annotated "typically don't get this", so it stays out until real data shows
+# otherwise
+PLANNED_IMMUNIZATION_FIELDS: list[FieldSpec] = [
+    FieldSpec("Planned Immunization", _MANUFACTURED_MATERIAL_CODE, "concept"),
+    FieldSpec("Date", "hl7:effectiveTime", "typed"),
+    FieldSpec("Dose", "hl7:doseQuantity", "typed"),
+    FieldSpec("Route", "hl7:routeCode", "concept"),
+    FieldSpec(
+        "Lot",
+        "hl7:consumable/hl7:manufacturedProduct/hl7:manufacturedMaterial"
+        "/hl7:lotNumberText",
+        "text",
+    ),
+    FieldSpec(
+        "Manufacturer",
+        "hl7:consumable/hl7:manufacturedProduct/hl7:manufacturerOrganization/hl7:name",
+        "text",
+    ),
+    _STATUS,
+    _PERFORMER,
 ]
 
 
@@ -1020,6 +1209,130 @@ def reconstruct_medications(section: _Element) -> list[Block]:
 
 
 # NOTE:
+# PLAN OF TREATMENT — the heterogeneous section
+# =============================================================================
+# every other reconstructable section is **one** kind of thing repeated. plan of
+# treatment is five: planned observations, procedures, acts, medications and
+# immunizations sit as siblings under a single <section>. that is why it emits
+# one **captioned** block per entry kind instead of one block per grouping entry:
+# the kinds do not share columns, and "unlike patterns are never collapsed into
+# a shared grid" cuts the other way here--without a caption the reader gets a
+# run of unlabelled tables
+#
+# the split is by ELEMENT NAME, except for substanceAdministration, which is
+# both the medication and the immunization shape and can only be told apart by
+# templateId. that mirrors how the matching rules for this section already
+# discriminate (see specification/entry_match_rules.py, rules 2-5), so the two
+# halves of the pipeline agree on what an entry **is**
+
+# a substanceAdministration bearing either immunization template is a vaccine;
+# the Planned variant (22.4.120) is IG-recommended for this section and the
+# event-mood one (22.4.52) is the discouraged-but-permitted fallback the
+# matching rules also accept
+_IMMUNIZATION_TEMPLATES: tuple[str, ...] = (
+    PLANNED_IMMUNIZATION_ACTIVITY,
+    IMMUNIZATION_ACTIVITY_V3,
+)
+
+
+def _is_planned_immunization(anchor: _Element) -> bool:
+    """
+    Return True if a `<substanceAdministration>` is a vaccine, not a drug.
+    """
+
+    return any(
+        template.get("root") in _IMMUNIZATION_TEMPLATES
+        for template in anchor.findall("hl7:templateId", HL7_NS)
+    )
+
+
+def _entry_kind_block(
+    anchors: list[_Element],
+    *,
+    fields: list[FieldSpec],
+    caption: str,
+) -> Block:
+    """
+    Build the captioned block for one Plan of Treatment entry kind.
+
+    The caller skips empty kinds before calling, so this always builds a
+    block (one row per anchor).
+    """
+
+    return Block(
+        context={},
+        columns=[spec.label for spec in fields],
+        rows=[
+            DetailRow(
+                source=anchor,
+                values=extract_fields(anchor, fields),
+                negated=anchor.get("negationInd") == "true",
+            )
+            for anchor in anchors
+        ],
+        caption=caption,
+    )
+
+
+def reconstruct_plan_of_treatment(section: _Element) -> list[Block]:
+    """
+    Reconstruct the Plan of Treatment section as one block per entry kind.
+
+    HETEROGENEOUS section: entries are grouped by the clinical statement
+    they are, each kind rendering as its own captioned table with its own
+    columns. Blocks come out in the spreadsheet's order (observation,
+    procedure, act, medication, immunization) rather than document order,
+    so like sits with like.
+
+    Args:
+        section: The post-prune, post-enrich Plan of Treatment <section>.
+
+    Returns:
+        One Block per entry kind that has surviving entries.
+    """
+
+    # a substanceAdministration carrying **neither** immunization template is read
+    # as a medication rather than dropped: its field map is the generic
+    # substanceAdministration shape, and an entry that survived pruning with no
+    # narrative row would make the section's typeCode="DRIV" a lie
+    immunizations: list[_Element] = []
+    medications: list[_Element] = []
+    for anchor in section.findall("hl7:entry/hl7:substanceAdministration", HL7_NS):
+        target = immunizations if _is_planned_immunization(anchor) else medications
+        target.append(anchor)
+
+    # (anchors, field map, caption) per entry kind, in spreadsheet order. the
+    # grouping is by element name, except substanceAdministration — one element
+    # serving two kinds — which was split by templateId above
+    kinds: list[tuple[list[_Element], list[FieldSpec], str]] = [
+        (
+            section.findall("hl7:entry/hl7:observation", HL7_NS),
+            PLANNED_OBSERVATION_FIELDS,
+            "Planned Observations",
+        ),
+        (
+            section.findall("hl7:entry/hl7:procedure", HL7_NS),
+            PLANNED_PROCEDURE_FIELDS,
+            "Planned Procedures",
+        ),
+        (
+            section.findall("hl7:entry/hl7:act", HL7_NS),
+            PLANNED_ACT_FIELDS,
+            "Planned Activities",
+        ),
+        (medications, PLANNED_MEDICATION_FIELDS, "Planned Medications"),
+        (immunizations, PLANNED_IMMUNIZATION_FIELDS, "Planned Immunizations"),
+    ]
+
+    # a kind with no surviving entries contributes no table
+    return [
+        _entry_kind_block(anchors, fields=fields, caption=caption)
+        for anchors, fields, caption in kinds
+        if anchors
+    ]
+
+
+# NOTE:
 # DISPATCH + PUBLIC ENTRY
 # =============================================================================
 # convention over container: a flat LOINC -> function dict relates the
@@ -1031,6 +1344,7 @@ SECTION_RECONSTRUCTORS: dict[str, SectionReconstructor] = {
     ReconstructableSection.PROBLEM.value: reconstruct_problems,
     ReconstructableSection.IMMUNIZATIONS.value: reconstruct_immunizations,
     ReconstructableSection.MEDICATIONS_ADMINISTERED.value: reconstruct_medications,
+    ReconstructableSection.PLAN_OF_TREATMENT.value: reconstruct_plan_of_treatment,
 }
 
 
