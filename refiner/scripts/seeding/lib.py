@@ -1,6 +1,7 @@
 import json
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, TypedDict
 from uuid import UUID
 
@@ -589,6 +590,38 @@ def is_condition_grouper(vs: dict) -> bool:
     return any("conditiongroupervalueset" in str(prof).lower() for prof in profiles)
 
 
+def collect_files_to_parse(is_local: bool, versions_to_keep=2) -> list[Path]:
+    """
+    Function to collect the relevant files to seed, filtering out only the previous two TES releases to speed up local dev.
+    """
+    json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
+    if not is_local:
+        return json_files
+
+    # match on either TES semver version or the datetime string
+    version_regex = re.compile(r"\d+\.\d+\.\d+")
+    datetime_regex = re.compile(r"\d{8}")
+    combined_regex = re.compile(
+        f"(?:{version_regex.pattern})|(?:{datetime_regex.pattern})"
+    )
+
+    def get_version(file: Path, regex: re.Pattern[str]) -> str | None:
+        match = regex.search(file.name)
+        return match.group(0) if match else None
+
+    unique_versions_semver = {
+        ver for f in json_files if (ver := get_version(f, version_regex))
+    }
+    unique_versions_datetime = {
+        ver for f in json_files if (ver := get_version(f, datetime_regex))
+    }
+    top_versions = set(
+        sorted(unique_versions_semver, reverse=True)[0:versions_to_keep]
+    ) | set(sorted(unique_versions_datetime, reverse=True)[0:versions_to_keep])
+
+    return [f for f in json_files if get_version(f, combined_regex) in top_versions]
+
+
 def load_valuesets_from_all_files(
     is_local=False,
 ) -> dict[tuple[VsCanonicalUrl, VsVersion], VsDict]:
@@ -597,11 +630,7 @@ def load_valuesets_from_all_files(
     """
 
     vs_map: dict[tuple[str, str], dict] = {}
-    json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
-    grouper_regex = r"grouper_(.*?)\.part0\d+\.json"
-    file_matches = [re.search(grouper_regex, f.name) for f in json_files]
-    file_names = [n.group(1) for n in file_matches if n is not None]
-    print(set(file_names))
+    json_files = collect_files_to_parse(is_local=is_local)
 
     for idx, file_path in enumerate(json_files, start=1):
         logger.info(f"📝 Loading TES file {idx} / {len(json_files)}: {file_path.name}")

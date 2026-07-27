@@ -654,6 +654,7 @@ def load_tes_data(
     Args:
        cursor: A DB cursor
        system_data: inserted system data to be used by downstream code seeding
+       is_local: ENV var on local env
     """
     all_valuesets_map = load_valuesets_from_all_files(is_local=is_local)
 
@@ -704,6 +705,7 @@ def load_static_data(db_url: str, db_password: str, env: str | None) -> None:
     Args:
         db_url (str): The database URL
         db_password (str): The database password
+        env (str): The env var
     """
     start = time.perf_counter()
     is_local = env == "local"
