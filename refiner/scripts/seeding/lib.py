@@ -599,14 +599,13 @@ def collect_files_to_parse(is_local: bool, versions_to_keep=2) -> list[Path]:
         return json_files
 
     # match on either TES semver version or the datetime string
-    version_regex = re.compile(r"\d+\.\d+\.\d+")
-    datetime_regex = re.compile(r"\d{8}")
-    combined_regex = re.compile(
-        f"(?:{version_regex.pattern})|(?:{datetime_regex.pattern})"
-    )
+    version_regex = r"\d+\.\d+\.\d+"
+    datetime_regex = r"\d{8}"
+    combined_regex = f"(?:{version_regex})|(?:{datetime_regex})"
 
-    def get_version(file: Path, regex: re.Pattern[str]) -> str | None:
-        match = regex.search(file.name)
+    def get_version(file: Path, regex: str) -> str | None:
+        regex_to_match = re.compile(regex)
+        match = regex_to_match.search(file.name)
         return match.group(0) if match else None
 
     unique_versions_semver = {
