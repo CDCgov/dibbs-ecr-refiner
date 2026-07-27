@@ -7,6 +7,7 @@ import pytest
 from fastapi import status
 
 from app.services.format import format_xml_document_for_display
+from tests.integration.conftest import PREV_TES_VERSION
 
 api_route_base = "/api/v1/simulator"
 
@@ -239,18 +240,18 @@ async def test_discovers_configs_across_multiple_tes_versions(
     current_covid_id = await get_condition_id("COVID-19")
     current_flu_id = await get_condition_id("Influenza")
 
-    old_covid_id = await get_condition_id("COVID-19", "5.0.0")
-    old_flu_id = await get_condition_id("Influenza", "5.0.0")
+    old_covid_id = await get_condition_id("COVID-19", PREV_TES_VERSION)
+    old_flu_id = await get_condition_id("Influenza", PREV_TES_VERSION)
 
-    # create a bunch of 5.0.0 COVID configs
+    # create a bunch of prev version COVID configs
     for _ in range(21):
         config = await create_config(old_covid_id)
         await activate_config(config["id"])
 
-    # create a 5.0.0 COVID draft
+    # create a prev version COVID draft
     await create_config(current_covid_id)
 
-    # create a bunch of 5.0.0 influenza configs
+    # create a bunch of prev version influenza configs
     for _ in range(27):
         config = await create_config(old_flu_id)
         await activate_config(config["id"])
