@@ -117,8 +117,7 @@ section never reconstructs, and when nothing survived (or a section has no
 registered reconstructor) it falls back to retaining the original narrative.
 
 On house style: the reconstruction stays vendor-neutral — it does not encode
-one EHR's stylesheet quirks (see
-`docs/decisions/0011_2026-06-24_narrative-reconstruction-real-data-blocks-and-linkage.md`).
+one EHR's stylesheet quirks ([see here](/docs/decisions/0011_2026-06-24_narrative-reconstruction-real-data-blocks-and-linkage.md)).
 But "convention-aligned" leans toward the shape a PHA is used to reading, which
 in practice means Epic (the long-run-consistent plurality of what flows through
 AIMS). Taking inspiration from how Epic renders a section is fine where the
