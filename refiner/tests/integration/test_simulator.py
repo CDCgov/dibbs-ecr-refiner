@@ -7,7 +7,6 @@ import pytest
 from fastapi import status
 
 from app.services.format import format_xml_document_for_display
-from tests.integration.conftest import PREV_TES_VERSION
 
 api_route_base = "/api/v1/simulator"
 
@@ -229,6 +228,7 @@ async def test_discovers_configs_across_multiple_tes_versions(
     activate_config,
     covid_influenza_v1_1_zip_path,
     authed_client,
+    previous_tes_version,
 ):
     """
     Test that the discovery feature will find all configurations for a reportable condition
@@ -240,8 +240,8 @@ async def test_discovers_configs_across_multiple_tes_versions(
     current_covid_id = await get_condition_id("COVID-19")
     current_flu_id = await get_condition_id("Influenza")
 
-    old_covid_id = await get_condition_id("COVID-19", PREV_TES_VERSION)
-    old_flu_id = await get_condition_id("Influenza", PREV_TES_VERSION)
+    old_covid_id = await get_condition_id("COVID-19", previous_tes_version)
+    old_flu_id = await get_condition_id("Influenza", previous_tes_version)
 
     # create a bunch of prev version COVID configs
     for _ in range(21):
