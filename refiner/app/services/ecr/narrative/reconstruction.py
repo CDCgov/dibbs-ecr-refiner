@@ -595,25 +595,24 @@ _RECONSTRUCTION_MARKER: str = (
     "entries: machine-derived, not clinician-attested. "
 )
 
-# prepended to a negated substanceAdministration's leading cell so the row reads
-# as the negative it is rather than as a product. the wording follows moodCode:
-# negating an EVN statement says the act did NOT happen ("No Known Medications",
-# a refused vaccine); negating a planned one says it is NOT going to be done --
-# a contraindication or a cancelled order, not a missing administration
-_NEGATED_PREFIX: str = "Not administered: "
-_NEGATED_PLANNED_PREFIX: str = "Not planned: "
-
 
 def _negated_prefix(source: _Element) -> str:
     """
     Return the negation prefix appropriate to an anchor's moodCode.
+
+    Prepended to a negated substanceAdministration's leading cell so the
+    row reads as the negative it is rather than as a product. The wording
+    follows moodCode: negating an EVN statement says the act did **not**
+    happen ("No Known Medications", a refused vaccine); negating a planned
+    one says it is NOT going to be done--a contraindication or a
+    cancelled order, not a missing administration.
 
     Absent `@moodCode` is treated as EVN: it is the CDA default for the
     clinical statements the flat reconstructors anchor on.
     """
 
     mood = source.get("moodCode") or "EVN"
-    return _NEGATED_PREFIX if mood == "EVN" else _NEGATED_PLANNED_PREFIX
+    return "Not administered: " if mood == "EVN" else "Not planned: "
 
 
 def _strip_entry_references(section: _Element) -> None:
