@@ -14,7 +14,6 @@ from app.db.code_systems.db import (
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
-from tests.integration.conftest import DEFAULT_TES_VERSION, PREV_TES_VERSION
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -108,6 +107,7 @@ class TestConfigurations:
         authed_client,
         get_condition_id,
         get_config_by_id,
+        PREV_TES_VERSION,
     ):
         """
         Tests that a brand new, non-cloned configuration always uses the latest
@@ -124,7 +124,6 @@ class TestConfigurations:
         config = await get_config_by_id(config_id)
         assert config["condition_id"] == str(await get_condition_id("Glanders"))
 
-    @pytest.mark.parametrize("OLD_TES_VERSION", [PREV_TES_VERSION])
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
         setup,
@@ -136,7 +135,8 @@ class TestConfigurations:
         db_pool,
         associate_codeset,
         activate_config,
-        OLD_TES_VERSION,
+        PREV_TES_VERSION,
+        DEFAULT_TES_VERSION,
     ):
         """
         Tests that configurations using previous TES versions are automatically updated to use the latest condition information when cloned.
@@ -145,7 +145,7 @@ class TestConfigurations:
         PRIMARY_CONDITION = "COVID-19"
 
         # Try creating a config with an outdated TES version
-        old_condition_id = await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
+        old_condition_id = await get_condition_id(PRIMARY_CONDITION, PREV_TES_VERSION)
 
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
@@ -223,10 +223,7 @@ class TestConfigurations:
         ]
 
     async def test_code_set_association_fails_when_tes_version_mismatch(
-        self,
-        setup,
-        authed_client,
-        get_condition_id,
+        self, setup, authed_client, get_condition_id, DEFAULT_TES_VERSION
     ):
         """
         Tests that a prev TES version code set cannot be associated with a configuration

@@ -72,6 +72,16 @@ DEFAULT_TES_VERSION = "6.0.0"
 PREV_TES_VERSION = "5.0.0"
 
 
+@pytest.fixture
+def default_tes_version():
+    return DEFAULT_TES_VERSION
+
+
+@pytest.fixture
+def previous_tes_version():
+    return PREV_TES_VERSION
+
+
 @pytest_asyncio.fixture
 async def upload_custom_codes(authed_client):
     """
