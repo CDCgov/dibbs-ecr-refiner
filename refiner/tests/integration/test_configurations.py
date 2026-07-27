@@ -179,15 +179,15 @@ class TestConfigurations:
         # Ensure the config is using the older version
         config = await get_config_by_id(old_config_id)
         assert config["condition_id"] == str(
-            await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, PREV_TES_VERSION)
         )
 
         # Associate a couple of older code sets with the config
         config_id = config["id"]
-        old_code_set_1_id = await get_condition_id("Influenza", OLD_TES_VERSION)
+        old_code_set_1_id = await get_condition_id("Influenza", PREV_TES_VERSION)
         await associate_codeset(config_id, old_code_set_1_id)
 
-        old_code_set_2_id = await get_condition_id("Microtia", OLD_TES_VERSION)
+        old_code_set_2_id = await get_condition_id("Microtia", PREV_TES_VERSION)
         await associate_codeset(config_id, old_code_set_2_id)
 
         # Activate the old config
@@ -223,7 +223,12 @@ class TestConfigurations:
         ]
 
     async def test_code_set_association_fails_when_tes_version_mismatch(
-        self, setup, authed_client, get_condition_id, DEFAULT_TES_VERSION
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        DEFAULT_TES_VERSION,
+        PREV_TES_VERSION,
     ):
         """
         Tests that a prev TES version code set cannot be associated with a configuration
