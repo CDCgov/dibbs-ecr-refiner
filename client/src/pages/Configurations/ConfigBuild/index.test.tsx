@@ -79,8 +79,12 @@ vi.mock('../../../api/conditions/conditions', async () => {
             code_category_statuses: [],
           },
           codes: [
-            { code: '1', system: 'LOINC', description: 'idk' },
-            { code: '2', system: 'SNOMED', description: 'example' },
+            { code: 'mock-loinc-code', system: 'LOINC', description: 'idk' },
+            {
+              code: 'mock-snomed-code',
+              system: 'SNOMED',
+              description: 'example',
+            },
           ],
 
           systems: mockCodeSystems,
@@ -372,14 +376,14 @@ describe('Config builder page', () => {
 
   it('should filter codes by search text', async () => {
     const user = userEvent.setup();
-    const covidCode = '1';
+    const mockLoincCode = 'mock-loinc-code';
     renderPage();
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
     const searchBox = await screen.findByPlaceholderText(/Search code set/);
-    await user.type(searchBox, covidCode);
-    expect(searchBox).toHaveValue(covidCode);
+    await user.type(searchBox, mockLoincCode);
+    expect(searchBox).toHaveValue(mockLoincCode);
 
     // wait for debounced search results to appear before checking
     await waitFor(async () => {
@@ -387,7 +391,7 @@ describe('Config builder page', () => {
       expect(rows).toHaveLength(1);
     });
 
-    const row = await screen.findByText(covidCode, { selector: 'mark' });
+    const row = await screen.findByText(mockLoincCode, { selector: 'mark' });
     expect(row).toBeInTheDocument();
   });
 
