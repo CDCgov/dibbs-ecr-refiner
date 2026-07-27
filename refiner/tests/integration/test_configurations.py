@@ -135,8 +135,8 @@ class TestConfigurations:
         db_pool,
         associate_codeset,
         activate_config,
-        PREV_TES_VERSION,
-        DEFAULT_TES_VERSION,
+        prev_tes_version,
+        default_tes_version,
     ):
         """
         Tests that configurations using previous TES versions are automatically updated to use the latest condition information when cloned.
@@ -145,7 +145,7 @@ class TestConfigurations:
         PRIMARY_CONDITION = "COVID-19"
 
         # Try creating a config with an outdated TES version
-        old_condition_id = await get_condition_id(PRIMARY_CONDITION, PREV_TES_VERSION)
+        old_condition_id = await get_condition_id(PRIMARY_CONDITION, prev_tes_version)
 
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
@@ -179,15 +179,15 @@ class TestConfigurations:
         # Ensure the config is using the older version
         config = await get_config_by_id(old_config_id)
         assert config["condition_id"] == str(
-            await get_condition_id(PRIMARY_CONDITION, PREV_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, prev_tes_version)
         )
 
         # Associate a couple of older code sets with the config
         config_id = config["id"]
-        old_code_set_1_id = await get_condition_id("Influenza", PREV_TES_VERSION)
+        old_code_set_1_id = await get_condition_id("Influenza", prev_tes_version)
         await associate_codeset(config_id, old_code_set_1_id)
 
-        old_code_set_2_id = await get_condition_id("Microtia", PREV_TES_VERSION)
+        old_code_set_2_id = await get_condition_id("Microtia", prev_tes_version)
         await associate_codeset(config_id, old_code_set_2_id)
 
         # Activate the old config
@@ -200,12 +200,12 @@ class TestConfigurations:
 
         # This config should have all verion 6.0.0 info (primary condition ID, included conditions array, etc.)
         updated_config = await get_config_by_id(response.json()["id"])
-        new_code_set_1_id = await get_condition_id("Influenza", DEFAULT_TES_VERSION)
-        new_code_set_2_id = await get_condition_id("Microtia", DEFAULT_TES_VERSION)
+        new_code_set_1_id = await get_condition_id("Influenza", default_tes_version)
+        new_code_set_2_id = await get_condition_id("Microtia", default_tes_version)
 
         # Check that all of the new IDs are where they should be
         assert updated_config["condition_id"] == str(
-            await get_condition_id(PRIMARY_CONDITION, DEFAULT_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, default_tes_version)
         )
         assert str(new_code_set_1_id) in [
             uc["condition_id"] for uc in updated_config["code_sets"]
@@ -227,29 +227,29 @@ class TestConfigurations:
         setup,
         authed_client,
         get_condition_id,
-        DEFAULT_TES_VERSION,
-        PREV_TES_VERSION,
+        default_tes_version,
+        prev_tes_version,
     ):
         """
         Tests that a prev TES version code set cannot be associated with a configuration
         that uses a default TES version  primary condition.
         """
         # Create config using default
-        condition_id = await get_condition_id("Glanders", DEFAULT_TES_VERSION)
+        condition_id = await get_condition_id("Glanders", default_tes_version)
         payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         config_id = response.json()["id"]
 
         # Ensure associating a code set a prev version is not allowed
-        old_code_set_id = await get_condition_id("COVID-19", PREV_TES_VERSION)
+        old_code_set_id = await get_condition_id("COVID-19", prev_tes_version)
         payload = {"condition_id": str(old_code_set_id)}
         response = await authed_client.put(
             f"api/v1/configurations/{config_id}/code-sets", json=payload
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        expected_error = f"Invalid association for condition with ID: {old_code_set_id}. TES version of condition ({PREV_TES_VERSION}) does not match version used by configuration ({DEFAULT_TES_VERSION})."
+        expected_error = f"Invalid association for condition with ID: {old_code_set_id}. TES version of condition ({prev_tes_version}) does not match version used by configuration ({default_tes_version})."
         assert expected_error in response.json()["detail"]
 
     async def test_custom_sections(self, setup, authed_client, get_condition_id):
