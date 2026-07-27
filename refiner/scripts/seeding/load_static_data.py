@@ -182,43 +182,44 @@ def _build_codes(
         for child_vs in get_child_rsg_valuesets(
             parent=condition, all_vs_map=valuesets_map
         ):
-            if child_rsg_code := parse_snomed_from_url(child_vs.get("url", "")):
-                display = parse_child_rsg_details_from_use_context(
-                    child_vs.get("useContext", "")
-                )
-                code_index = (snomed_db_id, cond_version, child_rsg_code)
-                if code_index not in codes_seen_so_far:
-                    codes_seen_so_far.add(code_index)
-                    code_row = CodeRow(
+            child_rsg_code = parse_snomed_from_url(child_vs.get("url", ""))
+            child_tuples.update(extract_codes_from_compose(child_vs))
+            if not child_rsg_code:
+                continue
+
+            display = parse_child_rsg_details_from_use_context(
+                child_vs.get("useContext", "")
+            )
+            code_tuple = (snomed_db_id, cond_version, child_rsg_code)
+            condition_child_rsg_snomed_codes.add(code_tuple)
+
+            if code_tuple not in codes_seen_so_far:
+                codes_seen_so_far.add(code_tuple)
+                codes_for_codes_table.append(
+                    CodeRow(
                         id=uuid4(),
                         code=child_rsg_code,
                         version=cond_version,
                         display=display,
                         system_id=snomed_db_id,
                     )
-                    codes_for_codes_table.append(code_row)
-                system_code_tuple = (
-                    snomed_db_id,
-                    cond_version,
-                    child_rsg_code,
                 )
-
-                if system_code_tuple not in condition_child_rsg_snomed_codes:
-                    condition_child_rsg_snomed_codes.add(system_code_tuple)
-
-            child_codes = extract_codes_from_compose(child_vs)
-            child_tuples.update(set(child_codes))
 
         condition_to_code_relationships[cond_index]["child_rsg_codes"] = (
             condition_child_rsg_snomed_codes
         )
-
-        sibling_tuples = set()
-        for sibling_vs in get_sibling_context_valuesets(condition, valuesets_map):
-            sibling_tuples.update(extract_codes_from_compose(sibling_vs))
-
-        all_tuples = sibling_tuples | child_tuples
-        system_sorted_codes = categorize_codes_by_system_oid(set(all_tuples))
+        sibling_code_tuple_sets = [
+            extract_codes_from_compose(sibling_vs)
+            for sibling_vs in get_sibling_context_valuesets(condition, valuesets_map)
+        ]
+        sibling_sets = {
+            sibling_tuple
+            for sibling_tuple_set in sibling_code_tuple_sets
+            for sibling_tuple in sibling_tuple_set
+        }
+        system_sorted_codes = categorize_codes_by_system_oid(
+            sibling_sets | child_tuples
+        )
 
         for system_oid, code_list in system_sorted_codes.items():
             system_id = oid_indexed_system_db_ids.get(system_oid)
@@ -230,9 +231,9 @@ def _build_codes(
                 if not code:
                     continue
 
-                code_index = (system_id, cond_version, code)
-                if code_index not in codes_seen_so_far:
-                    codes_seen_so_far.add(code_index)
+                code_tuple = (system_id, cond_version, code)
+                if code_tuple not in codes_seen_so_far:
+                    codes_seen_so_far.add(code_tuple)
                     code_row = CodeRow(
                         id=uuid4(),
                         code=code,
@@ -241,15 +242,13 @@ def _build_codes(
                         system_id=system_id,
                     )
                     codes_for_codes_table.append(code_row)
-                system_code_tuple = (system_id, cond_version, code)
                 if (
                     # skip code if already marked in child_rsgs so we don't try to
                     # upsert the same code twice in the same transaction and run into
                     # cardinality violations
-                    system_code_tuple not in condition_child_rsg_snomed_codes
-                    and system_code_tuple not in condition_non_child_rsg_snomed_codes
+                    code_tuple not in condition_child_rsg_snomed_codes
                 ):
-                    condition_non_child_rsg_snomed_codes.add(system_code_tuple)
+                    condition_non_child_rsg_snomed_codes.add(code_tuple)
 
         condition_to_code_relationships[cond_index]["non_child_rsg_codes"] = (
             condition_non_child_rsg_snomed_codes
@@ -545,8 +544,6 @@ def _upsert_codes(
 
     logger.info(f"📥 Staged {len(data['codes_to_insert'])} unique code rows.")
     cursor.execute("ANALYZE stage_codes;")
-    # bump up local memory to help with the large joins
-    cursor.execute("SET LOCAL work_mem = '128MB'")
 
     cursor.execute("""
         INSERT INTO codes (id, system_id, version, code, display)
@@ -591,9 +588,7 @@ def _build_system_response(
     return response
 
 
-def load_system_data(
-    cursor: Cursor,
-) -> dict[SystemOid, SystemDbId]:
+def load_system_data(cursor: Cursor) -> dict[SystemOid, SystemDbId]:
     """
     Loads system data into the data.
 
@@ -647,7 +642,9 @@ def load_system_data(
     return _build_system_response(db_system_response=systems_response)
 
 
-def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> None:
+def load_tes_data(
+    cursor: Cursor, system_data: dict[SystemOid, SystemDbId], is_local=False
+) -> None:
     """
     Loads condition grouper data from the TES and upserts condition rows and their associated context grouper rows into the database.
 
@@ -658,8 +655,7 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
        cursor: A DB cursor
        system_data: inserted system data to be used by downstream code seeding
     """
-
-    all_valuesets_map = load_valuesets_from_all_files()
+    all_valuesets_map = load_valuesets_from_all_files(is_local=is_local)
 
     condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
@@ -701,7 +697,7 @@ def load_tes_data(cursor: Cursor, system_data: dict[SystemOid, SystemDbId]) -> N
     )
 
 
-def load_static_data(db_url: str, db_password: str) -> None:
+def load_static_data(db_url: str, db_password: str, env: str | None) -> None:
     """
     Orchestration function that loads all static data into the DB.
 
@@ -710,12 +706,13 @@ def load_static_data(db_url: str, db_password: str) -> None:
         db_password (str): The database password
     """
     start = time.perf_counter()
+    is_local = env == "local"
 
     try:
         with get_db_connection(db_url, db_password) as conn:
             with conn.cursor() as cursor:
                 system_data = load_system_data(cursor=cursor)
-                load_tes_data(cursor=cursor, system_data=system_data)
+                load_tes_data(cursor=cursor, system_data=system_data, is_local=is_local)
 
                 logger.info("🏁 Done!")
 
@@ -733,10 +730,11 @@ def load_static_data(db_url: str, db_password: str) -> None:
 if __name__ == "__main__":
     load_dotenv(dotenv_path=ENV_PATH)
 
+    env = os.getenv("ENV")
     db_url = os.getenv("DB_URL")
     db_password = os.getenv("DB_PASSWORD")
 
     if not db_url or not db_password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
     else:
-        load_static_data(db_password=db_password, db_url=db_url)
+        load_static_data(db_password=db_password, db_url=db_url, env=env)

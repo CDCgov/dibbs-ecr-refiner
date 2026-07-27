@@ -5,5 +5,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS codes_upsert_constraint_idx
     ON codes (system_id, version, code);
 
 -- migrate:down
-ALTER TABLE condition_codes DROP COLUMN is_child_rsg;
+DROP INDEX IF EXISTS codes_upsert_constraint_idx;
+ALTER TABLE conditions_codes DROP COLUMN is_child_rsg;
 ALTER TABLE conditions_codes RENAME TO conditions_rsg_codes;

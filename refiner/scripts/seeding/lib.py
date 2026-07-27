@@ -589,13 +589,19 @@ def is_condition_grouper(vs: dict) -> bool:
     return any("conditiongroupervalueset" in str(prof).lower() for prof in profiles)
 
 
-def load_valuesets_from_all_files() -> dict[tuple[VsCanonicalUrl, VsVersion], VsDict]:
+def load_valuesets_from_all_files(
+    is_local=False,
+) -> dict[tuple[VsCanonicalUrl, VsVersion], VsDict]:
     """
     Loads all ValueSet resources from JSON files in the TES data directory.
     """
 
     vs_map: dict[tuple[str, str], dict] = {}
     json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
+    grouper_regex = r"grouper_(.*?)\.part0\d+\.json"
+    file_matches = [re.search(grouper_regex, f.name) for f in json_files]
+    file_names = [n.group(1) for n in file_matches if n is not None]
+    print(set(file_names))
 
     for idx, file_path in enumerate(json_files, start=1):
         logger.info(f"📝 Loading TES file {idx} / {len(json_files)}: {file_path.name}")
