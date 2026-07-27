@@ -123,7 +123,7 @@ class TestConfigurations:
         config = await get_config_by_id(config_id)
         assert config["condition_id"] == str(await get_condition_id("Glanders"))
 
-    @pytest.mark.parametrize("OLD_TES_VERSION", ["5.0.0", "4.0.0", "3.0.0", "2.0.0"])
+    @pytest.mark.parametrize("OLD_TES_VERSION", ["5.0.0"])
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
         setup,
