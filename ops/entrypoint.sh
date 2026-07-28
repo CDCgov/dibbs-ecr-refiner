@@ -42,7 +42,7 @@ case "$COMMAND" in
         ;;
     regenerate-active-configs)
         echo "Regenerating active configuration files"
-        exec python3 ./scripts/migrations/regenerate_active_configs.py "$@"
+        exec python3 ./scripts/reactivations/regenerate_active_configs.py "$@"
         ;;
     python|python3)
         echo "Running Python script: $*"
@@ -54,7 +54,7 @@ case "$COMMAND" in
         echo "Migration step complete"
         python3 ./scripts/seeding/load_static_data.py
         echo "Regenerating active configuration files"
-        python3 ./scripts/migrations/regenerate_active_configs.py
+        python3 ./scripts/reactivations/regenerate_active_configs.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"

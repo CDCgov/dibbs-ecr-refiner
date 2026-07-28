@@ -11,12 +11,12 @@ import pytest
 from fastapi import status
 from jsonschema import Draft202012Validator
 from psycopg.rows import dict_row
+from scripts.migrations import regenerate_active_configs as reactivation
+from scripts.migrations.regenerate_active_configs import regenerate_active_configuration
 
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.configurations import convert_config_to_storage_payload
-from scripts.migrations import regenerate_active_configs as reactivation
-from scripts.migrations.regenerate_active_configs import regenerate_active_configuration
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"

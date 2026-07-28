@@ -612,6 +612,7 @@ async def regenerate_active_configs(
                 configuration=configuration,
                 db=db,
             )
+            successful += 1
         except Exception:
             configuration_id = str(configuration.id)
             failures.append(configuration_id)
@@ -624,8 +625,6 @@ async def regenerate_active_configs(
                     "jurisdiction_id": configuration.jurisdiction_id,
                 },
             )
-        else:
-            successful += 1
 
     logger.info(
         "Active configuration regeneration finished.",
