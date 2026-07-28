@@ -38,7 +38,7 @@ describe('Configurations Table component', () => {
       })
     ).toHaveAttribute(
       'href',
-      '/configurations/chlamydia-config-id/manage-codes'
+      '/configurations/chlamydia-config-id/customize-sections'
     );
 
     expect(
@@ -47,14 +47,14 @@ describe('Configurations Table component', () => {
       })
     ).toHaveAttribute(
       'href',
-      '/configurations/asdf-zxcv-qwer-hjkl/manage-codes'
+      '/configurations/asdf-zxcv-qwer-hjkl/customize-sections'
     );
 
     expect(
       screen.getByRole('link', { name: /configure acanthamoeba/i })
     ).toHaveAttribute(
       'href',
-      '/configurations/1234-5678-9101-1121/manage-codes'
+      '/configurations/1234-5678-9101-1121/customize-sections'
     );
   });
 
@@ -88,7 +88,7 @@ describe('Configurations Table component', () => {
     await user.keyboard('{Enter}');
     expect(link).toHaveAttribute(
       'href',
-      '/configurations/chlamydia-config-id/manage-codes'
+      '/configurations/chlamydia-config-id/customize-sections'
     );
   });
 });

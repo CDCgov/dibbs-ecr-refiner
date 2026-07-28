@@ -11,7 +11,7 @@ import {
   UploadCustomCodesPreviewItem,
   UploadCustomCodesPreviewResponse,
 } from '../../../../../api/schemas';
-import { mockCodeSystems } from '../../fixtures';
+import { mockCodeSystems } from '../../../test/fixtures';
 
 vi.mock('../../../../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
@@ -62,7 +62,9 @@ vi.mock('./utils', () => {
 
 async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
   render(
-    <MemoryRouter initialEntries={[`/configurations/${MOCK_CONFIG_ID}/manage-codes`]}>
+    <MemoryRouter
+      initialEntries={[`/configurations/${MOCK_CONFIG_ID}/manage-codes`]}
+    >
       <TestQueryClientProvider>
         <ImportCustomCodes configurationId={MOCK_CONFIG_ID} />
       </TestQueryClientProvider>
