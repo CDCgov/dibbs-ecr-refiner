@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { Sections } from './Sections';
+import { Sections } from '../CustomizeSections/Sections';
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
 import { useToast } from '../../../hooks/useToast';

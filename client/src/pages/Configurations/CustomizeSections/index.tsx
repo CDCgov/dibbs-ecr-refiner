@@ -2,7 +2,7 @@ import { useParams } from 'react-router';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { Spinner } from '@components/Spinner';
-import { Sections } from '../ManageCodes/Sections';
+import { Sections } from './Sections';
 import { Header, SectionContainer } from '../layout';
 
 export function CustomizeSections() {
