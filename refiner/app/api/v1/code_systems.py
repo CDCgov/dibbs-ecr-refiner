@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.db.code_systems.db import get_all_code_systems_db
+from app.db.code_systems.db import get_code_systems_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 
 router = APIRouter(prefix="/code-systems")
@@ -36,7 +36,7 @@ async def get_code_systems(
     Returns:
         List of code system.
     """
-    all_code_systems = await get_all_code_systems_db(db)
+    code_systems = await get_code_systems_db(db)
     return [
         CodeSystemsReponse(
             key=system_data.key,
@@ -44,5 +44,5 @@ async def get_code_systems(
             oid=system_data.oid,
             id=system_data.id,
         )
-        for system_data in all_code_systems.values()
+        for system_data in code_systems
     ]

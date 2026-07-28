@@ -7,7 +7,6 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { DbConfigurationCustomCode } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
@@ -16,12 +15,13 @@ import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 import { Select, SelectContainer } from '@components/Select';
 import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 import { Spinner } from '@components/Spinner';
+import { CustomCodeResponse } from '../../../../api/schemas';
 
 interface CustomCodeModalProps {
   configurationId: string;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedCustomCode: DbConfigurationCustomCode | null;
+  selectedCustomCode: CustomCodeResponse | null;
   onClose: () => void;
 }
 
@@ -82,17 +82,17 @@ function CustomCodeForm({
 
   const { data: codeSystems, isPending, isError } = useGetCodeSystems();
 
-  const [name, setName] = useState(selectedCustomCode?.name ?? '');
+  const [name, setName] = useState(selectedCustomCode?.display ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
 
-  const [selectedSystem, setSelectedSystem] = useState(
-    selectedCustomCode?.system_key ?? ''
+  const [selectedSystemId, setSelectedSystemId] = useState(
+    selectedCustomCode?.system_id ?? ''
   );
 
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isButtonEnabled = code && selectedSystem && name && !error;
+  const isButtonEnabled = code && selectedSystemId && name && !error;
 
   const handleCodeUpdate = (code: string) => {
     setCode(code);
@@ -137,12 +137,10 @@ function CustomCodeForm({
         {
           configurationId,
           data: {
-            code: selectedCustomCode.code,
-            system_key: selectedCustomCode.system_key,
-            name: selectedCustomCode.name,
-            new_code: code.trim(),
-            new_system_key: selectedSystem,
-            new_name: name.trim(),
+            id: selectedCustomCode.id,
+            code: code.trim() || selectedCustomCode.code,
+            system_id: selectedSystemId || selectedCustomCode.system_id,
+            display: name.trim() || selectedCustomCode.display,
           },
         },
         {
@@ -169,8 +167,8 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: code.trim(),
-            system_key: selectedSystem,
-            name: name.trim(),
+            system_id: selectedSystemId,
+            display: name.trim(),
           },
         },
         {
@@ -215,14 +213,14 @@ function CustomCodeForm({
         <Field>
           <Label>Code system</Label>
           <Select
-            value={selectedSystem}
-            onChange={(e) => setSelectedSystem(e.target.value)}
+            value={selectedSystemId}
+            onChange={(e) => setSelectedSystemId(e.target.value)}
           >
             <option value="" disabled>
               Select system
             </option>
             {codeSystems.data.map((s) => (
-              <option key={s.id} value={s.key}>
+              <option key={s.id} value={s.id}>
                 {s.display_name}
               </option>
             ))}

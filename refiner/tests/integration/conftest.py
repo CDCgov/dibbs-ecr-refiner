@@ -1,6 +1,5 @@
 import os
 import subprocess
-from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -13,9 +12,8 @@ from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
-from app.api.v1.configurations.model import UploadCustomCodesInput
+from app.api.v1.configurations.model import AddCustomCodeInput
 from app.db.configurations.model import (
-    DbConfigurationCustomCode,
     DbNarrativeAction,
     DbSectionAction,
 )
@@ -76,14 +74,30 @@ async def upload_custom_codes(authed_client):
     """
     Returns a function that uploads custom codes for a specific configuration.
 
-    result = await upload_custom_codes(config_id, [UploadCustomCodesInput(code="123", system_key="icd10", name="ICD-10 Example")])
+    result = await upload_custom_codes(config_id, [AddCustomCodeInput(code="123", system_id="cf176e7a-71fa-4f97-8bd3-6ec4fe06600d", name="ICD-10 Example")])
     """
 
-    async def _get(config_id: UUID, codes: list[UploadCustomCodesInput]):
+    async def _get(config_id: UUID, codes: list[AddCustomCodeInput]):
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/custom-codes/confirm",
-            json={"custom_codes": [c.model_dump() for c in codes]},
+            json={"custom_codes": [c.model_dump(mode="json") for c in codes]},
         )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def get_systems(authed_client):
+    """
+    Returns a function that fetches all available code systems.
+
+    systems = await get_systems()
+    """
+
+    async def _get():
+        response = await authed_client.get("/api/v1/code-systems/")
         assert response.status_code == status.HTTP_200_OK
         return response.json()
 
@@ -124,9 +138,9 @@ async def deactivate_config(authed_client):
 
 @pytest_asyncio.fixture
 async def delete_custom_code(authed_client):
-    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
+    async def _get(config_id: UUID, custom_code_id: UUID):
         response = await authed_client.delete(
-            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code.system_key}/{custom_code.code}"
+            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code_id}"
         )
         assert response.status_code == status.HTTP_200_OK
         return response.json()
@@ -136,8 +150,8 @@ async def delete_custom_code(authed_client):
 
 @pytest_asyncio.fixture
 async def add_custom_code(authed_client):
-    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
-        payload = asdict(custom_code)
+    async def _get(config_id: UUID, custom_code: AddCustomCodeInput):
+        payload = custom_code.model_dump(mode="json")
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/custom-codes", json=payload
         )
@@ -178,7 +192,7 @@ def edit_custom_code(authed_client):
     from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
 
     async def _get(config_id: UUID, body: UpdateCustomCodeInput):
-        payload = vars(body)
+        payload = body.model_dump(mode="json")
         response = await authed_client.put(
             f"/api/v1/configurations/{config_id}/custom-codes", json=payload
         )
@@ -356,6 +370,7 @@ async def reset_db(db_pool):
     # run after each test
     async with db_pool.get_connection() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM custom_codes")
             await cur.execute("DELETE FROM configurations")
 
 

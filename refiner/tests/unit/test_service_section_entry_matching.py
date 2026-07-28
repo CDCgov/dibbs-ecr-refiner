@@ -51,9 +51,9 @@ def _get_refiner_comments(section: _Element) -> list[str]:
 def _make_oid_to_system_map() -> dict[Oid, CodeSystemKey]:
     systems: dict[Oid, CodeSystemKey] = defaultdict()
 
-    for key, system in create_mock_systems().items():
-        oid = system.oid
-        systems[oid] = key
+    for system in create_mock_systems():
+        systems[system.oid] = system.key
+
     return systems
 
 
