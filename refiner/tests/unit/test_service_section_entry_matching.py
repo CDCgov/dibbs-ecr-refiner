@@ -695,6 +695,236 @@ def test_results_rule_matches_snomed_on_value(spec_v1_1) -> None:
     assert result.matches_found is True
 
 
+# NOTE:
+# RESULTS SHARED-CONTEXT CARVE-OUT (prune_container_guard_xpath)
+# =============================================================================
+# a Result Organizer may carry sibling components that are NOT result
+# observations — the Specimen Collection Procedure (...4.415, the specimen
+# collection date / body site / source) and the Laboratory Result Status
+# (...4.418). They are organizer-scoped shared context and unmatchable by
+# construction. The guard on the Results rules exempts any component that does
+# not itself contain a Result Observation V3, so those siblings survive
+# alongside a retained result instead of being pruned as non-matching
+
+
+def _results_organizer_with_specimen() -> str:
+    # one organizer: a MATCHED result, a NON-matching result, a Specimen
+    # Collection Procedure (...4.415), and a Laboratory Result Status (...4.418)
+    return """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="30954-2"/>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="99999-9" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                    <component>
+                        <procedure classCode="PROC" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.415"
+                                        extension="2018-09-01"/>
+                            <code code="17636008"
+                                  codeSystem="2.16.840.1.113883.6.96"/>
+                            <effectiveTime><low value="20200309"/></effectiveTime>
+                        </procedure>
+                    </component>
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.418"/>
+                            <code code="55199-6" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                </organizer>
+            </entry>
+        </section>
+        """
+
+
+def _result_codes(section: _Element) -> list[str]:
+    return section.xpath(
+        ".//hl7:observation[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.2']]"
+        "/hl7:code/@code",
+        namespaces=HL7_NS,
+    )
+
+
+def test_results_specimen_and_labstatus_survive_with_matched_result(
+    spec_v1_1,
+) -> None:
+    """
+    The carve-out retains non-result siblings alongside a matched result.
+
+    In a single organizer: the matched Result Observation is kept, the
+    non-matching one is still pruned, and BOTH the Specimen Collection
+    Procedure and the Laboratory Result Status survive as shared context.
+    Lab Result Status is itself an <observation> under a sibling component —
+    its survival proves the guard keys on the Result Observation V3 templateId,
+    not "any observation".
+    """
+
+    section = _build_section(_results_organizer_with_specimen())
+
+    # precondition: the source organizer really carries the shared-context
+    # siblings this test is about
+    assert section.xpath(
+        ".//hl7:procedure[hl7:code/@code='17636008']", namespaces=HL7_NS
+    )
+    assert section.xpath(
+        ".//hl7:observation[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.418']]",
+        namespaces=HL7_NS,
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+
+    # matched result kept; non-matching Result Observation still pruned
+    assert _result_codes(section) == ["94533-7"]
+
+    # specimen collection procedure (...4.415) survives as shared context
+    assert section.xpath(
+        ".//hl7:procedure[hl7:code/@code='17636008']", namespaces=HL7_NS
+    ), "Specimen Collection Procedure was pruned — the specimen data-loss bug"
+
+    # laboratory result status (...4.418) survives too
+    assert section.xpath(
+        ".//hl7:observation[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.418']]",
+        namespaces=HL7_NS,
+    ), "Laboratory Result Status was pruned — guard is over-broad"
+
+
+def test_results_unmatched_organizer_drops_its_specimen_procedure(
+    spec_v1_1,
+) -> None:
+    """
+    Regression guard: the carve-out fires only within a MATCHED organizer.
+
+    An organizer whose only result does not match is removed wholesale and its
+    specimen procedure goes with it — the shared-context exemption must not
+    leak an orphaned procedure out of a fully-pruned organizer.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="30954-2"/>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="99999-9" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                    <component>
+                        <procedure classCode="PROC" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.415"
+                                        extension="2018-09-01"/>
+                            <code code="17636008"
+                                  codeSystem="2.16.840.1.113883.6.96"/>
+                        </procedure>
+                    </component>
+                </organizer>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is False
+    assert not section.xpath(
+        ".//hl7:procedure[hl7:code/@code='17636008']", namespaces=HL7_NS
+    ), "A fully-pruned organizer leaked its specimen procedure"
+
+
+def test_results_specimen_retained_only_in_matched_organizer(spec_v1_1) -> None:
+    """
+    With two organizers, the specimen procedure survives only where a result
+    was retained; the fully-pruned organizer emits nothing.
+
+    The two procedures are distinguished by targetSiteCode so the assertion
+    names exactly which one survived.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="30954-2"/>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                    <component>
+                        <procedure classCode="PROC" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.415"
+                                        extension="2018-09-01"/>
+                            <code code="17636008"
+                                  codeSystem="2.16.840.1.113883.6.96"/>
+                            <targetSiteCode code="MATCHED"/>
+                        </procedure>
+                    </component>
+                </organizer>
+            </entry>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="99999-9" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                    <component>
+                        <procedure classCode="PROC" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.415"
+                                        extension="2018-09-01"/>
+                            <code code="17636008"
+                                  codeSystem="2.16.840.1.113883.6.96"/>
+                            <targetSiteCode code="UNMATCHED"/>
+                        </procedure>
+                    </component>
+                </organizer>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+
+    surviving_sites = section.xpath(
+        ".//hl7:procedure[hl7:code/@code='17636008']/hl7:targetSiteCode/@code",
+        namespaces=HL7_NS,
+    )
+    assert surviving_sites == ["MATCHED"], (
+        f"Specimen procedure survived in the wrong organizers: {surviving_sites}. "
+        f"Expected only the one under the organizer whose result matched."
+    )
+
+
 def test_rule_with_candidates_claims_entry_blocking_subsequent_rules() -> None:
     """
     Structural precedence: the first rule that finds any code-bearing
@@ -1241,3 +1471,84 @@ def test_real_v3_1_1_problems_section_is_processable(
         namespaces=HL7_NS,
     )
     assert result.matches_found is False
+
+
+# NOTE:
+# INVARIANT: a matched entry is never removed
+# =============================================================================
+# container-level pruning ends by deleting an entry that has no containers
+# left. that test cannot, on its own, tell "we pruned every container away"
+# apart from "this entry never had containers at that path"--and the second
+# case is reachable on live data, because every code_xpath is unanchored
+# (`.//`) while every prune_container_xpath assumes a specific shape. the two
+# tests below pin the distinction from both sides
+
+
+def test_matched_entry_without_containers_survives_results(spec_v1_1) -> None:
+    """
+    A bare Result Observation under <entry>, with no organizer, is retained.
+
+    The Results code_xpath is unanchored, so it matches an observation sitting
+    directly under <entry>. prune_container_xpath ("hl7:organizer/hl7:component")
+    then finds nothing--which must read as "this rule's container model does
+    not describe this entry", not as "we pruned it to nothing".
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="30954-2"/>
+            <entry>
+                <observation classCode="OBS" moodCode="EVN">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                    <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+                </observation>
+            </entry>
+        </section>
+        """
+    )
+
+    # precondition: the entry really has no organizer/component containers
+    assert not section.xpath(
+        ".//hl7:entry/hl7:organizer/hl7:component", namespaces=HL7_NS
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+
+    assert result.matches_found is True
+    assert _result_codes(section) == ["94533-7"], (
+        "a matched entry was deleted because it carried no containers at "
+        "prune_container_xpath"
+    )
+
+
+def test_matched_entry_with_containers_pruned_to_nothing_is_removed(
+    spec_v1_1,
+) -> None:
+    """
+    The other side of the invariant: pruning every container does delete.
+
+    Guards against "fixing" the case above by never removing an emptied entry.
+    Here the organizer holds only non-matching Result Observations, so every
+    container is legitimately pruned and the husk goes with them.
+    """
+
+    section = _build_section(_results_organizer_with_specimen())
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+
+    # the matched organizer survives; nothing else to assert here beyond the
+    # entry still being present with its one retained result
+    assert section.xpath(".//hl7:entry/hl7:organizer", namespaces=HL7_NS)
+    assert _result_codes(section) == ["94533-7"]

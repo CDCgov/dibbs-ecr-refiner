@@ -6,6 +6,10 @@ from app.services.ecr.section import get_section_by_code, process_section
 from app.services.ecr.section.generic_matching import (
     _find_path_to_entry,
 )
+from app.services.ecr.section.generic_matching import (
+    process as generic_process,
+)
+from app.services.terminology import CodeSystemSets
 
 # NOTE:
 # HELPERS
@@ -542,3 +546,61 @@ def test_find_path_to_entry_returns_enclosing_entry() -> None:
     deep = _find_one(section, ".//hl7:value[@code='DEEP']")
     assert entry is not None and deep is not None
     assert _find_path_to_entry(deep) is entry
+
+
+# NOTE:
+# NARRATIVE-REFERENCE ENRICHMENT ON THE GENERIC PATH
+# =============================================================================
+# this path clears <text> before matching, so the narrative index has to be
+# captured up front and handed to enrich_surviving_entries. the test exists
+# because the obvious implementation — letting enrich build its own index--
+# silently no-ops here while working fine on the entry_matching path
+
+
+def test_generic_path_recovers_display_from_narrative_reference():
+    """
+    A surviving code with only a narrative #id reference still gets a display.
+
+    The label lives in the section narrative and the entry points at it with
+    <originalText><reference value="#id"/>. Because generic_matching clears
+    <text> before matching, the index must be taken before the clear or the
+    fallback resolves against an empty narrative and does nothing.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <code code="29762-2" codeSystem="2.16.840.1.113883.6.1"/>
+            <text>
+                <table><tbody>
+                    <tr><td><content ID="soc1">Recent travel to Ohio</content></td></tr>
+                </tbody></table>
+            </text>
+            <entry>
+                <observation classCode="OBS" moodCode="EVN">
+                    <code code="420008001" codeSystem="2.16.840.1.113883.6.96"/>
+                    <value xsi:type="CD" code="MATCHME"
+                           codeSystem="2.16.840.1.113883.6.96">
+                        <originalText><reference value="#soc1"/></originalText>
+                    </value>
+                </observation>
+            </entry>
+        </section>
+        """
+    )
+
+    generic_process(
+        section=section,
+        codes_to_match={"MATCHME"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+    )
+
+    value = _find_one(section, ".//hl7:value[@code='MATCHME']")
+    assert value is not None
+    assert value.get("displayName") == "Recent travel to Ohio", (
+        "the narrative index was captured after <text> was cleared, so the "
+        "originalText/reference fallback had nothing to resolve against"
+    )

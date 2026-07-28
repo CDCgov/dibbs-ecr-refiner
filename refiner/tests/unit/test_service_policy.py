@@ -1,3 +1,4 @@
+from app.services.ecr.narrative.reconstruction import SECTION_RECONSTRUCTORS
 from app.services.ecr.policy import (
     NARRATIVE_ACTION_REQUIRES_REFINE,
     NARRATIVE_ONLY_SECTIONS,
@@ -57,8 +58,20 @@ class TestReconstructableSections:
         Ensure only the intended LOINCs are active for reconstruction.
         TODO: Update this list when more LOINCs are uncommented in policy.py
         """
-        expected = ["30954-2", "11450-4", "11369-6", "29549-3"]
+        expected = ["30954-2", "11450-4", "11369-6", "29549-3", "18776-5"]
         assert RECONSTRUCTABLE_SECTIONS == expected
+
+    def test_every_reconstructable_section_has_a_reconstructor(self):
+        """
+        The policy gate and the dispatch table must not drift.
+
+        `is_reconstructable_section` is what the API lets a jurisdiction
+        configure; SECTION_RECONSTRUCTORS is what actually runs. A code in
+        the first but not the second silently degrades to the retained
+        narrative at refinement time.
+        """
+
+        assert set(RECONSTRUCTABLE_SECTIONS) == set(SECTION_RECONSTRUCTORS)
 
 
 class TestPolicyPredicates:

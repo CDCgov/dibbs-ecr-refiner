@@ -1,6 +1,6 @@
-# 11. Updating Active Configs in S3
+# 12. Updating Active Configs in S3
 
-**Date:** 2026-06-24  
+**Date:** 2026-06-24
 **Status:** Accepted
 
 ## Context and Problem Statement
@@ -99,10 +99,10 @@ Before starting the regeneration, the ops container should compare the successfu
 
 The tracking record should include the schema version, migration status, start and completion times, and success and failure counts. Suggested statuses are:
 
-* `IN_PROGRESS`
-* `COMPLETE`
-* `PARTIAL_FAILURE`
-* `FAILED`
+- `IN_PROGRESS`
+- `COMPLETE`
+- `PARTIAL_FAILURE`
+- `FAILED`
 
 Only a migration marked `COMPLETE` should be treated as successfully applying the schema version.
 
@@ -169,7 +169,6 @@ Record the final migration status
 Remove the maintenance lock after a successful migration
 ```
 
-
 For each active configuration, the migration should:
 
 1. Load the active configuration from Postgres.
@@ -206,9 +205,9 @@ If an individual configuration fails to rebuild, the migration should log a crit
 
 After all configurations have been attempted:
 
-* Mark the migration `COMPLETE` if all configurations succeeded.
-* Mark it `PARTIAL_FAILURE` if only some configurations succeeded.
-* Mark it `FAILED` if the migration could not run successfully.
+- Mark the migration `COMPLETE` if all configurations succeeded.
+- Mark it `PARTIAL_FAILURE` if only some configurations succeeded.
+- Mark it `FAILED` if the migration could not run successfully.
 
 A `PARTIAL_FAILURE` should trigger an alert for manual intervention. The maintenance lock should remain in place after a partial or complete failure so Lambda does not resume processing while incompatible configurations may still exist.
 

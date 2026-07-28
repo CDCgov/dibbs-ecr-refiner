@@ -191,6 +191,7 @@ CAPABILITY_COVERAGE: list[CapabilityRow] = [
             "problems_reconstruction",
             "immunizations_reconstruction",
             "medications_reconstruction",
+            "plan_of_treatment_reconstruction",
         ],
         evidence=(
             "`covid_results_reconstruction` configures the Results section "
@@ -213,8 +214,17 @@ CAPABILITY_COVERAGE: list[CapabilityRow] = [
             "fallback that absorbs CVX/RxNorm sender variance. "
             "`medications_reconstruction` is the second flat section (LOINC "
             "29549-3), reusing the same machinery with a different field map "
-            "(medication, dose, duration, route). The validation layer confirms "
-            "all four stay CDA R2 XSD- and schematron-valid. Reconstruction is "
+            "(medication, dose, duration, route). "
+            "`plan_of_treatment_reconstruction` covers the heterogeneous case "
+            "(LOINC 18776-5), the only section carrying five unlike clinical "
+            "statements side by side: the snapshot pins one captioned table per "
+            "entry kind (planned observations, procedures, activities, "
+            "medications, immunizations), each with its own columns, and pins "
+            "the split of `substanceAdministration` into medication vs "
+            "immunization by templateId. Every planned row carries its "
+            "performer -- the person if the sender named one, otherwise the "
+            "organization. The validation layer confirms "
+            "all five stay CDA R2 XSD- and schematron-valid. Reconstruction is "
             "only "
             "reachable on the refine path — a retained section never reconstructs "
             "— so a regression that stopped rebuilding the narrative would surface "
