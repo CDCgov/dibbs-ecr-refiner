@@ -602,6 +602,16 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     configuration = parse_s3_content_to_dict(config_file_content)
     schema_version = configuration.get("schema_version")
 
+    if schema_version is None:
+        raise IncompatibleActiveConfigurationError(
+            "Active configuration is missing required field 'schema_version'."
+        )
+
+    if not isinstance(schema_version, int):
+        raise IncompatibleActiveConfigurationError(
+            f"'schema_version' must be an int, got {type(schema_version).__name__}."
+        )
+
     if schema_version != CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION:
         logger.error(
             "Active configuration schema version is incompatible.",
