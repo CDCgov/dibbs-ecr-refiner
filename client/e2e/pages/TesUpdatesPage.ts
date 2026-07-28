@@ -4,17 +4,19 @@ export class TesUpdatesPage {
   constructor(private page: Page) {}
 
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto('/tes-updates');
 
-    await this.page.getByLabel('Open settings menu').click();
-    await this.page.getByRole('menuitem', { name: 'TES updates' }).click();
-    await expect(
-      this.page.getByRole('heading', {
-        name: 'TES Updates',
-        exact: true,
-        level: 1,
-      })
-    ).toBeVisible();
+    // todo: uncommment this once we're ready to have the TES display back
+    // await this.page.goto('/');
+    // await this.page.getByLabel('Open settings menu').click();
+    // await this.page.getByRole('menuitem', { name: 'TES updates' }).click();
+    // await expect(
+    //   this.page.getByRole('heading', {
+    //     name: 'TES Updates',
+    //     exact: true,
+    //     level: 1,
+    //   })
+    // ).toBeVisible();
   }
 
   async goToTesUpdate(versionString: string) {

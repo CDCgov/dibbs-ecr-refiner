@@ -56,14 +56,15 @@ export function Header({ displayName }: HeaderProps) {
               App updates
             </Link>
           </MenuItem>
-          <MenuItem>
+
+          {/* <MenuItem>
             <Link
               className="hover:bg-gray-cool-1 data-focus:outline-blue-40v block p-3 hover:outline-none! data-focus:rounded-md data-focus:outline-4 data-focus:-outline-offset-4"
               to="/tes-updates"
             >
               TES updates
             </Link>
-          </MenuItem>
+          </MenuItem> */}
           <MenuItem>
             <a
               className="hover:bg-gray-cool-1 data-focus:outline-blue-40v block p-3 hover:outline-none! data-focus:rounded-md data-focus:outline-4 data-focus:-outline-offset-4"
