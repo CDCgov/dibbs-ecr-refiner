@@ -18,7 +18,10 @@ from botocore.exceptions import ClientError
 from app.core.models.types import XMLFiles
 from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
-from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
+from app.db.configurations.model import (
+    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+    MAINTENANCE_LOCK_KEY,
+)
 from app.services.aws.s3_keys import (
     get_active_file_key,
     get_current_file_key,

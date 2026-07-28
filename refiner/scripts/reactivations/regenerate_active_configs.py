@@ -34,6 +34,7 @@ from psycopg.rows import dict_row
 from app.db.configurations.db import get_configurations_db
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+    MAINTENANCE_LOCK_KEY,
     DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection, create_db
@@ -49,8 +50,7 @@ from app.services.configurations import (
 
 logger = logging.getLogger(__name__)
 
-MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
-REACTIVATION_NAME = "active-payload-schema-v2"
+REACTIVATION_NAME = f"active-payload-schema-v{CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}"
 
 LAMBDA_DRAIN_SECONDS = 30
 LOCK_EXPIRATION_MINUTES = 15

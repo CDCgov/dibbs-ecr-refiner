@@ -12,6 +12,7 @@ type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 type DbSectionType = Literal["standard", "custom"]
 
 CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION = 1
+MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
 
 
 @dataclass(frozen=True)
