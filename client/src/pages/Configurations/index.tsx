@@ -91,14 +91,14 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         }
         refreshUser={refreshUser}
       />
-      <TesUpdateBanner
+      {/* <TesUpdateBanner
         isVisible={
           user.notifications.to_render[
             NotificationKeys.most_recent_tes_update
           ] ?? false
         }
         refreshUser={refreshUser}
-      />
+      /> */}
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
