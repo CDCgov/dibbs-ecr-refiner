@@ -51,8 +51,6 @@ REFINER_COMPLETE_PREFIX = get_env_variable("REFINER_COMPLETE_PREFIX")
 S3_BUCKET_CONFIG = get_env_variable("S3_BUCKET_CONFIG")
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
-MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
-
 JurisdictionCode = str
 ConditionCode = str
 RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
