@@ -20,13 +20,16 @@ export function CustomizeSections() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
+  const isDisabled =
+    configuration.data.is_locked || !configuration.data.is_draft;
+
   return (
     <>
       <Header configuration={configuration.data} />
       <SectionContainer>
         <Sections
           configurationId={configuration.data.id}
-          disabled={false}
+          disabled={isDisabled}
           sections={configuration.data.section_processing}
         />
       </SectionContainer>
