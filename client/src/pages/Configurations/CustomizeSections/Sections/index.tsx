@@ -33,16 +33,23 @@ interface SectionsProps {
   configurationId: string;
   sections: DbConfigurationSectionProcessing[];
   disabled: boolean;
+  selectedSection: DbConfigurationSectionProcessing | null;
+  setSelectedSection: React.Dispatch<
+    React.SetStateAction<DbConfigurationSectionProcessing | null>
+  >;
+  setIsCustomSectionModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isCustomSectionModalOpen: boolean;
 }
 
 export function Sections({
   configurationId,
   sections: sectionProcessing,
   disabled,
+  setSelectedSection,
+  selectedSection,
+  setIsCustomSectionModalOpen,
+  isCustomSectionModalOpen,
 }: SectionsProps) {
-  const [selectedSection, setSelectedSection] =
-    useState<DbConfigurationSectionProcessing | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
@@ -64,7 +71,7 @@ export function Sections({
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
     setSelectedSection(section);
-    setIsOpen(true);
+    setIsCustomSectionModalOpen(true);
   };
 
   const resetModal = () => {
@@ -73,26 +80,12 @@ export function Sections({
 
   return (
     <SectionErrorProvider>
-      <section className="flex min-h-0 w-full flex-1 flex-col gap-6">
+      <section className="flex max-h-150 min-h-0 w-full flex-1 flex-col">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-gray-cool-90 font-bold">
-              Customize eICR Sections
-            </h2>
-            {disabled ? null : (
-              <Button
-                variant="tertiary"
-                onClick={() => {
-                  setSelectedSection(null);
-                  setIsOpen(true);
-                }}
-              >
-                Add custom section <span aria-hidden>+</span>
-              </Button>
-            )}
             <CustomSectionModal
-              isOpen={isOpen}
-              setIsOpen={setIsOpen}
+              isOpen={isCustomSectionModalOpen}
+              setIsOpen={setIsCustomSectionModalOpen}
               configurationId={configurationId}
               initialSection={
                 selectedSection
@@ -106,10 +99,6 @@ export function Sections({
             />
             <KeepOnMatchModal isOpen={isInfoOpen} setIsOpen={setIsInfoOpen} />
           </div>
-          <p className="italic">
-            Choose which sections of your eICR to include, as well as whether to
-            refine or retain each section.
-          </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-scroll">
@@ -117,7 +106,7 @@ export function Sections({
               whether a virtualized list is appropriate for large section counts.
               */}
           <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10">
+            <thead className="bg-gray-cool-5 sticky top-0 z-10">
               <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
                 <th scope="col" className="w-20 py-3">
                   Include
@@ -178,7 +167,7 @@ export function Sections({
                       <div className="flex flex-col items-end justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
-                            className="text-gray-cool-50 whitespace-nowrap italic"
+                            className="text-gray-cool-60 whitespace-nowrap italic"
                             aria-hidden
                           >
                             Not applicable for this section
