@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+from app.db.custom_codes.model import DbCustomCode
+
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbNarrativeAction = Literal["retain", "remove", "reconstruct", "keep_on_match"]
@@ -37,22 +39,6 @@ class DbTotalConditionCodeCount:
     condition_id: UUID
     display_name: str
     total_codes: int
-
-
-# TODO: Revisit this to see if we can figure out how to reduce overlap with other types.
-# This is a "custom_code" column on the configuration row in the configurations table.
-# This is one object in the `custom_codes` list and we have many objects that are Similar
-# shaped. A flexible FHIR R4 Coding model with standard metadata could simplify a lot of
-# redundancy.
-@dataclass(frozen=True)
-class DbConfigurationCustomCode:
-    """
-    Custom code associated with a Configuration.
-    """
-
-    code: str
-    system_key: str
-    name: str
 
 
 @dataclass(frozen=True)
@@ -137,7 +123,7 @@ class DbConfiguration:
     jurisdiction_id: str
     condition_id: UUID
     included_conditions: list[UUID]
-    custom_codes: list[DbConfigurationCustomCode]
+    custom_codes: list[DbCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
     version: int
     last_activated_at: datetime | None
@@ -165,8 +151,14 @@ class DbConfiguration:
             condition_id=row["condition_id"],
             included_conditions=row.get("included_conditions") or [],
             custom_codes=[
-                DbConfigurationCustomCode(
-                    system_key=c["system_key"], code=c["code"], name=c["name"]
+                DbCustomCode(
+                    id=UUID(c["id"]),
+                    code=c["code"],
+                    display=c["display"],
+                    system_id=UUID(c["system_id"]),
+                    created_at=c["created_at"],
+                    updated_at=c["updated_at"],
+                    configuration_id=UUID(c["configuration_id"]),
                 )
                 for c in row["custom_codes"]
             ],

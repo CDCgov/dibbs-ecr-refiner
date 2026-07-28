@@ -1,4 +1,5 @@
 import { APIRequestContext, expect } from '@playwright/test';
+import type { CodeSystemsReponse } from '../../src/api/schemas/codeSystemsReponse';
 
 interface Configuration {
   id: string;
@@ -18,9 +19,8 @@ interface Condition {
 
 interface CustomCode {
   code: string;
-  system_key: string;
-  system_display_name: string;
-  name: string;
+  system_id: string;
+  display: string;
 }
 
 export class Api {
@@ -94,6 +94,13 @@ export class Api {
         errors: null,
       })
     );
+  }
+
+  async getSystems(): Promise<CodeSystemsReponse[]> {
+    const systemsReq = await this.request.get(`/api/v1/code-systems/`);
+    expect(systemsReq.ok()).toBeTruthy();
+    const json = await systemsReq.json();
+    return json as CodeSystemsReponse[];
   }
 
   async updateConfigurationStatus(
