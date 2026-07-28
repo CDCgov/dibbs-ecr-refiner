@@ -42,7 +42,7 @@ export function CustomizeSections() {
           />
           {isDisabled ? null : (
             <Button
-            className='m-0! p-0! whitespace-nowrap'
+              className="m-0! p-0! whitespace-nowrap"
               variant="tertiary"
               onClick={() => {
                 setSelectedSection(null);

@@ -55,9 +55,7 @@ export function ConfigActivate() {
           </div>
           <hr className="text-gray-cool-20!" />
           <div className="mt-6">
-            <ActivationButtons
-              configurationData={configuration.data}
-            />
+            <ActivationButtons configurationData={configuration.data} />
           </div>
         </div>
       </SectionContainer>
