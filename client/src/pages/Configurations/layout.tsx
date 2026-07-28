@@ -24,7 +24,7 @@ export function NavigationContainer({
 }
 
 export function SectionContainer({ children }: { children: React.ReactNode }) {
-  return <section className="px-8 lg:px-20">{children}</section>;
+  return <section className="px-8 py-9 lg:px-20">{children}</section>;
 }
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {

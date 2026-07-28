@@ -117,7 +117,7 @@ export function Sections({
               whether a virtualized list is appropriate for large section counts.
               */}
           <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10 bg-white">
+            <thead className="sticky top-0 z-10">
               <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
                 <th scope="col" className="w-20 py-3">
                   Include
