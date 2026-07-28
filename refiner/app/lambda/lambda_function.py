@@ -308,7 +308,7 @@ def lambda_handler(event, context) -> dict:
                     "Deferring record because active configuration maintenance is in progress.",
                     operation="active_configuration_maintenance",
                     persistence_id=persistence_id,
-                    error=str(e),
+                    exception=e,
                 )
                 batch_item_failures.append({"itemIdentifier": record_id})
 
