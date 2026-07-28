@@ -56,9 +56,17 @@ class ResizeObserver {
 (global as any).ResizeObserver = ResizeObserver;
 
 // Mock navigator.sendBeacon for tests
+const mockSendBeacon = vi.fn().mockReturnValue(true);
 Object.defineProperty(navigator, 'sendBeacon', {
   writable: true,
-  value: vi.fn(),
+  value: mockSendBeacon,
+});
+
+// Mock fetch globally to prevent unhandled rejections from hooks that use it
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  status: 204,
+  headers: new Headers(),
 });
 
 mockAnimationsApi();
