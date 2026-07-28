@@ -11,12 +11,14 @@ import pytest
 from fastapi import status
 from jsonschema import Draft202012Validator
 from psycopg.rows import dict_row
-from scripts.migrations import regenerate_active_configs as reactivation
-from scripts.migrations.regenerate_active_configs import regenerate_active_configuration
 
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.configurations import convert_config_to_storage_payload
+from scripts.reactivations import regenerate_active_configs as reactivation
+from scripts.reactivations.regenerate_active_configs import (
+    regenerate_active_configuration,
+)
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -311,7 +313,7 @@ class TestActivations:
         assert configuration is not None
 
         with patch(
-            "scripts.migrations.regenerate_active_configs.upload_configuration_payload",
+            "scripts.reactivations,regenerate_active_configs.upload_configuration_payload",
             side_effect=upload_regenerated_payload_to_localstack,
         ):
             await regenerate_active_configuration(
@@ -387,18 +389,18 @@ class TestActivations:
 
         with (
             patch(
-                "scripts.migrations.regenerate_active_configs.create_maintenance_lock"
+                "scripts.reactivations.regenerate_active_configs.create_maintenance_lock"
             ) as create_lock_mock,
             patch(
-                "scripts.migrations.regenerate_active_configs.wait_for_lambda_to_drain",
+                "scripts.reactivations.regenerate_active_configs.wait_for_lambda_to_drain",
                 new_callable=AsyncMock,
             ) as wait_for_lambda_to_drain_mock,
             patch(
-                "scripts.migrations.regenerate_active_configs.regenerate_active_configs",
+                "scripts.reactivations.regenerate_active_configs.regenerate_active_configs",
                 new_callable=AsyncMock,
             ) as regenerate_active_configs_mock,
             patch(
-                "scripts.migrations.regenerate_active_configs.remove_maintenance_lock"
+                "scripts.reactivations.regenerate_active_configs.remove_maintenance_lock"
             ) as remove_lock_mock,
         ):
             await reactivation.run_active_config_reactivation(db=db_pool)
@@ -427,14 +429,14 @@ class TestActivations:
 
         with (
             patch(
-                "scripts.migrations.regenerate_active_configs.create_maintenance_lock"
+                "scripts.reactivations.regenerate_active_configs.create_maintenance_lock"
             ) as create_lock_mock,
             patch(
-                "scripts.migrations.regenerate_active_configs.wait_for_lambda_to_drain",
+                "scripts.reactivations.regenerate_active_configs.wait_for_lambda_to_drain",
                 new_callable=AsyncMock,
             ) as wait_for_lambda_to_drain_mock,
             patch(
-                "scripts.migrations.regenerate_active_configs.regenerate_active_configs",
+                "scripts.reactivations.regenerate_active_configs.regenerate_active_configs",
                 new_callable=AsyncMock,
                 return_value={
                     "total": 2,
@@ -443,7 +445,7 @@ class TestActivations:
                 },
             ) as regenerate_active_configs_mock,
             patch(
-                "scripts.migrations.regenerate_active_configs.remove_maintenance_lock"
+                "scripts.reactivations.regenerate_active_configs.remove_maintenance_lock"
             ) as remove_lock_mock,
         ):
             await reactivation.run_active_config_reactivation(db=db_pool)
