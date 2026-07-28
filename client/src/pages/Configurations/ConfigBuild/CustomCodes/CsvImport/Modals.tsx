@@ -1,6 +1,6 @@
 import {
   IndexedCodeSystem,
-  UploadCustomCodesInput,
+  AddCustomCodeInput,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 
@@ -124,11 +124,11 @@ export function PreviewEditModal({
     closePreviewEditModal();
   };
 
-  function handlePreviewEditChange<K extends keyof UploadCustomCodesInput>(
+  function handlePreviewEditChange<K extends keyof AddCustomCodeInput>(
     field: K,
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) {
-    const value = event.target.value as UploadCustomCodesInput[K];
+    const value = event.target.value as AddCustomCodeInput[K];
     setPreviewEditForm((prev) => {
       return {
         ...prev,
@@ -141,8 +141,8 @@ export function PreviewEditModal({
     error != null ||
     !previewEditForm ||
     !previewEditForm.code ||
-    !previewEditForm.name ||
-    !previewEditForm.system_key;
+    !previewEditForm.display ||
+    !previewEditForm.system_id;
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
@@ -188,11 +188,20 @@ export function PreviewEditModal({
           <Field>
             <Label>Code system</Label>
             <Select
-              value={previewEditForm.system_key}
-              onChange={(e) => handlePreviewEditChange('system_key', e)}
+              value={previewEditForm.system_id}
+              onChange={(e) => {
+                const system = Object.values(codeSystems).find(
+                  (s) => s.id === e.target.value
+                );
+                setPreviewEditForm((prev) => ({
+                  ...prev,
+                  system_id: e.target.value,
+                  system_name: system?.display_name ?? prev.system_name,
+                }));
+              }}
             >
               {Object.values(codeSystems).map((s) => (
-                <option key={s.id} value={s.key}>
+                <option key={s.id} value={s.id}>
                   {s.display_name}
                 </option>
               ))}
@@ -203,8 +212,8 @@ export function PreviewEditModal({
           <Label>Display name</Label>
           <TextInput
             type="text"
-            value={previewEditForm.name}
-            onChange={(e) => handlePreviewEditChange('name', e)}
+            value={previewEditForm.display}
+            onChange={(e) => handlePreviewEditChange('display', e)}
           />
         </Field>
       </ModalBody>

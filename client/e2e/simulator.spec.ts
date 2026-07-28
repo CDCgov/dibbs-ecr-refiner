@@ -1,13 +1,13 @@
 import { Locator } from '@playwright/test';
-import { deleteAllConfigurations } from './db';
+import { clearDb } from './db';
 import { test, expect } from './fixtures';
 
 test.describe('Simulate testing', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await configurationsPage.goto();
-    await deleteAllConfigurations();
+    await clearDb();
   });
-  test.afterEach(async () => await deleteAllConfigurations());
+  test.afterEach(async () => await clearDb());
 
   test('No available configurations', async ({
     page,

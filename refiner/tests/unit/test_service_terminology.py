@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -6,8 +7,8 @@ import pytest
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCustomCode,
 )
+from app.db.custom_codes.model import DbCustomCode
 from tests.unit.helpers.configuration import create_processed_config
 
 
@@ -59,13 +60,20 @@ def mock_db_functions(monkeypatch, mock_all_systems):
     """
     monkeypatch.setattr(
         "app.services.code_systems.get_all_code_systems_db",
-        AsyncMock(return_value=mock_all_systems),
+        AsyncMock(return_value={m.id: m for m in mock_all_systems}),
+    )
+
+    monkeypatch.setattr(
+        "app.services.configurations.get_all_code_systems_db",
+        AsyncMock(return_value={m.id: m for m in mock_all_systems}),
     )
 
     monkeypatch.setattr(
         "app.services.configurations.get_code_system_by_key_db",
         AsyncMock(
-            side_effect=lambda key, db: mock_all_systems[key],
+            side_effect=lambda key, db: next(
+                m for m in mock_all_systems if m.key == key
+            ),
         ),
     )
 
@@ -73,38 +81,52 @@ def mock_db_functions(monkeypatch, mock_all_systems):
 @pytest.mark.asyncio
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(
-        self,
+        self, get_mock_system
     ):
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
+
+        loinc = get_mock_system("loinc")
+
+        mock_config_id = uuid4()
         config: DbConfiguration = make_dbconfiguration(
+            id=mock_config_id,
             custom_codes=[
-                DbConfigurationCustomCode(
+                DbCustomCode(
+                    id="test-code",
                     code="B",
-                    system_key="loinc",
-                    name="Custom LOINC",
+                    display="Custom LOINC",
+                    system_id=loinc.id,
+                    updated_at=datetime.now(),
+                    created_at=datetime.now(),
+                    configuration_id=mock_config_id,
                 )
-            ]
+            ],
         )
         processed = await create_processed_config(config=config, conditions=[cond1])
         assert processed.codes == {"A", "B"}
 
-    async def test_processed_configuration_duplicate_codes(
-        self,
-    ):
+    async def test_processed_configuration_duplicate_codes(self, get_mock_system):
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
         cond2: DbCondition = make_condition(
             loinc_codes=[make_db_condition_coding("DUP", "LOINC")]
         )
+        loinc = get_mock_system("loinc")
+
+        mock_config_id = uuid4()
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
-                DbConfigurationCustomCode(
+                DbCustomCode(
+                    id="test-code",
                     code="DUP",
-                    system_key="loinc",
-                    name="Custom",
+                    display="Custom",
+                    system_id=loinc.id,
+                    updated_at=datetime.now(),
+                    created_at=datetime.now(),
+                    configuration_id=mock_config_id,
                 )
             ]
         )
