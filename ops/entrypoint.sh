@@ -52,9 +52,9 @@ case "$COMMAND" in
         echo "Running migration scripts and updating condition data"
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         echo "Migration step complete"
-        exec python3 ./scripts/seeding/load_static_data.py
+        python3 ./scripts/seeding/load_static_data.py
         echo "Regenerating active configuration files"
-        exec python3 ./scripts/migrations/regenerate_active_configs.py
+        python3 ./scripts/migrations/regenerate_active_configs.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"
