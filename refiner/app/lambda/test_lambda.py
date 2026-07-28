@@ -137,8 +137,7 @@ def test_lambda_inactive(
     s3_input_objects,
 ):
     """
-    Test that a file with two reportable conditions works when configurations are not
-    present for either condition.
+    Test that a file with two reportable conditions works when configurations are not present for either condition.
     """
     from .lambda_function import lambda_handler
 
@@ -213,8 +212,7 @@ def test_lambda_one_active(
     s3_input_objects,
 ):
     """
-    Test that a file with two reportable conditions works when a configuration is
-    active for only one of those conditions.
+    Test that a file with two reportable conditions works when a configuration is active for only one of those conditions.
     """
     from .lambda_function import lambda_handler
 
@@ -349,8 +347,7 @@ def test_lambda_all_active(
     s3_input_objects,
 ):
     """
-    Test that a file with two reportable conditions works when a configuration is
-    active for both of those conditions.
+    Test that a file with two reportable conditions works when a configuration is active for both of those conditions.
     """
     from .lambda_function import lambda_handler
 
