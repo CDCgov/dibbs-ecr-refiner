@@ -121,11 +121,9 @@ def delete_maintenance_lock() -> None:
     )
 
     logger.info(
-        "Deleted active configuration maintenance lock.",
-        extra={
-            "bucket": S3_CONFIGURATION_BUCKET_NAME,
-            "key": MAINTENANCE_LOCK_KEY,
-        },
+        "Deleted active configuration maintenance lock. bucket=%s key=%s",
+        S3_CONFIGURATION_BUCKET_NAME,
+        MAINTENANCE_LOCK_KEY,
     )
 
 
@@ -168,12 +166,11 @@ def remove_expired_maintenance_lock() -> bool:
         return False
 
     logger.warning(
-        "Removing expired active configuration maintenance lock.",
-        extra={
-            "bucket": S3_CONFIGURATION_BUCKET_NAME,
-            "key": MAINTENANCE_LOCK_KEY,
-            "expires_at": expiration.isoformat(),
-        },
+        "Removing expired active configuration maintenance lock. "
+        "bucket=%s key=%s expires_at=%s",
+        S3_CONFIGURATION_BUCKET_NAME,
+        MAINTENANCE_LOCK_KEY,
+        expiration.isoformat(),
     )
 
     delete_maintenance_lock()
@@ -252,13 +249,12 @@ def create_maintenance_lock(
             raise
 
     logger.info(
-        "Created active configuration maintenance lock.",
-        extra={
-            "bucket": S3_CONFIGURATION_BUCKET_NAME,
-            "key": MAINTENANCE_LOCK_KEY,
-            "reactivation": REACTIVATION_NAME,
-            "expires_at": lock_payload["expires_at"],
-        },
+        "Created active configuration maintenance lock. "
+        "bucket=%s key=%s reactivation=%s expires_at=%s",
+        S3_CONFIGURATION_BUCKET_NAME,
+        MAINTENANCE_LOCK_KEY,
+        REACTIVATION_NAME,
+        lock_payload["expires_at"],
     )
 
 
@@ -284,8 +280,8 @@ async def wait_for_lambda_to_drain(
         return
 
     logger.info(
-        "Waiting for existing Lambda executions to finish.",
-        extra={"drain_seconds": drain_seconds},
+        "Waiting for existing Lambda executions to finish. drain_seconds=%s",
+        drain_seconds,
     )
 
     await asyncio.sleep(drain_seconds)
@@ -461,14 +457,14 @@ async def regenerate_active_configuration(
         started_at = time.perf_counter()
 
         logger.info(
-            "Regenerating active configuration.",
-            extra={
-                "configuration_id": str(configuration.id),
-                "configuration_version": configuration.version,
-                "jurisdiction_id": configuration.jurisdiction_id,
-                "attempt": attempt,
-                "max_attempts": REACTIVATION_MAX_ATTEMPTS,
-            },
+            "Regenerating active configuration. "
+            "configuration_id=%s configuration_version=%s jurisdiction_id=%s "
+            "attempt=%s max_attempts=%s",
+            configuration.id,
+            configuration.version,
+            configuration.jurisdiction_id,
+            attempt,
+            REACTIVATION_MAX_ATTEMPTS,
         )
 
         try:
@@ -513,29 +509,17 @@ async def regenerate_active_configuration(
             upload_finished_at = time.perf_counter()
 
             logger.info(
-                "Regenerated active configuration.",
-                extra={
-                    "configuration_id": str(configuration.id),
-                    "configuration_version": configuration.version,
-                    "jurisdiction_id": configuration.jurisdiction_id,
-                    "attempt": attempt,
-                    "payload_generation_ms": round(
-                        (payload_finished_at - payload_started_at) * 1000,
-                        2,
-                    ),
-                    "metadata_generation_ms": round(
-                        (metadata_finished_at - payload_finished_at) * 1000,
-                        2,
-                    ),
-                    "upload_ms": round(
-                        (upload_finished_at - metadata_finished_at) * 1000,
-                        2,
-                    ),
-                    "total_ms": round(
-                        (upload_finished_at - started_at) * 1000,
-                        2,
-                    ),
-                },
+                "Regenerated active configuration. "
+                "configuration_id=%s configuration_version=%s jurisdiction_id=%s attempt=%s "
+                "payload_generation_ms=%s metadata_generation_ms=%s upload_ms=%s total_ms=%s",
+                configuration.id,
+                configuration.version,
+                configuration.jurisdiction_id,
+                attempt,
+                round((payload_finished_at - payload_started_at) * 1000, 2),
+                round((metadata_finished_at - payload_finished_at) * 1000, 2),
+                round((upload_finished_at - metadata_finished_at) * 1000, 2),
+                round((upload_finished_at - started_at) * 1000, 2),
             )
 
             return
@@ -543,29 +527,29 @@ async def regenerate_active_configuration(
         except Exception:
             if attempt == REACTIVATION_MAX_ATTEMPTS:
                 logger.exception(
-                    "Active configuration regeneration failed after retries.",
-                    extra={
-                        "configuration_id": str(configuration.id),
-                        "configuration_version": configuration.version,
-                        "jurisdiction_id": configuration.jurisdiction_id,
-                        "attempt": attempt,
-                        "max_attempts": REACTIVATION_MAX_ATTEMPTS,
-                    },
+                    "Active configuration regeneration failed after retries. "
+                    "configuration_id=%s configuration_version=%s jurisdiction_id=%s "
+                    "attempt=%s max_attempts=%s",
+                    configuration.id,
+                    configuration.version,
+                    configuration.jurisdiction_id,
+                    attempt,
+                    REACTIVATION_MAX_ATTEMPTS,
                 )
                 raise
 
             delay_seconds = REACTIVATION_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
 
             logger.warning(
-                "Active configuration regeneration failed; retrying.",
-                extra={
-                    "configuration_id": str(configuration.id),
-                    "configuration_version": configuration.version,
-                    "jurisdiction_id": configuration.jurisdiction_id,
-                    "attempt": attempt,
-                    "max_attempts": REACTIVATION_MAX_ATTEMPTS,
-                    "retry_delay_seconds": delay_seconds,
-                },
+                "Active configuration regeneration failed; retrying. "
+                "configuration_id=%s configuration_version=%s jurisdiction_id=%s "
+                "attempt=%s max_attempts=%s retry_delay_seconds=%s",
+                configuration.id,
+                configuration.version,
+                configuration.jurisdiction_id,
+                attempt,
+                REACTIVATION_MAX_ATTEMPTS,
+                delay_seconds,
                 exc_info=True,
             )
 
@@ -598,12 +582,11 @@ async def regenerate_active_configs(
     failures: list[str] = []
 
     logger.info(
-        "Starting active configuration regeneration.",
-        extra={
-            "configuration_count": total,
-            "limit": limit,
-            "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-        },
+        "Starting active configuration regeneration. "
+        "configuration_count=%s limit=%s target_schema_version=%s",
+        total,
+        limit,
+        CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     )
 
     for configuration in active_configurations:
@@ -618,22 +601,20 @@ async def regenerate_active_configs(
             failures.append(configuration_id)
 
             logger.exception(
-                "Failed to regenerate active configuration.",
-                extra={
-                    "configuration_id": configuration_id,
-                    "configuration_version": configuration.version,
-                    "jurisdiction_id": configuration.jurisdiction_id,
-                },
+                "Failed to regenerate active configuration. "
+                "configuration_id=%s configuration_version=%s jurisdiction_id=%s",
+                configuration_id,
+                configuration.version,
+                configuration.jurisdiction_id,
             )
 
     logger.info(
-        "Active configuration regeneration finished.",
-        extra={
-            "total": total,
-            "successful": successful,
-            "failed": len(failures),
-            "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-        },
+        "Active configuration regeneration finished. "
+        "total=%s successful=%s failed=%s target_schema_version=%s",
+        total,
+        successful,
+        len(failures),
+        CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     )
 
     return {
@@ -661,11 +642,10 @@ async def run_active_config_reactivation(
 
     if latest_complete_schema_version == CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION:
         logger.info(
-            "Active payload schema version already applied; skipping reactivation.",
-            extra={
-                "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-                "latest_complete_schema_version": latest_complete_schema_version,
-            },
+            "Active payload schema version already applied; skipping reactivation. "
+            "target_schema_version=%s latest_complete_schema_version=%s",
+            CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+            latest_complete_schema_version,
         )
         return
 
@@ -739,10 +719,9 @@ async def run_active_config_reactivation(
         lock_created = False
 
         logger.info(
-            "Active configuration reactivation completed successfully.",
-            extra={
-                "target_schema_version": CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-            },
+            "Active configuration reactivation completed successfully. "
+            "target_schema_version=%s",
+            CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         )
 
     finally:
