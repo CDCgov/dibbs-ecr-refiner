@@ -188,30 +188,30 @@ function AppUpdateBanner({ isVisible, refreshUser }: BannerProps) {
   );
 }
 
-function TesUpdateBanner({ isVisible, refreshUser }: BannerProps) {
-  const dismiss = useDismissNotification(
-    NotificationKeys.most_recent_tes_update,
-    refreshUser
-  );
+// function TesUpdateBanner({ isVisible, refreshUser }: BannerProps) {
+//   const dismiss = useDismissNotification(
+//     NotificationKeys.most_recent_tes_update,
+//     refreshUser
+//   );
 
-  if (!isVisible) return null;
+//   if (!isVisible) return null;
 
-  return (
-    <NotificationBanner
-      message="A new TES update was published."
-      onDismiss={dismiss}
-    >
-      <Button
-        className="m-0!"
-        variant="secondary"
-        to="/tes-updates"
-        onClick={dismiss}
-      >
-        View updates <span className="sr-only">for TES</span>
-      </Button>
-    </NotificationBanner>
-  );
-}
+//   return (
+//     <NotificationBanner
+//       message="A new TES update was published."
+//       onDismiss={dismiss}
+//     >
+//       <Button
+//         className="m-0!"
+//         variant="secondary"
+//         to="/tes-updates"
+//         onClick={dismiss}
+//       >
+//         View updates <span className="sr-only">for TES</span>
+//       </Button>
+//     </NotificationBanner>
+//   );
+// }
 
 interface NewConfigModalProps {
   open: boolean;
