@@ -6,7 +6,7 @@ import { Layout } from '@components/Layout';
 import { useLogin } from './hooks/useLogin';
 import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
-import { ConfigBuild } from './pages/Configurations/ManageCodes';
+import { ManageCodes } from './pages/Configurations/ManageCodes';
 import { ConfigTest } from './pages/Configurations/ConfigTest';
 import { ConfigActivate } from './pages/Configurations/ConfigActivate';
 import 'react-toastify/dist/ReactToastify.css';
@@ -51,7 +51,10 @@ export function App() {
           path="/configurations/:id/customize-sections"
           element={<CustomizeSections />}
         />
-        <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+        <Route
+          path="/configurations/:id/manage-codes"
+          element={<ManageCodes />}
+        />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
         <Route
           path="/configurations/:id/activate"

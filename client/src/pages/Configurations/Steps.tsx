@@ -26,8 +26,8 @@ export function Steps({ configurationId }: StepsProps) {
         </StepLink>
       </li>
       <li>
-        <StepLink to={`/configurations/${configurationId}/build`}>
-          Build
+        <StepLink to={`/configurations/${configurationId}/manage-codes`}>
+          Manage Codes
         </StepLink>
       </li>
       <li>

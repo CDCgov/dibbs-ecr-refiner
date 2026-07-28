@@ -98,7 +98,9 @@ function NewDraftModal({
               { data: { condition_id: conditionId } },
               {
                 onSuccess: async (resp) => {
-                  await navigate(`/configurations/${resp.data.id}/build`);
+                  await navigate(
+                    `/configurations/${resp.data.id}/manage-codes`
+                  );
                   showToast({
                     heading: 'New draft created',
                     body: `Version ${newVersion}`,

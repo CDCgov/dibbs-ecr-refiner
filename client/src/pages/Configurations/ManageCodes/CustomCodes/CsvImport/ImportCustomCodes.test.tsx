@@ -62,7 +62,7 @@ vi.mock('./utils', () => {
 
 async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
   render(
-    <MemoryRouter initialEntries={[`/configurations/${MOCK_CONFIG_ID}/build`]}>
+    <MemoryRouter initialEntries={[`/configurations/${MOCK_CONFIG_ID}/manage-codes`]}>
       <TestQueryClientProvider>
         <ImportCustomCodes configurationId={MOCK_CONFIG_ID} />
       </TestQueryClientProvider>

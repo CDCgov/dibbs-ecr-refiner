@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, Mock } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { ConfigBuild } from '.';
+import { ManageCodes } from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
@@ -143,10 +143,13 @@ describe('Config builder page', () => {
       reset: vi.fn(),
     });
     render(
-      <MemoryRouter initialEntries={['/configurations/config-id/build']}>
+      <MemoryRouter initialEntries={['/configurations/config-id/manage-codes']}>
         <TestQueryClientProvider>
           <Routes>
-            <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+            <Route
+              path="/configurations/:id/manage-codes"
+              element={<ManageCodes />}
+            />
           </Routes>
         </TestQueryClientProvider>
       </MemoryRouter>
@@ -177,11 +180,16 @@ describe('Config builder page', () => {
   function renderPage() {
     return render(
       <MemoryRouter
-        initialEntries={[`/configurations/${MOCK_CONFIG_DRAFT_ID}/build`]}
+        initialEntries={[
+          `/configurations/${MOCK_CONFIG_DRAFT_ID}/manage-codes`,
+        ]}
       >
         <TestQueryClientProvider>
           <Routes>
-            <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+            <Route
+              path="/configurations/:id/manage-codes"
+              element={<ManageCodes />}
+            />
           </Routes>
         </TestQueryClientProvider>
       </MemoryRouter>

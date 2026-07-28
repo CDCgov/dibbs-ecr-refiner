@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse, UserResponse } from '../../api/schemas';
-import { ConfigBuild } from './ManageCodes';
+import { ManageCodes } from './ManageCodes';
 
 const mockUser: UserResponse = {
   id: '1',
@@ -102,7 +102,10 @@ const renderPageView = () =>
             path="/configurations"
             element={<Configurations user={mockUser} refreshUser={vi.fn()} />}
           />
-          <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+          <Route
+            path="/configurations/:id/manage-codes"
+            element={<ManageCodes />}
+          />
         </Routes>
       </TestQueryClientProvider>
     </MemoryRouter>
