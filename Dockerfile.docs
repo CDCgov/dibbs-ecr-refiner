@@ -1,0 +1,36 @@
+# docs.Dockerfile
+# Self-contained image for serving the Eleventy-based documentation site with
+# Python API doc extraction (griffe). Used by the design-review script so
+# reviewers only need Docker on their machine.
+
+FROM node:26-alpine3.23
+
+# Install Python 3 and build deps for native Python packages (lxml, etc.)
+RUN apk add --no-cache python3 py3-pip python3-dev build-base
+
+WORKDIR /app
+
+# Copy entire source tree
+COPY . .
+
+# Install Node deps (npm ci deletes and reinstalls from lockfile, so any
+# platform-mismatched node_modules from the host are replaced)
+RUN npm --prefix docs ci
+
+# Install Python deps (both main and dev - griffe, watchdog, docstring-parser)
+RUN pip3 install --no-cache-dir \
+    -r refiner/requirements.txt \
+    -r refiner/dev-requirements.txt
+
+# Build TailwindCSS
+RUN npm --prefix docs run build:css
+
+# Extract Python API docs from the refiner source
+RUN python3 .justscripts/py/docs/extract_python.py && \
+    python3 .justscripts/py/docs/extract_lambda.py && \
+    python3 .justscripts/py/docs/validate_lambda_docs.py
+
+EXPOSE 9091
+
+# Eleventy serve with live-reload, on port 9091
+CMD ["npm", "--prefix", "docs", "run", "serve", "--", "--port=9091"]
