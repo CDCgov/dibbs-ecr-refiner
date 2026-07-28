@@ -8,8 +8,9 @@ from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import DatabaseQueryError
-from app.db.code_systems.db import IndexedCodeSystem
-from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from app.db.code_systems.db import DbCodeSystem
+from app.db.configurations.model import DbConfiguration
+from app.db.custom_codes.model import DbCustomCode
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
@@ -275,13 +276,19 @@ async def get_custom_code_upload_events_by_event_id(
 async def insert_custom_code_upload_events_db(
     configuration: DbConfiguration,
     user_id: UUID,
-    custom_codes: list[DbConfigurationCustomCode],
-    code_systems: IndexedCodeSystem,
+    custom_codes: list[DbCustomCode],
+    code_systems: list[DbCodeSystem],
     cursor: AsyncCursor[Any],
 ) -> None:
     """
     Helper function to insert a bulk custom code upload event and its subevents.
     """
+
+    def _get_system_name(id: UUID) -> str:
+        system = next((s for s in code_systems if s.id == id), None)
+        if system is None:
+            raise ValueError(f"Unable to determine code system by ID: {id}")
+        return system.display_name
 
     # No events to insert
     if len(custom_codes) < 1:
@@ -304,7 +311,7 @@ async def insert_custom_code_upload_events_db(
         VALUES (%s, %s, %s, %s)
         """,
         [
-            (event_id, code_systems[cc.system_key].display_name, cc.code, cc.name)
+            (event_id, _get_system_name(cc.system_id), cc.code, cc.display)
             for cc in custom_codes
         ],
     )

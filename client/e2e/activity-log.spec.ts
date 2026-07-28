@@ -1,13 +1,13 @@
-import { deleteAllConfigurations } from './db';
+import { clearDb } from './db';
 import { test, expect } from './fixtures';
 
 test.describe('Activity log', () => {
   test.beforeEach(async ({ configurationsPage }) => {
-    await deleteAllConfigurations();
+    await clearDb();
     await configurationsPage.goto();
   });
   test.afterEach(async () => {
-    await deleteAllConfigurations();
+    await clearDb();
   });
 
   test('Check empty state', async ({
@@ -91,13 +91,11 @@ test.describe('Activity log', () => {
     const config = await api.createConfiguration(condition);
 
     // Create 50 codes to upload
-    const systems = ['loinc', 'icd10', 'snomed', 'rxnorm', 'cvx', 'other'];
-    const systemNames = ['LOINC', 'ICD-10', 'SNOMED', 'RxNorm', 'CVX', 'Other'];
+    const systems = await api.getSystems();
     const customCodes = Array.from({ length: 50 }, (_, i) => ({
       code: `mc-${i + 1}`,
-      name: `mock code ${i + 1}`,
-      system_key: systems[i % systems.length],
-      system_display_name: systemNames[i % systems.length],
+      display: `mock code ${i + 1}`,
+      system_id: systems[i % systems.length].id,
     }));
 
     await api.uploadCustomCodeCsv(config.id, customCodes);
@@ -122,7 +120,7 @@ test.describe('Activity log', () => {
       customCodes.length + 1 // including header row
     );
     await expect(
-      page.getByText(customCodes[1].name, { exact: true })
+      page.getByText(customCodes[1].display, { exact: true })
     ).toBeInViewport();
 
     // We shouldn't be able to see the last row until we scroll

@@ -136,9 +136,3 @@ export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-

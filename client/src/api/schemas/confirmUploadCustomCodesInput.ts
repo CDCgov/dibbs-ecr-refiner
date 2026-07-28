@@ -1,8 +1,8 @@
-import type { UploadCustomCodesInput } from './uploadCustomCodesInput';
+import type { AddCustomCodeInput } from './addCustomCodeInput';
 
 /**
  * Payload used to confirm a previously validated CSV import.
  */
 export interface ConfirmUploadCustomCodesInput {
-  custom_codes: UploadCustomCodesInput[];
+  custom_codes: AddCustomCodeInput[];
 }
