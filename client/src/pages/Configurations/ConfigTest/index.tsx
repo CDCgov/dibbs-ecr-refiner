@@ -1,11 +1,5 @@
-import {
-  NavigationContainer,
-  SectionContainer,
-  TitleContainer,
-} from '../layout';
-import { StepsContainer, Steps } from '../Steps';
+import { Header, SectionContainer } from '../layout';
 import { useParams } from 'react-router';
-import { Title } from '@components/Title';
 import { RunSimulation } from '../../Simulator/RunSimulation';
 import { useState } from 'react';
 import {
@@ -19,7 +13,6 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
 import { Uploading } from '../../Simulator/Uploading';
 import { Status } from '../ManageCodes/Status';
-import { VersionMenu } from '../ManageCodes/VersionMenu';
 import { FileUploadWarning } from '@components/FileUploadWarning';
 
 export function ConfigTest() {
@@ -35,22 +28,7 @@ export function ConfigTest() {
 
   return (
     <div>
-      <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
-        <Status version={configuration.data.active_version} />
-      </TitleContainer>
-      <NavigationContainer>
-        <VersionMenu
-          id={configuration.data.id}
-          currentVersion={configuration.data.version}
-          status={configuration.data.status}
-          versions={configuration.data.all_versions}
-        />
-        <StepsContainer>
-          <Steps configurationId={id} />
-        </StepsContainer>
-      </NavigationContainer>
-
+      <Header configuration={configuration.data} />
       <SectionContainer>
         <ConfigurationTitleBar
           title="Test configuration"

@@ -1,17 +1,8 @@
 import { useParams } from 'react-router';
-import { ConfigLockBanner } from '../ManageCodes/Lock/ConfigLockBanner';
-import { Title } from '@components/Title';
-import {
-  NavigationContainer,
-  SectionContainer,
-  TitleContainer,
-} from '../layout';
-import { StepsContainer, Steps } from '../Steps';
+import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { Spinner } from '@components/Spinner';
-import { VersionMenu } from '../ManageCodes/VersionMenu';
-import { Status } from '../ManageCodes/Status';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { ActivationButtons } from './ActivationButtons';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
@@ -31,31 +22,9 @@ export function ConfigActivate() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
-  const { is_locked } = configuration.data;
-
   return (
     <div>
-      <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
-        <Status version={configuration.data.active_version} />
-      </TitleContainer>
-      <NavigationContainer>
-        <VersionMenu
-          id={configuration.data.id}
-          currentVersion={configuration.data.version}
-          status={configuration.data.status}
-          versions={configuration.data.all_versions}
-        />
-        <StepsContainer>
-          <Steps configurationId={id} />
-        </StepsContainer>
-      </NavigationContainer>
-      {is_locked && (
-        <ConfigLockBanner
-          lockedByName={configuration.data.locked_by?.name}
-          lockedByEmail={configuration.data.locked_by?.email}
-        />
-      )}
+      <Header configuration={configuration.data} />
       <SectionContainer>
         <ConfigurationTitleBar
           title="Turn on configuration"
@@ -88,7 +57,6 @@ export function ConfigActivate() {
           <div className="mt-6">
             <ActivationButtons
               configurationData={configuration.data}
-              isLocked={is_locked}
             />
           </div>
         </div>

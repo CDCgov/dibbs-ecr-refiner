@@ -32,7 +32,7 @@ export function CustomizeSections() {
     configuration.data.is_locked || !configuration.data.is_draft;
 
   return (
-    <>
+    <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
         <div className="flex items-start justify-between">
@@ -62,6 +62,6 @@ export function CustomizeSections() {
           isCustomSectionModalOpen={isCustomSectionModalOpen}
         />
       </SectionContainer>
-    </>
+    </div>
   );
 }
