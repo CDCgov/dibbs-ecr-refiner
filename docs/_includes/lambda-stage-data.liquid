@@ -1,0 +1,3 @@
+{% assign stageOrder = "Entry,S3 Retrieval,Configuration Loading,Refinement Pipeline,Output Writing,Skip/Error Handling,Types" | split: "," %}
+{% assign roleColors = "Handler,S3 I/O,Configuration,Orchestrator,Output,Error Handling,Data Type" | split: "," %}
+{% assign roleBadgeColors = "blue,cyan,teal,green,orange,red,purple" | split: "," %}

@@ -1,0 +1,72 @@
+---
+title: Lambda Handlers — Pipeline Diagram
+layout: layout.liquid
+---
+
+{% include "lambda-stage-data" %}
+
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">
+  <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
+  Pipeline roles & diagram
+</h1>
+
+<p class="text-gray-60 mb-8 prose">Role badges shown under <a href="/reference/lambda/code/">Lambda > Function Reference</a> and in the diagram.</p>
+
+<div class="flex flex-wrap gap-3 mb-8">
+  {% for role in roleColors %}
+    {% assign idx = 0 %}
+    {% for r in roleColors %}
+      {% if r == role %}{% assign roleIdx = idx %}{% endif %}
+      {% assign idx = idx | plus: 1 %}
+    {% endfor %}
+    <span class="text-xs font-medium px-2.5 py-0.5 rounded-full
+      {% if roleIdx == 0 %}bg-blue-100 text-blue-800
+      {% elsif roleIdx == 1 %}bg-cyan-100 text-cyan-800
+      {% elsif roleIdx == 2 %}bg-teal-100 text-teal-800
+      {% elsif roleIdx == 3 %}bg-green-100 text-green-800
+      {% elsif roleIdx == 4 %}bg-orange-100 text-orange-800
+      {% elsif roleIdx == 5 %}bg-red-100 text-red-800
+      {% elsif roleIdx == 6 %}bg-purple-100 text-purple-800
+      {% endif %}">
+      {{ role }}
+    </span>
+  {% endfor %}
+</div>
+
+<h2 class="font-merriweather text-xl font-bold mb-4">Pipeline Diagram</h2>
+
+<p class="text-gray-60 mb-8">End-to-end processing flow through the Lambda stages.</p>
+
+<div class="bg-gray-2 rounded-lg p-6 mb-8 overflow-x-auto not-prose">
+  <pre class="text-sm leading-relaxed font-mono">
+             +-------------+                    +-----------------------------------------+
+             |  SQS Event  |        +----------->   Configuration Loading                 |
+      +------+  (Trigger)  |        |           |      (Configuration)                    |
+      |      +-------------+        |           | `read_rsg_cg_mapping_file` →            |
+      |    +------------------+     |           |     `read_current_version` →            |
+      +---->      Entry       |     |           |         `read_configuration_file` →     |
+           |    (Handler)     |     |           |             `load_active_configuration` |
++----------+ `lambda_handler` |     |           +--+--------------------------------------+
+|          +------------------+     |              |
+| +---------------------------------+-----+        |  +------------------------------+
+| |         S3 Retrieval                  |        |  |   Refinement Pipeline        |
++->           (S3 I/O)                    |        +-->     (Orchestrator)           +-----+
+  |  `extract_persistence_id` →           |           | `run_refinement` →           |     |
+  |      `get_s3_object_content` →        |           |     `process_jurisdiction` → |     |
+  |           `parse_s3_content_to_dict`  |           |         `process_condition`  |     |
+  +---------------------------------------+           +------------------------------+     |
+                                                                                           |                   |
+                                                        +---------------------------+      |
+                       +--------------------------------+    Output Writing         <------+
+                       |                                |       (Output)            |
+                     +-v----------------------+         | `write_refined_outputs` → |
+                     |   `RefinerComplete`    |         |     `write_remainder_rrs` |
+                     |  Manifest → AIMS (S3)  |         +---------------------------+
+                     +------------------------+
+  </pre>
+  <!--
+    NOTE: source link below for the diagram above:
+    https://asciiflow.com/#/share/eJzFV89r2zAU%2FleETwl0DBY2tt7WrLBAS7ZmsItBVm3FVbFlI8lpSymMMHbaIYzQ%2BbBjjjvuNPbX5C%2FZ868kduzEWeruIbDk6On79J7eJ%2BdW48Sl2qH2pnd0JBHtnqEzOmScCvQEnRD33CJo6HhX2oHmkBsqYOatro2okMzjunb47EDXruH5qvMCejfRm5fPoafotYKBrqFVm0%2B%2Fzqef6rUJKrFdFmiiTZCu8wKjMUKD9wN0PKJcpeMdyN7%2Fhpldjw%2BZHQiiIKroxCMW43bJ5sdL%2BIrFZwi1Pghm21S0C2TGhaVia%2BWg2%2BUxz8GOs860dtTCahKGoMTCQtrYtLFLfB82jofMoQaaf%2Fm2jcYex2GyISoJKTMQAlKK08O%2BjVA%2BHHFawY65EjeF5StSsQReTUkhGDnQVf%2FWW8ItJ856LagYzoGThomp2IjmUY0MqEaEZ7BOLBT4IqFgVMIvYvTzfxRvmGxoXMpo98XKIrr%2BotpSMo8lab8qSiAj3TCPSWHTyzANOnDlKMHoiDjrUSpKWDJO7ig3Utx3zKcODNYcYqg4v1kxxtYCvN7TfqXULbrZ0Ui9W31hXlCpoEA80c45%2FVjfbVyj8XIG3IQCagz7kY5IRblJMbOKclImjQHHYrHRKgd4LsEiM2yqsOxg7%2FySAizUtSq6V8ieLzyTSokvA8GkxUy1kL1KsNSRCEkjzBQMKw9H%2FsZGscvgwMliCVYJ0D9X6J4tzNFulEWY23Jjth9AM%2FowqUHtURRyFiH1A%2BUHCn0UcBxXPsDm3z%2BXpm0T5a3XwHJKK4Ftl%2F9aBZJG5f7PA6YhBTauIAA01R4LezE9mVeCTcSiGUb6N6Lrub5DFXzCFMKyUJ0MzCWMW1RgIaRRF%2BaUcDYEUY6pve6dDiJ5bxeBmijecCu9B0QNSyGqTNfutLu%2FgdX%2BiA%3D%3D)
+  -->
+</div>
