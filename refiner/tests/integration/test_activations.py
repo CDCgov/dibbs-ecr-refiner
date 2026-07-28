@@ -313,7 +313,7 @@ class TestActivations:
         assert configuration is not None
 
         with patch(
-            "scripts.reactivations,regenerate_active_configs.upload_configuration_payload",
+            "scripts.reactivations.regenerate_active_configs.upload_configuration_payload",
             side_effect=upload_regenerated_payload_to_localstack,
         ):
             await regenerate_active_configuration(
