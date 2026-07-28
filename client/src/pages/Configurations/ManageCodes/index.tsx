@@ -103,7 +103,6 @@ export function ManageCodes() {
           currentVersion={configuration.data.version}
           status={configuration.data.status}
           versions={configuration.data.all_versions}
-          step="build"
         />
         <StepsContainer>
           <Steps configurationId={configuration.data.id} />
@@ -114,7 +113,6 @@ export function ManageCodes() {
           draftId={configuration.data.draft_id}
           conditionId={configuration.data.condition_id}
           latestVersion={configuration.data.latest_version}
-          step="build"
         />
       ) : null}
       {disabledForConcurrency ? (
@@ -126,8 +124,8 @@ export function ManageCodes() {
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
           <ConfigurationTitleBar
-            step="build"
-            condition={configuration.data.display_name}
+            title="Manage codes"
+            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
           />
           <Export id={configuration.data.id} />
         </div>

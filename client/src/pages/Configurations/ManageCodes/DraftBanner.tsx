@@ -12,21 +12,21 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { InfoIcon } from '@components/Icons/InfoIcon';
+import { useGetStep } from './useGetStep';
 
 interface DraftBannerProps {
   draftId: string | null;
   conditionId: string;
   latestVersion: number;
-  step: 'build' | 'test' | 'activate';
 }
 
 export function DraftBanner({
   draftId,
   conditionId,
   latestVersion,
-  step,
 }: DraftBannerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const step = useGetStep();
 
   const newDraftText =
     'Previous versions cannot be modified. You must draft a new version to make changes.';

@@ -45,7 +45,6 @@ export function ConfigActivate() {
           currentVersion={configuration.data.version}
           status={configuration.data.status}
           versions={configuration.data.all_versions}
-          step="activate"
         />
         <StepsContainer>
           <Steps configurationId={id} />
@@ -59,8 +58,14 @@ export function ConfigActivate() {
       )}
       <SectionContainer>
         <ConfigurationTitleBar
-          step="activate"
-          condition={configuration.data.display_name}
+          title="Turn on configuration"
+          subtitle={
+            <span>
+              Refiner will <span className="font-bold">immediately</span> start
+              to refine eCRs with {configuration.data.display_name} as a
+              reportable condition, in accordance with this configuration.
+            </span>
+          }
         />
         <div className="max-w[80rem] mb-8 bg-white p-6">
           <div className="mb-6">

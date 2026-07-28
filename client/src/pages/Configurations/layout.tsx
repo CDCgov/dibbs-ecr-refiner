@@ -74,7 +74,6 @@ export function Header({ configuration }: HeaderProps) {
           currentVersion={configuration.version}
           status={configuration.status}
           versions={configuration.all_versions}
-          step="build"
         />
         <StepsContainer>
           <Steps configurationId={configuration.id} />
@@ -85,7 +84,6 @@ export function Header({ configuration }: HeaderProps) {
           draftId={configuration.draft_id}
           conditionId={configuration.condition_id}
           latestVersion={configuration.latest_version}
-          step="build"
         />
       ) : null}
       {configuration.is_locked ? (

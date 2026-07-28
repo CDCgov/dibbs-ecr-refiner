@@ -45,7 +45,6 @@ export function ConfigTest() {
           currentVersion={configuration.data.version}
           status={configuration.data.status}
           versions={configuration.data.all_versions}
-          step="test"
         />
         <StepsContainer>
           <Steps configurationId={id} />
@@ -54,10 +53,10 @@ export function ConfigTest() {
 
       <SectionContainer>
         <ConfigurationTitleBar
-          step="test"
-          condition={configuration.data.display_name}
+          title="Test configuration"
+          subtitle="Check the results of your configuration before turning it on."
         />
-        <Tester config={configuration.data} />
+        <Test config={configuration.data} />
       </SectionContainer>
     </div>
   );
@@ -65,12 +64,11 @@ export function ConfigTest() {
 
 type Status = 'idle' | 'pending' | 'error' | 'success';
 
-interface TesterProps {
+interface Test {
   config: GetConfigurationResponse;
-  isLocked?: boolean;
 }
 
-function Tester({ config }: TesterProps) {
+function Test({ config }: Test) {
   const [status, setStatus] = useState<Status>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const {

@@ -6,21 +6,22 @@ import {
 } from '../../../api/schemas';
 import { Fragment } from 'react';
 import { useDatetimeFormatter } from '../../../hooks/UseDatetimeFormatter';
+import { useGetStep } from './useGetStep';
 
 interface VersionMenuProps {
   id: string;
   currentVersion: number;
   status: DbConfigurationStatus;
   versions: GetConfigurationResponseVersion[];
-  step: 'build' | 'test' | 'activate';
 }
 
 export function VersionMenu({
   currentVersion,
   status,
   versions,
-  step,
 }: VersionMenuProps) {
+  const step = useGetStep();
+
   return (
     <>
       <Menu as="div" className="z-10">
