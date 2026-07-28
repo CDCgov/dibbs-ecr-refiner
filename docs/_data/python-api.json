@@ -1165,10 +1165,10 @@
         {
           "name": "LogOperation",
           "type": "class",
-          "docstring": "All possible log `operation` values. The goal is to keep operation values standardized.\n\nPlease add a new operation here and then reference it.",
+          "docstring": "All possible log `operation` values. The goal is to keep operation values standardized.\n\nPlease add a new operation here and then reference it.\n\nStage:\n    Types\nRole:\n    Data Type",
           "parsed_docstring": {
             "summary": "All possible log `operation` values. The goal is to keep operation values standardized.",
-            "description": "Please add a new operation here and then reference it.",
+            "description": "Please add a new operation here and then reference it.\n\nStage: Types\nRole: Data Type",
             "params": [],
             "returns": null,
             "raises": []
@@ -1206,7 +1206,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 70,
+          "lineno": 75,
           "methods": []
         },
         {
@@ -1233,7 +1233,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 92,
+          "lineno": 97,
           "methods": []
         },
         {
@@ -1266,7 +1266,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 112,
+          "lineno": 117,
           "methods": [
             {
               "name": "__init__",
@@ -1347,7 +1347,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 141,
+          "lineno": 146,
           "methods": [
             {
               "name": "__init__",
@@ -1420,7 +1420,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 166,
+          "lineno": 171,
           "methods": [
             {
               "name": "__init__",
@@ -1478,7 +1478,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 188,
+          "lineno": 193,
           "signature": "lambda_handler(event, context) -> dict",
           "parameters": [
             {
@@ -1521,7 +1521,7 @@
             },
             "raises": []
           },
-          "lineno": 367,
+          "lineno": 372,
           "signature": "extract_persistence_id(object_key: str, input_prefix: str) -> str",
           "parameters": [
             {
@@ -1570,7 +1570,7 @@
             },
             "raises": []
           },
-          "lineno": 395,
+          "lineno": 400,
           "signature": "get_s3_object_content(s3_client, bucket: str, key: str) -> str",
           "parameters": [
             {
@@ -1629,7 +1629,7 @@
               }
             ]
           },
-          "lineno": 417,
+          "lineno": 422,
           "signature": "check_s3_object_exists(s3_client, bucket: str, key: str) -> bool",
           "parameters": [
             {
@@ -1676,7 +1676,7 @@
               }
             ]
           },
-          "lineno": 450,
+          "lineno": 455,
           "signature": "parse_s3_content_to_dict(body: str) -> dict",
           "parameters": [
             {
@@ -1720,7 +1720,7 @@
             },
             "raises": []
           },
-          "lineno": 477,
+          "lineno": 482,
           "signature": "read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None",
           "parameters": [
             {
@@ -1755,7 +1755,7 @@
             },
             "raises": []
           },
-          "lineno": 516,
+          "lineno": 521,
           "signature": "read_current_version(s3_client, bucket: str, key: str) -> int | None",
           "parameters": [
             {
@@ -1814,7 +1814,7 @@
               }
             ]
           },
-          "lineno": 549,
+          "lineno": 554,
           "signature": "read_configuration_file(s3_client, bucket: str, key: str) -> dict",
           "parameters": [
             {
@@ -1880,7 +1880,7 @@
             },
             "raises": []
           },
-          "lineno": 591,
+          "lineno": 596,
           "signature": "run_refinement(input: RefinementInput) -> RefinementOutput",
           "parameters": [
             {
@@ -1902,7 +1902,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 662,
+          "lineno": 667,
           "signature": "process_jurisdiction(jurisdiction_group: JurisdictionReportableConditions, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1939,7 +1939,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 704,
+          "lineno": 709,
           "signature": "process_condition(jurisdiction_code: str, reportable_condition: ReportableCondition, rsg_cg_payload: ConditionMappingPayload, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1986,7 +1986,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 783,
+          "lineno": 788,
           "signature": "load_condition_mapping_for_jurisdiction(s3_client, config_bucket: str, jurisdiction_code: str) -> ConditionMappingPayload | None",
           "parameters": [
             {
@@ -2018,7 +2018,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 816,
+          "lineno": 821,
           "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
           "parameters": [
             {
@@ -2050,7 +2050,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 838,
+          "lineno": 843,
           "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState, **kwargs) -> None",
           "parameters": [
             {
@@ -2105,7 +2105,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 866,
+          "lineno": 871,
           "methods": [
             {
               "name": "__init__",
@@ -2150,7 +2150,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 886,
+          "lineno": 891,
           "signature": "load_active_configuration(s3_client, config_bucket: str, jurisdiction_code: str, cg_metadata: ConditionMapValue, rsg_metadata: ReportableCondition) -> ActiveConfiguration | None",
           "parameters": [
             {
@@ -2192,7 +2192,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 949,
+          "lineno": 954,
           "signature": "write_refined_outputs(refiner_input: RefinementInput, jurisdiction_code: str, condition_code: str, condition_grouper_name: str, result: RefinementResult, state: RefinementState) -> None",
           "parameters": [
             {
@@ -2239,7 +2239,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 1001,
+          "lineno": 1006,
           "signature": "write_remainder_rrs(refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {

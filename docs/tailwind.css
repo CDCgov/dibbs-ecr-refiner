@@ -18,6 +18,18 @@
   summary::-webkit-details-marker {
     display: none;
   }
+
+  #logo-link {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+    a {
+      span {
+        display: inline-block;
+      }
+    }
+  }
 }
 
 /*
