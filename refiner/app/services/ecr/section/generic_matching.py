@@ -23,6 +23,7 @@ from ..narrative import (
     restore_narrative,
 )
 from .utils import (
+    _index_narrative_display_ids,
     build_generic_match_comment_text,
     enrich_surviving_entries,
     insert_comment_before,
@@ -113,6 +114,13 @@ def process(
         if text_element is not None and narrative_action in PRESERVE_NARRATIVE_ACTIONS
         else None
     )
+    # capture the narrative's ID -> label map BEFORE clearing it. entries
+    # point at those labels through <originalText><reference value="#id"/>,
+    # and enrich_surviving_entries (STEP 4, far below) needs them to recover a
+    # display for codes the jurisdiction sets don't carry. clearing first would
+    # leave nothing to resolve against
+    narrative_index = _index_narrative_display_ids(section, namespaces)
+
     if text_element is not None:
         text_element.clear()
 
@@ -195,7 +203,12 @@ def process(
 
             # STEP 4: ENRICH displayName on surviving entries
             if code_system_sets is not None:
-                enrich_surviving_entries(section, code_system_sets, namespaces)
+                enrich_surviving_entries(
+                    section,
+                    code_system_sets,
+                    namespaces,
+                    narrative_index=narrative_index,
+                )
 
             # STEP 5: handle narrative <text> reconstruction runs HERE,
             # after STEP 4 enrichment, because it reads displayName off

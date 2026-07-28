@@ -76,6 +76,7 @@ async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
 
   await user.upload(fileInput, file);
 }
+
 beforeEach(() => {
   (useUploadCustomCodesCsv as unknown as Mock).mockReturnValue({
     mutate: vi.fn((variables, options) => {
@@ -272,12 +273,8 @@ function checkOtherCode(exists = true) {
 }
 
 function checkCode(codeSystemName: string, exists = true) {
-  const codeSystem = mockCodeSystems.find(
-    (s) => s.display_name === codeSystemName
-  );
-
   const mockCode = mockPreviewItems.find(
-    (i) => i.system_key === codeSystem?.key
+    (i) => i.system_name === codeSystemName
   )?.code as string;
 
   const matcher = exists ? 'getByText' : 'queryByText';
@@ -326,8 +323,13 @@ const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
     return {
       id: crypto.randomUUID(),
       code: row['code'],
-      system_key: row['code_system'],
-      name: row['display_name'],
+      system_id: mockCodeSystems.find(
+        (system) => system.key === row['code_system']
+      )!.id,
+      system_name: mockCodeSystems.find(
+        (system) => system.key === row['code_system']
+      )!.display_name,
+      display: row['display_name'],
       row: i,
     };
   }

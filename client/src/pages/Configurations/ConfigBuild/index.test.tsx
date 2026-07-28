@@ -79,8 +79,12 @@ vi.mock('../../../api/conditions/conditions', async () => {
             code_category_statuses: [],
           },
           codes: [
-            { code: '1', system: 'LOINC', description: 'idk' },
-            { code: '2', system: 'SNOMED', description: 'example' },
+            { code: 'mock-loinc-code', system: 'LOINC', description: 'idk' },
+            {
+              code: 'mock-snomed-code',
+              system: 'SNOMED',
+              description: 'example',
+            },
           ],
 
           systems: mockCodeSystems,
@@ -372,14 +376,14 @@ describe('Config builder page', () => {
 
   it('should filter codes by search text', async () => {
     const user = userEvent.setup();
-    const covidCode = '1';
+    const mockLoincCode = 'mock-loinc-code';
     renderPage();
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
     const searchBox = await screen.findByPlaceholderText(/Search code set/);
-    await user.type(searchBox, covidCode);
-    expect(searchBox).toHaveValue(covidCode);
+    await user.type(searchBox, mockLoincCode);
+    expect(searchBox).toHaveValue(mockLoincCode);
 
     // wait for debounced search results to appear before checking
     await waitFor(async () => {
@@ -387,7 +391,7 @@ describe('Config builder page', () => {
       expect(rows).toHaveLength(1);
     });
 
-    const row = await screen.findByText(covidCode, { selector: 'mark' });
+    const row = await screen.findByText(mockLoincCode, { selector: 'mark' });
     expect(row).toBeInTheDocument();
   });
 
@@ -552,7 +556,9 @@ describe('Config builder page', () => {
     expect(screen.getByLabelText('Display name')).toHaveValue(
       'test-custom-code1'
     );
-    expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
+    expect(screen.getByLabelText('Code system')).toHaveValue(
+      mockCustomCodes[0].system_id
+    );
 
     await user.type(screen.getByLabelText('Code'), '12345');
 
@@ -747,23 +753,7 @@ const baseMockConfig: GetConfigurationResponse = {
       system_id: MOCK_SNOMED_DB_ID,
     },
   ],
-  custom_codes: {
-    codes: mockCustomCodes,
-    code_systems: {
-      icd10: {
-        key: 'icd10',
-        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
-        display_name: 'ICD-10',
-        oid: '2.16.840.1.113883.6.90',
-      },
-      snomed: {
-        key: 'snomed',
-        id: MOCK_SNOMED_DB_ID,
-        display_name: 'SNOMED',
-        oid: '2.16.840.1.113883.6.96',
-      },
-    },
-  },
+  custom_codes: mockCustomCodes,
   section_processing: [
     {
       name: 'Encounters Section',

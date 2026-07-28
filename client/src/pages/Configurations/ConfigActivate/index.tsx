@@ -97,7 +97,7 @@ function buildRetainedDataDisplay(configurationData: GetConfigurationResponse) {
     .map((c) => c.display_name)
     .join(', ');
 
-  const customCodeCount = configurationData.custom_codes.codes.length;
+  const customCodeCount = configurationData.custom_codes.length;
 
   let result = `${codeSetNames} code set(s)`;
 

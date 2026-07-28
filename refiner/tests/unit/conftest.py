@@ -172,25 +172,57 @@ def mock_logged_in_user(mock_user, test_app):
 
 
 CODE_SYSTEM_DATA = {
-    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
-    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
-    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
-    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
-    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
-    "other": {"oid": "Other", "display_name": "Other"},
+    "b0f45de0-5756-48ae-81da-0c7cabe5d59d": {
+        "oid": "2.16.840.1.113883.6.96",
+        "display_name": "SNOMED",
+        "key": "snomed",
+    },
+    "4a2d151c-881b-4bf5-89dd-1947b62dc857": {
+        "oid": "2.16.840.1.113883.6.1",
+        "display_name": "LOINC",
+        "key": "loinc",
+    },
+    "b7bd2993-0af3-423a-ab19-90febe736a7e": {
+        "oid": "2.16.840.1.113883.6.90",
+        "display_name": "ICD-10",
+        "key": "icd10",
+    },
+    "8a60b7ab-a780-432c-af4f-0bd607912b01": {
+        "oid": "2.16.840.1.113883.6.88",
+        "display_name": "RxNorm",
+        "key": "rxnorm",
+    },
+    "02cb5af7-5d26-4c7d-9d62-7b084e3950bd": {
+        "oid": "2.16.840.1.113883.12.292",
+        "display_name": "CVX",
+        "key": "cvx",
+    },
+    "f6359e14-0196-4ba7-a3e0-220785434e6f": {
+        "oid": "Other",
+        "display_name": "Other",
+        "key": "other",
+    },
 }
 
 
-def create_mock_systems():
-    return {
-        key: DbCodeSystem(
-            id=uuid4(),
-            oid=system["oid"],
+def create_mock_systems() -> list[DbCodeSystem]:
+    return [
+        DbCodeSystem(
+            id=UUID(id_str),
+            key=system["key"],
             display_name=system["display_name"],
-            key=key,
+            oid=system["oid"],
         )
-        for key, system in CODE_SYSTEM_DATA.items()
-    }
+        for id_str, system in CODE_SYSTEM_DATA.items()
+    ]
+
+
+@pytest.fixture
+def get_mock_system(mock_all_systems: list[DbCodeSystem]):
+    def _get(key: str) -> DbCodeSystem:
+        return next(s for s in mock_all_systems if s.key == key)
+
+    return _get
 
 
 @pytest.fixture

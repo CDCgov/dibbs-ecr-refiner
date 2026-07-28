@@ -432,7 +432,10 @@ def _prune_section_by_matches(
 
     2. prune_container_xpath set — non-matching containers within matched
        entries are removed. Used for Results and Vital Signs where each
-       panel sub-observation should be independently evaluated.
+       panel sub-observation should be independently evaluated. A rule may
+       also carry prune_container_guard_xpath to exempt sibling containers
+       that are shared, entry-scoped context (e.g. the Results Specimen
+       Collection Procedure) from pruning.
 
     3. Default — unmatched entries removed, matched entries kept whole.
     """
@@ -463,8 +466,15 @@ def _prune_at_container_level(
     Cases:
     1. No match — remove entry entirely.
     2. Matched with preserve_whole_entry=True — keep intact, skip pruning.
-    3. Matched with prune_container_xpath — remove non-matching containers.
+    3. Matched with prune_container_xpath — remove non-matching containers,
+       except containers exempted by prune_container_guard_xpath (shared,
+       organizer-scoped context such as the Specimen Collection Procedure).
     4. Matched, no prune_container_xpath, preserve_whole_entry=False — keep whole.
+
+    Invariant: a matched entry is never removed. An entry whose containers were
+    all pruned away is deleted; an entry that never had containers at
+    prune_container_xpath is kept, since the rule's container model simply does
+    not describe it.
     """
 
     matched_entry_ids = {id(m.entry) for m in matches}
@@ -493,9 +503,11 @@ def _prune_at_container_level(
             continue
 
         prune_xpath: str | None = None
+        guard_xpath: str | None = None
         for em in entry_matches:
             if em.rule.prune_container_xpath:
                 prune_xpath = em.rule.prune_container_xpath
+                guard_xpath = em.rule.prune_container_guard_xpath
                 break
 
         if not prune_xpath:
@@ -505,16 +517,30 @@ def _prune_at_container_level(
             list[_Element],
             entry.xpath(prune_xpath, namespaces=namespaces),
         )
+        had_containers = bool(containers)
 
         for container in containers:
+            # a guarded container that does not itself contain a match
+            # candidate is shared, organizer-scoped context (e.g. the
+            # Specimen Collection Procedure) — retain it alongside any
+            # surviving sibling rather than pruning it as non-matching
+            if guard_xpath and not container.xpath(guard_xpath, namespaces=namespaces):
+                continue
+
             if not _container_has_matched_descendant(
                 container, matched_code_element_ids
             ):
                 remove_element(container)
 
-        remaining = entry.xpath(prune_xpath, namespaces=namespaces)
-        if isinstance(remaining, list) and len(remaining) == 0:
-            remove_element(entry)
+        # only an entry we actually pruned down to nothing is empty; an entry
+        # that never had containers at this path (a Result Observation sitting
+        # directly under <entry> with no organizer, or a Problems act whose
+        # entryRelationship carries a non-SUBJ typeCode) still holds the match
+        # that retained it. without this guard a MATCHED entry is deleted
+        if had_containers:
+            remaining = entry.xpath(prune_xpath, namespaces=namespaces)
+            if isinstance(remaining, list) and len(remaining) == 0:
+                remove_element(entry)
 
 
 def _container_has_matched_descendant(

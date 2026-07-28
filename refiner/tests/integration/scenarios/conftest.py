@@ -1,9 +1,11 @@
+from uuid import UUID
+
 import pytest
 import pytest_asyncio
 from fastapi import status
 
+from app.api.v1.configurations.model import AddCustomCodeInput
 from app.core.models.types import XMLFiles
-from app.db.configurations.model import DbConfigurationCustomCode
 from app.services.terminology import ProcessedConfiguration
 from tests.integration.scenarios.build_report import build_report
 
@@ -262,6 +264,33 @@ SCENARIOS: list[Scenario] = [
             SectionOverride(current_code="29549-3", narrative="reconstruct"),
         ),
     ),
+    Scenario(
+        name="plan_of_treatment_reconstruction",
+        fixture_dir="ecr_pairs/all_sections_covid_influenza",
+        condition_name="COVID-19",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=13,
+        # the heterogeneous section: the fixture's Plan of Treatment carries
+        # planned observations, a planned procedure, a planned act and a
+        # planned medication. one custom code per surviving entry kind keeps
+        # all four alive through pruning so the snapshot pins the multi-table
+        # captioned output (the whole point of the heterogeneous section)
+        # rather than collapsing to a single table. the trigger-code lab
+        # orders match from the COVID grouper on their own
+        custom_codes=(
+            CustomCode("385857005", "snomed", "Artificial respiration"),
+            CustomCode("233573008", "snomed", "Extracorporeal membrane oxygenation"),
+            CustomCode("409524006", "snomed", "Airborne precautions"),
+            CustomCode("248656", "rxnorm", "Azithromycin 500 MG Oral Tablet"),
+        ),
+        section_overrides=(
+            SectionOverride(current_code="18776-5", narrative="reconstruct"),
+        ),
+    ),
 ]
 
 # name -> Scenario lookup for the explicit-assertion suite, which references
@@ -404,6 +433,7 @@ async def build_scenario_configuration(
     activate_config,
     fetch_activation_payload,
     test_user_jurisdiction_id,
+    get_systems,
 ):
     """
     Author a scenario's configuration through the API, activate it, and read
@@ -424,11 +454,22 @@ async def build_scenario_configuration(
         for name in scenario.associated_conditions:
             await associate_codeset(config_id, await get_condition_id(name))
 
+        systems = await get_systems()
+
+        def _get_system_id(system_key: str) -> UUID:
+            matching_system = next(
+                (s for s in systems if s["key"] == system_key),
+                None,
+            )
+            if matching_system is None:
+                raise ValueError(f"Could not find system matching key: {system_key}")
+            return matching_system["id"]
+
         for cc in scenario.custom_codes:
             await add_custom_code(
                 config_id,
-                DbConfigurationCustomCode(
-                    code=cc.code, system_key=cc.system, name=cc.name
+                AddCustomCodeInput(
+                    code=cc.code, system_id=_get_system_id(cc.system), display=cc.name
                 ),
             )
 
