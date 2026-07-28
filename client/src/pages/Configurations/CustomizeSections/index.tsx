@@ -35,13 +35,14 @@ export function CustomizeSections() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
           <ConfigurationTitleBar
             title="Customize eICR Sections"
             subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
           />
           {isDisabled ? null : (
             <Button
+            className='m-0! p-0! whitespace-nowrap'
               variant="tertiary"
               onClick={() => {
                 setSelectedSection(null);
