@@ -18,8 +18,8 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
 import { Uploading } from '../../Simulator/Uploading';
-import { Status } from '../ConfigBuild/Status';
-import { VersionMenu } from '../ConfigBuild/VersionMenu';
+import { Status } from '../ManageCodes/Status';
+import { VersionMenu } from '../ManageCodes/VersionMenu';
 import { FileUploadWarning } from '@components/FileUploadWarning';
 
 export function ConfigTest() {

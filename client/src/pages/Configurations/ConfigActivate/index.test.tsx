@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigActivate } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
-import { mockCodeSets } from '../ConfigBuild/fixtures';
+import { mockCodeSets } from '../ManageCodes/fixtures';
 
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {

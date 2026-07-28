@@ -21,6 +21,11 @@ export function Steps({ configurationId }: StepsProps) {
   return (
     <ol className="flex list-inside flex-col gap-11 sm:flex-row sm:gap-10">
       <li>
+        <StepLink to={`/configurations/${configurationId}/customize-sections`}>
+          Customize eICR Sections
+        </StepLink>
+      </li>
+      <li>
         <StepLink to={`/configurations/${configurationId}/build`}>
           Build
         </StepLink>

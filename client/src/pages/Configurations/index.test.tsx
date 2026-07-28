@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse, UserResponse } from '../../api/schemas';
-import { ConfigBuild } from './ConfigBuild';
+import { ConfigBuild } from './ManageCodes';
 
 const mockUser: UserResponse = {
   id: '1',

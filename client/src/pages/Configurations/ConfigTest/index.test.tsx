@@ -7,7 +7,7 @@ import userEvent, { UserEvent } from '@testing-library/user-event';
 import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 import { AxiosError } from 'axios';
-import { mockCustomCodes, mockCodeSets } from '../ConfigBuild/fixtures';
+import { mockCustomCodes, mockCodeSets } from '../ManageCodes/fixtures';
 
 // Mock all API requests.
 
