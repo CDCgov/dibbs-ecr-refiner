@@ -507,13 +507,14 @@ test.describe('Configuration detail flow', () => {
         .click();
 
       await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
+        page.getByRole('heading', { name: 'Customize eICR sections', level: 2 })
       ).toBeVisible();
       await expect(page.getByText('Status: Version 1 active')).toBeVisible();
       await expect(page.getByText('Editing: Version 2')).toBeVisible();
     });
 
     await test.step('Upload custom code CSV', async () => {
+      await configurationPage.goToManageCodesTab();
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
