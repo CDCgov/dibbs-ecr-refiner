@@ -1,12 +1,11 @@
 import { useParams } from 'react-router';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { Spinner } from '@components/Spinner';
-import { Sections } from './Sections';
+import { SectionModalState, Sections } from './Sections';
 import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Button } from '@components/Button';
 import { useState } from 'react';
-import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 
 export function CustomizeSections() {
@@ -20,10 +19,11 @@ export function CustomizeSections() {
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
-  const [selectedSection, setSelectedSection] =
-    useState<DbConfigurationSectionProcessing | null>(null);
-  const [isCustomSectionModalOpen, setIsCustomSectionModalOpen] =
-    useState(false);
+
+  const [modalState, setModalState] = useState<SectionModalState>({
+    isOpen: false,
+    selectedSection: null,
+  });
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -44,23 +44,19 @@ export function CustomizeSections() {
             <Button
               className="m-0! p-0! whitespace-nowrap"
               variant="tertiary"
-              onClick={() => {
-                setSelectedSection(null);
-                setIsCustomSectionModalOpen(true);
-              }}
+              onClick={() =>
+                setModalState({ isOpen: true, selectedSection: null })
+              }
             >
               Add custom section <span aria-hidden>+</span>
             </Button>
           )}
         </div>
         <Sections
-          configurationId={configuration.data.id}
+          configuration={configuration.data}
           disabled={isDisabled}
-          sections={configuration.data.section_processing}
-          setSelectedSection={setSelectedSection}
-          selectedSection={selectedSection}
-          setIsCustomSectionModalOpen={setIsCustomSectionModalOpen}
-          isCustomSectionModalOpen={isCustomSectionModalOpen}
+          modalState={modalState}
+          setModalState={setModalState}
         />
       </SectionContainer>
     </div>

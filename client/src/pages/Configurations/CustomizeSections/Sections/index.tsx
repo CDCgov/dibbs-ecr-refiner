@@ -4,6 +4,7 @@ import {
   CodedDataLabelsValue,
   DbSectionAction,
   DisabledSection,
+  GetConfigurationResponse,
   NarrativeOnlySection,
   ReconstructableSection,
 } from '../../../../api/schemas';
@@ -29,26 +30,23 @@ import { Tooltip } from '@components/Tooltip';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import { KeepOnMatchModal } from './KeepOnMatchModal';
 
-interface SectionsProps {
-  configurationId: string;
-  sections: DbConfigurationSectionProcessing[];
-  disabled: boolean;
+export interface SectionModalState {
+  isOpen: boolean;
   selectedSection: DbConfigurationSectionProcessing | null;
-  setSelectedSection: React.Dispatch<
-    React.SetStateAction<DbConfigurationSectionProcessing | null>
-  >;
-  setIsCustomSectionModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isCustomSectionModalOpen: boolean;
+}
+
+interface SectionsProps {
+  configuration: GetConfigurationResponse;
+  disabled: boolean;
+  modalState: SectionModalState;
+  setModalState: React.Dispatch<React.SetStateAction<SectionModalState>>;
 }
 
 export function Sections({
-  configurationId,
-  sections: sectionProcessing,
+  configuration,
   disabled,
-  setSelectedSection,
-  selectedSection,
-  setIsCustomSectionModalOpen,
-  isCustomSectionModalOpen,
+  modalState,
+  setModalState,
 }: SectionsProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
 
@@ -70,12 +68,11 @@ export function Sections({
     reconstructableSections.some((v) => (v as string) === s);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
-    setSelectedSection(section);
-    setIsCustomSectionModalOpen(true);
+    setModalState({ isOpen: true, selectedSection: section });
   };
 
   const resetModal = () => {
-    setSelectedSection(null);
+    setModalState((prev) => ({ ...prev, selectedSection: null }));
   };
 
   return (
@@ -84,14 +81,16 @@ export function Sections({
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <CustomSectionModal
-              isOpen={isCustomSectionModalOpen}
-              setIsOpen={setIsCustomSectionModalOpen}
-              configurationId={configurationId}
+              isOpen={modalState.isOpen}
+              setIsOpen={(isOpen) =>
+                setModalState((prev) => ({ ...prev, isOpen: !!isOpen }))
+              }
+              configurationId={configuration.id}
               initialSection={
-                selectedSection
+                modalState.selectedSection
                   ? {
-                      name: selectedSection.name,
-                      currentCode: selectedSection.code,
+                      name: modalState.selectedSection.name,
+                      currentCode: modalState.selectedSection.code,
                     }
                   : null
               }
@@ -142,21 +141,21 @@ export function Sections({
               </tr>
             </thead>
             <tbody className="divide-gray-cool-20 divide-y">
-              {sectionProcessing.map((section) => (
+              {configuration.section_processing.map((section) => (
                 <tr key={section.code} className="text-gray-cool-60">
                   <td>
                     <div className="flex justify-center p-8">
                       <IncludeCheckbox
-                        configurationId={configurationId}
+                        configurationId={configuration.id}
                         currentSection={section}
-                        sections={sectionProcessing}
+                        sections={configuration.section_processing}
                         disabled={disabled || isDisabledSection(section.code)}
                       />
                     </div>
                   </td>
                   <td>
                     <SectionName
-                      configurationId={configurationId}
+                      configurationId={configuration.id}
                       section={section}
                       disabled={disabled}
                       setSelectedSection={() => onSelectedSection(section)}
@@ -174,9 +173,9 @@ export function Sections({
                           </span>
                         ) : (
                           <RefineSwitch
-                            configurationId={configurationId}
+                            configurationId={configuration.id}
                             currentSection={section}
-                            sections={sectionProcessing}
+                            sections={configuration.section_processing}
                             disabled={
                               disabled || isDisabledSection(section.code)
                             }
@@ -188,7 +187,7 @@ export function Sections({
                   <td>
                     {section.include ? (
                       <NarrativeSelect
-                        configurationId={configurationId}
+                        configurationId={configuration.id}
                         currentSection={section}
                         disabled={disabled || isDisabledSection(section.code)}
                         isNarrativeOnly={isNarrativeSection(section.code)}
