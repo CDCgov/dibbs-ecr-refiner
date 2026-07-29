@@ -738,12 +738,10 @@ async def run_active_config_reactivation(
         if lock_created:
             logger.error(
                 "The reactivation failed while the maintenance lock was active. "
-                "The lock remains in S3 and must be reviewed before processing "
-                "is resumed.",
-                extra={
-                    "bucket": S3_CONFIGURATION_BUCKET_NAME,
-                    "key": MAINTENANCE_LOCK_KEY,
-                },
+                "The lock remains in S3 and must be reviewed before processing is resumed. "
+                "bucket=%s key=%s",
+                S3_CONFIGURATION_BUCKET_NAME,
+                MAINTENANCE_LOCK_KEY,
             )
 
 
