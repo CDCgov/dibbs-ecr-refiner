@@ -151,17 +151,42 @@ def remove_expired_maintenance_lock() -> bool:
 
     try:
         lock = json.loads(response["Body"].read())
-    except (json.JSONDecodeError, TypeError) as exc:
-        raise RuntimeError(
-            "The existing maintenance lock contains invalid JSON."
-        ) from exc
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(
+            "Removing corrupt active configuration maintenance lock. "
+            "bucket=%s key=%s reason=invalid_json",
+            S3_CONFIGURATION_BUCKET_NAME,
+            MAINTENANCE_LOCK_KEY,
+            exc_info=True,
+        )
+
+        delete_maintenance_lock()
+        return True
+
+    if not isinstance(lock, dict):
+        logger.warning(
+            "Removing corrupt active configuration maintenance lock. "
+            "bucket=%s key=%s reason=unexpected_json_type lock_type=%s",
+            S3_CONFIGURATION_BUCKET_NAME,
+            MAINTENANCE_LOCK_KEY,
+            type(lock).__name__,
+        )
+
+        delete_maintenance_lock()
+        return True
 
     expiration = get_lock_expiration(lock)
 
     if expiration is None:
-        raise RuntimeError(
-            "The existing maintenance lock does not contain a valid expires_at value."
+        logger.warning(
+            "Removing corrupt active configuration maintenance lock. "
+            "bucket=%s key=%s reason=missing_or_invalid_expires_at",
+            S3_CONFIGURATION_BUCKET_NAME,
+            MAINTENANCE_LOCK_KEY,
         )
+
+        delete_maintenance_lock()
+        return True
 
     if expiration > datetime.now(UTC):
         return False
