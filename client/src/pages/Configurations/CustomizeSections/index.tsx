@@ -37,7 +37,7 @@ export function CustomizeSections() {
       <SectionContainer>
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
           <ConfigurationTitleBar
-            title="Customize eICR Sections"
+            title="Customize eICR sections"
             subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
           />
           {isDisabled ? null : (
