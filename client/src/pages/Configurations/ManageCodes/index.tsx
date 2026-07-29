@@ -26,7 +26,7 @@ import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { ConfigLockBanner } from './Lock/ConfigLockBanner';
 import { Status } from './Status';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
+import { useConfigLock } from '../../../hooks/useConfigLock';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
@@ -47,8 +47,8 @@ const isCsvImportView = (view: TableView): view is CsvImportView =>
 export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
 
-  // release lock on beforeunload
-  useConfigLockRelease(id);
+  // acquire lock on mount, schedule release on unmount
+  useConfigLock(id);
 
   const {
     data: configuration,
@@ -315,7 +315,7 @@ function Builder({
                     aria-current={tableView === 'custom' ? 'true' : undefined}
                   >
                     <span>Custom codes</span>
-                    <span>{custom_codes.codes.length?.toLocaleString()}</span>
+                    <span>{custom_codes.length?.toLocaleString()}</span>
                   </Button>
                 </li>
               </OptionsList>
@@ -350,8 +350,7 @@ function Builder({
                 isOpen={isModalOpen}
                 setIsOpen={setIsModalOpen}
                 configurationId={id}
-                customCodes={custom_codes.codes}
-                codeSystems={custom_codes.code_systems}
+                customCodes={custom_codes}
                 disabled={disabled}
               />
             </div>

@@ -1,19 +1,12 @@
 import {
+  CustomCodeResponse,
   DbCodeSystem,
   DbTotalConditionCodeCount,
   GetConfigurationResponse,
   GetConfigurationResponseVersion,
 } from '../../../api/schemas';
-import { DbConfigurationCustomCode } from '../../../api/schemas/dbConfigurationCustomCode';
 
 export const MOCK_CONFIG_DRAFT_ID = 'b8f96556-2567-48c1-9d1a-cf3e202e5fdb';
-export const mockCustomCodes: DbConfigurationCustomCode[] = [
-  {
-    code: 'custom-code1',
-    name: 'test-custom-code1',
-    system_key: 'icd10',
-  },
-];
 
 export const mockCodeSets: DbTotalConditionCodeCount[] = [
   { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
@@ -57,6 +50,16 @@ export const mockCodeSystems: DbCodeSystem[] = [
     oid: 'Other',
     key: 'other',
     display_name: 'Other',
+  },
+];
+
+export const mockCustomCodes: CustomCodeResponse[] = [
+  {
+    id: '3c4ee804-dad5-42ba-b786-4dd752779197',
+    code: 'custom-code1',
+    display: 'test-custom-code1',
+    system_id: mockCodeSystems.find((cs) => cs.display_name === 'ICD-10')!.id,
+    system_name: 'ICD-10',
   },
 ];
 
@@ -117,23 +120,7 @@ export const baseMockConfig: GetConfigurationResponse = {
       system_id: MOCK_SNOMED_DB_ID,
     },
   ],
-  custom_codes: {
-    codes: mockCustomCodes,
-    code_systems: {
-      icd10: {
-        key: 'icd10',
-        id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
-        display_name: 'ICD-10',
-        oid: '2.16.840.1.113883.6.90',
-      },
-      snomed: {
-        key: 'snomed',
-        id: MOCK_SNOMED_DB_ID,
-        display_name: 'SNOMED',
-        oid: '2.16.840.1.113883.6.96',
-      },
-    },
-  },
+  custom_codes: mockCustomCodes,
   section_processing: [
     {
       name: 'Encounters Section',

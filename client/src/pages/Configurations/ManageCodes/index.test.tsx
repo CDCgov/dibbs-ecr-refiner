@@ -16,6 +16,7 @@ import {
   baseMockConfig,
   MOCK_CONFIG_DRAFT_ID,
   mockCodeSets,
+  mockCustomCodes,
   mockCodeSystems,
 } from '../test/fixtures';
 
@@ -557,7 +558,9 @@ describe('Manage codes page', () => {
     expect(screen.getByLabelText('Display name')).toHaveValue(
       'test-custom-code1'
     );
-    expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
+    expect(screen.getByLabelText('Code system')).toHaveValue(
+      mockCustomCodes[0].system_id
+    );
 
     await user.type(screen.getByLabelText('Code'), '12345');
 

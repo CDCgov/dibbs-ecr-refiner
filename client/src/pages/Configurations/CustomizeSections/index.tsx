@@ -1,6 +1,5 @@
 import { useParams } from 'react-router';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { Spinner } from '@components/Spinner';
 import { Sections } from './Sections';
 import { Header, SectionContainer } from '../layout';
@@ -8,12 +7,13 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Button } from '@components/Button';
 import { useState } from 'react';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
+import { useConfigLock } from '../../../hooks/useConfigLock';
 
 export function CustomizeSections() {
   const { id } = useParams<{ id: string }>();
 
-  // release lock on beforeunload
-  useConfigLockRelease(id);
+  // acquire lock on mount, schedule release on unmount
+  useConfigLock(id);
 
   const {
     data: configuration,

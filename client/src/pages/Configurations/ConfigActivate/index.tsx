@@ -5,7 +5,7 @@ import { useGetConfiguration } from '../../../api/configurations/configurations'
 import { Spinner } from '@components/Spinner';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { ActivationButtons } from './ActivationButtons';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
+import { useConfigLock } from '../../../hooks/useConfigLock';
 
 export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
@@ -16,8 +16,8 @@ export function ConfigActivate() {
     isError,
   } = useGetConfiguration(id ?? '');
 
-  // release lock on beforeunload
-  useConfigLockRelease(id);
+  // acquire lock on mount, schedule release on unmount
+  useConfigLock(id);
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -68,7 +68,7 @@ function buildRetainedDataDisplay(configurationData: GetConfigurationResponse) {
     .map((c) => c.display_name)
     .join(', ');
 
-  const customCodeCount = configurationData.custom_codes.codes.length;
+  const customCodeCount = configurationData.custom_codes.length;
 
   let result = `${codeSetNames} code set(s)`;
 
