@@ -80,6 +80,8 @@ class ProcessedCondition(TypedDict):
 
 type SystemDbId = str
 type SystemOid = str
+type CodeVersion = str
+
 type CodeValue = str
 type DbCodedConcept = tuple[SystemDbId, CodeValue]
 
@@ -175,6 +177,11 @@ def _build_codes(
 
         condition_child_rsg_snomed_codes: set[DbCodedConcept] = set()
         condition_non_child_rsg_snomed_codes: set[DbCodedConcept] = set()
+
+        child_tuples: set[FhirCodeTuple] = set()
+
+        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
 
         child_tuples: set[FhirCodeTuple] = set()
 

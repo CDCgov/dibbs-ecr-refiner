@@ -631,24 +631,10 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: active_payload_schema_reactivations_one_complete_per_version_id; Type: INDEX; Schema: public; Owner: -
+-- Name: codes_upsert_constraint_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX active_payload_schema_reactivations_one_complete_per_version_id ON public.active_payload_schema_reactivations USING btree (target_schema_version) WHERE (status = 'COMPLETE'::text);
-
-
---
--- Name: active_payload_schema_reactivations_status_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX active_payload_schema_reactivations_status_idx ON public.active_payload_schema_reactivations USING btree (status);
-
-
---
--- Name: active_payload_schema_reactivations_target_schema_version_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON public.active_payload_schema_reactivations USING btree (target_schema_version);
+CREATE UNIQUE INDEX codes_upsert_constraint_idx ON public.codes USING btree (system_id, version, code);
 
 
 --
