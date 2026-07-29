@@ -324,7 +324,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               {
                 onSuccess: async (resp) => {
                   await navigate(
-                    `/configurations/${resp.data.id}/manage-codes`
+                    `/configurations/${resp.data.id}/customize-sections`
                   );
 
                   showToast({
