@@ -13,6 +13,7 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 from app.api.v1.configurations.model import AddCustomCodeInput
+from app.core.config import get_db_config
 from app.db.configurations.model import (
     DbNarrativeAction,
     DbSectionAction,
@@ -42,7 +43,6 @@ from fastapi import status
 from rich.console import Console
 
 from app.api.auth.session import get_hashed_token
-from app.core.config import ENVIRONMENT
 from app.db.pool import create_db
 from scripts.validation.validate_document_schematron import (
     STANDARDS_MAP,
@@ -389,8 +389,8 @@ async def reset_db(db_pool):
 async def db_pool(setup):
     # setup as a dependency guarantees that the pool isn't created until migrations have run
     db = create_db(
-        db_url=ENVIRONMENT["DB_URL"],
-        db_password=ENVIRONMENT["DB_PASSWORD"],
+        db_url=get_db_config().DB_URL,
+        db_password=get_db_config().DB_PASSWORD,
         prepare_threshold=None,
     )
     await db.connect()

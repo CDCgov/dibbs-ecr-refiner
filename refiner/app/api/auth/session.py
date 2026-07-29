@@ -9,14 +9,14 @@ from logging import Logger
 from fastapi import Response
 from psycopg.rows import dict_row
 
+from app.core.config import AppConfig, get_auth_config
 from app.db.pool import AsyncDatabaseConnection
 
-from ...core.config import ENVIRONMENT
 from ...db.users.model import DbUser
 
 SESSION_EXPIRY_SECONDS = 3600  # one hour
 SESSION_TTL = timedelta(seconds=SESSION_EXPIRY_SECONDS)
-SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
+SESSION_SECRET_KEY = get_auth_config().SESSION_SECRET_KEY.encode("utf-8")
 
 
 def get_hashed_token(token: str) -> str:
@@ -34,15 +34,18 @@ def get_hashed_token(token: str) -> str:
     ).hexdigest()
 
 
-def set_session_cookie(response: Response, session_token: str) -> None:
+def set_session_cookie(
+    response: Response, app_config: AppConfig, session_token: str
+) -> None:
     """
     Sets the user's session cookie.
 
     Args:
         response (Response): The response object
+        app_config (AppConfig): The required application environment variables.
         session_token (str): The user's session token
     """
-    env = ENVIRONMENT["ENV"]
+    env = app_config.ENV
 
     response.set_cookie(
         key="refiner-session",

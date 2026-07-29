@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pythonjsonlogger.json import JsonFormatter
 
-from ..core.config import ENVIRONMENT
+from app.core.config import AppConfig
 
 _logger = logging.getLogger("refiner")
 
@@ -45,7 +45,7 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-def setup_logger() -> logging.Logger:
+def setup_logger(app_config: AppConfig) -> logging.Logger:
     """
     Called to initially configure the logger.
     """
@@ -53,7 +53,7 @@ def setup_logger() -> logging.Logger:
 
     handler = logging.StreamHandler()
     handler.setFormatter(
-        JsonFormatter(defaults={"service": "refiner", "env": ENVIRONMENT["ENV"]})
+        JsonFormatter(defaults={"service": "refiner", "env": app_config.ENV})
     )
 
     handler.addFilter(RequestIdFilter())
