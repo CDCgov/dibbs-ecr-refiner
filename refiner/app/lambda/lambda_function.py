@@ -8,7 +8,6 @@ import json
 import os
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
 from typing import Any, TypedDict
 
 import boto3
@@ -224,7 +223,7 @@ def lambda_handler(event, context) -> dict:
                         "Active configuration maintenance is in progress.",
                         operation="active_configuration_maintenance",
                         lock_key=MAINTENANCE_LOCK_KEY,
-                        migration=maintenance_lock.get("migration"),
+                        reactivation=maintenance_lock.get("reactivation"),
                         started_at=maintenance_lock.get("started_at"),
                         expires_at=maintenance_lock.get("expires_at"),
                         persistence_id=persistence_id,
@@ -351,61 +350,57 @@ def lambda_handler(event, context) -> dict:
 ###############################################
 
 
-def read_active_configuration_maintenance_lock(
-    s3_client,
-    bucket: str,
-) -> dict | None:
+def read_active_configuration_maintenance_lock() -> dict | None:
     """
-    Return the active maintenance lock, or None when no active lock exists.
+    Read the active configuration maintenance lock from S3.
 
-    An expired lock is treated as inactive. A malformed lock raises an error so
-    refinement fails closed instead of running during an uncertain migration.
-
-    Args:
-        s3_client: Boto3 S3 client.
-        bucket: Configuration bucket name.
-
-    Returns:
-        dict | None: Lock contents when maintenance is active, otherwise None.
+    If the lock is missing, expired, empty, null, or invalid JSON, treat it as
+    no active lock. A malformed lock should not fail refinement processing.
     """
 
     try:
         response = s3_client.get_object(
-            Bucket=bucket,
+            Bucket=S3_CONFIGURATION_BUCKET_NAME,
             Key=MAINTENANCE_LOCK_KEY,
         )
-    except ClientError as e:
-        error_code = e.response.get("Error", {}).get("Code")
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
 
         if error_code in {"404", "NoSuchKey", "NotFound"}:
             return None
 
         raise
 
-    lock = parse_s3_content_to_dict(response["Body"].read().decode("utf-8"))
-
-    expires_at_value = lock.get("expires_at")
-    if not isinstance(expires_at_value, str):
-        raise ValueError(
-            f"Maintenance lock at {MAINTENANCE_LOCK_KEY} is missing expires_at."
-        )
+    lock_body = response["Body"].read().decode("utf-8")
 
     try:
-        expires_at = datetime.fromisoformat(expires_at_value)
-    except ValueError as e:
-        raise ValueError(
-            f"Maintenance lock at {MAINTENANCE_LOCK_KEY} has an invalid expires_at."
-        ) from e
-
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=UTC)
-
-    if expires_at <= datetime.now(UTC):
+        lock = parse_s3_content_to_dict(lock_body)
+    except json.JSONDecodeError:
         logger.warning(
-            "Ignoring expired active configuration maintenance lock.",
-            operation="active_configuration_maintenance",
-            lock_key=MAINTENANCE_LOCK_KEY,
-            expires_at=expires_at_value,
+            "Active configuration maintenance lock could not be parsed; "
+            "treating as no active lock. bucket=%s key=%s",
+            S3_CONFIGURATION_BUCKET_NAME,
+            MAINTENANCE_LOCK_KEY,
+            exc_info=True,
+        )
+        return None
+
+    if lock is None:
+        logger.warning(
+            "Active configuration maintenance lock was null; treating as no active lock. "
+            "bucket=%s key=%s",
+            S3_CONFIGURATION_BUCKET_NAME,
+            MAINTENANCE_LOCK_KEY,
+        )
+        return None
+
+    if not isinstance(lock, dict):
+        logger.warning(
+            "Active configuration maintenance lock was not an object; "
+            "treating as no active lock. bucket=%s key=%s lock_type=%s",
+            S3_CONFIGURATION_BUCKET_NAME,
+            MAINTENANCE_LOCK_KEY,
+            type(lock).__name__,
         )
         return None
 
