@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse, UserResponse } from '../../api/schemas';
-import { ManageCodes } from './ManageCodes';
+import { CustomizeSections } from './CustomizeSections';
 
 const mockUser: UserResponse = {
   id: '1',
@@ -61,6 +61,7 @@ vi.mock('../../api/configurations/configurations', async () => {
             },
           ],
           all_versions: [],
+          section_processing: [],
         },
       },
     })),
@@ -103,8 +104,8 @@ const renderPageView = () =>
             element={<Configurations user={mockUser} refreshUser={vi.fn()} />}
           />
           <Route
-            path="/configurations/:id/manage-codes"
-            element={<ManageCodes />}
+            path="/configurations/:id/customize-sections"
+            element={<CustomizeSections />}
           />
         </Routes>
       </TestQueryClientProvider>
@@ -194,7 +195,7 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
   });
 
-  it('should create a new config and takes the user to the build page', async () => {
+  it('should create a new config and takes the user to the customize sections page', async () => {
     const user = userEvent.setup();
 
     const response: CreateConfigurationResponse = {
@@ -258,7 +259,7 @@ describe('Configurations Page', () => {
 
     // Check that navigation to the build page worked
     expect(
-      await screen.findByText('Anaplasmosis', { selector: 'h1' })
+      await screen.findByRole('heading', { name: 'Anaplasmosis', level: 1 })
     ).toBeInTheDocument();
 
     expect(

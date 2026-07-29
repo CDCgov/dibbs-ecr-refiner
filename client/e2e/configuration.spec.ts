@@ -422,6 +422,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Add a code set', async () => {
+      await configurationPage.goToManageCodesTab();
       await expect(
         page.getByRole('heading', { name: condition, level: 1 })
       ).toBeVisible();
@@ -471,7 +472,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Delete custom section', async () => {
-      await page.getByRole('button', { name: 'Sections' }).click();
+      await configurationPage.goToCustomizeSectionsTab();
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
