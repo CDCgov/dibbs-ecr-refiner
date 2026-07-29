@@ -350,7 +350,10 @@ def lambda_handler(event, context) -> dict:
 ###############################################
 
 
-def read_active_configuration_maintenance_lock() -> dict | None:
+def read_active_configuration_maintenance_lock(
+    s3_client,
+    bucket: str,
+) -> dict | None:
     """
     Read the active configuration maintenance lock from S3.
 
@@ -360,7 +363,7 @@ def read_active_configuration_maintenance_lock() -> dict | None:
 
     try:
         response = s3_client.get_object(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME,
+            Bucket=bucket,
             Key=MAINTENANCE_LOCK_KEY,
         )
     except ClientError as exc:
@@ -379,7 +382,7 @@ def read_active_configuration_maintenance_lock() -> dict | None:
         logger.warning(
             "Active configuration maintenance lock could not be parsed; "
             "treating as no active lock. bucket=%s key=%s",
-            S3_CONFIGURATION_BUCKET_NAME,
+            bucket,
             MAINTENANCE_LOCK_KEY,
             exc_info=True,
         )
@@ -389,7 +392,7 @@ def read_active_configuration_maintenance_lock() -> dict | None:
         logger.warning(
             "Active configuration maintenance lock was null; treating as no active lock. "
             "bucket=%s key=%s",
-            S3_CONFIGURATION_BUCKET_NAME,
+            bucket,
             MAINTENANCE_LOCK_KEY,
         )
         return None
@@ -398,7 +401,7 @@ def read_active_configuration_maintenance_lock() -> dict | None:
         logger.warning(
             "Active configuration maintenance lock was not an object; "
             "treating as no active lock. bucket=%s key=%s lock_type=%s",
-            S3_CONFIGURATION_BUCKET_NAME,
+            bucket,
             MAINTENANCE_LOCK_KEY,
             type(lock).__name__,
         )
