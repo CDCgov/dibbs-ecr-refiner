@@ -16,21 +16,24 @@ from ...db.users.model import DbUser
 
 SESSION_EXPIRY_SECONDS = 3600  # one hour
 SESSION_TTL = timedelta(seconds=SESSION_EXPIRY_SECONDS)
-SESSION_SECRET_KEY = get_auth_config().SESSION_SECRET_KEY.encode("utf-8")
 
 
-def get_hashed_token(token: str) -> str:
+def get_hashed_token(token: str, secret_key: str | None = None) -> str:
     """
     Given a session token, calculates a hash using the session secret key.
 
     Args:
         token (str): Session token
+        secret_key: str | None: Optional secret key value. If not provided, uses `SESSION_SECRET_KEY` env variable.
 
     Returns:
         str: Hashed session token
     """
+    resolved_key = secret_key or get_auth_config().SESSION_SECRET_KEY
     return hmac.new(
-        SESSION_SECRET_KEY, token.encode("utf-8"), hashlib.sha256
+        resolved_key.encode("utf-8"),
+        token.encode("utf-8"),
+        hashlib.sha256,
     ).hexdigest()
 
 

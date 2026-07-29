@@ -4,8 +4,6 @@ from authlib.integrations.starlette_client import OAuth, StarletteOAuth2App
 
 from app.core.config import get_app_config, get_auth_config
 
-_SESSION_SECRET_KEY = get_auth_config().SESSION_SECRET_KEY
-
 _oauth = OAuth()
 
 if get_app_config().ENV == "local":
@@ -60,4 +58,4 @@ def get_session_secret_key() -> str:
     Returns:
         str: Session secret key
     """
-    return _SESSION_SECRET_KEY
+    return get_auth_config().SESSION_SECRET_KEY

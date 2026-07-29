@@ -6,18 +6,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
-from lxml import etree
-from psycopg.rows import dict_row
-from saxonche import PySaxonProcessor
-from testcontainers.compose import DockerCompose
-
-from app.api.v1.configurations.model import AddCustomCodeInput
-from app.core.config import get_db_config
-from app.db.configurations.model import (
-    DbNarrativeAction,
-    DbSectionAction,
-)
 
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
@@ -28,21 +16,34 @@ os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
 os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
 os.environ["AUTH_ISSUER"] = "http://mock.com"
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
-
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["AWS_ACCESS_KEY_ID"] = "refiner"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "refiner"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
-
-# ensure session secret is set before `app` imports
+# # ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
-
 from fastapi import status
+from httpx import AsyncClient
+from lxml import etree
+from psycopg.rows import dict_row
 from rich.console import Console
+from saxonche import PySaxonProcessor
+from testcontainers.compose import DockerCompose
 
 from app.api.auth.session import get_hashed_token
+from app.api.v1.configurations.model import AddCustomCodeInput
+from app.core.config import (
+    get_app_config,
+    get_auth_config,
+    get_db_config,
+    get_s3_config,
+)
+from app.db.configurations.model import (
+    DbNarrativeAction,
+    DbSectionAction,
+)
 from app.db.pool import create_db
 from scripts.validation.validate_document_schematron import (
     STANDARDS_MAP,
@@ -52,9 +53,17 @@ from scripts.validation.validate_document_schematron import (
 )
 from scripts.validation.validate_document_xsd import build_schema, display_xsd_results
 
+get_app_config.cache_clear()
+get_auth_config.cache_clear()
+get_db_config.cache_clear()
+get_s3_config.cache_clear()
+
 # Session info
 TEST_SESSION_TOKEN = "test-token"
-TEST_SESSION_TOKEN_HASH = get_hashed_token(TEST_SESSION_TOKEN)
+TEST_SECRET_KEY = "super-secret-key"
+TEST_SESSION_TOKEN_HASH = get_hashed_token(
+    token=TEST_SESSION_TOKEN, secret_key=TEST_SECRET_KEY
+)
 
 # User info
 TEST_USERNAME = "refiner"
