@@ -675,11 +675,7 @@ async def run_active_config_reactivation(
         )
         return
 
-    reactivation_id = await create_reactivation_tracking_record_db(
-        db=db,
-        target_schema_version=CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-    )
-
+    reactivation_id: str | None = None
     lock_created = False
     tracking_record_finalized = False
 
@@ -688,6 +684,16 @@ async def run_active_config_reactivation(
             expiration_minutes=LOCK_EXPIRATION_MINUTES,
         )
         lock_created = True
+
+        try:
+            reactivation_id = await create_reactivation_tracking_record_db(
+                db=db,
+                target_schema_version=CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+            )
+        except Exception:
+            remove_maintenance_lock()
+            lock_created = False
+            raise
 
         await wait_for_lambda_to_drain(
             drain_seconds=LAMBDA_DRAIN_SECONDS,
