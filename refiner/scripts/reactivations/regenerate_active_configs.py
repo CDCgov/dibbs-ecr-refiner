@@ -61,6 +61,7 @@ REACTIVATION_LIMIT: int | None = None
 
 REACTIVATION_MAX_ATTEMPTS = 3
 REACTIVATION_RETRY_BASE_DELAY_SECONDS = 1.0
+MAX_FAILURE_IDS_IN_ERROR = 10
 
 
 class MaintenanceLock(TypedDict):
@@ -684,10 +685,19 @@ async def run_active_config_reactivation(
             )
             tracking_record_finalized = True
 
-            raise RuntimeError(
-                "Failed to regenerate active configurations: "
-                + ", ".join(result["failures"])
+            failure_ids_for_error = result["failures"][:MAX_FAILURE_IDS_IN_ERROR]
+            remaining_failure_count = failure_count - len(failure_ids_for_error)
+
+            error_message = (
+                "Failed to regenerate active configurations. "
+                f"failure_count={failure_count} "
+                f"first_failure_ids={', '.join(failure_ids_for_error)}"
             )
+
+            if remaining_failure_count > 0:
+                error_message += f" remaining_failure_count={remaining_failure_count}"
+
+            raise RuntimeError(error_message)
 
         await update_reactivation_tracking_record_db(
             db=db,
