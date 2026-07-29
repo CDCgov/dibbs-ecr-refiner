@@ -98,5 +98,6 @@ services:
     environment:
       - DB_URL=postgresql://postgres@db:5432/refiner
       - DB_PASSWORD=refiner
+
     volumes:
       - .:/app
