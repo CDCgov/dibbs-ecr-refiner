@@ -8,29 +8,26 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { Spinner } from '@components/Spinner';
+import { ActivateButton } from './ActivateButton';
 
 interface SwitchToVersionButtonProps {
   handleActivation: () => void;
   curVersion: number;
   activeVersion: number | null;
   isLoading: boolean;
+  disabled: boolean;
 }
 export function SwitchToVersionButton({
   handleActivation,
   curVersion,
   activeVersion,
   isLoading,
+  disabled,
 }: SwitchToVersionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div>
-      <Button
-        variant="primary"
-        onClick={() => setIsOpen(true)}
-        className="self-start"
-      >
-        Activate this version
-      </Button>
+      <ActivateButton onClick={() => setIsOpen(true)} disabled={disabled} />
       <SwitchToVersionModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

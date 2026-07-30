@@ -119,6 +119,7 @@ export function ActivationButtons({
       activeVersion={activeVersion}
       handleActivation={handleActivation}
       isLoading={isLoading}
+      disabled={isLocked}
     />
   );
 }
