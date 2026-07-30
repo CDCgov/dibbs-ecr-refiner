@@ -14,13 +14,24 @@ export class ConfigurationPage {
     await uploadMonmothmaTestFile(this.page);
   }
 
-  async goToBuildTab() {
-    await this.page.getByRole('link', { name: 'Build', exact: true }).click();
-    await this.checkHeading('Build configuration');
+  async goToCustomizeSectionsTab() {
+    await this.page
+      .getByRole('link', { name: 'Customize eICR sections', exact: true })
+      .click();
+    await this.checkHeading('Customize eICR sections');
+  }
+
+  async goToManageCodesTab() {
+    await this.page
+      .getByRole('link', { name: 'Manage codes', exact: true })
+      .click();
+    await this.checkHeading('Manage codes');
   }
 
   async goToTestTab() {
-    await this.page.getByRole('link', { name: 'Test', exact: true }).click();
+    await this.page
+      .getByRole('link', { name: 'Test & export', exact: true })
+      .click();
     await this.checkHeading('Test configuration');
   }
 
@@ -72,7 +83,9 @@ export class ConfigurationPage {
       .getByRole('button', { name: 'Add new custom code' })
       .click();
     await this.page.getByLabel('Code', { exact: true }).fill(code);
-    await this.page.getByLabel('Code system').selectOption(codeSystem);
+    await this.page
+      .getByLabel('Code system')
+      .selectOption({ label: codeSystem });
     await this.page.getByLabel('Display name').fill(codeName);
     await this.page.getByRole('button', { name: 'Add custom code' }).click();
   }

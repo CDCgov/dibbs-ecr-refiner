@@ -1,10 +1,27 @@
-import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, Mock } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import { TestQueryClientProvider } from '../../../../test-utils';
-import { Sections } from '.';
-import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { TestQueryClientProvider } from '../../../test-utils';
+import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import userEvent from '@testing-library/user-event';
+import { baseMockConfig, MOCK_CONFIG_DRAFT_ID } from '../test/fixtures';
+import { CustomizeSections } from '.';
+import { MemoryRouter, Routes, Route } from 'react-router';
+import { useGetConfiguration } from '../../../api/configurations/configurations';
+
+// Mock configurations request
+vi.mock('../../../api/configurations/configurations', async () => {
+  const actual = await vi.importActual(
+    '../../../api/configurations/configurations'
+  );
+  return {
+    ...actual,
+    useGetConfiguration: vi.fn(() => ({
+      data: {
+        data: { ...baseMockConfig, section_processing: sections },
+      },
+    })),
+  };
+});
 
 const sections: DbConfigurationSectionProcessing[] = [
   {
@@ -113,17 +130,28 @@ const sectionsWithKeepOnMatch: DbConfigurationSectionProcessing[] = [
   },
 ];
 
-const testId = 'test-id';
-
-function renderWithClient(ui: React.ReactElement) {
-  return render(<TestQueryClientProvider>{ui}</TestQueryClientProvider>);
+function renderPage() {
+  return render(
+    <MemoryRouter
+      initialEntries={[
+        `/configurations/${MOCK_CONFIG_DRAFT_ID}/customize-sections`,
+      ]}
+    >
+      <TestQueryClientProvider>
+        <Routes>
+          <Route
+            path="/configurations/:id/customize-sections"
+            element={<CustomizeSections />}
+          />
+        </Routes>
+      </TestQueryClientProvider>
+    </MemoryRouter>
+  );
 }
 
 describe('Configuration sections', () => {
   it('should display sections based on stored section data', () => {
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     const rows = screen.getAllByRole('row');
     expect(rows).toHaveLength(5);
@@ -173,9 +201,7 @@ describe('Configuration sections', () => {
   });
 
   it('should render narrative dropdown with correct options', () => {
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     const selects = screen.getAllByRole('combobox');
     expect(selects.length).toBeGreaterThanOrEqual(1);
@@ -192,9 +218,7 @@ describe('Configuration sections', () => {
   });
 
   it('should blank out narrative controls for excluded rows', () => {
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     const rows = screen.getAllByRole('row');
     const medRow = rows[2];
@@ -204,13 +228,15 @@ describe('Configuration sections', () => {
   });
 
   it('should disable narrative dropdown for disabled section LOINC codes', () => {
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithDisabled}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithDisabled,
+        },
+      },
+    });
+    renderPage();
 
     const disabledSectionName = screen.getByText('Disabled section');
     const row = disabledSectionName.closest('tr');
@@ -223,9 +249,7 @@ describe('Configuration sections', () => {
   it('should allow custom section additions', async () => {
     const user = userEvent.setup();
 
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     expect(screen.getByText('Add custom section')).toBeInTheDocument();
     await user.click(screen.getByText('Add custom section'));
@@ -251,9 +275,7 @@ describe('Configuration sections', () => {
   });
 
   it('should allow custom section edits', () => {
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     const cell = screen.getByText('Mock custom section');
     const row = cell.closest('tr');
@@ -270,9 +292,7 @@ describe('Configuration sections', () => {
   });
 
   it('should allow custom section deletions', () => {
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     const cell = screen.getByText('Mock custom section');
     const row = cell.closest('tr');
@@ -289,13 +309,16 @@ describe('Configuration sections', () => {
   });
 
   it('should not show Reconstruct option for narrative-only sections', () => {
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithNarrativeOnly}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithNarrativeOnly,
+        },
+      },
+    });
+
+    renderPage();
 
     const chiefComplaintName = screen.getByText('Chief Complaint');
     const row = chiefComplaintName.closest('tr');
@@ -315,13 +338,16 @@ describe('Configuration sections', () => {
   });
 
   it('should disable Reconstruct option when coded data action is retain', () => {
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithReconstruct}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithReconstruct,
+        },
+      },
+    });
+
+    renderPage();
 
     const medicationsName = screen.getByText('Medications section');
     const row = medicationsName.closest('tr');
@@ -340,13 +366,15 @@ describe('Configuration sections', () => {
   });
 
   it('should enable Reconstruct option when coded data action is reconstruct', () => {
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithReconstruct}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithReconstruct,
+        },
+      },
+    });
+    renderPage();
 
     const problemsName = screen.getByText('Results section');
     const row = problemsName.closest('tr');
@@ -367,14 +395,15 @@ describe('Configuration sections', () => {
 
   it('should show error when trying to switch coded data to retain while narrative is reconstruct', async () => {
     const user = userEvent.setup();
-
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithReconstruct}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithReconstruct,
+        },
+      },
+    });
+    renderPage();
 
     const problemsName = screen.getByText('Results section');
     const row = problemsName.closest('tr');
@@ -397,13 +426,16 @@ describe('Configuration sections', () => {
   });
 
   it('should enable Keep on match option when coded data action is refine', () => {
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithKeepOnMatch}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithKeepOnMatch,
+        },
+      },
+    });
+
+    renderPage();
 
     const problemsName = screen.getByText('Results section');
     const row = problemsName.closest('tr');
@@ -423,13 +455,15 @@ describe('Configuration sections', () => {
   });
 
   it('should disable Keep on match option when coded data action is retain', () => {
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithKeepOnMatch}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithKeepOnMatch,
+        },
+      },
+    });
+    renderPage();
 
     const immName = screen.getByText('Immunizations section');
     const row = immName.closest('tr');
@@ -451,13 +485,16 @@ describe('Configuration sections', () => {
   it('should show error when trying to switch coded data to retain while narrative is keep_on_match', async () => {
     const user = userEvent.setup();
 
-    renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sectionsWithKeepOnMatch}
-      />
-    );
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          section_processing: sectionsWithKeepOnMatch,
+        },
+      },
+    });
+
+    renderPage();
 
     const problemsName = screen.getByText('Results section');
     const row = problemsName.closest('tr');
@@ -482,9 +519,7 @@ describe('Configuration sections', () => {
   it('should open info modal when clicking ? icon', async () => {
     const user = userEvent.setup();
 
-    renderWithClient(
-      <Sections configurationId={testId} disabled={false} sections={sections} />
-    );
+    renderPage();
 
     const infoButtons = screen.getAllByText('More information');
     await user.click(infoButtons[1]);

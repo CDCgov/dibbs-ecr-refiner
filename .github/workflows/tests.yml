@@ -138,7 +138,7 @@ jobs:
         working-directory: client
 
       - name: Start Application
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up --detach --build
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up --detach --build --wait
 
       - name: Wait for Auth Service to be Ready
         run: |

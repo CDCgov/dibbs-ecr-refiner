@@ -15,12 +15,10 @@ import { useState } from 'react';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
-  isLocked?: boolean;
 }
 
 export function ActivationButtons({
   configurationData,
-  isLocked = false,
 }: ActivationButtonsProps) {
   const queryClient = useQueryClient();
 
@@ -31,6 +29,8 @@ export function ActivationButtons({
   const showToast = useToast();
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const isLocked = configurationData.is_locked;
 
   async function handleActivation() {
     setIsLoading(true);

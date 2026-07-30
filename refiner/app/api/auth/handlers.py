@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from app.core.config import AppConfig, get_app_config
 from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.tes import get_latest_tes_version
 
@@ -22,7 +23,7 @@ from ...db.users.db import (
 )
 from ...db.users.model import DbUser
 from ...services.logger import get_logger
-from .config import ENVIRONMENT, get_oauth_provider
+from .config import get_oauth_provider
 from .session import (
     create_session,
     delete_session,
@@ -35,19 +36,22 @@ auth_router = APIRouter()
 
 @auth_router.get("/login", tags=["auth", "internal"], include_in_schema=False)
 async def login(
-    request: Request, logger: Logger = Depends(get_logger)
+    request: Request,
+    app_config: AppConfig = Depends(get_app_config),
+    logger: Logger = Depends(get_logger),
 ) -> RedirectResponse:
     """
     Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.
 
     Args:
         request (Request): The incoming HTTP/S request.
+        app_config (AppConfig): The required application environment variables
         logger (Logger): The standard logger.
 
     Returns:
         RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.
     """
-    env = ENVIRONMENT["ENV"]
+    env = app_config.ENV
 
     redirect_uri = (
         request.url_for("auth_callback").replace(
@@ -74,6 +78,7 @@ async def login(
 )
 async def auth_callback(
     request: Request,
+    app_config: AppConfig = Depends(get_app_config),
     logger: Logger = Depends(get_logger),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> RedirectResponse:
@@ -82,6 +87,7 @@ async def auth_callback(
 
     Args:
         request (Request): The incoming HTTP request containing the authorization code.
+        app_config (AppConfig): The required application environment variables.
         logger (Logger): The standard logger.
         db (AsyncDatabaseConnection): The DB connection pool.
 
@@ -190,7 +196,7 @@ async def auth_callback(
         # Create a session for the user
         session_token = await create_session(user_id=user_id, db=db)
 
-        env = ENVIRONMENT["ENV"]
+        env = app_config.ENV
         redirect_uri = "/" if env != "local" else "http://localhost:8081"
         response = RedirectResponse(url=redirect_uri)
 
@@ -204,7 +210,9 @@ async def auth_callback(
             secure=env != "local",
         )
 
-        set_session_cookie(response=response, session_token=session_token)
+        set_session_cookie(
+            response=response, app_config=app_config, session_token=session_token
+        )
         return response
 
     except Exception:
@@ -329,6 +337,7 @@ async def get_user(
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
 async def logout(
     request: Request,
+    app_config: AppConfig = Depends(get_app_config),
     logger: Logger = Depends(get_logger),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> RedirectResponse:
@@ -337,6 +346,7 @@ async def logout(
 
     Args:
         request (Request): The incoming HTTP request.
+        app_config (AppConfig): The required application environment variables.
         logger (Logger): The standard logger.
         db (AsyncDatabaseConnection): The database connection.
 
@@ -345,7 +355,7 @@ async def logout(
     """
 
     # Redirect to client
-    env = ENVIRONMENT["ENV"]
+    env = app_config.ENV
     post_logout_redirect_uri = "/" if env != "local" else "http://localhost:8081"
 
     session_token = request.cookies.get("refiner-session")

@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from app.services.pipeline import RefinementResult
+from tests.utils.normalize_xml import normalize_xml
 
-from ...unit.conftest import normalize_xml
 from .conftest import SCENARIOS, Scenario, load_scenario_xml_files
 from .harness import refine_one
 

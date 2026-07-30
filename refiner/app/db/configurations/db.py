@@ -5,7 +5,12 @@ from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
+from app.api.v1.configurations.model import (
+    AddCustomCodeInput,
+    AddSectionInput,
+    DeleteSectionInput,
+)
+from app.db.code_systems.db import DbCodeSystem, get_code_system_by_id_db
 from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
@@ -14,9 +19,9 @@ from app.db.configurations.labels import (
     CODED_DATA_LABELS,
     NARRATIVE_DATA_LABELS,
 )
+from app.db.custom_codes.model import DbCustomCode
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
-from app.services.code_systems import get_all_code_systems_by_key
 from app.services.configurations import (
     clone_section_processing_instructions,
     get_default_sections,
@@ -28,7 +33,6 @@ from ..pool import AsyncDatabaseConnection
 from .model import (
     BulkAddCustomCodesResult,
     DbConfiguration,
-    DbConfigurationCustomCode,
     DbConfigurationSection,
     DbConfigurationSectionProcessing,
     DbConfigurationSummary,
@@ -283,14 +287,12 @@ async def insert_configuration_db(
         jurisdiction_id,
         name,
         created_by,
-        custom_codes,
         version
     )
     VALUES (
         %s,
         %s,
         %s,
-        %s::jsonb,
         %s
     )
     RETURNING
@@ -312,13 +314,6 @@ async def insert_configuration_db(
                     config_to_clone.name,
                     # cloned by this user
                     user_id,
-                    # custom_codes
-                    Jsonb(
-                        [
-                            {"name": c.name, "code": c.code, "system_key": c.system_key}
-                            for c in config_to_clone.custom_codes
-                        ]
-                    ),
                     next_version,
                 )
             else:
@@ -328,8 +323,6 @@ async def insert_configuration_db(
                     latest_condition.display_name,
                     # created by this user
                     user_id,
-                    # custom_codes
-                    EMPTY_JSONB,
                     next_version,
                 )
 
@@ -351,6 +344,19 @@ async def insert_configuration_db(
                     ),
                     cursor=cur,
                 )
+
+                # Clone custom codes
+                if config_to_clone.custom_codes:
+                    await cur.executemany(
+                        """
+                        INSERT INTO custom_codes (configuration_id, code, display, system_id)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        [
+                            (config_id, cc.code, cc.display, cc.system_id)
+                            for cc in config_to_clone.custom_codes
+                        ],
+                    )
             else:
                 await _insert_configuration_sections_db(
                     configuration_id=config_id,
@@ -676,7 +682,9 @@ async def get_total_condition_code_counts_by_configuration_db(
 
 async def add_custom_code_to_configuration_db(
     config: DbConfiguration,
-    custom_code: DbConfigurationCustomCode,
+    display_name: str,
+    code: str,
+    system_id: UUID,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -685,29 +693,13 @@ async def add_custom_code_to_configuration_db(
     """
 
     query = """
-            UPDATE configurations
-            SET custom_codes = %s::jsonb
-            WHERE id = %s
-            RETURNING
-                id;
-            """
+            INSERT INTO custom_codes (configuration_id, display, code, system_id)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (configuration_id, system_id, code) DO NOTHING
+            RETURNING id;
+        """
 
-    custom_codes = config.custom_codes
-
-    exists = any(
-        (c.code == custom_code.code and c.system_key == custom_code.system_key)
-        for c in custom_codes
-    )
-
-    if not exists:
-        custom_codes.append(custom_code)
-
-    json = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in custom_codes
-    ]
-
-    params = (Jsonb(json), config.id)
+    params = (config.id, display_name, code, system_id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -723,7 +715,7 @@ async def add_custom_code_to_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="add_code",
-                    action_text=f"Added custom code '{custom_code.code}'",
+                    action_text=f"Added custom code '{code}'",
                 ),
                 cursor=cur,
             )
@@ -735,7 +727,8 @@ async def add_custom_code_to_configuration_db(
 
 async def add_bulk_custom_codes_to_configuration_db(
     config: DbConfiguration,
-    custom_codes: list[DbConfigurationCustomCode],
+    custom_codes: list[AddCustomCodeInput],
+    code_systems: list[DbCodeSystem],
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> BulkAddCustomCodesResult | None:
@@ -746,49 +739,40 @@ async def add_bulk_custom_codes_to_configuration_db(
         BulkAddCustomCodesResult | None
     """
 
-    query = """
-        UPDATE configurations
-        SET custom_codes = %s::jsonb
-        WHERE id = %s
-        RETURNING
-            id;
+    placeholders = ", ".join(["(%s, %s, %s, %s)"] * len(custom_codes))
+    query = f"""
+        INSERT INTO custom_codes (configuration_id, display, code, system_id)
+        VALUES {placeholders}
+        ON CONFLICT DO NOTHING
+        RETURNING *;
     """
 
-    existing_codes = config.custom_codes or []
-
-    # Build a set of (code, system_key) for fast lookup
-    existing_keys = {(c.code, c.system_key) for c in existing_codes}
-
-    new_codes_added: list[DbConfigurationCustomCode] = []
-    code_systems = await get_all_code_systems_by_key(db=db)
-
-    for code in custom_codes:
-        key = (code.code, code.system_key)
-        if key not in existing_keys:
-            existing_codes.append(code)
-            existing_keys.add(key)
-            new_codes_added.append(code)
-
-    json_payload = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in existing_codes
+    params = [
+        val for c in custom_codes for val in (config.id, c.display, c.code, c.system_id)
     ]
-
-    params = (Jsonb(json_payload), config.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            row = await cur.fetchone()
-
-            if not row:
-                return None
+            new_codes_added = await cur.fetchall()
 
             # Insert a single audit event if codes were added
             await insert_custom_code_upload_events_db(
                 configuration=config,
                 user_id=user_id,
-                custom_codes=new_codes_added,
+                custom_codes=[
+                    # TODO: add `from_db_row`?
+                    DbCustomCode(
+                        id=cc["id"],
+                        code=cc["code"],
+                        display=cc["display"],
+                        system_id=cc["system_id"],
+                        created_at=cc["created_at"],
+                        updated_at=cc["updated_at"],
+                        configuration_id=cc["configuration_id"],
+                    )
+                    for cc in new_codes_added
+                ],
                 code_systems=code_systems,
                 cursor=cur,
             )
@@ -808,30 +792,21 @@ async def add_bulk_custom_codes_to_configuration_db(
 
 async def delete_custom_code_from_configuration_db(
     config: DbConfiguration,
-    system_key: str,
-    code: str,
+    id: UUID,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
-    Given a config, system_key, and custom code, deletes the custom code from the configuration.
+    Given a config and custom code ID, deletes the custom code from the configuration.
     """
 
     query = """
-            UPDATE configurations
-            SET custom_codes = %s::jsonb
+            DELETE FROM custom_codes
             WHERE id = %s
             RETURNING
-                id;
+                code;
             """
-
-    updated_custom_codes = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in config.custom_codes
-        if not (cc.system_key == system_key and cc.code == code)
-    ]
-
-    params = (Jsonb(updated_custom_codes), config.id)
+    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -847,7 +822,7 @@ async def delete_custom_code_from_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="delete_code",
-                    action_text=f"Removed custom code '{code}'",
+                    action_text=f"Removed custom code '{row['code']}'",
                 ),
                 cursor=cur,
             )
@@ -859,14 +834,11 @@ async def delete_custom_code_from_configuration_db(
 
 async def edit_custom_code_from_configuration_db(
     config: DbConfiguration,
-    updated_custom_codes: list[DbConfigurationCustomCode],
+    custom_code: DbCustomCode,
     user_id: UUID,
-    prev_code: str,
-    prev_system_key: str,
-    prev_name: str,
-    new_code: str | None,
-    new_system_key: str | None,
-    new_name: str | None,
+    display: str,
+    code: str,
+    system: DbCodeSystem,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -874,19 +846,20 @@ async def edit_custom_code_from_configuration_db(
     """
 
     query = """
-            UPDATE configurations
-            SET custom_codes = %s::jsonb
+            UPDATE custom_codes
+            SET display = %s,
+                code = %s,
+                system_id = %s
             WHERE id = %s
-            RETURNING
-                id;
+            RETURNING *;
             """
 
-    json_codes = [
-        {"code": cc.code, "system_key": cc.system_key, "name": cc.name}
-        for cc in updated_custom_codes
-    ]
-
-    params = (Jsonb(json_codes), config.id)
+    params = (
+        display,
+        code,
+        system.id,
+        custom_code.id,
+    )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -900,38 +873,46 @@ async def edit_custom_code_from_configuration_db(
             events_to_insert = []
 
             # 1. Code changed
-            if new_code is not None and new_code != prev_code:
+            if code != custom_code.code:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated custom code from '{prev_code}' to '{new_code}'",
+                        action_text=f"Updated custom code from '{custom_code.code}' to '{code}'",
                     )
                 )
 
             # 2. Name changed
-            if new_name is not None and new_name != prev_name:
+            if display != custom_code.display:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated name for custom code '{prev_code}' from '{prev_name}' to '{new_name}'",
+                        action_text=f"Updated name for custom code '{custom_code.code}' from '{custom_code.display}' to '{display}'",
                     )
                 )
 
             # 3. System changed
-            if new_system_key is not None and new_system_key != prev_system_key:
+            if system.id != custom_code.system_id:
+                prev_system = await get_code_system_by_id_db(
+                    id=custom_code.system_id, db=db
+                )
+                if prev_system is None:
+                    raise ValueError(
+                        f"Could not find code system with ID {custom_code.system_id}"
+                    )
+
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated system for custom code '{prev_code}' from '{prev_system_key}' to '{new_system_key}'",
+                        action_text=f"Updated system for custom code '{custom_code.code}' from '{prev_system.display_name}' to '{system.display_name}'",
                     )
                 )
 
@@ -1259,7 +1240,7 @@ def _get_configurations_core_query() -> str:
         c.status,
         c.jurisdiction_id,
         cc_primary.condition_id,
-        c.custom_codes,
+        COALESCE(codes.custom_codes, '[]'::jsonb) AS custom_codes,
 
         COALESCE(conds.included_conditions, '{}') AS included_conditions,
         COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
@@ -1271,6 +1252,21 @@ def _get_configurations_core_query() -> str:
         c.s3_url
     FROM configurations c
     JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
+    LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+                   jsonb_build_object(
+                       'id', cc.id::text,
+                       'code', cc.code,
+                       'display', cc.display,
+                       'system_id', cc.system_id::text,
+                       'created_at', cc.created_at,
+                       'updated_at', cc.updated_at,
+                       'configuration_id', cc.configuration_id::text
+                   )
+               ) AS custom_codes
+        FROM custom_codes cc
+        WHERE cc.configuration_id = c.id
+    ) codes ON TRUE
     LEFT JOIN LATERAL (
         SELECT array_agg(cc.condition_id) AS included_conditions
         FROM configurations_conditions cc

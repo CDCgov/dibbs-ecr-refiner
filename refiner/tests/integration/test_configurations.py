@@ -5,15 +5,14 @@ from uuid import uuid4
 import pytest
 from fastapi import status
 from psycopg.rows import dict_row
-from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+from app.api.v1.configurations.model import AddCustomCodeInput
 from app.db.code_systems.db import (
     get_code_system_by_key_db,
 )
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.model import DbConfigurationCustomCode
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -107,13 +106,14 @@ class TestConfigurations:
         authed_client,
         get_condition_id,
         get_config_by_id,
+        previous_tes_version,
     ):
         """
         Tests that a brand new, non-cloned configuration always uses the latest
         TES condition information available.
         """
         # Try creating a config with an outdated TES version
-        condition_id = await get_condition_id("Glanders", "5.0.0")
+        condition_id = await get_condition_id("Glanders", previous_tes_version)
         payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
@@ -123,7 +123,6 @@ class TestConfigurations:
         config = await get_config_by_id(config_id)
         assert config["condition_id"] == str(await get_condition_id("Glanders"))
 
-    @pytest.mark.parametrize("OLD_TES_VERSION", ["5.0.0", "4.0.0", "3.0.0", "2.0.0"])
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
         setup,
@@ -135,31 +134,32 @@ class TestConfigurations:
         db_pool,
         associate_codeset,
         activate_config,
-        OLD_TES_VERSION,
+        previous_tes_version,
+        default_tes_version,
     ):
         """
         Tests that configurations using previous TES versions are automatically updated to use the latest condition information when cloned.
         """
 
-        NEW_TES_VERSION = "6.0.0"
         PRIMARY_CONDITION = "COVID-19"
 
         # Try creating a config with an outdated TES version
-        old_condition_id = await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
+        old_condition_id = await get_condition_id(
+            PRIMARY_CONDITION, previous_tes_version
+        )
 
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
                     """
-                    INSERT INTO configurations (jurisdiction_id, name, created_by, custom_codes, version)
-                    VALUES (%s, %s, %s, %s::jsonb, %s)
+                    INSERT INTO configurations (jurisdiction_id, name, created_by, version)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
                     (
                         test_user_jurisdiction_id,
                         PRIMARY_CONDITION,
                         test_user_id,
-                        Jsonb([]),
                         1,
                     ),
                 )
@@ -179,15 +179,15 @@ class TestConfigurations:
         # Ensure the config is using the older version
         config = await get_config_by_id(old_config_id)
         assert config["condition_id"] == str(
-            await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, previous_tes_version)
         )
 
         # Associate a couple of older code sets with the config
         config_id = config["id"]
-        old_code_set_1_id = await get_condition_id("Influenza", OLD_TES_VERSION)
+        old_code_set_1_id = await get_condition_id("Influenza", previous_tes_version)
         await associate_codeset(config_id, old_code_set_1_id)
 
-        old_code_set_2_id = await get_condition_id("Microtia", OLD_TES_VERSION)
+        old_code_set_2_id = await get_condition_id("Microtia", previous_tes_version)
         await associate_codeset(config_id, old_code_set_2_id)
 
         # Activate the old config
@@ -200,12 +200,12 @@ class TestConfigurations:
 
         # This config should have all verion 6.0.0 info (primary condition ID, included conditions array, etc.)
         updated_config = await get_config_by_id(response.json()["id"])
-        new_code_set_1_id = await get_condition_id("Influenza", NEW_TES_VERSION)
-        new_code_set_2_id = await get_condition_id("Microtia", NEW_TES_VERSION)
+        new_code_set_1_id = await get_condition_id("Influenza", default_tes_version)
+        new_code_set_2_id = await get_condition_id("Microtia", default_tes_version)
 
         # Check that all of the new IDs are where they should be
         assert updated_config["condition_id"] == str(
-            await get_condition_id(PRIMARY_CONDITION, NEW_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, default_tes_version)
         )
         assert str(new_code_set_1_id) in [
             uc["condition_id"] for uc in updated_config["code_sets"]
@@ -227,27 +227,29 @@ class TestConfigurations:
         setup,
         authed_client,
         get_condition_id,
+        default_tes_version,
+        previous_tes_version,
     ):
         """
-        Tests that a TES version 5.0.0 code set cannot be associated with a configuration
-        that uses a TES version 6.0.0 primary condition.
+        Tests that a prev TES version code set cannot be associated with a configuration
+        that uses a default TES version  primary condition.
         """
-        # Create config using 6.0.0
-        condition_id = await get_condition_id("Glanders", "6.0.0")
+        # Create config using default
+        condition_id = await get_condition_id("Glanders", default_tes_version)
         payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         config_id = response.json()["id"]
 
-        # Ensure associating a 4.0.0 code set is not allowed
-        old_code_set_id = await get_condition_id("COVID-19", "5.0.0")
+        # Ensure associating a code set a prev version is not allowed
+        old_code_set_id = await get_condition_id("COVID-19", previous_tes_version)
         payload = {"condition_id": str(old_code_set_id)}
         response = await authed_client.put(
             f"api/v1/configurations/{config_id}/code-sets", json=payload
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        expected_error = f"Invalid association for condition with ID: {old_code_set_id}. TES version of condition (5.0.0) does not match version used by configuration (6.0.0)."
+        expected_error = f"Invalid association for condition with ID: {old_code_set_id}. TES version of condition ({previous_tes_version}) does not match version used by configuration ({default_tes_version})."
         assert expected_error in response.json()["detail"]
 
     async def test_custom_sections(self, setup, authed_client, get_condition_id):
@@ -559,25 +561,28 @@ class TestConfigurations:
         initial_display_name = "Mock code"
         initial_system = await get_code_system_by_key_db(key="loinc", db=db_pool)
         assert initial_system
-        await add_custom_code(
+
+        custom_code = await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=initial_code,
-                system_key=initial_system.key,
-                name=initial_display_name,
+                display=initial_display_name,
+                system_id=initial_system.id,
             ),
         )
 
+        new_system = await get_code_system_by_key_db(key=new_system_key, db=db_pool)
+        assert new_system, f"Couldn't get system by key '{new_system_key}'"
+
         edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
-            system_key=initial_system.key,
-            code=initial_code,
-            name=initial_display_name,
-            new_code=new_code,
-            new_name=new_name,
-            new_system_key=new_system_key,
+            id=custom_code["custom_codes"][0]["id"],
+            code=new_code if new_code else initial_code,
+            display=new_name if new_name else initial_display_name,
+            system_id=new_system.id if new_system else initial_system.id,
         )
 
         edit_response = await edit_custom_code(config_id, edit_payload)
+
         assert len(edit_response["custom_codes"]) == 1
         edited_custom_code = edit_response["custom_codes"][0]
 
@@ -587,13 +592,13 @@ class TestConfigurations:
             assert edited_custom_code["code"] == initial_code
 
         if new_system_key:
-            assert edited_custom_code["system_key"] == new_system_key
+            assert edited_custom_code["system_id"] == str(new_system.id)
         else:
-            assert edited_custom_code["system_key"] == initial_system.key
+            assert edited_custom_code["system_id"] == str(initial_system.id)
         if new_name:
-            assert edited_custom_code["name"] == new_name
+            assert edited_custom_code["display"] == new_name
         else:
-            assert edited_custom_code["name"] == initial_display_name
+            assert edited_custom_code["display"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
@@ -648,14 +653,14 @@ class TestConfigurations:
 
         config_id = config["id"]
         same_code = "VERY-FAKE-CODE-00000"
-        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
-        assert loinc_info
+        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=same_code,
-                system_key=loinc_info.key,
-                name="Mock code",
+                display="Mock code",
+                system_id=loinc.id,
             ),
         )
 
@@ -684,28 +689,28 @@ class TestConfigurations:
         config_id = config["id"]
 
         desired_code = "FAKE-DESIRED-CODE-99999"
-        loinc_info = await get_code_system_by_key_db(key="loinc", db=db_pool)
-        assert loinc_info
+        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
+        assert loinc
 
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=desired_code,
-                system_key=loinc_info.key,
-                name="Mock code",
+                display="Mock code",
+                system_id=loinc.id,
             ),
         )
 
         code_to_edit = "FAKE-CODE-TO-EDIT-111"
-        rxnorm_info = await get_code_system_by_key_db(key="rxnorm", db=db_pool)
-        assert rxnorm_info
+        rxnorm = await get_code_system_by_key_db(key="rxnorm", db=db_pool)
+        assert rxnorm
 
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(
+            AddCustomCodeInput(
                 code=code_to_edit,
-                system_key=rxnorm_info.key,
-                name="edit me",
+                display="edit me",
+                system_id=rxnorm.id,
             ),
         )
 

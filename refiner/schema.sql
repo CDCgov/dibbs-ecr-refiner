@@ -1,7 +1,7 @@
 \restrict dbmate
 
 -- Dumped from database version 18.4
--- Dumped by pg_dump version 18.3
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -169,6 +169,17 @@ CREATE TABLE public.conditions (
 
 
 --
+-- Name: conditions_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conditions_codes (
+    condition_id uuid CONSTRAINT conditions_rsg_codes_condition_id_not_null NOT NULL,
+    code_id uuid CONSTRAINT conditions_rsg_codes_code_id_not_null NOT NULL,
+    is_child_rsg boolean DEFAULT false
+);
+
+
+--
 -- Name: conditions_context_groupers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -186,16 +197,6 @@ CREATE TABLE public.conditions_context_groupers (
 
 
 --
--- Name: conditions_rsg_codes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.conditions_rsg_codes (
-    condition_id uuid NOT NULL,
-    code_id uuid NOT NULL
-);
-
-
---
 -- Name: configurations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -204,7 +205,6 @@ CREATE TABLE public.configurations (
     version integer NOT NULL,
     jurisdiction_id text NOT NULL,
     name text NOT NULL,
-    custom_codes jsonb DEFAULT '[]'::jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     status public.configuration_status DEFAULT 'draft'::public.configuration_status NOT NULL,
@@ -266,7 +266,8 @@ CREATE TABLE public.custom_codes (
     code text CONSTRAINT custom_codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    configuration_id uuid
 );
 
 
@@ -420,10 +421,10 @@ ALTER TABLE ONLY public.conditions
 
 
 --
--- Name: conditions_rsg_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_rsg_codes
+ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
@@ -476,19 +477,19 @@ ALTER TABLE ONLY public.configurations_sections
 
 
 --
+-- Name: custom_codes custom_codes_configuration_id_system_id_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_configuration_id_system_id_code_key UNIQUE (configuration_id, system_id, code);
+
+
+--
 -- Name: custom_codes custom_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.custom_codes
     ADD CONSTRAINT custom_codes_pkey PRIMARY KEY (id);
-
-
---
--- Name: custom_codes custom_codes_system_id_value_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.custom_codes
-    ADD CONSTRAINT custom_codes_system_id_value_key UNIQUE (system_id, code);
 
 
 --
@@ -601,6 +602,13 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: codes_upsert_constraint_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX codes_upsert_constraint_idx ON public.codes USING btree (system_id, version, code);
 
 
 --
@@ -717,18 +725,18 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 
 --
--- Name: conditions_rsg_codes conditions_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes conditions_rsg_codes_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_rsg_codes
+ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
 
 
 --
--- Name: conditions_rsg_codes conditions_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes conditions_rsg_codes_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_rsg_codes
+ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
@@ -802,6 +810,14 @@ ALTER TABLE ONLY public.configurations_locks
 
 ALTER TABLE ONLY public.configurations_sections
     ADD CONSTRAINT configurations_sections_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: custom_codes custom_codes_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.custom_codes
+    ADD CONSTRAINT custom_codes_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
 
 
 --
@@ -895,4 +911,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260625154206'),
     ('20260630173611'),
     ('20260701151910'),
-    ('20260709201220');
+    ('20260709201220'),
+    ('20260716184236');

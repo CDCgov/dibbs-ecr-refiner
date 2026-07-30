@@ -1,11 +1,5 @@
-import {
-  NavigationContainer,
-  SectionContainer,
-  TitleContainer,
-} from '../layout';
-import { StepsContainer, Steps } from '../Steps';
+import { Header, SectionContainer } from '../layout';
 import { useParams } from 'react-router';
-import { Title } from '@components/Title';
 import { RunSimulation } from '../../Simulator/RunSimulation';
 import { useState } from 'react';
 import {
@@ -18,8 +12,7 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
 import { Uploading } from '../../Simulator/Uploading';
-import { Status } from '../ConfigBuild/Status';
-import { VersionMenu } from '../ConfigBuild/VersionMenu';
+import { Status } from '../ManageCodes/Status';
 import { FileUploadWarning } from '@components/FileUploadWarning';
 
 export function ConfigTest() {
@@ -35,29 +28,13 @@ export function ConfigTest() {
 
   return (
     <div>
-      <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
-        <Status version={configuration.data.active_version} />
-      </TitleContainer>
-      <NavigationContainer>
-        <VersionMenu
-          id={configuration.data.id}
-          currentVersion={configuration.data.version}
-          status={configuration.data.status}
-          versions={configuration.data.all_versions}
-          step="test"
-        />
-        <StepsContainer>
-          <Steps configurationId={id} />
-        </StepsContainer>
-      </NavigationContainer>
-
+      <Header configuration={configuration.data} />
       <SectionContainer>
         <ConfigurationTitleBar
-          step="test"
-          condition={configuration.data.display_name}
+          title="Test configuration"
+          subtitle="Check the results of your configuration before turning it on."
         />
-        <Tester config={configuration.data} />
+        <Test config={configuration.data} />
       </SectionContainer>
     </div>
   );
@@ -65,12 +42,11 @@ export function ConfigTest() {
 
 type Status = 'idle' | 'pending' | 'error' | 'success';
 
-interface TesterProps {
+interface Test {
   config: GetConfigurationResponse;
-  isLocked?: boolean;
 }
 
-function Tester({ config }: TesterProps) {
+function Test({ config }: Test) {
   const [status, setStatus] = useState<Status>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const {

@@ -104,11 +104,11 @@ function Container({
   return (
     <div className="flex flex-col items-start gap-10 p-6">
       <Button
-        to={`/configurations/${id}/build`}
+        to={`/configurations/${id}/manage-codes`}
         variant="tertiary"
         className="p-0!"
       >
-        Back to build page
+        Back to manage codes page
       </Button>
 
       {children}

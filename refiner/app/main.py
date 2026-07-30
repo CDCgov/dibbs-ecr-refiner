@@ -27,13 +27,14 @@ from .api.auth.session import run_expired_session_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
-from .core.config import ENVIRONMENT
+from .core.config import (
+    get_app_config,
+    get_auth_config,
+    get_aws_config,
+    get_db_config,
+)
 from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
-
-# Pydantic warnings will be reported as errors in local dev / testing
-if ENVIRONMENT["ENV"] == "local":
-    warnings.filterwarnings("error", category=UserWarning, module="pydantic")
 
 
 class CharsetStaticFiles(StaticFiles):
@@ -72,11 +73,22 @@ def create_lifespan(
 
     @asynccontextmanager
     async def _lifespan(app: FastAPI):
-        # Write OpenAPI doc
-        if ENVIRONMENT["ENV"] == "local":
+        # Validate all required configs at startup.
+        # These will be cached and returned by Depends() throughout the app's lifetime.
+        get_app_config()
+        get_db_config()
+        get_auth_config()
+        get_aws_config()
+
+        if get_app_config().ENV == "local":
+            # Pydantic warnings will be reported as errors in local dev / testing
+            warnings.filterwarnings("error", category=UserWarning, module="pydantic")
+
+            # Write OpenAPI doc
             schema = create_custom_openapi(app)
             with open("openapi.json", "w") as f:
                 json.dump(schema, f)
+
         # Start the DB connection
         app.state.db = db
         await db.connect()
@@ -163,7 +175,9 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
     app.mount(
         "/dist/assets",
         CharsetStaticFiles(
-            directory="dist/assets", html=True, check_dir=ENVIRONMENT["ENV"] != "local"
+            directory="dist/assets",
+            html=True,
+            check_dir=get_app_config().ENV != "local",
         ),
         name="assets",
     )
@@ -188,11 +202,11 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
         """
 
         index_file = Path("dist/index.html").read_text()
-        app_env = ENVIRONMENT["ENV"]
+        app_env = get_app_config().ENV
         html = index_file.replace("%APP_ENV%", app_env)
         return HTMLResponse(content=html)
 
-    if ENVIRONMENT["ENV"] == "local":
+    if get_app_config().ENV == "local":
         app.add_middleware(
             CORSMiddleware,
             allow_origins=["http://localhost:8081"],  # Client dev server
@@ -207,7 +221,7 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
         SessionMiddleware,
         session_cookie="oidc",
         secret_key=get_session_secret_key(),
-        https_only=ENVIRONMENT["ENV"] != "local",
+        https_only=get_app_config().ENV != "local",
         same_site="lax",
         max_age=None,
     )
@@ -265,7 +279,7 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
     ) -> Response:
         response: Response = await call_next(request)
 
-        if ENVIRONMENT["ENV"] != "local":
+        if get_app_config().ENV != "local":
             # HSTS Policy
             response.headers["Strict-Transport-Security"] = (
                 "max-age=63072000; includeSubDomains"

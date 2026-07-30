@@ -1,24 +1,11 @@
 import os
 import subprocess
-from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
-from lxml import etree
-from psycopg.rows import dict_row
-from saxonche import PySaxonProcessor
-from testcontainers.compose import DockerCompose
-
-from app.api.v1.configurations.model import UploadCustomCodesInput
-from app.db.configurations.model import (
-    DbConfigurationCustomCode,
-    DbNarrativeAction,
-    DbSectionAction,
-)
 
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
@@ -28,23 +15,34 @@ os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
 os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
 os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
 os.environ["AUTH_ISSUER"] = "http://mock.com"
-os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
-
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["AWS_ACCESS_KEY_ID"] = "refiner"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "refiner"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
-
-# ensure session secret is set before `app` imports
+# # ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
-
 from fastapi import status
+from httpx import AsyncClient
+from lxml import etree
+from psycopg.rows import dict_row
 from rich.console import Console
+from saxonche import PySaxonProcessor
+from testcontainers.compose import DockerCompose
 
 from app.api.auth.session import get_hashed_token
-from app.core.config import ENVIRONMENT
+from app.api.v1.configurations.model import AddCustomCodeInput
+from app.core.config import (
+    get_app_config,
+    get_auth_config,
+    get_aws_config,
+    get_db_config,
+)
+from app.db.configurations.model import (
+    DbNarrativeAction,
+    DbSectionAction,
+)
 from app.db.pool import create_db
 from scripts.validation.validate_document_schematron import (
     STANDARDS_MAP,
@@ -54,9 +52,17 @@ from scripts.validation.validate_document_schematron import (
 )
 from scripts.validation.validate_document_xsd import build_schema, display_xsd_results
 
+get_app_config.cache_clear()
+get_auth_config.cache_clear()
+get_db_config.cache_clear()
+get_aws_config.cache_clear()
+
 # Session info
 TEST_SESSION_TOKEN = "test-token"
-TEST_SESSION_TOKEN_HASH = get_hashed_token(TEST_SESSION_TOKEN)
+TEST_SECRET_KEY = "super-secret-key"
+TEST_SESSION_TOKEN_HASH = get_hashed_token(
+    token=TEST_SESSION_TOKEN, secret_key=TEST_SECRET_KEY
+)
 
 # User info
 TEST_USERNAME = "refiner"
@@ -69,6 +75,17 @@ TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
 DEFAULT_TES_VERSION = "6.0.0"
+PREV_TES_VERSION = "5.0.0"
+
+
+@pytest.fixture
+def default_tes_version():
+    return DEFAULT_TES_VERSION
+
+
+@pytest.fixture
+def previous_tes_version():
+    return PREV_TES_VERSION
 
 
 @pytest_asyncio.fixture
@@ -76,14 +93,30 @@ async def upload_custom_codes(authed_client):
     """
     Returns a function that uploads custom codes for a specific configuration.
 
-    result = await upload_custom_codes(config_id, [UploadCustomCodesInput(code="123", system_key="icd10", name="ICD-10 Example")])
+    result = await upload_custom_codes(config_id, [AddCustomCodeInput(code="123", system_id="cf176e7a-71fa-4f97-8bd3-6ec4fe06600d", name="ICD-10 Example")])
     """
 
-    async def _get(config_id: UUID, codes: list[UploadCustomCodesInput]):
+    async def _get(config_id: UUID, codes: list[AddCustomCodeInput]):
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/custom-codes/confirm",
-            json={"custom_codes": [c.model_dump() for c in codes]},
+            json={"custom_codes": [c.model_dump(mode="json") for c in codes]},
         )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def get_systems(authed_client):
+    """
+    Returns a function that fetches all available code systems.
+
+    systems = await get_systems()
+    """
+
+    async def _get():
+        response = await authed_client.get("/api/v1/code-systems/")
         assert response.status_code == status.HTTP_200_OK
         return response.json()
 
@@ -124,9 +157,9 @@ async def deactivate_config(authed_client):
 
 @pytest_asyncio.fixture
 async def delete_custom_code(authed_client):
-    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
+    async def _get(config_id: UUID, custom_code_id: UUID):
         response = await authed_client.delete(
-            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code.system_key}/{custom_code.code}"
+            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code_id}"
         )
         assert response.status_code == status.HTTP_200_OK
         return response.json()
@@ -136,8 +169,8 @@ async def delete_custom_code(authed_client):
 
 @pytest_asyncio.fixture
 async def add_custom_code(authed_client):
-    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
-        payload = asdict(custom_code)
+    async def _get(config_id: UUID, custom_code: AddCustomCodeInput):
+        payload = custom_code.model_dump(mode="json")
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/custom-codes", json=payload
         )
@@ -178,7 +211,7 @@ def edit_custom_code(authed_client):
     from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
 
     async def _get(config_id: UUID, body: UpdateCustomCodeInput):
-        payload = vars(body)
+        payload = body.model_dump(mode="json")
         response = await authed_client.put(
             f"/api/v1/configurations/{config_id}/custom-codes", json=payload
         )
@@ -268,9 +301,9 @@ async def get_condition_by_id(db_pool):
                         t.version,
                         ARRAY(
                             SELECT codes.code
-                            FROM conditions_rsg_codes crc
+                            FROM conditions_codes crc
                             JOIN codes ON crc.code_id = codes.id
-                            WHERE crc.condition_id = c.id
+                            WHERE crc.condition_id = c.id AND crc.is_child_rsg
                         ) as child_rsg_snomed_codes,
                         c.snomed_codes,
                         c.loinc_codes,
@@ -356,6 +389,7 @@ async def reset_db(db_pool):
     # run after each test
     async with db_pool.get_connection() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM custom_codes")
             await cur.execute("DELETE FROM configurations")
 
 
@@ -363,8 +397,8 @@ async def reset_db(db_pool):
 async def db_pool(setup):
     # setup as a dependency guarantees that the pool isn't created until migrations have run
     db = create_db(
-        db_url=ENVIRONMENT["DB_URL"],
-        db_password=ENVIRONMENT["DB_PASSWORD"],
+        db_url=get_db_config().DB_URL,
+        db_password=get_db_config().DB_PASSWORD,
         prepare_threshold=None,
     )
     await db.connect()

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from app.api.auth.middleware import get_logged_in_user
-from app.core.config import ENVIRONMENT
+from app.core.config import AppConfig, get_app_config
 from app.db.conditions.db import get_condition_by_id_db
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/info")
 @router.get("", tags=["info", "internal"], include_in_schema=False)
 async def get_info(
     user: DbUser = Depends(get_logged_in_user),
+    app_config: AppConfig = Depends(get_app_config),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> JSONResponse:
     """
@@ -24,6 +25,7 @@ async def get_info(
 
     Args:
         user (DbUser, optional): The logged-in user.
+        app_config (AppConfig): The required application environment variables.
         db (AsyncDatabaseConnection, optional): The database connection.
         logger (Logger, optional): The app logger.
 
@@ -56,8 +58,8 @@ async def get_info(
     return JSONResponse(
         content={
             "app": {
-                "environment": ENVIRONMENT["ENV"],
-                "version": ENVIRONMENT["VERSION"],
+                "environment": app_config.ENV,
+                "version": app_config.VERSION,
             },
             "data": {
                 "revision": await get_latest_migration_db(db=db),
