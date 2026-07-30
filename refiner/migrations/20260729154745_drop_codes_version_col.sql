@@ -5,7 +5,8 @@ ALTER TABLE codes
 
 -- replace rows in the join table with the deconflicted ID's and then
 -- delete rows made duplicate with the dropped version so we can apply the 
--- followup unique index
+-- followup unique index. Tiebreak self join by version so the replacement 
+-- ids line up.
 WITH duplicates_to_delete AS (
     DELETE FROM codes c1
     USING codes c2
@@ -73,7 +74,7 @@ ON CONFLICT (system_id, version, code) DO NOTHING;
 
 -- update the join table with all the re-inserted codes by checking the linked
 -- TES version
-UPDATE condtions_codes cc 
+UPDATE conditions_codes cc 
 SET code_id = new_codes.id  
 FROM 
     conditions cond,
@@ -81,9 +82,9 @@ FROM
     codes new_codes,
     codes old_codes
 WHERE cc.condition_id = cond.id 
-    AND cond.tes_id = tes.id 
+    AND cond.tes_id = t.id 
     AND cc.code_id = old_codes.id 
     AND old_codes.code = new_codes.code 
     AND old_codes.system_id = new_codes.system_id
-    AND new_codes.version = tes.version
+    AND new_codes.version = t.version
     AND cc.code_id != new_codes.id;
