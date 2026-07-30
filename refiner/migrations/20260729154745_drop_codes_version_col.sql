@@ -1,7 +1,10 @@
 -- migrate:up
 -- Replace the unique constraint to scope to the existing codes
 ALTER TABLE codes
-    DROP CONSTRAINT IF EXISTS codes_system_id_version_value_key;
+    DROP CONSTRAINT IF EXISTS codes_system_id_code_value_key;
+
+ALTER TABLE codes
+    DROP CONSTRAINT IF EXISTS codes_system_id_code_value_key;
 
 ALTER TABLE codes
     DROP COLUMN version;
@@ -49,28 +52,28 @@ ALTER TABLE codes
     ADD CONSTRAINT codes_system_id_code_value_key
         UNIQUE (system_id, version, code);
 
--- -- insert all the other ones
-WITH ranked_versions AS (
-    SELECT 
-      cc.code_id,
-      tes.version,
-      ROW_NUMBER() OVER (PARTITION BY cc.code_id ORDER BY tes.version ASC) as rn 
-    FROM conditions_codes cc 
-    JOIN conditions cond ON cc.condition_id = cond.id 
-    JOIN tes ON cond.tes_id = tes.id
-)
-INSERT INTO codes (system_id, code, version, display, created_at)
-SELECT 
-    c.system_id,
-    c.code,
-    rv.version,
-    c.display,
-    c.created_at
-FROM conditions_codes cc 
-JOIN conditions cond ON cc.condition_id = cond.id 
-JOIN tes ON cond.tes_id = tes.id
-JOIN codes c ON c.id = cc.code_id
-JOIN ranked_versions rv ON rv.code_id = cc.code_id AND rv.version = tes.version 
-WHERE rv.rn > 1;
+-- -- -- insert all the other ones
+-- WITH ranked_versions AS (
+--     SELECT 
+--       cc.code_id,
+--       tes.version,
+--       ROW_NUMBER() OVER (PARTITION BY cc.code_id ORDER BY tes.version ASC) as rn 
+--     FROM conditions_codes cc 
+--     JOIN conditions cond ON cc.condition_id = cond.id 
+--     JOIN tes ON cond.tes_id = tes.id
+-- )
+-- INSERT INTO codes (system_id, code, version, display, created_at)
+-- SELECT 
+--     c.system_id,
+--     c.code,
+--     rv.version,
+--     c.display,
+--     c.created_at
+-- FROM conditions_codes cc 
+-- JOIN conditions cond ON cc.condition_id = cond.id 
+-- JOIN tes ON cond.tes_id = tes.id
+-- JOIN codes c ON c.id = cc.code_id
+-- JOIN ranked_versions rv ON rv.code_id = cc.code_id AND rv.version = tes.version 
+-- WHERE rv.rn > 1;
 
 
