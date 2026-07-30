@@ -141,7 +141,7 @@ CREATE TABLE public.codes (
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    version text
+    version text NOT NULL
 );
 
 
@@ -385,15 +385,7 @@ ALTER TABLE ONLY public.codes
 --
 
 ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_system_id_code_value_key UNIQUE (system_id, code);
-
-
---
--- Name: codes codes_upsert_constraint_idx; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_upsert_constraint_idx UNIQUE (system_id, version, code);
+    ADD CONSTRAINT codes_system_id_code_value_key UNIQUE (system_id, version, code);
 
 
 --
