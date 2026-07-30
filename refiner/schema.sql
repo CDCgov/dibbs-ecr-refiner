@@ -604,13 +604,6 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: codes_upsert_constraint_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX codes_upsert_constraint_idx ON public.codes USING btree (system_id, version, code);
-
-
---
 -- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -911,4 +904,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260630173611'),
     ('20260701151910'),
     ('20260709201220'),
-    ('20260716184236');
+    ('20260716184236'),
+    ('20260728212408'),
+    ('20260729154745');
