@@ -4,10 +4,25 @@ set -euo pipefail # exit on failure
 # default sslmode to "require"
 SSL_MODE="${SSL_MODE:-require}"
 
-# Ensure both expected variables are present
-if [[ -z "${DB_URL:-}" || -z "${DB_PASSWORD:-}" ]]; then
-  echo "ERROR: DB_URL and DB_PASSWORD must be set"
+# Ensure required variables are present
+if [[ -z "${ENV:-}" || \
+      -z "${VERSION:-}" || \
+      -z "${DB_URL:-}" || \
+      -z "${DB_PASSWORD:-}" || \
+      -z "${AWS_REGION:-}" || \
+      -z "${S3_BUCKET_CONFIG:-}" ]]; then
+  echo "ERROR: ENV, VERSION, DB_URL, DB_PASSWORD, AWS_REGION, and S3_BUCKET_CONFIG must be set"
   exit 1
+fi
+
+# Ensure local/demo S3 variables are present
+if [[ "${ENV}" == "local" || "${ENV}" == "demo" ]]; then
+  if [[ -z "${AWS_ACCESS_KEY_ID:-}" || \
+        -z "${AWS_SECRET_ACCESS_KEY:-}" || \
+        -z "${S3_ENDPOINT_URL:-}" ]]; then
+    echo "ERROR: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and S3_ENDPOINT_URL must be set for local/demo"
+    exit 1
+  fi
 fi
 
 # Encode DB_PASSWORD
@@ -40,6 +55,10 @@ case "$COMMAND" in
         echo "Importing static data"
         exec python3 ./scripts/seeding/load_static_data.py
         ;;
+    regenerate-active-configs)
+        echo "Regenerating active configuration files"
+        exec python3 ./scripts/reactivations/regenerate_active_configs.py "$@"
+        ;;
     python|python3)
         echo "Running Python script: $*"
         exec python3 "$@"
@@ -48,7 +67,9 @@ case "$COMMAND" in
         echo "Running migration scripts and updating condition data"
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         echo "Migration step complete"
-        exec python3 ./scripts/seeding/load_static_data.py
+        python3 ./scripts/seeding/load_static_data.py
+        echo "Regenerating active configuration files"
+        python3 ./scripts/reactivations/regenerate_active_configs.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"

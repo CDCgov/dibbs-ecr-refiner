@@ -23,6 +23,7 @@ ENV VERSION=$VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 # Install system dependencies
 RUN apk update && apk add --no-cache \
@@ -48,7 +49,8 @@ RUN pip install --no-cache-dir /wheels/*
 
 # Python files
 COPY ./refiner/scripts-requirements.txt ./
-RUN pip install --no-cache-dir -r scripts-requirements.txt
+COPY ./refiner/requirements.txt ./
+RUN pip install --no-cache-dir -r scripts-requirements.txt -r requirements.txt
 
 # Copy migration files
 COPY ./refiner/migrations ./migrations
@@ -56,6 +58,15 @@ COPY ./refiner/migrations ./migrations
 # Copy TES update files
 COPY ./refiner/scripts/seeding ./scripts/seeding
 COPY ./refiner/scripts/data/source-tes-groupers ./scripts/data/source-tes-groupers
+
+# Copy active configuration regeneration script
+COPY ./refiner/scripts/reactivations ./scripts/reactivations
+
+# Copy refiner modules
+COPY ./refiner/app/api app/api
+COPY ./refiner/app/core app/core
+COPY ./refiner/app/services app/services
+COPY ./refiner/app/db app/db
 
 # Copy entrypoint script
 COPY ./ops/entrypoint.sh ./entrypoint.sh
