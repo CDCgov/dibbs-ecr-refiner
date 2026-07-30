@@ -25,10 +25,10 @@ export function TurnOnConfigButton({
     <div>
       <Button
         onClick={() => setIsOpen(true)}
-        variant="secondary"
+        variant="primary"
         disabled={disabled}
       >
-        Turn on configuration
+        Activate this version
       </Button>
 
       <TurnOnConfigModal
