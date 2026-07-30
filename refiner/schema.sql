@@ -639,6 +639,13 @@ CREATE UNIQUE INDEX one_primary_per_configuration ON public.configurations_condi
 
 
 --
+-- Name: system_code; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX system_code ON public.codes USING btree (system_id, code);
+
+
+--
 -- Name: configurations configurations_set_last_activated_at_on_status_change_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 

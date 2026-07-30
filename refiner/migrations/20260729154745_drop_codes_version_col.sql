@@ -6,7 +6,6 @@ ALTER TABLE codes
 ALTER TABLE codes
     DROP COLUMN version;
 
-CREATE INDEX system_code ON codes (system_id, code);
 -- delete rows made duplicate with the dropped version so we can apply the 
 -- followup unique index
 DELETE FROM codes c1
@@ -16,7 +15,7 @@ WHERE c1.id > c2.id
     AND c1.code = c2.code;
 
 ALTER TABLE codes
-    ADD CONSTRAINT codes_system_id_version_value_key
+    ADD CONSTRAINT codes_system_id_code_value_key
         UNIQUE (system_id, code);
 
 -- migrate:down
