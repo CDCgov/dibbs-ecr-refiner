@@ -25,7 +25,7 @@ EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
 ACTIVE_CONFIG_PAYLOAD_SCHEMA_FIXTURE = (
     Path(__file__).parents[1]
     / "fixtures"
-    / "lambda"
+    / "activations"
     / "active_config_payload_schema_v1.json"
 )
 
