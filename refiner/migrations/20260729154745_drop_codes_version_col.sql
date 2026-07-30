@@ -3,16 +3,13 @@
 ALTER TABLE codes
     DROP CONSTRAINT IF EXISTS codes_system_id_version_value_key;
 
-ALTER TABLE codes
-    DROP COLUMN version;
-
 -- replace rows in the join table with the deconflicted ID's and then
 -- delete rows made duplicate with the dropped version so we can apply the 
 -- followup unique index
 WITH duplicates_to_delete AS (
     DELETE FROM codes c1
     USING codes c2
-    WHERE c1.id > c2.id
+    WHERE c1.version > c2.version
       AND c1.system_id = c2.system_id
       AND c1.code = c2.code
     RETURNING c1.id AS old_id, c2.id AS new_id
@@ -21,6 +18,9 @@ UPDATE conditions_codes
 SET code_id = d.new_id
 FROM duplicates_to_delete d
 WHERE code_id = d.old_id;
+
+ALTER TABLE codes
+    DROP COLUMN version;
 
 ALTER TABLE codes
     ADD CONSTRAINT codes_system_id_code_value_key
@@ -70,3 +70,20 @@ LEFT JOIN codes c ON c.id = cc.code_id
 LEFT JOIN conditions cond ON cc.condition_id = cond.id
 LEFT JOIN tes t ON cond.tes_id = t.id 
 ON CONFLICT (system_id, version, code) DO NOTHING;
+
+-- update the join table with all the re-inserted codes by checking the linked
+-- TES version
+UPDATE condtions_codes cc 
+SET code_id = new_codes.id  
+FROM 
+    conditions cond,
+    tes t, 
+    codes new_codes,
+    codes old_codes
+WHERE cc.condition_id = cond.id 
+    AND cond.tes_id = tes.id 
+    AND cc.code_id = old_codes.id 
+    AND old_codes.code = new_codes.code 
+    AND old_codes.system_id = new_codes.system_id
+    AND new_codes.version = tes.version
+    AND cc.code_id != new_codes.id;
