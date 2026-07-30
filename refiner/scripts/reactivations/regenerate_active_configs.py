@@ -18,7 +18,6 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection, create_db
 from app.services.aws.s3 import (
-    S3_CONFIGURATION_BUCKET_NAME,
     s3_client,
     upload_configuration_payload,
 )
@@ -55,6 +54,8 @@ paused until the lock expires or the ops command is rerun successfully.
 """
 
 logger = logging.getLogger(__name__)
+
+S3_CONFIGURATION_BUCKET_NAME = os.environ["S3_BUCKET_CONFIG"]
 
 REACTIVATION_NAME = f"active-payload-schema-v{CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}"
 
