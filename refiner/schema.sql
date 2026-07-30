@@ -159,8 +159,7 @@ CREATE TABLE public.codes (
     code text CONSTRAINT codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    version text
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -947,4 +946,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260701151910'),
     ('20260709201220'),
     ('20260716184236'),
-    ('20260728212408');
+    ('20260728212408'),
+    ('20260729154745');
