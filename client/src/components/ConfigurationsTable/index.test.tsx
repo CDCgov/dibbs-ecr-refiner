@@ -36,17 +36,26 @@ describe('Configurations Table component', () => {
       screen.getByRole('link', {
         name: /configure chlamydia trachomatis infection/i,
       })
-    ).toHaveAttribute('href', '/configurations/chlamydia-config-id/build');
+    ).toHaveAttribute(
+      'href',
+      '/configurations/chlamydia-config-id/customize-sections'
+    );
 
     expect(
       screen.getByRole('link', {
         name: /configure disease caused by enterovirus/i,
       })
-    ).toHaveAttribute('href', '/configurations/asdf-zxcv-qwer-hjkl/build');
+    ).toHaveAttribute(
+      'href',
+      '/configurations/asdf-zxcv-qwer-hjkl/customize-sections'
+    );
 
     expect(
       screen.getByRole('link', { name: /configure acanthamoeba/i })
-    ).toHaveAttribute('href', '/configurations/1234-5678-9101-1121/build');
+    ).toHaveAttribute(
+      'href',
+      '/configurations/1234-5678-9101-1121/customize-sections'
+    );
   });
 
   it('should render an error message if no data is supplied', () => {
@@ -79,7 +88,7 @@ describe('Configurations Table component', () => {
     await user.keyboard('{Enter}');
     expect(link).toHaveAttribute(
       'href',
-      '/configurations/chlamydia-config-id/build'
+      '/configurations/chlamydia-config-id/customize-sections'
     );
   });
 });

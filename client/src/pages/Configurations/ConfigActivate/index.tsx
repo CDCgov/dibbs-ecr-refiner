@@ -1,17 +1,8 @@
 import { useParams } from 'react-router';
-import { ConfigLockBanner } from '../ConfigBuild/Lock/ConfigLockBanner';
-import { Title } from '@components/Title';
-import {
-  NavigationContainer,
-  SectionContainer,
-  TitleContainer,
-} from '../layout';
-import { StepsContainer, Steps } from '../Steps';
+import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { Spinner } from '@components/Spinner';
-import { VersionMenu } from '../ConfigBuild/VersionMenu';
-import { Status } from '../ConfigBuild/Status';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { ActivationButtons } from './ActivationButtons';
 import { useConfigLock } from '../../../hooks/useConfigLock';
@@ -31,36 +22,19 @@ export function ConfigActivate() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
-  const { is_locked } = configuration.data;
-
   return (
     <div>
-      <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
-        <Status version={configuration.data.active_version} />
-      </TitleContainer>
-      <NavigationContainer>
-        <VersionMenu
-          id={configuration.data.id}
-          currentVersion={configuration.data.version}
-          status={configuration.data.status}
-          versions={configuration.data.all_versions}
-          step="activate"
-        />
-        <StepsContainer>
-          <Steps configurationId={id} />
-        </StepsContainer>
-      </NavigationContainer>
-      {is_locked && (
-        <ConfigLockBanner
-          lockedByName={configuration.data.locked_by?.name}
-          lockedByEmail={configuration.data.locked_by?.email}
-        />
-      )}
+      <Header configuration={configuration.data} />
       <SectionContainer>
         <ConfigurationTitleBar
-          step="activate"
-          condition={configuration.data.display_name}
+          title="Turn on configuration"
+          subtitle={
+            <span>
+              Refiner will <span className="font-bold">immediately</span> start
+              to refine eCRs with {configuration.data.display_name} as a
+              reportable condition, in accordance with this configuration.
+            </span>
+          }
         />
         <div className="max-w[80rem] mb-8 bg-white p-6">
           <div className="mb-6">
@@ -81,10 +55,7 @@ export function ConfigActivate() {
           </div>
           <hr className="text-gray-cool-20!" />
           <div className="mt-6">
-            <ActivationButtons
-              configurationData={configuration.data}
-              isLocked={is_locked}
-            />
+            <ActivationButtons configurationData={configuration.data} />
           </div>
         </div>
       </SectionContainer>
