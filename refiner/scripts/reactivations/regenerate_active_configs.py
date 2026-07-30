@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
 
+from app.core.config import get_aws_config
 from app.db.configurations.db import get_configurations_db
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
@@ -54,8 +55,6 @@ paused until the lock expires or the ops command is rerun successfully.
 """
 
 logger = logging.getLogger(__name__)
-
-S3_CONFIGURATION_BUCKET_NAME = os.environ["S3_BUCKET_CONFIG"]
 
 REACTIVATION_NAME = f"active-payload-schema-v{CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}"
 
@@ -123,13 +122,13 @@ def delete_maintenance_lock() -> None:
     """Delete the maintenance lock from S3."""
 
     s3_client.delete_object(
-        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Bucket=get_aws_config().S3_BUCKET_CONFIG,
         Key=MAINTENANCE_LOCK_KEY,
     )
 
     logger.info(
         "Deleted active configuration maintenance lock. bucket=%s key=%s",
-        S3_CONFIGURATION_BUCKET_NAME,
+        get_aws_config().S3_BUCKET_CONFIG,
         MAINTENANCE_LOCK_KEY,
     )
 
@@ -144,7 +143,7 @@ def remove_expired_maintenance_lock() -> bool:
 
     try:
         response = s3_client.get_object(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME,
+            Bucket=get_aws_config().S3_BUCKET_CONFIG,
             Key=MAINTENANCE_LOCK_KEY,
         )
     except ClientError as exc:
@@ -161,7 +160,7 @@ def remove_expired_maintenance_lock() -> bool:
         logger.warning(
             "Removing corrupt active configuration maintenance lock. "
             "bucket=%s key=%s reason=invalid_json",
-            S3_CONFIGURATION_BUCKET_NAME,
+            get_aws_config().S3_BUCKET_CONFIG,
             MAINTENANCE_LOCK_KEY,
             exc_info=True,
         )
@@ -173,7 +172,7 @@ def remove_expired_maintenance_lock() -> bool:
         logger.warning(
             "Removing corrupt active configuration maintenance lock. "
             "bucket=%s key=%s reason=unexpected_json_type lock_type=%s",
-            S3_CONFIGURATION_BUCKET_NAME,
+            get_aws_config().S3_BUCKET_CONFIG,
             MAINTENANCE_LOCK_KEY,
             type(lock).__name__,
         )
@@ -187,7 +186,7 @@ def remove_expired_maintenance_lock() -> bool:
         logger.warning(
             "Removing corrupt active configuration maintenance lock. "
             "bucket=%s key=%s reason=missing_or_invalid_expires_at",
-            S3_CONFIGURATION_BUCKET_NAME,
+            get_aws_config().S3_BUCKET_CONFIG,
             MAINTENANCE_LOCK_KEY,
         )
 
@@ -200,7 +199,7 @@ def remove_expired_maintenance_lock() -> bool:
     logger.warning(
         "Removing expired active configuration maintenance lock. "
         "bucket=%s key=%s expires_at=%s",
-        S3_CONFIGURATION_BUCKET_NAME,
+        get_aws_config().S3_BUCKET_CONFIG,
         MAINTENANCE_LOCK_KEY,
         expiration.isoformat(),
     )
@@ -236,7 +235,7 @@ def create_maintenance_lock(
 
     def put_lock() -> None:
         s3_client.put_object(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME,
+            Bucket=get_aws_config().S3_BUCKET_CONFIG,
             Key=MAINTENANCE_LOCK_KEY,
             Body=json.dumps(lock_payload, indent=2).encode("utf-8"),
             ContentType="application/json",
@@ -283,7 +282,7 @@ def create_maintenance_lock(
     logger.info(
         "Created active configuration maintenance lock. "
         "bucket=%s key=%s reactivation=%s expires_at=%s",
-        S3_CONFIGURATION_BUCKET_NAME,
+        get_aws_config().S3_BUCKET_CONFIG,
         MAINTENANCE_LOCK_KEY,
         REACTIVATION_NAME,
         lock_payload["expires_at"],
@@ -747,7 +746,7 @@ async def run_active_config_reactivation(
                 "The reactivation failed while the maintenance lock was active. "
                 "Lambda processing may be paused until the lock expires or the ops command "
                 "is rerun successfully. bucket=%s key=%s expiration_minutes=%s",
-                S3_CONFIGURATION_BUCKET_NAME,
+                get_aws_config().S3_BUCKET_CONFIG,
                 MAINTENANCE_LOCK_KEY,
                 LOCK_EXPIRATION_MINUTES,
             )
