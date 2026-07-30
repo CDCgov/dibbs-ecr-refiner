@@ -64,8 +64,8 @@ class AuthConfig:
         self.AUTH_ISSUER: str = get_env_variable("AUTH_ISSUER")
 
 
-class S3Config:
-    """S3 config. Needed by API, Lambda, Ops."""
+class AwsConfig:
+    """AWS config. Needed by API, Lambda, Ops."""
 
     def __init__(self) -> None:  # noqa: D107
         self.S3_BUCKET_CONFIG: str = get_env_variable("S3_BUCKET_CONFIG")
@@ -97,8 +97,8 @@ def get_auth_config() -> AuthConfig:
 
 
 @lru_cache
-def get_s3_config() -> S3Config:
+def get_aws_config() -> AwsConfig:
     """
-    Creates an instance of an S3Config.
+    Creates an instance of an AwsConfig.
     """
-    return S3Config()
+    return AwsConfig()

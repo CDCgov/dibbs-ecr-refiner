@@ -30,8 +30,8 @@ from .core.app.openapi import create_custom_openapi
 from .core.config import (
     get_app_config,
     get_auth_config,
+    get_aws_config,
     get_db_config,
-    get_s3_config,
 )
 from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
@@ -78,7 +78,7 @@ def create_lifespan(
         get_app_config()
         get_db_config()
         get_auth_config()
-        get_s3_config()
+        get_aws_config()
 
         if get_app_config().ENV == "local":
             # Pydantic warnings will be reported as errors in local dev / testing

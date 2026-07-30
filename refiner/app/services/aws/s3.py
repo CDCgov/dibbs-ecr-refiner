@@ -12,7 +12,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi.concurrency import run_in_threadpool
 
-from app.core.config import get_app_config, get_s3_config
+from app.core.config import get_app_config, get_aws_config
 from app.db.conditions.model import ConditionMappingPayload
 from app.db.configurations.model import (
     ConfigurationStorageMetadata,
@@ -31,7 +31,7 @@ from .s3_keys import (
 
 def _build_s3_client_kwargs() -> dict[str, Any]:
     kwargs: dict[str, Any] = {
-        "region_name": get_s3_config().AWS_REGION,
+        "region_name": get_aws_config().AWS_REGION,
         "config": Config(signature_version="s3v4"),
     }
 
@@ -104,7 +104,7 @@ def get_serialized_files(
     def fetch(key: str) -> str:
         try:
             resp = s3_client.get_object(
-                Bucket=get_s3_config().S3_BUCKET_CONFIG,
+                Bucket=get_aws_config().S3_BUCKET_CONFIG,
                 Key=key,
             )
             return resp["Body"].read().decode("utf-8")
@@ -144,7 +144,7 @@ def upload_current_version_file(
     }
 
     s3_client.put_object(
-        Bucket=get_s3_config().S3_BUCKET_CONFIG,
+        Bucket=get_aws_config().S3_BUCKET_CONFIG,
         Key=f"{directory_key}/current.json",
         Body=json.dumps(data, indent=2).encode("utf-8"),
         ContentType="application/json",
@@ -184,7 +184,7 @@ def upload_configuration_payload(
         version=metadata.configuration_version,
     )
     s3_client.put_object(
-        Bucket=get_s3_config().S3_BUCKET_CONFIG,
+        Bucket=get_aws_config().S3_BUCKET_CONFIG,
         Key=active_key,
         Body=json.dumps(payload_data, indent=2).encode("utf-8"),
         ContentType="application/json",
@@ -197,7 +197,7 @@ def upload_configuration_payload(
         version=metadata.configuration_version,
     )
     s3_client.put_object(
-        Bucket=get_s3_config().S3_BUCKET_CONFIG,
+        Bucket=get_aws_config().S3_BUCKET_CONFIG,
         Key=metadata_key,
         Body=json.dumps(metadata_data, indent=2).encode("utf-8"),
         ContentType="application/json",
@@ -230,7 +230,7 @@ def upload_condition_mapping_payload(
     mapping_payload_dict = mapping_payload.to_dict()
 
     s3_client.put_object(
-        Bucket=get_s3_config().S3_BUCKET_CONFIG,
+        Bucket=get_aws_config().S3_BUCKET_CONFIG,
         Key=condition_mapping_key,
         Body=json.dumps(mapping_payload_dict, indent=2).encode("utf-8"),
         ContentType="application/json",
@@ -248,7 +248,7 @@ def _upload_refined_ecr(
     file_buffer: BytesIO,
     s3_key: str,
 ) -> str:
-    s3_client.upload_fileobj(file_buffer, get_s3_config().S3_BUCKET_CONFIG, s3_key)
+    s3_client.upload_fileobj(file_buffer, get_aws_config().S3_BUCKET_CONFIG, s3_key)
     return s3_key
 
 
@@ -280,7 +280,7 @@ async def upload_refined_file_package(
             "Attempted refined file upload to S3 failed",
             extra={
                 "error": str(e),
-                "bucket": get_s3_config().S3_BUCKET_CONFIG,
+                "bucket": get_aws_config().S3_BUCKET_CONFIG,
                 "key": key,
                 "user_id": user.id,
             },
@@ -293,7 +293,7 @@ def fetch_zip_from_s3(key: str) -> dict:
     Fetch file from s3, return botocore response dict.
     """
     resp = s3_client.get_object(
-        Bucket=get_s3_config().S3_BUCKET_CONFIG,
+        Bucket=get_aws_config().S3_BUCKET_CONFIG,
         Key=key,
     )
     return resp

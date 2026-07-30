@@ -36,8 +36,8 @@ from app.api.v1.configurations.model import AddCustomCodeInput
 from app.core.config import (
     get_app_config,
     get_auth_config,
+    get_aws_config,
     get_db_config,
-    get_s3_config,
 )
 from app.db.configurations.model import (
     DbNarrativeAction,
@@ -55,7 +55,7 @@ from scripts.validation.validate_document_xsd import build_schema, display_xsd_r
 get_app_config.cache_clear()
 get_auth_config.cache_clear()
 get_db_config.cache_clear()
-get_s3_config.cache_clear()
+get_aws_config.cache_clear()
 
 # Session info
 TEST_SESSION_TOKEN = "test-token"
