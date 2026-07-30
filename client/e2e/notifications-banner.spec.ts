@@ -27,18 +27,18 @@ test.describe('Notification banners', () => {
       ).toBeVisible();
     });
 
-    // await test.step('TES banner', async () => {
-    //   const tesText = 'A new TES update was published.';
-    //   await expect(page.getByText(tesText, { exact: true })).toBeVisible();
-    //   await expect(
-    //     page.getByRole('link', { name: 'View updates for TES' })
-    //   ).toBeVisible();
-    //   await expect(
-    //     page.getByRole('button', {
-    //       name: `Dismiss notification for ${tesText}`,
-    //     })
-    //   ).toBeVisible();
-    // });
+    await test.step('TES banner', async () => {
+      const tesText = 'A new TES update was published.';
+      await expect(page.getByText(tesText, { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'View updates for TES' })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', {
+          name: `Dismiss notification for ${tesText}`,
+        })
+      ).toBeVisible();
+    });
   });
 
   test('Banner is dismissed upon clicking the "X" button', async ({ page }) => {
@@ -48,19 +48,19 @@ test.describe('Notification banners', () => {
       name: `Dismiss notification for ${appText}`,
     });
 
-    // const tesText = 'A new TES update was published.';
-    // const tesUpdateText = page.getByText(tesText, { exact: true });
-    // const tesUpdateBannerButton = page.getByRole('button', {
-    //   name: `Dismiss notification for ${tesText}`,
-    // });
+    const tesText = 'A new TES update was published.';
+    const tesUpdateText = page.getByText(tesText, { exact: true });
+    const tesUpdateBannerButton = page.getByRole('button', {
+      name: `Dismiss notification for ${tesText}`,
+    });
 
     await expect(appUpdateText).toBeVisible();
     await appUpdateBannerButton.click();
     await expect(appUpdateText).not.toBeVisible();
 
-    // await expect(tesUpdateText).toBeVisible();
-    // await tesUpdateBannerButton.click();
-    // await expect(tesUpdateText).not.toBeVisible();
+    await expect(tesUpdateText).toBeVisible();
+    await tesUpdateBannerButton.click();
+    await expect(tesUpdateText).not.toBeVisible();
 
     // make sure they're both gone on a refresh
     await page.reload();

@@ -139,3 +139,112 @@ export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     cur_version: Version to compare against.
+ *     prev_version: Version to compare against.
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     TesResponse: A bundle with a list of TesUpdates, including
+ *         - The version
+ *         - The when it was created
+ * @summary Get Tes Diff Details
+ */
+export const getTesUpdateDiff = (
+    params: GetTesUpdateDiffParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<TesDiffResponse[]>> => {
+
+
+    return axios.default.get(
+      `/api/v1/tes/`,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+
+export const getGetTesUpdateDiffQueryKey = (params?: GetTesUpdateDiffParams,) => {
+    return [
+    `/api/v1/tes/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetTesUpdateDiffQueryOptions = <TData = Awaited<ReturnType<typeof getTesUpdateDiff>>, TError = AxiosError<HTTPValidationError>>(params: GetTesUpdateDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdateDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTesUpdateDiffQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTesUpdateDiff>>> = ({ signal }) => getTesUpdateDiff(params, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTesUpdateDiff>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTesUpdateDiffQueryResult = NonNullable<Awaited<ReturnType<typeof getTesUpdateDiff>>>
+export type GetTesUpdateDiffQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetTesUpdateDiff<TData = Awaited<ReturnType<typeof getTesUpdateDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: GetTesUpdateDiffParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdateDiff>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTesUpdateDiff>>,
+          TError,
+          Awaited<ReturnType<typeof getTesUpdateDiff>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTesUpdateDiff<TData = Awaited<ReturnType<typeof getTesUpdateDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: GetTesUpdateDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdateDiff>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTesUpdateDiff>>,
+          TError,
+          Awaited<ReturnType<typeof getTesUpdateDiff>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTesUpdateDiff<TData = Awaited<ReturnType<typeof getTesUpdateDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: GetTesUpdateDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdateDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Tes Diff Details
+ */
+
+export function useGetTesUpdateDiff<TData = Awaited<ReturnType<typeof getTesUpdateDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: GetTesUpdateDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdateDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTesUpdateDiffQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
