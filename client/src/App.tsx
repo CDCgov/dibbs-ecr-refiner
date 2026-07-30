@@ -8,7 +8,6 @@ import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
 import { ManageCodes } from './pages/Configurations/ManageCodes';
 import { ConfigTest } from './pages/Configurations/ConfigTest';
-import { ConfigActivate } from './pages/Configurations/ConfigActivate';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner } from '@components/Spinner';
 import { SessionRedirect } from './pages/SessionRedirect';
@@ -56,10 +55,6 @@ export function App() {
           element={<ManageCodes />}
         />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
-        <Route
-          path="/configurations/:id/activate"
-          element={<ConfigActivate />}
-        />
         <Route
           path="/configurations/:id/serialized"
           element={<ConfigSerialized />}

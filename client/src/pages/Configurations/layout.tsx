@@ -10,7 +10,7 @@ import { Status } from './ManageCodes/Status';
 import { VersionMenu } from './ManageCodes/VersionMenu';
 import { SerializedContentButton } from './SerializedContentButton';
 import { StepsContainer, Steps } from './Steps';
-import { ActivationButtons } from './ConfigActivate/ActivationButtons';
+import { ActivationButtons } from './ActivationButtons';
 
 export function NavigationContainer({
   children,

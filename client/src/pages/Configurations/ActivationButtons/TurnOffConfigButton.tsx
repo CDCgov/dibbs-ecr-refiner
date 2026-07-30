@@ -30,14 +30,14 @@ export function TurnOffConfigButton({
         handleDeactivation={handleDeactivation}
         isLoading={isLoading}
       />
-        <Button
-          onClick={() => setIsOpen(true)}
-          variant="secondary"
-          className="self-start"
-          disabled={disabled}
-        >
-          Deactivate
-        </Button>
+      <Button
+        onClick={() => setIsOpen(true)}
+        variant="secondary"
+        className="self-start"
+        disabled={disabled}
+      >
+        Deactivate
+      </Button>
     </div>
   );
 }
