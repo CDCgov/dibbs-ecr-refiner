@@ -6,9 +6,9 @@ ALTER TABLE codes
 ALTER TABLE codes
     DROP COLUMN version;
 
+-- replace rows in the join table with the deconflicted ID's and then
 -- delete rows made duplicate with the dropped version so we can apply the 
 -- followup unique index
-
 WITH duplicates_to_delete AS (
     DELETE FROM codes c1
     USING codes c2
@@ -17,10 +17,10 @@ WITH duplicates_to_delete AS (
       AND c1.code = c2.code
     RETURNING c1.id AS old_id, c2.id AS new_id
 )
-UPDATE conditions_codes cc
-SET cc.code_id = d.new_id
+UPDATE conditions_codes
+SET code_id = d.new_id
 FROM duplicates_to_delete d
-WHERE cc.code_id = d.old_id;
+WHERE code_id = d.old_id;
 
 ALTER TABLE codes
     ADD CONSTRAINT codes_system_id_code_value_key
@@ -39,7 +39,7 @@ WITH ranked_codes AS (
     SELECT 
       c.id as code_id,
       tes.version,
-      DENSE_RANK() OVER (PARTITION BY cc.code_id ORDER BY tes.version ASC) as rn
+      ROW_NUMBER() OVER (PARTITION BY cc.code_id ORDER BY tes.version ASC) as rn
     FROM conditions_codes cc 
     JOIN codes c ON cc.code_id = c.id 
     JOIN conditions cond ON cc.condition_id = cond.id 
