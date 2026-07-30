@@ -7,7 +7,7 @@ import userEvent, { UserEvent } from '@testing-library/user-event';
 import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 import { AxiosError } from 'axios';
-import { mockCustomCodes, mockCodeSets } from '../ConfigBuild/fixtures';
+import { mockCustomCodes, mockCodeSets } from '../test/fixtures';
 
 // Mock all API requests.
 
@@ -52,6 +52,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
             { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
           ],
           all_versions: [{ version: 1 }],
+          rsg_codes: [],
         },
       },
     })),
@@ -94,11 +95,9 @@ describe('Config testing page', () => {
 
   it('should show "Test configuration" as the current step', () => {
     renderPage();
-    expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
-    expect(screen.getByText('Test', { selector: 'a' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(
+      screen.getByText('Test & export', { selector: 'a' })
+    ).toHaveAttribute('aria-current', 'page');
   });
 
   it('should warn the user that the expected condition was not found during inline testing', async () => {

@@ -232,6 +232,7 @@ export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
  * Args:
  *     configuration_id (UUID): The active configuration ID
  *     user (DbUser): The logged-in user
+ *     app_config (AppConfig): The required application environment variables
  *     db (AsyncDatabaseConnection): The database connection
  *     logger (Logger): The standard app logger
  *

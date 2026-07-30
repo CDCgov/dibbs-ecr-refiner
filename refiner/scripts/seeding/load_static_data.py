@@ -95,6 +95,7 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     condition_display_name: str
     child_rsg_codes: set[SystemCodeTuple]
     non_child_rsg_codes: set[SystemCodeTuple]
+    version: str
 
 
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
@@ -168,6 +169,11 @@ def _build_codes(
 
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
+
+        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+
+        child_tuples: set[FhirCodeTuple] = set()
 
         condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
         condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
