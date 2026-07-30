@@ -19,7 +19,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
   if (isError) return 'Error!';
 
   return (
-    <div className="border-gray-cool-20! grow border-y border-r bg-white p-8">
+    <div className="border-gray-cool-20! h-160 max-h-160 grow overflow-y-scroll border-y border-r bg-white p-8">
       <h3 className="font-bold">
         What's changed in Version {selectedUpdate?.version}
       </h3>
