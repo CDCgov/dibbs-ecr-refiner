@@ -140,8 +140,7 @@ CREATE TABLE public.codes (
     code text CONSTRAINT codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    version text
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -381,11 +380,11 @@ ALTER TABLE ONLY public.codes
 
 
 --
--- Name: codes codes_upsert_constraint_idx; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: codes codes_system_id_version_value_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_upsert_constraint_idx UNIQUE (system_id, version, code);
+    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, code);
 
 
 --
@@ -906,4 +905,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260701151910'),
     ('20260709201220'),
     ('20260716184236'),
-    ('20260728212408');
+    ('20260728212408'),
+    ('20260729154745');
