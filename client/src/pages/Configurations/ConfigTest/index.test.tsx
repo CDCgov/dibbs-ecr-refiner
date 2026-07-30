@@ -95,10 +95,9 @@ describe('Config testing page', () => {
 
   it('should show "Test configuration" as the current step', () => {
     renderPage();
-    expect(screen.getByText('Test', { selector: 'a' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(
+      screen.getByText('Test & export', { selector: 'a' })
+    ).toHaveAttribute('aria-current', 'page');
   });
 
   it('should warn the user that the expected condition was not found during inline testing', async () => {

@@ -199,7 +199,7 @@ describe('Manage codes page', () => {
       await screen.findByText('Manage codes', { selector: 'a' })
     ).toHaveAttribute('aria-current', 'page');
     expect(
-      await screen.findByText('Test', { selector: 'a' })
+      await screen.findByText('Test & export', { selector: 'a' })
     ).toBeInTheDocument();
     expect(
       await screen.findByText('Activate', { selector: 'a' })
