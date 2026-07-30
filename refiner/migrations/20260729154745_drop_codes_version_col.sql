@@ -8,7 +8,10 @@ CREATE INDEX IF NOT EXISTS idx_conditions_codes_condition_id
 
 -- Replace the unique constraint to scope to the existing codes
 ALTER TABLE codes
-    DROP CONSTRAINT IF EXISTS codes_system_id_version_value_key;
+    DROP CONSTRAINT IF EXISTS codes_system_id_code_value_key;
+
+ALTER TABLE codes
+    DROP CONSTRAINT IF EXISTS codes_system_id_code_value_key;
 
 -- replace rows in the join table with the deconflicted ID's and then
 -- delete rows made duplicate with the dropped version so we can apply the
