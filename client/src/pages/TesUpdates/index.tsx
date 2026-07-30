@@ -1,11 +1,11 @@
 import { Title } from '@components/Title';
-import { ExternalLink } from '@components/ExternalLink';
 import { useState } from 'react';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { TesUpdate } from '../../api/schemas/tesUpdate';
 import { Spinner } from '@components/Spinner';
 import { useGetTesUpdates } from '../../api/tes/tes';
+import { TesVersionDetails } from './TesVersionDetails';
 
 export function TesUpdates() {
   const { data: tesUpdates, isPending, isError } = useGetTesUpdates();
@@ -62,18 +62,9 @@ export function TesUpdates() {
             aria-hidden="true"
           />
         </div>
-
-        <div className="border-gray-cool-20! grow border-y border-r bg-white p-8">
-          <h3 className="font-bold">
-            What's changed in Version {selectedUpdate?.version}
-          </h3>
-          <p>
-            These code sets come from the{' '}
-            <ExternalLink href="https://tes.tools.aimsplatform.org/">
-              TES (Terminology Exchange Service)
-            </ExternalLink>
-          </p>
-        </div>
+        {selectedUpdate && (
+          <TesVersionDetails selectedUpdate={selectedUpdate} />
+        )}
       </div>
     </div>
   );

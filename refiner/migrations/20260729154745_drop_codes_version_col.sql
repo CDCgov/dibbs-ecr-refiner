@@ -4,8 +4,8 @@ ALTER TABLE codes
     DROP CONSTRAINT IF EXISTS codes_system_id_version_value_key;
 
 -- replace rows in the join table with the deconflicted ID's and then
--- delete rows made duplicate with the dropped version so we can apply the
--- followup unique index. Tiebreak self join by version so the replacement
+-- delete rows made duplicate with the dropped version so we can apply the 
+-- followup unique index. Tiebreak self join by version so the replacement 
 -- ids line up.
 WITH duplicates_to_delete AS (
     DELETE FROM codes c1
@@ -37,18 +37,18 @@ ALTER TABLE codes
 
 -- set the existing code version columns to the highest RV code
 WITH ranked_codes AS (
-    SELECT
+    SELECT 
       c.id as code_id,
       tes.version,
       ROW_NUMBER() OVER (PARTITION BY cc.code_id ORDER BY tes.version ASC) as rn
-    FROM conditions_codes cc
-    JOIN codes c ON cc.code_id = c.id
-    JOIN conditions cond ON cc.condition_id = cond.id
+    FROM conditions_codes cc 
+    JOIN codes c ON cc.code_id = c.id 
+    JOIN conditions cond ON cc.condition_id = cond.id 
     JOIN tes ON cond.tes_id = tes.id
 )
-UPDATE codes c
-SET version = rv.version
-FROM ranked_codes rv
+UPDATE codes c 
+SET version = rv.version 
+FROM ranked_codes rv 
 WHERE c.id = rv.code_id AND rv.rn = 1;
 
 -- Rebuild the old constraint
@@ -67,24 +67,24 @@ SELECT
     c.display,
     c.created_at
 FROM conditions_codes cc
-LEFT JOIN codes c ON c.id = cc.code_id
+LEFT JOIN codes c ON c.id = cc.code_id 
 LEFT JOIN conditions cond ON cc.condition_id = cond.id
-LEFT JOIN tes t ON cond.tes_id = t.id
+LEFT JOIN tes t ON cond.tes_id = t.id 
 ON CONFLICT (system_id, version, code) DO NOTHING;
 
 -- update the join table with all the re-inserted codes by checking the linked
 -- TES version
-UPDATE conditions_codes cc
-SET code_id = new_codes.id
-FROM
+UPDATE conditions_codes cc 
+SET code_id = new_codes.id  
+FROM 
     conditions cond,
-    tes t,
+    tes t, 
     codes new_codes,
     codes old_codes
-WHERE cc.condition_id = cond.id
-    AND cond.tes_id = t.id
-    AND cc.code_id = old_codes.id
-    AND old_codes.code = new_codes.code
+WHERE cc.condition_id = cond.id 
+    AND cond.tes_id = t.id 
+    AND cc.code_id = old_codes.id 
+    AND old_codes.code = new_codes.code 
     AND old_codes.system_id = new_codes.system_id
     AND new_codes.version = t.version
     AND cc.code_id != new_codes.id;
