@@ -29,7 +29,9 @@ export class ConfigurationPage {
   }
 
   async goToTestTab() {
-    await this.page.getByRole('link', { name: 'Test', exact: true }).click();
+    await this.page
+      .getByRole('link', { name: 'Test & export', exact: true })
+      .click();
     await this.checkHeading('Test configuration');
   }
 
