@@ -174,16 +174,6 @@ def _build_codes(
 
         child_tuples: set[FhirCodeTuple] = set()
 
-        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
-        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
-
-        child_tuples: set[FhirCodeTuple] = set()
-
-        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
-        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
-
-        child_tuples: set[FhirCodeTuple] = set()
-
         for child_vs in get_child_rsg_valuesets(
             parent=condition, all_vs_map=valuesets_map
         ):
