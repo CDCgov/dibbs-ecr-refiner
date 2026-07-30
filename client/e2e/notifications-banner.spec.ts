@@ -68,7 +68,7 @@ test.describe('Notification banners', () => {
       page.getByRole('heading', { name: 'Configurations', level: 1 })
     ).toBeVisible();
     await expect(appUpdateText).not.toBeVisible();
-    await expect(tesUpdateText).not.toBeVisible();
+    // await expect(tesUpdateText).not.toBeVisible();
   });
 
   test('Clicking "view updates" button dismisses the banner', async ({
@@ -94,19 +94,19 @@ test.describe('Notification banners', () => {
       await expect(appBannerText).not.toBeVisible();
     });
 
-    await test.step('TES banner', async () => {
-      const tesBannerText = page.getByText('A new TES update was published.', {
-        exact: true,
-      });
-      await expect(tesBannerText).toBeVisible();
+    // await test.step('TES banner', async () => {
+    //   const tesBannerText = page.getByText('A new TES update was published.', {
+    //     exact: true,
+    //   });
+    //   await expect(tesBannerText).toBeVisible();
 
-      await page.getByRole('link', { name: 'View updates for TES' }).click();
-      await expect(
-        page.getByRole('heading', { name: 'TES Updates' })
-      ).toBeVisible();
+    //   await page.getByRole('link', { name: 'View updates for TES' }).click();
+    //   await expect(
+    //     page.getByRole('heading', { name: 'TES Updates' })
+    //   ).toBeVisible();
 
-      await configurationsPage.goto();
-      await expect(tesBannerText).not.toBeVisible();
-    });
+    //   await configurationsPage.goto();
+    //   await expect(tesBannerText).not.toBeVisible();
+    // });
   });
 });

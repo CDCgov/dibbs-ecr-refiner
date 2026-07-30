@@ -14,8 +14,8 @@ import boto3
 from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
+from app.core.config import get_env_variable
 from app.core.models.types import XMLFiles
-from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
 from app.services.aws.s3_keys import (
     get_active_file_key,

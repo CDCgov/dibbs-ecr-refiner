@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigActivate } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
-import { mockCodeSets } from '../ConfigBuild/fixtures';
+import { mockCodeSets } from '../test/fixtures';
 
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {
@@ -25,6 +25,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
             { id: 'covid-1', display_name: 'COVID-19', associated: true },
           ],
           all_versions: [{ version: 1 }],
+          rsg_codes: [],
         },
       },
     })),
@@ -49,9 +50,6 @@ describe('Config activation page', () => {
 
   it('should show "Activate" as the current step', () => {
     renderPage();
-
-    expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
-    expect(screen.getByText('Test', { selector: 'a' })).toBeInTheDocument();
     expect(screen.getByText('Activate', { selector: 'a' })).toHaveAttribute(
       'aria-current',
       'page'

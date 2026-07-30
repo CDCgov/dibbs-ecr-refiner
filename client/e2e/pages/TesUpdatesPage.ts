@@ -4,8 +4,9 @@ export class TesUpdatesPage {
   constructor(private page: Page) {}
 
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto('/tes-updates');
 
+    await this.page.goto('/');
     await this.page.getByLabel('Open settings menu').click();
     await this.page.getByRole('menuitem', { name: 'TES updates' }).click();
     await expect(

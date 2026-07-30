@@ -80,10 +80,9 @@ class ProcessedCondition(TypedDict):
 
 type SystemDbId = str
 type SystemOid = str
-type CodeVersion = str
 
 type CodeValue = str
-type SystemCodeTuple = tuple[SystemDbId, CodeVersion, CodeValue]
+type SystemCodeTuple = tuple[SystemDbId, CodeValue]
 
 
 class ConditionToCodeRelationshipTrace(TypedDict):
@@ -92,6 +91,7 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     """
 
     condition_id: UUID
+    condition_url: str
     condition_display_name: str
     child_rsg_codes: set[SystemCodeTuple]
     non_child_rsg_codes: set[SystemCodeTuple]
@@ -100,9 +100,7 @@ class ConditionToCodeRelationshipTrace(TypedDict):
 
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
 
-type ConditionToCodeRelationshipIndex = dict[
-    ConditionUniqueIndex, ConditionToCodeRelationshipTrace
-]
+type ConditionToCodeRelationshipIndex = dict[str, ConditionToCodeRelationshipTrace]
 
 
 class ProcessedCodePayload(TypedDict):
@@ -166,13 +164,16 @@ def _build_codes(
 ) -> ProcessedCodePayload:
 
     snomed_db_id = oid_indexed_system_db_ids[SNOMED_OID]
-    codes_seen_so_far: set[tuple[str, str, str]] = set()
+    codes_seen_so_far: set[tuple[str, str]] = set()
     codes_for_codes_table: list[CodeRow] = []
 
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
-        cond_version = condition.get("version", "")
-        cond_index = (cond_canonical_url, cond_version)
+
+        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+
+        child_tuples: set[FhirCodeTuple] = set()
 
         condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
         condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
@@ -190,7 +191,7 @@ def _build_codes(
             display = parse_child_rsg_details_from_use_context(
                 child_vs.get("useContext", "")
             )
-            code_tuple = (snomed_db_id, cond_version, child_rsg_code)
+            code_tuple = (snomed_db_id, child_rsg_code)
             condition_child_rsg_snomed_codes.add(code_tuple)
 
             if code_tuple not in codes_seen_so_far:
@@ -199,13 +200,12 @@ def _build_codes(
                     CodeRow(
                         id=uuid4(),
                         code=child_rsg_code,
-                        version=cond_version,
                         display=display,
                         system_id=snomed_db_id,
                     )
                 )
 
-        condition_to_code_relationships[cond_index]["child_rsg_codes"] = (
+        condition_to_code_relationships[cond_canonical_url]["child_rsg_codes"] = (
             condition_child_rsg_snomed_codes
         )
         sibling_code_tuple_sets = [
@@ -231,13 +231,12 @@ def _build_codes(
                 if not code:
                     continue
 
-                code_tuple = (system_id, cond_version, code)
+                code_tuple = (system_id, code)
                 if code_tuple not in codes_seen_so_far:
                     codes_seen_so_far.add(code_tuple)
                     code_row = CodeRow(
                         id=uuid4(),
                         code=code,
-                        version=cond_version,
                         display=c.get("display") or "",
                         system_id=system_id,
                     )
@@ -250,7 +249,7 @@ def _build_codes(
                 ):
                     condition_non_child_rsg_snomed_codes.add(code_tuple)
 
-        condition_to_code_relationships[cond_index]["non_child_rsg_codes"] = (
+        condition_to_code_relationships[cond_canonical_url]["non_child_rsg_codes"] = (
             condition_non_child_rsg_snomed_codes
         )
 
@@ -389,9 +388,9 @@ def _upsert_conditions_and_groupers(
             OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
             OR conditions_context_groupers.completeness IS DISTINCT FROM EXCLUDED.completeness
     """
-    condition_to_code_relationships: dict[
-        ConditionUniqueIndex, ConditionToCodeRelationshipTrace
-    ] = defaultdict()
+    condition_to_code_relationships: dict[str, ConditionToCodeRelationshipTrace] = (
+        defaultdict()
+    )
 
     for item in processed:
         cond = item["condition"]
@@ -405,18 +404,16 @@ def _upsert_conditions_and_groupers(
 
         cond_id = condition_response[0]
         condition_canonical_url = cond.get("canonical_url")
-        condition_version = cond.get("version")
         condition_name = cond.get("display_name")
-        condition_index = (condition_canonical_url, condition_version)
         condition_payload = ConditionToCodeRelationshipTrace(
             condition_id=cond_id,
             condition_display_name=condition_name,
             child_rsg_codes=set(),
             non_child_rsg_codes=set(),
-            version=condition_version,
+            condition_url=condition_canonical_url,
         )
 
-        condition_to_code_relationships[condition_index] = condition_payload
+        condition_to_code_relationships[condition_canonical_url] = condition_payload
 
         groupers = item.get("context_groupers", [])
         if not groupers:
@@ -449,7 +446,6 @@ def _upsert_relationships(
         CREATE TEMP TABLE IF NOT EXISTS stage_relationships (
             condition_id UUID NOT NULL,
             system_id UUID NOT NULL,
-            version TEXT NOT NULL,
             code TEXT NOT NULL,
             is_child_rsg BOOLEAN NOT NULL
         ) ON COMMIT DROP
@@ -466,17 +462,17 @@ def _upsert_relationships(
             if not cond_id:
                 continue
 
-            for system_id, version, code in cond["child_rsg_codes"]:
+            for system_id, code in cond["child_rsg_codes"]:
                 staged_counts[child_rsg_key] += 1
-                yield (cond_id, system_id, version, code, True)
+                yield (cond_id, system_id, code, True)
 
-            for system_id, version, code in cond["non_child_rsg_codes"]:
+            for system_id, code in cond["non_child_rsg_codes"]:
                 staged_counts[non_child_rsg_key] += 1
-                yield (cond_id, system_id, version, code, False)
+                yield (cond_id, system_id, code, False)
 
     logger.info("🚀 Streaming relationships into stage table...")
     with cursor.copy(
-        """COPY stage_relationships (condition_id, system_id, version, code, is_child_rsg) FROM STDIN"""
+        """COPY stage_relationships (condition_id, system_id, code, is_child_rsg) FROM STDIN"""
     ) as copy:
         for row in relationship_generator():
             copy.write_row(row)
@@ -495,7 +491,6 @@ def _upsert_relationships(
         FROM stage_relationships sr
         JOIN codes c
             ON  c.system_id = sr.system_id
-            AND c.version = sr.version
             AND c.code = sr.code;
     """)
 
@@ -518,7 +513,6 @@ def _upsert_codes(
         CREATE TEMP TABLE IF NOT EXISTS stage_codes (
             id UUID NOT NULL,
             system_id UUID NOT NULL,
-            version TEXT NOT NULL,
             code TEXT NOT NULL,
             display TEXT
         ) ON COMMIT DROP
@@ -530,14 +524,13 @@ def _upsert_codes(
             yield (
                 code["id"],
                 code["system_id"],
-                code["version"],
                 code["code"],
                 code["display"],
             )
 
     logger.info("🚀 Streaming codes into stage table...")
     with cursor.copy(
-        "COPY stage_codes (id, system_id, version, code, display) FROM STDIN"
+        "COPY stage_codes (id, system_id, code, display) FROM STDIN"
     ) as copy:
         for record in code_generator():
             copy.write_row(record)
@@ -546,16 +539,15 @@ def _upsert_codes(
     cursor.execute("ANALYZE stage_codes;")
 
     cursor.execute("""
-        INSERT INTO codes (id, system_id, version, code, display)
-        SELECT s.id, s.system_id, s.version, s.code, s.display
+        INSERT INTO codes (id, system_id, code, display)
+        SELECT s.id, s.system_id, s.code, s.display
         FROM stage_codes s
         LEFT JOIN codes c
             ON  s.system_id = c.system_id
             AND s.code = c.code
-            AND s.version = c.version
         WHERE c.id IS NULL
-        ORDER BY s.system_id, s.version, s.code
-        ON CONFLICT (system_id, version, code) DO NOTHING;
+        ORDER BY s.system_id, s.code
+        ON CONFLICT (system_id, code) DO NOTHING;
     """)
 
     logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in codes table.")
