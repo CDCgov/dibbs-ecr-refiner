@@ -765,14 +765,14 @@ async def run_active_config_reactivation(
             CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
         )
 
-    finally:
         if lock_created:
             logger.error(
                 "The reactivation failed while the maintenance lock was active. "
-                "The lock remains in S3 and must be reviewed before processing is resumed. "
-                "bucket=%s key=%s",
+                "Lambda processing may be paused until the lock expires or the ops command "
+                "is rerun successfully. bucket=%s key=%s expiration_minutes=%s",
                 S3_CONFIGURATION_BUCKET_NAME,
                 MAINTENANCE_LOCK_KEY,
+                LOCK_EXPIRATION_MINUTES,
             )
 
 
