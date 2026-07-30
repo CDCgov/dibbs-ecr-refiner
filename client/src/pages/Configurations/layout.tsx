@@ -10,6 +10,7 @@ import { Status } from './ManageCodes/Status';
 import { VersionMenu } from './ManageCodes/VersionMenu';
 import { SerializedContentButton } from './SerializedContentButton';
 import { StepsContainer, Steps } from './Steps';
+import { ActivationButtons } from './ConfigActivate/ActivationButtons';
 
 export function NavigationContainer({
   children,
@@ -32,11 +33,7 @@ export function SectionContainer({ children }: { children: React.ReactNode }) {
 }
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2 px-8 py-6 shadow-lg lg:px-20">
-      {children}
-    </div>
-  );
+  return <div className="px-8 py-6 shadow-lg lg:px-20">{children}</div>;
 }
 
 interface HeaderProps {
@@ -48,28 +45,33 @@ export function Header({ configuration }: HeaderProps) {
   return (
     <div>
       <TitleContainer>
-        <div className="flex items-center gap-2">
-          <Title>{configuration.display_name}</Title>
-          <Button
-            variant="tertiary"
-            onClick={() => setIsRsgDetailsModalOpen(true)}
-            className="p-0!"
-            aria-label="Open reporting specification details modal"
-          >
-            <QuestionIcon />
-          </Button>
-          <RsgDetailsModal
-            open={isRsgDetailsModalOpen}
-            onClose={() => setIsRsgDetailsModalOpen(false)}
-            primaryConditionDisplayName={configuration.display_name}
-            rsgCodes={configuration.rsg_codes}
-          />
-        </div>
-        <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
-          <Status version={configuration.active_version} />
-          {configuration.active_version === configuration.version && (
-            <SerializedContentButton configurationId={configuration.id} />
-          )}
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-col">
+            <div className="flex flex-row items-center gap-2">
+              <Title>{configuration.display_name}</Title>
+              <Button
+                variant="tertiary"
+                onClick={() => setIsRsgDetailsModalOpen(true)}
+                className="p-0!"
+                aria-label="Open reporting specification details modal"
+              >
+                <QuestionIcon />
+              </Button>
+              <RsgDetailsModal
+                open={isRsgDetailsModalOpen}
+                onClose={() => setIsRsgDetailsModalOpen(false)}
+                primaryConditionDisplayName={configuration.display_name}
+                rsgCodes={configuration.rsg_codes}
+              />
+            </div>
+            <Status version={configuration.active_version} />
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <ActivationButtons configurationData={configuration} />
+            {configuration.active_version === configuration.version && (
+              <SerializedContentButton configurationId={configuration.id} />
+            )}
+          </div>
         </div>
       </TitleContainer>
       <NavigationContainer>
