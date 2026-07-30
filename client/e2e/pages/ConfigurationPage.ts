@@ -14,9 +14,18 @@ export class ConfigurationPage {
     await uploadMonmothmaTestFile(this.page);
   }
 
-  async goToBuildTab() {
-    await this.page.getByRole('link', { name: 'Build', exact: true }).click();
-    await this.checkHeading('Build configuration');
+  async goToCustomizeSectionsTab() {
+    await this.page
+      .getByRole('link', { name: 'Customize eICR sections', exact: true })
+      .click();
+    await this.checkHeading('Customize eICR sections');
+  }
+
+  async goToManageCodesTab() {
+    await this.page
+      .getByRole('link', { name: 'Manage codes', exact: true })
+      .click();
+    await this.checkHeading('Manage codes');
   }
 
   async goToTestTab() {

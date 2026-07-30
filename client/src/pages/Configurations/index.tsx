@@ -323,7 +323,9 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               { data: { condition_id: selectedCondition.id } },
               {
                 onSuccess: async (resp) => {
-                  await navigate(`/configurations/${resp.data.id}/build`);
+                  await navigate(
+                    `/configurations/${resp.data.id}/customize-sections`
+                  );
 
                   showToast({
                     heading: 'New configuration created',
