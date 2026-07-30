@@ -161,7 +161,6 @@ def _build_codes(
     oid_indexed_system_db_ids: dict[SystemOid, SystemDbId],
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
 ) -> ProcessedCodePayload:
-
     snomed_db_id = oid_indexed_system_db_ids[SNOMED_OID]
     codes_seen_so_far: set[tuple[str, str]] = set()
     codes_for_codes_table: list[CodeRow] = []
