@@ -12,6 +12,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
     data: response,
     isPending,
     isError,
+    // todo: don't hard code this
   } = useGetTesUpdateDiff({ cur_version: '6.0.0', prev_version: '5.0.0' });
 
   if (isPending) return <Spinner variant="centered" />;
