@@ -159,7 +159,8 @@ CREATE TABLE public.codes (
     code text CONSTRAINT codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    version text
 );
 
 
@@ -680,13 +681,6 @@ CREATE UNIQUE INDEX one_primary_per_configuration ON public.configurations_condi
 
 
 --
--- Name: system_code; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX system_code ON public.codes USING btree (system_id, code);
-
-
---
 -- Name: configurations configurations_set_last_activated_at_on_status_change_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -953,5 +947,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260701151910'),
     ('20260709201220'),
     ('20260716184236'),
-    ('20260728212408'),
-    ('20260729154745');
+    ('20260728212408');
