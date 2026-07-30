@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 REACTIVATION_NAME = f"active-payload-schema-v{CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}"
 
-LAMBDA_DRAIN_SECONDS = 30
+LAMBDA_DRAIN_SECONDS = 0
 LOCK_EXPIRATION_MINUTES = 15
 
 # Set to None to process all active configurations.
