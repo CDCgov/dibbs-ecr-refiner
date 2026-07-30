@@ -160,7 +160,7 @@ CREATE TABLE public.codes (
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    version text
+    version text NOT NULL
 );
 
 
