@@ -95,7 +95,6 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     condition_display_name: str
     child_rsg_codes: set[SystemCodeTuple]
     non_child_rsg_codes: set[SystemCodeTuple]
-    version: str
 
 
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
