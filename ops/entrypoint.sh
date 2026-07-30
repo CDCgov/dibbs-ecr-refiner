@@ -53,12 +53,6 @@ case "$COMMAND" in
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         echo "Migration step complete"
         python3 ./scripts/seeding/load_static_data.py
-        ;;
-    prepare-db-and-regenerate)
-        echo "Running migration scripts and updating condition data"
-        dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
-        echo "Migration step complete"
-        python3 ./scripts/seeding/load_static_data.py
         echo "Regenerating active configuration files"
         python3 ./scripts/reactivations/regenerate_active_configs.py
         ;;
