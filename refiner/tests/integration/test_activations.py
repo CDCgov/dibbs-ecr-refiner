@@ -392,10 +392,6 @@ class TestActivations:
                 "scripts.reactivations.regenerate_active_configs.create_maintenance_lock"
             ) as create_lock_mock,
             patch(
-                "scripts.reactivations.regenerate_active_configs.wait_for_lambda_to_drain",
-                new_callable=AsyncMock,
-            ) as wait_for_lambda_to_drain_mock,
-            patch(
                 "scripts.reactivations.regenerate_active_configs.regenerate_active_configs",
                 new_callable=AsyncMock,
             ) as regenerate_active_configs_mock,
@@ -410,7 +406,6 @@ class TestActivations:
         assert rows_after == rows_before
 
         create_lock_mock.assert_not_called()
-        wait_for_lambda_to_drain_mock.assert_not_awaited()
         regenerate_active_configs_mock.assert_not_awaited()
         remove_lock_mock.assert_not_called()
 
@@ -432,10 +427,6 @@ class TestActivations:
                 "scripts.reactivations.regenerate_active_configs.create_maintenance_lock"
             ) as create_lock_mock,
             patch(
-                "scripts.reactivations.regenerate_active_configs.wait_for_lambda_to_drain",
-                new_callable=AsyncMock,
-            ) as wait_for_lambda_to_drain_mock,
-            patch(
                 "scripts.reactivations.regenerate_active_configs.regenerate_active_configs",
                 new_callable=AsyncMock,
                 return_value={
@@ -452,9 +443,6 @@ class TestActivations:
 
         create_lock_mock.assert_called_once_with(
             expiration_minutes=reactivation.LOCK_EXPIRATION_MINUTES,
-        )
-        wait_for_lambda_to_drain_mock.assert_awaited_once_with(
-            drain_seconds=reactivation.LAMBDA_DRAIN_SECONDS,
         )
         regenerate_active_configs_mock.assert_awaited_once_with(
             db=db_pool,

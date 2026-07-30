@@ -1,24 +1,3 @@
-"""
-Regenerate active configuration artifacts in S3.
-
-This script:
-
-1. Creates a maintenance lock in S3.
-2. Waits for Lambda executions that started before the lock to finish.
-3. Queries Postgres for all currently active configurations.
-4. Rebuilds each active.json and metadata.json using current application code.
-5. Uploads the files to their existing S3 locations.
-6. Removes the maintenance lock after all files are regenerated successfully.
-
-This script does not:
-
-- Reactivate configurations in Postgres.
-- Change configuration versions.
-- Update activation history.
-- Rewrite current.json.
-- Rewrite the jurisdiction condition mapping file.
-"""
-
 import asyncio
 import json
 import logging
@@ -48,11 +27,37 @@ from app.services.configurations import (
     get_config_payload_metadata,
 )
 
+"""
+Regenerate active configuration artifacts in S3.
+
+This script:
+
+1. Checks whether the current active payload schema version has already been
+   regenerated successfully.
+2. Creates a maintenance lock in S3 to temporarily pause Lambda processing.
+3. Records the reactivation attempt in Postgres.
+4. Queries Postgres for all currently active configurations.
+5. Rebuilds each active.json and metadata.json using current application code.
+6. Uploads the files to their existing S3 locations.
+7. Records the final reactivation status, success count, and failure count.
+8. Removes the maintenance lock after all files are regenerated successfully.
+
+This script does not:
+
+- Reactivate configurations in Postgres.
+- Change configuration versions.
+- Update activation history.
+- Rewrite current.json.
+- Rewrite the jurisdiction condition mapping file.
+
+If the script fails while the maintenance lock is active, Lambda processing may be
+paused until the lock expires or the ops command is rerun successfully.
+"""
+
 logger = logging.getLogger(__name__)
 
 REACTIVATION_NAME = f"active-payload-schema-v{CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}"
 
-LAMBDA_DRAIN_SECONDS = 0
 LOCK_EXPIRATION_MINUTES = 15
 
 # Set to None to process all active configurations.
@@ -288,31 +293,6 @@ def remove_maintenance_lock() -> None:
     """Remove the maintenance lock after a successful reactivation."""
 
     delete_maintenance_lock()
-
-
-async def wait_for_lambda_to_drain(
-    *,
-    drain_seconds: int,
-) -> None:
-    """
-    Wait for Lambda executions that started before the lock was created.
-
-    This prototype uses a fixed delay. It does not currently check
-    Lambda concurrency directly.
-    """
-
-    if drain_seconds <= 0:
-        logger.info("Skipping Lambda drain wait.")
-        return
-
-    logger.info(
-        "Waiting for existing Lambda executions to finish. drain_seconds=%s",
-        drain_seconds,
-    )
-
-    await asyncio.sleep(drain_seconds)
-
-    logger.info("Lambda drain wait complete.")
 
 
 async def get_active_jurisdiction_ids_db(
@@ -694,10 +674,6 @@ async def run_active_config_reactivation(
             remove_maintenance_lock()
             lock_created = False
             raise
-
-        await wait_for_lambda_to_drain(
-            drain_seconds=LAMBDA_DRAIN_SECONDS,
-        )
 
         result = await regenerate_active_configs(
             db=db,
