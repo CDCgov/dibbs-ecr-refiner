@@ -19,7 +19,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
   if (isError) return 'Error!';
 
   return (
-    <div className="border-gray-cool-20! h-160 max-h-160 grow overflow-y-scroll border-y border-r bg-white p-8">
+    <div className="border-gray-cool-20! h-160 grow overflow-y-scroll border-y border-r bg-white p-8">
       <h3 className="font-bold">
         What's changed in Version {selectedUpdate?.version}
       </h3>
@@ -30,7 +30,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
         </ExternalLink>
       </p>
 
-      <table>
+      <table className="w-full">
         <thead className="border-b-gray-cool-20 border-b">
           <tr className="text-gray-cool-60 w-1/2 text-left font-bold">
             <th className="px-2 py-3" scope="col">

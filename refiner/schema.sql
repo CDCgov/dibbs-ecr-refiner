@@ -631,6 +631,27 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: active_payload_schema_reactivations_one_complete_per_version_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX active_payload_schema_reactivations_one_complete_per_version_id ON public.active_payload_schema_reactivations USING btree (target_schema_version) WHERE (status = 'COMPLETE'::text);
+
+
+--
+-- Name: active_payload_schema_reactivations_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX active_payload_schema_reactivations_status_idx ON public.active_payload_schema_reactivations USING btree (status);
+
+
+--
+-- Name: active_payload_schema_reactivations_target_schema_version_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON public.active_payload_schema_reactivations USING btree (target_schema_version);
+
+
+--
 -- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -946,5 +967,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260701151910'),
     ('20260709201220'),
     ('20260716184236'),
+    ('20260722140510'),
     ('20260728212408'),
     ('20260729154745');
