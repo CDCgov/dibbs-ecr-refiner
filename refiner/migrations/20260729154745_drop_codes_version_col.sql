@@ -1,6 +1,5 @@
 -- migrate:up
 
--- migrate:up
 CREATE INDEX IF NOT EXISTS idx_conditions_codes_code_id
     ON conditions_codes (code_id);
 
