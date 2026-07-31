@@ -23,13 +23,11 @@ export function VersionMenu({
   const step = useGetStep();
 
   return (
-    <Menu as="div" className="z-10">
+    <Menu as="div" className="z-50">
       <MenuButton>
         <div className="cursor-pointer">
-          <span>
-            {status === 'draft' ? 'Editing' : 'Viewing'}:{' '}
-            <span className="font-bold">Version {currentVersion}</span>
-          </span>
+          {status === 'draft' ? 'Editing' : 'Viewing'}:{' '}
+          <span className="font-bold">Version {currentVersion}</span>
           <ArrowDropDownIcon />
         </div>
       </MenuButton>
