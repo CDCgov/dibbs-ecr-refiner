@@ -291,7 +291,6 @@ class CodeRow(TypedDict):
     id: UUID
     display: str
     code: str
-    version: str
     system_id: str
 
 
