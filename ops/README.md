@@ -4,16 +4,15 @@
 
 | Name                    | Description                                      | Required | Default value |
 | ----------------------- | ------------------------------------------------ | -------- | ------------- |
-| `ENV`                   | Runtime environment, such as `local` or `demo`   | Yes      | N/A           |
-| `VERSION`               | Application/version identifier                   | Yes      | N/A           |
+| `ENV`                   | Runtime environment, such as `development` or `production`   | Yes      | N/A           |
 | `DB_URL`                | The PostgreSQL database URL                      | Yes      | N/A           |
 | `DB_PASSWORD`           | The PostgreSQL password                          | Yes      | N/A           |
-| `SSL_MODE`              | PostgreSQL `sslmode` value                       | No       | `require`     |
-| `AWS_REGION`            | AWS region used when creating the S3 client      | Yes      | N/A           |
-| `AWS_ACCESS_KEY_ID`     | AWS access key for local/demo S3 access          | Local/demo only | N/A     |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key for local/demo S3 access          | Local/demo only | N/A     |
-| `S3_ENDPOINT_URL`       | Custom S3 endpoint, used for LocalStack/demo S3  | Local/demo only | N/A     |
 | `S3_BUCKET_CONFIG`      | S3 bucket containing configuration artifacts     | Yes      | N/A           |
+| `AWS_REGION`            | AWS region used when creating the S3 client      | Yes      | N/A           |
+| `SSL_MODE`              | PostgreSQL `sslmode` value                       | No       | `require`     |
+| `AWS_ACCESS_KEY_ID`     | AWS access key for local/demo S3 access          | Local/demo only | N/A    |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for local/demo S3 access          | Local/demo only | N/A    |
+| `S3_ENDPOINT_URL`       | Custom S3 endpoint, used for LocalStack/demo S3  | Local/demo only | N/A    |
 
 ## entrypoint.sh
 

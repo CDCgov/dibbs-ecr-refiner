@@ -5,22 +5,33 @@ set -euo pipefail # exit on failure
 SSL_MODE="${SSL_MODE:-require}"
 
 # Ensure required variables are present
-if [[ -z "${ENV:-}" || \
-      -z "${VERSION:-}" || \
-      -z "${DB_URL:-}" || \
-      -z "${DB_PASSWORD:-}" || \
-      -z "${AWS_REGION:-}" || \
-      -z "${S3_BUCKET_CONFIG:-}" ]]; then
-  echo "ERROR: ENV, VERSION, DB_URL, DB_PASSWORD, AWS_REGION, and S3_BUCKET_CONFIG must be set"
+REQUIRED_VARS=(ENV DB_URL DB_PASSWORD AWS_REGION S3_BUCKET_CONFIG)
+MISSING=()
+
+for var in "${REQUIRED_VARS[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    MISSING+=("$var")
+  fi
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "ERROR: The following required variables are not set: ${MISSING[*]}"
   exit 1
 fi
 
 # Ensure local/demo S3 variables are present
 if [[ "${ENV}" == "local" || "${ENV}" == "demo" ]]; then
-  if [[ -z "${AWS_ACCESS_KEY_ID:-}" || \
-        -z "${AWS_SECRET_ACCESS_KEY:-}" || \
-        -z "${S3_ENDPOINT_URL:-}" ]]; then
-    echo "ERROR: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and S3_ENDPOINT_URL must be set for local/demo"
+  LOCAL_VARS=(AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_ENDPOINT_URL)
+  MISSING=()
+
+  for var in "${LOCAL_VARS[@]}"; do
+    if [[ -z "${!var:-}" ]]; then
+      MISSING+=("$var")
+    fi
+  done
+
+  if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "ERROR: The following variables are required for local/demo: ${MISSING[*]}"
     exit 1
   fi
 fi
