@@ -80,7 +80,6 @@ class ProcessedCondition(TypedDict):
 
 type SystemDbId = str
 type SystemOid = str
-
 type CodeValue = str
 type DbCodedConcept = tuple[SystemDbId, CodeValue]
 
