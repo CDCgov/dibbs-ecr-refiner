@@ -33,10 +33,10 @@ from app.services.configurations import (
 )
 from app.services.logger import get_logger
 
+from .custom_codes.model import CustomCodeResponse
 from .model import (
     CreateConfigInput,
     CreateConfigurationResponse,
-    CustomCodeResponse,
     GetConfigurationResponse,
     GetConfigurationsResponse,
     IncludedCondition,

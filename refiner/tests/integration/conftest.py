@@ -208,7 +208,9 @@ def update_section_processing(authed_client):
 
 @pytest_asyncio.fixture
 def edit_custom_code(authed_client):
-    from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+    from app.api.v1.configurations.custom_codes.custom_codes import (
+        UpdateCustomCodeInput,
+    )
 
     async def _get(config_id: UUID, body: UpdateCustomCodeInput):
         payload = body.model_dump(mode="json")

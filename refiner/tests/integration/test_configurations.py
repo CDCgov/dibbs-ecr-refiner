@@ -6,7 +6,7 @@ import pytest
 from fastapi import status
 from psycopg.rows import dict_row
 
-from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+from app.api.v1.configurations.custom_codes.custom_codes import UpdateCustomCodeInput
 from app.api.v1.configurations.model import AddCustomCodeInput
 from app.db.code_systems.db import (
     get_code_system_by_key_db,

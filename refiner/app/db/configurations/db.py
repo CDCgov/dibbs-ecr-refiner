@@ -5,11 +5,10 @@ from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.api.v1.configurations.model import (
+from app.api.v1.configurations.custom_codes.model import (
     AddCustomCodeInput,
-    AddSectionInput,
-    DeleteSectionInput,
 )
+from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
 from app.db.code_systems.db import DbCodeSystem, get_code_system_by_id_db
 from app.db.conditions.db import (
     get_latest_tes_condition_db,

@@ -8,9 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.model import (
+from app.api.v1.configurations.custom_codes.model import (
     AddCustomCodeInput,
-    ConfigurationCustomCodeResponse,
     ConfirmUploadCustomCodesInput,
     CustomCodeResponse,
     UploadCustomCodesCsvInput,
@@ -31,6 +30,7 @@ from app.db.configurations.db import (
     get_configuration_by_id_db,
     get_total_condition_code_counts_by_configuration_db,
 )
+from app.db.configurations.model import DbTotalConditionCodeCount
 from app.db.custom_codes.db import (
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
@@ -50,22 +50,16 @@ from app.services.terminology import CodeSystemKey
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
 
-def _validate_add_custom_code_input(input: AddCustomCodeInput):
-    if not input.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "code" is missing.',
-        )
-    if not input.system_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_id" is missing.',
-        )
-    if not input.display:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "name" is missing.',
-        )
+@dataclass(frozen=True)
+class ConfigurationCustomCodeResponse:
+    """
+    Configuration response for custom code operations (add/edit/delete).
+    """
+
+    id: UUID
+    display_name: str
+    code_sets: list[DbTotalConditionCodeCount]
+    custom_codes: list[CustomCodeResponse]
 
 
 @router.post(
@@ -98,15 +92,9 @@ async def add_custom_code(
         ConfigurationCustomCodeResponse: Updated configuration
     """
 
-    # validate input
-    _validate_add_custom_code_input(body)
-
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # find config
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if not config:
@@ -576,30 +564,6 @@ async def delete_custom_code(
     )
 
 
-class UpdateCustomCodeInput(BaseModel):
-    """
-    Input model when updating a config's custom code.
-    """
-
-    id: UUID
-    system_id: UUID
-    code: str
-    display: str
-
-
-def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
-    if not input.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "code" is missing.',
-        )
-    if not input.system_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_id" is missing.',
-        )
-
-
 class ValidateCustomCodeInput(BaseModel):
     """
     Input model when validating a config's custom code.
@@ -686,6 +650,17 @@ async def validate_custom_code(
     return ValidateCustomCodeResponse(valid=is_valid)
 
 
+class UpdateCustomCodeInput(BaseModel):
+    """
+    Input model when updating a config's custom code.
+    """
+
+    id: UUID
+    system_id: UUID
+    code: str
+    display: str
+
+
 @router.put(
     "",
     response_model=ConfigurationCustomCodeResponse,
@@ -697,7 +672,6 @@ async def edit_custom_code(
     body: UpdateCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-    logger: Logger = Depends(get_logger),
 ) -> ConfigurationCustomCodeResponse:
     """
     Modify a configuration's custom code based on system_key/code pair.
@@ -717,14 +691,9 @@ async def edit_custom_code(
         ConfigurationCustomCodeResponse: The updated configuration.
     """
 
-    _validate_edit_custom_code_input(body)
-
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # find config
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if not config:
