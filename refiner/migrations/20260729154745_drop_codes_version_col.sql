@@ -13,12 +13,12 @@ WITH duplicates_to_delete AS (
     WHERE c1.version > c2.version
       AND c1.system_id = c2.system_id
       AND c1.code = c2.code
-    RETURNING c1.id AS old_id, c2.id AS new_id
+    RETURNING c1.id AS new_id, c2.id AS old_id
 )
 UPDATE conditions_codes
-SET code_id = d.new_id
+SET code_id = d.old_id
 FROM duplicates_to_delete d
-WHERE code_id = d.old_id;
+WHERE code_id = d.new_id;
 
 ALTER TABLE codes
     DROP COLUMN version;
