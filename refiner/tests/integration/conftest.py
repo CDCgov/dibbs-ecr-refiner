@@ -32,7 +32,7 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 from app.api.auth.session import get_hashed_token
-from app.api.v1.configurations.model import AddCustomCodeInput
+from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
 from app.core.config import (
     get_app_config,
     get_auth_config,

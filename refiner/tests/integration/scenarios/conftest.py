@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from fastapi import status
 
-from app.api.v1.configurations.model import AddCustomCodeInput
+from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
 from app.core.models.types import XMLFiles
 from app.services.terminology import ProcessedConfiguration
 from tests.integration.scenarios.build_report import build_report

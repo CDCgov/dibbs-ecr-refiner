@@ -6,7 +6,7 @@ from io import BytesIO, StringIO
 import pytest
 from fastapi import status
 
-from app.api.v1.configurations.model import AddCustomCodeInput
+from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
 from app.db.code_systems.db import get_all_code_systems_db, get_code_system_by_key_db
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.services.configurations import get_default_sections
