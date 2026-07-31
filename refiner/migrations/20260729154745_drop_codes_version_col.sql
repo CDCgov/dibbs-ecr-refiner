@@ -77,9 +77,9 @@ SELECT
     c.display,
     c.created_at
 FROM conditions_codes cc
-LEFT JOIN codes c ON c.id = cc.code_id
-LEFT JOIN conditions cond ON cc.condition_id = cond.id
-LEFT JOIN tes t ON cond.tes_id = t.id
+JOIN codes c ON c.id = cc.code_id
+JOIN conditions cond ON cc.condition_id = cond.id
+JOIN tes t ON cond.tes_id = t.id
 ON CONFLICT (system_id, version, code) DO NOTHING;
 
 -- update the join table with all the re-inserted codes by checking the linked
