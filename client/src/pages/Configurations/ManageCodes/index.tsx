@@ -122,13 +122,10 @@ export function ManageCodes() {
         />
       ) : null}
       <SectionContainer>
-        <div className="content flex flex-wrap justify-between">
-          <ConfigurationTitleBar
-            title="Manage codes"
-            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
-          />
-          <Export id={configuration.data.id} />
-        </div>
+        <ConfigurationTitleBar
+          title="Manage codes"
+          subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
+        />
 
         <Builder
           id={configuration.data.id}
@@ -140,22 +137,6 @@ export function ManageCodes() {
         />
       </SectionContainer>
     </>
-  );
-}
-
-interface ExportBuilderProps {
-  id: string;
-}
-
-export function Export({ id }: ExportBuilderProps) {
-  return (
-    <a
-      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
-      href={`/api/v1/configurations/${id}/export`}
-      download
-    >
-      Export configuration
-    </a>
   );
 }
 
