@@ -45,7 +45,7 @@ export function Header({ configuration }: HeaderProps) {
   return (
     <div>
       <TitleContainer>
-        <div className="flex flex-row items-center justify-between">
+        <div className="flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col">
             <div className="flex flex-row items-center gap-2">
               <Title>{configuration.display_name}</Title>
@@ -66,7 +66,7 @@ export function Header({ configuration }: HeaderProps) {
             </div>
             <Status version={configuration.active_version} />
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col gap-2 md:items-end">
             <ActivationButtons configurationData={configuration} />
             {configuration.active_version === configuration.version && (
               <SerializedContentButton configurationId={configuration.id} />
