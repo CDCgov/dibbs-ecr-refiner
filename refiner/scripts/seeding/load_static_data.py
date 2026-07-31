@@ -80,9 +80,11 @@ class ProcessedCondition(TypedDict):
 
 type SystemDbId = str
 type SystemOid = str
-
 type CodeValue = str
-type SystemCodeTuple = tuple[SystemDbId, CodeValue]
+type DbCodedConcept = tuple[SystemDbId, CodeValue]
+
+type CodeVersion = str
+type SystemCodeTuple = tuple[SystemDbId, CodeVersion, CodeValue]
 
 
 class ConditionToCodeRelationshipTrace(TypedDict):
@@ -93,13 +95,15 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     condition_id: UUID
     condition_url: str
     condition_display_name: str
-    child_rsg_codes: set[SystemCodeTuple]
-    non_child_rsg_codes: set[SystemCodeTuple]
+    child_rsg_codes: set[DbCodedConcept]
+    non_child_rsg_codes: set[DbCodedConcept]
 
 
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
 
-type ConditionToCodeRelationshipIndex = dict[str, ConditionToCodeRelationshipTrace]
+type ConditionToCodeRelationshipIndex = dict[
+    ConditionUniqueIndex, ConditionToCodeRelationshipTrace
+]
 
 
 class ProcessedCodePayload(TypedDict):
@@ -162,14 +166,15 @@ def _build_codes(
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
 ) -> ProcessedCodePayload:
     snomed_db_id = oid_indexed_system_db_ids[SNOMED_OID]
-    codes_seen_so_far: set[tuple[str, str]] = set()
+    codes_seen_so_far: set[DbCodedConcept] = set()
     codes_for_codes_table: list[CodeRow] = []
 
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
+        cond_version = condition.get("version", "")
 
-        condition_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
-        condition_non_child_rsg_snomed_codes: set[SystemCodeTuple] = set()
+        condition_child_rsg_snomed_codes: set[DbCodedConcept] = set()
+        condition_non_child_rsg_snomed_codes: set[DbCodedConcept] = set()
 
         child_tuples: set[FhirCodeTuple] = set()
 
@@ -198,9 +203,9 @@ def _build_codes(
                     )
                 )
 
-        condition_to_code_relationships[cond_canonical_url]["child_rsg_codes"] = (
-            condition_child_rsg_snomed_codes
-        )
+        condition_to_code_relationships[(cond_canonical_url, cond_version)][
+            "child_rsg_codes"
+        ] = condition_child_rsg_snomed_codes
         sibling_code_tuple_sets = [
             extract_codes_from_compose(sibling_vs)
             for sibling_vs in get_sibling_context_valuesets(condition, valuesets_map)
@@ -242,9 +247,9 @@ def _build_codes(
                 ):
                     condition_non_child_rsg_snomed_codes.add(code_tuple)
 
-        condition_to_code_relationships[cond_canonical_url]["non_child_rsg_codes"] = (
-            condition_non_child_rsg_snomed_codes
-        )
+        condition_to_code_relationships[(cond_canonical_url, cond_version)][
+            "non_child_rsg_codes"
+        ] = condition_non_child_rsg_snomed_codes
 
     return ProcessedCodePayload(
         codes_to_insert=codes_for_codes_table,
@@ -381,9 +386,9 @@ def _upsert_conditions_and_groupers(
             OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
             OR conditions_context_groupers.completeness IS DISTINCT FROM EXCLUDED.completeness
     """
-    condition_to_code_relationships: dict[str, ConditionToCodeRelationshipTrace] = (
-        defaultdict()
-    )
+    condition_to_code_relationships: dict[
+        ConditionUniqueIndex, ConditionToCodeRelationshipTrace
+    ] = defaultdict()
 
     for item in processed:
         cond = item["condition"]
@@ -397,6 +402,8 @@ def _upsert_conditions_and_groupers(
 
         cond_id = condition_response[0]
         condition_canonical_url = cond.get("canonical_url")
+        condition_version = cond.get("version")
+
         condition_name = cond.get("display_name")
         condition_payload = ConditionToCodeRelationshipTrace(
             condition_id=cond_id,
@@ -406,7 +413,9 @@ def _upsert_conditions_and_groupers(
             condition_url=condition_canonical_url,
         )
 
-        condition_to_code_relationships[condition_canonical_url] = condition_payload
+        condition_to_code_relationships[
+            (condition_canonical_url, condition_version)
+        ] = condition_payload
 
         groupers = item.get("context_groupers", [])
         if not groupers:

@@ -131,6 +131,25 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: active_payload_schema_reactivations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_payload_schema_reactivations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    target_schema_version integer CONSTRAINT active_payload_schema_reactivati_target_schema_version_not_null NOT NULL,
+    status text NOT NULL,
+    started_at timestamp with time zone DEFAULT now() NOT NULL,
+    completed_at timestamp with time zone,
+    success_count integer DEFAULT 0 NOT NULL,
+    failure_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT active_payload_schema_reactivations_counts_check CHECK (((success_count >= 0) AND (failure_count >= 0))),
+    CONSTRAINT active_payload_schema_reactivations_status_check CHECK ((status = ANY (ARRAY['IN_PROGRESS'::text, 'COMPLETE'::text, 'PARTIAL_FAILURE'::text, 'FAILED'::text])))
+);
+
+
+--
 -- Name: codes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -372,6 +391,14 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: active_payload_schema_reactivations active_payload_schema_reactivations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_payload_schema_reactivations
+    ADD CONSTRAINT active_payload_schema_reactivations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: codes codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -601,6 +628,27 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: active_payload_schema_reactivations_one_complete_per_version_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX active_payload_schema_reactivations_one_complete_per_version_id ON public.active_payload_schema_reactivations USING btree (target_schema_version) WHERE (status = 'COMPLETE'::text);
+
+
+--
+-- Name: active_payload_schema_reactivations_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX active_payload_schema_reactivations_status_idx ON public.active_payload_schema_reactivations USING btree (status);
+
+
+--
+-- Name: active_payload_schema_reactivations_target_schema_version_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON public.active_payload_schema_reactivations USING btree (target_schema_version);
 
 
 --
@@ -905,5 +953,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260701151910'),
     ('20260709201220'),
     ('20260716184236'),
+    ('20260722140510'),
     ('20260728212408'),
     ('20260729154745');
