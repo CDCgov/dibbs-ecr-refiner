@@ -101,7 +101,9 @@ class ConditionToCodeRelationshipTrace(TypedDict):
 
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
 
-type ConditionToCodeRelationshipIndex = dict[str, ConditionToCodeRelationshipTrace]
+type ConditionToCodeRelationshipIndex = dict[
+    ConditionUniqueIndex, ConditionToCodeRelationshipTrace
+]
 
 
 class ProcessedCodePayload(TypedDict):
@@ -384,9 +386,9 @@ def _upsert_conditions_and_groupers(
             OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
             OR conditions_context_groupers.completeness IS DISTINCT FROM EXCLUDED.completeness
     """
-    condition_to_code_relationships: dict[str, ConditionToCodeRelationshipTrace] = (
-        defaultdict()
-    )
+    condition_to_code_relationships: dict[
+        ConditionUniqueIndex, ConditionToCodeRelationshipTrace
+    ] = defaultdict()
 
     for item in processed:
         cond = item["condition"]
