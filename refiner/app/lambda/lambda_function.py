@@ -14,9 +14,13 @@ import boto3
 from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
+from app.core.config import get_env_variable
 from app.core.models.types import XMLFiles
-from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
+from app.db.configurations.model import (
+    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+    MAINTENANCE_LOCK_KEY,
+)
 from app.services.aws.s3_keys import (
     get_active_file_key,
     get_current_file_key,
@@ -112,6 +116,14 @@ class RefinerCompleteError(TypedDict):
 
     RefinerSkip: bool
     Error: str
+
+
+class MaintenanceModeError(Exception):
+    """Raised when active configuration maintenance is in progress."""
+
+
+class IncompatibleActiveConfigurationError(Exception):
+    """Raised when an active configuration file uses an unsupported schema version."""
 
 
 @dataclass
@@ -262,6 +274,24 @@ def lambda_handler(event, context) -> dict:
                 continue
 
             try:
+                maintenance_lock = read_active_configuration_maintenance_lock(
+                    s3_client=s3_client,
+                    bucket=s3_config_bucket_name,
+                )
+
+                if maintenance_lock is not None:
+                    logger.warning(
+                        "Active configuration maintenance is in progress.",
+                        operation="active_configuration_maintenance",
+                        lock_key=MAINTENANCE_LOCK_KEY,
+                        reactivation=maintenance_lock.get("reactivation"),
+                        started_at=maintenance_lock.get("started_at"),
+                        expires_at=maintenance_lock.get("expires_at"),
+                        persistence_id=persistence_id,
+                    )
+                    raise MaintenanceModeError(
+                        "Active configuration maintenance is in progress."
+                    )
                 # S3 GET RR
                 logger.info(
                     f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}",
@@ -331,6 +361,18 @@ def lambda_handler(event, context) -> dict:
                     refined_output_count=refined_output_count,
                 )
 
+            except MaintenanceModeError as e:
+                # Do not write RefinerComplete for maintenance mode.
+                # Returning the record as a batch failure allows SQS to retry it
+                # after the queue visibility timeout.
+                logger.warning(
+                    "Deferring record because active configuration maintenance is in progress.",
+                    operation="active_configuration_maintenance",
+                    persistence_id=persistence_id,
+                    exception=e,
+                )
+                batch_item_failures.append({"itemIdentifier": record_id})
+
             except Exception as e:
                 logger.error("Fatal error processing record", exception=e)
 
@@ -367,6 +409,66 @@ def lambda_handler(event, context) -> dict:
 ###############################################
 # Helper functions
 ###############################################
+
+
+def read_active_configuration_maintenance_lock(
+    s3_client,
+    bucket: str,
+) -> dict | None:
+    """
+    Read the active configuration maintenance lock from S3.
+
+    If the lock is missing, expired, empty, null, or invalid JSON, treat it as
+    no active lock. A malformed lock should not fail refinement processing.
+    """
+
+    try:
+        response = s3_client.get_object(
+            Bucket=bucket,
+            Key=MAINTENANCE_LOCK_KEY,
+        )
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
+
+        if error_code in {"404", "NoSuchKey", "NotFound"}:
+            return None
+
+        raise
+
+    lock_body = response["Body"].read().decode("utf-8")
+
+    try:
+        lock = parse_s3_content_to_dict(lock_body)
+    except json.JSONDecodeError:
+        logger.warning(
+            "Active configuration maintenance lock could not be parsed; "
+            "treating as no active lock. bucket=%s key=%s",
+            bucket,
+            MAINTENANCE_LOCK_KEY,
+            exc_info=True,
+        )
+        return None
+
+    if lock is None:
+        logger.warning(
+            "Active configuration maintenance lock was null; treating as no active lock. "
+            "bucket=%s key=%s",
+            bucket,
+            MAINTENANCE_LOCK_KEY,
+        )
+        return None
+
+    if not isinstance(lock, dict):
+        logger.warning(
+            "Active configuration maintenance lock was not an object; "
+            "treating as no active lock. bucket=%s key=%s lock_type=%s",
+            bucket,
+            MAINTENANCE_LOCK_KEY,
+            type(lock).__name__,
+        )
+        return None
+
+    return lock
 
 
 def extract_persistence_id(object_key: str, input_prefix: str) -> str:
@@ -556,9 +658,9 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     Read an activated configuration file (`active.json`) from S3.
 
     This file contains the serialized configuration data needed for refinement,
-    including the flat codes set, per-system `code_system_sets`, section processing
-    rules, and included condition RSG codes. It is written during activation by
-    the webapp and read by Lambda at refinement time.
+    including the active payload schema version, per-system `code_system_sets`,
+    section processing rules, and included condition RSG codes. It is written
+    during activation by the webapp and read by Lambda at refinement time.
 
     Stage:
         Configuration Loading
@@ -575,7 +677,9 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
 
     Raises:
         Exception: If the file does not exist. This indicates a mismatch between
-            current.json (which pointed to this version) and the actual files on S3.
+            current.json, which pointed to this version, and the actual files on S3.
+        IncompatibleActiveConfigurationError: If the active configuration schema
+            version is missing or unsupported.
     """
 
     # Check that configuration file exists
@@ -590,7 +694,33 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
         s3_client=s3_client, bucket=bucket, key=key
     )
 
-    return parse_s3_content_to_dict(config_file_content)
+    configuration = parse_s3_content_to_dict(config_file_content)
+    schema_version = configuration.get("schema_version")
+
+    if schema_version is None:
+        raise IncompatibleActiveConfigurationError(
+            "Active configuration is missing required field 'schema_version'."
+        )
+
+    if not isinstance(schema_version, int):
+        raise IncompatibleActiveConfigurationError(
+            f"'schema_version' must be an int, got {type(schema_version).__name__}."
+        )
+
+    if schema_version != CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION:
+        logger.error(
+            "Active configuration schema version is incompatible.",
+            operation="active_configuration_schema_mismatch",
+            key=key,
+            expected_schema_version=CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+            actual_schema_version=schema_version,
+        )
+        raise IncompatibleActiveConfigurationError(
+            "Active configuration schema version is incompatible. "
+            f"Expected {CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION}, got {schema_version}."
+        )
+
+    return configuration
 
 
 def run_refinement(input: RefinementInput) -> RefinementOutput:
@@ -777,7 +907,7 @@ def process_condition(
 
     logger.info(
         "Refinement complete for condition.",
-        jurisidiction_code=jurisdiction_code,
+        jurisdiction_code=jurisdiction_code,
         condition_code=rsg_code,
         metrics=asdict(result.metrics),
         report=asdict(result.report),

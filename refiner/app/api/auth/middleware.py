@@ -6,6 +6,7 @@ from logging import Logger
 from fastapi import Depends, HTTPException, Request, Response, status
 from psycopg.rows import dict_row
 
+from app.core.config import get_app_config
 from app.db.pool import AsyncDatabaseConnection, get_db
 
 from ...core.exceptions import DatabaseConnectionError, DatabaseQueryError
@@ -156,7 +157,11 @@ async def _update_session_expiry_time(
                         "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
                         (new_expiration, token_hash),
                     )
-            set_session_cookie(response=response, session_token=session_token)
+            set_session_cookie(
+                response=response,
+                app_config=get_app_config(),
+                session_token=session_token,
+            )
 
         except (DatabaseConnectionError, DatabaseQueryError) as db_err:
             logger.error(

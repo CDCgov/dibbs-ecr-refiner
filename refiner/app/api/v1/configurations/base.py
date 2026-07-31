@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
-from app.core.config import ENVIRONMENT
+from app.core.config import AppConfig, get_app_config
 from app.db.code_systems.db import get_all_code_systems_db
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
@@ -173,6 +173,7 @@ async def create_configuration(
 async def get_serialized_configuration(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
+    app_config: AppConfig = Depends(get_app_config),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> SerializedFiles:
@@ -182,6 +183,7 @@ async def get_serialized_configuration(
     Args:
         configuration_id (UUID): The active configuration ID
         user (DbUser): The logged-in user
+        app_config (AppConfig): The required application environment variables
         db (AsyncDatabaseConnection): The database connection
         logger (Logger): The standard app logger
 
@@ -195,7 +197,7 @@ async def get_serialized_configuration(
         Response: The serialized configuration file content
     """
 
-    if ENVIRONMENT["ENV"] != "local":
+    if app_config.ENV != "local":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This endpoint is only available locally.",
@@ -368,6 +370,7 @@ async def get_configuration(
         condition_id=primary_condition.id,
         db=db,
     )
+
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,

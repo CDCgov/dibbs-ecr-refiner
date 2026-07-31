@@ -41,6 +41,30 @@ services:
       - ./refiner/app/db:/var/task/app/db
       - ./refiner/assets:/var/task/assets
 
+# Run with `docker compose --profile ops run --rm ops prepare-db`
+  ops:
+    build:
+      context: .
+      dockerfile: Dockerfile.ops
+    working_dir: /app
+    entrypoint: ["./entrypoint.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    environment:
+      ENV: local
+      DB_URL: postgresql://postgres@db:5432/refiner
+      DB_PASSWORD: refiner
+      SSL_MODE: disable
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: refiner
+      AWS_SECRET_ACCESS_KEY: refiner
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_BUCKET_CONFIG: local-config-bucket
+    profiles: ["ops"]
+
   db:
     image: postgres:alpine
     restart: on-failure
@@ -98,5 +122,6 @@ services:
     environment:
       - DB_URL=postgresql://postgres@db:5432/refiner
       - DB_PASSWORD=refiner
+
     volumes:
       - .:/app

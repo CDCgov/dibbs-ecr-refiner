@@ -6,7 +6,7 @@ import { Layout } from '@components/Layout';
 import { useLogin } from './hooks/useLogin';
 import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
-import { ConfigBuild } from './pages/Configurations/ConfigBuild';
+import { ManageCodes } from './pages/Configurations/ManageCodes';
 import { ConfigTest } from './pages/Configurations/ConfigTest';
 import { ConfigActivate } from './pages/Configurations/ConfigActivate';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,6 +16,7 @@ import { ActivityLog } from './pages/ActivityLog';
 import { AppUpdates } from './pages/AppUpdates';
 import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
 import { TesUpdates } from './pages/TesUpdates';
+import { CustomizeSections } from './pages/Configurations/CustomizeSections';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -46,7 +47,14 @@ export function App() {
           path="/configurations"
           element={<Configurations user={user} refreshUser={refreshUser} />}
         />
-        <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+        <Route
+          path="/configurations/:id/customize-sections"
+          element={<CustomizeSections />}
+        />
+        <Route
+          path="/configurations/:id/manage-codes"
+          element={<ManageCodes />}
+        />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
         <Route
           path="/configurations/:id/activate"

@@ -91,7 +91,7 @@ lint:
 [doc('Run tests on all code')]
 [group('test')]
 test:
-    just server::test
+    just server::test-all
     just client::run test:coverage
     just client::run e2e
 

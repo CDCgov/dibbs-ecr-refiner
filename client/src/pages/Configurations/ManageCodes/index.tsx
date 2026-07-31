@@ -1,5 +1,4 @@
 import { useParams } from 'react-router';
-import { Sections } from './Sections';
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -38,14 +37,14 @@ import { SerializedContentButton } from '../SerializedContentButton';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
-type TableView = 'none' | 'codeset' | 'custom' | 'sections' | CsvImportView;
+type TableView = 'none' | 'codeset' | 'custom' | CsvImportView;
 
 const toCsvImportView = (step: CsvImportStep): CsvImportView => `csv_${step}`;
 
 const isCsvImportView = (view: TableView): view is CsvImportView =>
   view.startsWith('csv_');
 
-export function ConfigBuild() {
+export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
 
   // acquire lock on mount, schedule release on unmount
@@ -104,7 +103,6 @@ export function ConfigBuild() {
           currentVersion={configuration.data.version}
           status={configuration.data.status}
           versions={configuration.data.all_versions}
-          step="build"
         />
         <StepsContainer>
           <Steps configurationId={configuration.data.id} />
@@ -115,7 +113,6 @@ export function ConfigBuild() {
           draftId={configuration.data.draft_id}
           conditionId={configuration.data.condition_id}
           latestVersion={configuration.data.latest_version}
-          step="build"
         />
       ) : null}
       {disabledForConcurrency ? (
@@ -127,8 +124,8 @@ export function ConfigBuild() {
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
           <ConfigurationTitleBar
-            step="build"
-            condition={configuration.data.display_name}
+            title="Manage codes"
+            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
           />
           <Export id={configuration.data.id} />
         </div>
@@ -138,7 +135,6 @@ export function ConfigBuild() {
           code_sets={sortedCodeSets}
           included_conditions={configuration.data.included_conditions}
           custom_codes={configuration.data.custom_codes}
-          section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           disabled={isDisabled}
         />
@@ -165,12 +161,7 @@ export function Export({ id }: ExportBuilderProps) {
 
 type BuilderProps = Pick<
   GetConfigurationResponse,
-  | 'id'
-  | 'code_sets'
-  | 'custom_codes'
-  | 'included_conditions'
-  | 'section_processing'
-  | 'display_name'
+  'id' | 'code_sets' | 'custom_codes' | 'included_conditions' | 'display_name'
 > & { disabled: boolean };
 
 function Builder({
@@ -178,7 +169,6 @@ function Builder({
   code_sets,
   custom_codes,
   included_conditions,
-  section_processing,
   display_name: default_condition_name,
   disabled,
 }: BuilderProps) {
@@ -328,24 +318,6 @@ function Builder({
                     <span>{custom_codes.length?.toLocaleString()}</span>
                   </Button>
                 </li>
-                <li key="sections">
-                  <Button
-                    variant="unstyled"
-                    className={classNames(
-                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                      {
-                        'bg-white': tableView === 'sections',
-                      }
-                    )}
-                    onClick={() => {
-                      setSelectedCodesetId(null);
-                      setTableView('sections');
-                    }}
-                    aria-current={tableView === 'sections' ? 'true' : undefined}
-                  >
-                    <span>Sections</span>
-                  </Button>
-                </li>
               </OptionsList>
             </OptionsListContainer>
           </div>
@@ -382,12 +354,6 @@ function Builder({
                 disabled={disabled}
               />
             </div>
-          ) : tableView === 'sections' ? (
-            <Sections
-              configurationId={id}
-              sections={section_processing}
-              disabled={disabled}
-            />
           ) : isCsvImportView(tableView) ? (
             <ImportCustomCodes
               configurationId={id}
