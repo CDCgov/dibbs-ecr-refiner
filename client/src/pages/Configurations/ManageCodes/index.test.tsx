@@ -202,10 +202,12 @@ describe('Manage codes page', () => {
 
   it('should render a version menu with previous versions', async () => {
     const user = userEvent.setup();
-    const expectedMenuText = 'Editing: Version 2';
+    const versionSelectorTestId = 'selected-version-label';
     renderPage();
-    expect(await screen.findByText(expectedMenuText)).toBeInTheDocument();
-    await user.click(await screen.findByText(expectedMenuText));
+    expect(
+      await screen.findByTestId(versionSelectorTestId)
+    ).toBeInTheDocument();
+    await user.click(await screen.findByTestId(versionSelectorTestId));
     expect(await screen.findAllByRole('menuitem')).toHaveLength(2);
   });
 
@@ -284,7 +286,7 @@ describe('Manage codes page', () => {
   });
 
   it('should display user and status information in the version picker menu', async () => {
-    const expectedMenuText = 'Editing: Version 2';
+    const versionSelectorTestId = 'selected-version-label';
     const user = userEvent.setup();
     (useGetConfiguration as unknown as Mock).mockReturnValue({
       data: {
@@ -301,8 +303,13 @@ describe('Manage codes page', () => {
     renderPage();
 
     // check that menu structure looks accurate
-    expect(await screen.findByText(expectedMenuText)).toBeInTheDocument();
-    await user.click(await screen.findByText(expectedMenuText));
+    expect(
+      await screen.findByTestId(versionSelectorTestId)
+    ).toBeInTheDocument();
+    expect(await screen.findByTestId(versionSelectorTestId)).toHaveTextContent(
+      'Editing: Version 2'
+    );
+    await user.click(await screen.findByTestId(versionSelectorTestId));
     const menuItems = await screen.findAllByRole('menuitem');
     expect(menuItems).toHaveLength(2);
 
