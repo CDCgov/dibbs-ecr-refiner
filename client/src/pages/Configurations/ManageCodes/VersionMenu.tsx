@@ -25,7 +25,10 @@ export function VersionMenu({
   return (
     <Menu as="div" className="z-50">
       <MenuButton>
-        <div className="cursor-pointer">
+        {/* NOTE: using data-testid in order to make this simple to grab in test code.
+              `findByText` won't work due to the span breaking up the text.
+          */}
+        <div data-testid="selected-version-label" className="cursor-pointer">
           {status === 'draft' ? 'Editing' : 'Viewing'}:{' '}
           <span className="font-bold">Version {currentVersion}</span>
           <ArrowDropDownIcon />
