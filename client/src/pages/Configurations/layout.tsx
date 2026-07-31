@@ -45,7 +45,7 @@ export function Header({ configuration }: HeaderProps) {
   return (
     <div>
       <TitleContainer>
-        <div className="flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col">
             <div className="flex flex-row items-center gap-2">
               <Title>{configuration.display_name}</Title>
@@ -66,8 +66,16 @@ export function Header({ configuration }: HeaderProps) {
             </div>
             <Status version={configuration.active_version} />
           </div>
-          <div className="flex flex-col gap-2 md:items-end">
-            <ActivationButtons configurationData={configuration} />
+          <div className="flex flex-col items-start gap-4 md:items-end">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              <VersionMenu
+                id={configuration.id}
+                currentVersion={configuration.version}
+                status={configuration.status}
+                versions={configuration.all_versions}
+              />
+              <ActivationButtons configurationData={configuration} />
+            </div>
             {configuration.active_version === configuration.version && (
               <SerializedContentButton configurationId={configuration.id} />
             )}
@@ -75,12 +83,6 @@ export function Header({ configuration }: HeaderProps) {
         </div>
       </TitleContainer>
       <NavigationContainer>
-        <VersionMenu
-          id={configuration.id}
-          currentVersion={configuration.version}
-          status={configuration.status}
-          versions={configuration.all_versions}
-        />
         <StepsContainer>
           <Steps configurationId={configuration.id} />
         </StepsContainer>
