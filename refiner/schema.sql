@@ -680,6 +680,20 @@ CREATE INDEX configurations_sections_configuration_id_idx ON public.configuratio
 
 
 --
+-- Name: idx_conditions_codes_code_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_conditions_codes_code_id ON public.conditions_codes USING btree (code_id);
+
+
+--
+-- Name: idx_conditions_codes_condition_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_conditions_codes_condition_id ON public.conditions_codes USING btree (condition_id);
+
+
+--
 -- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
