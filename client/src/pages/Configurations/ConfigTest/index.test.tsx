@@ -100,6 +100,13 @@ describe('Config testing page', () => {
     ).toHaveAttribute('aria-current', 'page');
   });
 
+  it('should display an "Export configuration" button', () => {
+    renderPage();
+    expect(
+      screen.getByText('Export configuration', { selector: 'a' })
+    ).toBeInTheDocument();
+  });
+
   it('should warn the user that the expected condition was not found during inline testing', async () => {
     const user = userEvent.setup();
 

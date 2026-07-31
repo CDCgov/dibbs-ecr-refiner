@@ -602,13 +602,6 @@ describe('Manage codes page', () => {
     await user.click(screen.getByText('Delete', { selector: 'button' }));
   });
 
-  it('should display an "Export configuration" button', () => {
-    renderPage();
-    expect(
-      screen.getByText('Export configuration', { selector: 'a' })
-    ).toBeInTheDocument();
-  });
-
   it('should bulk upload custom codes from a CSV file', async () => {
     const user = userEvent.setup();
     renderPage();

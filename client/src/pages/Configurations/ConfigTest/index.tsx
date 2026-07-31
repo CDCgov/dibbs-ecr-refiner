@@ -30,10 +30,14 @@ export function ConfigTest() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <ConfigurationTitleBar
-          title="Test configuration"
-          subtitle="Check the results of your configuration before turning it on."
-        />
+        <div className="flex flex-wrap justify-between">
+          <ConfigurationTitleBar
+            title="Test configuration"
+            subtitle="Check the results of your configuration before turning it on."
+          />
+          <Export id={configuration.data.id} />
+        </div>
+
         <Test config={configuration.data} />
       </SectionContainer>
     </div>
@@ -132,4 +136,20 @@ function useZipUpload() {
     errorMessage,
     resetState,
   };
+}
+
+interface ExportBuilderProps {
+  id: string;
+}
+
+function Export({ id }: ExportBuilderProps) {
+  return (
+    <a
+      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
+      href={`/api/v1/configurations/${id}/export`}
+      download
+    >
+      Export configuration
+    </a>
+  );
 }
