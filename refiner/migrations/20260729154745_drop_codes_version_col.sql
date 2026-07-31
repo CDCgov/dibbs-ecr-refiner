@@ -1,4 +1,12 @@
 -- migrate:up
+
+-- migrate:up
+CREATE INDEX IF NOT EXISTS idx_conditions_codes_code_id
+    ON conditions_codes (code_id);
+
+CREATE INDEX IF NOT EXISTS idx_conditions_codes_condition_id
+    ON conditions_codes (condition_id);
+
 -- Replace the unique constraint to scope to the existing codes
 ALTER TABLE codes
     DROP CONSTRAINT IF EXISTS codes_system_id_version_value_key;
@@ -28,6 +36,9 @@ ALTER TABLE codes
         UNIQUE (system_id, code);
 
 -- migrate:down
+
+DROP INDEX IF EXISTS idx_conditions_codes_code_id;
+DROP INDEX IF EXISTS idx_conditions_codes_condition_id;
 
 -- Re-add version column
 ALTER TABLE codes
