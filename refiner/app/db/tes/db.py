@@ -116,6 +116,9 @@ async def get_tes_update_diff_db(
         AND curr.code_id = prev.code_id
     GROUP BY
         COALESCE(curr.canonical_url, prev.canonical_url)
+    HAVING
+        COUNT(curr.code_id) FILTER (WHERE prev.code_id IS NULL) > 0 
+        OR COUNT(prev.code_id) FILTER (WHERE curr.code_id IS NULL) > 0;
     """
 
     async with db.get_connection() as conn:
