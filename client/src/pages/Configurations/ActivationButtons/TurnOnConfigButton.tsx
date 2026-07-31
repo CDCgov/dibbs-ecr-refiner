@@ -8,6 +8,7 @@ import {
 } from '@components/Modal';
 import { Button } from '@components/Button';
 import { Spinner } from '@components/Spinner';
+import { ActivateButton } from './ActivateButton';
 
 interface TurnOnConfigButtonProps {
   handleActivation: () => void;
@@ -23,14 +24,7 @@ export function TurnOnConfigButton({
 
   return (
     <div>
-      <Button
-        onClick={() => setIsOpen(true)}
-        variant="secondary"
-        disabled={disabled}
-      >
-        Turn on configuration
-      </Button>
-
+      <ActivateButton onClick={() => setIsOpen(true)} disabled={disabled} />
       <TurnOnConfigModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

@@ -20,7 +20,6 @@ export function TurnOffConfigButton({
   handleDeactivation,
   disabled,
   isLoading,
-  grouped = false,
 }: TurnOffConfigButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -31,22 +30,14 @@ export function TurnOffConfigButton({
         handleDeactivation={handleDeactivation}
         isLoading={isLoading}
       />
-      <div className="flex flex-row items-center gap-1">
-        <Button
-          onClick={() => setIsOpen(true)}
-          variant={grouped ? 'secondary' : 'primary'}
-          className="self-start"
-          disabled={disabled}
-        >
-          {grouped ? 'Turn off configuration' : 'Turn off current version'}
-        </Button>
-        {grouped ? (
-          <p>
-            Stop the current version. No version will be active until you turn
-            one on
-          </p>
-        ) : null}
-      </div>
+      <Button
+        onClick={() => setIsOpen(true)}
+        variant="secondary"
+        className="self-start"
+        disabled={disabled}
+      >
+        Deactivate
+      </Button>
     </div>
   );
 }

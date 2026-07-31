@@ -35,11 +35,6 @@ export function Steps({ configurationId }: StepsProps) {
           Test & export
         </StepLink>
       </li>
-      <li>
-        <StepLink to={`/configurations/${configurationId}/activate`}>
-          Activate
-        </StepLink>
-      </li>
     </ol>
   );
 }

@@ -8,7 +8,7 @@ import { forwardRef } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'unstyled';
 
-interface ButtonProps extends HeadlessButtonProps {
+export interface ButtonProps extends HeadlessButtonProps {
   children: React.ReactNode;
   variant?: ButtonVariant;
   to?: string;

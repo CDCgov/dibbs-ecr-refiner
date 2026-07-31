@@ -93,16 +93,6 @@ export function ActivationButtons({
   const curVersion = configurationData.version;
   const activeVersion = configurationData.active_version;
 
-  if (!activeVersion) {
-    return (
-      <TurnOnConfigButton
-        handleActivation={handleActivation}
-        disabled={isLocked}
-        isLoading={isLoading}
-      />
-    );
-  }
-
   if (curVersion === activeVersion) {
     return (
       <TurnOffConfigButton
@@ -113,27 +103,23 @@ export function ActivationButtons({
     );
   }
 
+  if (!activeVersion) {
+    return (
+      <TurnOnConfigButton
+        handleActivation={handleActivation}
+        disabled={isLocked}
+        isLoading={isLoading}
+      />
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <h3 className="text-lg font-bold">Option 1</h3>
-        <SwitchToVersionButton
-          handleActivation={handleActivation}
-          activeVersion={activeVersion}
-          curVersion={curVersion}
-          isLoading={isLoading}
-          grouped
-        />
-      </div>
-      <div className="flex flex-col gap-4">
-        <h3 className="text-lg font-bold">Option 2</h3>
-        <TurnOffConfigButton
-          handleDeactivation={handleDeactivation}
-          disabled={isLocked}
-          isLoading={isLoading}
-          grouped
-        />
-      </div>
-    </div>
+    <SwitchToVersionButton
+      curVersion={curVersion}
+      activeVersion={activeVersion}
+      handleActivation={handleActivation}
+      isLoading={isLoading}
+      disabled={isLocked}
+    />
   );
 }

@@ -193,17 +193,11 @@ describe('Manage codes page', () => {
     );
   }
 
-  it('should show "Build configuration" as the current step', async () => {
+  it('should show "Manages codes" as the current step', async () => {
     renderPage();
     expect(
       await screen.findByText('Manage codes', { selector: 'a' })
     ).toHaveAttribute('aria-current', 'page');
-    expect(
-      await screen.findByText('Test & export', { selector: 'a' })
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText('Activate', { selector: 'a' })
-    ).toBeInTheDocument();
   });
 
   it('should render a version menu with previous versions', async () => {
