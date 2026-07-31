@@ -4,7 +4,6 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.services.terminology import CodeSystemKey
 
 
 @dataclass
@@ -14,7 +13,7 @@ class DbCodeSystem:
     """
 
     id: UUID
-    key: CodeSystemKey
+    key: str
     display_name: str
     oid: str
 

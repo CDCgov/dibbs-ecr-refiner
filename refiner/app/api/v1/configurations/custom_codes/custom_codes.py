@@ -38,7 +38,6 @@ from app.db.custom_codes.model import DbCustomCode
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
-    get_all_code_systems_by_key,
     get_allowed_code_system_keys,
     get_code_system_by_id_or_raise,
 )
@@ -180,7 +179,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     preview_items: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
-    code_systems: dict[str, DbCodeSystem]
+    code_systems: list[DbCodeSystem]
 
 
 def _create_csv_reader(
@@ -359,7 +358,7 @@ async def upload_custom_codes_csv(
             )
         )
 
-    code_systems = await get_all_code_systems_by_key(db=db)
+    code_systems = await get_code_systems_db(db=db)
     if errors:
         logger.error("CSV upload errors", extra={"errors": errors})
         raise HTTPException(

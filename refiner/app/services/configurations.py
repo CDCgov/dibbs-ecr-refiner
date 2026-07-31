@@ -5,7 +5,6 @@ from logging import Logger
 from typing import Any
 
 from app.db.code_systems.db import (
-    CodeSystemKey,
     get_all_code_systems_db,
     get_code_system_by_key_db,
 )
@@ -34,6 +33,7 @@ from app.services.ecr.specification import (
 )
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
+    CodeSystemKey,
     CodeSystemSets,
     Coding,
     index_condition_code_list_by_system,
