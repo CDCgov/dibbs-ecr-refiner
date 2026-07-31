@@ -131,6 +131,25 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: active_payload_schema_reactivations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_payload_schema_reactivations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    target_schema_version integer CONSTRAINT active_payload_schema_reactivati_target_schema_version_not_null NOT NULL,
+    status text NOT NULL,
+    started_at timestamp with time zone DEFAULT now() NOT NULL,
+    completed_at timestamp with time zone,
+    success_count integer DEFAULT 0 NOT NULL,
+    failure_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT active_payload_schema_reactivations_counts_check CHECK (((success_count >= 0) AND (failure_count >= 0))),
+    CONSTRAINT active_payload_schema_reactivations_status_check CHECK ((status = ANY (ARRAY['IN_PROGRESS'::text, 'COMPLETE'::text, 'PARTIAL_FAILURE'::text, 'FAILED'::text])))
+);
+
+
+--
 -- Name: codes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -138,7 +157,6 @@ CREATE TABLE public.codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     display text CONSTRAINT codes_name_not_null NOT NULL,
     code text CONSTRAINT codes_value_not_null NOT NULL,
-    version text NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -373,6 +391,14 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: active_payload_schema_reactivations active_payload_schema_reactivations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_payload_schema_reactivations
+    ADD CONSTRAINT active_payload_schema_reactivations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: codes codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -381,11 +407,11 @@ ALTER TABLE ONLY public.codes
 
 
 --
--- Name: codes codes_system_id_version_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: codes codes_system_id_code_value_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_system_id_version_value_key UNIQUE (system_id, version, code);
+    ADD CONSTRAINT codes_system_id_code_value_key UNIQUE (system_id, code);
 
 
 --
@@ -605,10 +631,24 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: codes_upsert_constraint_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: active_payload_schema_reactivations_one_complete_per_version_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX codes_upsert_constraint_idx ON public.codes USING btree (system_id, version, code);
+CREATE UNIQUE INDEX active_payload_schema_reactivations_one_complete_per_version_id ON public.active_payload_schema_reactivations USING btree (target_schema_version) WHERE (status = 'COMPLETE'::text);
+
+
+--
+-- Name: active_payload_schema_reactivations_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX active_payload_schema_reactivations_status_idx ON public.active_payload_schema_reactivations USING btree (status);
+
+
+--
+-- Name: active_payload_schema_reactivations_target_schema_version_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON public.active_payload_schema_reactivations USING btree (target_schema_version);
 
 
 --
@@ -637,6 +677,20 @@ CREATE INDEX configurations_sections_code_idx ON public.configurations_sections 
 --
 
 CREATE INDEX configurations_sections_configuration_id_idx ON public.configurations_sections USING btree (configuration_id);
+
+
+--
+-- Name: idx_conditions_codes_code_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_conditions_codes_code_id ON public.conditions_codes USING btree (code_id);
+
+
+--
+-- Name: idx_conditions_codes_condition_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_conditions_codes_condition_id ON public.conditions_codes USING btree (condition_id);
 
 
 --
@@ -912,4 +966,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260630173611'),
     ('20260701151910'),
     ('20260709201220'),
-    ('20260716184236');
+    ('20260716184236'),
+    ('20260722140510'),
+    ('20260728212408'),
+    ('20260729154745');
