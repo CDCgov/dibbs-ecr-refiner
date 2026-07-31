@@ -17,7 +17,6 @@ from app.api.v1.configurations.custom_codes.model import (
 )
 from app.db.code_systems.db import (
     DbCodeSystem,
-    IndexedCodeSystem,
     get_code_system_by_id_db,
     get_code_systems_db,
 )
@@ -181,7 +180,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     preview_items: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
-    code_systems: IndexedCodeSystem
+    code_systems: dict[str, DbCodeSystem]
 
 
 def _create_csv_reader(

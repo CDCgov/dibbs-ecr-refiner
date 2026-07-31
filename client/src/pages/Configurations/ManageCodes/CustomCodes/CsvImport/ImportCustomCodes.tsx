@@ -14,8 +14,8 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
 import { Search } from '@components/Search';
 import {
-  IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
+  UploadCustomCodesPreviewResponseCodeSystems,
 } from '../../../../../api/schemas';
 import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
 import { buildCsvDownloadTemplate } from './utils';
@@ -70,9 +70,8 @@ export function ImportCustomCodes({
   const [previewItems, setPreviewItems] = useState<
     UploadCustomCodesPreviewItem[]
   >([]);
-  const [codeSystems, setCodeSystems] = useState<IndexedCodeSystem | null>(
-    null
-  );
+  const [codeSystems, setCodeSystems] =
+    useState<UploadCustomCodesPreviewResponseCodeSystems | null>(null);
 
   const [error, setError] = useState<UploadError | null>(null);
   const [step, setStep] = useState<CsvImportStep>('intro');
@@ -418,7 +417,7 @@ interface PreviewEditTableProps {
   setPreviewItems: React.Dispatch<
     React.SetStateAction<UploadCustomCodesPreviewItem[]>
   >;
-  codeSystems: IndexedCodeSystem | null;
+  codeSystems: UploadCustomCodesPreviewResponseCodeSystems | null;
   error: UploadError | null;
   exitPreviewStep: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
@@ -540,7 +539,7 @@ function PreviewRow({
 interface UploadInstructionProps {
   handleButtonClick: () => void;
   disabled: boolean;
-  codeSystems: IndexedCodeSystem | null;
+  codeSystems: UploadCustomCodesPreviewResponseCodeSystems | null;
 }
 
 function UploadInstructions({

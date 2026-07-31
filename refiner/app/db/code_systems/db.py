@@ -19,9 +19,6 @@ class DbCodeSystem:
     oid: str
 
 
-type IndexedCodeSystem = dict[CodeSystemKey, DbCodeSystem]
-
-
 async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[DbCodeSystem]:
     """
     Fetches all available code systems.

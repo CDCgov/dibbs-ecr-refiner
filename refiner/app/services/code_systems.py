@@ -4,10 +4,10 @@ from fastapi import HTTPException, status
 
 from app.db.code_systems.db import (
     DbCodeSystem,
-    IndexedCodeSystem,
     get_all_code_systems_db,
 )
 from app.db.pool import AsyncDatabaseConnection
+from app.services.terminology import CodeSystemKey
 
 
 def get_code_system_by_id_or_raise(
@@ -37,7 +37,7 @@ def get_code_system_by_id_or_raise(
 
 async def get_all_code_systems_by_key(
     db: AsyncDatabaseConnection,
-) -> IndexedCodeSystem:
+) -> dict[CodeSystemKey, DbCodeSystem]:
     """
     Helper method that returns a map of key to code system.
 
