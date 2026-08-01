@@ -14,21 +14,25 @@ export class ConfigurationPage {
     await uploadMonmothmaTestFile(this.page);
   }
 
-  async goToBuildTab() {
-    await this.page.getByRole('link', { name: 'Build', exact: true }).click();
-    await this.checkHeading('Build configuration');
+  async goToCustomizeSectionsTab() {
+    await this.page
+      .getByRole('link', { name: 'Customize eICR sections', exact: true })
+      .click();
+    await this.checkHeading('Customize eICR sections');
+  }
+
+  async goToManageCodesTab() {
+    await this.page
+      .getByRole('link', { name: 'Manage codes', exact: true })
+      .click();
+    await this.checkHeading('Manage codes');
   }
 
   async goToTestTab() {
-    await this.page.getByRole('link', { name: 'Test', exact: true }).click();
-    await this.checkHeading('Test configuration');
-  }
-
-  async goToActivateTab() {
     await this.page
-      .getByRole('link', { name: 'Activate', exact: true })
+      .getByRole('link', { name: 'Test & export', exact: true })
       .click();
-    await this.checkHeading('Turn on configuration');
+    await this.checkHeading('Test configuration');
   }
 
   private async checkHeading(text: string) {
@@ -120,7 +124,7 @@ export class ConfigurationPage {
 
   async activateConfiguration() {
     await this.page
-      .getByRole('button', { name: 'Turn on configuration' })
+      .getByRole('button', { name: 'Activate this version' })
       .click();
     await this.page
       .getByRole('button', { name: 'Yes, turn on configuration' })

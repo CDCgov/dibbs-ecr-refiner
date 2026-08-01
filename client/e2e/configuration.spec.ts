@@ -23,15 +23,14 @@ test.describe('Configuration detail flow', () => {
     });
     await expect(link).not.toBeVisible();
 
-    await configurationPage.goToActivateTab();
     await configurationPage.activateConfiguration();
-    await configurationPage.goToBuildTab();
+    await configurationPage.goToManageCodesTab();
     await expect(link).toBeVisible();
     await link.click();
-    const backToBuildPageLink = page.getByRole('link', {
-      name: 'back to build page',
+    const backToManageCodesPageLink = page.getByRole('link', {
+      name: 'back to manage codes page',
     });
-    await expect(backToBuildPageLink).toBeVisible();
+    await expect(backToManageCodesPageLink).toBeVisible();
 
     // basic content check
     await expect(
@@ -49,9 +48,9 @@ test.describe('Configuration detail flow', () => {
         `configurations/SDDH/${conditionCanonicalUuid}/1/active.json`
       )
     ).toBeVisible();
-    await backToBuildPageLink.click();
+    await backToManageCodesPageLink.click();
     await expect(
-      page.getByRole('heading', { name: 'Build configuration', level: 2 })
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
     ).toBeVisible();
   });
 
@@ -63,7 +62,7 @@ test.describe('Configuration detail flow', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToBuildTab();
+    await configurationPage.goToManageCodesTab();
     await page.getByLabel('View TES code set information for Anotia').click();
 
     await expect(page.getByRole('columnheader')).toHaveText([
@@ -74,6 +73,83 @@ test.describe('Configuration detail flow', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
+  test('Activation button is available across all configuration screens', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+  }) => {
+    await configurationsPage.createConfiguration('Anotia');
+    const activateThisVersionButton = page.getByRole('button', {
+      name: 'Activate this version',
+    });
+
+    await configurationPage.goToCustomizeSectionsTab();
+    await expect(activateThisVersionButton).toBeVisible();
+
+    await configurationPage.goToManageCodesTab();
+    await expect(activateThisVersionButton).toBeVisible();
+
+    await configurationPage.goToTestTab();
+    await expect(activateThisVersionButton).toBeVisible();
+  });
+
+  test('Activation button "activate", "switch to", and "deactivate" states are displayed appropriately', async ({
+    page,
+    configurationsPage,
+  }) => {
+    await configurationsPage.createConfiguration('Anotia');
+    const activateThisVersionButton = page.getByRole('button', {
+      name: 'Activate this version',
+    });
+
+    await test.step('Check "activate"', async () => {
+      await activateThisVersionButton.click();
+      await expect(
+        page.getByRole('heading', { name: 'Turn on configuration?', level: 2 })
+      ).toBeVisible();
+      await page
+        .getByRole('button', { name: 'Yes, turn on configuration' })
+        .click();
+
+      await expect(
+        page.getByRole('button', { name: 'Deactivate' })
+      ).toBeVisible();
+
+      await expect(
+        page.getByText(
+          'Previous versions cannot be modified. You must draft a new version to make changes.'
+        )
+      ).toBeVisible();
+    });
+
+    await test.step('Check "switch to"', async () => {
+      await page.getByRole('button', { name: 'Draft a new version' }).click();
+      await page
+        .getByRole('button', { name: 'Yes, draft a new version' })
+        .click();
+
+      await expect(page.getByText('Editing: Version 2')).toBeVisible();
+      await expect(activateThisVersionButton).toBeVisible();
+
+      await activateThisVersionButton.click();
+      await expect(
+        page.getByRole('heading', { name: 'Switch to Version 2' })
+      ).toBeVisible();
+      await page
+        .getByRole('button', { name: 'Yes, switch to Version 2' })
+        .click();
+      await expect(page.getByText('Status: Version 2 active')).toBeVisible();
+    });
+
+    await test.step('Check "deactivate"', async () => {
+      await page.getByRole('button', { name: 'Deactivate' }).click();
+      await page.getByRole('button', { name: 'Yes, turn off' }).click();
+
+      await expect(page.getByText('Status: Inactive')).toBeVisible();
+      await expect(activateThisVersionButton).toBeVisible();
+    });
+  });
+
   test('Code set table can be filtered by code system', async ({
     page,
     configurationsPage,
@@ -81,7 +157,7 @@ test.describe('Configuration detail flow', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToBuildTab();
+    await configurationPage.goToManageCodesTab();
     await page.getByLabel('View TES code set information for Anotia').click();
     const codeSystemSelect = page.getByRole('combobox', {
       name: 'Code system',
@@ -108,7 +184,7 @@ test.describe('Configuration detail flow', () => {
   }) => {
     const condition = 'COVID-19';
     await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToBuildTab();
+    await configurationPage.goToManageCodesTab();
 
     await expect(
       page.getByLabel('Code set completion status:', {
@@ -167,7 +243,7 @@ test.describe('Configuration detail flow', () => {
   }) => {
     const condition = 'Amebiasis';
     await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToBuildTab();
+    await configurationPage.goToManageCodesTab();
     await page.getByRole('button', { name: 'Custom codes' }).click();
 
     const customCode1 = {
@@ -345,28 +421,14 @@ test.describe('Configuration detail flow', () => {
       ).toBeVisible();
     });
 
-    await test.step('Add a code set', async () => {
-      await expect(
-        page.getByRole('heading', { name: condition, level: 1 })
-      ).toBeVisible();
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
-      await page.getByLabel('Code system').selectOption({ label: 'SNOMED' });
-      await configurationPage.addCodeSet('agri', additionalCodeSetName);
-    });
-
-    await test.step('Configure a custom code', async () => {
-      await page.getByRole('button', { name: 'Custom codes' }).click();
-      await configurationPage.addCustomCode(
-        customCode,
-        customCodeSystem,
-        customCodeName
-      );
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
-    });
-
     await test.step('Configure standard sections', async () => {
       await test.step('Select and check options', async () => {
-        await page.getByRole('button', { name: 'Sections' }).click();
+        await expect(
+          page.getByRole('heading', {
+            name: 'Customize eICR sections',
+            level: 2,
+          })
+        ).toBeVisible();
 
         await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -435,6 +497,26 @@ test.describe('Configuration detail flow', () => {
       ).toHaveValue('remove');
     });
 
+    await test.step('Add a code set', async () => {
+      await configurationPage.goToManageCodesTab();
+      await expect(
+        page.getByRole('heading', { name: condition, level: 1 })
+      ).toBeVisible();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+      await page.getByLabel('Code system').selectOption({ label: 'SNOMED' });
+      await configurationPage.addCodeSet('agri', additionalCodeSetName);
+    });
+
+    await test.step('Configure a custom code', async () => {
+      await page.getByRole('button', { name: 'Custom codes' }).click();
+      await configurationPage.addCustomCode(
+        customCode,
+        customCodeSystem,
+        customCodeName
+      );
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+    });
+
     await test.step('Run inline test', async () => {
       await configurationPage.goToTestTab();
 
@@ -452,7 +534,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Delete custom codes', async () => {
-      await configurationPage.goToBuildTab();
+      await configurationPage.goToManageCodesTab();
       await configurationPage.deleteCodeSet(additionalCodeSetName);
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -466,7 +548,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Delete custom section', async () => {
-      await page.getByRole('button', { name: 'Sections' }).click();
+      await configurationPage.goToCustomizeSectionsTab();
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -481,17 +563,16 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Activate configuration', async () => {
-      await configurationPage.goToActivateTab();
       await configurationPage.activateConfiguration();
       await expect(
-        page.getByRole('button', { name: 'Turn off current version' })
+        page.getByRole('button', { name: 'Deactivate' })
       ).toBeVisible();
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
     });
 
     await test.step('Draft new configuration version', async () => {
-      await configurationPage.goToBuildTab();
+      await configurationPage.goToManageCodesTab();
       await page.getByRole('button', { name: 'Draft a new version' }).click();
       await expect(page.getByRole('paragraph')).toContainText('Version 1');
       await expect(page.getByRole('paragraph')).toContainText('Version 2');
@@ -501,13 +582,14 @@ test.describe('Configuration detail flow', () => {
         .click();
 
       await expect(
-        page.getByRole('heading', { name: 'Build configuration', level: 2 })
+        page.getByRole('heading', { name: 'Customize eICR sections', level: 2 })
       ).toBeVisible();
       await expect(page.getByText('Status: Version 1 active')).toBeVisible();
       await expect(page.getByText('Editing: Version 2')).toBeVisible();
     });
 
     await test.step('Upload custom code CSV', async () => {
+      await configurationPage.goToManageCodesTab();
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -646,35 +728,31 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Activate modified draft', async () => {
-      await configurationPage.goToActivateTab();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-      await expect(page.getByText('Switch to version 2')).toBeVisible();
-      await expect(page.getByText('Turn off configuration')).toBeVisible();
-
-      await page.getByRole('button', { name: 'Switch to version 2' }).click();
+      await page.getByRole('button', { name: 'Activate this version' }).click();
       await expect(
         page.getByText("You're about to stop Version 1 and start Version 2")
       ).toBeVisible();
-
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       await page
         .getByRole('button', { name: 'Yes, switch to Version 2' })
         .click();
       await expect(page.getByText('Status: Version 2 active')).toBeVisible();
-      await expect(page.getByText('Turn off current version')).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Deactivate' })
+      ).toBeVisible();
     });
   });
 });
 
 test.describe('Sections Validation and Error Lifecycle', () => {
-  test.beforeEach(async ({ page, configurationsPage }) => {
+  test.beforeEach(async ({ configurationsPage }) => {
     await clearDb();
     await configurationsPage.goto();
     const condition = 'COVID-19';
     await configurationsPage.createConfiguration(condition);
-    await page.getByRole('button', { name: 'Sections' }).click();
   });
 
   test('should manage "Reconstruct" option availability and state', async ({

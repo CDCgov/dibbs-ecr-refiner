@@ -50,7 +50,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
               >
                 <Link
                   aria-label={`Configure ${name}`}
-                  to={`/configurations/${id}/build`}
+                  to={`/configurations/${id}/customize-sections`}
                   className="relative z-0 flex items-center px-4 py-2 after:absolute after:inset-0 after:content-['']"
                 >
                   {name}

@@ -1,14 +1,7 @@
 import { useParams } from 'react-router';
-import { Sections } from './Sections';
-import { Title } from '@components/Title';
 import { Button } from '@components/Button';
 import { useToast } from '../../../hooks/useToast';
-import { Steps, StepsContainer } from '../Steps';
-import {
-  NavigationContainer,
-  SectionContainer,
-  TitleContainer,
-} from '../layout';
+import { Header, SectionContainer } from '../layout';
 import { useRef, useState, forwardRef } from 'react';
 
 import classNames from 'classnames';
@@ -17,35 +10,28 @@ import {
   useDisassociateConditionWithConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { DbCode, GetConfigurationResponse } from '../../../api/schemas';
+import { GetConfigurationResponse } from '../../../api/schemas';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
-import { VersionMenu } from './VersionMenu';
-import { DraftBanner } from './DraftBanner';
-import { ConfigLockBanner } from './Lock/ConfigLockBanner';
-import { Status } from './Status';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
-import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
-import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
-import { SerializedContentButton } from '../SerializedContentButton';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
-type TableView = 'none' | 'codeset' | 'custom' | 'sections' | CsvImportView;
+type TableView = 'none' | 'codeset' | 'custom' | CsvImportView;
 
 const toCsvImportView = (step: CsvImportStep): CsvImportView => `csv_${step}`;
 
 const isCsvImportView = (view: TableView): view is CsvImportView =>
   view.startsWith('csv_');
 
-export function ConfigBuild() {
+export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
 
   // acquire lock on mount, schedule release on unmount
@@ -56,8 +42,6 @@ export function ConfigBuild() {
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
-
-  const [isRsgDetailsModalOpen, setIsRsgDetailsModalOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -72,105 +56,30 @@ export function ConfigBuild() {
   });
 
   return (
-    <>
-      <TitleContainer>
-        <div className="flex items-center gap-2">
-          <Title>{configuration.data.display_name}</Title>
-          <Button
-            variant="tertiary"
-            onClick={() => setIsRsgDetailsModalOpen(true)}
-            className="p-0!"
-            aria-label="Open reporting specification details modal"
-          >
-            <QuestionIcon />
-          </Button>
-          <RsgDetailsModal
-            open={isRsgDetailsModalOpen}
-            onClose={() => setIsRsgDetailsModalOpen(false)}
-            primaryConditionDisplayName={configuration.data.display_name}
-            rsgCodes={configuration.data.rsg_codes}
-          />
-        </div>
-        <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
-          <Status version={configuration.data.active_version} />
-          {configuration.data.active_version === configuration.data.version && (
-            <SerializedContentButton configurationId={configuration.data.id} />
-          )}
-        </div>
-      </TitleContainer>
-      <NavigationContainer>
-        <VersionMenu
-          id={configuration.data.id}
-          currentVersion={configuration.data.version}
-          status={configuration.data.status}
-          versions={configuration.data.all_versions}
-          step="build"
-        />
-        <StepsContainer>
-          <Steps configurationId={configuration.data.id} />
-        </StepsContainer>
-      </NavigationContainer>
-      {disabledForPrevVersion ? (
-        <DraftBanner
-          draftId={configuration.data.draft_id}
-          conditionId={configuration.data.condition_id}
-          latestVersion={configuration.data.latest_version}
-          step="build"
-        />
-      ) : null}
-      {disabledForConcurrency ? (
-        <ConfigLockBanner
-          lockedByName={configuration.data.locked_by?.name}
-          lockedByEmail={configuration.data.locked_by?.email}
-        />
-      ) : null}
+    <div>
+      <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="content flex flex-wrap justify-between">
-          <ConfigurationTitleBar
-            step="build"
-            condition={configuration.data.display_name}
-          />
-          <Export id={configuration.data.id} />
-        </div>
+        <ConfigurationTitleBar
+          title="Manage codes"
+          subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
+        />
 
         <Builder
           id={configuration.data.id}
           code_sets={sortedCodeSets}
           included_conditions={configuration.data.included_conditions}
           custom_codes={configuration.data.custom_codes}
-          section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           disabled={isDisabled}
         />
       </SectionContainer>
-    </>
-  );
-}
-
-interface ExportBuilderProps {
-  id: string;
-}
-
-export function Export({ id }: ExportBuilderProps) {
-  return (
-    <a
-      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
-      href={`/api/v1/configurations/${id}/export`}
-      download
-    >
-      Export configuration
-    </a>
+    </div>
   );
 }
 
 type BuilderProps = Pick<
   GetConfigurationResponse,
-  | 'id'
-  | 'code_sets'
-  | 'custom_codes'
-  | 'included_conditions'
-  | 'section_processing'
-  | 'display_name'
+  'id' | 'code_sets' | 'custom_codes' | 'included_conditions' | 'display_name'
 > & { disabled: boolean };
 
 function Builder({
@@ -178,7 +87,6 @@ function Builder({
   code_sets,
   custom_codes,
   included_conditions,
-  section_processing,
   display_name: default_condition_name,
   disabled,
 }: BuilderProps) {
@@ -328,24 +236,6 @@ function Builder({
                     <span>{custom_codes.length?.toLocaleString()}</span>
                   </Button>
                 </li>
-                <li key="sections">
-                  <Button
-                    variant="unstyled"
-                    className={classNames(
-                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                      {
-                        'bg-white': tableView === 'sections',
-                      }
-                    )}
-                    onClick={() => {
-                      setSelectedCodesetId(null);
-                      setTableView('sections');
-                    }}
-                    aria-current={tableView === 'sections' ? 'true' : undefined}
-                  >
-                    <span>Sections</span>
-                  </Button>
-                </li>
               </OptionsList>
             </OptionsListContainer>
           </div>
@@ -382,12 +272,6 @@ function Builder({
                 disabled={disabled}
               />
             </div>
-          ) : tableView === 'sections' ? (
-            <Sections
-              configurationId={id}
-              sections={section_processing}
-              disabled={disabled}
-            />
           ) : isCsvImportView(tableView) ? (
             <ImportCustomCodes
               configurationId={id}
@@ -568,59 +452,6 @@ function OptionsListContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsList({ children }: { children: React.ReactNode }) {
   return <ul className="flex flex-col gap-2">{children}</ul>;
-}
-
-interface RsgDetailsModal {
-  open: boolean;
-  onClose: () => void;
-  rsgCodes: DbCode[];
-  primaryConditionDisplayName: string;
-}
-
-function RsgDetailsModal({
-  open,
-  onClose,
-  rsgCodes,
-  primaryConditionDisplayName,
-}: RsgDetailsModal) {
-  return (
-    <Modal
-      className="max-w-160!"
-      open={open}
-      onClose={onClose}
-      position="center"
-    >
-      <ModalHeader>
-        <ModalTitle>{primaryConditionDisplayName}</ModalTitle>
-        <p>
-          Applies to eCR documents reportable for the conditions below. Only one
-          output will be produced per condition group.
-        </p>
-      </ModalHeader>
-      <ModalBody>
-        <table>
-          <thead className="border-b-gray-cool-20 border-b">
-            <tr>
-              <th scope="col" className="w-[40%] px-2 py-3 font-bold">
-                SNOMED code
-              </th>
-              <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
-            {rsgCodes.map((c) => {
-              return (
-                <tr key={c.code}>
-                  <td className="py-3 pl-2">{c.code}</td>
-                  <td className="py-3 pl-2">{c.display}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </ModalBody>
-    </Modal>
-  );
 }
 
 function DeleteIcon() {

@@ -4,6 +4,7 @@ import {
   CodedDataLabelsValue,
   DbSectionAction,
   DisabledSection,
+  GetConfigurationResponse,
   NarrativeOnlySection,
   ReconstructableSection,
 } from '../../../../api/schemas';
@@ -29,20 +30,24 @@ import { Tooltip } from '@components/Tooltip';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import { KeepOnMatchModal } from './KeepOnMatchModal';
 
+export interface SectionModalState {
+  isOpen: boolean;
+  selectedSection: DbConfigurationSectionProcessing | null;
+}
+
 interface SectionsProps {
-  configurationId: string;
-  sections: DbConfigurationSectionProcessing[];
+  configuration: GetConfigurationResponse;
   disabled: boolean;
+  modalState: SectionModalState;
+  setModalState: React.Dispatch<React.SetStateAction<SectionModalState>>;
 }
 
 export function Sections({
-  configurationId,
-  sections: sectionProcessing,
+  configuration,
   disabled,
+  modalState,
+  setModalState,
 }: SectionsProps) {
-  const [selectedSection, setSelectedSection] =
-    useState<DbConfigurationSectionProcessing | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
@@ -63,42 +68,29 @@ export function Sections({
     reconstructableSections.some((v) => (v as string) === s);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
-    setSelectedSection(section);
-    setIsOpen(true);
+    setModalState({ isOpen: true, selectedSection: section });
   };
 
   const resetModal = () => {
-    setSelectedSection(null);
+    setModalState((prev) => ({ ...prev, selectedSection: null }));
   };
 
   return (
     <SectionErrorProvider>
-      <section className="flex min-h-0 w-full flex-1 flex-col gap-6">
+      <section className="flex max-h-150 min-h-0 w-full flex-1 flex-col">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-gray-cool-90 text-xl font-bold">
-              eICR Sections
-            </h3>
-            {disabled ? null : (
-              <Button
-                variant="tertiary"
-                onClick={() => {
-                  setSelectedSection(null);
-                  setIsOpen(true);
-                }}
-              >
-                Add custom section <span aria-hidden>+</span>
-              </Button>
-            )}
             <CustomSectionModal
-              isOpen={isOpen}
-              setIsOpen={setIsOpen}
-              configurationId={configurationId}
+              isOpen={modalState.isOpen}
+              setIsOpen={(isOpen) =>
+                setModalState((prev) => ({ ...prev, isOpen: !!isOpen }))
+              }
+              configurationId={configuration.id}
               initialSection={
-                selectedSection
+                modalState.selectedSection
                   ? {
-                      name: selectedSection.name,
-                      currentCode: selectedSection.code,
+                      name: modalState.selectedSection.name,
+                      currentCode: modalState.selectedSection.code,
                     }
                   : null
               }
@@ -106,10 +98,6 @@ export function Sections({
             />
             <KeepOnMatchModal isOpen={isInfoOpen} setIsOpen={setIsInfoOpen} />
           </div>
-          <p className="italic">
-            Choose which sections of your eICR to include, as well as whether to
-            refine or retain each section.
-          </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-scroll">
@@ -117,7 +105,7 @@ export function Sections({
               whether a virtualized list is appropriate for large section counts.
               */}
           <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10 bg-white">
+            <thead className="bg-gray-cool-5 sticky top-0 z-10">
               <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
                 <th scope="col" className="w-20 py-3">
                   Include
@@ -153,21 +141,21 @@ export function Sections({
               </tr>
             </thead>
             <tbody className="divide-gray-cool-20 divide-y">
-              {sectionProcessing.map((section) => (
+              {configuration.section_processing.map((section) => (
                 <tr key={section.code} className="text-gray-cool-60">
                   <td>
                     <div className="flex justify-center p-8">
                       <IncludeCheckbox
-                        configurationId={configurationId}
+                        configurationId={configuration.id}
                         currentSection={section}
-                        sections={sectionProcessing}
+                        sections={configuration.section_processing}
                         disabled={disabled || isDisabledSection(section.code)}
                       />
                     </div>
                   </td>
                   <td>
                     <SectionName
-                      configurationId={configurationId}
+                      configurationId={configuration.id}
                       section={section}
                       disabled={disabled}
                       setSelectedSection={() => onSelectedSection(section)}
@@ -178,16 +166,16 @@ export function Sections({
                       <div className="flex flex-col items-end justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
-                            className="text-gray-cool-50 whitespace-nowrap italic"
+                            className="text-gray-cool-60 whitespace-nowrap italic"
                             aria-hidden
                           >
                             Not applicable for this section
                           </span>
                         ) : (
                           <RefineSwitch
-                            configurationId={configurationId}
+                            configurationId={configuration.id}
                             currentSection={section}
-                            sections={sectionProcessing}
+                            sections={configuration.section_processing}
                             disabled={
                               disabled || isDisabledSection(section.code)
                             }
@@ -199,7 +187,7 @@ export function Sections({
                   <td>
                     {section.include ? (
                       <NarrativeSelect
-                        configurationId={configurationId}
+                        configurationId={configuration.id}
                         currentSection={section}
                         disabled={disabled || isDisabledSection(section.code)}
                         isNarrativeOnly={isNarrativeSection(section.code)}

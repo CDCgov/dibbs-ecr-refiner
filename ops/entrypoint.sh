@@ -4,10 +4,36 @@ set -euo pipefail # exit on failure
 # default sslmode to "require"
 SSL_MODE="${SSL_MODE:-require}"
 
-# Ensure both expected variables are present
-if [[ -z "${DB_URL:-}" || -z "${DB_PASSWORD:-}" ]]; then
-  echo "ERROR: DB_URL and DB_PASSWORD must be set"
+# Ensure required variables are present
+REQUIRED_VARS=(ENV DB_URL DB_PASSWORD AWS_REGION S3_BUCKET_CONFIG)
+MISSING=()
+
+for var in "${REQUIRED_VARS[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    MISSING+=("$var")
+  fi
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "ERROR: The following required variables are not set: ${MISSING[*]}"
   exit 1
+fi
+
+# Ensure local/demo S3 variables are present
+if [[ "${ENV}" == "local" || "${ENV}" == "demo" ]]; then
+  LOCAL_VARS=(AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_ENDPOINT_URL)
+  MISSING=()
+
+  for var in "${LOCAL_VARS[@]}"; do
+    if [[ -z "${!var:-}" ]]; then
+      MISSING+=("$var")
+    fi
+  done
+
+  if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "ERROR: The following variables are required for local/demo: ${MISSING[*]}"
+    exit 1
+  fi
 fi
 
 # Encode DB_PASSWORD
@@ -40,6 +66,10 @@ case "$COMMAND" in
         echo "Importing static data"
         exec python3 ./scripts/seeding/load_static_data.py
         ;;
+    regenerate-active-configs)
+        echo "Regenerating active configuration files"
+        exec python3 ./scripts/reactivations/regenerate_active_configs.py "$@"
+        ;;
     python|python3)
         echo "Running Python script: $*"
         exec python3 "$@"
@@ -48,7 +78,9 @@ case "$COMMAND" in
         echo "Running migration scripts and updating condition data"
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         echo "Migration step complete"
-        exec python3 ./scripts/seeding/load_static_data.py
+        python3 ./scripts/seeding/load_static_data.py
+        echo "Regenerating active configuration files"
+        python3 ./scripts/reactivations/regenerate_active_configs.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"

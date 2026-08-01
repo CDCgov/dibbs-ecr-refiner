@@ -8,39 +8,26 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { Spinner } from '@components/Spinner';
+import { ActivateButton } from './ActivateButton';
 
 interface SwitchToVersionButtonProps {
   handleActivation: () => void;
   curVersion: number;
   activeVersion: number | null;
   isLoading: boolean;
-  grouped?: boolean;
+  disabled: boolean;
 }
 export function SwitchToVersionButton({
   handleActivation,
   curVersion,
   activeVersion,
   isLoading,
-  grouped = false,
+  disabled,
 }: SwitchToVersionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div>
-      <div className="flex flex-row items-center gap-1">
-        <Button
-          variant={grouped ? 'primary' : 'secondary'}
-          onClick={() => setIsOpen(true)}
-          className="self-start"
-        >
-          Switch to version {curVersion}
-        </Button>
-        {grouped ? (
-          <p>
-            Safely replace the current version with this one — it will begin
-            processing immediately
-          </p>
-        ) : null}
-      </div>
+      <ActivateButton onClick={() => setIsOpen(true)} disabled={disabled} />
       <SwitchToVersionModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
