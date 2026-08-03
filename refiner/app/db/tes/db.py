@@ -68,6 +68,39 @@ async def get_tes_by_version_number_db(
             return row
 
 
+async def _get_baseline_tes_diff_db(
+    db: AsyncDatabaseConnection, tes_id: UUID
+) -> list[DbTesCondition]:
+    """
+    Returns the TES update details for the first TES update, treating all conditions in that condition as "new.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        tes_id (UUID): The TES version ID to grab data for.
+
+    Returns:
+        DbTesCondition: The condition that changed codes between versions.
+    """
+
+    query = """
+        SELECT
+            c.canonical_url,
+            c.display_name,
+            COALESCE(array_agg(cc.code_id)) as added_code_ids,
+            '{}'::text[] as removed_code_ids
+        FROM conditions_codes cc
+        JOIN conditions c ON cc.condition_id = c.id
+        WHERE c.tes_id = %(tes_id)s
+        GROUP BY c.canonical_url, c.display_name
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbTesCondition)) as cur:
+            await cur.execute(query, {"tes_id": tes_id})
+            result = await cur.fetchall()
+            return result
+
+
 async def get_tes_update_diff_db(
     db: AsyncDatabaseConnection, cur_tes_id: UUID, prev_tes_id: UUID
 ) -> list[DbTesCondition]:
@@ -82,6 +115,9 @@ async def get_tes_update_diff_db(
     Returns:
         list[DbTesCondition]: All conditions that have changed codes between versions.
     """
+    if cur_tes_id == prev_tes_id:
+        return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
+
     query = """
     WITH curr AS (
         SELECT

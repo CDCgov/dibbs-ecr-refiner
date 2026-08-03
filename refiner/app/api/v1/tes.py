@@ -82,21 +82,25 @@ class TesDiffResponse:
 
 
 async def _get_tes_version_diff(
-    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str
+    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str | None
 ) -> list[DbTesCondition]:
     """
     Returns an array off all loaded TES version records.
     """
     cur_tes_record = await get_tes_by_version_number_db(db=db, version=cur_tes_version)
-    prev_tes_record = await get_tes_by_version_number_db(
-        db=db, version=prev_tes_version
-    )
+    if prev_tes_version:
+        prev_tes_record = await get_tes_by_version_number_db(
+            db=db, version=prev_tes_version
+        )
 
-    condition_diff = await get_tes_update_diff_db(
-        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
-    )
+        condition_diff = await get_tes_update_diff_db(
+            db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
+        )
 
-    return condition_diff
+        return condition_diff
+    return await get_tes_update_diff_db(
+        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=cur_tes_record.id
+    )
 
 
 @router.get(

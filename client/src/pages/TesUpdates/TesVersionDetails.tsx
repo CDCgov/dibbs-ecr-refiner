@@ -1,10 +1,10 @@
 import { ExternalLink } from '@components/ExternalLink';
-import { TesUpdate } from '../../api/schemas';
 import { useGetTesUpdateDiff } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
+import { TesDiffInformation } from '.';
 
 interface TesVersionProps {
-  selectedUpdate: TesUpdate;
+  selectedUpdate: TesDiffInformation;
 }
 
 export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
@@ -12,8 +12,12 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
     data: response,
     isPending,
     isError,
-    // todo: don't hard code this
-  } = useGetTesUpdateDiff({ cur_version: '6.0.0', prev_version: '5.0.0' });
+  } = useGetTesUpdateDiff({
+    cur_version: selectedUpdate.selected_update.version,
+    prev_version: selectedUpdate.prev_update
+      ? selectedUpdate.prev_update.version
+      : '',
+  });
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
@@ -21,7 +25,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
   return (
     <div className="border-gray-cool-20! grow overflow-y-scroll border-y border-r bg-white p-8">
       <h3 className="font-bold">
-        What's changed in Version {selectedUpdate?.version}
+        What's changed in Version {selectedUpdate?.selected_update.version}
       </h3>
       <p className="pb-6">
         These code sets come from the{' '}
@@ -40,17 +44,16 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
           </tr>
         </thead>
         <tbody className="divide-gray-cool-20 divide-y">
-          {response &&
-            response.data.map((r) => {
-              return (
-                <tr key={r.canonical_url}>
-                  <td className="px-2 py-3">{r.display_name}</td>
-                  <td className="px-2 py-3">
-                    {r.added_code_total} added, {r.removed_code_total} removed
-                  </td>
-                </tr>
-              );
-            })}
+          {response.data.map((r) => {
+            return (
+              <tr key={r.canonical_url}>
+                <td className="px-2 py-3">{r.display_name}</td>
+                <td className="px-2 py-3">
+                  {r.added_code_total} added, {r.removed_code_total} removed
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
