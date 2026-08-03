@@ -540,7 +540,6 @@ class TestConfigurations:
     async def test_custom_code_editing_succeds_on_all_fields(
         self,
         setup,
-        authed_client,
         get_condition_id,
         create_config,
         add_custom_code,
@@ -575,7 +574,7 @@ class TestConfigurations:
         assert new_system, f"Couldn't get system by key '{new_system_key}'"
 
         edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
-            id=custom_code["custom_codes"][0]["id"],
+            id=custom_code["id"],
             code=new_code if new_code else initial_code,
             display=new_name if new_name else initial_display_name,
             system_id=new_system.id if new_system else initial_system.id,
@@ -583,22 +582,19 @@ class TestConfigurations:
 
         edit_response = await edit_custom_code(config_id, edit_payload)
 
-        assert len(edit_response["custom_codes"]) == 1
-        edited_custom_code = edit_response["custom_codes"][0]
-
         if new_code:
-            assert edited_custom_code["code"] == new_code
+            assert edit_response["code"] == new_code
         else:
-            assert edited_custom_code["code"] == initial_code
+            assert edit_response["code"] == initial_code
 
         if new_system_key:
-            assert edited_custom_code["system_id"] == str(new_system.id)
+            assert edit_response["system_id"] == str(new_system.id)
         else:
-            assert edited_custom_code["system_id"] == str(initial_system.id)
+            assert edit_response["system_id"] == str(initial_system.id)
         if new_name:
-            assert edited_custom_code["display"] == new_name
+            assert edit_response["display"] == new_name
         else:
-            assert edited_custom_code["display"] == initial_display_name
+            assert edit_response["display"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
