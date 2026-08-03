@@ -138,30 +138,21 @@ async def insert_custom_codes_db(
     ]
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+        async with conn.transaction():
+            async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
+                await cur.execute(query, params)
+                rows = await cur.fetchall()
 
-            # Insert a single audit event if codes were added
-            await insert_custom_code_upload_events_db(
-                configuration=config,
-                user_id=user_id,
-                custom_codes=[
-                    # TODO: add `from_db_row`?
-                    DbCustomCode(
-                        id=cc["id"],
-                        code=cc["code"],
-                        display=cc["display"],
-                        system_id=cc["system_id"],
-                        created_at=cc["created_at"],
-                        updated_at=cc["updated_at"],
-                        configuration_id=cc["configuration_id"],
-                    )
-                    for cc in rows
-                ],
-                code_systems=code_systems,
-                cursor=cur,
-            )
+            async with conn.cursor(row_factory=dict_row) as event_cur:
+                # Insert a single audit event if codes were added
+                await insert_custom_code_upload_events_db(
+                    configuration=config,
+                    user_id=user_id,
+                    custom_codes=rows,
+                    code_systems=code_systems,
+                    cursor=event_cur,
+                )
+
             return rows
 
 
