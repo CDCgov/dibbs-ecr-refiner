@@ -31,6 +31,6 @@ jobs:
         continue-on-error: true
 
       - name: Commit changes onto PR
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "style: auto-fix pre-commit issues"
