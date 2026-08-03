@@ -85,7 +85,6 @@ async def insert_custom_code_db(
     query = """
             INSERT INTO custom_codes (configuration_id, display, code, system_id)
             VALUES (%s, %s, %s, %s)
-            ON CONFLICT (configuration_id, system_id, code) DO NOTHING
             RETURNING *;
         """
 
