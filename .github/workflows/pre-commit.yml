@@ -17,7 +17,8 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Set up Python
+      - name: Setup python ${{env.PYTHON_RUNNER_VERSION}}
+        uses: actions/checkout@v7
         uses: actions/setup-python@v7
         with:
           python-version: ${{env.PYTHON_RUNNER_VERSION}}
@@ -26,6 +27,8 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         continue-on-error: true
+        run: |
+          pre-commit run --all-files
 
       - name: Commit changes onto PR
         uses: stefanzweifel/git-auto-commit-action@v5
