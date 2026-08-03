@@ -23,56 +23,51 @@ export function VersionMenu({
   const step = useGetStep();
 
   return (
-    <>
-      <Menu as="div" className="z-10">
-        <MenuButton>
-          <div className="cursor-pointer">
-            <span className="font-bold">
-              {status === 'draft' ? 'Editing' : 'Viewing'}: Version{' '}
-              {currentVersion}
-            </span>
-            <ArrowDropDownIcon />
-          </div>
-        </MenuButton>
-        <MenuItems className="absolute mt-1 ml-4 flex max-h-100 flex-col overflow-y-auto rounded-lg bg-white px-4 py-2 shadow-lg">
-          {versions.map((config, i) => (
-            <Fragment key={config.id}>
-              <MenuItem>
-                <Link
-                  className="data-focus:bg-gray-10 block p-2"
-                  to={`/configurations/${config.id}/${step}`}
-                >
-                  <div className="flex flex-col">
-                    <VersionText
-                      versionNumber={config.version}
-                      isActive={config.status === 'active'}
-                    />
-                    <MenuItemDetail
-                      className="text-gray-60"
-                      created_at={config.created_at}
-                      created_by={config.created_by}
-                      last_activated_at={config.last_activated_at}
-                      last_activated_by={config.last_activated_by}
-                    />
-                  </div>
-                </Link>
-              </MenuItem>
-              {versions.length - 1 !== i && (
-                <div
-                  aria-hidden
-                  key={`${config.id}-divider`}
-                  className="bg-gray-cool-10 my-1 h-px"
-                />
-              )}
-            </Fragment>
-          ))}
-        </MenuItems>
-      </Menu>
-      <div
-        aria-hidden
-        className="border-gray-cool-20 mx-1 hidden h-10 border-l md:block"
-      />
-    </>
+    <Menu as="div" className="z-50">
+      <MenuButton>
+        {/* NOTE: using data-testid in order to make this simple to grab in test code.
+              `findByText` won't work due to the span breaking up the text.
+          */}
+        <div data-testid="selected-version-label" className="cursor-pointer">
+          {status === 'draft' ? 'Editing' : 'Viewing'}:{' '}
+          <span className="font-bold">Version {currentVersion}</span>
+          <ArrowDropDownIcon />
+        </div>
+      </MenuButton>
+      <MenuItems className="absolute mt-1 ml-4 flex max-h-100 flex-col overflow-y-auto rounded-lg bg-white px-4 py-2 shadow-lg">
+        {versions.map((config, i) => (
+          <Fragment key={config.id}>
+            <MenuItem>
+              <Link
+                className="data-focus:bg-gray-10 block p-2"
+                to={`/configurations/${config.id}/${step}`}
+              >
+                <div className="flex flex-col">
+                  <VersionText
+                    versionNumber={config.version}
+                    isActive={config.status === 'active'}
+                  />
+                  <MenuItemDetail
+                    className="text-gray-60"
+                    created_at={config.created_at}
+                    created_by={config.created_by}
+                    last_activated_at={config.last_activated_at}
+                    last_activated_by={config.last_activated_by}
+                  />
+                </div>
+              </Link>
+            </MenuItem>
+            {versions.length - 1 !== i && (
+              <div
+                aria-hidden
+                key={`${config.id}-divider`}
+                className="bg-gray-cool-10 my-1 h-px"
+              />
+            )}
+          </Fragment>
+        ))}
+      </MenuItems>
+    </Menu>
   );
 }
 

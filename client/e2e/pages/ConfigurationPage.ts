@@ -35,13 +35,6 @@ export class ConfigurationPage {
     await this.checkHeading('Test configuration');
   }
 
-  async goToActivateTab() {
-    await this.page
-      .getByRole('link', { name: 'Activate', exact: true })
-      .click();
-    await this.checkHeading('Turn on configuration');
-  }
-
   private async checkHeading(text: string) {
     await expect(
       this.page.getByRole('heading', {
@@ -131,7 +124,7 @@ export class ConfigurationPage {
 
   async activateConfiguration() {
     await this.page
-      .getByRole('button', { name: 'Turn on configuration' })
+      .getByRole('button', { name: 'Activate this version' })
       .click();
     await this.page
       .getByRole('button', { name: 'Yes, turn on configuration' })

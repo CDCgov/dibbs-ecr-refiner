@@ -14,14 +14,15 @@ async def get_rsg_codes_by_condition_id_db(
     """
 
     query = """
-        SELECT c.display, c.code, c.version, c.system_id
+        SELECT c.display, c.code, tes.version, c.system_id
         FROM conditions_codes as cc
         LEFT JOIN codes c on c.id = cc.code_id
-        WHERE cc.condition_id = %s AND cc.is_child_rsg;
+        LEFT JOIN conditions cond on cond.id = %(condition_id)s
+        LEFT JOIN tes on cond.tes_id = tes.id
+        WHERE cc.condition_id = %(condition_id)s AND cc.is_child_rsg;
     """
-    params = (condition_id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCode)) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"condition_id": condition_id})
 
             return await cur.fetchall()

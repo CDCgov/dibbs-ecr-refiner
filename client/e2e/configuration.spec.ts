@@ -23,7 +23,6 @@ test.describe('Configuration detail flow', () => {
     });
     await expect(link).not.toBeVisible();
 
-    await configurationPage.goToActivateTab();
     await configurationPage.activateConfiguration();
     await configurationPage.goToManageCodesTab();
     await expect(link).toBeVisible();
@@ -72,6 +71,83 @@ test.describe('Configuration detail flow', () => {
       'Display name',
     ]);
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+
+  test('Activation button is available across all configuration screens', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+  }) => {
+    await configurationsPage.createConfiguration('Anotia');
+    const activateThisVersionButton = page.getByRole('button', {
+      name: 'Activate this version',
+    });
+
+    await configurationPage.goToCustomizeSectionsTab();
+    await expect(activateThisVersionButton).toBeVisible();
+
+    await configurationPage.goToManageCodesTab();
+    await expect(activateThisVersionButton).toBeVisible();
+
+    await configurationPage.goToTestTab();
+    await expect(activateThisVersionButton).toBeVisible();
+  });
+
+  test('Activation button "activate", "switch to", and "deactivate" states are displayed appropriately', async ({
+    page,
+    configurationsPage,
+  }) => {
+    await configurationsPage.createConfiguration('Anotia');
+    const activateThisVersionButton = page.getByRole('button', {
+      name: 'Activate this version',
+    });
+
+    await test.step('Check "activate"', async () => {
+      await activateThisVersionButton.click();
+      await expect(
+        page.getByRole('heading', { name: 'Turn on configuration?', level: 2 })
+      ).toBeVisible();
+      await page
+        .getByRole('button', { name: 'Yes, turn on configuration' })
+        .click();
+
+      await expect(
+        page.getByRole('button', { name: 'Deactivate' })
+      ).toBeVisible();
+
+      await expect(
+        page.getByText(
+          'Previous versions cannot be modified. You must draft a new version to make changes.'
+        )
+      ).toBeVisible();
+    });
+
+    await test.step('Check "switch to"', async () => {
+      await page.getByRole('button', { name: 'Draft a new version' }).click();
+      await page
+        .getByRole('button', { name: 'Yes, draft a new version' })
+        .click();
+
+      await expect(page.getByText('Editing: Version 2')).toBeVisible();
+      await expect(activateThisVersionButton).toBeVisible();
+
+      await activateThisVersionButton.click();
+      await expect(
+        page.getByRole('heading', { name: 'Switch to Version 2' })
+      ).toBeVisible();
+      await page
+        .getByRole('button', { name: 'Yes, switch to Version 2' })
+        .click();
+      await expect(page.getByText('Status: Version 2 active')).toBeVisible();
+    });
+
+    await test.step('Check "deactivate"', async () => {
+      await page.getByRole('button', { name: 'Deactivate' }).click();
+      await page.getByRole('button', { name: 'Yes, turn off' }).click();
+
+      await expect(page.getByText('Status: Inactive')).toBeVisible();
+      await expect(activateThisVersionButton).toBeVisible();
+    });
   });
 
   test('Code set table can be filtered by code system', async ({
@@ -487,10 +563,9 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Activate configuration', async () => {
-      await configurationPage.goToActivateTab();
       await configurationPage.activateConfiguration();
       await expect(
-        page.getByRole('button', { name: 'Turn off current version' })
+        page.getByRole('button', { name: 'Deactivate' })
       ).toBeVisible();
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -653,24 +728,21 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Activate modified draft', async () => {
-      await configurationPage.goToActivateTab();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-      await expect(page.getByText('Switch to version 2')).toBeVisible();
-      await expect(page.getByText('Turn off configuration')).toBeVisible();
-
-      await page.getByRole('button', { name: 'Switch to version 2' }).click();
+      await page.getByRole('button', { name: 'Activate this version' }).click();
       await expect(
         page.getByText("You're about to stop Version 1 and start Version 2")
       ).toBeVisible();
-
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
       await page
         .getByRole('button', { name: 'Yes, switch to Version 2' })
         .click();
       await expect(page.getByText('Status: Version 2 active')).toBeVisible();
-      await expect(page.getByText('Turn off current version')).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Deactivate' })
+      ).toBeVisible();
     });
   });
 });
