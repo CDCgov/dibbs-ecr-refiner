@@ -151,15 +151,6 @@ async def add_custom_code(
     )
 
 
-class UploadCustomCodesResponse(BaseModel):
-    """CSV response model. Errors are surfaced via the `errors` array."""
-
-    message: str | None = None
-    codes_processed: int | None = None
-    total_custom_codes_in_configuration: int | None = None
-    errors: list[dict] | None = None
-
-
 class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
@@ -372,7 +363,7 @@ async def upload_custom_codes_csv(
     "/confirm",
     tags=["configurations"],
     operation_id="confirmUploadCustomCodesCsv",
-    response_model=UploadCustomCodesResponse,
+    response_model=list[CustomCodeResponse],
 )
 async def confirm_upload_custom_codes_csv(
     configuration_id: UUID,
@@ -380,16 +371,10 @@ async def confirm_upload_custom_codes_csv(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> UploadCustomCodesResponse:
+) -> list[CustomCodeResponse]:
     """
     Confirm and save custom codes from preview list.
     """
-
-    if not body.custom_codes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No custom codes to confirm.",
-        )
 
     config = await get_configuration_by_id_db(
         id=configuration_id,
@@ -420,7 +405,7 @@ async def confirm_upload_custom_codes_csv(
     code_systems = await get_code_systems_db(db=db)
 
     try:
-        result = await insert_custom_codes_db(
+        inserted_codes = await insert_custom_codes_db(
             config=config,
             code_systems=code_systems,
             custom_codes=body.custom_codes,
@@ -434,18 +419,24 @@ async def confirm_upload_custom_codes_csv(
             detail="Failed to insert custom codes.",
         )
 
-    if not result:
+    if not inserted_codes:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update configuration.",
         )
 
-    return UploadCustomCodesResponse(
-        message="Successfully imported custom codes.",
-        codes_processed=result.added_count,
-        total_custom_codes_in_configuration=len(result.config.custom_codes),
-        errors=None,
-    )
+    return [
+        CustomCodeResponse(
+            id=c.id,
+            display=c.display,
+            code=c.code,
+            system_id=c.system_id,
+            system_name=find_code_system_by_id_or_raise(
+                id=c.system_id, systems=code_systems
+            ).display_name,
+        )
+        for c in inserted_codes
+    ]
 
 
 @router.delete(
