@@ -5,8 +5,8 @@ from logging import Logger
 from typing import Any
 
 from app.db.code_systems.db import (
-    get_all_code_systems_db,
     get_code_system_by_key_db,
+    get_id_to_code_system_dict_db,
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.conditions.model import DbConditionCoding
@@ -217,7 +217,7 @@ async def convert_config_to_storage_payload(
 
     # build per-system code dicts for CodeSystemSets
     coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-    code_systems = await get_all_code_systems_db(db=db)
+    code_systems = await get_id_to_code_system_dict_db(db=db)
 
     # custom codes
     for cc in configuration.custom_codes:

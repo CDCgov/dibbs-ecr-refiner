@@ -7,7 +7,10 @@ import pytest
 from fastapi import status
 
 from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
-from app.db.code_systems.db import get_all_code_systems_db, get_code_system_by_key_db
+from app.db.code_systems.db import (
+    get_code_system_by_key_db,
+    get_id_to_code_system_dict_db,
+)
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.services.configurations import get_default_sections
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
@@ -211,7 +214,7 @@ class TestConfigurationExportCodesCsv:
             row["Code System"] for row in reader if row["Code System"]
         }
 
-        code_systems = await get_all_code_systems_db(db=db_pool)
+        code_systems = await get_id_to_code_system_dict_db(db=db_pool)
         expected_systems = {cs.display_name for cs in code_systems.values()}
 
         assert code_systems_in_csv <= expected_systems

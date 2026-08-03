@@ -7,7 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import AppConfig, get_app_config
-from app.db.code_systems.db import get_all_code_systems_db
+from app.db.code_systems.db import get_id_to_code_system_dict_db
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
@@ -354,7 +354,7 @@ async def get_configuration(
 
     is_locked = locked_by is not None and locked_by.id != user.id
 
-    systems = await get_all_code_systems_db(db=db)
+    systems = await get_id_to_code_system_dict_db(db=db)
     custom_codes = [
         CustomCodeResponse(
             id=cc.id,

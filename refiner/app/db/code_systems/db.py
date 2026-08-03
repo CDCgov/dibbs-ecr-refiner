@@ -33,17 +33,19 @@ async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[DbCodeSystem]
             return rows
 
 
-async def get_all_code_systems_db(
+async def get_id_to_code_system_dict_db(
     db: AsyncDatabaseConnection,
 ) -> dict[UUID, DbCodeSystem]:
     """
-    Get all code systems.
+    Returns a dictionary of all code systems.
+
+    The key is the code system's ID and the value is the system itself.
 
     Args:
         db: AsyncDatabaseConnection: A database connection.
 
     Returns:
-        dict[UUID, DbCodeSystem]: Dictionary of found code systems, indexed by their db ID's.
+        dict[UUID, DbCodeSystem]: Dictionary of found code systems, indexed by ID.
     """
 
     query = """
