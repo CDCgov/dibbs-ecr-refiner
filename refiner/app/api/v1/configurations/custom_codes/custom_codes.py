@@ -23,7 +23,6 @@ from app.db.code_systems.db import (
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
     get_configuration_by_id_db,
-    get_total_condition_code_counts_by_configuration_db,
 )
 from app.db.configurations.model import DbTotalConditionCodeCount
 from app.db.custom_codes.db import (
@@ -63,7 +62,7 @@ class ConfigurationCustomCodeResponse:
 
 @router.post(
     "",
-    response_model=ConfigurationCustomCodeResponse,
+    response_model=CustomCodeResponse,
     tags=["configurations"],
     operation_id="addCustomCodeToConfiguration",
 )
@@ -72,7 +71,7 @@ async def add_custom_code(
     body: AddCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> ConfigurationCustomCodeResponse:
+) -> CustomCodeResponse:
     """
     Add a user-defined custom code to a configuration.
 
@@ -139,29 +138,16 @@ async def add_custom_code(
             detail="Failed to add custom code.",
         )
 
-    # Get all associated conditions and their # of codes
-    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
-        config_id=config.id, db=db
-    )
-
     systems = await get_code_systems_db(db=db)
 
-    return ConfigurationCustomCodeResponse(
-        id=config.id,
-        display_name=config.name,
-        code_sets=config_condition_info,
-        custom_codes=[
-            CustomCodeResponse(
-                id=cc.id,
-                display=cc.display,
-                code=cc.code,
-                system_id=cc.system_id,
-                system_name=find_code_system_by_id_or_raise(
-                    id=cc.system_id, systems=systems
-                ).display_name,
-            )
-            for cc in config.custom_codes
-        ],
+    return CustomCodeResponse(
+        id=added_code.id,
+        display=added_code.display,
+        code=added_code.code,
+        system_id=added_code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=added_code.system_id, systems=systems
+        ).display_name,
     )
 
 
@@ -464,7 +450,7 @@ async def confirm_upload_custom_codes_csv(
 
 @router.delete(
     "/{id}",
-    response_model=ConfigurationCustomCodeResponse,
+    response_model=CustomCodeResponse,
     tags=["configurations"],
     operation_id="deleteCustomCodeFromConfiguration",
 )
@@ -473,7 +459,7 @@ async def delete_custom_code(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> ConfigurationCustomCodeResponse:
+) -> CustomCodeResponse:
     """
     Delete a custom code from a configuration.
 
@@ -535,29 +521,16 @@ async def delete_custom_code(
             detail="Unable to delete custom code.",
         )
 
-    # Get all associated conditions and their # of codes
-    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
-        config_id=config.id, db=db
-    )
-
     systems = await get_code_systems_db(db=db)
 
-    return ConfigurationCustomCodeResponse(
-        id=config.id,
-        display_name=config.name,
-        code_sets=config_condition_info,
-        custom_codes=[
-            CustomCodeResponse(
-                id=cc.id,
-                display=cc.display,
-                code=cc.code,
-                system_id=cc.system_id,
-                system_name=find_code_system_by_id_or_raise(
-                    id=cc.system_id, systems=systems
-                ).display_name,
-            )
-            for cc in config.custom_codes
-        ],
+    return CustomCodeResponse(
+        id=deleted_code.id,
+        display=deleted_code.display,
+        code=deleted_code.code,
+        system_id=deleted_code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=deleted_code.system_id, systems=systems
+        ).display_name,
     )
 
 
@@ -660,7 +633,7 @@ class UpdateCustomCodeInput(BaseModel):
 
 @router.put(
     "",
-    response_model=ConfigurationCustomCodeResponse,
+    response_model=CustomCodeResponse,
     tags=["configurations"],
     operation_id="editCustomCodeFromConfiguration",
 )
@@ -669,7 +642,7 @@ async def edit_custom_code(
     body: UpdateCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> ConfigurationCustomCodeResponse:
+) -> CustomCodeResponse:
     """
     Modify a configuration's custom code based on system_key/code pair.
 
@@ -741,25 +714,12 @@ async def edit_custom_code(
             detail="Failed to update custom code.",
         )
 
-    # Get all associated conditions and their # of codes
-    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
-        config_id=config.id, db=db
-    )
-
-    return ConfigurationCustomCodeResponse(
-        id=config.id,
-        display_name=config.name,
-        code_sets=config_condition_info,
-        custom_codes=[
-            CustomCodeResponse(
-                id=cc.id,
-                display=cc.display,
-                code=cc.code,
-                system_id=cc.system_id,
-                system_name=find_code_system_by_id_or_raise(
-                    id=cc.system_id, systems=systems
-                ).display_name,
-            )
-            for cc in config.custom_codes
-        ],
+    return CustomCodeResponse(
+        id=edited_code.id,
+        display=edited_code.display,
+        code=edited_code.code,
+        system_id=edited_code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=edited_code.system_id, systems=systems
+        ).display_name,
     )
