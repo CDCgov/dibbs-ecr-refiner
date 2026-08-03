@@ -21,11 +21,7 @@ from app.db.code_systems.db import (
     get_code_systems_db,
 )
 from app.db.conditions.db import get_included_conditions_db
-from app.db.configurations.db import (
-    get_configuration_by_id_db,
-)
-from app.db.configurations.model import DbTotalConditionCodeCount
-from app.db.custom_codes.db import (
+from app.db.configurations.custom_codes.db import (
     delete_custom_code_db,
     edit_custom_code_db,
     get_custom_code_by_id_db,
@@ -33,7 +29,11 @@ from app.db.custom_codes.db import (
     insert_custom_code_db,
     insert_custom_codes_db,
 )
-from app.db.custom_codes.model import DbCustomCode
+from app.db.configurations.custom_codes.model import DbCustomCode
+from app.db.configurations.db import (
+    get_configuration_by_id_db,
+)
+from app.db.configurations.model import DbTotalConditionCodeCount
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
