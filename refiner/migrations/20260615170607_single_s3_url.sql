@@ -11,3 +11,4 @@ ALTER TABLE configurations
 
 ALTER TABLE configurations
   RENAME COLUMN s3_url TO s3_urls;
+
