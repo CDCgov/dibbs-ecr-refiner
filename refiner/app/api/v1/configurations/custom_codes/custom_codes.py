@@ -38,8 +38,8 @@ from app.db.custom_codes.model import DbCustomCode
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
+    find_code_system_by_id_or_raise,
     get_allowed_code_system_keys,
-    get_code_system_by_id_or_raise,
 )
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
@@ -155,7 +155,7 @@ async def add_custom_code(
                 display=cc.display,
                 code=cc.code,
                 system_id=cc.system_id,
-                system_name=get_code_system_by_id_or_raise(
+                system_name=find_code_system_by_id_or_raise(
                     id=cc.system_id, systems=systems
                 ).display_name,
             )
@@ -553,7 +553,7 @@ async def delete_custom_code(
                 display=cc.display,
                 code=cc.code,
                 system_id=cc.system_id,
-                system_name=get_code_system_by_id_or_raise(
+                system_name=find_code_system_by_id_or_raise(
                     id=cc.system_id, systems=systems
                 ).display_name,
             )
@@ -722,7 +722,7 @@ async def edit_custom_code(
         )
 
     systems = await get_code_systems_db(db=db)
-    custom_code_system = get_code_system_by_id_or_raise(
+    custom_code_system = find_code_system_by_id_or_raise(
         id=body.system_id, systems=systems
     )
 
@@ -757,7 +757,7 @@ async def edit_custom_code(
                 display=cc.display,
                 code=cc.code,
                 system_id=cc.system_id,
-                system_name=get_code_system_by_id_or_raise(
+                system_name=find_code_system_by_id_or_raise(
                     id=cc.system_id, systems=systems
                 ).display_name,
             )
