@@ -2,10 +2,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.db.code_systems.db import (
-    DbCodeSystem,
-    get_id_to_code_system_dict_db,
-)
+from app.db.code_systems.db import DbCodeSystem, get_code_systems_db
 from app.db.pool import AsyncDatabaseConnection
 
 
@@ -60,6 +57,4 @@ async def get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]
     Returns:
         list[str]: A list of keys for supported systems
     """
-    allowed_code_systems = await get_id_to_code_system_dict_db(db)
-
-    return [s.key for s in allowed_code_systems.values()]
+    return [s.key for s in await get_code_systems_db(db=db)]

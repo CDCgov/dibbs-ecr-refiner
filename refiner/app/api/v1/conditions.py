@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.code_systems import CodeSystemsReponse
-from app.db.code_systems.db import get_id_to_code_system_dict_db
+from app.db.code_systems.db import get_code_systems_db
 from app.db.codes.model import CodedConcept
 from app.db.conditions.model import DbConditionsContextGrouper
 
@@ -186,7 +186,7 @@ async def get_condition(
     )
 
     code_category_statuses = _get_code_category_statuses(groupers=groupers)
-    systems = await get_id_to_code_system_dict_db(db)
+
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
@@ -199,6 +199,6 @@ async def get_condition(
             CodeSystemsReponse(
                 id=s.id, key=s.key, display_name=s.display_name, oid=s.oid
             )
-            for s in systems.values()
+            for s in await get_code_systems_db(db)
         ],
     )

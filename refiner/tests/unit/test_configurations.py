@@ -176,7 +176,7 @@ def mock_db_functions(
     )
 
     monkeypatch.setattr(
-        "app.services.code_systems.get_id_to_code_system_dict_db",
+        "app.services.code_systems.get_code_systems_db",
         AsyncMock(return_value=mock_all_systems),
     )
 
