@@ -38,6 +38,7 @@ from app.db.custom_codes.model import DbCustomCode
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
+    find_code_system_by_display_name,
     find_code_system_by_id_or_raise,
     get_allowed_code_system_keys,
 )
@@ -232,8 +233,8 @@ def _validate_csv_upload_row(
     system_names = [s.display_name for s in supported_systems]
 
     # get the DbCodeSystem that matches CSV system
-    matching_system = next(
-        (s for s in supported_systems if s.display_name == code_system_raw), None
+    matching_system = find_code_system_by_display_name(
+        systems=supported_systems, display_name=code_system_raw
     )
 
     row_errors: list[str] = []
