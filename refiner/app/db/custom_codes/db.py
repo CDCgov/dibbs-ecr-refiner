@@ -214,7 +214,7 @@ async def edit_custom_code_db(
     code: str,
     system: DbCodeSystem,
     db: AsyncDatabaseConnection,
-) -> DbConfiguration | None:
+) -> DbCustomCode | None:
     """
     Given a config and a custom code, edits the custom code using the specified properties.
     """
