@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS custom_codes(
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (system_id, value),
-    CONSTRAINT custom_codes_system_id_fkey 
-            FOREIGN KEY (system_id) 
-            REFERENCES systems (id) 
+    CONSTRAINT custom_codes_system_id_fkey
+            FOREIGN KEY (system_id)
+            REFERENCES systems (id)
             ON DELETE CASCADE
 );
 
@@ -20,38 +20,38 @@ CREATE TABLE IF NOT EXISTS codes(
     version TEXT NOT NULL,
     system_id UUID NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),    
+    updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (system_id, version, value),
-    CONSTRAINT fk_codes_system_id_fkey 
-        FOREIGN KEY (system_id) 
-        REFERENCES systems (id) 
+    CONSTRAINT fk_codes_system_id_fkey
+        FOREIGN KEY (system_id)
+        REFERENCES systems (id)
         ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS conditions_rsg_codes (
     condition_id UUID REFERENCES conditions(id) ON DELETE CASCADE,
-    code_id UUID REFERENCES codes(id) ON DELETE CASCADE, 
+    code_id UUID REFERENCES codes(id) ON DELETE CASCADE,
     PRIMARY KEY (condition_id, code_id)
 );
 
-ALTER TABLE conditions_context_groupers 
+ALTER TABLE conditions_context_groupers
     DROP CONSTRAINT conditions_context_groupers_condition_id_fkey;
 
-ALTER TABLE conditions_context_groupers 
-    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey 
-    FOREIGN KEY (condition_id) 
-    REFERENCES conditions (id) 
-    ON UPDATE CASCADE 
+ALTER TABLE conditions_context_groupers
+    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey
+    FOREIGN KEY (condition_id)
+    REFERENCES conditions (id)
+    ON UPDATE CASCADE
     ON DELETE RESTRICT;
 
-ALTER TABLE configurations_conditions 
+ALTER TABLE configurations_conditions
     DROP CONSTRAINT configurations_conditions_condition_id_fkey;
 
-ALTER TABLE configurations_conditions 
-    ADD CONSTRAINT configurations_conditions_condition_id_fkey 
-    FOREIGN KEY (condition_id) 
-    REFERENCES conditions (id) 
-    ON UPDATE CASCADE 
+ALTER TABLE configurations_conditions
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey
+    FOREIGN KEY (condition_id)
+    REFERENCES conditions (id)
+    ON UPDATE CASCADE
     ON DELETE RESTRICT;
 
 CREATE TRIGGER update_custom_codes_updated_at
@@ -67,21 +67,21 @@ EXECUTE FUNCTION set_updated_at();
 
 
 -- migrate:down
-ALTER TABLE conditions_context_groupers 
+ALTER TABLE conditions_context_groupers
     DROP CONSTRAINT conditions_context_groupers_condition_id_fkey;
 
-ALTER TABLE conditions_context_groupers 
-    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey 
-    FOREIGN KEY (condition_id) 
-    REFERENCES conditions (id) 
+ALTER TABLE conditions_context_groupers
+    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey
+    FOREIGN KEY (condition_id)
+    REFERENCES conditions (id)
     ON DELETE CASCADE;
 
-ALTER TABLE configurations_conditions 
+ALTER TABLE configurations_conditions
     DROP CONSTRAINT configurations_conditions_condition_id_fkey;
 
-ALTER TABLE configurations_conditions 
-    ADD CONSTRAINT configurations_conditions_condition_id_fkey 
-    FOREIGN KEY (condition_id) 
+ALTER TABLE configurations_conditions
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey
+    FOREIGN KEY (condition_id)
     REFERENCES conditions (id);
 
 DROP TABLE IF EXISTS conditions_rsg_codes;
