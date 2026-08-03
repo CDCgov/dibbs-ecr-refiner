@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from uuid import UUID
 
 import pytest
@@ -61,6 +62,22 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if not session.config.getoption("--update-snapshots", default=False):
         return
     build_report()
+
+
+@pytest_asyncio.fixture
+async def systems(get_systems):
+    return await get_systems()
+
+
+@pytest.fixture
+def get_system_id(systems: list[dict]) -> Callable[[str], UUID]:
+    def _get_system_id(system_key: str) -> UUID:
+        matching_system = next((s for s in systems if s["key"] == system_key), None)
+        if matching_system is None:
+            raise ValueError(f"Could not find system matching key: {system_key}")
+        return matching_system["id"]
+
+    return _get_system_id
 
 
 # NOTE:
@@ -433,7 +450,7 @@ async def build_scenario_configuration(
     activate_config,
     fetch_activation_payload,
     test_user_jurisdiction_id,
-    get_systems,
+    get_system_id,
 ):
     """
     Author a scenario's configuration through the API, activate it, and read
@@ -454,22 +471,11 @@ async def build_scenario_configuration(
         for name in scenario.associated_conditions:
             await associate_codeset(config_id, await get_condition_id(name))
 
-        systems = await get_systems()
-
-        def _get_system_id(system_key: str) -> UUID:
-            matching_system = next(
-                (s for s in systems if s["key"] == system_key),
-                None,
-            )
-            if matching_system is None:
-                raise ValueError(f"Could not find system matching key: {system_key}")
-            return matching_system["id"]
-
         for cc in scenario.custom_codes:
             await add_custom_code(
                 config_id,
                 AddCustomCodeInput(
-                    code=cc.code, system_id=_get_system_id(cc.system), display=cc.name
+                    code=cc.code, system_id=get_system_id(cc.system), display=cc.name
                 ),
             )
 
