@@ -7,7 +7,7 @@ ALTER TABLE codes
 
 ALTER TABLE custom_codes
   RENAME COLUMN value TO code;
-  
+
 ALTER TABLE custom_codes
   RENAME COLUMN name TO display;
 
@@ -21,6 +21,6 @@ ALTER TABLE codes
 
 ALTER TABLE custom_codes
   RENAME COLUMN code TO value;
-  
+
 ALTER TABLE custom_codes
   RENAME COLUMN display TO name;
