@@ -2,6 +2,7 @@ import { ExternalLink } from '@components/ExternalLink';
 import { useGetTesUpdateDiff } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { TesDiffInformation } from '.';
+import classNames from 'classnames';
 
 interface TesVersionProps {
   selectedUpdate: TesDiffInformation;
@@ -47,7 +48,9 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
           {response.data.map((r) => {
             return (
               <tr key={r.canonical_url}>
-                <td className="px-2 py-3">{r.display_name}</td>
+                <td className="px-2 py-3">
+                  {r.display_name} {r.is_new ? <NewConditionPill /> : <></>}
+                </td>
                 <td className="px-2 py-3">
                   {r.added_code_total} added, {r.removed_code_total} removed
                 </td>
@@ -57,5 +60,16 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function NewConditionPill() {
+  return (
+    <span
+      aria-label="This condition was added in this TES release as a new condition"
+      className="bg-state-success-lighter rounded-2xl px-2 py-1 font-mono text-sm"
+    >
+      New condition
+    </span>
   );
 }

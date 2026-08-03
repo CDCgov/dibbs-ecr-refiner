@@ -3,7 +3,7 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.db.tes.model import DbTes, DbTesCondition
+from app.db.tes.model import DbTes, DbTesConditionUpdate
 
 
 async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]:
@@ -70,7 +70,7 @@ async def get_tes_by_version_number_db(
 
 async def _get_baseline_tes_diff_db(
     db: AsyncDatabaseConnection, tes_id: UUID
-) -> list[DbTesCondition]:
+) -> list[DbTesConditionUpdate]:
     """
     Returns the TES update details for the first TES update, treating all conditions in that condition as "new.
 
@@ -87,7 +87,8 @@ async def _get_baseline_tes_diff_db(
             c.canonical_url,
             c.display_name,
             COALESCE(array_agg(cc.code_id)) as added_code_ids,
-            '{}'::text[] as removed_code_ids
+            '{}'::text[] as removed_code_ids,
+            TRUE as is_new
         FROM conditions_codes cc
         JOIN conditions c ON cc.condition_id = c.id
         WHERE c.tes_id = %(tes_id)s
@@ -95,7 +96,7 @@ async def _get_baseline_tes_diff_db(
     """
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTesCondition)) as cur:
+        async with conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur:
             await cur.execute(query, {"tes_id": tes_id})
             result = await cur.fetchall()
             return result
@@ -103,7 +104,7 @@ async def _get_baseline_tes_diff_db(
 
 async def get_tes_update_diff_db(
     db: AsyncDatabaseConnection, cur_tes_id: UUID, prev_tes_id: UUID
-) -> list[DbTesCondition]:
+) -> list[DbTesConditionUpdate]:
     """
     Returns all TES update details between the current and previous ID.
 
@@ -144,7 +145,8 @@ async def get_tes_update_diff_db(
         COALESCE(curr.canonical_url, prev.canonical_url) as canonical_url,
         MAX(COALESCE(curr.display_name, prev.display_name)) AS display_name,
         COALESCE(array_agg(curr.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
-        COALESCE(array_agg(prev.code_id) FILTER (where curr.code_id IS NULL), '{}'::uuid[]) as removed_code_ids
+        COALESCE(array_agg(prev.code_id) FILTER (where curr.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
+        FALSE as is_new
 
     FROM curr
     FULL OUTER JOIN prev
@@ -158,7 +160,7 @@ async def get_tes_update_diff_db(
     """
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTesCondition)) as cur:
+        async with conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur:
             await cur.execute(
                 query, {"cur_tes_id": cur_tes_id, "prev_tes_id": prev_tes_id}
             )

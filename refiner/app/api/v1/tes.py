@@ -10,7 +10,7 @@ from app.db.tes.db import (
     get_tes_by_version_number_db,
     get_tes_update_diff_db,
 )
-from app.db.tes.model import DbTesCondition
+from app.db.tes.model import DbTesConditionUpdate
 
 router = APIRouter(prefix="/tes")
 
@@ -79,11 +79,12 @@ class TesDiffResponse:
     display_name: str
     added_code_total: int
     removed_code_total: int
+    is_new: bool
 
 
 async def _get_tes_version_diff(
     db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str | None
-) -> list[DbTesCondition]:
+) -> list[DbTesConditionUpdate]:
     """
     Returns an array off all loaded TES version records.
     """
@@ -138,6 +139,7 @@ async def get_tes_diff_details(
             display_name=c.display_name,
             added_code_total=len(c.added_code_ids),
             removed_code_total=len(c.removed_code_ids),
+            is_new=c.is_new,
         )
         for c in sorted(conditions_changed, key=lambda x: x.display_name)
     ]

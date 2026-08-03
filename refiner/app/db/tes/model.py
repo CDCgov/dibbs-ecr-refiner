@@ -16,7 +16,7 @@ class DbTes:
 
 
 @dataclass
-class DbTesCondition:
+class DbTesConditionUpdate:
     """
     Model to represent the codes within a condition packaged in a TES update.
     """
@@ -25,3 +25,4 @@ class DbTesCondition:
     display_name: str
     added_code_ids: list[UUID]
     removed_code_ids: list[UUID]
+    is_new: bool
