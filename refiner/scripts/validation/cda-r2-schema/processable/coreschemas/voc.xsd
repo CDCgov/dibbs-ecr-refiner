@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mif="urn:hl7-org:v3/mif">
    <xs:annotation>
-      <xs:documentation> $Id: Vocabulary.xml,v 1.1 2005/08/25 11:33:46 mcraig Exp $ 
+      <xs:documentation> $Id: Vocabulary.xml,v 1.1 2005/08/25 11:33:46 mcraig Exp $
 RoseTree XML to Schema: $Id: VocabXMLtoXSD.xsl,v 1.6 2005/05/24 00:14:18 lmckenzi Exp $</xs:documentation>
    </xs:annotation>
    <xs:include schemaLocation="datatypes.xsd"/>
