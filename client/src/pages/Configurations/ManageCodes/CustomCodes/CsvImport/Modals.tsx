@@ -1,9 +1,8 @@
 import {
-  IndexedCodeSystem,
   AddCustomCodeInput,
+  DbCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
-
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
@@ -93,7 +92,7 @@ interface PreviewEditModalProps {
   closePreviewEditModal: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
   error: UploadError | null;
-  codeSystems: IndexedCodeSystem;
+  codeSystems: DbCodeSystem[];
   isOpen: boolean;
 }
 
