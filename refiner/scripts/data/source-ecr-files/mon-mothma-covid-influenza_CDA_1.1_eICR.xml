@@ -810,7 +810,7 @@
                     xsi:type="CD" />
                 </observation>
               </entryRelationship>
-              <!-- V6: NEW - Dyspnea caused by SARS-CoV-2 (IN COVID GROUPER) 
+              <!-- V6: NEW - Dyspnea caused by SARS-CoV-2 (IN COVID GROUPER)
                    *** MISSING displayName - code 119981000146107 IS in the COVID-19 condition grouper *** -->
               <entryRelationship typeCode="SUBJ">
                 <observation classCode="OBS" moodCode="EVN" negationInd="false">

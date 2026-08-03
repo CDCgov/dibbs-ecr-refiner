@@ -6,7 +6,7 @@
     <xs:documentation>
       Copyright (c) 2015 Health Level Seven.
       All rights reserved.
-      
+
       Redistribution and use in source and binary forms, with or
       without modification, are permitted provided that the following
       conditions are met:
@@ -19,9 +19,9 @@
       provided with the distribution.
       3. All advertising materials mentioning features or use of this
       software must display the following acknowledgement:
-      
+
       This product includes software developed by Health Level Seven.
-      
+
       THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS
       ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
       NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
@@ -40,12 +40,12 @@
       2012-07-06  Created POCD_MT000040_SDTC.xsd (this file) this file is an edited version of POCD_MT000040.xsd that contains the SDTC extensions.
     </xs:documentation>
     <xs:documentation>
-      2012-07-06 Added extensions approved by SDWG prior to 2012-07-06: 
+      2012-07-06 Added extensions approved by SDWG prior to 2012-07-06:
                     RelatedSubject/sdtc:id,
                     SubjectPerson/sdtc:id,
                     Patient/sdtc:deceasedInd,
                     SubjectPerson/sdtc:deceasedInd,
-                    Patient/sdtc:deceasedTime, 
+                    Patient/sdtc:deceasedTime,
                     SubjectPerson/sdtc:deceasedTime,
                     Encounter/sdtc:dischargeDispositionCode,
                     Patient/sdtc:raceCode,
@@ -65,7 +65,7 @@
                     SubjectPerson/sdtc:multipleBirthOrderNumber
                  Added extensions approved by SDWG on 2014-12-18:
                     Patient/sdtc:ethnicGroupCode,
-                    SubjectPerson/sdtc:ethnicGroupCode         
+                    SubjectPerson/sdtc:ethnicGroupCode
     </xs:documentation>
     <xs:documentation>
       2015-04-01 Added extension approved by SDWG on 2014-01-xx:
@@ -119,7 +119,7 @@
       </xs:documentation>
 
     <xs:documentation>
-        2019-08-06  Extensions created for Form Definition Document IG include: 
+        2019-08-06  Extensions created for Form Definition Document IG include:
             precondition
       </xs:documentation>
     <xs:documentation>
@@ -138,7 +138,7 @@
       Added category extension approved by SDWG on 2024-10
     </xs:documentation>
     <xs:documentation>
-      2025-11-13  
+      2025-11-13
       Added sdtc:specialty to AssignedAuthor, AssignedEntity, AssociatedEntity, and ParticipantRole
       Added sdtc:expirationDate to Material
     </xs:documentation>
