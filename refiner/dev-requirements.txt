@@ -6,7 +6,7 @@ pytest-cov==7.1.0
 python-dotenv==1.2.2
 ruff==0.15.22
 saxonche==13.0.0
-testcontainers[compose]==4.14.2
+testcontainers[compose]==4.15.0
 tqdm==4.69.0
 mypy==2.2.0
 lxml-stubs==0.5.1
