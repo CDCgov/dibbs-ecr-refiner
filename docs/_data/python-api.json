@@ -15,7 +15,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 5
+          "lineno": 6
         },
         {
           "name": "DIBBS_CONTACT",
@@ -28,31 +28,12 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 13
+          "lineno": 14
         },
-        {
-          "name": "ENVIRONMENT",
-          "type": "attribute",
-          "docstring": "",
-          "parsed_docstring": {
-            "summary": "",
-            "description": "",
-            "params": [],
-            "returns": null,
-            "raises": []
-          },
-          "lineno": 20
-        }
-      ]
-    },
-    {
-      "name": "app.core.utils",
-      "docstring": "",
-      "members": [
         {
           "name": "get_env_variable",
           "type": "function",
-          "docstring": "Grabs a variable by name from the environment. Throws an error if the variable is not present.\n\nArgs:\n    name (str): Name of the environment variable\n\nRaises:\n    OSError: raised if environment variable is not present\n\nReturns:\n    str: Name of the environment variable",
+          "docstring": "Grabs a variable by name from the environment. Throws an error if the variable is not present.\n\nArgs:\n    name (str): Name of the environment variable\n\nRaises:\n    ValueError: raised if environment variable is not present\n\nReturns:\n    str: Name of the environment variable",
           "parsed_docstring": {
             "summary": "Grabs a variable by name from the environment. Throws an error if the variable is not present.",
             "description": "",
@@ -70,12 +51,12 @@
             },
             "raises": [
               {
-                "type": "OSError",
+                "type": "ValueError",
                 "description": "raised if environment variable is not present"
               }
             ]
           },
-          "lineno": 4,
+          "lineno": 21,
           "signature": "get_env_variable(name: str) -> str",
           "parameters": [
             {
@@ -85,6 +66,210 @@
             }
           ],
           "return_annotation": "str"
+        },
+        {
+          "name": "AppConfig",
+          "type": "class",
+          "docstring": "Core variables needed by all entry points.",
+          "parsed_docstring": {
+            "summary": "Core variables needed by all entry points.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 40,
+          "methods": [
+            {
+              "name": "__init__",
+              "docstring": "",
+              "parsed_docstring": {
+                "summary": "",
+                "description": "",
+                "params": [],
+                "returns": null,
+                "raises": []
+              },
+              "lineno": 43,
+              "signature": "__init__() -> None",
+              "parameters": [
+                {
+                  "name": "self",
+                  "annotation": null,
+                  "default": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "DbConfig",
+          "type": "class",
+          "docstring": "Database config. Needed by API and Ops.",
+          "parsed_docstring": {
+            "summary": "Database config. Needed by API and Ops.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 48,
+          "methods": [
+            {
+              "name": "__init__",
+              "docstring": "",
+              "parsed_docstring": {
+                "summary": "",
+                "description": "",
+                "params": [],
+                "returns": null,
+                "raises": []
+              },
+              "lineno": 51,
+              "signature": "__init__() -> None",
+              "parameters": [
+                {
+                  "name": "self",
+                  "annotation": null,
+                  "default": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AuthConfig",
+          "type": "class",
+          "docstring": "Auth config. Needed by API.",
+          "parsed_docstring": {
+            "summary": "Auth config. Needed by API.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 56,
+          "methods": [
+            {
+              "name": "__init__",
+              "docstring": "",
+              "parsed_docstring": {
+                "summary": "",
+                "description": "",
+                "params": [],
+                "returns": null,
+                "raises": []
+              },
+              "lineno": 59,
+              "signature": "__init__() -> None",
+              "parameters": [
+                {
+                  "name": "self",
+                  "annotation": null,
+                  "default": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AwsConfig",
+          "type": "class",
+          "docstring": "AWS config. Needed by API, Lambda, Ops.",
+          "parsed_docstring": {
+            "summary": "AWS config. Needed by API, Lambda, Ops.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 67,
+          "methods": [
+            {
+              "name": "__init__",
+              "docstring": "",
+              "parsed_docstring": {
+                "summary": "",
+                "description": "",
+                "params": [],
+                "returns": null,
+                "raises": []
+              },
+              "lineno": 70,
+              "signature": "__init__() -> None",
+              "parameters": [
+                {
+                  "name": "self",
+                  "annotation": null,
+                  "default": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get_app_config",
+          "type": "function",
+          "docstring": "Creates an instance of an AppConfig.",
+          "parsed_docstring": {
+            "summary": "Creates an instance of an AppConfig.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 75,
+          "signature": "get_app_config() -> AppConfig",
+          "parameters": [],
+          "return_annotation": "AppConfig"
+        },
+        {
+          "name": "get_db_config",
+          "type": "function",
+          "docstring": "Creates an instance of a DbConfig.",
+          "parsed_docstring": {
+            "summary": "Creates an instance of a DbConfig.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 83,
+          "signature": "get_db_config() -> DbConfig",
+          "parameters": [],
+          "return_annotation": "DbConfig"
+        },
+        {
+          "name": "get_auth_config",
+          "type": "function",
+          "docstring": "Creates an instance of an AuthConfig.",
+          "parsed_docstring": {
+            "summary": "Creates an instance of an AuthConfig.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 91,
+          "signature": "get_auth_config() -> AuthConfig",
+          "parameters": [],
+          "return_annotation": "AuthConfig"
+        },
+        {
+          "name": "get_aws_config",
+          "type": "function",
+          "docstring": "Creates an instance of an AwsConfig.",
+          "parsed_docstring": {
+            "summary": "Creates an instance of an AwsConfig.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 99,
+          "signature": "get_aws_config() -> AwsConfig",
+          "parameters": [],
+          "return_annotation": "AwsConfig"
         }
       ]
     },
@@ -575,7 +760,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 11
+          "lineno": 12
         },
         {
           "name": "INFLUENZA_CANONICAL_URL_UUID",
@@ -588,7 +773,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 12
+          "lineno": 13
         },
         {
           "name": "REFINER_INPUT_PREFIX",
@@ -601,7 +786,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 13
+          "lineno": 14
         },
         {
           "name": "REFINER_OUTPUT_PREFIX",
@@ -614,7 +799,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 14
+          "lineno": 15
         },
         {
           "name": "REFINER_COMPLETE_PREFIX",
@@ -627,7 +812,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 15
+          "lineno": 16
         },
         {
           "name": "ECR_INPUT_PREFIX",
@@ -640,7 +825,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 16
+          "lineno": 17
         },
         {
           "name": "S3_BUCKET_CONFIG",
@@ -653,7 +838,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 17
+          "lineno": 18
         },
         {
           "name": "MockLambdaContext",
@@ -666,7 +851,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 20,
+          "lineno": 21,
           "methods": []
         },
         {
@@ -680,7 +865,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 29,
+          "lineno": 30,
           "signature": "aws_mock()",
           "parameters": []
         },
@@ -695,7 +880,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 35,
+          "lineno": 36,
           "signature": "config_lambda_env(monkeypatch) -> dict[str, str]",
           "parameters": [
             {
@@ -717,7 +902,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 51,
+          "lineno": 52,
           "signature": "lambda_event() -> dict",
           "parameters": [],
           "return_annotation": "dict"
@@ -733,7 +918,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 58,
+          "lineno": 59,
           "signature": "sample_xml_files() -> dict[str, bytes]",
           "parameters": [],
           "return_annotation": "dict[str, bytes]"
@@ -749,7 +934,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 74,
+          "lineno": 75,
           "signature": "s3_client(aws_mock)",
           "parameters": [
             {
@@ -770,7 +955,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 79,
+          "lineno": 80,
           "signature": "data_bucket(s3_client) -> str",
           "parameters": [
             {
@@ -792,7 +977,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 85,
+          "lineno": 86,
           "signature": "config_bucket(s3_client) -> str",
           "parameters": [
             {
@@ -814,7 +999,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 91,
+          "lineno": 92,
           "signature": "s3_input_objects(s3_client, data_bucket, sample_xml_files)",
           "parameters": [
             {
@@ -845,7 +1030,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 114,
+          "lineno": 115,
           "signature": "collect_lambda_output_keys(s3_client, bucket) -> list[str]",
           "parameters": [
             {
@@ -872,8 +1057,8 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 121,
-          "signature": "get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict",
+          "lineno": 122,
+          "signature": "get_refiner_complete_content(s3_client, bucket, persistence_id) -> dict",
           "parameters": [
             {
               "name": "s3_client",
@@ -886,7 +1071,7 @@
               "default": null
             },
             {
-              "name": "persistance_id",
+              "name": "persistence_id",
               "annotation": null,
               "default": null
             }
@@ -904,7 +1089,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 131,
+          "lineno": 132,
           "signature": "test_lambda_inactive(lambda_event, s3_client, data_bucket, config_lambda_env, s3_input_objects)",
           "parameters": [
             {
@@ -1043,7 +1228,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 39
+          "lineno": 43
         },
         {
           "name": "EICR_INPUT_PREFIX",
@@ -1056,7 +1241,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 42
+          "lineno": 46
         },
         {
           "name": "REFINER_INPUT_PREFIX",
@@ -1069,7 +1254,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 43
+          "lineno": 47
         },
         {
           "name": "REFINER_OUTPUT_PREFIX",
@@ -1082,7 +1267,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 44
+          "lineno": 48
         },
         {
           "name": "REFINER_COMPLETE_PREFIX",
@@ -1095,7 +1280,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 45
+          "lineno": 49
         },
         {
           "name": "S3_BUCKET_CONFIG",
@@ -1108,7 +1293,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 46
+          "lineno": 50
         },
         {
           "name": "S3_ENDPOINT_URL",
@@ -1121,7 +1306,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 47
+          "lineno": 51
         },
         {
           "name": "JurisdictionCode",
@@ -1134,7 +1319,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 49
+          "lineno": 53
         },
         {
           "name": "ConditionCode",
@@ -1147,7 +1332,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 50
+          "lineno": 54
         },
         {
           "name": "RefinerMetadata",
@@ -1160,7 +1345,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 51
+          "lineno": 55
         },
         {
           "name": "LogOperation",
@@ -1173,7 +1358,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 54,
+          "lineno": 58,
           "methods": []
         },
         {
@@ -1206,7 +1391,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 75,
+          "lineno": 79,
           "methods": []
         },
         {
@@ -1233,7 +1418,35 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 97,
+          "lineno": 101,
+          "methods": []
+        },
+        {
+          "name": "MaintenanceModeError",
+          "type": "class",
+          "docstring": "Raised when active configuration maintenance is in progress.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
+          "parsed_docstring": {
+            "summary": "Raised when active configuration maintenance is in progress.",
+            "description": "Stage: Skip/Error Handling\nRole: Error Handling",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 121,
+          "methods": []
+        },
+        {
+          "name": "IncompatibleActiveConfigurationError",
+          "type": "class",
+          "docstring": "Raised when an active configuration file uses an unsupported schema version.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
+          "parsed_docstring": {
+            "summary": "Raised when an active configuration file uses an unsupported schema version.",
+            "description": "Stage: Skip/Error Handling\nRole: Error Handling",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 132,
           "methods": []
         },
         {
@@ -1266,7 +1479,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 117,
+          "lineno": 143,
           "methods": [
             {
               "name": "__init__",
@@ -1347,7 +1560,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 146,
+          "lineno": 172,
           "methods": [
             {
               "name": "__init__",
@@ -1420,7 +1633,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 171,
+          "lineno": 197,
           "methods": [
             {
               "name": "__init__",
@@ -1478,7 +1691,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 193,
+          "lineno": 219,
           "signature": "lambda_handler(event, context) -> dict",
           "parameters": [
             {
@@ -1493,6 +1706,33 @@
             }
           ],
           "return_annotation": "dict"
+        },
+        {
+          "name": "read_active_configuration_maintenance_lock",
+          "type": "function",
+          "docstring": "Read the active configuration maintenance lock from S3.\n\nIf the lock is missing, expired, empty, null, or invalid JSON, treat it as\nno active lock. A malformed lock should not fail refinement processing.\n\nStage:\n    Entry\nRole:\n    Handler",
+          "parsed_docstring": {
+            "summary": "Read the active configuration maintenance lock from S3.",
+            "description": "If the lock is missing, expired, empty, null, or invalid JSON, treat it as\nno active lock. A malformed lock should not fail refinement processing.\n\nStage: Entry\nRole: Handler",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 428,
+          "signature": "read_active_configuration_maintenance_lock(s3_client, bucket: str) -> dict | None",
+          "parameters": [
+            {
+              "name": "s3_client",
+              "annotation": null,
+              "default": null
+            },
+            {
+              "name": "bucket",
+              "annotation": "str",
+              "default": null
+            }
+          ],
+          "return_annotation": "dict | None"
         },
         {
           "name": "extract_persistence_id",
@@ -1521,7 +1761,7 @@
             },
             "raises": []
           },
-          "lineno": 372,
+          "lineno": 493,
           "signature": "extract_persistence_id(object_key: str, input_prefix: str) -> str",
           "parameters": [
             {
@@ -1570,7 +1810,7 @@
             },
             "raises": []
           },
-          "lineno": 400,
+          "lineno": 521,
           "signature": "get_s3_object_content(s3_client, bucket: str, key: str) -> str",
           "parameters": [
             {
@@ -1629,7 +1869,7 @@
               }
             ]
           },
-          "lineno": 422,
+          "lineno": 543,
           "signature": "check_s3_object_exists(s3_client, bucket: str, key: str) -> bool",
           "parameters": [
             {
@@ -1676,7 +1916,7 @@
               }
             ]
           },
-          "lineno": 455,
+          "lineno": 576,
           "signature": "parse_s3_content_to_dict(body: str) -> dict",
           "parameters": [
             {
@@ -1720,7 +1960,7 @@
             },
             "raises": []
           },
-          "lineno": 482,
+          "lineno": 603,
           "signature": "read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None",
           "parameters": [
             {
@@ -1755,7 +1995,7 @@
             },
             "raises": []
           },
-          "lineno": 521,
+          "lineno": 642,
           "signature": "read_current_version(s3_client, bucket: str, key: str) -> int | None",
           "parameters": [
             {
@@ -1779,10 +2019,10 @@
         {
           "name": "read_configuration_file",
           "type": "function",
-          "docstring": "Read an activated configuration file (`active.json`) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
+          "docstring": "Read an activated configuration file (`active.json`) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the active payload schema version, per-system `code_system_sets`,\nsection processing rules, and included condition RSG codes. It is written\nduring activation by the webapp and read by Lambda at refinement time.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json, which pointed to this version, and the actual files on S3.\n    IncompatibleActiveConfigurationError: If the active configuration schema\n        version is missing or unsupported.",
           "parsed_docstring": {
             "summary": "Read an activated configuration file (`active.json`) from S3.",
-            "description": "This file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nStage: Configuration Loading\nRole: Configuration",
+            "description": "This file contains the serialized configuration data needed for refinement,\nincluding the active payload schema version, per-system `code_system_sets`,\nsection processing rules, and included condition RSG codes. It is written\nduring activation by the webapp and read by Lambda at refinement time.\n\nStage: Configuration Loading\nRole: Configuration",
             "params": [
               {
                 "name": "s3_client",
@@ -1810,11 +2050,15 @@
             "raises": [
               {
                 "type": "Exception",
-                "description": "If the file does not exist. This indicates a mismatch between current.json (which pointed to this version) and the actual files on S3."
+                "description": "If the file does not exist. This indicates a mismatch between current.json, which pointed to this version, and the actual files on S3."
+              },
+              {
+                "type": "IncompatibleActiveConfigurationError",
+                "description": "If the active configuration schema version is missing or unsupported."
               }
             ]
           },
-          "lineno": 554,
+          "lineno": 675,
           "signature": "read_configuration_file(s3_client, bucket: str, key: str) -> dict",
           "parameters": [
             {
@@ -1880,7 +2124,7 @@
             },
             "raises": []
           },
-          "lineno": 596,
+          "lineno": 745,
           "signature": "run_refinement(input: RefinementInput) -> RefinementOutput",
           "parameters": [
             {
@@ -1902,7 +2146,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 667,
+          "lineno": 816,
           "signature": "process_jurisdiction(jurisdiction_group: JurisdictionReportableConditions, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1939,7 +2183,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 709,
+          "lineno": 858,
           "signature": "process_condition(jurisdiction_code: str, reportable_condition: ReportableCondition, rsg_cg_payload: ConditionMappingPayload, refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -1986,7 +2230,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 788,
+          "lineno": 937,
           "signature": "load_condition_mapping_for_jurisdiction(s3_client, config_bucket: str, jurisdiction_code: str) -> ConditionMappingPayload | None",
           "parameters": [
             {
@@ -2018,7 +2262,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 821,
+          "lineno": 970,
           "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
           "parameters": [
             {
@@ -2050,7 +2294,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 843,
+          "lineno": 992,
           "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState, **kwargs) -> None",
           "parameters": [
             {
@@ -2105,7 +2349,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 871,
+          "lineno": 1020,
           "methods": [
             {
               "name": "__init__",
@@ -2150,7 +2394,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 891,
+          "lineno": 1040,
           "signature": "load_active_configuration(s3_client, config_bucket: str, jurisdiction_code: str, cg_metadata: ConditionMapValue, rsg_metadata: ReportableCondition) -> ActiveConfiguration | None",
           "parameters": [
             {
@@ -2192,7 +2436,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 954,
+          "lineno": 1103,
           "signature": "write_refined_outputs(refiner_input: RefinementInput, jurisdiction_code: str, condition_code: str, condition_grouper_name: str, result: RefinementResult, state: RefinementState) -> None",
           "parameters": [
             {
@@ -2239,7 +2483,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 1006,
+          "lineno": 1155,
           "signature": "write_remainder_rrs(refiner_input: RefinementInput, state: RefinementState, run: AugmentationRun) -> None",
           "parameters": [
             {
@@ -3789,7 +4033,7 @@
         {
           "name": "get_info",
           "type": "function",
-          "docstring": "Fetch application state information for debugging purposes.\n\nArgs:\n    user (DbUser, optional): The logged-in user.\n    db (AsyncDatabaseConnection, optional): The database connection.\n    logger (Logger, optional): The app logger.\n\nReturns:\n    JSONResponse: Application state information.",
+          "docstring": "Fetch application state information for debugging purposes.\n\nArgs:\n    user (DbUser, optional): The logged-in user.\n    app_config (AppConfig): The required application environment variables.\n    db (AsyncDatabaseConnection, optional): The database connection.\n    logger (Logger, optional): The app logger.\n\nReturns:\n    JSONResponse: Application state information.",
           "parsed_docstring": {
             "summary": "Fetch application state information for debugging purposes.",
             "description": "",
@@ -3798,6 +4042,12 @@
                 "name": "user",
                 "type": "DbUser",
                 "description": "The logged-in user.",
+                "default": ""
+              },
+              {
+                "name": "app_config",
+                "type": "AppConfig",
+                "description": "The required application environment variables.",
                 "default": ""
               },
               {
@@ -3820,12 +4070,17 @@
             "raises": []
           },
           "lineno": 17,
-          "signature": "get_info(user: DbUser = Depends(get_logged_in_user), db: AsyncDatabaseConnection = Depends(get_db)) -> JSONResponse",
+          "signature": "get_info(user: DbUser = Depends(get_logged_in_user), app_config: AppConfig = Depends(get_app_config), db: AsyncDatabaseConnection = Depends(get_db)) -> JSONResponse",
           "parameters": [
             {
               "name": "user",
               "annotation": "DbUser",
               "default": "Depends(get_logged_in_user)"
+            },
+            {
+              "name": "app_config",
+              "annotation": "AppConfig",
+              "default": "Depends(get_app_config)"
             },
             {
               "name": "db",
@@ -3855,7 +4110,7 @@
             },
             "raises": []
           },
-          "lineno": 40,
+          "lineno": 38,
           "signature": "get_oauth_provider() -> StarletteOAuth2App",
           "parameters": [],
           "return_annotation": "StarletteOAuth2App"
@@ -3874,7 +4129,7 @@
             },
             "raises": []
           },
-          "lineno": 56,
+          "lineno": 54,
           "signature": "get_session_secret_key() -> str",
           "parameters": [],
           "return_annotation": "str"
@@ -3912,22 +4167,9 @@
           "lineno": 18
         },
         {
-          "name": "SESSION_SECRET_KEY",
-          "type": "attribute",
-          "docstring": "",
-          "parsed_docstring": {
-            "summary": "",
-            "description": "",
-            "params": [],
-            "returns": null,
-            "raises": []
-          },
-          "lineno": 19
-        },
-        {
           "name": "get_hashed_token",
           "type": "function",
-          "docstring": "Given a session token, calculates a hash using the session secret key.\n\nArgs:\n    token (str): Session token\n\nReturns:\n    str: Hashed session token",
+          "docstring": "Given a session token, calculates a hash using the session secret key.\n\nArgs:\n    token (str): Session token\n    secret_key: str | None: Optional secret key value. If not provided, uses `SESSION_SECRET_KEY` env variable.\n\nReturns:\n    str: Hashed session token",
           "parsed_docstring": {
             "summary": "Given a session token, calculates a hash using the session secret key.",
             "description": "",
@@ -3937,6 +4179,12 @@
                 "type": "str",
                 "description": "Session token",
                 "default": ""
+              },
+              {
+                "name": "secret_key",
+                "type": "",
+                "description": "str | None: Optional secret key value. If not provided, uses `SESSION_SECRET_KEY` env variable.",
+                "default": ""
               }
             ],
             "returns": {
@@ -3945,13 +4193,18 @@
             },
             "raises": []
           },
-          "lineno": 22,
-          "signature": "get_hashed_token(token: str) -> str",
+          "lineno": 21,
+          "signature": "get_hashed_token(token: str, secret_key: str | None = None) -> str",
           "parameters": [
             {
               "name": "token",
               "annotation": "str",
               "default": null
+            },
+            {
+              "name": "secret_key",
+              "annotation": "str | None",
+              "default": "None"
             }
           ],
           "return_annotation": "str"
@@ -3959,7 +4212,7 @@
         {
           "name": "set_session_cookie",
           "type": "function",
-          "docstring": "Sets the user's session cookie.\n\nArgs:\n    response (Response): The response object\n    session_token (str): The user's session token",
+          "docstring": "Sets the user's session cookie.\n\nArgs:\n    response (Response): The response object\n    app_config (AppConfig): The required application environment variables.\n    session_token (str): The user's session token",
           "parsed_docstring": {
             "summary": "Sets the user's session cookie.",
             "description": "",
@@ -3968,6 +4221,12 @@
                 "name": "response",
                 "type": "Response",
                 "description": "The response object",
+                "default": ""
+              },
+              {
+                "name": "app_config",
+                "type": "AppConfig",
+                "description": "The required application environment variables.",
                 "default": ""
               },
               {
@@ -3980,12 +4239,17 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 37,
-          "signature": "set_session_cookie(response: Response, session_token: str) -> None",
+          "lineno": 40,
+          "signature": "set_session_cookie(response: Response, app_config: AppConfig, session_token: str) -> None",
           "parameters": [
             {
               "name": "response",
               "annotation": "Response",
+              "default": null
+            },
+            {
+              "name": "app_config",
+              "annotation": "AppConfig",
               "default": null
             },
             {
@@ -4023,7 +4287,7 @@
             },
             "raises": []
           },
-          "lineno": 57,
+          "lineno": 63,
           "signature": "create_session(user_id: str, db: AsyncDatabaseConnection) -> str",
           "parameters": [
             {
@@ -4063,7 +4327,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 86,
+          "lineno": 92,
           "signature": "get_user_from_session(token: str, db: AsyncDatabaseConnection) -> DbUser | None",
           "parameters": [
             {
@@ -4090,7 +4354,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 128,
+          "lineno": 134,
           "signature": "run_expired_session_cleanup_task(logger: Logger, db: AsyncDatabaseConnection) -> None",
           "parameters": [
             {
@@ -4130,7 +4394,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 146,
+          "lineno": 152,
           "signature": "delete_session(token: str, db: AsyncDatabaseConnection) -> None",
           "parameters": [
             {
@@ -4163,12 +4427,12 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 33
+          "lineno": 34
         },
         {
           "name": "login",
           "type": "function",
-          "docstring": "Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.\n\nArgs:\n    request (Request): The incoming HTTP/S request.\n    logger (Logger): The standard logger.\n\nReturns:\n    RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.",
+          "docstring": "Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.\n\nArgs:\n    request (Request): The incoming HTTP/S request.\n    app_config (AppConfig): The required application environment variables\n    logger (Logger): The standard logger.\n\nReturns:\n    RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.",
           "parsed_docstring": {
             "summary": "Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.",
             "description": "",
@@ -4177,6 +4441,12 @@
                 "name": "request",
                 "type": "Request",
                 "description": "The incoming HTTP/S request.",
+                "default": ""
+              },
+              {
+                "name": "app_config",
+                "type": "AppConfig",
+                "description": "The required application environment variables",
                 "default": ""
               },
               {
@@ -4192,13 +4462,18 @@
             },
             "raises": []
           },
-          "lineno": 36,
-          "signature": "login(request: Request, logger: Logger = Depends(get_logger)) -> RedirectResponse",
+          "lineno": 37,
+          "signature": "login(request: Request, app_config: AppConfig = Depends(get_app_config), logger: Logger = Depends(get_logger)) -> RedirectResponse",
           "parameters": [
             {
               "name": "request",
               "annotation": "Request",
               "default": null
+            },
+            {
+              "name": "app_config",
+              "annotation": "AppConfig",
+              "default": "Depends(get_app_config)"
             },
             {
               "name": "logger",
@@ -4211,7 +4486,7 @@
         {
           "name": "auth_callback",
           "type": "function",
-          "docstring": "Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.\n\nArgs:\n    request (Request): The incoming HTTP request containing the authorization code.\n    logger (Logger): The standard logger.\n    db (AsyncDatabaseConnection): The DB connection pool.\n\nReturns:\n    dict[str, str]: A dictionary of user claims extracted from the ID token.\n\nRaises:\n    Exception: If token exchange or ID token parsing fails.",
+          "docstring": "Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.\n\nArgs:\n    request (Request): The incoming HTTP request containing the authorization code.\n    app_config (AppConfig): The required application environment variables.\n    logger (Logger): The standard logger.\n    db (AsyncDatabaseConnection): The DB connection pool.\n\nReturns:\n    dict[str, str]: A dictionary of user claims extracted from the ID token.\n\nRaises:\n    Exception: If token exchange or ID token parsing fails.",
           "parsed_docstring": {
             "summary": "Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.",
             "description": "",
@@ -4220,6 +4495,12 @@
                 "name": "request",
                 "type": "Request",
                 "description": "The incoming HTTP request containing the authorization code.",
+                "default": ""
+              },
+              {
+                "name": "app_config",
+                "type": "AppConfig",
+                "description": "The required application environment variables.",
                 "default": ""
               },
               {
@@ -4246,13 +4527,18 @@
               }
             ]
           },
-          "lineno": 69,
-          "signature": "auth_callback(request: Request, logger: Logger = Depends(get_logger), db: AsyncDatabaseConnection = Depends(get_db)) -> RedirectResponse",
+          "lineno": 73,
+          "signature": "auth_callback(request: Request, app_config: AppConfig = Depends(get_app_config), logger: Logger = Depends(get_logger), db: AsyncDatabaseConnection = Depends(get_db)) -> RedirectResponse",
           "parameters": [
             {
               "name": "request",
               "annotation": "Request",
               "default": null
+            },
+            {
+              "name": "app_config",
+              "annotation": "AppConfig",
+              "default": "Depends(get_app_config)"
             },
             {
               "name": "logger",
@@ -4278,7 +4564,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 223,
+          "lineno": 231,
           "methods": []
         },
         {
@@ -4292,7 +4578,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 232,
+          "lineno": 240,
           "methods": [
             {
               "name": "__init__",
@@ -4332,7 +4618,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 241,
+          "lineno": 249,
           "methods": [
             {
               "name": "from_db_user",
@@ -4344,7 +4630,7 @@
                 "returns": null,
                 "raises": []
               },
-              "lineno": 251,
+              "lineno": 259,
               "signature": "from_db_user(user: DbUser, db: AsyncDatabaseConnection) -> UserResponse",
               "parameters": [
                 {
@@ -4377,7 +4663,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 298,
+          "lineno": 306,
           "signature": "get_user(request: Request, db: AsyncDatabaseConnection = Depends(get_db)) -> UserResponse | None",
           "parameters": [
             {
@@ -4396,7 +4682,7 @@
         {
           "name": "logout",
           "type": "function",
-          "docstring": "Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.\n\nArgs:\n    request (Request): The incoming HTTP request.\n    logger (Logger): The standard logger.\n    db (AsyncDatabaseConnection): The database connection.\n\nReturns:\n    RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.",
+          "docstring": "Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.\n\nArgs:\n    request (Request): The incoming HTTP request.\n    app_config (AppConfig): The required application environment variables.\n    logger (Logger): The standard logger.\n    db (AsyncDatabaseConnection): The database connection.\n\nReturns:\n    RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.",
           "parsed_docstring": {
             "summary": "Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.",
             "description": "",
@@ -4405,6 +4691,12 @@
                 "name": "request",
                 "type": "Request",
                 "description": "The incoming HTTP request.",
+                "default": ""
+              },
+              {
+                "name": "app_config",
+                "type": "AppConfig",
+                "description": "The required application environment variables.",
                 "default": ""
               },
               {
@@ -4426,13 +4718,18 @@
             },
             "raises": []
           },
-          "lineno": 329,
-          "signature": "logout(request: Request, logger: Logger = Depends(get_logger), db: AsyncDatabaseConnection = Depends(get_db)) -> RedirectResponse",
+          "lineno": 337,
+          "signature": "logout(request: Request, app_config: AppConfig = Depends(get_app_config), logger: Logger = Depends(get_logger), db: AsyncDatabaseConnection = Depends(get_db)) -> RedirectResponse",
           "parameters": [
             {
               "name": "request",
               "annotation": "Request",
               "default": null
+            },
+            {
+              "name": "app_config",
+              "annotation": "AppConfig",
+              "default": "Depends(get_app_config)"
             },
             {
               "name": "logger",
@@ -4464,7 +4761,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 16
+          "lineno": 17
         },
         {
           "name": "DbUserWithSessionExpiryTime",
@@ -4477,7 +4774,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 19,
+          "lineno": 20,
           "methods": [
             {
               "name": "to_db_user",
@@ -4492,7 +4789,7 @@
                 },
                 "raises": []
               },
-              "lineno": 27,
+              "lineno": 28,
               "signature": "to_db_user() -> DbUser",
               "parameters": [
                 {
@@ -4577,7 +4874,7 @@
               }
             ]
           },
-          "lineno": 40,
+          "lineno": 41,
           "signature": "get_logged_in_user(request: Request, response: Response, logger: Logger = Depends(get_logger), db: AsyncDatabaseConnection = Depends(get_db)) -> DbUser",
           "parameters": [
             {
@@ -4980,7 +5277,7 @@
             },
             "raises": []
           },
-          "lineno": 42,
+          "lineno": 43,
           "signature": "get_default_sections() -> list[DbConfigurationSectionProcessing]",
           "parameters": [],
           "return_annotation": "list[DbConfigurationSectionProcessing]"
@@ -5018,7 +5315,7 @@
             },
             "raises": []
           },
-          "lineno": 80,
+          "lineno": 81,
           "signature": "clone_section_processing_instructions(clone_from: list[DbConfigurationSectionProcessing], clone_to: list[DbConfigurationSectionProcessing], logger: Logger | None = None) -> list[DbConfigurationSectionProcessing]",
           "parameters": [
             {
@@ -5072,7 +5369,7 @@
             },
             "raises": []
           },
-          "lineno": 158,
+          "lineno": 159,
           "signature": "get_config_payload_metadata(configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection) -> ConfigurationStorageMetadata | None",
           "parameters": [
             {
@@ -5120,7 +5417,7 @@
             },
             "raises": []
           },
-          "lineno": 196,
+          "lineno": 197,
           "signature": "convert_config_to_storage_payload(configuration: DbConfiguration, db: AsyncDatabaseConnection) -> ConfigurationStoragePayload | None",
           "parameters": [
             {
@@ -5157,7 +5454,7 @@
             },
             "raises": []
           },
-          "lineno": 294,
+          "lineno": 297,
           "signature": "format_section_naming(section: DbConfigurationSectionProcessing) -> DbConfigurationSectionProcessing",
           "parameters": [
             {
@@ -5213,6 +5510,54 @@
       "docstring": "",
       "members": [
         {
+          "name": "get_code_system_by_id_or_raise",
+          "type": "function",
+          "docstring": "Attempts to find a code by the provided ID.\n\nArgs:\n    id (UUID): The desired system ID\n    systems (list[DbCodeSystem]): A list of systems to search for the matching ID\n\nRaises:\n    HTTPException: 404 is raised if the system ID is not found in the list of systems\n\nReturns:\n    DbCodeSystem: The matching code system",
+          "parsed_docstring": {
+            "summary": "Attempts to find a code by the provided ID.",
+            "description": "",
+            "params": [
+              {
+                "name": "id",
+                "type": "UUID",
+                "description": "The desired system ID",
+                "default": ""
+              },
+              {
+                "name": "systems",
+                "type": "list[DbCodeSystem]",
+                "description": "A list of systems to search for the matching ID",
+                "default": ""
+              }
+            ],
+            "returns": {
+              "type": "DbCodeSystem",
+              "description": "The matching code system"
+            },
+            "raises": [
+              {
+                "type": "HTTPException",
+                "description": "404 is raised if the system ID is not found in the list of systems"
+              }
+            ]
+          },
+          "lineno": 13,
+          "signature": "get_code_system_by_id_or_raise(id: UUID, systems: list[DbCodeSystem]) -> DbCodeSystem",
+          "parameters": [
+            {
+              "name": "id",
+              "annotation": "UUID",
+              "default": null
+            },
+            {
+              "name": "systems",
+              "annotation": "list[DbCodeSystem]",
+              "default": null
+            }
+          ],
+          "return_annotation": "DbCodeSystem"
+        },
+        {
           "name": "get_all_code_systems_by_key",
           "type": "function",
           "docstring": "Helper method that returns a map of key to code system.\n\nArgs:\n    db: AsyncDatabaseConnection: A database connection.\n\nReturns:\n    list[str]: A list of stored DB code systems",
@@ -5233,7 +5578,7 @@
             },
             "raises": []
           },
-          "lineno": 8,
+          "lineno": 38,
           "signature": "get_all_code_systems_by_key(db: AsyncDatabaseConnection) -> IndexedCodeSystem",
           "parameters": [
             {
@@ -5265,7 +5610,7 @@
             },
             "raises": []
           },
-          "lineno": 25,
+          "lineno": 55,
           "signature": "get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]",
           "parameters": [
             {
@@ -5470,8 +5815,14 @@
             "raises": []
           },
           "lineno": 48,
-          "signature": "setup_logger() -> logging.Logger",
-          "parameters": [],
+          "signature": "setup_logger(app_config: AppConfig) -> logging.Logger",
+          "parameters": [
+            {
+              "name": "app_config",
+              "annotation": "AppConfig",
+              "default": null
+            }
+          ],
           "return_annotation": "logging.Logger"
         },
         {
@@ -13291,19 +13642,6 @@
       "docstring": "",
       "members": [
         {
-          "name": "S3_CONFIGURATION_BUCKET_NAME",
-          "type": "attribute",
-          "docstring": "",
-          "parsed_docstring": {
-            "summary": "",
-            "description": "",
-            "params": [],
-            "returns": null,
-            "raises": []
-          },
-          "lineno": 31
-        },
-        {
           "name": "s3_client",
           "type": "attribute",
           "docstring": "",
@@ -13314,7 +13652,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 48
+          "lineno": 46
         },
         {
           "name": "SerializedFile",
@@ -13327,7 +13665,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 51,
+          "lineno": 49,
           "methods": [
             {
               "name": "__init__",
@@ -13372,7 +13710,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 61,
+          "lineno": 59,
           "methods": [
             {
               "name": "__init__",
@@ -13450,7 +13788,7 @@
             },
             "raises": []
           },
-          "lineno": 72,
+          "lineno": 70,
           "signature": "get_serialized_files(jurisdiction_id: str, canonical_url: str, version: int, logger: Logger) -> SerializedFiles",
           "parameters": [
             {
@@ -13506,7 +13844,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 131,
+          "lineno": 129,
           "signature": "upload_current_version_file(directory_key: str, active_version: int | None, logger: Logger) -> None",
           "parameters": [
             {
@@ -13560,7 +13898,7 @@
             },
             "raises": []
           },
-          "lineno": 159,
+          "lineno": 157,
           "signature": "upload_configuration_payload(payload: ConfigurationStoragePayload, metadata: ConfigurationStorageMetadata, logger: Logger) -> str",
           "parameters": [
             {
@@ -13614,7 +13952,7 @@
             },
             "raises": []
           },
-          "lineno": 216,
+          "lineno": 214,
           "signature": "upload_condition_mapping_payload(mapping_payload: ConditionMappingPayload, jurisdiction_id: str, logger: Logger) -> str",
           "parameters": [
             {
@@ -13674,7 +14012,7 @@
             },
             "raises": []
           },
-          "lineno": 257,
+          "lineno": 255,
           "signature": "upload_refined_file_package(user: DbUser, buffer: BytesIO, filename: str, logger: Logger) -> str",
           "parameters": [
             {
@@ -13711,7 +14049,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 293,
+          "lineno": 291,
           "signature": "fetch_zip_from_s3(key: str) -> dict",
           "parameters": [
             {
@@ -13733,7 +14071,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 304,
+          "lineno": 302,
           "signature": "get_refined_user_zip_key(user_id: UUID, jurisdiction_id: str, filename: str) -> str",
           "parameters": [
             {

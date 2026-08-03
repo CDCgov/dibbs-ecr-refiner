@@ -119,11 +119,25 @@ class RefinerCompleteError(TypedDict):
 
 
 class MaintenanceModeError(Exception):
-    """Raised when active configuration maintenance is in progress."""
+    """
+    Raised when active configuration maintenance is in progress.
+
+    Stage:
+        Skip/Error Handling
+    Role:
+        Error Handling
+    """
 
 
 class IncompatibleActiveConfigurationError(Exception):
-    """Raised when an active configuration file uses an unsupported schema version."""
+    """
+    Raised when an active configuration file uses an unsupported schema version.
+
+    Stage:
+        Skip/Error Handling
+    Role:
+        Error Handling
+    """
 
 
 @dataclass
@@ -420,6 +434,11 @@ def read_active_configuration_maintenance_lock(
 
     If the lock is missing, expired, empty, null, or invalid JSON, treat it as
     no active lock. A malformed lock should not fail refinement processing.
+
+    Stage:
+        Entry
+    Role:
+        Handler
     """
 
     try:

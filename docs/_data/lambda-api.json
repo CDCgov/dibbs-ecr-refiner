@@ -10,7 +10,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 20,
+      "lineno": 21,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -26,7 +26,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 29,
+      "lineno": 30,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -43,7 +43,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 35,
+      "lineno": 36,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -67,7 +67,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 51,
+      "lineno": 52,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -85,7 +85,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 58,
+      "lineno": 59,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -103,7 +103,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 74,
+      "lineno": 75,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -126,7 +126,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 79,
+      "lineno": 80,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -150,7 +150,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 85,
+      "lineno": 86,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -174,7 +174,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 91,
+      "lineno": 92,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -207,7 +207,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 114,
+      "lineno": 115,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -236,11 +236,11 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 121,
+      "lineno": 122,
       "stage": null,
       "role": null,
       "source_type": "test",
-      "signature": "get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict",
+      "signature": "get_refiner_complete_content(s3_client, bucket, persistence_id) -> dict",
       "parameters": [
         {
           "name": "s3_client",
@@ -253,7 +253,7 @@
           "default": null
         },
         {
-          "name": "persistance_id",
+          "name": "persistence_id",
           "annotation": null,
           "default": null
         }
@@ -270,7 +270,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 131,
+      "lineno": 132,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -409,7 +409,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 54,
+      "lineno": 58,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -444,7 +444,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 75,
+      "lineno": 79,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -473,9 +473,41 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 97,
+      "lineno": 101,
       "stage": "Types",
       "role": "Data Type",
+      "source_type": "production",
+      "methods": []
+    },
+    {
+      "name": "app.lambda.lambda_function.MaintenanceModeError",
+      "docstring": "Raised when active configuration maintenance is in progress.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
+      "parsed_docstring": {
+        "summary": "Raised when active configuration maintenance is in progress.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 121,
+      "stage": "Skip/Error Handling",
+      "role": "Error Handling",
+      "source_type": "production",
+      "methods": []
+    },
+    {
+      "name": "app.lambda.lambda_function.IncompatibleActiveConfigurationError",
+      "docstring": "Raised when an active configuration file uses an unsupported schema version.\n\nStage:\n    Skip/Error Handling\nRole:\n    Error Handling",
+      "parsed_docstring": {
+        "summary": "Raised when an active configuration file uses an unsupported schema version.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 132,
+      "stage": "Skip/Error Handling",
+      "role": "Error Handling",
       "source_type": "production",
       "methods": []
     },
@@ -508,7 +540,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 117,
+      "lineno": 143,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -591,7 +623,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 146,
+      "lineno": 172,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -666,7 +698,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 171,
+      "lineno": 197,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -713,7 +745,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 193,
+      "lineno": 219,
       "stage": "Entry",
       "role": "Handler",
       "source_type": "production",
@@ -733,6 +765,35 @@
       "return_annotation": "dict"
     },
     {
+      "name": "app.lambda.lambda_function.read_active_configuration_maintenance_lock",
+      "docstring": "Read the active configuration maintenance lock from S3.\n\nIf the lock is missing, expired, empty, null, or invalid JSON, treat it as\nno active lock. A malformed lock should not fail refinement processing.\n\nStage:\n    Entry\nRole:\n    Handler",
+      "parsed_docstring": {
+        "summary": "Read the active configuration maintenance lock from S3.",
+        "description": "If the lock is missing, expired, empty, null, or invalid JSON, treat it as\nno active lock. A malformed lock should not fail refinement processing.",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 428,
+      "stage": "Entry",
+      "role": "Handler",
+      "source_type": "production",
+      "signature": "read_active_configuration_maintenance_lock(s3_client, bucket: str) -> dict | None",
+      "parameters": [
+        {
+          "name": "s3_client",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "bucket",
+          "annotation": "str",
+          "default": null
+        }
+      ],
+      "return_annotation": "dict | None"
+    },
+    {
       "name": "app.lambda.lambda_function.extract_persistence_id",
       "docstring": "Extract the `persistence_id` from an S3 object key.\n\n- **Object key format**: `<pipeline-step>/<persistance_id>`\n- **Example**: `RefinerInput/2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n- **Returns**: `2026/01/01/0026b704-f510-4494-8d21-11d27217d96e`\n\nStage:\n    S3 Retrieval\nRole:\n    S3 I/O\n\nArgs:\n    object_key: The S3 object key\n    input_prefix: The pipeline step prefix (e.g., \"RefinerInput/\")\n\nReturns:\n    str: The persistence_id portion of the key",
       "parsed_docstring": {
@@ -742,7 +803,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 372,
+      "lineno": 493,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -771,7 +832,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 400,
+      "lineno": 521,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -805,7 +866,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 422,
+      "lineno": 543,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -839,7 +900,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 455,
+      "lineno": 576,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -863,7 +924,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 482,
+      "lineno": 603,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -897,7 +958,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 521,
+      "lineno": 642,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -923,15 +984,15 @@
     },
     {
       "name": "app.lambda.lambda_function.read_configuration_file",
-      "docstring": "Read an activated configuration file (`active.json`) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json (which pointed to this version) and the actual files on S3.",
+      "docstring": "Read an activated configuration file (`active.json`) from S3.\n\nThis file contains the serialized configuration data needed for refinement,\nincluding the active payload schema version, per-system `code_system_sets`,\nsection processing rules, and included condition RSG codes. It is written\nduring activation by the webapp and read by Lambda at refinement time.\n\nStage:\n    Configuration Loading\nRole:\n    Configuration\n\nArgs:\n    s3_client: Boto3 S3 client.\n    bucket: S3 bucket name.\n    key: S3 object key for the configuration file.\n\nReturns:\n    dict: The configuration data as a dictionary.\n\nRaises:\n    Exception: If the file does not exist. This indicates a mismatch between\n        current.json, which pointed to this version, and the actual files on S3.\n    IncompatibleActiveConfigurationError: If the active configuration schema\n        version is missing or unsupported.",
       "parsed_docstring": {
         "summary": "Read an activated configuration file (`active.json`) from S3.",
-        "description": "This file contains the serialized configuration data needed for refinement,\nincluding the flat codes set, per-system `code_system_sets`, section processing\nrules, and included condition RSG codes. It is written during activation by\nthe webapp and read by Lambda at refinement time.",
+        "description": "This file contains the serialized configuration data needed for refinement,\nincluding the active payload schema version, per-system `code_system_sets`,\nsection processing rules, and included condition RSG codes. It is written\nduring activation by the webapp and read by Lambda at refinement time.",
         "params": [],
         "returns": null,
         "raises": []
       },
-      "lineno": 554,
+      "lineno": 675,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -965,7 +1026,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 596,
+      "lineno": 745,
       "stage": "Refinement Pipeline",
       "role": "Orchestrator",
       "source_type": "production",
@@ -989,7 +1050,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 667,
+      "lineno": 816,
       "stage": "Refinement Pipeline",
       "role": "Orchestrator",
       "source_type": "production",
@@ -1028,7 +1089,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 709,
+      "lineno": 858,
       "stage": "Refinement Pipeline",
       "role": "Orchestrator",
       "source_type": "production",
@@ -1077,7 +1138,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 788,
+      "lineno": 937,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1111,7 +1172,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 821,
+      "lineno": 970,
       "stage": "Skip/Error Handling",
       "role": "Error Handling",
       "source_type": "production",
@@ -1145,7 +1206,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 843,
+      "lineno": 992,
       "stage": "Skip/Error Handling",
       "role": "Error Handling",
       "source_type": "production",
@@ -1202,7 +1263,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 871,
+      "lineno": 1020,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -1249,7 +1310,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 891,
+      "lineno": 1040,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1293,7 +1354,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 954,
+      "lineno": 1103,
       "stage": "Output Writing",
       "role": "Output",
       "source_type": "production",
@@ -1342,7 +1403,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 1006,
+      "lineno": 1155,
       "stage": "Output Writing",
       "role": "Output",
       "source_type": "production",
