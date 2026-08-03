@@ -202,7 +202,7 @@ export function ImportCustomCodes({
           });
           showToast({
             heading: 'CSV confirmed',
-            body: `${res.data.codes_processed ?? previewItems.length} codes imported.`,
+            body: `${res.data.length ?? previewItems.length} codes imported.`,
           });
           handleDelete(false);
         },
