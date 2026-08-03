@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.db.custom_codes.model import DbCustomCode
+from app.db.configurations.custom_codes.model import DbCustomCode
 
 type DbSectionAction = Literal["retain", "refine"]
 

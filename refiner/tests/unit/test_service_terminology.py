@@ -5,10 +5,10 @@ from uuid import uuid4
 import pytest
 
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     DbConfiguration,
 )
-from app.db.custom_codes.model import DbCustomCode
 from tests.unit.helpers.configuration import create_processed_config
 
 

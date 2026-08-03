@@ -12,6 +12,7 @@ import app.api.v1.configurations.custom_codes.custom_codes as custom_codes_modul
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.labels import (
     CODED_DATA_LABELS,
     NARRATIVE_DATA_LABELS,
@@ -23,7 +24,6 @@ from app.db.configurations.model import (
     DbSectionAction,
     GetConfigurationResponseVersion,
 )
-from app.db.custom_codes.model import DbCustomCode
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 from tests.unit.conftest import create_mock_systems

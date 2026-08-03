@@ -4,8 +4,8 @@ from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
 from app.db.code_systems.db import DbCodeSystem, get_code_system_by_id_db
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
-from app.db.custom_codes.model import DbCustomCode
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection

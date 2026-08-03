@@ -9,8 +9,8 @@ from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import DatabaseQueryError
 from app.db.code_systems.db import DbCodeSystem
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
-from app.db.custom_codes.model import DbCustomCode
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
