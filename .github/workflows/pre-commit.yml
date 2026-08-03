@@ -1,0 +1,33 @@
+name: Run pre-commit on pull request
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{env.PYTHON_RUNNER_VERSION}}
+          cache: pip
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+        continue-on-error: true
+
+      - name: Commit changes onto PR
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-fix pre-commit issues"
