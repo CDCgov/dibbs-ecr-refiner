@@ -87,8 +87,14 @@ class AsyncDatabaseConnection:
             DatabaseConnectionError: If a connection cannot be retrieved from the pool.
         """
 
-        async with self.pool.connection() as conn:
-            yield conn
+        try:
+            async with self.pool.connection() as conn:
+                yield conn
+        except Exception as e:
+            raise DatabaseConnectionError(
+                message="Failed to get connection from pool",
+                details={"error": str(e)},
+            )
 
 
 def create_db(
