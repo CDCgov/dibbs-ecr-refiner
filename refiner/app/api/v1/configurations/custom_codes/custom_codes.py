@@ -23,7 +23,6 @@ from app.db.code_systems.db import (
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
     add_bulk_custom_codes_to_configuration_db,
-    add_custom_code_to_configuration_db,
     delete_custom_code_from_configuration_db,
     edit_custom_code_from_configuration_db,
     get_configuration_by_id_db,
@@ -33,6 +32,7 @@ from app.db.configurations.model import DbTotalConditionCodeCount
 from app.db.custom_codes.db import (
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
+    insert_custom_code_db,
 )
 from app.db.custom_codes.model import DbCustomCode
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -124,7 +124,7 @@ async def add_custom_code(
             detail=f"System must be one of [{allowed_keys}]",
         )
 
-    updated_config = await add_custom_code_to_configuration_db(
+    updated_config = await insert_custom_code_db(
         config=config,
         code=body.code.strip(),
         display_name=body.display,

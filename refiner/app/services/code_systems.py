@@ -34,21 +34,20 @@ def find_code_system_by_id_or_raise(
     return system
 
 
-# TODO: Are these needed?
-# def find_code_system_by_key(
-#     systems: list[DbCodeSystem], key: str
-# ) -> DbCodeSystem | None:
-#     """
-#     Attempts to find a `DbCodeSystem` in a `DbCodeSystem[]` that has the specified `key`.
+def find_code_system_by_key(
+    systems: list[DbCodeSystem], key: str
+) -> DbCodeSystem | None:
+    """
+    Attempts to find a `DbCodeSystem` in a `DbCodeSystem[]` that has the specified `key`.
 
-#     Args:
-#         systems (list[DbCodeSystem]): List of `DbCodeSystem`
-#         key (str): The `key` of the `DbCodeSystem` to search for
+    Args:
+        systems (list[DbCodeSystem]): List of `DbCodeSystem`
+        key (str): The `key` of the `DbCodeSystem` to search for
 
-#     Returns:
-#         DbCodeSystem | None: The system, or `None` if one could not be found
-#     """
-#     return next((s for s in systems if s.key == key), None)
+    Returns:
+        DbCodeSystem | None: The system, or `None` if one could not be found
+    """
+    return next((s for s in systems if s.key == key), None)
 
 
 def find_code_system_by_display_name(
@@ -64,7 +63,7 @@ def find_code_system_by_display_name(
     Returns:
         DbCodeSystem | None: The system, or `None` if one could not be found
     """
-    return next((s for s in systems if s.key == display_name), None)
+    return next((s for s in systems if s.display_name == display_name), None)
 
 
 async def get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]:

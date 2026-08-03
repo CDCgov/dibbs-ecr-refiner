@@ -679,51 +679,6 @@ async def get_total_condition_code_counts_by_configuration_db(
     return row
 
 
-async def add_custom_code_to_configuration_db(
-    config: DbConfiguration,
-    display_name: str,
-    code: str,
-    system_id: UUID,
-    user_id: UUID,
-    db: AsyncDatabaseConnection,
-) -> DbConfiguration | None:
-    """
-    Given a config, adds a user-defined custom code to the configuration.
-    """
-
-    query = """
-            INSERT INTO custom_codes (configuration_id, display, code, system_id)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (configuration_id, system_id, code) DO NOTHING
-            RETURNING id;
-        """
-
-    params = (config.id, display_name, code, system_id)
-
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-
-            if not row:
-                return None
-
-            await insert_event_db(
-                event=EventInput(
-                    jurisdiction_id=config.jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=config.id,
-                    event_type="add_code",
-                    action_text=f"Added custom code '{code}'",
-                ),
-                cursor=cur,
-            )
-
-    return await get_configuration_by_id_db(
-        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
-    )
-
-
 async def add_bulk_custom_codes_to_configuration_db(
     config: DbConfiguration,
     custom_codes: list[AddCustomCodeInput],
