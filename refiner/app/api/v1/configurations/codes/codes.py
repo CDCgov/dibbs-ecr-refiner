@@ -19,6 +19,7 @@ class CodesResponse:
     """
 
     codes: list[DbCodeResult]  # TODO: Don't use this directly
+    next_cursor: str | None
     total_code_count: int
     total_code_sets_count: int
     total_excluded_codes_count: int
@@ -32,6 +33,7 @@ class CodesResponse:
 )
 async def get_codes(
     configuration_id: UUID,
+    cursor: str | None = None,
     db: AsyncDatabaseConnection = Depends(get_db),
     user: DbUser = Depends(get_logged_in_user),
 ) -> CodesResponse:
@@ -40,10 +42,13 @@ async def get_codes(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
+        cursor (str | None): The cursor for the page to start from
         user (DbUser): The logged-in user
         logger (Logger): The standard logger
         db (AsyncDatabaseConnection): Database connection
     """
+
+    CODES_LIMIT = 1
 
     config = await get_configuration_by_id_db(
         id=configuration_id,
@@ -57,10 +62,13 @@ async def get_codes(
             detail="Configuration cannot be found.",
         )
 
-    codes = await get_configuration_codes_db(configuration=config, db=db)
+    codes, next_cursor = await get_configuration_codes_db(
+        configuration=config, db=db, limit=CODES_LIMIT, cursor=cursor
+    )
 
     return CodesResponse(
         codes=codes,
+        next_cursor=next_cursor,
         total_code_count=len(codes),
         total_code_sets_count=len({code.condition_id for code in codes}),
         total_excluded_codes_count=sum(

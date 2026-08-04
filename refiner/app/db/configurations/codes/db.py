@@ -1,3 +1,5 @@
+import base64
+import json
 from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
@@ -24,13 +26,49 @@ class DbCodeResult:
     status: Literal["included", "excluded"]
 
 
+@dataclass
+class DbCodeCursor:
+    """
+    Cursor object for pagination.
+    """
+
+    condition_id: str
+    code: str
+
+
+def _encode_cursor(cursor: DbCodeCursor) -> str:
+    return base64.b64encode(
+        json.dumps({"condition_id": cursor.condition_id, "code": cursor.code}).encode()
+    ).decode()
+
+
+def _decode_cursor(cursor: str) -> DbCodeCursor:
+    data = json.loads(base64.b64decode(cursor).decode())
+    return DbCodeCursor(**data)
+
+
 async def get_configuration_codes_db(
-    configuration: DbConfiguration, db: AsyncDatabaseConnection
-) -> list[DbCodeResult]:
+    configuration: DbConfiguration,
+    db: AsyncDatabaseConnection,
+    limit: int,
+    cursor: str | None = None,
+) -> tuple[list[DbCodeResult], str | None]:
     """
-    Given a configuration ID, fetch all condition codes associated with the configuration.
+    Given a configuration ID, fetch a paginated set of condition codes associated with the configuration using keyset pagination.
+
+    Returns a tuple of (codes, next_cursor), where `next_cursor` is `None` if there are no more pages.
     """
-    query = """
+    params = [configuration.id]
+    cursor_clause = ""
+
+    if cursor:
+        decoded = _decode_cursor(cursor)
+        cursor_clause = "AND (cfgc.condition_id, c.code) > (%s, %s)"
+        params += [decoded.condition_id, decoded.code]
+
+    params.append(limit + 1)
+
+    query = f"""
         SELECT
             c.id,
             cfgc.condition_id,
@@ -49,11 +87,23 @@ async def get_configuration_codes_db(
             ON e.configuration_id = cfgc.configuration_id
             AND e.condition_id = cfgc.condition_id
             AND e.code_id = cc.code_id
-        WHERE cfgc.configuration_id = %s;
+        WHERE cfgc.configuration_id = %s
+        {cursor_clause}
+        ORDER BY cfgc.condition_id, c.code
+        LIMIT %s;
     """
-    params = (configuration.id,)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
-            return rows
+
+    if len(rows) > limit:
+        rows = rows[:limit]
+        next_cursor = _encode_cursor(
+            DbCodeCursor(condition_id=str(rows[-1].condition_id), code=rows[-1].code)
+        )
+    else:
+        next_cursor = None
+
+    return rows, next_cursor

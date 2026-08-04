@@ -43,6 +43,7 @@ export * from './discoveredConfigurationVersion';
 export * from './eventFilterOption';
 export * from './eventsResponse';
 export * from './fileInfoResponse';
+export * from './getCodesParams';
 export * from './getConditionCode';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';

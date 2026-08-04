@@ -17,6 +17,15 @@ export default defineConfig({
       httpClient: 'axios',
       override: {
         header: false,
+        operations: {
+          getCodes: {
+            query: {
+              useInfinite: true,
+              useInfiniteQueryParam: 'cursor',
+
+            },
+          },
+        },
       },
     },
     hooks: {

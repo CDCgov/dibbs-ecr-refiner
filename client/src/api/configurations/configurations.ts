@@ -1,16 +1,21 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
+  DefinedUseInfiniteQueryResult,
   DefinedUseQueryResult,
+  InfiniteData,
   MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseInfiniteQueryOptions,
+  UseInfiniteQueryResult,
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
@@ -38,6 +43,7 @@ import type {
   CreateConfigInput,
   CreateConfigurationResponse,
   DeleteSectionInput,
+  GetCodesParams,
   GetConfigurationResponse,
   GetConfigurationsResponse,
   HTTPValidationError,
@@ -1731,41 +1737,126 @@ export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationEr
  *
  * Args:
  *     configuration_id (UUID): ID of the configuration to update
+ *     cursor (str | None): The cursor for the page to start from
  *     user (DbUser): The logged-in user
  *     logger (Logger): The standard logger
  *     db (AsyncDatabaseConnection): Database connection
  * @summary Get Codes
  */
 export const getCodes = (
-    configurationId: string, options?: AxiosRequestConfig
+    configurationId: string,
+    params?: GetCodesParams, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<CodesResponse>> => {
 
 
     return axios.default.get(
-      `/api/v1/configurations/${configurationId}/codes`,options
+      `/api/v1/configurations/${configurationId}/codes`,{
+    ...options,
+        params: {...params, ...options?.params},}
     );
   }
 
 
 
 
-export const getGetCodesQueryKey = (configurationId: string,) => {
+export const getGetCodesInfiniteQueryKey = (configurationId: string,
+    params?: GetCodesParams,) => {
     return [
-    `/api/v1/configurations/${configurationId}/codes`
+    'infinite', `/api/v1/configurations/${configurationId}/codes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+export const getGetCodesQueryKey = (configurationId: string,
+    params?: GetCodesParams,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/codes`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetCodesQueryOptions = <TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getGetCodesInfiniteQueryOptions = <TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetCodesQueryKey(configurationId);
+  const queryKey =  queryOptions?.queryKey ?? getGetCodesInfiniteQueryKey(configurationId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodes>>> = ({ signal }) => getCodes(configurationId, { signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodes>>, QueryKey, GetCodesParams['cursor']> = ({ signal, pageParam }) => getCodes(configurationId,{...params, 'cursor': pageParam ?? params?.['cursor']}, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCodesInfiniteQueryResult = NonNullable<Awaited<ReturnType<typeof getCodes>>>
+export type GetCodesInfiniteQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    params: undefined |  GetCodesParams, options: { query:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodes>>,
+          TError,
+          Awaited<ReturnType<typeof getCodes>>, QueryKey
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodes>>,
+          TError,
+          Awaited<ReturnType<typeof getCodes>>, QueryKey
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Codes
+ */
+
+export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCodesInfiniteQueryOptions(configurationId,params,options)
+
+  const query = useInfiniteQuery(queryOptions, queryClient) as  UseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetCodesQueryOptions = <TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCodesQueryKey(configurationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodes>>> = ({ signal }) => getCodes(configurationId,params, { signal, ...axiosOptions });
 
 
 
@@ -1779,7 +1870,8 @@ export type GetCodesQueryError = AxiosError<HTTPValidationError>
 
 
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
+ configurationId: string,
+    params: undefined |  GetCodesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getCodes>>,
           TError,
@@ -1789,7 +1881,8 @@ export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
+ configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getCodes>>,
           TError,
@@ -1799,7 +1892,8 @@ export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+ configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1807,11 +1901,12 @@ export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError
  */
 
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+ configurationId: string,
+    params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetCodesQueryOptions(configurationId,options)
+  const queryOptions = getGetCodesQueryOptions(configurationId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
