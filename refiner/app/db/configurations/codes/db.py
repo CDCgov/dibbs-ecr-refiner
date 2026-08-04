@@ -34,7 +34,7 @@ async def get_configuration_codes_db(
         SELECT
             c.id,
             cfgc.condition_id,
-            con.display_name || ' RSG' AS source,
+            con.display_name || ' CG' AS source,
             c.code,
             c.display as description,
             c.system_id,
