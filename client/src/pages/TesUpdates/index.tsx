@@ -14,18 +14,21 @@ export interface TesDiffInformation {
 
 export function TesUpdates() {
   const { data: tesUpdates, isPending, isError } = useGetTesUpdates();
-  const [tesDiff, setTesDiff] = useState<TesDiffInformation | null>(null);
+  const [tesDiff, setTesDiff] = useState<TesDiffInformation>();
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error occurred!';
 
   if (!tesDiff) {
-    setTesDiff({
-      // todo error handle this more intelligently
-      selected_update: tesUpdates.data.tes_updates[0],
-      prev_update: tesUpdates.data.tes_updates[1]
+    const newestUpdate = tesUpdates.data.tes_updates[0];
+    const prevUpdate =
+      tesUpdates.data.tes_updates.length >= 2
         ? tesUpdates.data.tes_updates[1]
-        : null,
+        : null;
+
+    setTesDiff({
+      selected_update: newestUpdate,
+      prev_update: prevUpdate,
     });
   }
   const dateOptions: Intl.DateTimeFormatOptions = {
