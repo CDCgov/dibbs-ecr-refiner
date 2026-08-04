@@ -70,9 +70,9 @@ async def get_tes_updates(
 
 
 @dataclass
-class TesDiffResponse:
+class TesDiffConditionDetails:
     """
-    A changed condition within a TES update.
+    A condition within a TES diff, with details for the diff page to display.
     """
 
     canonical_url: str
@@ -89,52 +89,49 @@ async def _get_tes_version_diff(
     Returns an array off all loaded TES version records.
     """
     cur_tes_record = await get_tes_by_version_number_db(db=db, version=cur_tes_version)
+
     if prev_tes_version:
         prev_tes_record = await get_tes_by_version_number_db(
             db=db, version=prev_tes_version
         )
+    else:
+        prev_tes_record = cur_tes_record
 
-        condition_diff = await get_tes_update_diff_db(
-            db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
-        )
-
-        return condition_diff
     return await get_tes_update_diff_db(
-        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=cur_tes_record.id
+        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
     )
 
 
 @router.get(
     "/",
-    response_model=list[TesDiffResponse],
+    response_model=list[TesDiffConditionDetails],
     tags=["tes"],
-    operation_id="getTesUpdateDiff",
+    operation_id="getTesDiffDetails",
 )
 async def get_tes_diff_details(
     cur_version: str,
     prev_version: str,
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[TesDiffResponse]:
+) -> list[TesDiffConditionDetails]:
     """
     Returns a list of all TES updates, ordered from newest to oldest.
 
     Args:
-        cur_version: Version to compare against.
-        prev_version: Version to compare against.
+        cur_version: Version to compare on.
+        prev_version: Version to compare against. Potentially an empty string if we're in the "baseline" TES version
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        TesResponse: A bundle with a list of TesUpdates, including
-            - The version
-            - The when it was created
+        list[TesDiffResponse]: A bundle with a list of TesDiffResponse, including
+            - The condition metadata across the versions
+            - The number of added and removed codes
     """
-
     conditions_changed = await _get_tes_version_diff(
         db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
     )
 
     return [
-        TesDiffResponse(
+        TesDiffConditionDetails(
             canonical_url=c.canonical_url,
             display_name=c.display_name,
             added_code_total=len(c.added_code_ids),

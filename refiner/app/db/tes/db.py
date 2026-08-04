@@ -146,8 +146,7 @@ async def get_tes_update_diff_db(
         MAX(COALESCE(curr.display_name, prev.display_name)) AS display_name,
         COALESCE(array_agg(curr.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
         COALESCE(array_agg(prev.code_id) FILTER (where curr.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
-        FALSE as is_new
-
+        (COUNT(prev.code_id) IS NULL) AS is_new
     FROM curr
     FULL OUTER JOIN prev
         ON curr.canonical_url = prev.canonical_url

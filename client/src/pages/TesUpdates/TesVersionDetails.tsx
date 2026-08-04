@@ -1,23 +1,25 @@
 import { ExternalLink } from '@components/ExternalLink';
-import { useGetTesUpdateDiff } from '../../api/tes/tes';
+import { useGetTesDiffDetails } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { TesDiffInformation } from '.';
-import classNames from 'classnames';
 
 interface TesVersionProps {
   selectedUpdate: TesDiffInformation;
 }
 
 export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
+  const newVersion = selectedUpdate.selected_update.version;
+  const oldVersion = selectedUpdate.prev_update
+    ? selectedUpdate.prev_update.version
+    : '';
+
   const {
     data: response,
     isPending,
     isError,
-  } = useGetTesUpdateDiff({
-    cur_version: selectedUpdate.selected_update.version,
-    prev_version: selectedUpdate.prev_update
-      ? selectedUpdate.prev_update.version
-      : '',
+  } = useGetTesDiffDetails({
+    cur_version: newVersion,
+    prev_version: oldVersion,
   });
 
   if (isPending) return <Spinner variant="centered" />;
@@ -46,10 +48,15 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
         </thead>
         <tbody className="divide-gray-cool-20 divide-y">
           {response.data.map((r) => {
+            const shouldShowNewConditionPill =
+              // don't show pill if oldVersion is undefined (the "baseline" config)
+              // since everything in that version would be a new condition
+              r.is_new && oldVersion != '';
             return (
               <tr key={r.canonical_url}>
                 <td className="px-2 py-3">
-                  {r.display_name} {r.is_new ? <NewConditionPill /> : <></>}
+                  {r.display_name}{' '}
+                  {shouldShowNewConditionPill ? <NewConditionPill /> : <></>}
                 </td>
                 <td className="px-2 py-3">
                   {r.added_code_total} added, {r.removed_code_total} removed
@@ -65,10 +72,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
 
 function NewConditionPill() {
   return (
-    <span
-      aria-label="This condition was added in this TES release as a new condition"
-      className="bg-state-success-lighter rounded-2xl px-2 py-1 font-mono text-sm"
-    >
+    <span className="bg-state-success-lighter rounded-2xl px-2 py-1 font-mono text-sm">
       New condition
     </span>
   );
