@@ -637,7 +637,7 @@ def load_system_data(cursor: Cursor) -> dict[SystemOid, SystemDbId]:
 
 
 def load_tes_data(
-    cursor: Cursor, system_data: dict[SystemOid, SystemDbId], is_local=False
+    cursor: Cursor, system_data: dict[SystemOid, SystemDbId], seed_all_tes_data=False
 ) -> None:
     """
     Loads condition grouper data from the TES and upserts condition rows and their associated context grouper rows into the database.
@@ -650,7 +650,9 @@ def load_tes_data(
        system_data: inserted system data to be used by downstream code seeding
        is_local: ENV var on local env
     """
-    all_valuesets_map = load_valuesets_from_all_files(is_local=is_local)
+    all_valuesets_map = load_valuesets_from_all_files(
+        seed_all_tes_data=seed_all_tes_data
+    )
 
     condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
@@ -692,23 +694,28 @@ def load_tes_data(
     )
 
 
-def load_static_data(db_url: str, db_password: str, env: str | None) -> None:
+def load_static_data(
+    db_url: str, db_password: str, seed_all_tes_data: str | None
+) -> None:
     """
     Orchestration function that loads all static data into the DB.
 
     Args:
         db_url (str): The database URL
         db_password (str): The database password
-        env (str): The env var
+        seed_all_tes_data (str): Whether to seed all TES data or not
     """
     start = time.perf_counter()
-    is_local = env == "local"
 
     try:
         with get_db_connection(db_url, db_password) as conn:
             with conn.cursor() as cursor:
                 system_data = load_system_data(cursor=cursor)
-                load_tes_data(cursor=cursor, system_data=system_data, is_local=is_local)
+                load_tes_data(
+                    cursor=cursor,
+                    system_data=system_data,
+                    seed_all_tes_data=seed_all_tes_data == "false",
+                )
 
                 logger.info("🏁 Done!")
 
@@ -726,11 +733,15 @@ def load_static_data(db_url: str, db_password: str, env: str | None) -> None:
 if __name__ == "__main__":
     load_dotenv(dotenv_path=ENV_PATH)
 
-    env = os.getenv("ENV")
+    seed_all_tes_data = os.getenv("SEED_ALL_TES_DATA")
     db_url = os.getenv("DB_URL")
     db_password = os.getenv("DB_PASSWORD")
 
     if not db_url or not db_password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
     else:
-        load_static_data(db_password=db_password, db_url=db_url, env=env)
+        load_static_data(
+            db_password=db_password,
+            db_url=db_url,
+            seed_all_tes_data=seed_all_tes_data,
+        )
