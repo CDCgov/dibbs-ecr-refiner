@@ -6,7 +6,7 @@
     <xs:documentation>
     Copyright (c) 2015 Health Level Seven.
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or
     without modification, are permitted provided that the following
     conditions are met:
@@ -19,9 +19,9 @@
     provided with the distribution.
     3. All advertising materials mentioning features or use of this
     software must display the following acknowledgement:
-    
+
     This product includes software developed by Health Level Seven.
-    
+
     THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS
     ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
     NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
@@ -41,8 +41,8 @@
       2012-07-06 Created datatypes-base_SDTC.xsd (this file) this file is an edited version of datatypes-base.xsd that contains the SDTC extensions.
     </xs:documentation>
     <xs:documentation>
-      2012-07-06 Added extensions approved by SDWG prior to 2012-07-06: 
-                  valueSet, 
+      2012-07-06 Added extensions approved by SDWG prior to 2012-07-06:
+                  valueSet,
                   valuesetVersion
     </xs:documentation>
     <xs:documentation>
@@ -188,10 +188,10 @@
             HL7. This includes unformatted or formatted written language,
             multimedia data, or structured information as defined by a
             different standard (e.g., XML-signatures.)  Instead of the
-            data itself, an ED may contain 
+            data itself, an ED may contain
             only a reference (see TEL.) Note
             that the ST data type is a
-            specialization of 
+            specialization of
             when the  is text/plain.
          </xs:documentation>
     </xs:annotation>
@@ -333,7 +333,7 @@
     <xs:annotation>
       <xs:documentation>
             Coded data in its simplest form, consists of a code.
-            The code system and code system version is fixed by 
+            The code system and code system version is fixed by
             the context in which the  value occurs.  is used
             for coded attributes that have a single HL7-defined
             value set.
@@ -598,7 +598,7 @@
             is ordered. The Coded Ordinal data type adds semantics
             related to ordering so that models that make use of such
             domains may introduce model elements that involve statements
-            about the order of the terms in a domain. 
+            about the order of the terms in a domain.
          </xs:documentation>
     </xs:annotation>
     <xs:complexContent>

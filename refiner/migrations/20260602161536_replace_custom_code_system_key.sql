@@ -1,8 +1,8 @@
 -- migrate:up
 
--- Change "system" index to "system_key" and values to the new key values 
+-- Change "system" index to "system_key" and values to the new key values
 
-UPDATE configurations c 
+UPDATE configurations c
 SET custom_codes = COALESCE((
     SELECT jsonb_agg(
         (elem
@@ -18,13 +18,13 @@ SET custom_codes = COALESCE((
             ORDER BY ord
     )
     FROM jsonb_array_elements(c.custom_codes) WITH ORDINALITY AS t(elem, ord)
-), '[]'::jsonb) 
+), '[]'::jsonb)
 WHERE c.custom_codes IS NOT NULL
   AND jsonb_typeof(c.custom_codes) = 'array';
 
 
 -- migrate:down
-UPDATE configurations c 
+UPDATE configurations c
 SET custom_codes = COALESCE((
     SELECT jsonb_agg(
         (elem
@@ -40,6 +40,6 @@ SET custom_codes = COALESCE((
             ORDER BY ord
     )
     FROM jsonb_array_elements(c.custom_codes) WITH ORDINALITY AS t(elem, ord)
-), '[]'::jsonb) 
+), '[]'::jsonb)
 WHERE c.custom_codes IS NOT NULL
   AND jsonb_typeof(c.custom_codes) = 'array';
