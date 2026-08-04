@@ -18,6 +18,8 @@ export default defineConfig({
       override: {
         header: false,
         operations: {
+          // We need to generate an infinite hook for `useGetCodes`
+          // to support the "Manage codes" feature
           getCodes: {
             query: {
               useInfinite: true,
