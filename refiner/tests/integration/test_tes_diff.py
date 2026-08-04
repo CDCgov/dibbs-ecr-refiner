@@ -6,12 +6,13 @@ from app.api.v1.tes import get_tes_diff_details
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestTesDiff:
-    async def test_tes_diff_between_conditions(self, db_pool):
-        # these values are hardcoded rather than using the fixtures so that
-        # TES updates don't change the outcome of the test
+    async def test_tes_diff_between_conditions(
+        self, default_tes_version, previous_tes_version, db_pool
+    ):
+
         diff_6_and_5 = await get_tes_diff_details(
-            cur_version="6.0.0",
-            prev_version="5.0.0",
+            cur_version=default_tes_version,
+            prev_version=previous_tes_version,
             db=db_pool,
         )
 
