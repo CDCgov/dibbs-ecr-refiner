@@ -6,7 +6,6 @@ from uuid import UUID
 
 from psycopg.rows import class_row
 
-from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection
 
 
@@ -47,8 +46,8 @@ def _decode_cursor(cursor: str) -> DbCodeCursor:
     return DbCodeCursor(**data)
 
 
-async def get_configuration_codes_db(
-    configuration: DbConfiguration,
+async def get_codes_db(
+    configuration_id: UUID,
     db: AsyncDatabaseConnection,
     limit: int,
     cursor: str | None = None,
@@ -58,7 +57,7 @@ async def get_configuration_codes_db(
 
     Returns a tuple of (codes, next_cursor), where `next_cursor` is `None` if there are no more pages.
     """
-    params = [configuration.id]
+    params = [configuration_id]
     cursor_clause = ""
 
     if cursor:
@@ -107,3 +106,44 @@ async def get_configuration_codes_db(
         next_cursor = None
 
     return rows, next_cursor
+
+
+@dataclass
+class DbCodeResultCountMetadata:
+    """
+    Code count metadata.
+    """
+
+    total_code_count: int
+    excluded_code_count: int
+    code_set_count: int
+
+
+async def get_code_count_metadata_db(
+    configuration_id: UUID, db: AsyncDatabaseConnection
+) -> DbCodeResultCountMetadata | None:
+    """
+    Given a configuration ID, returns code count related metadata.
+    """
+
+    query = """
+    SELECT
+        COUNT(*) AS total_code_count,
+        COUNT(*) FILTER (WHERE e.code_id IS NOT NULL) AS excluded_code_count,
+        COUNT(DISTINCT cfgc.condition_id) AS code_set_count
+    FROM configurations_conditions cfgc
+    JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+    LEFT JOIN configurations_conditions_code_exclusions e
+        ON e.configuration_id = cfgc.configuration_id
+        AND e.condition_id = cfgc.condition_id
+        AND e.code_id = cc.code_id
+    WHERE cfgc.configuration_id = %s;
+    """
+    params = (configuration_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCodeResultCountMetadata)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
+            return row

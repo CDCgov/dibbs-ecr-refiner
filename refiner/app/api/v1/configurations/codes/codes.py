@@ -4,7 +4,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.configurations.codes.db import DbCodeResult, get_configuration_codes_db
+from app.db.configurations.codes.db import (
+    DbCodeResult,
+    get_code_count_metadata_db,
+    get_codes_db,
+)
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -18,11 +22,11 @@ class CodesResponse:
     Codes and metadata to return to the client.
     """
 
-    codes: list[DbCodeResult]  # TODO: Don't use this directly
     next_cursor: str | None
     total_code_count: int
     total_code_sets_count: int
     total_excluded_codes_count: int
+    codes: list[DbCodeResult]
 
 
 @router.get(
@@ -48,7 +52,8 @@ async def get_codes(
         db (AsyncDatabaseConnection): Database connection
     """
 
-    CODES_LIMIT = 1
+    # Number of codes pulled per batch
+    CODES_LIMIT = 500
 
     config = await get_configuration_by_id_db(
         id=configuration_id,
@@ -62,16 +67,22 @@ async def get_codes(
             detail="Configuration cannot be found.",
         )
 
-    codes, next_cursor = await get_configuration_codes_db(
-        configuration=config, db=db, limit=CODES_LIMIT, cursor=cursor
+    codes, next_cursor = await get_codes_db(
+        configuration_id=config.id, db=db, limit=CODES_LIMIT, cursor=cursor
     )
 
+    code_counts = await get_code_count_metadata_db(configuration_id=config.id, db=db)
+
+    if not code_counts:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to get code count metadata.",
+        )
+
     return CodesResponse(
-        codes=codes,
         next_cursor=next_cursor,
-        total_code_count=len(codes),
-        total_code_sets_count=len({code.condition_id for code in codes}),
-        total_excluded_codes_count=sum(
-            1 for code in codes if code.status == "excluded"
-        ),
+        total_code_count=code_counts.total_code_count,
+        total_code_sets_count=code_counts.code_set_count,
+        total_excluded_codes_count=code_counts.excluded_code_count,
+        codes=codes,
     )
