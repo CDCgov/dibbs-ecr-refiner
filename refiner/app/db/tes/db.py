@@ -146,7 +146,7 @@ async def get_tes_update_diff_db(
         MAX(COALESCE(curr.display_name, prev.display_name)) AS display_name,
         COALESCE(array_agg(curr.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
         COALESCE(array_agg(prev.code_id) FILTER (where curr.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
-        (COUNT(prev.code_id) IS NULL) AS is_new
+        (COUNT(prev.condition_id) = 0) AS is_new
     FROM curr
     FULL OUTER JOIN prev
         ON curr.canonical_url = prev.canonical_url
@@ -165,3 +165,23 @@ async def get_tes_update_diff_db(
             )
             rows = await cur.fetchall()
             return rows
+
+
+async def get_tes_version_diff(
+    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str | None
+) -> list[DbTesConditionUpdate]:
+    """
+    Returns an array off all loaded TES version records.
+    """
+    cur_tes_record = await get_tes_by_version_number_db(db=db, version=cur_tes_version)
+
+    if prev_tes_version:
+        prev_tes_record = await get_tes_by_version_number_db(
+            db=db, version=prev_tes_version
+        )
+    else:
+        prev_tes_record = cur_tes_record
+
+    return await get_tes_update_diff_db(
+        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
+    )

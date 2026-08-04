@@ -7,10 +7,8 @@ from fastapi import APIRouter, Depends
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
     get_loaded_tes_versions_db,
-    get_tes_by_version_number_db,
-    get_tes_update_diff_db,
+    get_tes_version_diff,
 )
-from app.db.tes.model import DbTesConditionUpdate
 
 router = APIRouter(prefix="/tes")
 
@@ -82,26 +80,6 @@ class TesDiffConditionDetails:
     is_new: bool
 
 
-async def _get_tes_version_diff(
-    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str | None
-) -> list[DbTesConditionUpdate]:
-    """
-    Returns an array off all loaded TES version records.
-    """
-    cur_tes_record = await get_tes_by_version_number_db(db=db, version=cur_tes_version)
-
-    if prev_tes_version:
-        prev_tes_record = await get_tes_by_version_number_db(
-            db=db, version=prev_tes_version
-        )
-    else:
-        prev_tes_record = cur_tes_record
-
-    return await get_tes_update_diff_db(
-        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
-    )
-
-
 @router.get(
     "/",
     response_model=list[TesDiffConditionDetails],
@@ -126,7 +104,7 @@ async def get_tes_diff_details(
             - The condition metadata across the versions
             - The number of added and removed codes
     """
-    conditions_changed = await _get_tes_version_diff(
+    conditions_changed = await get_tes_version_diff(
         db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
     )
 

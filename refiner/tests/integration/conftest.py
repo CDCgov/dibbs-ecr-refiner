@@ -8,7 +8,6 @@ import pytest
 import pytest_asyncio
 
 os.environ["ENV"] = "local"
-os.environ["SEED_ALL_TES_DATA"] = "true"
 os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
 os.environ["DB_PASSWORD"] = "refiner"
@@ -22,6 +21,7 @@ os.environ["AWS_SECRET_ACCESS_KEY"] = "refiner"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
+
 # # ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 from fastapi import status
@@ -515,6 +515,8 @@ def setup(request):
 
     print("🚀 Setting up tests...")
     path = Path(__file__).resolve().parent.parent.parent.parent
+    os.environ["SEED_ALL_TES_DATA"] = "true"
+
     refiner_service = DockerCompose(
         path,
         compose_file_name=["docker-compose.yml", "docker-compose.override.yml"],
@@ -556,7 +558,10 @@ def setup(request):
 
     print("🩺 Seeding conditions...")
     refiner_service.exec_in_container(
-        ["python", "/app/scripts/seeding/load_static_data.py"],
+        [
+            "python",
+            "/app/scripts/seeding/load_static_data.py",
+        ],
         "server",
     )
 
