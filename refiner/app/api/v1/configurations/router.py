@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from .activation import router as activation_router
 from .base import router as base_router
+from .codes.codes import router as codes_router
 from .codesets import router as codesets_router
 from .custom_codes import router as custom_codes_router
 from .exports import router as exports_router
@@ -19,3 +20,4 @@ router.include_router(testing_router)
 router.include_router(sections_router)
 router.include_router(activation_router)
 router.include_router(locking_router)
+router.include_router(codes_router)

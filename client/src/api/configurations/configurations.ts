@@ -30,6 +30,7 @@ import type {
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  CodesResponse,
   ConfigurationCustomCodeResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
@@ -1725,3 +1726,94 @@ export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationEr
       > => {
       return useMutation(getReleaseConfigurationLockMutationOptions(options), queryClient);
     }
+    /**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
+export const getCodes = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CodesResponse>> => {
+
+
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/codes`,options
+    );
+  }
+
+
+
+
+export const getGetCodesQueryKey = (configurationId: string,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/codes`
+    ] as const;
+    }
+
+
+export const getGetCodesQueryOptions = <TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCodesQueryKey(configurationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodes>>> = ({ signal }) => getCodes(configurationId, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCodesQueryResult = NonNullable<Awaited<ReturnType<typeof getCodes>>>
+export type GetCodesQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodes>>,
+          TError,
+          Awaited<ReturnType<typeof getCodes>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodes>>,
+          TError,
+          Awaited<ReturnType<typeof getCodes>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Codes
+ */
+
+export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCodesQueryOptions(configurationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
