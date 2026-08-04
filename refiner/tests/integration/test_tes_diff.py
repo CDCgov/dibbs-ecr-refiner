@@ -9,7 +9,6 @@ class TestTesDiff:
     async def test_tes_diff_between_conditions(
         self, default_tes_version, previous_tes_version, db_pool
     ):
-
         diff_6_and_5 = await get_tes_diff_details(
             cur_version=default_tes_version,
             prev_version=previous_tes_version,
