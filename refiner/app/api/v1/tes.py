@@ -64,7 +64,7 @@ async def get_tes_updates(
     return TesResponse(
         tes_updates=[
             TesUpdate(id=t.id, version=t.version, created_at=t.created_at)
-            for t in updates
+            for t in sorted(updates, key=lambda x: x.version, reverse=True)
         ]
     )
 
