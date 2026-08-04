@@ -733,7 +733,7 @@ if __name__ == "__main__":
 
     seed_all_tes_data = os.getenv("SEED_ALL_TES_DATA")
     env = os.getenv("ENV")
-    seed_all = (seed_all_tes_data and seed_all_tes_data != "false") or env != "local"
+    seed_all = seed_all_tes_data != "false" if seed_all_tes_data else env != "local"
 
     db_url = os.getenv("DB_URL")
     db_password = os.getenv("DB_PASSWORD")
