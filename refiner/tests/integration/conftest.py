@@ -8,6 +8,7 @@ import pytest
 import pytest_asyncio
 
 os.environ["ENV"] = "local"
+os.environ["SEED_ALL_TES_DATA"] = "true"
 os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
 os.environ["DB_PASSWORD"] = "refiner"

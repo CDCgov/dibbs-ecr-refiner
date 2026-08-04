@@ -6,16 +6,17 @@ from app.api.v1.tes import get_tes_diff_details
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestTesDiff:
-    async def test_tes_diff_between_conditions(
-        self, default_tes_version, previous_tes_version, db_pool
-    ):
-        # check some topline numbers between known quantities
+    async def test_tes_diff_between_conditions(self, db_pool):
+        # these values are hardcoded rather than using the fixtures so that
+        # TES updates don't change the outcome of the test
         default_and_prev_diff = await get_tes_diff_details(
-            cur_version=default_tes_version,
-            prev_version=previous_tes_version,
+            cur_version="6.0.0",
+            prev_version="5.0.0",
             db=db_pool,
         )
 
+        # these may need to change with new TES releases since the numbers will
+        # change
         expected_acanthamoeba = default_and_prev_diff[0]
         assert expected_acanthamoeba.display_name == "Acanthamoeba"
         assert expected_acanthamoeba.added_code_total == 6

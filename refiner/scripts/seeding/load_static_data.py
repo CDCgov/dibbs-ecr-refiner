@@ -648,7 +648,7 @@ def load_tes_data(
     Args:
        cursor: A DB cursor
        system_data: inserted system data to be used by downstream code seeding
-       is_local: ENV var on local env
+       seed_all_tes_data: flag for whether to seed all available TES values
     """
     all_valuesets_map = load_valuesets_from_all_files(
         seed_all_tes_data=seed_all_tes_data
@@ -694,9 +694,7 @@ def load_tes_data(
     )
 
 
-def load_static_data(
-    db_url: str, db_password: str, seed_all_tes_data: str | None
-) -> None:
+def load_static_data(db_url: str, db_password: str, seed_all_tes_data: bool) -> None:
     """
     Orchestration function that loads all static data into the DB.
 
@@ -714,7 +712,7 @@ def load_static_data(
                 load_tes_data(
                     cursor=cursor,
                     system_data=system_data,
-                    seed_all_tes_data=seed_all_tes_data == "false",
+                    seed_all_tes_data=seed_all_tes_data,
                 )
 
                 logger.info("🏁 Done!")
@@ -734,6 +732,9 @@ if __name__ == "__main__":
     load_dotenv(dotenv_path=ENV_PATH)
 
     seed_all_tes_data = os.getenv("SEED_ALL_TES_DATA")
+    env = os.getenv("ENV")
+    seed_all = (seed_all_tes_data and seed_all_tes_data != "false") or env != "local"
+
     db_url = os.getenv("DB_URL")
     db_password = os.getenv("DB_PASSWORD")
 
@@ -743,5 +744,5 @@ if __name__ == "__main__":
         load_static_data(
             db_password=db_password,
             db_url=db_url,
-            seed_all_tes_data=seed_all_tes_data,
+            seed_all_tes_data=seed_all,
         )
