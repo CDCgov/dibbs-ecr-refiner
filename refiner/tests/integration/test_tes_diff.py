@@ -28,3 +28,8 @@ class TestTesDiff:
         assert expected_rubella
         assert expected_rubella.added_code_total == 1156
         assert expected_rubella.removed_code_total == 3
+
+        expected_zika = default_and_prev_diff[-1]
+        assert expected_zika.display_name == "Zika Virus"
+        assert expected_zika.added_code_total == 32
+        assert expected_zika.removed_code_total == 0
