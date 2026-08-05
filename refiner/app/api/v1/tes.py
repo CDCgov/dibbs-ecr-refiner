@@ -9,20 +9,10 @@ from app.db.tes.db import (
     get_loaded_tes_versions_db,
     get_tes_version_diff_db,
 )
+from app.db.tes.model import TesUpdate
 from app.services.tes import sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
-
-
-@dataclass
-class TesUpdate:
-    """
-    All metadata for a TES update needed for the frontend.
-    """
-
-    id: UUID
-    version: str
-    created_at: datetime
 
 
 @dataclass

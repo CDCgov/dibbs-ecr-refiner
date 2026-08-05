@@ -8,9 +8,11 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
+import app.api.v1.configurations.custom_codes.custom_codes as custom_codes_module
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.labels import (
     CODED_DATA_LABELS,
     NARRATIVE_DATA_LABELS,
@@ -22,7 +24,6 @@ from app.db.configurations.model import (
     DbSectionAction,
     GetConfigurationResponseVersion,
 )
-from app.db.custom_codes.model import DbCustomCode
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 from tests.unit.conftest import create_mock_systems
@@ -160,12 +161,6 @@ def mock_db_functions(
         AsyncMock(return_value=updated_config_mock_disassoc),
     )
 
-    # for get_total_condition_code_counts_by_configuration_db, could use a list of count objects if needed
-    monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_total_condition_code_counts_by_configuration_db",
-        AsyncMock(return_value=[]),
-    )
-
     # Mock ConfigurationLock methods
     monkeypatch.setattr(
         "app.api.v1.configurations.base.ConfigurationLock.acquire_lock",
@@ -181,12 +176,13 @@ def mock_db_functions(
     )
 
     monkeypatch.setattr(
-        "app.services.code_systems.get_all_code_systems_db",
+        "app.services.code_systems.get_code_systems_db",
         AsyncMock(return_value=mock_all_systems),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_code_system_by_id_db",
+        custom_codes_module,
+        "get_code_system_by_id_db",
         AsyncMock(
             side_effect=lambda id, db: next(m for m in mock_all_systems if m.id == id),
         ),
@@ -260,12 +256,14 @@ async def test_add_custom_code_to_configuration(
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        custom_codes_module,
+        "get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_code_systems_db",
+        custom_codes_module,
+        "get_code_systems_db",
         AsyncMock(return_value=[code_system]),
     )
 
@@ -286,8 +284,9 @@ async def test_add_custom_code_to_configuration(
         ],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.add_custom_code_to_configuration_db",
-        AsyncMock(return_value=custom_code_config_mock),
+        custom_codes_module,
+        "insert_custom_code_db",
+        AsyncMock(return_value=custom_code_config_mock.custom_codes[0]),
     )
 
     config_id = str(mock_configuration.id)
@@ -301,9 +300,9 @@ async def test_add_custom_code_to_configuration(
     )
     assert response.status_code == 200
     data = response.json()
-    assert len(data["custom_codes"]) == 1
-    assert data["custom_codes"][0]["code"] == "test-code"
-    assert data["custom_codes"][0]["system_id"] == str(code_system.id)
+
+    assert data["code"] == "test-code"
+    assert data["system_id"] == str(code_system.id)
 
 
 @pytest.mark.asyncio
@@ -319,7 +318,7 @@ async def test_delete_custom_code_from_configuration(
         created_at=datetime.now(),
         updated_at=datetime.now(),
         configuration_id=mock_configuration.id,
-        system_id=get_mock_system("loinc"),
+        system_id=get_mock_system("snomed").id,
     )
 
     original_config = replace(
@@ -328,23 +327,27 @@ async def test_delete_custom_code_from_configuration(
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        custom_codes_module,
+        "get_configuration_by_id_db",
         AsyncMock(return_value=original_config),
     )
 
-    # Mock deleting a custom code from a config
-    custom_code_deletion_mock = replace(
-        original_config,
-        custom_codes=[],
+    monkeypatch.setattr(
+        custom_codes_module,
+        "delete_custom_code_db",
+        AsyncMock(return_value=custom_code_to_delete),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.delete_custom_code_from_configuration_db",
-        AsyncMock(return_value=custom_code_deletion_mock),
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_custom_code_by_id_db",
+        custom_codes_module,
+        "get_custom_code_by_id_db",
         AsyncMock(return_value=custom_code_to_delete),
+    )
+
+    monkeypatch.setattr(
+        custom_codes_module,
+        "get_code_systems_db",
+        AsyncMock(return_value=[get_mock_system("snomed")]),
     )
 
     config_id = str(original_config.id)
@@ -354,7 +357,8 @@ async def test_delete_custom_code_from_configuration(
     )
     assert response.status_code == 200
     data = response.json()
-    assert len(data["custom_codes"]) == 0
+    assert data["id"] == str(custom_code_to_delete.id)
+    assert data["system_name"] == "SNOMED"
 
 
 @pytest.mark.asyncio
@@ -384,8 +388,9 @@ async def test_edit_custom_code_from_configuration(
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.edit_custom_code_from_configuration_db",
-        AsyncMock(return_value=custom_code_edit_mock),
+        custom_codes_module,
+        "edit_custom_code_db",
+        AsyncMock(return_value=custom_code_edit_mock.custom_codes[0]),
     )
 
     config_id = str(mock_configuration.id)
@@ -416,17 +421,20 @@ async def test_edit_custom_code_from_configuration(
         s3_url="",
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        custom_codes_module,
+        "get_configuration_by_id_db",
         AsyncMock(return_value=mock_config),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_custom_code_by_id_db",
+        custom_codes_module,
+        "get_custom_code_by_id_db",
         AsyncMock(return_value=mock_config.custom_codes[0]),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_code_systems_db",
+        custom_codes_module,
+        "get_code_systems_db",
         AsyncMock(return_value=[get_mock_system("snomed"), get_mock_system("loinc")]),
     )
 
@@ -443,10 +451,9 @@ async def test_edit_custom_code_from_configuration(
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data["custom_codes"]) == 1
-    assert data["custom_codes"][0]["code"] == "test-code"
-    assert data["custom_codes"][0]["system_id"] == str(get_mock_system("snomed").id)
-    assert data["custom_codes"][0]["display"] == "updated-name"
+    assert data["code"] == "test-code"
+    assert data["system_id"] == str(get_mock_system("snomed").id)
+    assert data["display"] == "updated-name"
 
 
 @pytest.mark.asyncio

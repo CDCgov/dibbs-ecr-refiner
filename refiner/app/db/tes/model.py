@@ -26,3 +26,14 @@ class DbTesConditionUpdate:
     added_code_ids: list[UUID]
     removed_code_ids: list[UUID]
     is_new: bool
+
+
+@dataclass
+class TesUpdate:
+    """
+    All metadata for a TES update needed for the frontend.
+    """
+
+    id: UUID
+    version: str
+    created_at: datetime

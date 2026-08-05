@@ -8,9 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.model import (
+from app.api.v1.configurations.custom_codes.model import (
     AddCustomCodeInput,
-    ConfigurationCustomCodeResponse,
     ConfirmUploadCustomCodesInput,
     CustomCodeResponse,
     UploadCustomCodesCsvInput,
@@ -18,30 +17,29 @@ from app.api.v1.configurations.model import (
 )
 from app.db.code_systems.db import (
     DbCodeSystem,
-    IndexedCodeSystem,
     get_code_system_by_id_db,
     get_code_systems_db,
 )
 from app.db.conditions.db import get_included_conditions_db
-from app.db.configurations.db import (
-    add_bulk_custom_codes_to_configuration_db,
-    add_custom_code_to_configuration_db,
-    delete_custom_code_from_configuration_db,
-    edit_custom_code_from_configuration_db,
-    get_configuration_by_id_db,
-    get_total_condition_code_counts_by_configuration_db,
-)
-from app.db.custom_codes.db import (
+from app.db.configurations.custom_codes.db import (
+    delete_custom_code_db,
+    edit_custom_code_db,
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
+    insert_custom_code_db,
+    insert_custom_codes_db,
 )
-from app.db.custom_codes.model import DbCustomCode
+from app.db.configurations.custom_codes.model import DbCustomCode
+from app.db.configurations.db import (
+    get_configuration_by_id_db,
+)
+from app.db.configurations.model import DbTotalConditionCodeCount
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
-    get_all_code_systems_by_key,
+    find_code_system_by_display_name,
+    find_code_system_by_id_or_raise,
     get_allowed_code_system_keys,
-    get_code_system_by_id_or_raise,
 )
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
@@ -50,27 +48,21 @@ from app.services.terminology import CodeSystemKey
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
 
-def _validate_add_custom_code_input(input: AddCustomCodeInput):
-    if not input.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "code" is missing.',
-        )
-    if not input.system_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_id" is missing.',
-        )
-    if not input.display:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "name" is missing.',
-        )
+@dataclass(frozen=True)
+class ConfigurationCustomCodeResponse:
+    """
+    Configuration response for custom code operations (add/edit/delete).
+    """
+
+    id: UUID
+    display_name: str
+    code_sets: list[DbTotalConditionCodeCount]
+    custom_codes: list[CustomCodeResponse]
 
 
 @router.post(
     "",
-    response_model=ConfigurationCustomCodeResponse,
+    response_model=CustomCodeResponse,
     tags=["configurations"],
     operation_id="addCustomCodeToConfiguration",
 )
@@ -79,7 +71,7 @@ async def add_custom_code(
     body: AddCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> ConfigurationCustomCodeResponse:
+) -> CustomCodeResponse:
     """
     Add a user-defined custom code to a configuration.
 
@@ -98,15 +90,9 @@ async def add_custom_code(
         ConfigurationCustomCodeResponse: Updated configuration
     """
 
-    # validate input
-    _validate_add_custom_code_input(body)
-
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # find config
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if not config:
@@ -137,7 +123,7 @@ async def add_custom_code(
             detail=f"System must be one of [{allowed_keys}]",
         )
 
-    updated_config = await add_custom_code_to_configuration_db(
+    added_code = await insert_custom_code_db(
         config=config,
         code=body.code.strip(),
         display_name=body.display,
@@ -146,45 +132,23 @@ async def add_custom_code(
         db=db,
     )
 
-    if not updated_config:
+    if not added_code:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update configuration.",
+            detail="Failed to add custom code.",
         )
-
-    # Get all associated conditions and their # of codes
-    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
-        config_id=config.id, db=db
-    )
 
     systems = await get_code_systems_db(db=db)
 
-    return ConfigurationCustomCodeResponse(
-        id=updated_config.id,
-        display_name=updated_config.name,
-        code_sets=config_condition_info,
-        custom_codes=[
-            CustomCodeResponse(
-                id=cc.id,
-                display=cc.display,
-                code=cc.code,
-                system_id=cc.system_id,
-                system_name=get_code_system_by_id_or_raise(
-                    id=cc.system_id, systems=systems
-                ).display_name,
-            )
-            for cc in updated_config.custom_codes
-        ],
+    return CustomCodeResponse(
+        id=added_code.id,
+        display=added_code.display,
+        code=added_code.code,
+        system_id=added_code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=added_code.system_id, systems=systems
+        ).display_name,
     )
-
-
-class UploadCustomCodesResponse(BaseModel):
-    """CSV response model. Errors are surfaced via the `errors` array."""
-
-    message: str | None = None
-    codes_processed: int | None = None
-    total_custom_codes_in_configuration: int | None = None
-    errors: list[dict] | None = None
 
 
 class UploadCustomCodesPreviewResponse(BaseModel):
@@ -193,7 +157,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     preview_items: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
-    code_systems: IndexedCodeSystem
+    code_systems: list[DbCodeSystem]
 
 
 def _create_csv_reader(
@@ -246,8 +210,8 @@ def _validate_csv_upload_row(
     system_names = [s.display_name for s in supported_systems]
 
     # get the DbCodeSystem that matches CSV system
-    matching_system = next(
-        (s for s in supported_systems if s.display_name == code_system_raw), None
+    matching_system = find_code_system_by_display_name(
+        systems=supported_systems, display_name=code_system_raw
     )
 
     row_errors: list[str] = []
@@ -372,7 +336,7 @@ async def upload_custom_codes_csv(
             )
         )
 
-    code_systems = await get_all_code_systems_by_key(db=db)
+    code_systems = await get_code_systems_db(db=db)
     if errors:
         logger.error("CSV upload errors", extra={"errors": errors})
         raise HTTPException(
@@ -399,7 +363,7 @@ async def upload_custom_codes_csv(
     "/confirm",
     tags=["configurations"],
     operation_id="confirmUploadCustomCodesCsv",
-    response_model=UploadCustomCodesResponse,
+    response_model=list[CustomCodeResponse],
 )
 async def confirm_upload_custom_codes_csv(
     configuration_id: UUID,
@@ -407,16 +371,10 @@ async def confirm_upload_custom_codes_csv(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> UploadCustomCodesResponse:
+) -> list[CustomCodeResponse]:
     """
     Confirm and save custom codes from preview list.
     """
-
-    if not body.custom_codes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No custom codes to confirm.",
-        )
 
     config = await get_configuration_by_id_db(
         id=configuration_id,
@@ -447,7 +405,7 @@ async def confirm_upload_custom_codes_csv(
     code_systems = await get_code_systems_db(db=db)
 
     try:
-        result = await add_bulk_custom_codes_to_configuration_db(
+        inserted_codes = await insert_custom_codes_db(
             config=config,
             code_systems=code_systems,
             custom_codes=body.custom_codes,
@@ -461,23 +419,29 @@ async def confirm_upload_custom_codes_csv(
             detail="Failed to insert custom codes.",
         )
 
-    if not result:
+    if not inserted_codes:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update configuration.",
         )
 
-    return UploadCustomCodesResponse(
-        message="Successfully imported custom codes.",
-        codes_processed=result.added_count,
-        total_custom_codes_in_configuration=len(result.config.custom_codes),
-        errors=None,
-    )
+    return [
+        CustomCodeResponse(
+            id=c.id,
+            display=c.display,
+            code=c.code,
+            system_id=c.system_id,
+            system_name=find_code_system_by_id_or_raise(
+                id=c.system_id, systems=code_systems
+            ).display_name,
+        )
+        for c in inserted_codes
+    ]
 
 
 @router.delete(
     "/{id}",
-    response_model=ConfigurationCustomCodeResponse,
+    response_model=CustomCodeResponse,
     tags=["configurations"],
     operation_id="deleteCustomCodeFromConfiguration",
 )
@@ -486,7 +450,7 @@ async def delete_custom_code(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> ConfigurationCustomCodeResponse:
+) -> CustomCodeResponse:
     """
     Delete a custom code from a configuration.
 
@@ -505,12 +469,10 @@ async def delete_custom_code(
     Returns:
         ConfigurationCustomCodeResponse: The updated configuration
     """
-    # get user jurisdiction
-    jd = user.jurisdiction_id
 
     # find config
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if not config:
@@ -540,64 +502,27 @@ async def delete_custom_code(
             detail=f"Failed to find custom code to delete with ID: {id}",
         )
 
-    updated_config = await delete_custom_code_from_configuration_db(
+    deleted_code = await delete_custom_code_db(
         config=config, id=custom_code.id, user_id=user.id, db=db
     )
 
-    if not updated_config:
+    if not deleted_code:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update configuration.",
+            detail="Unable to delete custom code.",
         )
-
-    # Get all associated conditions and their # of codes
-    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
-        config_id=config.id, db=db
-    )
 
     systems = await get_code_systems_db(db=db)
 
-    return ConfigurationCustomCodeResponse(
-        id=updated_config.id,
-        display_name=updated_config.name,
-        code_sets=config_condition_info,
-        custom_codes=[
-            CustomCodeResponse(
-                id=cc.id,
-                display=cc.display,
-                code=cc.code,
-                system_id=cc.system_id,
-                system_name=get_code_system_by_id_or_raise(
-                    id=cc.system_id, systems=systems
-                ).display_name,
-            )
-            for cc in updated_config.custom_codes
-        ],
+    return CustomCodeResponse(
+        id=deleted_code.id,
+        display=deleted_code.display,
+        code=deleted_code.code,
+        system_id=deleted_code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=deleted_code.system_id, systems=systems
+        ).display_name,
     )
-
-
-class UpdateCustomCodeInput(BaseModel):
-    """
-    Input model when updating a config's custom code.
-    """
-
-    id: UUID
-    system_id: UUID
-    code: str
-    display: str
-
-
-def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
-    if not input.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "code" is missing.',
-        )
-    if not input.system_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system_id" is missing.',
-        )
 
 
 class ValidateCustomCodeInput(BaseModel):
@@ -686,9 +611,20 @@ async def validate_custom_code(
     return ValidateCustomCodeResponse(valid=is_valid)
 
 
+class UpdateCustomCodeInput(BaseModel):
+    """
+    Input model when updating a config's custom code.
+    """
+
+    id: UUID
+    system_id: UUID
+    code: str
+    display: str
+
+
 @router.put(
     "",
-    response_model=ConfigurationCustomCodeResponse,
+    response_model=CustomCodeResponse,
     tags=["configurations"],
     operation_id="editCustomCodeFromConfiguration",
 )
@@ -697,8 +633,7 @@ async def edit_custom_code(
     body: UpdateCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-    logger: Logger = Depends(get_logger),
-) -> ConfigurationCustomCodeResponse:
+) -> CustomCodeResponse:
     """
     Modify a configuration's custom code based on system_key/code pair.
 
@@ -717,14 +652,9 @@ async def edit_custom_code(
         ConfigurationCustomCodeResponse: The updated configuration.
     """
 
-    _validate_edit_custom_code_input(body)
-
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # find config
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if not config:
@@ -755,11 +685,11 @@ async def edit_custom_code(
         )
 
     systems = await get_code_systems_db(db=db)
-    custom_code_system = get_code_system_by_id_or_raise(
+    custom_code_system = find_code_system_by_id_or_raise(
         id=body.system_id, systems=systems
     )
 
-    updated_config = await edit_custom_code_from_configuration_db(
+    edited_code = await edit_custom_code_db(
         config=config,
         custom_code=custom_code,
         user_id=user.id,
@@ -769,31 +699,18 @@ async def edit_custom_code(
         db=db,
     )
 
-    if not updated_config:
+    if not edited_code:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update configuration.",
+            detail="Failed to update custom code.",
         )
 
-    # Get all associated conditions and their # of codes
-    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
-        config_id=config.id, db=db
-    )
-
-    return ConfigurationCustomCodeResponse(
-        id=updated_config.id,
-        display_name=updated_config.name,
-        code_sets=config_condition_info,
-        custom_codes=[
-            CustomCodeResponse(
-                id=cc.id,
-                display=cc.display,
-                code=cc.code,
-                system_id=cc.system_id,
-                system_name=get_code_system_by_id_or_raise(
-                    id=cc.system_id, systems=systems
-                ).display_name,
-            )
-            for cc in updated_config.custom_codes
-        ],
+    return CustomCodeResponse(
+        id=edited_code.id,
+        display=edited_code.display,
+        code=edited_code.code,
+        system_id=edited_code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=edited_code.system_id, systems=systems
+        ).display_name,
     )

@@ -1,7 +1,6 @@
 from packaging.version import parse
 
-from app.db.tes.model import DbTes
-from app.api.v1.tes import TesUpdate
+from app.db.tes.model import DbTes, TesUpdate
 
 
 def get_latest_tes_version(available_versions: list[DbTes]) -> DbTes:
@@ -17,12 +16,12 @@ def get_latest_tes_version(available_versions: list[DbTes]) -> DbTes:
     return max(available_versions, key=lambda av: parse(av.version))
 
 
-def sort_tes_diffs_by_version(updates: list[DbTes]) -> list[TesUpdate]:
+def sort_tes_updates_by_version(updates: list[DbTes]) -> list[TesUpdate]:
     """
     Given a list of TES updates, sorts and returns the list by version.
 
     Args:
-        available_diffs (list[TesUpdate]): An unsorted list of available TES Updates
+        updates (list[DbTes]): An unsorted list of available DB TES objects
 
     Returns:
         list[TesUpdate]: A sorted list of TES updates
