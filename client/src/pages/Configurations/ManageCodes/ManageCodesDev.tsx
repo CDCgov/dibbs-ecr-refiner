@@ -11,6 +11,15 @@ import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Checkbox } from '@components/Checkbox';
 import { useState } from 'react';
+import { Tooltip } from '@components/Tooltip';
+import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@components/Modal';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
@@ -59,6 +68,7 @@ function CodesTable({ id }: CodesTableProps) {
     },
   });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
   if (isPending) return 'Loading...';
   if (isError) return 'Error!';
@@ -68,7 +78,11 @@ function CodesTable({ id }: CodesTableProps) {
   const allSelected = codes.length > 0 && selectedIds.size === codes.length;
 
   return (
-    <div className='flex flex-col gap-4 items-start'>
+    <div className="flex flex-col items-start gap-4">
+      <SourceModal
+        isOpen={isSourceModalOpen}
+        onClose={() => setIsSourceModalOpen(false)}
+      />
       <Button
         onClick={() => fetchNextPage()}
         disabled={!hasNextPage || isFetchingNextPage}
@@ -77,7 +91,7 @@ function CodesTable({ id }: CodesTableProps) {
       </Button>
       <table className="w-full table-fixed">
         <thead className="sticky top-0 z-10">
-          <tr className="border-gray-cool-20 text-gray-cool-60 border-b text-left">
+          <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
             <th scope="col" className="w-10 text-center">
               <Checkbox
                 checked={allSelected}
@@ -91,17 +105,40 @@ function CodesTable({ id }: CodesTableProps) {
             <th scope="col">Code no.</th>
             <th scope="col">System</th>
             <th scope="col">Description</th>
-            <th scope="col">Source</th>
-            <th scope="col">Status</th>
+            <th scope="col">
+              <div className="flex flex-row items-center gap-1">
+                <span>Source</span>
+                <Button
+                  variant="tertiary"
+                  onClick={() => setIsSourceModalOpen(true)}
+                  className="p-0!"
+                  aria-label="Open reporting specification details modal"
+                >
+                  <QuestionIcon />
+                </Button>
+              </div>
+            </th>
+            <th scope="col" className="text-center">
+              Status
+            </th>
+            <th>
+              <div className="flex flex-row items-center gap-1">
+                <span>Actions</span>
+                <Tooltip label="Include or exclude a code from this configuration, or edit and delete custom codes you've added." />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-gray-cool-20 divide-y">
           {codes.map((code) => (
             <tr
               key={code.id}
-              className={classNames('text-gray-cool-60', {
-                italic: code.status === 'excluded',
-              })}
+              className={classNames(
+                'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
+                {
+                  italic: code.status === 'excluded',
+                }
+              )}
             >
               <td className="text-center">
                 <Checkbox
@@ -123,11 +160,63 @@ function CodesTable({ id }: CodesTableProps) {
               <td>{code.system_name}</td>
               <td>{code.description}</td>
               <td>{code.source}</td>
-              <td>{code.status === 'included' ? 'Included' : 'Excluded'}</td>
+              <td className="text-center">
+                {code.status === 'included' ? 'Included' : 'Excluded'}
+              </td>
+              <td>Actions</td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+interface SourceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function SourceModal({ isOpen, onClose }: SourceModalProps) {
+  return (
+    <Modal open={isOpen} onClose={onClose} position="center">
+      <ModalHeader>
+        <ModalTitle>Where codes come from</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <div className="flex flex-col gap-4">
+          <p>
+            Each code's Source is the code set it comes from within the
+            Terminology Exchange Service (TES). A condition's Condition Grouper
+            is made up of two component types:
+          </p>
+          <p>
+            <span className="font-bold">
+              Reporting Specification Grouper (RSG)
+            </span>{' '}
+            — a ValueSet that combines all RCKMS reporting specification codes
+            linked to a specific SNOMED condition.
+          </p>
+          <p>
+            <span className="font-bold">Additional Context Grouper (ACG)</span>{' '}
+            — a ValueSet curated for the TES containing codes that provide
+            context to a Condition Grouper (e.g., RxNorm, LOINC, SNOMED,
+            ICD-10-CM).
+          </p>
+          <p>
+            <span className="font-bold">Condition Grouper</span> — a grouping
+            ValueSet that contains both components (Reporting Specification &
+            Additional Context).
+          </p>
+          <p>
+            <span className="font-bold">Custom Code</span> — a code you added
+            directly to this configuration, outside the TES code sets.
+          </p>
+        </div>
+      </ModalBody>
+      <ModalFooter align="left">
+        <Button onClick={onClose}>Close</Button>
+      </ModalFooter>
+    </Modal>
   );
 }
