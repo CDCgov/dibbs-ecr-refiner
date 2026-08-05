@@ -2,7 +2,8 @@ from pathlib import Path
 
 from lxml import etree
 
-from app.services.ecr.model import HL7_NS
+from app.services.ecr.model import HL7_NS, SectionOutcome
+from app.services.ecr.narrative.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.narrative.reconstruction import reconstruct_narrative
 
 # NOTE:
@@ -16,6 +17,7 @@ from app.services.ecr.narrative.reconstruction import reconstruct_narrative
 # replaces--it may not introduce new XSD or schematron errors
 
 _RESULTS_LOINC = "30954-2"
+_PROBLEMS_LOINC = "11450-4"
 
 
 def _eicr_with_reconstructed_results(fixtures_path: Path) -> tuple[str, str]:
