@@ -16,7 +16,6 @@ from app.services.ecr.narrative.reconstruction import reconstruct_narrative
 # replaces--it may not introduce new XSD or schematron errors
 
 _RESULTS_LOINC = "30954-2"
-_PROBLEMS_LOINC = "11450-4"
 
 
 def _eicr_with_reconstructed_results(fixtures_path: Path) -> tuple[str, str]:
