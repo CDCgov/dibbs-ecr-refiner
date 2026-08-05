@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
@@ -83,17 +83,23 @@ async def get_tes_diff_details(
             - The condition metadata across the versions
             - The number of added and removed codes
     """
-    conditions_changed = await get_tes_version_diff_db(
-        db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
-    )
-
-    return [
-        TesDiffConditionDetails(
-            canonical_url=c.canonical_url,
-            display_name=c.display_name,
-            added_code_total=len(c.added_code_ids),
-            removed_code_total=len(c.removed_code_ids),
-            is_new=c.is_new,
+    try:
+        conditions_changed = await get_tes_version_diff_db(
+            db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
         )
-        for c in sorted(conditions_changed, key=lambda x: x.display_name)
-    ]
+
+        return [
+            TesDiffConditionDetails(
+                canonical_url=c.canonical_url,
+                display_name=c.display_name,
+                added_code_total=len(c.added_code_ids),
+                removed_code_total=len(c.removed_code_ids),
+                is_new=c.is_new,
+            )
+            for c in sorted(conditions_changed, key=lambda x: x.display_name)
+        ]
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Specified TES version(s) {cur_version} or {prev_version} not found.",
+        )
