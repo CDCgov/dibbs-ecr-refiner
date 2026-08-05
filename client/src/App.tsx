@@ -16,6 +16,7 @@ import { AppUpdates } from './pages/AppUpdates';
 import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
 import { TesUpdates } from './pages/TesUpdates';
 import { CustomizeSections } from './pages/Configurations/CustomizeSections';
+import { ManageCodesDev } from './pages/Configurations/ManageCodes/ManageCodesDev';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -49,6 +50,14 @@ export function App() {
         <Route
           path="/configurations/:id/customize-sections"
           element={<CustomizeSections />}
+        />
+        {/* TODO: This route will be removed once manage codes is more complete.
+         * This will only be used while the work is in progress. Once complete we'll
+         * move to using only the route below this one.
+         */}
+        <Route
+          path="/configurations/:id/manage-codes/view"
+          element={<ManageCodesDev />}
         />
         <Route
           path="/configurations/:id/manage-codes"
