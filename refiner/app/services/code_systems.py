@@ -2,15 +2,11 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.db.code_systems.db import (
-    DbCodeSystem,
-    IndexedCodeSystem,
-    get_all_code_systems_db,
-)
+from app.db.code_systems.db import DbCodeSystem, get_code_systems_db
 from app.db.pool import AsyncDatabaseConnection
 
 
-def get_code_system_by_id_or_raise(
+def find_code_system_by_id_or_raise(
     id: UUID, systems: list[DbCodeSystem]
 ) -> DbCodeSystem:
     """
@@ -35,21 +31,20 @@ def get_code_system_by_id_or_raise(
     return system
 
 
-async def get_all_code_systems_by_key(
-    db: AsyncDatabaseConnection,
-) -> IndexedCodeSystem:
+def find_code_system_by_display_name(
+    systems: list[DbCodeSystem], display_name: str
+) -> DbCodeSystem | None:
     """
-    Helper method that returns a map of key to code system.
+    Attempts to find a `DbCodeSystem` in a `DbCodeSystem[]` that has the specified `display_name`.
 
     Args:
-        db: AsyncDatabaseConnection: A database connection.
+        systems (list[DbCodeSystem]): List of `DbCodeSystem`
+        display_name (str): The `display_name` of the `DbCodeSystem` to search for
 
     Returns:
-        list[str]: A list of stored DB code systems
+        DbCodeSystem | None: The system, or `None` if one could not be found
     """
-    allowed_code_systems = await get_all_code_systems_db(db)
-
-    return {s.key: s for s in allowed_code_systems.values()}
+    return next((s for s in systems if s.display_name == display_name), None)
 
 
 async def get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]:
@@ -62,6 +57,4 @@ async def get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]
     Returns:
         list[str]: A list of keys for supported systems
     """
-    allowed_code_systems = await get_all_code_systems_db(db)
-
-    return [s.key for s in allowed_code_systems.values()]
+    return [s.key for s in await get_code_systems_db(db=db)]

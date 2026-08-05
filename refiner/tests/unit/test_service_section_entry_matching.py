@@ -4,12 +4,11 @@ import pytest
 from lxml import etree
 from lxml.etree import _Element
 
-from app.db.code_systems.db import CodeSystemKey
 from app.services.ecr.model import HL7_NS, EntryMatchRule, SectionSpecification
 from app.services.ecr.section import get_section_by_code
 from app.services.ecr.section.entry_matching import process
 from app.services.ecr.specification import load_spec
-from app.services.terminology import CodeSystemSets, Oid
+from app.services.terminology import CodeSystemKey, CodeSystemSets, Oid
 from tests.unit.conftest import create_mock_systems
 
 # NOTE:

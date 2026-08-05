@@ -32,7 +32,7 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 from app.api.auth.session import get_hashed_token
-from app.api.v1.configurations.model import AddCustomCodeInput
+from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
 from app.core.config import (
     get_app_config,
     get_auth_config,
@@ -208,7 +208,9 @@ def update_section_processing(authed_client):
 
 @pytest_asyncio.fixture
 def edit_custom_code(authed_client):
-    from app.api.v1.configurations.custom_codes import UpdateCustomCodeInput
+    from app.api.v1.configurations.custom_codes.custom_codes import (
+        UpdateCustomCodeInput,
+    )
 
     async def _get(config_id: UUID, body: UpdateCustomCodeInput):
         payload = body.model_dump(mode="json")
