@@ -2,8 +2,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from app.services.ecr.model import HL7_NS, SectionOutcome
-from app.services.ecr.narrative.constants import PROVENANCE_OUTCOME_NOTES
+from app.services.ecr.model import HL7_NS
 from app.services.ecr.narrative.reconstruction import reconstruct_narrative
 
 # NOTE:

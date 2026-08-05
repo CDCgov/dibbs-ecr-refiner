@@ -7,7 +7,6 @@ from lxml.etree import _Element
 from app.core.exceptions import XMLParsingError
 from app.services.format import remove_element
 from app.services.terminology import CodeSystemSets, Coding
-from app.services.ecr.narrative.reconstruction import NarrativeReconstructionFallback
 
 from ..model import (
     HL7_XSI_NS,

@@ -1,4 +1,3 @@
-from enum import StrEnum
 import re
 from collections.abc import Callable
 from typing import Literal, NamedTuple, cast
