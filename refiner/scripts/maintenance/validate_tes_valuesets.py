@@ -41,9 +41,16 @@ COVERAGE_LEVEL_URL = (
     "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-curationCoverageLevel"
 )
 
+# the curationCoverageLevel (completeness) flag was only introduced on additional
+# context groupers in the 6.0.0 release; earlier versions carry no flag on their ACGs,
+# so comparing those against the condition grouper produces false mismatches:
+# all ACG coverage analysis is therefore evaluated only from this and future version's pov
+ACG_COVERAGE_REFERENCE_VERSION = "6.0.0"
+
 # type aliases
 type SimpleCode = tuple[str, str]
 type MatchStatus = Literal["match", "mismatch"]
+type ACGCoverageStatus = Literal["match", "mismatch", "condition_uncovered"]
 
 
 @dataclass
@@ -75,6 +82,7 @@ class ChildGrouperInfo:
     is_additional_context: bool = False
     name: str | None = None
     code_count: int = 0
+    coverage: CoverageLevel | None = None
 
 
 @dataclass
@@ -194,6 +202,7 @@ class ConditionVersion:
                     is_additional_context=is_acg,
                     name=child_vs.title or child_vs.name,
                     code_count=len(child_codes),
+                    coverage=_parse_coverage_level(child_vs),
                 )
 
                 if is_acg:
@@ -233,13 +242,30 @@ class ConditionVersion:
             return False
         return self.expansion_codes == self.all_composed_codes
 
+    def acg_coverage_results(
+        self,
+    ) -> list[tuple[ChildGrouperInfo, ACGCoverageStatus]]:
+        """
+        Compares each additional context grouper's coverage level against this condition grouper's coverage level.
+
+        Returns one (acg, status) pair per resolved additional context grouper
+        child, where status reflects whether the ACG's coverage flag matches
+        the parent condition grouper's. See acg_coverage_status for semantics.
+        """
+
+        return [
+            (acg, acg_coverage_status(self.coverage, acg.coverage))
+            for acg in self.grouper_resolution.additional_context_children
+        ]
+
 
 def _parse_coverage_level(vs: ValueSet | None) -> CoverageLevel | None:
     """
-    Extracts the crmi-curationCoverageLevel extension from a condition grouper ValueSet, if present.
+    Extracts the crmi-curationCoverageLevel extension from a ValueSet, if present.
 
-    Coverage level is only declared at the condition grouper level, not on
-    individual child ValueSets (RSG or ACG).
+    Coverage level is declared both at the condition grouper level and on the
+    additional context grouper children, which lets us check that each ACG's
+    coverage flag matches its parent condition grouper (see acg_coverage_status).
 
     The extension is complex (has nested sub-extensions rather than a direct value).
     Expected sub-extensions by url:
@@ -295,6 +321,31 @@ def _parse_coverage_level(vs: ValueSet | None) -> CoverageLevel | None:
         return CoverageLevel(level=level, reason=reason, date=date)
 
     return None
+
+
+def acg_coverage_status(
+    condition_cov: CoverageLevel | None,
+    acg_cov: CoverageLevel | None,
+) -> ACGCoverageStatus:
+    """
+    Compares an additional context grouper's coverage flag to its parent condition grouper's.
+
+    Only the level (e.g. "complete" / "partial") is compared — that is the
+    coverage "flag." Reason and date are supporting metadata and are not part
+    of the match.
+
+    Returns:
+        - "match": the ACG and condition grouper declare the same level.
+        - "mismatch": the levels differ, including when the ACG declares no
+          coverage at all while the condition grouper does.
+        - "condition_uncovered": the condition grouper declares no coverage, so
+          there is nothing to compare the ACG against.
+    """
+
+    if condition_cov is None:
+        return "condition_uncovered"
+    acg_level = acg_cov.level if acg_cov else None
+    return "match" if acg_level == condition_cov.level else "mismatch"
 
 
 def load_all_valuesets(data_dir: Path) -> dict[tuple[str, str], ValueSet]:
@@ -475,8 +526,26 @@ def print_version_details(ver: ConditionVersion, label: str) -> MatchStatus | No
                 f"     Additional Context children: "
                 f"{len(res.additional_context_children)} resolved"
             )
-            for acg in res.additional_context_children:
-                print(f"       📦 {acg.name or acg.url} — {acg.code_count} codes")
+            # only compare ACG coverage flags from the reference version's pov;
+            # earlier versions carry no flag, so a comparison there is meaningless
+            if ver.version == ACG_COVERAGE_REFERENCE_VERSION:
+                for acg, status in ver.acg_coverage_results():
+                    acg_level = acg.coverage.level if acg.coverage else "(none)"
+                    flag = {
+                        "match": "✅",
+                        "mismatch": "❌",
+                        "condition_uncovered": "➖",
+                    }[status]
+                    print(
+                        f"       📦 {acg.name or acg.url} — {acg.code_count} codes "
+                        f"| coverage: {acg_level} {flag}"
+                    )
+            else:
+                for acg in res.additional_context_children:
+                    print(
+                        f"       📦 {acg.name or acg.url} — {acg.code_count} codes "
+                        f"| coverage: n/a (pre-{ACG_COVERAGE_REFERENCE_VERSION})"
+                    )
 
         if res.unresolved_refs:
             print(f"     ❌ Unresolved references: {len(res.unresolved_refs)}")
@@ -637,8 +706,51 @@ def print_acg_summary(
             print(f"  - {name}")
 
 
+def print_acg_coverage_summary(
+    acg_coverage_summary: dict[str, int],
+    conditions_with_acg_coverage_mismatch: list[str],
+) -> None:
+    """
+    Prints the aggregate additional context grouper coverage match summary.
+
+    Reports how many ACGs (across newest versions) match their parent condition
+    grouper's coverage flag, and lists any conditions where one or more ACGs
+    diverge.
+    """
+
+    total = sum(acg_coverage_summary.values())
+    if total == 0:
+        return
+
+    print(
+        f"\n🏷️  Additional Context Grouper Coverage Match "
+        f"(v{ACG_COVERAGE_REFERENCE_VERSION} only):"
+    )
+    print(f"  ✅ Match: {acg_coverage_summary.get('match', 0)}")
+    print(f"  ❌ Mismatch: {acg_coverage_summary.get('mismatch', 0)}")
+    if acg_coverage_summary.get("condition_uncovered", 0):
+        print(
+            f"  ➖ Condition grouper has no coverage to compare: "
+            f"{acg_coverage_summary['condition_uncovered']}"
+        )
+
+    if conditions_with_acg_coverage_mismatch:
+        print(
+            f"\n⚠️  Conditions with ACG coverage mismatches: "
+            f"{len(conditions_with_acg_coverage_mismatch)}"
+        )
+        for entry in conditions_with_acg_coverage_mismatch:
+            print(f"  - {entry}")
+
+
 # the versions we care about, in order
-VERSIONS_TO_CHECK = ["3.0.0", "4.0.0", "5.0.0", "6.0.0"]
+VERSIONS_TO_CHECK = [
+    # to compare earlier releases uncomment
+    # "3.0.0",
+    # "4.0.0",
+    "5.0.0",
+    "6.0.0",
+]
 
 
 def main() -> None:
@@ -673,6 +785,8 @@ def main() -> None:
     not_present_with_acgs = 0
     not_present_without_acgs = 0
     conditions_with_unresolved: list[str] = []
+    acg_coverage_summary: dict[str, int] = defaultdict(int)
+    conditions_with_acg_coverage_mismatch: list[str] = []
 
     for name, vs_by_ver in sorted(conditions_to_process.items()):
         logger.info(f"Processing condition: {name}")
@@ -722,6 +836,37 @@ def main() -> None:
         # count total ACGs from newest version
         total_acgs += len(newest.grouper_resolution.additional_context_children)
 
+        # acg coverage match is evaluated only from the reference version's pov:
+        # the completeness flag did not exist on ACGs before then, so comparing
+        # earlier versions floods the summary with false mismatches; pin to the
+        # reference version explicitly rather than relying on "newest present"
+        reference = next(
+            (
+                v
+                for v in present_versions
+                if v.version == ACG_COVERAGE_REFERENCE_VERSION
+            ),
+            None,
+        )
+        if reference is not None:
+            mismatched_acg_names: list[str] = []
+            for acg, acg_status in reference.acg_coverage_results():
+                acg_coverage_summary[acg_status] += 1
+                if acg_status == "mismatch":
+                    acg_level = acg.coverage.level if acg.coverage else "(none)"
+                    cond_level = (
+                        reference.coverage.level if reference.coverage else "(none)"
+                    )
+                    mismatched_acg_names.append(
+                        f"{acg.name or acg.url} is {acg_level} "
+                        f"(condition grouper is {cond_level})"
+                    )
+
+            if mismatched_acg_names:
+                conditions_with_acg_coverage_mismatch.append(
+                    f"{name} (v{reference.version}): " + "; ".join(mismatched_acg_names)
+                )
+
         if newest.grouper_resolution.unresolved_refs:
             conditions_with_unresolved.append(f"{name} (v{newest.version})")
 
@@ -744,6 +889,9 @@ def main() -> None:
     print()
     print_invariant_violations(all_invariant_violations)
     print_acg_summary(total_acgs, conditions_with_unresolved)
+    print_acg_coverage_summary(
+        dict(acg_coverage_summary), conditions_with_acg_coverage_mismatch
+    )
     print("=" * 55)
 
     logger.info("Validation process complete.")
