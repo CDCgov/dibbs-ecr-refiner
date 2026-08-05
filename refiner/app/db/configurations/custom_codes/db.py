@@ -27,9 +27,9 @@ async def get_custom_codes_by_configuration_id_db(
         updated_at,
         configuration_id
     FROM custom_codes
-    WHERE configuration_id = %s
+    WHERE configuration_id = %(configuration_id)s
     """
-    params = (configuration_id,)
+    params = {"configuration_id": configuration_id}
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
@@ -56,9 +56,9 @@ async def get_custom_code_by_id_db(
         updated_at,
         configuration_id
     FROM custom_codes
-    WHERE id = %s
+    WHERE id = %(id)s
     """
-    params = (id,)
+    params = {"id": id}
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
@@ -84,11 +84,16 @@ async def insert_custom_code_db(
 
     query = """
             INSERT INTO custom_codes (configuration_id, display, code, system_id)
-            VALUES (%s, %s, %s, %s)
+            VALUES (%(configuration_id)s, %(display)s, %(code)s, %(system_id)s)
             RETURNING *;
         """
 
-    params = (config.id, display_name, code, system_id)
+    params = {
+        "configuration_id": config.id,
+        "display": display_name,
+        "code": code,
+        "system_id": system_id,
+    }
 
     async with db.get_connection() as conn:
         async with conn.transaction():
@@ -168,10 +173,10 @@ async def delete_custom_code_db(
 
     query = """
             DELETE FROM custom_codes
-            WHERE id = %s
+            WHERE id = %(id)s
             RETURNING *;
             """
-    params = (id,)
+    params = {"id": id}
 
     async with db.get_connection() as conn:
         async with conn.transaction():
@@ -212,19 +217,19 @@ async def edit_custom_code_db(
 
     query = """
             UPDATE custom_codes
-            SET display = %s,
-                code = %s,
-                system_id = %s
-            WHERE id = %s
+            SET display = %(display)s,
+                code = %(code)s,
+                system_id = %(system_id)s
+            WHERE id = %(id)s
             RETURNING *;
             """
 
-    params = (
-        display,
-        code,
-        system.id,
-        custom_code.id,
-    )
+    params = {
+        "display": display,
+        "code": code,
+        "system_id": system.id,
+        "id": custom_code.id,
+    }
 
     async with db.get_connection() as conn:
         async with conn.transaction():
