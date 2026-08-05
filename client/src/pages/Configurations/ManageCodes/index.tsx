@@ -22,7 +22,6 @@ import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { CustomCodesDetail } from './CustomCodes';
 import { TesLink } from '../TesLink';
 import { ConditionCodeTable } from './CodeSets/CodeSetsTable';
-import { Checkbox } from '@components/Checkbox';
 
 export type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
@@ -313,14 +312,14 @@ function CodesTable({ id }: CodesTableProps) {
       getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
     },
   });
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   if (isPending) return 'Loading...';
   if (isError) return 'Error!';
 
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
-  const allSelected = codes.length > 0 && selectedIds.size === codes.length;
+  // const allSelected = codes.length > 0 && selectedIds.size === codes.length;
 
   return (
     <div>
@@ -332,8 +331,8 @@ function CodesTable({ id }: CodesTableProps) {
       </Button>
       <table className="w-full table-fixed">
         <thead className="sticky top-0 z-10">
-          <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-            <th scope="col" className="w-10 text-center">
+          <tr className="border-gray-cool-20 text-gray-cool-60 border-b text-left">
+            {/* <th scope="col" className="w-10 text-center">
               <Checkbox
                 checked={allSelected}
                 onChange={(checked) =>
@@ -342,7 +341,7 @@ function CodesTable({ id }: CodesTableProps) {
                   )
                 }
               />
-            </th>
+            </th> */}
             <th scope="col">Code no.</th>
             <th scope="col">System</th>
             <th scope="col">Description</th>
@@ -358,7 +357,7 @@ function CodesTable({ id }: CodesTableProps) {
                 italic: code.status === 'excluded',
               })}
             >
-              <td className="text-center">
+              {/* <td className="text-center">
                 <Checkbox
                   checked={selectedIds.has(code.id)}
                   onChange={(checked) =>
@@ -373,12 +372,12 @@ function CodesTable({ id }: CodesTableProps) {
                     })
                   }
                 />
-              </td>
+              </td> */}
               <td>{code.code}</td>
               <td>{code.system_name}</td>
               <td>{code.description}</td>
               <td>{code.source}</td>
-              <td>{code.status}</td>
+              <td>{code.status === 'included' ? 'Included' : 'Excluded'}</td>
             </tr>
           ))}
         </tbody>
