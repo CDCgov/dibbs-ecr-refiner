@@ -56,7 +56,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
               <tr key={r.canonical_url}>
                 <td className="px-2 py-3">
                   {r.display_name}{' '}
-                  {shouldShowNewConditionPill ? <NewConditionPill /> : <></>}
+                  {shouldShowNewConditionPill ? <NewConditionPill /> : null}
                 </td>
                 <td className="px-2 py-3">
                   {r.added_code_total} added, {r.removed_code_total} removed

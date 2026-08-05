@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
     get_loaded_tes_versions_db,
-    get_tes_version_diff,
+    get_tes_version_diff_db,
 )
+from app.services.tes import sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
 
@@ -53,18 +54,8 @@ async def get_tes_updates(
             - The version
             - The when it was created
     """
-    updates = sorted(
-        await get_loaded_tes_versions_db(db=db),
-        key=lambda r: (r.created_at, r.version),
-        reverse=True,
-    )
-
-    return TesResponse(
-        tes_updates=[
-            TesUpdate(id=t.id, version=t.version, created_at=t.created_at)
-            for t in sorted(updates, key=lambda x: x.version, reverse=True)
-        ]
-    )
+    updates = await get_loaded_tes_versions_db(db=db)
+    return TesResponse(sort_tes_updates_by_version(updates))
 
 
 @dataclass
@@ -104,7 +95,7 @@ async def get_tes_diff_details(
             - The condition metadata across the versions
             - The number of added and removed codes
     """
-    conditions_changed = await get_tes_version_diff(
+    conditions_changed = await get_tes_version_diff_db(
         db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
     )
 

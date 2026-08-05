@@ -32,7 +32,7 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
             return rows
 
 
-async def get_tes_by_version_number_db(
+async def _get_tes_by_version_number_db(
     db: AsyncDatabaseConnection, version: str
 ) -> DbTes:
     """
@@ -102,7 +102,7 @@ async def _get_baseline_tes_diff_db(
             return result
 
 
-async def get_tes_update_diff_db(
+async def _get_tes_update_diff_db(
     db: AsyncDatabaseConnection, cur_tes_id: UUID, prev_tes_id: UUID
 ) -> list[DbTesConditionUpdate]:
     """
@@ -167,21 +167,18 @@ async def get_tes_update_diff_db(
             return rows
 
 
-async def get_tes_version_diff(
+async def get_tes_version_diff_db(
     db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str | None
 ) -> list[DbTesConditionUpdate]:
     """
     Returns an array off all loaded TES version records.
     """
-    cur_tes_record = await get_tes_by_version_number_db(db=db, version=cur_tes_version)
-
-    if prev_tes_version:
-        prev_tes_record = await get_tes_by_version_number_db(
-            db=db, version=prev_tes_version
-        )
-    else:
-        prev_tes_record = cur_tes_record
-
-    return await get_tes_update_diff_db(
+    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
+    prev_tes_record = (
+        await _get_tes_by_version_number_db(db=db, version=prev_tes_version)
+        if prev_tes_version
+        else cur_tes_record
+    )
+    return await _get_tes_update_diff_db(
         db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
     )

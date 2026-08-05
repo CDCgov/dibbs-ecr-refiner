@@ -14,7 +14,7 @@ export interface TesDiffInformation {
 
 export function TesUpdates() {
   const { data: tesUpdates, isPending, isError } = useGetTesUpdates();
-  const [tesDiff, setTesDiff] = useState<TesDiffInformation>();
+  const [tesDiff, setTesDiff] = useState<TesDiffInformation | null>(null);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error occurred!';
