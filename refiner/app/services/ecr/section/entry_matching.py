@@ -214,6 +214,14 @@ def process(
                             matches_found=True,
                             narrative_disposition="reconstructed",
                         )
+                    # NOTE: no registered reconstructor (or nothing
+                    # survived to rebuild) — fall back to RETAIN the
+                    # original narrative rather than swap in a removal
+                    # notice. assumption: when the jurisdiction asked
+                    # for reconstruction and we can't run it, the
+                    # original narrative is more informative to a
+                    # reviewer than the removal placeholder, even though
+                    # it may reference entries that were pruned.
                     case "no_matching_entries":
                         return SectionRunResult(
                             matches_found=False,
