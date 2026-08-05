@@ -20,6 +20,8 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
+import { Search } from '@components/Search';
+import { CodesResponse } from '../../../api/schemas';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
@@ -89,6 +91,21 @@ function CodesTable({ id }: CodesTableProps) {
       >
         Next
       </Button>
+      <CodeInformationBar
+        total_code_count={data.pages[0].data.total_code_count}
+        total_code_sets_count={data.pages[0].data.total_code_sets_count}
+        total_excluded_codes_count={
+          data.pages[0].data.total_excluded_codes_count
+        }
+      />
+      <div className="flex w-full justify-between">
+        <Search placeholder="Search by keyword" className="w-80!" />
+        <div className="flex flex-row gap-4">
+          <div className="border p-2">Code system filter</div>
+          <div className="border p-2">Source filter</div>
+          <div className="border p-2">Status filter</div>
+        </div>
+      </div>
       <table className="w-full table-fixed">
         <thead className="sticky top-0 z-10">
           <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
@@ -168,6 +185,36 @@ function CodesTable({ id }: CodesTableProps) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+type CodeInformationBarProps = Pick<
+  CodesResponse,
+  'total_code_count' | 'total_code_sets_count' | 'total_excluded_codes_count'
+>;
+
+function CodeInformationBar({
+  total_code_count,
+  total_code_sets_count,
+  total_excluded_codes_count,
+}: CodeInformationBarProps) {
+  return (
+    <div className="bg-blue-cool-5 border-blue-cool-20! flex w-full flex-col gap-2 border px-10 py-4">
+      <div className="flex flex-row items-center justify-between">
+        <div>
+          <span className="text-2xl font-bold">
+            {total_code_count - total_excluded_codes_count}
+          </span>{' '}
+          <span className="text-lg">of {total_code_count} codes included</span>
+        </div>
+        <div className="flex flex-row gap-4">
+          <span>{total_excluded_codes_count} excluded</span>
+          <span>X custom</span>
+          <span>{total_code_sets_count} condition code sets</span>
+        </div>
+      </div>
+      <div aria-hidden className="bg-blue-cool-50 h-3 w-full rounded-2xl" />
     </div>
   );
 }
