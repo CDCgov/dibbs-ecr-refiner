@@ -29,4 +29,4 @@ def sort_tes_updates_by_version(updates: list[DbTes]) -> list[TesUpdate]:
     tes_updates = [
         TesUpdate(id=t.id, version=t.version, created_at=t.created_at) for t in updates
     ]
-    return sorted(tes_updates, key=lambda d: parse(d.version))
+    return sorted(tes_updates, key=lambda d: parse(d.version), reverse=True)
