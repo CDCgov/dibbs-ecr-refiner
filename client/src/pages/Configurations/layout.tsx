@@ -11,6 +11,7 @@ import { VersionMenu } from './ManageCodes/VersionMenu';
 import { SerializedContentButton } from './SerializedContentButton';
 import { StepsContainer, Steps } from './Steps';
 import { ActivationButtons } from './ActivationButtons';
+import { InfoIcon } from '@components/Icons/InfoIcon';
 
 export function NavigationContainer({
   children,
@@ -18,8 +19,10 @@ export function NavigationContainer({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-blue-cool-5 drop-shadow-nav flex flex-col items-start gap-4 px-8 py-2 md:flex-row md:items-center md:py-2 lg:px-20">
-      {children}
+    <div className="border-b border-gray-400 bg-white px-8 lg:px-20">
+      <div className="flex flex-col items-start gap-4 border-t border-gray-400 md:flex-row md:items-end">
+        {children}
+      </div>
     </div>
   );
 }
@@ -33,7 +36,9 @@ export function SectionContainer({ children }: { children: React.ReactNode }) {
 }
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {
-  return <div className="px-8 py-6 shadow-lg lg:px-20">{children}</div>;
+  return (
+    <div className="bg-white px-8 py-6 shadow-lg lg:px-20">{children}</div>
+  );
 }
 
 interface HeaderProps {
@@ -47,6 +52,7 @@ export function Header({ configuration }: HeaderProps) {
       <TitleContainer>
         <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col">
+            <Status version={configuration.active_version} />
             <div className="flex flex-row items-center gap-2">
               <Title>{configuration.display_name}</Title>
               <Button
@@ -55,7 +61,7 @@ export function Header({ configuration }: HeaderProps) {
                 className="p-0!"
                 aria-label="Open reporting specification details modal"
               >
-                <QuestionIcon />
+                <InfoIcon />
               </Button>
               <RsgDetailsModal
                 open={isRsgDetailsModalOpen}
@@ -64,7 +70,6 @@ export function Header({ configuration }: HeaderProps) {
                 rsgCodes={configuration.rsg_codes}
               />
             </div>
-            <Status version={configuration.active_version} />
           </div>
           <div className="flex flex-col items-start gap-4 md:items-end">
             <div className="flex flex-col gap-4 md:flex-row md:items-center">

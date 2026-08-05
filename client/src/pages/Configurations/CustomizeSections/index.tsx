@@ -4,7 +4,6 @@ import { Spinner } from '@components/Spinner';
 import { SectionModalState, Sections } from './Sections';
 import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
-import { Button } from '@components/Button';
 import { useState } from 'react';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 
@@ -35,23 +34,20 @@ export function CustomizeSections() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
-          <ConfigurationTitleBar
-            title="Customize eICR sections"
-            subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
-          />
-          {isDisabled ? null : (
-            <Button
-              className="m-0! p-0! whitespace-nowrap"
-              variant="tertiary"
-              onClick={() =>
-                setModalState({ isOpen: true, selectedSection: null })
-              }
-            >
-              Add custom section <span aria-hidden>+</span>
-            </Button>
-          )}
-        </div>
+        <ConfigurationTitleBar
+          title="Customize eICR sections"
+          subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
+          actionButton={
+            !isDisabled
+              ? {
+                  text: 'Add custom section +',
+                  onClick: () =>
+                    setModalState({ isOpen: true, selectedSection: null }),
+                  disabled: isDisabled,
+                }
+              : undefined
+          }
+        />
         <Sections
           configuration={configuration.data}
           disabled={isDisabled}
