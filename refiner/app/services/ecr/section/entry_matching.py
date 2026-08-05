@@ -169,7 +169,7 @@ def process(
                 # to a reviewer than the removal notice.
                 return SectionRunResult(
                     matches_found=False,
-                    narrative_disposition="reconstruct_fallback_retained",
+                    narrative_disposition="retained",
                 )
 
             # "retain": leave the original narrative in place
