@@ -221,32 +221,40 @@ def process(
                         narrative_disposition="removed",
                     )
                 case "reconstruct":
-                    reconstructed = reconstruct_narrative(
+                    match reconstruct_narrative(
                         section, augmentation_timestamp=augmentation_timestamp
-                    )
-                    if reconstructed is not None:
-                        replace_narrative_with_reconstruction(
-                            section, reconstructed, namespaces
-                        )
-                        return SectionRunResult(
-                            matches_found=True,
-                            narrative_disposition="reconstructed",
-                        )
-                    # NOTE: no registered reconstructor (or nothing
-                    # survived to rebuild) — fall back to RETAIN the
-                    # original narrative rather than swap in a
-                    # removal notice. assumption: when the
-                    # jurisdiction asked for reconstruction and we
-                    # can't run it, the original narrative is more
-                    # informative to a reviewer than the removal
-                    # placeholder, even though it may reference
-                    # entries that were pruned.
-                    if original_text is not None:
-                        restore_narrative(section, original_text, namespaces)
-                    return SectionRunResult(
-                        matches_found=True,
-                        narrative_disposition="reconstruct_fallback_retained",
-                    )
+                    ):
+                        case _Element() as reconstructed:
+                            replace_narrative_with_reconstruction(
+                                section, reconstructed, namespaces
+                            )
+                            return SectionRunResult(
+                                matches_found=True,
+                                narrative_disposition="reconstructed",
+                            )
+                        # NOTE: no registered reconstructor (or nothing
+                        # survived to rebuild) — fall back to RETAIN the
+                        # original narrative rather than swap in a removal
+                        # notice. assumption: when the jurisdiction asked
+                        # for reconstruction and we can't run it, the
+                        # original narrative is more informative to a
+                        # reviewer than the removal placeholder, even though
+                        # it may reference entries that were pruned.
+                        case "no_matching_entries":
+                            if original_text is not None:
+                                restore_narrative(section, original_text, namespaces)
+                            return SectionRunResult(
+                                matches_found=False,
+                                narrative_disposition="retained",
+                            )
+                        case "reconstruction_unavailable":
+                            if original_text is not None:
+                                restore_narrative(section, original_text, namespaces)
+                            return SectionRunResult(
+                                matches_found=True,
+                                narrative_disposition="reconstruct_fallback_retained",
+                            )
+
                 case _:
                     # "retain" or "keep_on_match" (matches found):
                     # restore the saved original when present; a None
