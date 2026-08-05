@@ -7,6 +7,7 @@ from lxml.etree import _Element
 from app.core.exceptions import XMLParsingError
 from app.services.format import remove_element
 from app.services.terminology import CodeSystemSets, Coding
+from app.services.ecr.narrative.reconstruction import NarrativeReconstructionFallback
 
 from ..model import (
     HL7_XSI_NS,
@@ -202,29 +203,28 @@ def process(
                     narrative_disposition="removed",
                 )
             case "reconstruct":
-                reconstructed = reconstruct_narrative(
+                match reconstruct_narrative(
                     section, augmentation_timestamp=augmentation_timestamp
-                )
-                if reconstructed is not None:
-                    replace_narrative_with_reconstruction(
-                        section, reconstructed, namespaces
-                    )
-                    return SectionRunResult(
-                        matches_found=True,
-                        narrative_disposition="reconstructed",
-                    )
-                # NOTE: no registered reconstructor (or nothing
-                # survived to rebuild) — fall back to RETAIN the
-                # original narrative rather than swap in a removal
-                # notice. assumption: when the jurisdiction asked
-                # for reconstruction and we can't run it, the
-                # original narrative is more informative to a
-                # reviewer than the removal placeholder, even though
-                # it may reference entries that were pruned.
-                return SectionRunResult(
-                    matches_found=True,
-                    narrative_disposition="reconstruct_fallback_retained",
-                )
+                ):
+                    case _Element() as reconstructed:
+                        replace_narrative_with_reconstruction(
+                            section, reconstructed, namespaces
+                        )
+                        return SectionRunResult(
+                            matches_found=True,
+                            narrative_disposition="reconstructed",
+                        )
+                    case "no_matching_entries":
+                        return SectionRunResult(
+                            matches_found=False,
+                            narrative_disposition="retained",
+                        )
+                    case "reconstruction_unavailable":
+                        return SectionRunResult(
+                            matches_found=True,
+                            narrative_disposition="reconstruct_fallback_retained",
+                        )
+
             case _:
                 # "retain" or "keep_on_match" (matches found):
                 # leave the original narrative in place
