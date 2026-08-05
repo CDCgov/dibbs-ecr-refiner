@@ -12,7 +12,7 @@ interface LayoutProps {
 
 export function Layout({ displayName, children }: LayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="bg-page-bg flex min-h-screen flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
@@ -43,6 +43,7 @@ export function Header({ displayName }: HeaderProps) {
         >
           <PersonIcon />
           {displayName}
+          <DropdownCaretIcon />
         </MenuButton>
         <MenuItems
           anchor="bottom"
@@ -84,7 +85,7 @@ export function Header({ displayName }: HeaderProps) {
         <Link to="/" aria-label="Link back to the home configurations page">
           <div className="my-4 flex items-center gap-3">
             <img src={DibbsLogo} alt="DIBBs" role="presentation" />
-            <span className="font-merriweather text-2xl text-white">
+            <span className="font-merriweather text-2xl font-bold text-white">
               eCR Refiner
             </span>
           </div>
@@ -164,6 +165,21 @@ function PersonIcon() {
       fill="currentColor"
     >
       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
+  );
+}
+
+function DropdownCaretIcon() {
+  return (
+    <svg
+      data-dc-tpl="22"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="#ffffff"
+      aria-hidden
+    >
+      <path data-dc-tpl="23" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
     </svg>
   );
 }
