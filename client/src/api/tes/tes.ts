@@ -1,14 +1,18 @@
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -21,6 +25,7 @@ import type {
 } from 'axios';
 
 import type {
+  ExportDiffInput,
   GetTesDiffDetailsParams,
   HTTPValidationError,
   TesDiffConditionDetails,
@@ -242,3 +247,74 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+/**
+ * Generates and exports a CSV of condition diffs between specified TES versions.
+ *
+ * Args:
+ *     body (ExportDiffInput): Inputs needed to generate the diff.
+ * @summary Export Tes Condition Diff
+ */
+export const exportConditionDiff = (
+    exportDiffInput: ExportDiffInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+
+
+    return axios.default.post(
+      `/api/v1/tes/export`,
+      exportDiffInput,options
+    );
+  }
+
+
+
+
+export const getExportConditionDiffMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError,{data: ExportDiffInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError,{data: ExportDiffInput}, TContext> => {
+
+const mutationKey = ['exportConditionDiff'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof exportConditionDiff>>, {data: ExportDiffInput}> = (props) => {
+          const {data} = props ?? {};
+
+          return  exportConditionDiff(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExportConditionDiffMutationResult = NonNullable<Awaited<ReturnType<typeof exportConditionDiff>>>
+    export type ExportConditionDiffMutationBody = ExportDiffInput
+    export type ExportConditionDiffMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Export Tes Condition Diff
+ */
+export const useExportConditionDiff = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError,{data: ExportDiffInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof exportConditionDiff>>,
+        TError,
+        {data: ExportDiffInput},
+        TContext
+      > => {
+      return useMutation(getExportConditionDiffMutationOptions(options), queryClient);
+    }

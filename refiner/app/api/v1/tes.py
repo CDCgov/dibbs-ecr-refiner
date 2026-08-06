@@ -7,7 +7,7 @@ from app.db.tes.db import (
     get_loaded_tes_versions_db,
     get_tes_version_diff_db,
 )
-from app.db.tes.model import TesUpdate
+from app.db.tes.model import ExportDiffInput, TesUpdate
 from app.services.tes import sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
@@ -103,3 +103,25 @@ async def get_tes_diff_details(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Specified TES version(s) {cur_version} or {prev_version} not found.",
         )
+
+
+@router.post(
+    "/export",
+    tags=["tes"],
+    operation_id="exportConditionDiff",
+)
+async def export_tes_condition_diff(
+    body: ExportDiffInput,
+) -> None:
+    """
+    Generates and exports a CSV of condition diffs between specified TES versions.
+
+    Args:
+        body (ExportDiffInput): Inputs needed to generate the diff.
+
+    """
+
+    print("export input")
+    print(body.cond_canonical_url)
+    print(body.new_tes_version)
+    print(body.old_tes_version)

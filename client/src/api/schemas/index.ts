@@ -37,6 +37,7 @@ export * from './discoveredConfigurationsResponse';
 export * from './discoveredConfigurationVersion';
 export * from './eventFilterOption';
 export * from './eventsResponse';
+export * from './exportDiffInput';
 export * from './fileInfoResponse';
 export * from './getConditionCode';
 export * from './getConditionResponse';

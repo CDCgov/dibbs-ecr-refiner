@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from pydantic import BaseModel
+
 
 @dataclass
 class DbTes:
@@ -37,3 +39,13 @@ class TesUpdate:
     id: UUID
     version: str
     created_at: datetime
+
+
+class ExportDiffInput(BaseModel):
+    """
+    Body required to generate a TES update diff for a specific condition.
+    """
+
+    cond_canonical_url: str
+    new_tes_version: str
+    old_tes_version: str
