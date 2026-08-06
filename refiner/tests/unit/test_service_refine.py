@@ -541,7 +541,7 @@ class TestRefiningService:
         # footnote shows reconstruct-fallback outcome
         assert (
             PROVENANCE_OUTCOME_NOTES[
-                SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED
+                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
             ]
             in rendered
         )

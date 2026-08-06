@@ -260,7 +260,7 @@ def test_narrative_retention_when_narrative_retain(spec_v1_1) -> None:
         namespaces=HL7_NS,
         narrative_action="retain",
     )
-    assert result.narrative_disposition == "reconstruct_no_entries"
+    assert result.narrative_disposition == "retained"
     text = _find_one(section, "hl7:text")
     assert text is not None and "Original narrative" in (text.text or "")
 
