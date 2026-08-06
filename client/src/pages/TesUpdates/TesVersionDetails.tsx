@@ -1,5 +1,8 @@
 import { ExternalLink } from '@components/ExternalLink';
-import { useExportConditionDiff, useGetTesDiffDetails } from '../../api/tes/tes';
+import {
+  useExportConditionDiff,
+  useGetTesDiffDetails,
+} from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { TesDiffInformation } from '.';
 import { Button } from '@components/Button';
@@ -24,7 +27,6 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
   });
 
   const { mutate: exportConfig } = useExportConditionDiff();
-  
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
@@ -48,7 +50,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
               Condition code set
             </th>
             <th className="px-2 py-3">Change</th>
-            <th className="px-2 py-3"/>
+            <th className="px-2 py-3" />
           </tr>
         </thead>
         <tbody className="divide-gray-cool-20 divide-y">
@@ -67,16 +69,20 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
                   {r.added_code_total} added, {r.removed_code_total} removed
                 </td>
                 <td>
-                <Button onClick={() => {
-                  exportConfig(
-                    { data: {
-                      cond_canonical_url: r.canonical_url,
-                      new_tes_version: newVersion,
-                      old_tes_version: oldVersion
-                    }
-                  })
-                }} variant='tertiary'>Export CSV</Button>
-
+                  <Button
+                    onClick={() => {
+                      exportConfig({
+                        data: {
+                          cond_canonical_url: r.canonical_url,
+                          cur_tes_version: newVersion,
+                          prev_tes_version: oldVersion,
+                        },
+                      });
+                    }}
+                    variant="tertiary"
+                  >
+                    Export CSV
+                  </Button>
                 </td>
               </tr>
             );

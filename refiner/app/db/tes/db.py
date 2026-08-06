@@ -3,7 +3,7 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.db.tes.model import DbTes, DbTesConditionUpdate
+from app.db.tes.model import ConditionDiffCodeRow, DbTes, DbTesConditionUpdate
 
 
 async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]:
@@ -102,15 +102,113 @@ async def _get_baseline_tes_diff_db(
             return result
 
 
+async def get_tes_update_condition_diff_db(
+    db: AsyncDatabaseConnection,
+    cur_tes_version: str,
+    prev_tes_version: str,
+    cond_url: str,
+):
+    """
+    Returns an array of codes for a specified condition within the specified TES diff.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        cur_tes_version(str): The ceiling TES version to diff against
+        prev_tes_version(str): The floor TES version to diff against
+        cond_url(str): The condition URL to retrieve the diff from
+
+    Returns:
+        list[DbTes]: A list of all the relevant TES details needed for the diff page
+    """
+    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
+    prev_tes_record = (
+        await _get_tes_by_version_number_db(db=db, version=prev_tes_version)
+        if prev_tes_version
+        else cur_tes_record
+    )
+
+    query = """
+        WITH cur AS (
+            SELECT
+                cond.canonical_url,
+                cond.display_name as condition_name,
+                c.code,
+                s.display_name as system_name,
+                c.display as code_name,
+                c.id as code_id
+            FROM conditions_codes cc
+            LEFT JOIN conditions cond ON cc.condition_id = cond.id
+            LEFT JOIN codes c ON cc.code_id = c.id
+            LEFT JOIN tes t ON cond.tes_id = t.id
+            LEFT JOIN systems s ON c.system_id = s.id
+            WHERE cond.tes_id = %(cur_tes_id)s AND cond.canonical_url = %(cond_url)s
+        ),
+        prev AS (
+            SELECT
+                cond.canonical_url,
+                cond.display_name as condition_name,
+                c.code,
+                s.display_name as system_name,
+                c.display as code_name,
+                c.id as code_id
+            FROM conditions_codes cc
+            LEFT JOIN conditions cond ON cc.condition_id = cond.id
+            LEFT JOIN codes c ON cc.code_id = c.id
+            LEFT JOIN tes t ON cond.tes_id = t.id
+            LEFT JOIN systems s ON c.system_id = s.id
+            WHERE cond.tes_id = %(prev_tes_id)s AND cond.canonical_url = %(cond_url)s
+        )
+        SELECT
+            COALESCE (prev.canonical_url, cur.canonical_url) AS canonical_url,
+            MAX(COALESCE(cur.condition_name, prev.condition_name)) AS condition_name,
+            COALESCE(jsonb_agg(
+                jsonb_build_object(
+                'code', cur.code,
+                'system_name', cur.system_name,
+                'display', cur.code_name
+                ))
+            FILTER (WHERE prev.code_id IS NULL), '[]'::jsonb) as added_codes,
+            COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'code', prev.code,
+                    'system_name', prev.system_name,
+                    'display', prev.code_name
+                ))
+            FILTER (WHERE cur.code_id IS NULL), '[]'::jsonb) as removed_codes
+        FROM cur
+        FULL OUTER JOIN prev
+            ON cur.canonical_url = prev.canonical_url
+            AND cur.code_id = prev.code_id
+        GROUP BY
+            COALESCE (prev.canonical_url, cur.canonical_url)
+        HAVING
+            COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
+            OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(ConditionDiffCodeRow)) as cur:
+            await cur.execute(
+                query,
+                {
+                    "cur_tes_id": cur_tes_record.id,
+                    "prev_tes_id": prev_tes_record.id,
+                    "cond_url": cond_url,
+                },
+            )
+            rows = await cur.fetchall()
+            return rows
+
+
 async def _get_tes_update_diff_db(
     db: AsyncDatabaseConnection, cur_tes_id: UUID, prev_tes_id: UUID
 ) -> list[DbTesConditionUpdate]:
     """
-    Returns all TES update details between the current and previous ID.
+    Returns all TES update details between the curent and previous ID.
 
     Args:
         db (AsyncDatabaseConnection): The DB connection pool.
-        cur_tes_id (UUID): The current TES version ID.
+        cur_tes_id (UUID): The curent TES version ID.
         prev_tes_id (UUID): The PREVIOUS TES version ID.
 
     Returns:
@@ -120,7 +218,7 @@ async def _get_tes_update_diff_db(
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
     query = """
-    WITH curr AS (
+    WITH cur AS (
         SELECT
             c.id as condition_id,
             c.canonical_url,
@@ -142,20 +240,20 @@ async def _get_tes_update_diff_db(
     )
 
     SELECT
-        COALESCE(curr.canonical_url, prev.canonical_url) as canonical_url,
-        MAX(COALESCE(curr.display_name, prev.display_name)) AS display_name,
-        COALESCE(array_agg(curr.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
-        COALESCE(array_agg(prev.code_id) FILTER (where curr.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
+        COALESCE(cur.canonical_url, prev.canonical_url) as canonical_url,
+        MAX(COALESCE(cur.display_name, prev.display_name)) AS display_name,
+        COALESCE(array_agg(cur.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
+        COALESCE(array_agg(prev.code_id) FILTER (where cur.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
         (COUNT(prev.condition_id) = 0) AS is_new
-    FROM curr
+    FROM cur
     FULL OUTER JOIN prev
-        ON curr.canonical_url = prev.canonical_url
-        AND curr.code_id = prev.code_id
+        ON cur.canonical_url = prev.canonical_url
+        AND cur.code_id = prev.code_id
     GROUP BY
-        COALESCE(curr.canonical_url, prev.canonical_url)
+        COALESCE(cur.canonical_url, prev.canonical_url)
     HAVING
-        COUNT(curr.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
-        OR COUNT(prev.code_id) FILTER (WHERE curr.code_id IS NULL) > 0;
+        COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
+        OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
     """
 
     async with db.get_connection() as conn:

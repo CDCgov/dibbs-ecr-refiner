@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
     get_loaded_tes_versions_db,
+    get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
 from app.db.tes.model import ExportDiffInput, TesUpdate
@@ -112,16 +113,22 @@ async def get_tes_diff_details(
 )
 async def export_tes_condition_diff(
     body: ExportDiffInput,
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> None:
     """
     Generates and exports a CSV of condition diffs between specified TES versions.
 
     Args:
         body (ExportDiffInput): Inputs needed to generate the diff.
+        db (AsyncDatabaseConnection) : The db connection.
 
     """
+    condition_diff = await get_tes_update_condition_diff_db(
+        cur_tes_version=body.cur_tes_version,
+        prev_tes_version=body.prev_tes_version,
+        cond_url=body.cond_canonical_url,
+        db=db,
+    )
 
     print("export input")
-    print(body.cond_canonical_url)
-    print(body.new_tes_version)
-    print(body.old_tes_version)
+    print(condition_diff)

@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.db.codes.model import CodeDisplay
+
 
 @dataclass
 class DbTes:
@@ -41,11 +43,23 @@ class TesUpdate:
     created_at: datetime
 
 
+@dataclass
+class ConditionDiffCodeRow:
+    """
+    All metadata for a TES update needed for the frontend.
+    """
+
+    canonical_url: str
+    condition_name: str
+    added_codes: list[CodeDisplay]
+    removed_codes: list[CodeDisplay]
+
+
 class ExportDiffInput(BaseModel):
     """
     Body required to generate a TES update diff for a specific condition.
     """
 
     cond_canonical_url: str
-    new_tes_version: str
-    old_tes_version: str
+    cur_tes_version: str
+    prev_tes_version: str

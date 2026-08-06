@@ -258,6 +258,7 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
  *
  * Args:
  *     body (ExportDiffInput): Inputs needed to generate the diff.
+ *     db (AsyncDatabaseConnection) : The db connection.
  * @summary Export Tes Condition Diff
  */
 export const exportConditionDiff = (

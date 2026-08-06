@@ -4,6 +4,6 @@
  */
 export interface ExportDiffInput {
   cond_canonical_url: string;
-  new_tes_version: string;
-  old_tes_version: string;
+  cur_tes_version: string;
+  prev_tes_version: string;
 }
