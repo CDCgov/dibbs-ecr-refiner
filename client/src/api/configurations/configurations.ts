@@ -35,6 +35,7 @@ import type {
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  CodeCountsResponse,
   CodesResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
@@ -1906,6 +1907,109 @@ export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetCodesQueryOptions(configurationId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Fetch code count information for a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if code count metadata can't be fetched
+ *
+ * Returns:
+ *     CodeCountsResponse: Object containing code count info
+ * @summary Get Code Counts
+ */
+export const getCodeCounts = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CodeCountsResponse>> => {
+
+
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/code-counts`,options
+    );
+  }
+
+
+
+
+export const getGetCodeCountsQueryKey = (configurationId: string,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/code-counts`
+    ] as const;
+    }
+
+
+export const getGetCodeCountsQueryOptions = <TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCodeCountsQueryKey(configurationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodeCounts>>> = ({ signal }) => getCodeCounts(configurationId, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCodeCountsQueryResult = NonNullable<Awaited<ReturnType<typeof getCodeCounts>>>
+export type GetCodeCountsQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodeCounts>>,
+          TError,
+          Awaited<ReturnType<typeof getCodeCounts>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodeCounts>>,
+          TError,
+          Awaited<ReturnType<typeof getCodeCounts>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Code Counts
+ */
+
+export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCodeCountsQueryOptions(configurationId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

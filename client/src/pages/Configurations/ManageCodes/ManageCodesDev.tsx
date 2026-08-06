@@ -1,5 +1,6 @@
 import { useParams } from 'react-router';
 import {
+  useGetCodeCounts,
   useGetCodesInfinite,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
@@ -21,7 +22,6 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { Search } from '@components/Search';
-import { CodesResponse } from '../../../api/schemas';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
@@ -91,13 +91,7 @@ function CodesTable({ id }: CodesTableProps) {
       >
         Next
       </Button>
-      <CodeInformationBar
-        total_code_count={data.pages[0].data.total_code_count}
-        total_code_sets_count={data.pages[0].data.total_code_sets_count}
-        total_excluded_codes_count={
-          data.pages[0].data.total_excluded_codes_count
-        }
-      />
+      <CodeInformationBar id={id} />
       <div className="flex w-full justify-between">
         <Search placeholder="Search by keyword" className="w-80!" />
         <div className="flex flex-row gap-4">
@@ -153,7 +147,7 @@ function CodesTable({ id }: CodesTableProps) {
               className={classNames(
                 'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
                 {
-                  italic: code.status === 'excluded',
+                  italic: code.status === 'Excluded',
                 }
               )}
             >
@@ -177,9 +171,7 @@ function CodesTable({ id }: CodesTableProps) {
               <td>{code.system_name}</td>
               <td>{code.description}</td>
               <td>{code.source}</td>
-              <td className="text-center">
-                {code.status === 'included' ? 'Included' : 'Excluded'}
-              </td>
+              <td className="text-center">{code.status}</td>
               <td>Actions</td>
             </tr>
           ))}
@@ -189,29 +181,36 @@ function CodesTable({ id }: CodesTableProps) {
   );
 }
 
-type CodeInformationBarProps = Pick<
-  CodesResponse,
-  'total_code_count' | 'total_code_sets_count' | 'total_excluded_codes_count'
->;
+function CodeInformationBar({ id }: { id: string }) {
+  const { data: codeCounts, isPending, isError } = useGetCodeCounts(id);
 
-function CodeInformationBar({
-  total_code_count,
-  total_code_sets_count,
-  total_excluded_codes_count,
-}: CodeInformationBarProps) {
+  if (isPending) return 'Loading...';
+  if (isError) return 'Error!';
+
+  const {
+    total_code_count,
+    total_code_sets_count,
+    total_custom_codes_count,
+    total_excluded_codes_count,
+  } = codeCounts.data;
+
   return (
     <div className="bg-blue-cool-5 border-blue-cool-20! flex w-full flex-col gap-2 border px-10 py-4">
       <div className="flex flex-row items-center justify-between">
         <div>
           <span className="text-2xl font-bold">
-            {total_code_count - total_excluded_codes_count}
+            {(total_code_count - total_excluded_codes_count).toLocaleString()}
           </span>{' '}
-          <span className="text-lg">of {total_code_count} codes included</span>
+          <span className="text-lg">
+            of {total_code_count.toLocaleString()} codes included
+          </span>
         </div>
-        <div className="flex flex-row gap-4">
-          <span>{total_excluded_codes_count} excluded</span>
-          <span>X custom</span>
-          <span>{total_code_sets_count} condition code sets</span>
+        <div className="flex flex-row gap-8">
+          <span>{total_excluded_codes_count.toLocaleString()} excluded</span>
+          <span>{total_custom_codes_count.toLocaleString()} custom</span>
+          <span>
+            {total_code_sets_count.toLocaleString()} condition code sets
+          </span>
         </div>
       </div>
       <div aria-hidden className="bg-blue-cool-50 h-3 w-full rounded-2xl" />
