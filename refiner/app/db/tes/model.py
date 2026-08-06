@@ -13,3 +13,27 @@ class DbTes:
     version: str
     created_at: datetime
     updated_at: datetime
+
+
+@dataclass
+class DbTesConditionUpdate:
+    """
+    Model to represent the codes within a condition packaged in a TES update.
+    """
+
+    canonical_url: str
+    display_name: str
+    added_code_ids: list[UUID]
+    removed_code_ids: list[UUID]
+    is_new: bool
+
+
+@dataclass
+class TesUpdate:
+    """
+    All metadata for a TES update needed for the frontend.
+    """
+
+    id: UUID
+    version: str
+    created_at: datetime

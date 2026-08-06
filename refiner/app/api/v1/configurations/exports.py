@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.code_systems.db import get_all_code_systems_db
+from app.db.code_systems.db import get_id_to_code_system_dict_db
 from app.db.conditions.db import (
     get_condition_codes_by_condition_id_db,
     get_included_conditions_db,
@@ -168,7 +168,7 @@ async def _build_config_csv(
 ) -> str:
     """Build the CSV export content for a configuration."""
 
-    code_systems = await get_all_code_systems_db(db=db)
+    code_systems = await get_id_to_code_system_dict_db(db=db)
 
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)

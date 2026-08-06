@@ -42,7 +42,9 @@ def seed_database(db_url: str, db_password: str) -> None:
         logger.error("Make sure migrations have been run prior to seeding!")
         raise
 
-    load_static_data(db_url=db_url, db_password=db_password)
+    load_static_data(
+        db_url=db_url, db_password=db_password, seed_all_tes_data=seed_all_tes_data
+    )
 
 
 if __name__ == "__main__":
@@ -50,6 +52,7 @@ if __name__ == "__main__":
 
     db_url = os.getenv("DB_URL")
     db_password = os.getenv("DB_PASSWORD")
+    seed_all_tes_data = os.getenv("SEED_ALL_TES_DATA")
 
     if not db_url or not db_password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")

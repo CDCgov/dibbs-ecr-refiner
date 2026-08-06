@@ -54,7 +54,7 @@ services:
 
   seed:
     environment:
-      - ENV=local
+      - SEED_ALL_TES_DATA=false
 
 volumes:
   pgdata:

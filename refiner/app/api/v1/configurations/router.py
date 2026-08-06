@@ -4,7 +4,7 @@ from .activation import router as activation_router
 from .base import router as base_router
 from .codes.codes import router as codes_router
 from .codesets import router as codesets_router
-from .custom_codes import router as custom_codes_router
+from .custom_codes.custom_codes import router as custom_codes_router
 from .exports import router as exports_router
 from .locking import router as locking_router
 from .sections import router as sections_router

@@ -36,12 +36,12 @@ import type {
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
   CodesResponse,
-  ConfigurationCustomCodeResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
   ConfirmUploadCustomCodesInput,
   CreateConfigInput,
   CreateConfigurationResponse,
+  CustomCodeResponse,
   DeleteSectionInput,
   GetCodesParams,
   GetConfigurationResponse,
@@ -53,7 +53,6 @@ import type {
   UpdateSectionProcessingResponse,
   UploadCustomCodesCsvInput,
   UploadCustomCodesPreviewResponse,
-  UploadCustomCodesResponse,
   ValidateCustomCodeInput,
   ValidateCustomCodeResponse
 } from '../schemas';
@@ -610,7 +609,7 @@ export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HT
 export const addCustomCodeToConfiguration = (
     configurationId: string,
     addCustomCodeInput: AddCustomCodeInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
+ ): Promise<AxiosResponse<CustomCodeResponse>> => {
 
 
     return axios.default.post(
@@ -687,7 +686,7 @@ export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidati
 export const editCustomCodeFromConfiguration = (
     configurationId: string,
     updateCustomCodeInput: UpdateCustomCodeInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
+ ): Promise<AxiosResponse<CustomCodeResponse>> => {
 
 
     return axios.default.put(
@@ -819,7 +818,7 @@ export const useUploadCustomCodesCsv = <TError = AxiosError<HTTPValidationError>
 export const confirmUploadCustomCodesCsv = (
     configurationId: string,
     confirmUploadCustomCodesInput: ConfirmUploadCustomCodesInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UploadCustomCodesResponse>> => {
+ ): Promise<AxiosResponse<CustomCodeResponse[]>> => {
 
 
     return axios.default.post(
@@ -897,7 +896,7 @@ export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidatio
 export const deleteCustomCodeFromConfiguration = (
     configurationId: string,
     id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
+ ): Promise<AxiosResponse<CustomCodeResponse>> => {
 
 
     return axios.default.delete(
