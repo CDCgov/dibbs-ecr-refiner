@@ -109,8 +109,9 @@ def process(
 
     The orchestrator maps the resulting `SectionRunResult` to
     `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
-    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or
-    `REFINED_RECONSTRUCT_FALLBACK_RETAINED` — see
+    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`,
+    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED`, or
+    `REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED` — see
     `refine._interpret_run_result`.
 
     Returns:
@@ -168,7 +169,7 @@ def process(
                 # to a reviewer than the removal notice.
                 return SectionRunResult(
                     matches_found=False,
-                    narrative_disposition="retained",
+                    narrative_disposition="reconstruct_no_entries",
                 )
 
             # "retain": leave the original narrative in place
@@ -224,12 +225,12 @@ def process(
                     case "no_matching_entries":
                         return SectionRunResult(
                             matches_found=False,
-                            narrative_disposition="retained",
+                            narrative_disposition="reconstruct_no_entries",
                         )
                     case "reconstruction_unavailable":
                         return SectionRunResult(
                             matches_found=True,
-                            narrative_disposition="reconstruct_fallback_retained",
+                            narrative_disposition="reconstruct_unavailable",
                         )
 
             case _:

@@ -183,7 +183,7 @@ def process(
                     restore_narrative(section, original_text, namespaces)
                 return SectionRunResult(
                     matches_found=False,
-                    narrative_disposition="reconstruct_fallback_retained",
+                    narrative_disposition="reconstruct_no_entries",
                 )
 
             # "retain": restore the original <text> we saved before
@@ -245,14 +245,14 @@ def process(
                                 restore_narrative(section, original_text, namespaces)
                             return SectionRunResult(
                                 matches_found=False,
-                                narrative_disposition="retained",
+                                narrative_disposition="reconstruct_no_entries",
                             )
                         case "reconstruction_unavailable":
                             if original_text is not None:
                                 restore_narrative(section, original_text, namespaces)
                             return SectionRunResult(
                                 matches_found=True,
-                                narrative_disposition="reconstruct_fallback_retained",
+                                narrative_disposition="reconstruct_unavailable",
                             )
 
                 case _:

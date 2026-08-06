@@ -435,7 +435,7 @@ def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
         narrative_action="reconstruct",
     )
     assert result.matches_found is True
-    assert result.narrative_disposition == "reconstruct_fallback_retained"
+    assert result.narrative_disposition == "reconstruct_unavailable"
     text = _find_one(section, "hl7:text")
     assert text is not None
     assert "Original narrative" in etree.tostring(text, encoding="unicode")
