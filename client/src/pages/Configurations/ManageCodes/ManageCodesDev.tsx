@@ -23,6 +23,7 @@ import {
 } from '@components/Modal';
 import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
@@ -86,12 +87,6 @@ function CodesTable({ id }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <Button
-        onClick={() => fetchNextPage()}
-        disabled={!hasNextPage || isFetchingNextPage}
-      >
-        Next
-      </Button>
       <AddCustomCodeButton configurationId={id} disabled={false} />
       <CodeInformationBar id={id} />
       <div className="flex w-full justify-between">
@@ -102,83 +97,93 @@ function CodesTable({ id }: CodesTableProps) {
           <div className="border p-2">Status filter</div>
         </div>
       </div>
-      <table className="w-full table-fixed">
-        <thead className="bg-gray-cool-5 sticky top-0 z-10">
-          <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
-            <th scope="col" className="w-10 text-center">
-              <Checkbox
-                checked={allSelected}
-                onChange={(checked) =>
-                  setSelectedIds(
-                    checked ? new Set(codes.map((c) => c.id)) : new Set()
-                  )
-                }
-              />
-            </th>
-            <th scope="col">Code no.</th>
-            <th scope="col">System</th>
-            <th scope="col">Description</th>
-            <th scope="col">
-              <div className="flex flex-row items-center gap-1">
-                <span>Source</span>
-                <Button
-                  variant="tertiary"
-                  onClick={() => setIsSourceModalOpen(true)}
-                  className="p-0!"
-                  aria-label="Open reporting specification details modal"
-                >
-                  <QuestionIcon />
-                </Button>
-              </div>
-            </th>
-            <th scope="col" className="text-center">
-              Status
-            </th>
-            <th>
-              <div className="flex flex-row items-center gap-1">
-                <span>Actions</span>
-                <Tooltip label="Include or exclude a code from this configuration, or edit and delete custom codes you've added." />
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-gray-cool-20 divide-y">
-          {codes.map((code) => (
-            <tr
-              key={code.id}
-              className={classNames(
-                'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
-                {
-                  italic: code.status === 'Excluded',
-                }
-              )}
-            >
-              <td className="text-center">
+      <InfiniteScroll
+        dataLength={codes.length}
+        next={fetchNextPage}
+        hasMore={!!hasNextPage}
+        loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
+        endMessage={
+          <p className="text-center italic">You've reached the end.</p>
+        }
+      >
+        <table className="w-full table-fixed">
+          <thead className="bg-gray-cool-5 sticky top-0 z-10">
+            <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
+              <th scope="col" className="w-10 text-center">
                 <Checkbox
-                  checked={selectedIds.has(code.id)}
+                  checked={allSelected}
                   onChange={(checked) =>
-                    setSelectedIds((prev) => {
-                      const next = new Set(prev);
-                      if (checked) {
-                        next.add(code.id);
-                      } else {
-                        next.delete(code.id);
-                      }
-                      return next;
-                    })
+                    setSelectedIds(
+                      checked ? new Set(codes.map((c) => c.id)) : new Set()
+                    )
                   }
                 />
-              </td>
-              <td>{code.code}</td>
-              <td>{code.system_name}</td>
-              <td>{code.description}</td>
-              <td>{code.source}</td>
-              <td className="text-center">{code.status}</td>
-              <td>Actions</td>
+              </th>
+              <th scope="col">Code no.</th>
+              <th scope="col">System</th>
+              <th scope="col">Description</th>
+              <th scope="col">
+                <div className="flex flex-row items-center gap-1">
+                  <span>Source</span>
+                  <Button
+                    variant="tertiary"
+                    onClick={() => setIsSourceModalOpen(true)}
+                    className="p-0!"
+                    aria-label="Open reporting specification details modal"
+                  >
+                    <QuestionIcon />
+                  </Button>
+                </div>
+              </th>
+              <th scope="col" className="text-center">
+                Status
+              </th>
+              <th>
+                <div className="flex flex-row items-center gap-1">
+                  <span>Actions</span>
+                  <Tooltip label="Include or exclude a code from this configuration, or edit and delete custom codes you've added." />
+                </div>
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-gray-cool-20 divide-y">
+            {codes.map((code) => (
+              <tr
+                key={code.id}
+                className={classNames(
+                  'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
+                  {
+                    italic: code.status === 'Excluded',
+                  }
+                )}
+              >
+                <td className="text-center">
+                  <Checkbox
+                    checked={selectedIds.has(code.id)}
+                    onChange={(checked) =>
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (checked) {
+                          next.add(code.id);
+                        } else {
+                          next.delete(code.id);
+                        }
+                        return next;
+                      })
+                    }
+                  />
+                </td>
+                <td>{code.code}</td>
+                <td>{code.system_name}</td>
+                <td>{code.description}</td>
+                <td>{code.source}</td>
+                <td className="text-center">{code.status}</td>
+                <td>Actions</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InfiniteScroll>
     </div>
   );
 }
