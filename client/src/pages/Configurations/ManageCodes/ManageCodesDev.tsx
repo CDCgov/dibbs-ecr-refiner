@@ -22,6 +22,7 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { Search } from '@components/Search';
+import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
@@ -91,6 +92,7 @@ function CodesTable({ id }: CodesTableProps) {
       >
         Next
       </Button>
+      <AddCustomCodeButton configurationId={id} disabled={false} />
       <CodeInformationBar id={id} />
       <div className="flex w-full justify-between">
         <Search placeholder="Search by keyword" className="w-80!" />
@@ -101,7 +103,7 @@ function CodesTable({ id }: CodesTableProps) {
         </div>
       </div>
       <table className="w-full table-fixed">
-        <thead className="sticky top-0 z-10">
+        <thead className="bg-gray-cool-5 sticky top-0 z-10">
           <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
             <th scope="col" className="w-10 text-center">
               <Checkbox

@@ -164,7 +164,7 @@ async def get_code_counts(
         )
 
     return CodeCountsResponse(
-        total_code_count=code_counts.total_code_count,
+        total_code_count=code_counts.total_code_count + code_counts.custom_code_count,
         total_code_sets_count=code_counts.code_set_count,
         total_excluded_codes_count=code_counts.excluded_code_count,
         total_custom_codes_count=code_counts.custom_code_count,
