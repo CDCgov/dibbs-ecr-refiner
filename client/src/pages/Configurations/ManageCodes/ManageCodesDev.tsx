@@ -186,36 +186,47 @@ function CodesTable({ id }: CodesTableProps) {
 function CodeInformationBar({ id }: { id: string }) {
   const { data: codeCounts, isPending, isError } = useGetCodeCounts(id);
 
-  if (isPending) return 'Loading...';
   if (isError) return 'Error!';
 
-  const {
-    total_code_count,
-    total_code_sets_count,
-    total_custom_codes_count,
-    total_excluded_codes_count,
-  } = codeCounts.data;
-
   return (
-    <div className="bg-blue-cool-5 border-blue-cool-20! flex w-full flex-col gap-2 border px-10 py-4">
-      <div className="flex flex-row items-center justify-between">
-        <div>
-          <span className="text-2xl font-bold">
-            {(total_code_count - total_excluded_codes_count).toLocaleString()}
-          </span>{' '}
-          <span className="text-lg">
-            of {total_code_count.toLocaleString()} codes included
-          </span>
+    <div className="bg-blue-cool-5 border-blue-cool-20! flex h-20 w-full flex-col gap-2 border px-10 py-4">
+      {isPending ? (
+        <div className="absolute inset-0 top-10 flex items-center justify-center">
+          <Spinner />
         </div>
-        <div className="flex flex-row gap-8">
-          <span>{total_excluded_codes_count.toLocaleString()} excluded</span>
-          <span>{total_custom_codes_count.toLocaleString()} custom</span>
-          <span>
-            {total_code_sets_count.toLocaleString()} condition code sets
-          </span>
-        </div>
-      </div>
-      <div aria-hidden className="bg-blue-cool-50 h-3 w-full rounded-2xl" />
+      ) : (
+        <>
+          <div className="flex flex-row items-center justify-between">
+            <div>
+              <span className="text-2xl font-bold">
+                {(
+                  codeCounts.data.total_code_count -
+                  codeCounts.data.total_excluded_codes_count
+                ).toLocaleString()}
+              </span>{' '}
+              <span className="text-lg">
+                of {codeCounts.data.total_code_count.toLocaleString()} codes
+                included
+              </span>
+            </div>
+            <div className="flex flex-row gap-8">
+              <span>
+                {codeCounts.data.total_excluded_codes_count.toLocaleString()}{' '}
+                excluded
+              </span>
+              <span>
+                {codeCounts.data.total_custom_codes_count.toLocaleString()}{' '}
+                custom
+              </span>
+              <span>
+                {codeCounts.data.total_code_sets_count.toLocaleString()}{' '}
+                condition code sets
+              </span>
+            </div>
+          </div>
+          <div aria-hidden className="bg-blue-cool-50 h-3 w-full rounded-2xl" />
+        </>
+      )}
     </div>
   );
 }
