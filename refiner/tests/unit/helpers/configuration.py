@@ -17,7 +17,7 @@ async def create_processed_config(
             return_value=conditions,
         ),
         unittest.mock.patch(
-            "app.services.configurations.get_all_code_systems_db",
+            "app.services.configurations.get_id_to_code_system_dict_db",
             new=unittest.mock.AsyncMock(return_value={m.id: m for m in mock_systems}),
         ),
     ):

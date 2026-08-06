@@ -89,11 +89,9 @@ export class Api {
 
     expect(uploadCsvReq.ok()).toBeTruthy();
     const json = await uploadCsvReq.json();
-    expect(json).toEqual(
-      expect.objectContaining({
-        errors: null,
-      })
-    );
+
+    // This should be an array of objects
+    expect(Array.isArray(json)).toBe(true);
   }
 
   async getSystems(): Promise<CodeSystemsReponse[]> {
