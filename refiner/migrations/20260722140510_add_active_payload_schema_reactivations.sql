@@ -29,4 +29,3 @@ CREATE UNIQUE INDEX active_payload_schema_reactivations_one_complete_per_version
 
 -- migrate:down
 DROP TABLE active_payload_schema_reactivations;
-

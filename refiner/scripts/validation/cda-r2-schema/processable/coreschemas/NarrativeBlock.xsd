@@ -3,8 +3,8 @@
   *****************************************************************
   This specification should in no circumstance be used in the development of, or at runtime
   by, systems which perform processing of personal or patient data in a clinical or operational
-  setting, or in the provision of medical or therapeutic advice or treatment in a clinical or 
-  operational setting. 
+  setting, or in the provision of medical or therapeutic advice or treatment in a clinical or
+  operational setting.
   *****************************************************************
   -->
 <!-- $Id: NarrativeBlock.xsd,v 1.6 2007/03/20 02:42:07 wbeeler Exp $ -->
