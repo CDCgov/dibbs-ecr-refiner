@@ -63,6 +63,7 @@ export function ManageCodes() {
           title="Manage codes"
           subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
         />
+
         <Builder
           id={configuration.data.id}
           code_sets={sortedCodeSets}
