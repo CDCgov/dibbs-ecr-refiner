@@ -24,6 +24,8 @@ import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
+import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
+import { GetConfigurationResponse } from '../../../api/schemas';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -52,6 +54,18 @@ export function ManageCodesDev() {
           title="Manage codes"
           subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
         />
+        <div className="flex w-full flex-row justify-end gap-2">
+          {/* TODO: change disabled value */}
+          <AddCodeSetsButton
+            id={configuration.data.id}
+            included_conditions={configuration.data.included_conditions}
+            display_name={configuration.data.display_name}
+            disabled={false}
+          />
+          {/* TODO: change disabled value */}
+          <AddCustomCodeButton configurationId={id} disabled={false} />
+        </div>
+        <CodeInformationBar id={id} />
         <CodesTable id={configuration.data.id} />
       </SectionContainer>
     </div>
@@ -91,8 +105,6 @@ function CodesTable({ id }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <AddCustomCodeButton configurationId={id} disabled={false} />
-      <CodeInformationBar id={id} />
       <div className="flex w-full flex-col items-start justify-between gap-4 md:flex-row">
         <Search placeholder="Search by keyword" className="w-70!" />
         <div className="flex flex-col items-start gap-4 md:flex-row">
@@ -185,6 +197,35 @@ function CodesTable({ id }: CodesTableProps) {
         </table>
       </InfiniteScroll>
     </div>
+  );
+}
+
+type AddCodeSetsButtonProps = Pick<
+  GetConfigurationResponse,
+  'id' | 'included_conditions' | 'display_name'
+> & {
+  disabled: boolean;
+};
+
+function AddCodeSetsButton({
+  id,
+  included_conditions,
+  display_name,
+  disabled,
+}: AddCodeSetsButtonProps) {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setIsDrawerOpen(true)}>Condition code sets</Button>
+      <AddConditionCodeSetsDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        conditions={included_conditions}
+        configurationId={id}
+        reportable_condition_display_name={display_name}
+        disabled={disabled}
+      />
+    </>
   );
 }
 
