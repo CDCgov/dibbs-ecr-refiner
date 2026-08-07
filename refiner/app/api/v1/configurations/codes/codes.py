@@ -79,7 +79,7 @@ async def get_codes(
     """
 
     # Number of codes pulled per batch
-    CODES_LIMIT = 1000
+    CODES_LIMIT = 100
 
     config = await get_configuration_by_id_db(
         id=configuration_id,
