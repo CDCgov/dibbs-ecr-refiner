@@ -97,5 +97,5 @@ def _build_export_filename(
     version: str,
 ) -> str:
     """Build filename for condition TES diff export."""
-    condition_grouper = cond_grouper.replace(" ", "_")
+    condition_grouper = cond_grouper.replace(" ", "-")
     return f"{condition_grouper}_TES_v{version}_change_summary.csv"

@@ -35,7 +35,7 @@ test.describe('TES updates page', () => {
     const zikaDownload = await lastRowDownloadPromise;
 
     expect(zikaDownload.suggestedFilename()).toMatch(
-      /Zika_Virus_Disease_TES_v6.0.0_change_summary.csv$/
+      /Zika-Virus-Disease_TES_v6.0.0_change_summary.csv$/
     );
   });
 });
