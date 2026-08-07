@@ -46,6 +46,9 @@ export function ManageCodesDev() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
+  const isDisabled =
+    configuration.data.status !== 'draft' || configuration.data.is_locked;
+
   return (
     <div>
       <Header configuration={configuration.data} />
@@ -55,15 +58,13 @@ export function ManageCodesDev() {
           subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
         />
         <div className="flex w-full flex-row justify-end gap-2">
-          {/* TODO: change disabled value */}
           <AddCodeSetsButton
             id={configuration.data.id}
             included_conditions={configuration.data.included_conditions}
             display_name={configuration.data.display_name}
-            disabled={false}
+            disabled={isDisabled}
           />
-          {/* TODO: change disabled value */}
-          <AddCustomCodeButton configurationId={id} disabled={false} />
+          <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
         </div>
         <CodeInformationBar id={id} />
         <CodesTable id={configuration.data.id} />
