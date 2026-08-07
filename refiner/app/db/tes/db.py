@@ -3,7 +3,7 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.db.tes.model import ConditionDiffCodeRow, DbTes, DbTesConditionUpdate
+from app.db.tes.model import ConditionDiffExportData, DbTes, DbTesConditionUpdate
 
 
 async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]:
@@ -107,7 +107,7 @@ async def get_tes_update_condition_diff_db(
     cur_tes_version: str,
     prev_tes_version: str,
     cond_url: str,
-):
+) -> ConditionDiffExportData:
     """
     Returns an array of codes for a specified condition within the specified TES diff.
 
@@ -187,7 +187,7 @@ async def get_tes_update_condition_diff_db(
     """
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConditionDiffCodeRow)) as cur:
+        async with conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur:
             await cur.execute(
                 query,
                 {
@@ -196,8 +196,12 @@ async def get_tes_update_condition_diff_db(
                     "cond_url": cond_url,
                 },
             )
-            rows = await cur.fetchall()
-            return rows
+            result = await cur.fetchone()
+            if not result:
+                raise ValueError(
+                    f"Condition with URL {cond_url} not found for TES versions {cur_tes_version} or {prev_tes_version} "
+                )
+            return result
 
 
 async def _get_tes_update_diff_db(

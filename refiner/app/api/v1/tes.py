@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
@@ -9,7 +9,7 @@ from app.db.tes.db import (
     get_tes_version_diff_db,
 )
 from app.db.tes.model import ExportDiffInput, TesUpdate
-from app.services.tes import sort_tes_updates_by_version
+from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
 
@@ -106,29 +106,47 @@ async def get_tes_diff_details(
         )
 
 
-@router.post(
+@router.get(
     "/export",
     tags=["tes"],
     operation_id="exportConditionDiff",
 )
 async def export_tes_condition_diff(
-    body: ExportDiffInput,
+    cur_tes_version: str,
+    prev_tes_version: str,
+    cond_canonical_url: str,
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> None:
+) -> Response:
     """
     Generates and exports a CSV of condition diffs between specified TES versions.
 
     Args:
-        body (ExportDiffInput): Inputs needed to generate the diff.
+        cur_tes_version(str) : The ceiling TES version to compare against
+        prev_tes_version(str) : The floor TES version to compare against
+        cond_canonical_url(str) : The condition diff being requested
         db (AsyncDatabaseConnection) : The db connection.
 
     """
-    condition_diff = await get_tes_update_condition_diff_db(
-        cur_tes_version=body.cur_tes_version,
-        prev_tes_version=body.prev_tes_version,
-        cond_url=body.cond_canonical_url,
-        db=db,
-    )
+    try:
+        condition_diff = await get_tes_update_condition_diff_db(
+            cur_tes_version=cur_tes_version,
+            prev_tes_version=prev_tes_version,
+            cond_url=cond_canonical_url,
+            db=db,
+        )
 
-    print("export input")
-    print(condition_diff)
+        (file_name, file_contents) = build_tes_export_csv(
+            diff_data=condition_diff, cur_tes_version=cur_tes_version
+        )
+
+        return Response(
+            content=file_contents,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e,
+        )

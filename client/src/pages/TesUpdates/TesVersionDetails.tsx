@@ -26,8 +26,6 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
     prev_version: oldVersion,
   });
 
-  const { mutate: exportConfig } = useExportConditionDiff();
-
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
@@ -69,20 +67,11 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
                   {r.added_code_total} added, {r.removed_code_total} removed
                 </td>
                 <td>
-                  <Button
-                    onClick={() => {
-                      exportConfig({
-                        data: {
-                          cond_canonical_url: r.canonical_url,
-                          cur_tes_version: newVersion,
-                          prev_tes_version: oldVersion,
-                        },
-                      });
-                    }}
-                    variant="tertiary"
-                  >
-                    Export CSV
-                  </Button>
+                  <ExportLink
+                    cond_canonical_url={r.canonical_url}
+                    cur_tes_version={newVersion}
+                    prev_tes_version={oldVersion}
+                  />
                 </td>
               </tr>
             );
@@ -98,5 +87,32 @@ function NewConditionPill() {
     <span className="bg-state-success-lighter rounded-2xl px-2 py-1 font-mono text-sm">
       New condition
     </span>
+  );
+}
+
+interface ExportLinkProps {
+  cond_canonical_url: string;
+  cur_tes_version: string;
+  prev_tes_version: string;
+}
+function ExportLink({
+  cond_canonical_url,
+  cur_tes_version,
+  prev_tes_version,
+}: ExportLinkProps) {
+  const params = new URLSearchParams({
+    cond_canonical_url: cond_canonical_url,
+    cur_tes_version: cur_tes_version,
+    prev_tes_version: prev_tes_version,
+  });
+
+  return (
+    <Button
+      href={`/api/v1/tes/export?${params.toString()}`}
+      anchorProps={{ download: true }}
+      variant="tertiary"
+    >
+      Export as CSV
+    </Button>
   );
 }
