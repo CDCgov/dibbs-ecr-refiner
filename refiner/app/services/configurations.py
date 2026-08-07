@@ -10,6 +10,7 @@ from app.db.code_systems.db import (
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.conditions.model import DbConditionCoding
+from app.db.configurations.exclusions.db import get_code_exclusions_db
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
@@ -245,8 +246,18 @@ async def convert_config_to_storage_payload(
         included_conditions=configuration.included_conditions, db=db
     )
     systems_keys_to_index_by = await get_allowed_code_system_keys(db=db)
+    excluded_codes = await get_code_exclusions_db(
+        configuration_id=configuration.id, db=db
+    )
     # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
+        # exclusions are scoped to (configuration, condition), so they are applied
+        # here rather than to the merged dict below: this loop is the last point
+        # where a code's originating condition is still known, and it is the only
+        # loop custom codes never pass through--so an exclusion can never strip a
+        # hand-added custom code that happens to share a (system, code) pair
+        excluded_for_condition = excluded_codes.get(condition.id, set())
+
         # map each db code list to its target dict + OID
         code_system_map: dict[CodeSystemKey, list[DbConditionCoding]] = (
             index_condition_code_list_by_system(
@@ -270,6 +281,7 @@ async def convert_config_to_storage_payload(
                         )
                     )
                     for c in code_list
+                    if (key, c.code) not in excluded_for_condition
                 ]
             )
 
