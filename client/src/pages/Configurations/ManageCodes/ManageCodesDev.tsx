@@ -89,9 +89,9 @@ function CodesTable({ id }: CodesTableProps) {
       />
       <AddCustomCodeButton configurationId={id} disabled={false} />
       <CodeInformationBar id={id} />
-      <div className="flex w-full justify-between">
-        <Search placeholder="Search by keyword" className="w-80!" />
-        <div className="flex flex-row gap-4">
+      <div className="flex w-full flex-col items-start justify-between gap-4 md:flex-row">
+        <Search placeholder="Search by keyword" className="w-70!" />
+        <div className="flex flex-col items-start gap-4 md:flex-row">
           <div className="border p-2">Code system filter</div>
           <div className="border p-2">Source filter</div>
           <div className="border p-2">Status filter</div>
@@ -214,7 +214,7 @@ function CodeInformationBar({ id }: { id: string }) {
                 included
               </span>
             </div>
-            <div className="flex flex-row gap-8">
+            <div className="flex flex-col gap-4 text-left md:flex-row md:gap-8">
               <span>
                 {codeCounts.data.total_excluded_codes_count.toLocaleString()}{' '}
                 excluded
