@@ -27,7 +27,6 @@ import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Tooltip } from '@components/Tooltip';
-import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import { KeepOnMatchModal } from './KeepOnMatchModal';
 import { InfoIcon } from '@components/Icons/InfoIcon';
 

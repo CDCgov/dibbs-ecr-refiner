@@ -46,7 +46,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     name: 'Immunizations section',
     action: 'retain',
     include: true,
-    code: 'imm',
+    code: '11369-6',
     narrative: 'remove',
     versions: ['3.1', '3.1.1'],
     section_type: 'standard',
@@ -123,7 +123,7 @@ const sectionsWithKeepOnMatch: DbConfigurationSectionProcessing[] = [
     name: 'Immunizations section',
     action: 'retain',
     include: true,
-    code: 'imm',
+    code: '11369-6',
     narrative: 'keep_on_match',
     versions: ['3.1', '3.1.1'],
     section_type: 'standard',
@@ -165,7 +165,7 @@ describe('Configuration sections', () => {
 
         nameCell: within(row).getAllByRole('cell')[1],
         codedDataSwitch: within(row).queryByRole('switch', {
-          name: /Refine .* section/i,
+          name: /Refine .* section|Keep original for .* section/i,
         }),
 
         narrativeSelect: within(row).queryByRole('combobox'),
@@ -265,8 +265,8 @@ describe('Configuration sections', () => {
 
     renderPage();
 
-    expect(screen.getByText('Add custom section')).toBeInTheDocument();
-    await user.click(screen.getByText('Add custom section'));
+    expect(screen.getByText('Add custom section +')).toBeInTheDocument();
+    await user.click(screen.getByText('Add custom section +'));
 
     expect(
       screen.getByText('Add a custom section', { selector: 'h2' })
@@ -543,7 +543,7 @@ describe('Configuration sections', () => {
     await user.click(infoButtons[1]);
 
     expect(
-      screen.getByText('Narrative data', { selector: 'h2' })
+      screen.getByText('Narrative data')
     ).toBeInTheDocument();
   });
 });

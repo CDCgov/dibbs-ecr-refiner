@@ -1,6 +1,5 @@
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { Title } from '@components/Title';
-import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import { Button } from '@components/Button';
 import { useState } from 'react';
 import { GetConfigurationResponse, DbCode } from '../../api/schemas';
