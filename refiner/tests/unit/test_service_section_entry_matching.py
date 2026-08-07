@@ -354,6 +354,53 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
     assert len(detail_rows) == 1
 
 
+def test_narrative_reconstruct_results_without_matching_falls_back_to_retention_text(
+    spec_v1_1,
+) -> None:
+    """
+    narrative="reconstruct" on Results swaps the stale source narrative for
+    a machine-derived table built from the surviving result entries.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <code code="30954-2"/>
+            <text>Original narrative content here.</text>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <code displayName="CBC panel"/>
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="nonsense code" codeSystem="2.16.840.1.113883.6.1"
+                                  displayName="nonsense"/>
+                            <effectiveTime value="20240115"/>
+                            <value xsi:type="PQ" value="9.2" unit="g/dL"/>
+                            <interpretationCode code="L" displayName="Low"/>
+                        </observation>
+                    </component>
+                </organizer>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+        narrative_action="reconstruct",
+    )
+    assert result.matches_found is False
+    assert result.narrative_disposition == "reconstruct_no_entries"
+
+    text = _find_one(section, "hl7:text")
+    assert text is not None
+    assert "Original narrative" in etree.tostring(text, encoding="unicode")
+
+
 def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
     spec_v1_1,
 ) -> None:
@@ -387,7 +434,7 @@ def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
         narrative_action="reconstruct",
     )
     assert result.matches_found is True
-    assert result.narrative_disposition == "reconstruct_fallback_retained"
+    assert result.narrative_disposition == "reconstruct_unavailable"
     text = _find_one(section, "hl7:text")
     assert text is not None
     assert "Original narrative" in etree.tostring(text, encoding="unicode")
