@@ -23,7 +23,7 @@ def _eicr_with_reconstructed_results(fixtures_path: Path) -> tuple[str, str]:
     Return (original_xml, reconstructed_xml) for the all-sections eICR.
     """
 
-    src = fixtures_path / "eicr_v3_1_1" / "all_sections_CDA_eICR.xml"
+    src = fixtures_path / "eicr_v3_1_1" / "all_sections_test_files" / "CDA_eICR.xml"
     root = etree.parse(str(src)).getroot()
     original_xml = etree.tostring(root, encoding="unicode")
 

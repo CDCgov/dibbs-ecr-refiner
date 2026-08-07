@@ -1346,12 +1346,16 @@ SECTION_RECONSTRUCTORS: dict[str, SectionReconstructor] = {
     ReconstructableSection.PLAN_OF_TREATMENT.value: reconstruct_plan_of_treatment,
 }
 
+type NarrativeReconstructionFallback = Literal[
+    "no_matching_entries", "reconstruction_unavailable"
+]
+
 
 def reconstruct_narrative(
     section: _Element,
     *,
     augmentation_timestamp: str,
-) -> _Element | None:
+) -> _Element | NarrativeReconstructionFallback:
     """
     Reconstruct a section's narrative `<text>` from its surviving entries.
 
@@ -1383,11 +1387,11 @@ def reconstruct_narrative(
 
     reconstruct = SECTION_RECONSTRUCTORS.get(loinc) if loinc else None
     if reconstruct is None or loinc is None:
-        return None
+        return "reconstruction_unavailable"
 
     blocks = reconstruct(section)
     if not any(block.rows for block in blocks):
-        return None
+        return "no_matching_entries"
 
     _strip_entry_references(section)
     _mark_entries_derived(section)

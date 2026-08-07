@@ -7,7 +7,7 @@ import pytest
 from fastapi import status
 from psycopg.rows import dict_row
 
-from app.api.v1.configurations.model import AddCustomCodeInput
+from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
 from app.api.v1.events import _format_timestamp
 from app.db.code_systems.db import get_code_systems_db
 from app.db.events.db import insert_event_db

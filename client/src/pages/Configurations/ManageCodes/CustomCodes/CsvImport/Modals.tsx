@@ -1,9 +1,8 @@
 import {
-  IndexedCodeSystem,
   AddCustomCodeInput,
+  DbCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
-
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
@@ -93,7 +92,7 @@ interface PreviewEditModalProps {
   closePreviewEditModal: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
   error: UploadError | null;
-  codeSystems: IndexedCodeSystem;
+  codeSystems: DbCodeSystem[];
   isOpen: boolean;
 }
 
@@ -190,9 +189,7 @@ export function PreviewEditModal({
             <Select
               value={previewEditForm.system_id}
               onChange={(e) => {
-                const system = Object.values(codeSystems).find(
-                  (s) => s.id === e.target.value
-                );
+                const system = codeSystems.find((s) => s.id === e.target.value);
                 setPreviewEditForm((prev) => ({
                   ...prev,
                   system_id: e.target.value,
@@ -200,7 +197,7 @@ export function PreviewEditModal({
                 }));
               }}
             >
-              {Object.values(codeSystems).map((s) => (
+              {codeSystems.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.display_name}
                 </option>

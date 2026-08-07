@@ -2593,57 +2593,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 10
-        },
-        {
-          "name": "TesUpdate",
-          "type": "class",
-          "docstring": "All metadata for a TES update needed for the frontend.",
-          "parsed_docstring": {
-            "summary": "All metadata for a TES update needed for the frontend.",
-            "description": "",
-            "params": [],
-            "returns": null,
-            "raises": []
-          },
-          "lineno": 13,
-          "methods": [
-            {
-              "name": "__init__",
-              "docstring": "",
-              "parsed_docstring": {
-                "summary": "",
-                "description": "",
-                "params": [],
-                "returns": null,
-                "raises": []
-              },
-              "lineno": 0,
-              "signature": "__init__(id: UUID, version: str, created_at: datetime) -> None",
-              "parameters": [
-                {
-                  "name": "self",
-                  "annotation": null,
-                  "default": null
-                },
-                {
-                  "name": "id",
-                  "annotation": "UUID",
-                  "default": null
-                },
-                {
-                  "name": "version",
-                  "annotation": "str",
-                  "default": null
-                },
-                {
-                  "name": "created_at",
-                  "annotation": "datetime",
-                  "default": null
-                }
-              ]
-            }
-          ]
+          "lineno": 13
         },
         {
           "name": "TesResponse",
@@ -2656,7 +2606,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 24,
+          "lineno": 16,
           "methods": [
             {
               "name": "__init__",
@@ -2706,7 +2656,7 @@
             },
             "raises": []
           },
-          "lineno": 33,
+          "lineno": 25,
           "signature": "get_tes_updates(db: AsyncDatabaseConnection = Depends(get_db)) -> TesResponse",
           "parameters": [
             {
@@ -2716,6 +2666,120 @@
             }
           ],
           "return_annotation": "TesResponse"
+        },
+        {
+          "name": "TesDiffConditionDetails",
+          "type": "class",
+          "docstring": "A condition within a TES diff, with details for the diff page to display.",
+          "parsed_docstring": {
+            "summary": "A condition within a TES diff, with details for the diff page to display.",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 49,
+          "methods": [
+            {
+              "name": "__init__",
+              "docstring": "",
+              "parsed_docstring": {
+                "summary": "",
+                "description": "",
+                "params": [],
+                "returns": null,
+                "raises": []
+              },
+              "lineno": 0,
+              "signature": "__init__(canonical_url: str, display_name: str, added_code_total: int, removed_code_total: int, is_new: bool) -> None",
+              "parameters": [
+                {
+                  "name": "self",
+                  "annotation": null,
+                  "default": null
+                },
+                {
+                  "name": "canonical_url",
+                  "annotation": "str",
+                  "default": null
+                },
+                {
+                  "name": "display_name",
+                  "annotation": "str",
+                  "default": null
+                },
+                {
+                  "name": "added_code_total",
+                  "annotation": "int",
+                  "default": null
+                },
+                {
+                  "name": "removed_code_total",
+                  "annotation": "int",
+                  "default": null
+                },
+                {
+                  "name": "is_new",
+                  "annotation": "bool",
+                  "default": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get_tes_diff_details",
+          "type": "function",
+          "docstring": "Returns a list of all TES updates, ordered from newest to oldest.\n\nArgs:\n    cur_version: Version to compare on.\n    prev_version: Version to compare against. Potentially an empty string if we're in the \"baseline\" TES version\n    db (AsyncDatabaseConnection): Database connection.\n\nReturns:\n    list[TesDiffResponse]: A bundle with a list of TesDiffResponse, including\n        - The condition metadata across the versions\n        - The number of added and removed codes",
+          "parsed_docstring": {
+            "summary": "Returns a list of all TES updates, ordered from newest to oldest.",
+            "description": "",
+            "params": [
+              {
+                "name": "cur_version",
+                "type": "",
+                "description": "Version to compare on.",
+                "default": ""
+              },
+              {
+                "name": "prev_version",
+                "type": "",
+                "description": "Version to compare against. Potentially an empty string if we're in the \"baseline\" TES version",
+                "default": ""
+              },
+              {
+                "name": "db",
+                "type": "AsyncDatabaseConnection",
+                "description": "Database connection.",
+                "default": ""
+              }
+            ],
+            "returns": {
+              "type": "list[TesDiffResponse]",
+              "description": "A bundle with a list of TesDiffResponse, including - The condition metadata across the versions - The number of added and removed codes"
+            },
+            "raises": []
+          },
+          "lineno": 62,
+          "signature": "get_tes_diff_details(cur_version: str, prev_version: str, db: AsyncDatabaseConnection = Depends(get_db)) -> list[TesDiffConditionDetails]",
+          "parameters": [
+            {
+              "name": "cur_version",
+              "annotation": "str",
+              "default": null
+            },
+            {
+              "name": "prev_version",
+              "annotation": "str",
+              "default": null
+            },
+            {
+              "name": "db",
+              "annotation": "AsyncDatabaseConnection",
+              "default": "Depends(get_db)"
+            }
+          ],
+          "return_annotation": "list[TesDiffConditionDetails]"
         }
       ]
     },
@@ -5574,6 +5638,38 @@
             }
           ],
           "return_annotation": "DbTes"
+        },
+        {
+          "name": "sort_tes_updates_by_version",
+          "type": "function",
+          "docstring": "Given a list of TES updates, sorts and returns the list by version.\n\nArgs:\n    updates (list[DbTes]): An unsorted list of available DB TES objects\n\nReturns:\n    list[TesUpdate]: A sorted list of TES updates",
+          "parsed_docstring": {
+            "summary": "Given a list of TES updates, sorts and returns the list by version.",
+            "description": "",
+            "params": [
+              {
+                "name": "updates",
+                "type": "list[DbTes]",
+                "description": "An unsorted list of available DB TES objects",
+                "default": ""
+              }
+            ],
+            "returns": {
+              "type": "list[TesUpdate]",
+              "description": "A sorted list of TES updates"
+            },
+            "raises": []
+          },
+          "lineno": 19,
+          "signature": "sort_tes_updates_by_version(updates: list[DbTes]) -> list[TesUpdate]",
+          "parameters": [
+            {
+              "name": "updates",
+              "annotation": "list[DbTes]",
+              "default": null
+            }
+          ],
+          "return_annotation": "list[TesUpdate]"
         }
       ]
     },
@@ -5582,7 +5678,7 @@
       "docstring": "",
       "members": [
         {
-          "name": "get_code_system_by_id_or_raise",
+          "name": "find_code_system_by_id_or_raise",
           "type": "function",
           "docstring": "Attempts to find a code by the provided ID.\n\nArgs:\n    id (UUID): The desired system ID\n    systems (list[DbCodeSystem]): A list of systems to search for the matching ID\n\nRaises:\n    HTTPException: 404 is raised if the system ID is not found in the list of systems\n\nReturns:\n    DbCodeSystem: The matching code system",
           "parsed_docstring": {
@@ -5613,8 +5709,8 @@
               }
             ]
           },
-          "lineno": 13,
-          "signature": "get_code_system_by_id_or_raise(id: UUID, systems: list[DbCodeSystem]) -> DbCodeSystem",
+          "lineno": 9,
+          "signature": "find_code_system_by_id_or_raise(id: UUID, systems: list[DbCodeSystem]) -> DbCodeSystem",
           "parameters": [
             {
               "name": "id",
@@ -5630,36 +5726,47 @@
           "return_annotation": "DbCodeSystem"
         },
         {
-          "name": "get_all_code_systems_by_key",
+          "name": "find_code_system_by_display_name",
           "type": "function",
-          "docstring": "Helper method that returns a map of key to code system.\n\nArgs:\n    db: AsyncDatabaseConnection: A database connection.\n\nReturns:\n    list[str]: A list of stored DB code systems",
+          "docstring": "Attempts to find a `DbCodeSystem` in a `DbCodeSystem[]` that has the specified `display_name`.\n\nArgs:\n    systems (list[DbCodeSystem]): List of `DbCodeSystem`\n    display_name (str): The `display_name` of the `DbCodeSystem` to search for\n\nReturns:\n    DbCodeSystem | None: The system, or `None` if one could not be found",
           "parsed_docstring": {
-            "summary": "Helper method that returns a map of key to code system.",
+            "summary": "Attempts to find a `DbCodeSystem` in a `DbCodeSystem[]` that has the specified `display_name`.",
             "description": "",
             "params": [
               {
-                "name": "db",
-                "type": "",
-                "description": "AsyncDatabaseConnection: A database connection.",
+                "name": "systems",
+                "type": "list[DbCodeSystem]",
+                "description": "List of `DbCodeSystem`",
+                "default": ""
+              },
+              {
+                "name": "display_name",
+                "type": "str",
+                "description": "The `display_name` of the `DbCodeSystem` to search for",
                 "default": ""
               }
             ],
             "returns": {
-              "type": "list[str]",
-              "description": "A list of stored DB code systems"
+              "type": "",
+              "description": "DbCodeSystem | None: The system, or `None` if one could not be found"
             },
             "raises": []
           },
-          "lineno": 38,
-          "signature": "get_all_code_systems_by_key(db: AsyncDatabaseConnection) -> IndexedCodeSystem",
+          "lineno": 34,
+          "signature": "find_code_system_by_display_name(systems: list[DbCodeSystem], display_name: str) -> DbCodeSystem | None",
           "parameters": [
             {
-              "name": "db",
-              "annotation": "AsyncDatabaseConnection",
+              "name": "systems",
+              "annotation": "list[DbCodeSystem]",
+              "default": null
+            },
+            {
+              "name": "display_name",
+              "annotation": "str",
               "default": null
             }
           ],
-          "return_annotation": "IndexedCodeSystem"
+          "return_annotation": "DbCodeSystem | None"
         },
         {
           "name": "get_allowed_code_system_keys",
@@ -5682,7 +5789,7 @@
             },
             "raises": []
           },
-          "lineno": 55,
+          "lineno": 50,
           "signature": "get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]",
           "parameters": [
             {
@@ -8560,7 +8667,7 @@
               }
             ]
           },
-          "lineno": 403,
+          "lineno": 406,
           "signature": "refine_eicr(eicr_root: _Element, plan: EICRRefinementPlan) -> None",
           "parameters": [
             {
@@ -8597,7 +8704,7 @@
             },
             "raises": []
           },
-          "lineno": 562,
+          "lineno": 565,
           "signature": "create_rr_refinement_plan(processed_configuration: ProcessedConfiguration) -> RRRefinementPlan",
           "parameters": [
             {
@@ -8637,7 +8744,7 @@
               }
             ]
           },
-          "lineno": 580,
+          "lineno": 583,
           "signature": "refine_rr(rr_root: _Element, plan: RRRefinementPlan) -> None",
           "parameters": [
             {
@@ -8680,7 +8787,7 @@
             },
             "raises": []
           },
-          "lineno": 709,
+          "lineno": 712,
           "signature": "refine_rr_for_unconfigured_conditions(xml_files: XMLFiles, condition_codes: set[str]) -> str",
           "parameters": [
             {
@@ -9422,7 +9529,7 @@
         {
           "name": "EntryMatchRule",
           "type": "class",
-          "docstring": "Each `<section>` has its own rules for their `<entry>`s; this object memorializes those rules.\n\nRules are evaluated in list order with structural precedence: if a\nrule's `code_xpath` finds code-bearing elements in an entry (candidates),\nthat rule claims the entry regardless of whether any codes matched \u2014\nsubsequent rules are not evaluated. This prevents fallback rules from\nrunning on entries that were already examined by a more specific rule.\n\nAttributes:\n    code_xpath:\n        XPath expression (relative to <entry>) targeting the primary\n        code-bearing elements for this rule. Should be scoped to a\n        specific C-CDA templateId predicate where possible so that\n        structural precedence operates at the template level rather\n        than the element level.\n\n    code_system_oid:\n        OID of the expected code system for primary code matches.\n        When set, only codes whose configured code system matches\n        this OID are considered matches. When None, any code system\n        is accepted \u2014 use None when vendor coding practice is too\n        varied to rely on the codeSystem attribute, and document\n        the intent with a comment at the call site.\n\n        For rules where the OID encodes semantic meaning (e.g.\n        SNOMED_OID on observation/value means \"organism/substance\n        result codes specifically\"), retain the OID and document\n        why. For rules where the OID is a validity guard on a\n        structurally unambiguous location (e.g. RxNorm on\n        manufacturedMaterial/code), None is acceptable because the\n        XPath already constrains the match location sufficiently.\n\n    translation_xpath:\n        XPath expression targeting translation elements to check\n        when the primary code_xpath produces no match. Handles the\n        common real-world pattern where the IG-expected code system\n        appears in <translation> rather than at the primary\n        location (e.g. local code as primary, LOINC in translation).\n\n    translation_code_system_oid:\n        OID for translation code matching. Same semantics as\n        code_system_oid. When None, any code system in the\n        translation is accepted.\n\n    prune_container_xpath:\n        XPath expression (relative to <entry>) identifying the\n        container elements to prune within a matched entry. When\n        set, only containers that contain a matched code element\n        are kept; the rest are removed. When None, the matched\n        entry is kept whole \u2014 no intra-entry pruning is performed.\n\n        Used for sections where entries contain panels of\n        sub-observations (Results organizer/component, Vital Signs\n        organizer/component) and each sub-observation should be\n        individually retained or removed.\n\n    prune_container_guard_xpath:\n        XPath expression (relative to a prune_container_xpath\n        container) that gates whether the container is eligible for\n        pruning at all. When set, a container is only pruned when\n        this xpath matches *inside* it AND it holds no matched code\n        element; a container that does not match the guard is\n        retained as shared, organizer-scoped context.\n\n        This exists because an organizer may carry sibling\n        components that are not themselves match candidates but\n        apply to every observation in the battery. The canonical\n        case is the Results Specimen Collection Procedure (ID)\n        (2.16.840.1.113883.10.20.22.4.415) \u2014 a <component><procedure>\n        with fixed code 17636008 that carries the specimen collection\n        date, body site, and source. It is unmatchable by\n        construction (its code is never a configured trigger), so the\n        component-level prune would drop it even when a Result\n        Observation in the same organizer is retained, silently\n        losing the very context a PHA keys a case to.\n\n        The guard is deliberately specific to the match target\n        (Result Observation V3), not \"any observation\": Laboratory\n        Result Status (...4.418) is itself an <observation> under a\n        sibling component and must also survive as shared context.\n        Keying the guard on the Result Observation V3 templateId\n        retains those siblings while still pruning non-matching\n        Result Observations.\n\n        When None, every container in prune_container_xpath is\n        eligible for pruning (the original behavior). Default None.\n\n    require_value_set_attr:\n        When True, a code element only qualifies as a match\n        candidate if it also carries an sdtc:valueSet attribute.\n\n        This guard is specifically for result observation value\n        elements where the presence of sdtc:valueSet is the\n        structural indicator that a code was placed there as an\n        RCTC trigger code rather than as a plain clinical finding\n        value. Per CONF:4527-443 (STU 3.1.1), sdtc:valueSet SHALL\n        be present on genuine trigger code values.\n\n        Without this guard, generic SNOMED qualifier codes like\n        260373001 \"Detected (qualifier value)\" \u2014 which appear as\n        plain observation values on any positive test \u2014 would match\n        the organism/substance rule and cause unrelated result\n        entries to be retained. The sdtc:valueSet attribute is\n        absent on those elements, so the guard correctly filters\n        them out while still matching codes like 5247005 \"Bordetella\n        pertussis (organism)\" that are genuine RCTC trigger values\n        and do carry sdtc:valueSet.\n\n        Default False. Only set to True on rules targeting\n        observation/value where this distinction matters.\n\n    tier:\n        IG conformance tier for this rule. Used in match provenance\n        comments to indicate how the rule relates to the spec:\n\n        1. SHALL: directly mandated by the IG. The primary conformant path.\n        If a sender follows the spec, this rule matches.\n\n        2. SHOULD/MAY: permitted by the IG but not required. Handles\n        optional patterns (translations, alternate code locations) that\n        conformant senders may or may not use.\n\n        3. HEURISTIC: not IG-conformant but observed in real EHR output.\n        Accommodates vendor variance. Each tier 3 rule should carry a\n        comment explaining what real-world pattern it was written for.\n\n        Surfaces in XML match comments as (T1), (T2), or (T3) so\n        readers can immediately tell whether a match fired on a\n        spec-mandated path or a heuristic accommodation.\n\n        Default 1.\n\n    preserve_whole_entry:\n        When True, a matched entry is kept entirely intact \u2014\n        all child elements including entryRelationship chains,\n        performers, authors, participants, and nested clinical\n        statements are preserved without pruning.\n\n        Use this for clinical acts where the entry is the natural\n        unit of preservation and intra-entry pruning would destroy\n        clinical meaning. The canonical cases are:\n\n          - Medication Activity: entryRelationship[@typeCode='CAUS']\n            carries Reaction Observation (V2) \u2014 adverse event\n            information that belongs with the medication record\n            per CONF:1098-7552 (MAY, Medication Activity V2).\n          - Procedure Activity: entryRelationship[@typeCode='COMP']\n            carries Reaction Observation (V2) per CONF:1098-32475\n            (MAY, Procedure Activity Procedure V2).\n          - Immunization Activity: entryRelationship carries\n            Reaction Observation (V2) per the Immunization Activity\n            V3 template context table.\n          - Social History structured entries (Travel History,\n            Exposure, Occupation): all meaningful content lives in\n            <participant> and nested entryRelationships, not in the\n            top-level coded elements. Preserving only the match path\n            would strip the location, employer, or agent information\n            that makes the entry useful to the PHA.\n\n        When True, prune_container_xpath is ignored \u2014 there is no\n        intra-entry pruning to perform. The match fires, the entry\n        is kept whole.\n\n        Default False.",
+          "docstring": "Each `<section>` has its own rules for their `<entry>`s; this object memorializes those rules.\n\nRules are evaluated in list order with structural precedence: if a\nrule's `code_xpath` finds code-bearing elements in an entry (candidates),\nthat rule claims the entry regardless of whether any codes matched \u2014\nsubsequent rules are not evaluated. This prevents fallback rules from\nrunning on entries that were already examined by a more specific rule.\n\nAttributes:\n    code_xpath:\n        XPath expression (relative to <entry>) targeting the primary\n        code-bearing elements for this rule. Should be scoped to a\n        specific C-CDA templateId predicate where possible so that\n        structural precedence operates at the template level rather\n        than the element level.\n\n    code_system_oid:\n        OID of the expected code system for primary code matches.\n        When set, only codes whose configured code system matches\n        this OID are considered matches. When None, any code system\n        is accepted \u2014 use None when vendor coding practice is too\n        varied to rely on the codeSystem attribute, and document\n        the intent with a comment at the call site.\n\n        For rules where the OID encodes semantic meaning (e.g.\n        SNOMED_OID on observation/value means \"organism/substance\n        result codes specifically\"), retain the OID and document\n        why. For rules where the OID is a validity guard on a\n        structurally unambiguous location (e.g. RxNorm on\n        manufacturedMaterial/code), None is acceptable because the\n        XPath already constrains the match location sufficiently.\n\n    translation_xpath:\n        XPath expression targeting translation elements to check\n        when the primary code_xpath produces no match. Handles the\n        common real-world pattern where the IG-expected code system\n        appears in <translation> rather than at the primary\n        location (e.g. local code as primary, LOINC in translation).\n\n    translation_code_system_oid:\n        OID for translation code matching. Same semantics as\n        code_system_oid. When None, any code system in the\n        translation is accepted.\n\n    prune_container_xpath:\n        XPath expression (relative to <entry>) identifying the\n        container elements to prune within a matched entry. When\n        set, only containers that contain a matched code element\n        are kept; the rest are removed. When None, the matched\n        entry is kept whole \u2014 no intra-entry pruning is performed.\n\n        Used for sections where entries contain panels of\n        sub-observations (Results organizer/component, Vital Signs\n        organizer/component) and each sub-observation should be\n        individually retained or removed.\n\n    prune_container_guard_xpath:\n        XPath expression (relative to a prune_container_xpath\n        container) that gates whether the container is eligible for\n        pruning at all. When set, a container is only pruned when\n        this xpath matches *inside* it AND it holds no matched code\n        element; a container that does not match the guard is\n        retained as shared, organizer-scoped context.\n\n        This exists because an organizer may carry sibling\n        components that are not themselves match candidates but\n        apply to every observation in the battery. The canonical\n        case is the Results Specimen Collection Procedure (ID)\n        (2.16.840.1.113883.10.20.22.4.415) \u2014 a <component><procedure>\n        with fixed code 17636008 that carries the specimen collection\n        date, body site, and source. It is unmatchable by\n        construction (its code is never a configured trigger), so the\n        component-level prune would drop it even when a Result\n        Observation in the same organizer is retained, silently\n        losing the very context a PHA keys a case to.\n\n        The guard is deliberately specific to the match target\n        (Result Observation V3), not \"any observation\": Laboratory\n        Result Status (...4.418) is itself an <observation> under a\n        sibling component and must also survive as shared context.\n        Keying the guard on the Result Observation V3 templateId\n        retains those siblings while still pruning non-matching\n        Result Observations.\n\n        When None, every container in prune_container_xpath is\n        eligible for pruning (the original behavior). Default None.\n\n    require_value_set_attr:\n        When True, a code element only qualifies as a match\n        candidate if it also carries an sdtc:valueSet attribute.\n\n        This guard is specifically for result observation value\n        elements where the presence of sdtc:valueSet is the\n        structural indicator that a code was placed there as an\n        RCTC trigger code rather than as a plain clinical finding\n        value. Per CONF:4527-443 (STU 3.1.1), sdtc:valueSet SHALL\n        be present on genuine trigger code values.\n\n        Without this guard, generic SNOMED qualifier codes like\n        260373001 \"Detected (qualifier value)\" \u2014 which appear as\n        plain observation values on any positive test \u2014 would match\n        the organism/substance rule and cause unrelated result\n        entries to be retained. The sdtc:valueSet attribute is\n        absent on those elements, so the guard correctly filters\n        them out while still matching codes like 5247005 \"Bordetella\n        pertussis (organism)\" that are genuine RCTC trigger values\n        and do carry sdtc:valueSet.\n\n        Default False. Only set to True on rules targeting\n        observation/value where this distinction matters.\n\n    tier:\n        IG conformance tier for this rule. Used in match provenance\n        comments to indicate how the rule relates to the spec:\n\n    1. SHALL: directly mandated by the IG. The primary conformant path.\n    If a sender follows the spec, this rule matches.\n\n    2. SHOULD/MAY: permitted by the IG but not required. Handles\n    optional patterns (translations, alternate code locations) that\n    conformant senders may or may not use.\n\n    3. HEURISTIC: not IG-conformant but observed in real EHR output.\n    Accommodates vendor variance. Each tier 3 rule should carry a\n    comment explaining what real-world pattern it was written for.\n\n    <br>\n\n    <p>Surfaces in XML match comments as (T1), (T2), or (T3) so\n    readers can immediately tell whether a match fired on a\n    spec-mandated path or a heuristic accommodation.</p>\n\n    <p>Default 1.</p>\n\n    preserve_whole_entry:\n        When True, a matched entry is kept entirely intact \u2014\n        all child elements including entryRelationship chains,\n        performers, authors, participants, and nested clinical\n        statements are preserved without pruning.\n\n        Use this for clinical acts where the entry is the natural\n        unit of preservation and intra-entry pruning would destroy\n        clinical meaning. The canonical cases are:\n\n          - Medication Activity: entryRelationship[@typeCode='CAUS']\n            carries Reaction Observation (V2) \u2014 adverse event\n            information that belongs with the medication record\n            per CONF:1098-7552 (MAY, Medication Activity V2).\n          - Procedure Activity: entryRelationship[@typeCode='COMP']\n            carries Reaction Observation (V2) per CONF:1098-32475\n            (MAY, Procedure Activity Procedure V2).\n          - Immunization Activity: entryRelationship carries\n            Reaction Observation (V2) per the Immunization Activity\n            V3 template context table.\n          - Social History structured entries (Travel History,\n            Exposure, Occupation): all meaningful content lives in\n            <participant> and nested entryRelationships, not in the\n            top-level coded elements. Preserving only the match path\n            would strip the location, employer, or agent information\n            that makes the entry useful to the PHA.\n\n        When True, prune_container_xpath is ignored \u2014 there is no\n        intra-entry pruning to perform. The match fires, the entry\n        is kept whole.\n\n        Default False.",
           "parsed_docstring": {
             "summary": "Each `<section>` has its own rules for their `<entry>`s; this object memorializes those rules.",
             "description": "Rules are evaluated in list order with structural precedence: if a\nrule's `code_xpath` finds code-bearing elements in an entry (candidates),\nthat rule claims the entry regardless of whether any codes matched \u2014\nsubsequent rules are not evaluated. This prevents fallback rules from\nrunning on entries that were already examined by a more specific rule.",
@@ -9472,7 +9579,25 @@
               {
                 "name": "tier",
                 "type": "",
-                "description": "IG conformance tier for this rule. Used in match provenance\ncomments to indicate how the rule relates to the spec:\n\n       1. SHALL: directly mandated by the IG. The primary conformant path. If a sender follows the spec, this rule matches.\n\n       2. SHOULD/MAY: permitted by the IG but not required. Handles optional patterns (translations, alternate code locations) that conformant senders may or may not use.\n\n       3. HEURISTIC: not IG-conformant but observed in real EHR output. Accommodates vendor variance. Each tier 3 rule should carry a comment explaining what real-world pattern it was written for.\nSurfaces in XML match comments as (T1), (T2), or (T3) so readers can immediately tell whether a match fired on a spec-mandated path or a heuristic accommodation.\nDefault 1.",
+                "description": "IG conformance tier for this rule. Used in match provenance\ncomments to indicate how the rule relates to the spec:",
+                "default": ""
+              },
+              {
+                "name": "1. SHALL",
+                "type": "",
+                "description": "directly mandated by the IG. The primary conformant path. If a sender follows the spec, this rule matches.",
+                "default": ""
+              },
+              {
+                "name": "2. SHOULD/MAY",
+                "type": "",
+                "description": "permitted by the IG but not required. Handles optional patterns (translations, alternate code locations) that conformant senders may or may not use.",
+                "default": ""
+              },
+              {
+                "name": "3. HEURISTIC",
+                "type": "",
+                "description": "not IG-conformant but observed in real EHR output. Accommodates vendor variance. Each tier 3 rule should carry a comment explaining what real-world pattern it was written for.\n<br>\n<p>Surfaces in XML match comments as (T1), (T2), or (T3) so readers can immediately tell whether a match fired on a spec-mandated path or a heuristic accommodation.</p>\n<p>Default 1.</p>",
                 "default": ""
               },
               {
@@ -9565,7 +9690,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 281,
+          "lineno": 283,
           "methods": [
             {
               "name": "__init__",
@@ -9625,7 +9750,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 313,
+          "lineno": 315,
           "methods": [
             {
               "name": "__init__",
@@ -9670,21 +9795,21 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 328,
+          "lineno": 330,
           "methods": []
         },
         {
           "name": "SectionOutcome",
           "type": "class",
-          "docstring": "Describes what the refiner actually did to a section at runtime.\n\nDistinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG:\n    include=False. Section reduced to a minimal stub regardless\n    of action/narrative settings.\n\n- RETAINED:\n    include=True, action=\"retain\", narrative=\"retain\". Section\n    with coded entries left untouched because the jurisdiction\n    asked us to.\n\n- RETAINED_NARRATIVE_REMOVED:\n    include=True, action=\"retain\", narrative=\"remove\". Coded\n    entries kept as provided, narrative replaced with the\n    removal notice.\n\n- NARRATIVE_ONLY_RETAINED:\n    include=True, narrative=\"retain\", section is narrative-only\n    (the eICR spec defines no entry match rules for it). There\n    was no coded data to refine \u2014 the section is conveyed\n    entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED:\n    this is the spec's structural reality, not a configuration\n    choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED:\n    include=True, narrative=\"remove\", section is narrative-only.\n    Narrative replaced with the removal notice; there are no\n    coded entries to preserve. Distinct from\n    RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" with matches). Entries filtered to those\n    matching the configuration, original narrative preserved\n    for context.\n\n- REFINED_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative=\"remove\". Entries\n    filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED:\n    include=True, action=\"refine\", narrative=\"refine\" (future).\n    Entries filtered, narrative reconstructed from surviving\n    entries. Not yet reachable \u2014 depends on narrative\n    reconstruction work landing.\n\n- REFINED_RECONSTRUCT_FALLBACK_RETAINED:\n    include=True, action=\"refine\", narrative=\"reconstruct\".\n    The jurisdiction asked for narrative reconstruction but\n    the engine couldn't produce one \u2014 either no entries\n    survived to rebuild from (no-match) or the section has\n    no registered reconstructor and the matched-path\n    fallback fired. Rather than discard the most informative\n    state available, the engine keeps the original narrative\n    in place. Distinct from the plain RETAINED / REFINED_*\n    outcomes so the provenance footnote can tell a reviewer\n    \"you asked for reconstruct; we couldn't, so we kept the\n    original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" without matches \u2192 narrative removed; see\n    sibling outcome). Matching produced nothing, but the\n    jurisdiction asked us to keep the original narrative \u2014\n    entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative in\n    (\"remove\" / \"keep_on_match\"). Matching produced nothing;\n    entries are pruned and the narrative is replaced with\n    the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
+          "docstring": "Describes what the refiner actually did to a section at runtime.\n\nDistinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG:\n    include=False. Section reduced to a minimal stub regardless\n    of action/narrative settings.\n\n- RETAINED:\n    include=True, action=\"retain\", narrative=\"retain\". Section\n    with coded entries left untouched because the jurisdiction\n    asked us to.\n\n- RETAINED_NARRATIVE_REMOVED:\n    include=True, action=\"retain\", narrative=\"remove\". Coded\n    entries kept as provided, narrative replaced with the\n    removal notice.\n\n- NARRATIVE_ONLY_RETAINED:\n    include=True, narrative=\"retain\", section is narrative-only\n    (the eICR spec defines no entry match rules for it). There\n    was no coded data to refine \u2014 the section is conveyed\n    entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED:\n    this is the spec's structural reality, not a configuration\n    choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED:\n    include=True, narrative=\"remove\", section is narrative-only.\n    Narrative replaced with the removal notice; there are no\n    coded entries to preserve. Distinct from\n    RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" with matches). Entries filtered to those\n    matching the configuration, original narrative preserved\n    for context.\n\n- REFINED_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative=\"remove\". Entries\n    filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED:\n    include=True, action=\"refine\", narrative=\"refine\" (future).\n    Entries filtered, narrative reconstructed from surviving\n    entries. Not yet reachable \u2014 depends on narrative\n    reconstruction work landing.\n\n- REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED:\n    include=True, action=\"refine\", narrative=\"reconstruct\".\n    The jurisdiction asked for narrative reconstruction but\n    the engine couldn't produce one because no entries\n    survived to rebuild from (no-match) or the section has\n    no registered reconstructor. Rather than discard the most\n    informative state available, the engine keeps the original\n    narrative in place. Distinct from the plain RETAINED / REFINED_*\n    outcomes so the provenance footnote can tell a reviewer\n    \"you asked for reconstruct; we couldn't, so we kept the\n    original.\"\n\n- REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED:\n    include=True, action=\"refine\", narrative=\"reconstruct\".\n    The jurisdiction asked for narrative reconstruction but\n    the engine couldn't produce one because the section has\n    no registered reconstructor. Rather than discard the most\n    informative state available, the engine keeps the original\n    narrative in place. Distinct from the plain RETAINED / REFINED_*\n    outcomes so the provenance footnote can tell a reviewer\n    \"you asked for reconstruct; we couldn't, so we kept the\n    original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED:\n    include=True, action=\"refine\", narrative=\"retain\" (or\n    \"keep_on_match\" without matches \u2192 narrative removed; see\n    sibling outcome). Matching produced nothing, but the\n    jurisdiction asked us to keep the original narrative \u2014\n    entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED:\n    include=True, action=\"refine\", narrative in\n    (\"remove\" / \"keep_on_match\"). Matching produced nothing;\n    entries are pruned and the narrative is replaced with\n    the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
           "parsed_docstring": {
             "summary": "Describes what the refiner actually did to a section at runtime.",
-            "description": "Distinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG: include=False. Section reduced to a minimal stub regardless of action/narrative settings.\n\n- RETAINED: include=True, action=\"retain\", narrative=\"retain\". Section with coded entries left untouched because the jurisdiction asked us to.\n\n- RETAINED_NARRATIVE_REMOVED: include=True, action=\"retain\", narrative=\"remove\". Coded entries kept as provided, narrative replaced with the removal notice.\n\n- NARRATIVE_ONLY_RETAINED: include=True, narrative=\"retain\", section is narrative-only (the eICR spec defines no entry match rules for it). There was no coded data to refine \u2014 the section is conveyed entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED: this is the spec's structural reality, not a configuration choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED: include=True, narrative=\"remove\", section is narrative-only. Narrative replaced with the removal notice; there are no coded entries to preserve. Distinct from RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES: include=True, action=\"refine\", narrative=\"retain\" (or \"keep_on_match\" with matches). Entries filtered to those matching the configuration, original narrative preserved for context.\n\n- REFINED_NARRATIVE_REMOVED: include=True, action=\"refine\", narrative=\"remove\". Entries filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED: include=True, action=\"refine\", narrative=\"refine\" (future). Entries filtered, narrative reconstructed from surviving entries. Not yet reachable \u2014 depends on narrative reconstruction work landing.\n\n- REFINED_RECONSTRUCT_FALLBACK_RETAINED: include=True, action=\"refine\", narrative=\"reconstruct\". The jurisdiction asked for narrative reconstruction but the engine couldn't produce one \u2014 either no entries survived to rebuild from (no-match) or the section has no registered reconstructor and the matched-path fallback fired. Rather than discard the most informative state available, the engine keeps the original narrative in place. Distinct from the plain RETAINED / REFINED_* outcomes so the provenance footnote can tell a reviewer \"you asked for reconstruct; we couldn't, so we kept the original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED: include=True, action=\"refine\", narrative=\"retain\" (or \"keep_on_match\" without matches \u2192 narrative removed; see sibling outcome). Matching produced nothing, but the jurisdiction asked us to keep the original narrative \u2014 entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED: include=True, action=\"refine\", narrative in (\"remove\" / \"keep_on_match\"). Matching produced nothing; entries are pruned and the narrative is replaced with the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
+            "description": "Distinct from the configured action and narrative settings, which\ndescribe what the jurisdiction asked for. Most outcomes confirm the\nconfiguration; the no-match variants below describe what was done\nwith the section when matching produced nothing.\n\nThe ten outcomes cover the full configuration space (current and\nfuture):\n\n- REMOVED_BY_CONFIG: include=False. Section reduced to a minimal stub regardless of action/narrative settings.\n\n- RETAINED: include=True, action=\"retain\", narrative=\"retain\". Section with coded entries left untouched because the jurisdiction asked us to.\n\n- RETAINED_NARRATIVE_REMOVED: include=True, action=\"retain\", narrative=\"remove\". Coded entries kept as provided, narrative replaced with the removal notice.\n\n- NARRATIVE_ONLY_RETAINED: include=True, narrative=\"retain\", section is narrative-only (the eICR spec defines no entry match rules for it). There was no coded data to refine \u2014 the section is conveyed entirely through its <text> element \u2014 so the only decision\n    was what to do with the narrative. Distinct from RETAINED: this is the spec's structural reality, not a configuration choice the jurisdiction made.\n\n- NARRATIVE_ONLY_REMOVED: include=True, narrative=\"remove\", section is narrative-only. Narrative replaced with the removal notice; there are no coded entries to preserve. Distinct from RETAINED_NARRATIVE_REMOVED for the same reason as above.\n\n- REFINED_WITH_MATCHES: include=True, action=\"refine\", narrative=\"retain\" (or \"keep_on_match\" with matches). Entries filtered to those matching the configuration, original narrative preserved for context.\n\n- REFINED_NARRATIVE_REMOVED: include=True, action=\"refine\", narrative=\"remove\". Entries filtered, narrative replaced with the removal notice.\n\n- REFINED_NARRATIVE_RECONSTRUCTED: include=True, action=\"refine\", narrative=\"refine\" (future). Entries filtered, narrative reconstructed from surviving entries. Not yet reachable \u2014 depends on narrative reconstruction work landing.\n\n- REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED: include=True, action=\"refine\", narrative=\"reconstruct\". The jurisdiction asked for narrative reconstruction but the engine couldn't produce one because no entries survived to rebuild from (no-match) or the section has no registered reconstructor. Rather than discard the most informative state available, the engine keeps the original narrative in place. Distinct from the plain RETAINED / REFINED_* outcomes so the provenance footnote can tell a reviewer \"you asked for reconstruct; we couldn't, so we kept the original.\"\n\n- REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED: include=True, action=\"refine\", narrative=\"reconstruct\". The jurisdiction asked for narrative reconstruction but the engine couldn't produce one because the section has no registered reconstructor. Rather than discard the most informative state available, the engine keeps the original narrative in place. Distinct from the plain RETAINED / REFINED_* outcomes so the provenance footnote can tell a reviewer \"you asked for reconstruct; we couldn't, so we kept the original.\"\n\n- REFINED_NO_MATCHES_NARRATIVE_RETAINED: include=True, action=\"refine\", narrative=\"retain\" (or \"keep_on_match\" without matches \u2192 narrative removed; see sibling outcome). Matching produced nothing, but the jurisdiction asked us to keep the original narrative \u2014 entries are pruned, narrative is preserved.\n\n- REFINED_NO_MATCHES_NARRATIVE_REMOVED: include=True, action=\"refine\", narrative in (\"remove\" / \"keep_on_match\"). Matching produced nothing; entries are pruned and the narrative is replaced with the removal notice. For \"keep_on_match\" this is the\n    negative branch: no matches \u2192 narrative removed.\n\nThe combination (action=\"retain\", narrative in (\"reconstruct\",\n\"keep_on_match\")) is invalid because both require refined entries\nto be meaningful; the API layer rejects it (see\n`_raise_if_invalid_narrative_action_combo` in\n`api/v1/configurations/sections.py`).",
             "params": [],
             "returns": null,
             "raises": []
           },
-          "lineno": 353,
+          "lineno": 355,
           "methods": []
         },
         {
@@ -9747,7 +9872,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 457,
+          "lineno": 474,
           "methods": [
             {
               "name": "__init__",
@@ -9865,7 +9990,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 518,
+          "lineno": 535,
           "methods": [
             {
               "name": "__init__",
@@ -9935,7 +10060,7 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 574,
+          "lineno": 591,
           "methods": [
             {
               "name": "__init__",
@@ -9967,7 +10092,7 @@
         {
           "name": "SectionRunResult",
           "type": "class",
-          "docstring": "What the section processing engines actually did at runtime.\n\nReturned by `entry_matching.process` and `generic_matching.process`\n(and surfaced through the `process_section` dispatcher) so that\n`refine.py` can map the structural facts to a user-facing\n`SectionOutcome` for the provenance footnote.\n\nThe split between this dataclass and `SectionOutcome` is\ndeliberate: the matching engines report **facts** (whether matches\nwere found, what they did to the narrative), and the orchestrator\ninterprets those facts into the user-facing outcome name. Keeping\ninterpretation out of the engines means the matching code stays\nstructural and any future policy decisions about how to label\noutcomes can land in one place (refine._interpret_run_result)\nwithout touching the engines.\n\nAttributes:\n    matches_found: True if the matching step found at least one\n        entry to keep. False when filtering removed everything;\n        the engine still resolves the narrative according to the\n        configured setting (notably \"keep_on_match\", which removes\n        the narrative on the no-match branch).\n    narrative_disposition: What the engine did with the section's\n        <text> element.\n\n          - \"retained\":      original narrative left in place\n          - \"removed\":       narrative replaced with the removal notice\n          - \"reconstructed\": narrative rebuilt from surviving entries\n          - \"reconstruct_fallback_retained\": the jurisdiction asked\n            for reconstruction but the engine couldn't run it (no\n            entries to build from, or no registered reconstructor),\n            so the original narrative was kept instead \u2014 see\n            SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED.\n\n        The orchestrator uses this together with `matches_found`\n        to choose the user-facing `SectionOutcome`.",
+          "docstring": "What the section processing engines actually did at runtime.\n\nReturned by `entry_matching.process` and `generic_matching.process`\n(and surfaced through the `process_section` dispatcher) so that\n`refine.py` can map the structural facts to a user-facing\n`SectionOutcome` for the provenance footnote.\n\nThe split between this dataclass and `SectionOutcome` is\ndeliberate: the matching engines report **facts** (whether matches\nwere found, what they did to the narrative), and the orchestrator\ninterprets those facts into the user-facing outcome name. Keeping\ninterpretation out of the engines means the matching code stays\nstructural and any future policy decisions about how to label\noutcomes can land in one place (refine._interpret_run_result)\nwithout touching the engines.\n\nAttributes:\n    matches_found: True if the matching step found at least one\n        entry to keep. False when filtering removed everything;\n        the engine still resolves the narrative according to the\n        configured setting (notably \"keep_on_match\", which removes\n        the narrative on the no-match branch).\n    narrative_disposition: What the engine did with the section's\n        <text> element.\n\n          - \"retained\":      original narrative left in place\n          - \"removed\":       narrative replaced with the removal notice\n          - \"reconstructed\": narrative rebuilt from surviving entries\n          - \"reconstruct_unavailable\": the jurisdiction asked\n            for reconstruction but the engine couldn't run it since there\n            was no registered reconstructor, so the original narrative was\n            kept instead \u2014 see SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED.\n          - \"reconstruct_no_entries\": the jurisdiction asked\n            for reconstruction but the engine couldn't run it because there\n            were no entries to build from),\n            so the original narrative was kept instead \u2014 see\n            SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.\n\n        The orchestrator uses this together with `matches_found`\n        to choose the user-facing `SectionOutcome`.",
           "parsed_docstring": {
             "summary": "What the section processing engines actually did at runtime.",
             "description": "Returned by `entry_matching.process` and `generic_matching.process`\n(and surfaced through the `process_section` dispatcher) so that\n`refine.py` can map the structural facts to a user-facing\n`SectionOutcome` for the provenance footnote.\n\nThe split between this dataclass and `SectionOutcome` is\ndeliberate: the matching engines report **facts** (whether matches\nwere found, what they did to the narrative), and the orchestrator\ninterprets those facts into the user-facing outcome name. Keeping\ninterpretation out of the engines means the matching code stays\nstructural and any future policy decisions about how to label\noutcomes can land in one place (refine._interpret_run_result)\nwithout touching the engines.",
@@ -9981,14 +10106,14 @@
               {
                 "name": "narrative_disposition",
                 "type": "",
-                "description": "What the engine did with the section's <text> element.\n         - \"retained\":      original narrative left in place\n         - \"removed\":       narrative replaced with the removal notice\n         - \"reconstructed\": narrative rebuilt from surviving entries\n         - \"reconstruct_fallback_retained\": the jurisdiction asked for reconstruction but the engine couldn't run it (no entries to build from, or no registered reconstructor), so the original narrative was kept instead \u2014 see SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED.\nThe orchestrator uses this together with `matches_found` to choose the user-facing `SectionOutcome`.",
+                "description": "What the engine did with the section's <text> element.\n         - \"retained\":      original narrative left in place\n         - \"removed\":       narrative replaced with the removal notice\n         - \"reconstructed\": narrative rebuilt from surviving entries\n         - \"reconstruct_unavailable\": the jurisdiction asked for reconstruction but the engine couldn't run it since there was no registered reconstructor, so the original narrative was kept instead \u2014 see SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED.\n         - \"reconstruct_no_entries\": the jurisdiction asked for reconstruction but the engine couldn't run it because there were no entries to build from), so the original narrative was kept instead \u2014 see SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.\nThe orchestrator uses this together with `matches_found` to choose the user-facing `SectionOutcome`.",
                 "default": ""
               }
             ],
             "returns": null,
             "raises": []
           },
-          "lineno": 591,
+          "lineno": 608,
           "methods": [
             {
               "name": "__init__",
@@ -10001,7 +10126,7 @@
                 "raises": []
               },
               "lineno": 0,
-              "signature": "__init__(matches_found: bool, narrative_disposition: Literal['retained', 'removed', 'reconstructed', 'reconstruct_fallback_retained']) -> None",
+              "signature": "__init__(matches_found: bool, narrative_disposition: Literal['retained', 'removed', 'reconstructed', 'reconstruct_unavailable', 'reconstruct_no_entries']) -> None",
               "parameters": [
                 {
                   "name": "self",
@@ -10015,7 +10140,7 @@
                 },
                 {
                   "name": "narrative_disposition",
-                  "annotation": "Literal['retained', 'removed', 'reconstructed', 'reconstruct_fallback_retained']",
+                  "annotation": "Literal['retained', 'removed', 'reconstructed', 'reconstruct_unavailable', 'reconstruct_no_entries']",
                   "default": null
                 }
               ]
@@ -10124,10 +10249,10 @@
         {
           "name": "process",
           "type": "function",
-          "docstring": "Process a section using IG-driven entry match rules.\n\nThis is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot\n   interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or\n   whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving\n   entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this\n                     honors the user's preference for the most\n                     informative state available rather than\n                     swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice\n                     (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or\n`REFINED_RECONSTRUCT_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.\n\nReturns:\n    SectionRunResult reporting whether matches were found and\n    what the engine did with the narrative.",
+          "docstring": "Process a section using IG-driven entry match rules.\n\nThis is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot\n   interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or\n   whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving\n   entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this\n                     honors the user's preference for the most\n                     informative state available rather than\n                     swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice\n                     (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`,\n`REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED`, or\n`REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.\n\nReturns:\n    SectionRunResult reporting whether matches were found and\n    what the engine did with the narrative.",
           "parsed_docstring": {
             "summary": "Process a section using IG-driven entry match rules.",
-            "description": "This is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this honors the user's preference for the most informative state available rather than swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or\n`REFINED_RECONSTRUCT_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.\n\nReturns: SectionRunResult reporting whether matches were found and what the engine did with the narrative.",
+            "description": "This is the section-aware path. It:\n\n1. Strips source document comments before matching so they cannot interfere with candidate gathering\n2. Finds matching entries using the section's rule list\n3. Prunes non-matching entries (entry-level, container-level, or whole-entry preservation depending on rule configuration)\n4. Enriches displayName on all surviving code-bearing elements\n5. Injects per-entry match provenance comments above surviving entries \u2014 added after source comment cleanup so they survive\n6. Handles narrative `<text>` based on the `narrative` action\n\nNo UUID swap needed \u2014 match rules only search within `<entry>`\nelements, so the section's own `<code>` is never at risk of matching.\n\nIf no entries match, all `<entry>` children are pruned and the\nsection's `<text>` is handled per the `narrative` setting:\n\n- \"retain\"           \u2192 narrative left intact\n- \"remove\"           \u2192 narrative replaced with the removal notice\n- \"reconstruct\"      \u2192 falls back to RETAIN the original narrative\n                     (nothing to rebuild from). NOTE: this honors the user's preference for the most informative state available rather than swapping in a removal notice.\n- \"keep_on_match\"    \u2192 narrative replaced with the removal notice (no matches means the negative branch)\n\nThe orchestrator maps the resulting `SectionRunResult` to\n`REFINED_NO_MATCHES_NARRATIVE_RETAINED`,\n`REFINED_NO_MATCHES_NARRATIVE_REMOVED`,\n`REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED`, or\n`REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED` \u2014 see\n`refine._interpret_run_result`.\n\nReturns: SectionRunResult reporting whether matches were found and what the engine did with the narrative.",
             "params": [],
             "returns": null,
             "raises": []
@@ -11274,6 +11399,19 @@
           "lineno": 1341
         },
         {
+          "name": "NarrativeReconstructionFallback",
+          "type": "type alias",
+          "docstring": "",
+          "parsed_docstring": {
+            "summary": "",
+            "description": "",
+            "params": [],
+            "returns": null,
+            "raises": []
+          },
+          "lineno": 1349
+        },
+        {
           "name": "reconstruct_narrative",
           "type": "function",
           "docstring": "Reconstruct a section's narrative `<text>` from its surviving entries.\n\nDispatches on the section's LOINC code. Returns a detached, namespace-\nqualified `<text>` ready to replace the section's existing narrative, or\nNone when the section has no registered reconstructor or nothing\nsurvived to reconstruct \u2014 in which case the caller falls back to the\nremoval notice rather than leaving a stale narrative.\n\nThis function MUTATES `section`: it strips the now-dangling narrative\nreferences off the surviving entries, relinks each one to the row that\nrepresents it, and stamps every entry with typeCode=\"DRIV\" (the narrative\nis derived from the entries). See ADR 0011. It is no longer a pure read.\n\nArgs:\n    section: The post-prune, post-enrich `<section>`.\n    augmentation_timestamp: The refinement run's HL7 V3 time value,\n        used to stamp the minted row IDs to the same run as the\n        section's provenance footnote.\n\nReturns:\n    A detached `<text>`, or None.",
@@ -11297,8 +11435,8 @@
             "returns": null,
             "raises": []
           },
-          "lineno": 1350,
-          "signature": "reconstruct_narrative(section: _Element, *, augmentation_timestamp: str) -> _Element | None",
+          "lineno": 1354,
+          "signature": "reconstruct_narrative(section: _Element, *, augmentation_timestamp: str) -> _Element | NarrativeReconstructionFallback",
           "parameters": [
             {
               "name": "section",
@@ -11311,7 +11449,7 @@
               "default": null
             }
           ],
-          "return_annotation": "_Element | None"
+          "return_annotation": "_Element | NarrativeReconstructionFallback"
         }
       ]
     },

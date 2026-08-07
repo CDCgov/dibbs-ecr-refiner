@@ -216,22 +216,24 @@ class EntryMatchRule:
             IG conformance tier for this rule. Used in match provenance
             comments to indicate how the rule relates to the spec:
 
-            1. SHALL: directly mandated by the IG. The primary conformant path.
-            If a sender follows the spec, this rule matches.
+        1. SHALL: directly mandated by the IG. The primary conformant path.
+        If a sender follows the spec, this rule matches.
 
-            2. SHOULD/MAY: permitted by the IG but not required. Handles
-            optional patterns (translations, alternate code locations) that
-            conformant senders may or may not use.
+        2. SHOULD/MAY: permitted by the IG but not required. Handles
+        optional patterns (translations, alternate code locations) that
+        conformant senders may or may not use.
 
-            3. HEURISTIC: not IG-conformant but observed in real EHR output.
-            Accommodates vendor variance. Each tier 3 rule should carry a
-            comment explaining what real-world pattern it was written for.
+        3. HEURISTIC: not IG-conformant but observed in real EHR output.
+        Accommodates vendor variance. Each tier 3 rule should carry a
+        comment explaining what real-world pattern it was written for.
 
-            Surfaces in XML match comments as (T1), (T2), or (T3) so
-            readers can immediately tell whether a match fired on a
-            spec-mandated path or a heuristic accommodation.
+        <br>
 
-            Default 1.
+        <p>Surfaces in XML match comments as (T1), (T2), or (T3) so
+        readers can immediately tell whether a match fired on a
+        spec-mandated path or a heuristic accommodation.</p>
+
+        <p>Default 1.</p>
 
         preserve_whole_entry:
             When True, a matched entry is kept entirely intact —
@@ -407,15 +409,25 @@ class SectionOutcome(StrEnum):
         entries. Not yet reachable — depends on narrative
         reconstruction work landing.
 
-    - REFINED_RECONSTRUCT_FALLBACK_RETAINED:
+    - REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED:
         include=True, action="refine", narrative="reconstruct".
         The jurisdiction asked for narrative reconstruction but
-        the engine couldn't produce one — either no entries
+        the engine couldn't produce one because no entries
         survived to rebuild from (no-match) or the section has
-        no registered reconstructor and the matched-path
-        fallback fired. Rather than discard the most informative
-        state available, the engine keeps the original narrative
-        in place. Distinct from the plain RETAINED / REFINED_*
+        no registered reconstructor. Rather than discard the most
+        informative state available, the engine keeps the original
+        narrative in place. Distinct from the plain RETAINED / REFINED_*
+        outcomes so the provenance footnote can tell a reviewer
+        "you asked for reconstruct; we couldn't, so we kept the
+        original."
+
+    - REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED:
+        include=True, action="refine", narrative="reconstruct".
+        The jurisdiction asked for narrative reconstruction but
+        the engine couldn't produce one because the section has
+        no registered reconstructor. Rather than discard the most
+        informative state available, the engine keeps the original
+        narrative in place. Distinct from the plain RETAINED / REFINED_*
         outcomes so the provenance footnote can tell a reviewer
         "you asked for reconstruct; we couldn't, so we kept the
         original."
@@ -449,7 +461,12 @@ class SectionOutcome(StrEnum):
     REFINED_WITH_MATCHES = "refined_with_matches"
     REFINED_NARRATIVE_REMOVED = "refined_narrative_removed"
     REFINED_NARRATIVE_RECONSTRUCTED = "refined_narrative_reconstructed"
-    REFINED_RECONSTRUCT_FALLBACK_RETAINED = "refined_reconstruct_fallback_retained"
+    REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED = (
+        "refined_reconstruct_no_matches_retained"
+    )
+    REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED = (
+        "refined_reconstruct_unavailable_retained"
+    )
     REFINED_NO_MATCHES_NARRATIVE_RETAINED = "refined_no_matches_narrative_retained"
     REFINED_NO_MATCHES_NARRATIVE_REMOVED = "refined_no_matches_narrative_removed"
 
@@ -619,11 +636,15 @@ class SectionRunResult:
               - "retained":      original narrative left in place
               - "removed":       narrative replaced with the removal notice
               - "reconstructed": narrative rebuilt from surviving entries
-              - "reconstruct_fallback_retained": the jurisdiction asked
-                for reconstruction but the engine couldn't run it (no
-                entries to build from, or no registered reconstructor),
+              - "reconstruct_unavailable": the jurisdiction asked
+                for reconstruction but the engine couldn't run it since there
+                was no registered reconstructor, so the original narrative was
+                kept instead — see SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED.
+              - "reconstruct_no_entries": the jurisdiction asked
+                for reconstruction but the engine couldn't run it because there
+                were no entries to build from),
                 so the original narrative was kept instead — see
-                SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED.
+                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.
 
             The orchestrator uses this together with `matches_found`
             to choose the user-facing `SectionOutcome`.
@@ -631,5 +652,9 @@ class SectionRunResult:
 
     matches_found: bool
     narrative_disposition: Literal[
-        "retained", "removed", "reconstructed", "reconstruct_fallback_retained"
+        "retained",
+        "removed",
+        "reconstructed",
+        "reconstruct_unavailable",
+        "reconstruct_no_entries",
     ]
