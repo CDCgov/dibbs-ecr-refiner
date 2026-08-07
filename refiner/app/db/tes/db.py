@@ -258,11 +258,11 @@ async def _get_tes_update_diff_db(
     db: AsyncDatabaseConnection, cur_tes_id: UUID, prev_tes_id: UUID
 ) -> list[DbTesConditionUpdate]:
     """
-    Returns all TES update details between the curent and previous ID.
+    Returns all TES update details between the current and previous ID.
 
     Args:
         db (AsyncDatabaseConnection): The DB connection pool.
-        cur_tes_id (UUID): The curent TES version ID.
+        cur_tes_id (UUID): The current TES version ID.
         prev_tes_id (UUID): The PREVIOUS TES version ID.
 
     Returns:
