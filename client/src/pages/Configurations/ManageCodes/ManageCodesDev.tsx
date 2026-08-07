@@ -194,7 +194,7 @@ function CodeInformationBar({ id }: { id: string }) {
   if (isError) return 'Error!';
 
   return (
-    <div className="bg-blue-cool-5 border-blue-cool-20! flex h-20 w-full flex-col gap-2 border px-10 py-4">
+    <div className="bg-blue-cool-5 border-blue-cool-20! flex min-h-20 w-full flex-col gap-2 border px-10 py-4">
       {isPending ? (
         <div className="absolute inset-0 top-10 flex items-center justify-center">
           <Spinner />
