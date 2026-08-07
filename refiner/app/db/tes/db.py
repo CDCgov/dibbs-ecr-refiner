@@ -102,6 +102,54 @@ async def _get_baseline_tes_diff_db(
             return result
 
 
+async def _get_baseline_tes_update_condition_diff_db(
+    db: AsyncDatabaseConnection,
+    tes_record: DbTes,
+    cond_url: str,
+):
+    query = """
+        SELECT
+            cond.canonical_url,
+            cond.display_name AS condition_name,
+            COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'code', c.code,
+                        'system_name', s.display_name,
+                        'display', c.display
+                    )
+                ) FILTER (WHERE c.id IS NOT NULL),
+                '[]'::jsonb
+            ) AS added_codes,
+            '{}'::text[] as removed_codes
+        FROM conditions_codes cc
+        LEFT JOIN conditions cond ON cc.condition_id = cond.id
+        LEFT JOIN codes c ON cc.code_id = c.id
+        LEFT JOIN tes t ON cond.tes_id = t.id
+        LEFT JOIN systems s ON c.system_id = s.id
+        WHERE cond.tes_id = %(tes_id)s AND cond.canonical_url = %(cond_url)s
+        GROUP BY
+            cond.canonical_url,
+            cond.display_name;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur:
+            await cur.execute(
+                query,
+                {
+                    "tes_id": tes_record.id,
+                    "cond_url": cond_url,
+                },
+            )
+            result = await cur.fetchone()
+            if not result:
+                raise ValueError(
+                    f"Condition with URL {cond_url} not found for TES versions {tes_record.version} "
+                )
+            return result
+
+
 async def get_tes_update_condition_diff_db(
     db: AsyncDatabaseConnection,
     cur_tes_version: str,
@@ -120,12 +168,14 @@ async def get_tes_update_condition_diff_db(
     Returns:
         list[DbTes]: A list of all the relevant TES details needed for the diff page
     """
-    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
-    prev_tes_record = (
-        await _get_tes_by_version_number_db(db=db, version=prev_tes_version)
-        if prev_tes_version
-        else cur_tes_record
+    (cur_tes_record, prev_tes_record) = await _get_cur_and_prev_tes_records_db(
+        db=db, cur_tes_version=cur_tes_version, prev_tes_version=prev_tes_version
     )
+
+    if cur_tes_record.id == prev_tes_record.id:
+        return await _get_baseline_tes_update_condition_diff_db(
+            db, tes_record=cur_tes_record, cond_url=cond_url
+        )
 
     query = """
         WITH cur AS (
@@ -270,17 +320,32 @@ async def _get_tes_update_diff_db(
 
 
 async def get_tes_version_diff_db(
-    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str | None
+    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str
 ) -> list[DbTesConditionUpdate]:
     """
     Returns an array off all loaded TES version records.
     """
+    (cur_tes_record, prev_tes_record) = await _get_cur_and_prev_tes_records_db(
+        db=db, cur_tes_version=cur_tes_version, prev_tes_version=prev_tes_version
+    )
+    return await _get_tes_update_diff_db(
+        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
+    )
+
+
+async def _get_cur_and_prev_tes_records_db(
+    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str
+) -> tuple[DbTes, DbTes]:
+    """Get current and previous TES records, setting prev to the current if it's the baseline."""
     cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
     prev_tes_record = (
         await _get_tes_by_version_number_db(db=db, version=prev_tes_version)
         if prev_tes_version
         else cur_tes_record
     )
-    return await _get_tes_update_diff_db(
-        db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
-    )
+
+    print("prev_tes_version")
+    print(prev_tes_record)
+    print("current_tes_version")
+    print(cur_tes_record)
+    return (cur_tes_record, prev_tes_record)

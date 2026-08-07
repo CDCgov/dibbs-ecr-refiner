@@ -1,8 +1,5 @@
 import { ExternalLink } from '@components/ExternalLink';
-import {
-  useExportConditionDiff,
-  useGetTesDiffDetails,
-} from '../../api/tes/tes';
+import { useGetTesDiffDetails } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { TesDiffInformation } from '.';
 import { Button } from '@components/Button';
