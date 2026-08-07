@@ -30,7 +30,15 @@ export function VersionMenu({
           */}
         <div data-testid="selected-version-label" className="cursor-pointer">
           {status === 'draft' ? 'Editing' : 'Viewing'}:{' '}
-          <span className="font-bold">Version {currentVersion}</span>
+          <span className="font-bold">
+            Version {currentVersion}
+            {status === 'draft' && (
+              <span className="text-state-warning-darker font-normal italic">
+                {' '}
+                (draft)
+              </span>
+            )}
+          </span>
           <ArrowDropDownIcon />
         </div>
       </MenuButton>

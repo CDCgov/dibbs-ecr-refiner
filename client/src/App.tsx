@@ -16,6 +16,7 @@ import { AppUpdates } from './pages/AppUpdates';
 import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
 import { TesUpdates } from './pages/TesUpdates';
 import { CustomizeSections } from './pages/Configurations/CustomizeSections';
+import { Overrides } from './pages/Overrides';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -41,6 +42,7 @@ export function App() {
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
         <Route path="/activity" element={<ActivityLog />} />
+        <Route path="/overrides" element={<Overrides />} />
         <Route path="/tes-updates" element={<TesUpdates />} />
         <Route
           path="/configurations"

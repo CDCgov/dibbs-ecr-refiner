@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { Button } from '@components/Button';
 import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
-import { Checkbox } from '@components/Checkbox';
+
 import { Switch } from './Switch';
 import { NarrativeSelect } from './NarrativeSelect';
 import { useSectionUpdater } from './useSectionUpdater';
@@ -27,8 +27,8 @@ import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Tooltip } from '@components/Tooltip';
-import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import { KeepOnMatchModal } from './KeepOnMatchModal';
+import { InfoIcon } from '@components/Icons/InfoIcon';
 
 export interface SectionModalState {
   isOpen: boolean;
@@ -105,10 +105,16 @@ export function Sections({
               whether a virtualized list is appropriate for large section counts.
               */}
           <table className="w-full table-fixed">
-            <thead className="bg-gray-cool-5 sticky top-0 z-10">
-              <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
+            <thead className="bg-page-bg border-gray-cool-70 sticky top-0 z-10 border-b-2">
+              <tr className="text-gray-cool-60">
                 <th scope="col" className="w-20 py-3">
-                  Include
+                  <div className="flex justify-end gap-1 pr-2">
+                    <span>Include</span>
+                    <Tooltip
+                      position="top"
+                      label="Turn a section on to include it in the refined eICR, or off to leave it out entirely."
+                    />
+                  </div>
                 </th>
                 <th scope="col" className="w-70 text-left">
                   Section name
@@ -117,35 +123,37 @@ export function Sections({
                   <div className="flex justify-end gap-1">
                     <span>Coded data</span>
                     <Tooltip
-                      position="left"
-                      label="Keep all original coded data included in the section, or set to Refine to choose the data you want to retain."
+                      position="top"
+                      label="Turn on Refine to filter this section's coded entries down to the codes in your configuration. Off keeps all coded data."
                     />
                   </div>
                 </th>
                 <th scope="col" className="w-40">
-                  <div className="flex gap-1">
-                    <span>Narrative data</span>
-                    <Button
-                      variant="unstyled"
-                      type="button"
-                      onClick={() => setIsInfoOpen(true)}
-                      className="inline-flex cursor-pointer rounded-sm focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
-                    >
-                      <span aria-hidden>
-                        <QuestionIcon />
-                      </span>
-                      <span className="sr-only">More information</span>
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-1">
+                      <span>Narrative data</span>
+                      <Button
+                        variant="unstyled"
+                        type="button"
+                        onClick={() => setIsInfoOpen(true)}
+                        className="inline-flex cursor-pointer rounded-sm focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+                      >
+                        <span aria-hidden>
+                          <InfoIcon />
+                        </span>
+                        <span className="sr-only">More information</span>
+                      </Button>
+                    </div>
                   </div>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-gray-cool-20 divide-y">
               {configuration.section_processing.map((section) => (
-                <tr key={section.code} className="text-gray-cool-60">
+                <tr key={section.code} className="text-gray-cool-90">
                   <td>
                     <div className="flex justify-center p-8">
-                      <IncludeCheckbox
+                      <IncludeSwitch
                         configurationId={configuration.id}
                         currentSection={section}
                         sections={configuration.section_processing}
@@ -166,7 +174,7 @@ export function Sections({
                       <div className="flex flex-col items-end justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
-                            className="text-gray-cool-60 whitespace-nowrap italic"
+                            className="text-gray-cool-90 whitespace-nowrap italic"
                             aria-hidden
                           >
                             Not applicable for this section
@@ -341,7 +349,7 @@ interface SelectionToggleProps {
   disabled: boolean;
 }
 
-function IncludeCheckbox({
+function IncludeSwitch({
   currentSection,
   configurationId,
   disabled,
@@ -350,8 +358,8 @@ function IncludeCheckbox({
   const { clearError } = useSectionError();
 
   return (
-    <Checkbox
-      id={`${currentSection.name}-include`}
+    <Switch
+      variant="include"
       aria-label={`Include ${currentSection.name} section rules in refined document.`}
       checked={currentSection.include}
       disabled={disabled}
@@ -425,6 +433,7 @@ function RefineSwitch({
             )}
           </Label>
           <Switch
+            variant="coded-data"
             disabled={disabled}
             checked={toggled}
             onChange={handleSwitchChange}

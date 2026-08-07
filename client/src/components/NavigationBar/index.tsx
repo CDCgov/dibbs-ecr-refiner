@@ -10,6 +10,8 @@ export function NavigationBar() {
       <NavigationLink to="/configurations" title="Configurations" />
       <NavigationLink to="/simulator" title="Simulator" />
       <NavigationLink to="/activity" title="Activity Log" />
+      {/* TODO: Uncomment the line below to enable Overrides navigation */}
+      {/* <NavigationLink to="/overrides" title="Overrides" /> */}
     </nav>
   );
 }
