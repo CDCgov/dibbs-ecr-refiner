@@ -12,7 +12,6 @@ import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Checkbox } from '@components/Checkbox';
 import { useState } from 'react';
-import { Tooltip } from '@components/Tooltip';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import {
   Modal,
@@ -138,12 +137,6 @@ function CodesTable({ id }: CodesTableProps) {
               <th scope="col" className="text-center">
                 Status
               </th>
-              <th>
-                <div className="flex flex-row items-center gap-1">
-                  <span>Actions</span>
-                  <Tooltip label="Include or exclude a code from this configuration, or edit and delete custom codes you've added." />
-                </div>
-              </th>
             </tr>
           </thead>
           <tbody className="divide-gray-cool-20 divide-y">
@@ -178,7 +171,6 @@ function CodesTable({ id }: CodesTableProps) {
                 <td>{code.description}</td>
                 <td>{code.source}</td>
                 <td className="text-center">{code.status}</td>
-                <td>Actions</td>
               </tr>
             ))}
           </tbody>
