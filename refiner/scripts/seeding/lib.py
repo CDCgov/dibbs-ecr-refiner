@@ -589,12 +589,12 @@ def is_condition_grouper(vs: dict) -> bool:
     return any("conditiongroupervalueset" in str(prof).lower() for prof in profiles)
 
 
-def collect_files_to_parse(is_local: bool, versions_to_keep=2) -> list[Path]:
+def collect_files_to_parse(seed_all_tes_data: bool, versions_to_keep=2) -> list[Path]:
     """
     Function to collect the relevant files to seed, filtering out only the previous two TES releases to speed up local dev.
     """
     json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
-    if not is_local:
+    if seed_all_tes_data:
         return json_files
 
     # match on either TES semver version or the datetime string
@@ -621,14 +621,14 @@ def collect_files_to_parse(is_local: bool, versions_to_keep=2) -> list[Path]:
 
 
 def load_valuesets_from_all_files(
-    is_local=False,
+    seed_all_tes_data=False,
 ) -> dict[tuple[VsCanonicalUrl, VsVersion], VsDict]:
     """
     Loads all ValueSet resources from JSON files in the TES data directory.
     """
 
     vs_map: dict[tuple[str, str], dict] = {}
-    json_files = collect_files_to_parse(is_local=is_local)
+    json_files = collect_files_to_parse(seed_all_tes_data=seed_all_tes_data)
 
     for idx, file_path in enumerate(json_files, start=1):
         logger.info(f"📝 Loading TES file {idx} / {len(json_files)}: {file_path.name}")

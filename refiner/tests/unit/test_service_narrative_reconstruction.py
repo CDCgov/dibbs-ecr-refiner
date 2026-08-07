@@ -892,12 +892,15 @@ def test_reconstruct_narrative_results_returns_block_tables():
     assert len(detail_rows) == 3
 
 
-def test_reconstruct_narrative_unknown_loinc_returns_none():
+def test_reconstruct_narrative_unknown_loinc_returns_reconstruction_unavailable():
     section = _el(
         f'<section {_NSDECL}><code code="29762-2" displayName="Social History"/>'
         "<entry/></section>"
     )
-    assert reconstruct_narrative(section, augmentation_timestamp=_RUN_TS) is None
+    assert (
+        reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+        == "reconstruction_unavailable"
+    )
 
 
 def test_reconstruct_narrative_relinks_surviving_entries():
@@ -1443,7 +1446,10 @@ def test_plan_of_treatment_empty_section_reconstructs_to_nothing():
     )
 
     assert reconstruct_plan_of_treatment(section) == []
-    assert reconstruct_narrative(section, augmentation_timestamp=_RUN_TS) is None
+    assert (
+        reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+        == "no_matching_entries"
+    )
 
 
 def test_plan_of_treatment_dispatches_and_renders_captioned_tables():

@@ -218,8 +218,8 @@ def mock_db_functions(monkeypatch, mock_all_systems):
     Mock return values of the `_db` functions called by the routes.
     """
     monkeypatch.setattr(
-        "app.services.code_systems.get_all_code_systems_db",
-        AsyncMock(return_value={m.id: m for m in mock_all_systems}),
+        "app.services.code_systems.get_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
     )
 
     monkeypatch.setattr(
@@ -497,7 +497,7 @@ class TestRefiningService:
         narrative='reconstruct' + no matches: the engine can't rebuild
         from anything, so it falls back to retaining the original
         narrative rather than swapping in a removal notice. Outcome
-        is REFINED_RECONSTRUCT_FALLBACK_RETAINED.
+        is REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.
         """
 
         empty_config = await _make_empty_processed_config()
@@ -541,7 +541,7 @@ class TestRefiningService:
         # footnote shows reconstruct-fallback outcome
         assert (
             PROVENANCE_OUTCOME_NOTES[
-                SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED
+                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
             ]
             in rendered
         )
@@ -555,7 +555,7 @@ class TestRefiningService:
         the original narrative. Encounters (46240-8) is refinable but
         has no reconstructor in ReconstructableSection.
 
-        Outcome is REFINED_RECONSTRUCT_FALLBACK_RETAINED.
+        Outcome is REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED.
         """
 
         processed_config = await _make_processed_config_v1_1(
@@ -604,7 +604,7 @@ class TestRefiningService:
         # footnote shows reconstruct-fallback outcome
         assert (
             PROVENANCE_OUTCOME_NOTES[
-                SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED
+                SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
             ]
             in rendered
         )

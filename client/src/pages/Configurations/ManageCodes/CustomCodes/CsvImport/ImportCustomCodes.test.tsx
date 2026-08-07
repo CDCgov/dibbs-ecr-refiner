@@ -6,8 +6,6 @@ import userEvent from '@testing-library/user-event';
 import { useUploadCustomCodesCsv } from '../../../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 import {
-  DbCodeSystem,
-  IndexedCodeSystem,
   UploadCustomCodesPreviewItem,
   UploadCustomCodesPreviewResponse,
 } from '../../../../../api/schemas';
@@ -291,15 +289,6 @@ function checkCode(codeSystemName: string, exists = true) {
   totalExpectation(mockCode);
   totalExpectation(codeSystemName);
 }
-
-const mockIndexedSystem: IndexedCodeSystem = mockCodeSystems.reduce(
-  (acc: IndexedCodeSystem, cur: DbCodeSystem) => {
-    acc[cur.key] = cur;
-    return acc;
-  },
-  {}
-);
-
 function csvToDict(csv: string) {
   const lines = csv.trim().split('\n');
   const headers = lines[0].split(',').map((h) => h.trim());
@@ -341,5 +330,5 @@ const mockUploadResponse: UploadCustomCodesPreviewResponse = {
   preview_items: mockPreviewItems,
   codes_processed: mockPreviewItems.length,
   total_custom_codes_in_configuration: mockPreviewItems.length,
-  code_systems: mockIndexedSystem,
+  code_systems: [],
 };
