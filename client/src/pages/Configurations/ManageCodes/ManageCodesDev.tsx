@@ -24,6 +24,10 @@ import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
+/**
+ * TODO: This component will live under the /manage-codes route once complete.
+ */
+
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
 

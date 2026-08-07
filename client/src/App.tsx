@@ -51,9 +51,9 @@ export function App() {
           path="/configurations/:id/customize-sections"
           element={<CustomizeSections />}
         />
-        {/* TODO: This route will be removed once manage codes is more complete.
+        {/* TODO: This route will be removed once codes management is more complete.
          * This will only be used while the work is in progress. Once complete we'll
-         * move to using only the route below this one.
+         * move to using only the route below this one and we will delete the /view route entirely.
          */}
         <Route
           path="/configurations/:id/manage-codes/view"
