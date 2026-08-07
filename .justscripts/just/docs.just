@@ -48,3 +48,66 @@ serve: sync _venv
 
     # Start eleventy server (foreground)
     {{ npm }} --prefix docs run serve -- --port 9091
+
+[doc('Debug manual sync issues with detailed diagnostics')]
+[group('debug')]
+debug-sync: _venv
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "🔍 Debugging docs sync process..."
+    echo ""
+
+    # 1. Environment validation
+    echo "📋 Environment Check:"
+    echo "Working directory: $(pwd)"
+    echo "Virtual env: $(ls -la refiner/.venv/bin/python3 2>/dev/null || echo 'MISSING')"
+    echo ""
+
+    # 2. Dependency verification
+    echo "📦 Testing Python imports:"
+    refiner/.venv/bin/python3 -c "import griffe, docstring_parser, watchdog; print('✅ All imports successful')" || echo "❌ Import failure"
+    echo ""
+
+    # 3. Pre-sync file state
+    echo "📊 Current JSON file state:"
+    ls -la docs/_data/*.json 2>/dev/null || echo "No JSON files found"
+    echo ""
+
+    # 4. Test griffe module loading
+    echo "🔍 Testing griffe module loading:"
+    refiner/.venv/bin/python3 -c "import griffe; pkg = griffe.load('app', search_paths=['refiner'], resolve_aliases=False); print(f'✅ Loaded app module with {len(pkg.members)} members')" || echo "❌ Module loading failed"
+    echo ""
+
+    # 5. Run extraction with detailed output
+    echo "🚀 Running extraction scripts with full output:"
+    echo "--- extract_python.py ---"
+    refiner/.venv/bin/python3 .justscripts/py/docs/extract_python.py || echo "❌ Python extraction failed"
+    echo ""
+    echo "--- extract_lambda.py ---"
+    refiner/.venv/bin/python3 .justscripts/py/docs/extract_lambda.py || echo "❌ Lambda extraction failed"
+    echo ""
+    echo "--- validate_lambda_docs.py ---"
+    refiner/.venv/bin/python3 .justscripts/py/docs/validate_lambda_docs.py || echo "❌ Lambda validation failed"
+    echo ""
+
+    # 6. Post-sync file state
+    echo "📊 Updated JSON file state:"
+    ls -la docs/_data/*.json 2>/dev/null || echo "No JSON files found"
+    echo ""
+
+    # 7. Content verification
+    echo "🔢 Module counts:"
+    python3 -c "
+    import json
+    try:
+        with open('docs/_data/python-api.json') as f:
+            data = json.load(f)
+            print(f'Python modules: {len(data.get(\"modules\", []))}')
+    except: print('Python API: Error reading')
+    try:
+        with open('docs/_data/lambda-api.json') as f:
+            data = json.load(f)
+            print(f'Lambda modules: {len(data.get(\"modules\", []))}')
+    except: print('Lambda API: Error reading')
+    "
