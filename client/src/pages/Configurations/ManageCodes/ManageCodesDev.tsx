@@ -187,7 +187,7 @@ function CodesTable({ id }: CodesTableProps) {
                 <td>{code.source}</td>
                 <td>
                   <div className="flex flex-row items-center gap-2">
-                    <Switch />
+                    <Switch defaultChecked={code.status === 'Included'} />
                     {code.status}
                   </div>
                 </td>
