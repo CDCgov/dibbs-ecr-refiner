@@ -71,6 +71,6 @@ class ExportDiffInput(BaseModel):
     Body required to generate a TES update diff for a specific condition.
     """
 
-    cond_canonical_url: str
+    canonical_url: str
     cur_tes_version: str
     prev_tes_version: str

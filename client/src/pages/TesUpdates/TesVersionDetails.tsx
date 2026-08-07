@@ -65,7 +65,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
                 </td>
                 <td>
                   <ExportLink
-                    cond_canonical_url={r.canonical_url}
+                    canonical_url={r.canonical_url}
                     cur_version={newVersion}
                     prev_version={oldVersion}
                   />
@@ -88,17 +88,17 @@ function NewConditionPill() {
 }
 
 interface ExportLinkProps {
-  cond_canonical_url: string;
+  canonical_url: string;
   cur_version: string;
   prev_version: string;
 }
 function ExportLink({
-  cond_canonical_url,
+  canonical_url,
   cur_version,
   prev_version,
 }: ExportLinkProps) {
   const params = new URLSearchParams({
-    cond_canonical_url: cond_canonical_url,
+    canonical_url: canonical_url,
     cur_version: cur_version,
     prev_version: prev_version,
   });

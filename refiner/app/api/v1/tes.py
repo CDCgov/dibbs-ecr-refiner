@@ -114,7 +114,7 @@ async def get_tes_diff_details(
 async def export_tes_condition_diff(
     cur_version: str,
     prev_version: str,
-    cond_canonical_url: str,
+    canonical_url: str,
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> Response:
     """
@@ -123,7 +123,7 @@ async def export_tes_condition_diff(
     Args:
         cur_version(str) : The ceiling TES version to compare against
         prev_version(str) : The floor TES version to compare against
-        cond_canonical_url(str) : The condition diff being requested
+        canonical_url(str) : The condition diff being requested
         db (AsyncDatabaseConnection) : The db connection.
 
     """
@@ -131,7 +131,7 @@ async def export_tes_condition_diff(
         condition_diff = await get_tes_update_condition_diff_db(
             cur_version=cur_version,
             prev_version=prev_version,
-            cond_url=cond_canonical_url,
+            cond_url=canonical_url,
             db=db,
         )
 
@@ -145,8 +145,8 @@ async def export_tes_condition_diff(
             headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
         )
 
-    except ValueError as e:
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=e,
+            detail=f"Condition with URL {canonical_url} not found for TES versions {cur_version} or {prev_version}.",
         )

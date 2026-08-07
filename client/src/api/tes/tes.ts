@@ -255,7 +255,7 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
  * Args:
  *     cur_version(str) : The ceiling TES version to compare against
  *     prev_version(str) : The floor TES version to compare against
- *     cond_canonical_url(str) : The condition diff being requested
+ *     canonical_url(str) : The condition diff being requested
  *     db (AsyncDatabaseConnection) : The db connection.
  * @summary Export Tes Condition Diff
  */

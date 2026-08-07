@@ -39,7 +39,7 @@ class TestTesDiff:
         COVID_CANONICAL_URL = "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"
 
         response = await authed_client.get(
-            f"/api/v1/tes/export?cur_version=6.0.0&prev_version=5.0.0&cond_canonical_url={COVID_CANONICAL_URL}"
+            f"/api/v1/tes/export?cur_version=6.0.0&prev_version=5.0.0&canonical_url={COVID_CANONICAL_URL}"
         )
         assert response.status_code == 200
         assert "text/csv" in response.headers.get("content-type", "")

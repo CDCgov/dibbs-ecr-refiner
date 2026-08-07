@@ -106,7 +106,7 @@ async def _get_baseline_tes_update_condition_diff_db(
     db: AsyncDatabaseConnection,
     tes_record: DbTes,
     cond_url: str,
-):
+) -> ConditionDiffExportData:
     query = """
         SELECT
             cond.canonical_url,
@@ -174,7 +174,7 @@ async def get_tes_update_condition_diff_db(
 
     if cur_tes_record.id == prev_tes_record.id:
         return await _get_baseline_tes_update_condition_diff_db(
-            db, tes_record=cur_tes_record, cond_url=cond_url
+            db=db, tes_record=cur_tes_record, cond_url=cond_url
         )
 
     query = """
