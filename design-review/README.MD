@@ -20,3 +20,13 @@ Follow these steps to run script and spin up a local instance of the DIBBs eCR R
 4. Replace `<MY-BRANCH>` with the name of the GitHub branch you would like to conduct a review on. For example, `./design-review-refiner.sh main` will spin up an instance of the DIBBs eCR Refiner based on the current state of the `main` branch of repository
 5. Press enter. The script will now ensure that all required dependencies are installed on your machine, build and run the DIBBs eCR Refiner, and finally navigate to the landing page in your system's default browser. Please note that because certain dependencies may need to be installed the script make take a few minutes the first time it is run on a machine. Additionally, depending on what needs to be installed you may be prompted at points during installation of dependencies to provide a password or click through some installation screens
 6. When you are done with your review you can shut down the DIBBs eCR Refiner by returning to the Terminal and pressing enter
+
+## Documentation Site
+
+The script also builds and serves the project documentation site (Eleventy-based) inside a Docker container alongside the app. The documentation is available at:
+
+- **URL**: http://localhost:9091
+
+The docs container is automatically started after the main app is ready and is cleaned up when you press Enter to end the review session. No additional setup is required beyond the initial setup steps above.
+
+The first time you run the script, the docs Docker image will be built from scratch, which may take several minutes. Subsequent runs reuse the cached image.
