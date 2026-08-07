@@ -8,7 +8,7 @@ from app.db.tes.db import (
     get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
-from app.db.tes.model import ExportDiffInput, TesUpdate
+from app.db.tes.model import TesUpdate
 from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
