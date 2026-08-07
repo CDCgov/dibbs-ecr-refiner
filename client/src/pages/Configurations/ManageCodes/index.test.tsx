@@ -228,9 +228,7 @@ describe('Manage codes page', () => {
       },
     });
     renderPage();
-    expect(
-      await screen.findByText('enabled')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('enabled')).toBeInTheDocument();
   });
 
   it('should render banner to make a new draft configuration', async () => {

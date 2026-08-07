@@ -62,7 +62,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                     <span
                       className="bg-state-success-dark mr-1 inline-block h-3 w-3"
                       aria-hidden
-                     />
+                    />
                     enabled
                   </span>
                 ) : (
@@ -70,7 +70,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                     <span
                       className="bg-gray-cool-60 mr-1 inline-block h-3 w-3"
                       aria-hidden
-                     />
+                    />
                     disabled
                   </span>
                 )}

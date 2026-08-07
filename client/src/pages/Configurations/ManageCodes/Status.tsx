@@ -8,7 +8,7 @@ export function Status({ version }: StatusProps) {
         <span
           className="bg-state-success-dark mr-1 inline-block h-3 w-3"
           aria-hidden
-         />
+        />
         enabled
       </p>
     );
@@ -16,10 +16,7 @@ export function Status({ version }: StatusProps) {
 
   return (
     <p className="text-gray-cool-60 font-bold">
-      <span
-        className="bg-gray-cool-60 mr-1 inline-block h-3 w-3"
-        aria-hidden
-       />
+      <span className="bg-gray-cool-60 mr-1 inline-block h-3 w-3" aria-hidden />
       disabled
     </p>
   );

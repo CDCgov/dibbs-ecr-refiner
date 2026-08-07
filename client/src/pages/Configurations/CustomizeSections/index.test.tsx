@@ -542,8 +542,6 @@ describe('Configuration sections', () => {
     const infoButtons = screen.getAllByText('More information');
     await user.click(infoButtons[1]);
 
-    expect(
-      screen.getByText('Narrative data')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Narrative data')).toBeInTheDocument();
   });
 });
