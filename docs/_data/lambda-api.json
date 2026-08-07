@@ -2,11 +2,36 @@
   "modules": [
     {
       "name": "app.lambda.test_lambda.MockLambdaContext",
-      "docstring": "",
+      "docstring": "Lambda runtime context\n\nThis class is used used by Lambda as a context to run mock Lambda\nfunctions.\n\nArgs:\n    function_name: The name of the function being mocked.\n    memory_limit_in_mb: The memory limit in megabytes.\n    invoked_function_arn: A set of AWS ARN strings.\n    aws_request_id: The request ID used in AWS.",
       "parsed_docstring": {
-        "summary": "",
-        "description": "",
-        "params": [],
+        "summary": "Lambda runtime context",
+        "description": "This class is used used by Lambda as a context to run mock Lambda\nfunctions.",
+        "params": [
+          {
+            "name": "function_name",
+            "type": "",
+            "description": "The name of the function being mocked.",
+            "default": ""
+          },
+          {
+            "name": "memory_limit_in_mb",
+            "type": "",
+            "description": "The memory limit in megabytes.",
+            "default": ""
+          },
+          {
+            "name": "invoked_function_arn",
+            "type": "",
+            "description": "A set of AWS ARN strings.",
+            "default": ""
+          },
+          {
+            "name": "aws_request_id",
+            "type": "",
+            "description": "The request ID used in AWS.",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
@@ -18,15 +43,15 @@
     },
     {
       "name": "app.lambda.test_lambda.aws_mock",
-      "docstring": "",
+      "docstring": "Wrapper around Moto's `mock_aws()` function.",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Wrapper around Moto's `mock_aws()` function.",
         "description": "",
         "params": [],
         "returns": null,
         "raises": []
       },
-      "lineno": 30,
+      "lineno": 43,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -35,15 +60,22 @@
     },
     {
       "name": "app.lambda.test_lambda.config_lambda_env",
-      "docstring": "",
+      "docstring": "Sets up the Lambda environment variables for testing.\n\nArgs:\n    monkeypatch: Pytest fixture for mocking environment variables.\n\nReturns:\n    A dictionary containing the environment variables set.",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Sets up the Lambda environment variables for testing.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "monkeypatch",
+            "type": "",
+            "description": "Pytest fixture for mocking environment variables.",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 36,
+      "lineno": 52,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -59,15 +91,15 @@
     },
     {
       "name": "app.lambda.test_lambda.lambda_event",
-      "docstring": "",
+      "docstring": "Provides a sample Lambda event loaded from a JSON file.\n\nReturns:\n    A dictionary representing the Lambda event.",
       "parsed_docstring": {
-        "summary": "",
-        "description": "",
+        "summary": "Provides a sample Lambda event loaded from a JSON file.",
+        "description": "Returns: A dictionary representing the Lambda event.",
         "params": [],
         "returns": null,
         "raises": []
       },
-      "lineno": 52,
+      "lineno": 78,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -77,15 +109,15 @@
     },
     {
       "name": "app.lambda.test_lambda.sample_xml_files",
-      "docstring": "",
+      "docstring": "Provides sample XML files (RR and eICR) extracted from a demo zip asset.\n\nReturns:\n    A dictionary containing the bytes of 'rr_xml' and 'eicr_xml'.",
       "parsed_docstring": {
-        "summary": "",
-        "description": "",
+        "summary": "Provides sample XML files (RR and eICR) extracted from a demo zip asset.",
+        "description": "Returns: A dictionary containing the bytes of 'rr_xml' and 'eicr_xml'.",
         "params": [],
         "returns": null,
         "raises": []
       },
-      "lineno": 59,
+      "lineno": 91,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -95,15 +127,22 @@
     },
     {
       "name": "app.lambda.test_lambda.s3_client",
-      "docstring": "",
+      "docstring": "Provides a mocked Boto3 S3 client.\n\nArgs:\n    aws_mock: Fixture that ensures AWS services are mocked via Moto.\n\nReturns:\n    An S3 client instance.",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Provides a mocked Boto3 S3 client.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "aws_mock",
+            "type": "",
+            "description": "Fixture that ensures AWS services are mocked via Moto.",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 75,
+      "lineno": 113,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -118,15 +157,22 @@
     },
     {
       "name": "app.lambda.test_lambda.data_bucket",
-      "docstring": "",
+      "docstring": "Creates and returns the name of the S3 bucket used for data.\n\nArgs:\n    s3_client: Mocked S3 client used to create the bucket.\n\nReturns:\n    The name of the created data bucket.",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Creates and returns the name of the S3 bucket used for data.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "s3_client",
+            "type": "",
+            "description": "Mocked S3 client used to create the bucket.",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 80,
+      "lineno": 127,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -142,15 +188,22 @@
     },
     {
       "name": "app.lambda.test_lambda.config_bucket",
-      "docstring": "",
+      "docstring": "Creates and returns the name of the S3 bucket used for configurations.\n\nArgs:\n    s3_client: Mocked S3 client used to create the bucket.\n\nReturns:\n    The name of the created configuration bucket.",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Creates and returns the name of the S3 bucket used for configurations.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "s3_client",
+            "type": "",
+            "description": "Mocked S3 client used to create the bucket.",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 86,
+      "lineno": 142,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -166,15 +219,34 @@
     },
     {
       "name": "app.lambda.test_lambda.s3_input_objects",
-      "docstring": "",
+      "docstring": "Uploads sample XML files to the S3 data bucket and returns the persistence ID.\n\nArgs:\n    s3_client: Mocked S3 client.\n    data_bucket: Name of the S3 bucket to upload to.\n    sample_xml_files: Dictionary containing the sample XML bytes.\n\nReturns:\n    The persistence ID used as the S3 key suffix.",
       "parsed_docstring": {
-        "summary": "",
+        "summary": "Uploads sample XML files to the S3 data bucket and returns the persistence ID.",
         "description": "",
-        "params": [],
+        "params": [
+          {
+            "name": "s3_client",
+            "type": "",
+            "description": "Mocked S3 client.",
+            "default": ""
+          },
+          {
+            "name": "data_bucket",
+            "type": "",
+            "description": "Name of the S3 bucket to upload to.",
+            "default": ""
+          },
+          {
+            "name": "sample_xml_files",
+            "type": "",
+            "description": "Dictionary containing the sample XML bytes.",
+            "default": ""
+          }
+        ],
         "returns": null,
         "raises": []
       },
-      "lineno": 92,
+      "lineno": 157,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -207,7 +279,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 115,
+      "lineno": 191,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -236,7 +308,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 122,
+      "lineno": 198,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -270,7 +342,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 132,
+      "lineno": 208,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -313,7 +385,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 205,
+      "lineno": 281,
       "stage": null,
       "role": null,
       "source_type": "test",
@@ -361,7 +433,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 340,
+      "lineno": 416,
       "stage": null,
       "role": null,
       "source_type": "test",
