@@ -19,7 +19,7 @@ export function AddCustomCodeButton({
         aria-label="Add new custom code"
         disabled={disabled}
       >
-        Add code
+        Add custom code
       </Button>
       <CustomCodeModal
         configurationId={configurationId}

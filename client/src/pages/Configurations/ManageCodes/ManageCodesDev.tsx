@@ -85,7 +85,7 @@ function CodesTable({ id }: CodesTableProps) {
   const allSelected = codes.length > 0 && selectedIds.size === codes.length;
 
   return (
-    <div className="flex flex-col items-start gap-4">
+    <div className="flex flex-col items-end gap-4">
       <SourceModal
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
