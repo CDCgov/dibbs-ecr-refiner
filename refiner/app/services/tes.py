@@ -40,20 +40,20 @@ type FileContents = str
 
 
 def build_tes_export_csv(
-    diff_data: ConditionDiffExportData, cur_tes_version: str
+    diff_data: ConditionDiffExportData, cur_version: str
 ) -> tuple[Filename, FileContents]:
     """
     Build the export CSV for a condition within a TES update given the relevant data.
 
     Args:
         diff_data (ConditionDiffExportData): Data derived from the DB with all codes added/removed for a condition
-        cur_tes_version (str): The current TES version to put in the filename
+        cur_version (str): The current TES version to put in the filename
 
     Returns:
         tuple[Filename, FileContents]: CSV info in tuple form
     """
     return (
-        _build_export_filename(diff_data.condition_name, version=cur_tes_version),
+        _build_export_filename(diff_data.condition_name, version=cur_version),
         _build_csv_row_data(diff_data=diff_data),
     )
 

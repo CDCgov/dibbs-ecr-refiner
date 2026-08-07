@@ -152,8 +152,8 @@ async def _get_baseline_tes_update_condition_diff_db(
 
 async def get_tes_update_condition_diff_db(
     db: AsyncDatabaseConnection,
-    cur_tes_version: str,
-    prev_tes_version: str,
+    cur_version: str,
+    prev_version: str,
     cond_url: str,
 ) -> ConditionDiffExportData:
     """
@@ -161,15 +161,15 @@ async def get_tes_update_condition_diff_db(
 
     Args:
         db (AsyncDatabaseConnection): The DB connection pool.
-        cur_tes_version(str): The ceiling TES version to diff against
-        prev_tes_version(str): The floor TES version to diff against
+        cur_version(str): The ceiling TES version to diff against
+        prev_version(str): The floor TES version to diff against
         cond_url(str): The condition URL to retrieve the diff from
 
     Returns:
         list[DbTes]: A list of all the relevant TES details needed for the diff page
     """
     (cur_tes_record, prev_tes_record) = await _get_cur_and_prev_tes_records_db(
-        db=db, cur_tes_version=cur_tes_version, prev_tes_version=prev_tes_version
+        db=db, cur_version=cur_version, prev_version=prev_version
     )
 
     if cur_tes_record.id == prev_tes_record.id:
@@ -249,7 +249,7 @@ async def get_tes_update_condition_diff_db(
             result = await cur.fetchone()
             if not result:
                 raise ValueError(
-                    f"Condition with URL {cond_url} not found for TES versions {cur_tes_version} or {prev_tes_version} "
+                    f"Condition with URL {cond_url} not found for TES versions {cur_version} or {prev_version} "
                 )
             return result
 
@@ -320,13 +320,13 @@ async def _get_tes_update_diff_db(
 
 
 async def get_tes_version_diff_db(
-    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str
+    db: AsyncDatabaseConnection, cur_version: str, prev_version: str
 ) -> list[DbTesConditionUpdate]:
     """
     Returns an array off all loaded TES version records.
     """
     (cur_tes_record, prev_tes_record) = await _get_cur_and_prev_tes_records_db(
-        db=db, cur_tes_version=cur_tes_version, prev_tes_version=prev_tes_version
+        db=db, cur_version=cur_version, prev_version=prev_version
     )
     return await _get_tes_update_diff_db(
         db=db, cur_tes_id=cur_tes_record.id, prev_tes_id=prev_tes_record.id
@@ -334,18 +334,14 @@ async def get_tes_version_diff_db(
 
 
 async def _get_cur_and_prev_tes_records_db(
-    db: AsyncDatabaseConnection, cur_tes_version: str, prev_tes_version: str
+    db: AsyncDatabaseConnection, cur_version: str, prev_version: str
 ) -> tuple[DbTes, DbTes]:
     """Get current and previous TES records, setting prev to the current if it's the baseline."""
-    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
+    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_version)
     prev_tes_record = (
-        await _get_tes_by_version_number_db(db=db, version=prev_tes_version)
-        if prev_tes_version
+        await _get_tes_by_version_number_db(db=db, version=prev_version)
+        if prev_version
         else cur_tes_record
     )
 
-    print("prev_tes_version")
-    print(prev_tes_record)
-    print("current_tes_version")
-    print(cur_tes_record)
     return (cur_tes_record, prev_tes_record)

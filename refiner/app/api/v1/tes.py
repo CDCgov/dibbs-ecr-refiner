@@ -86,7 +86,7 @@ async def get_tes_diff_details(
     """
     try:
         conditions_changed = await get_tes_version_diff_db(
-            db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
+            db=db, cur_version=cur_version, prev_version=prev_version
         )
 
         return [
@@ -112,8 +112,8 @@ async def get_tes_diff_details(
     operation_id="exportConditionDiff",
 )
 async def export_tes_condition_diff(
-    cur_tes_version: str,
-    prev_tes_version: str,
+    cur_version: str,
+    prev_version: str,
     cond_canonical_url: str,
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> Response:
@@ -121,22 +121,22 @@ async def export_tes_condition_diff(
     Generates and exports a CSV of condition diffs between specified TES versions.
 
     Args:
-        cur_tes_version(str) : The ceiling TES version to compare against
-        prev_tes_version(str) : The floor TES version to compare against
+        cur_version(str) : The ceiling TES version to compare against
+        prev_version(str) : The floor TES version to compare against
         cond_canonical_url(str) : The condition diff being requested
         db (AsyncDatabaseConnection) : The db connection.
 
     """
     try:
         condition_diff = await get_tes_update_condition_diff_db(
-            cur_tes_version=cur_tes_version,
-            prev_tes_version=prev_tes_version,
+            cur_version=cur_version,
+            prev_version=prev_version,
             cond_url=cond_canonical_url,
             db=db,
         )
 
         (file_name, file_contents) = build_tes_export_csv(
-            diff_data=condition_diff, cur_tes_version=cur_tes_version
+            diff_data=condition_diff, cur_version=cur_version
         )
 
         return Response(
