@@ -23,6 +23,7 @@ import {
 import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import { Switch } from '@components/Switch';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -138,9 +139,7 @@ function CodesTable({ id }: CodesTableProps) {
                   </Button>
                 </div>
               </th>
-              <th scope="col" className="text-center">
-                Status
-              </th>
+              <th scope="col">Status</th>
             </tr>
           </thead>
           <tbody className="divide-gray-cool-20 divide-y">
@@ -174,7 +173,12 @@ function CodesTable({ id }: CodesTableProps) {
                 <td>{code.system_name}</td>
                 <td>{code.description}</td>
                 <td>{code.source}</td>
-                <td className="text-center">{code.status}</td>
+                <td>
+                  <div className="flex flex-row items-center gap-2">
+                    <Switch />
+                    {code.status}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
