@@ -229,7 +229,10 @@ function CodeInformationBar({ id }: { id: string }) {
               </span>
             </div>
           </div>
-          <div aria-hidden className="bg-blue-cool-50 h-3 w-full rounded-2xl" />
+          <div
+            aria-hidden
+            className="bg-blue-cool-50 min-h-2 w-full rounded-2xl"
+          />
         </>
       )}
     </div>
