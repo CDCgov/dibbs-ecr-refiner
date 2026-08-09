@@ -5,10 +5,10 @@ from uuid import uuid4
 import pytest
 
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     DbConfiguration,
 )
-from app.db.custom_codes.model import DbCustomCode
 from tests.unit.helpers.configuration import create_processed_config
 
 
@@ -59,12 +59,12 @@ def mock_db_functions(monkeypatch, mock_all_systems):
     Mock return values of the `_db` functions called by the routes.
     """
     monkeypatch.setattr(
-        "app.services.code_systems.get_all_code_systems_db",
-        AsyncMock(return_value={m.id: m for m in mock_all_systems}),
+        "app.services.code_systems.get_code_systems_db",
+        AsyncMock(return_value=mock_all_systems),
     )
 
     monkeypatch.setattr(
-        "app.services.configurations.get_all_code_systems_db",
+        "app.services.configurations.get_id_to_code_system_dict_db",
         AsyncMock(return_value={m.id: m for m in mock_all_systems}),
     )
 

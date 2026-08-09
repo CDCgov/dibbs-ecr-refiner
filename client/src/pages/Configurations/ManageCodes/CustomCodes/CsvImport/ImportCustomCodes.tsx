@@ -14,7 +14,7 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../..';
 import { Search } from '@components/Search';
 import {
-  IndexedCodeSystem,
+  DbCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
@@ -70,9 +70,7 @@ export function ImportCustomCodes({
   const [previewItems, setPreviewItems] = useState<
     UploadCustomCodesPreviewItem[]
   >([]);
-  const [codeSystems, setCodeSystems] = useState<IndexedCodeSystem | null>(
-    null
-  );
+  const [codeSystems, setCodeSystems] = useState<DbCodeSystem[] | null>(null);
 
   const [error, setError] = useState<UploadError | null>(null);
   const [step, setStep] = useState<CsvImportStep>('intro');
@@ -204,7 +202,7 @@ export function ImportCustomCodes({
           });
           showToast({
             heading: 'CSV confirmed',
-            body: `${res.data.codes_processed ?? previewItems.length} codes imported.`,
+            body: `${res.data.length ?? previewItems.length} codes imported.`,
           });
           handleDelete(false);
         },
@@ -294,7 +292,6 @@ export function ImportCustomCodes({
             <UploadInstructions
               handleButtonClick={handleFileUpload}
               disabled={disabled}
-              codeSystems={codeSystems}
             />
             {error && (
               <div role="alert" className="text-sm text-red-600">
@@ -418,7 +415,7 @@ interface PreviewEditTableProps {
   setPreviewItems: React.Dispatch<
     React.SetStateAction<UploadCustomCodesPreviewItem[]>
   >;
-  codeSystems: IndexedCodeSystem | null;
+  codeSystems: DbCodeSystem[] | null;
   error: UploadError | null;
   exitPreviewStep: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
@@ -540,7 +537,6 @@ function PreviewRow({
 interface UploadInstructionProps {
   handleButtonClick: () => void;
   disabled: boolean;
-  codeSystems: IndexedCodeSystem | null;
 }
 
 function UploadInstructions({
@@ -569,6 +565,7 @@ function UploadInstructions({
 
     URL.revokeObjectURL(url);
   };
+
   return (
     <>
       <div className="flex items-start gap-4">

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
+from app.api.v1.configurations.custom_codes.model import CustomCodeResponse
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
     DbConfigurationSectionProcessing,
@@ -68,19 +69,6 @@ class LockedByUser(UserInfoBase):
 
 
 @dataclass(frozen=True)
-class CustomCodeResponse:
-    """
-    Custom code object to return to the client.
-    """
-
-    id: UUID
-    display: str
-    code: str
-    system_id: UUID
-    system_name: str
-
-
-@dataclass(frozen=True)
 class GetConfigurationResponse:
     """
     Model for a configration response.
@@ -105,18 +93,6 @@ class GetConfigurationResponse:
     latest_version: int
     is_locked: bool
     locked_by: LockedByUser | None
-
-
-@dataclass(frozen=True)
-class ConfigurationCustomCodeResponse:
-    """
-    Configuration response for custom code operations (add/edit/delete).
-    """
-
-    id: UUID
-    display_name: str
-    code_sets: list[DbTotalConditionCodeCount]
-    custom_codes: list[CustomCodeResponse]
 
 
 class AssociateCodesetInput(BaseModel):
@@ -194,39 +170,3 @@ class ConfigurationStatusUpdateResponse:
 
     configuration_id: UUID
     status: DbConfigurationStatus
-
-
-class UploadCustomCodesCsvInput(BaseModel):
-    """
-    Input model for Custom Code CSV.
-    """
-
-    csv_text: str = Field(..., description="Full CSV contents as UTF-8 text")
-    filename: str | None = None
-
-
-class AddCustomCodeInput(BaseModel):
-    """
-    Input model for adding a custom code to a configuration.
-    """
-
-    code: str
-    display: str
-    system_id: UUID
-
-
-class UploadCustomCodesPreviewItem(BaseModel):
-    """Validated CSV row ready for confirmation."""
-
-    id: UUID
-    code: str
-    system_id: UUID
-    system_name: str
-    display: str
-    row: int | None = None
-
-
-class ConfirmUploadCustomCodesInput(BaseModel):
-    """Payload used to confirm a previously validated CSV import."""
-
-    custom_codes: list[AddCustomCodeInput]

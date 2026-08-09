@@ -347,12 +347,12 @@ def _interpret_run_result(
             "retained"                       → REFINED_WITH_MATCHES
             "removed"                        → REFINED_NARRATIVE_REMOVED
             "reconstructed"                  → REFINED_NARRATIVE_RECONSTRUCTED
-            "reconstruct_fallback_retained"  → REFINED_RECONSTRUCT_FALLBACK_RETAINED
+            "reconstruct_unavailable"        → REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
 
         no matches:
             "retained"                       → REFINED_NO_MATCHES_NARRATIVE_RETAINED
             "removed"                        → REFINED_NO_MATCHES_NARRATIVE_REMOVED
-            "reconstruct_fallback_retained"  → REFINED_RECONSTRUCT_FALLBACK_RETAINED
+            "reconstruct_no_entries"         → REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
             "reconstructed"                  → (engines never produce
                                                 this on no-match)
 
@@ -376,11 +376,14 @@ def _interpret_run_result(
         The SectionOutcome describing what happened to this section.
     """
 
-    # reconstruct fallback collapses to a single outcome regardless
-    # of match status: the engine attempted reconstruction, couldn't
-    # complete it, and kept the original narrative
-    if run_result.narrative_disposition == "reconstruct_fallback_retained":
-        return SectionOutcome.REFINED_RECONSTRUCT_FALLBACK_RETAINED
+    # reconstruct fallback means the engine attempted reconstruction, couldn't
+    # complete it, and kept the original narrative. Could be either because
+    # there were no matches or the section requested doesn't have a rule configured.
+    if run_result.narrative_disposition == "reconstruct_unavailable":
+        return SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
+
+    if run_result.narrative_disposition == "reconstruct_no_entries":
+        return SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
 
     if not run_result.matches_found:
         if run_result.narrative_disposition == "retained":
