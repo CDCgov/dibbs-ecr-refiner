@@ -44,10 +44,10 @@ mechanism:
 > **Terminology.** This ADR uses the names the application uses, per review
 > feedback on the original draft:
 >
-> | Application feature | What it does                          | This codebase          |
-> | ------------------- | ------------------------------------- | ---------------------- |
+> | Application feature | What it does                           | This codebase          |
+> | ------------------- | -------------------------------------- | ---------------------- |
 > | **Exclusion**       | turn off a code a code set contributes | `exclusion` (ADR 0014) |
-> | **Overrides**       | never emit this code, ever            | `overrides` (ADR 0015) |
+> | **Overrides**       | never emit this code, ever             | `overrides` (ADR 0015) |
 >
 > The first draft called exclusion "the overrides case," which collides with the
 > product's use of "overrides" for the _other_ feature. Naming in code should
@@ -279,23 +279,23 @@ prerequisite; with the anti-join inside the condition loop, it no longer is.
 Unit (`tests/unit/test_service_terminology.py::TestCodeExclusions`) — projection
 behavior with the DB read mocked:
 
-| Scenario                                       | Expectation                                              |
-| ---------------------------------------------- | -------------------------------------------------------- |
-| Excluded code                                  | absent from the want-set                                  |
-| Code shared by two included conditions         | survives when excluded from only one (union semantics)    |
-| Same digits in two systems                     | only the named system's code is dropped                   |
-| Custom code colliding with an excluded code    | survives; display becomes the custom one                  |
-| No exclusions                                  | want-set identical to baseline                            |
-| Exclusion naming an unincluded condition       | ignored                                                   |
+| Scenario                                    | Expectation                                            |
+| ------------------------------------------- | ------------------------------------------------------ |
+| Excluded code                               | absent from the want-set                               |
+| Code shared by two included conditions      | survives when excluded from only one (union semantics) |
+| Same digits in two systems                  | only the named system's code is dropped                |
+| Custom code colliding with an excluded code | survives; display becomes the custom one               |
+| No exclusions                               | want-set identical to baseline                         |
+| Exclusion naming an unincluded condition    | ignored                                                |
 
 Integration (`tests/integration/test_code_exclusions.py`) — real SQL against the
 real table, which also checks that the `conditions` JSONB columns and the
 normalized `codes` tables still agree:
 
-| Scenario                          | Expectation                                                 |
-| --------------------------------- | ----------------------------------------------------------- |
-| Exclude one real condition code   | dropped from the payload; every sibling code untouched       |
-| `get_code_exclusions_db` grouping  | returns `{condition_id: {(system_key, code)}}`               |
+| Scenario                          | Expectation                                            |
+| --------------------------------- | ------------------------------------------------------ |
+| Exclude one real condition code   | dropped from the payload; every sibling code untouched |
+| `get_code_exclusions_db` grouping | returns `{condition_id: {(system_key, code)}}`         |
 
 ### Open questions
 
