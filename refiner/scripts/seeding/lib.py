@@ -81,7 +81,8 @@ _CATEGORY_SLUG_MAP = {
 type SystemOid = str
 type Code = str
 type Display = str | None
-type FhirCodeTuple = tuple[SystemOid, Code, Display]
+type Source = str | None
+type FhirCodeTuple = tuple[SystemOid, Code, Display, Source]
 
 
 # a dictionary representing a single code prepared for categorization by a code system
@@ -369,6 +370,17 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
     return None
 
 
+def parse_valueset_source(vs: dict) -> str | None:
+    useContext = vs.get("useContext", [])
+    if not useContext:
+        return None
+
+    for context in useContext:
+        for key, value in context.items():
+            if key == "valueCodeableConcept":
+                return value.get("text")
+
+
 def map_coverage_level_to_acg_completeness(vs: dict) -> str | None:
     """
     Maps TES CRMI curation coverage level to the app's ACG completeness label.
@@ -437,6 +449,10 @@ def extract_codes_from_compose(vs: dict) -> set[FhirCodeTuple]:
     """
 
     codes: set[FhirCodeTuple] = set()
+    sourceInformation = vs.get("useContext")
+    source = ""
+    if sourceInformation:
+        source = sourceInformation[0].get("valueCodeableConcept").get("text")
 
     compose = vs.get("compose")
     if not compose:
@@ -450,7 +466,7 @@ def extract_codes_from_compose(vs: dict) -> set[FhirCodeTuple]:
         for concept in inc.get("concept", []):
             code = concept.get("code")
             if code:
-                codes.add((system, code, concept.get("display")))
+                codes.add((system, code, concept.get("display"), source))
 
     return codes
 
@@ -547,9 +563,11 @@ def categorize_codes_by_system(
         system_name: [] for system_name in SYSTEM_MAP.values()
     }
 
-    for system, code, display in all_codes:
+    for system, code, display, source in all_codes:
         if system_key := SYSTEM_MAP.get(system):
-            result[system_key].append({"code": code, "display": display})
+            result[system_key].append(
+                {"code": code, "display": display, "source": source}
+            )
 
     return result
 
@@ -566,9 +584,11 @@ def categorize_codes_by_system_oid(
         system_oid: [] for system_oid in url_to_oid_map.values()
     }
 
-    for system_url, code, display in all_codes:
+    for system_url, code, display, source in all_codes:
         if cur_code_system_oid := url_to_oid_map.get(system_url):
-            result[cur_code_system_oid].append({"code": code, "display": display})
+            result[cur_code_system_oid].append(
+                {"code": code, "display": display, "source": source}
+            )
     return result
 
 

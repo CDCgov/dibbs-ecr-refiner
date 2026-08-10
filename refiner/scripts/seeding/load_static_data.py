@@ -95,6 +95,7 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     condition_id: UUID
     condition_url: str
     condition_display_name: str
+    condition_source: str
     child_rsg_codes: set[DbCodedConcept]
     non_child_rsg_codes: set[DbCodedConcept]
 
@@ -172,6 +173,7 @@ def _build_codes(
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
         cond_version = condition.get("version", "")
+        cond_display = condition.get("title", "")
 
         condition_child_rsg_snomed_codes: set[DbCodedConcept] = set()
         condition_non_child_rsg_snomed_codes: set[DbCodedConcept] = set()
@@ -189,7 +191,10 @@ def _build_codes(
             display = parse_child_rsg_details_from_use_context(
                 child_vs.get("useContext", "")
             )
-            code_tuple = (snomed_db_id, child_rsg_code)
+            code_tuple = (
+                snomed_db_id,
+                child_rsg_code,
+            )
             condition_child_rsg_snomed_codes.add(code_tuple)
 
             if code_tuple not in codes_seen_so_far:
@@ -403,8 +408,9 @@ def _upsert_conditions_and_groupers(
         cond_id = condition_response[0]
         condition_canonical_url = cond.get("canonical_url")
         condition_version = cond.get("version")
-
         condition_name = cond.get("display_name")
+        condition_name = cond.get("display_name")
+
         condition_payload = ConditionToCodeRelationshipTrace(
             condition_id=cond_id,
             condition_display_name=condition_name,
@@ -449,7 +455,8 @@ def _upsert_relationships(
             condition_id UUID NOT NULL,
             system_id UUID NOT NULL,
             code TEXT NOT NULL,
-            is_child_rsg BOOLEAN NOT NULL
+            is_child_rsg BOOLEAN NOT NULL,
+            source TEXT NOT NULL
         ) ON COMMIT DROP
     """)
     cursor.execute("TRUNCATE stage_relationships")
@@ -464,17 +471,21 @@ def _upsert_relationships(
             if not cond_id:
                 continue
 
+            source = cond["condition_source"]
+            if not cond_id:
+                continue
+
             for system_id, code in cond["child_rsg_codes"]:
                 staged_counts[child_rsg_key] += 1
-                yield (cond_id, system_id, code, True)
+                yield (cond_id, system_id, code, True, source)
 
             for system_id, code in cond["non_child_rsg_codes"]:
                 staged_counts[non_child_rsg_key] += 1
-                yield (cond_id, system_id, code, False)
+                yield (cond_id, system_id, code, False, source)
 
     logger.info("🚀 Streaming relationships into stage table...")
     with cursor.copy(
-        """COPY stage_relationships (condition_id, system_id, code, is_child_rsg) FROM STDIN"""
+        """COPY stage_relationships (condition_id, system_id, code, is_child_rsg, source) FROM STDIN"""
     ) as copy:
         for row in relationship_generator():
             copy.write_row(row)
@@ -485,11 +496,12 @@ def _upsert_relationships(
     logger.info("🔗 Linking codes table to relationship joins...")
 
     cursor.execute("""
-        INSERT INTO conditions_codes (condition_id, code_id, is_child_rsg)
+        INSERT INTO conditions_codes (condition_id, code_id, is_child_rsg, source)
         SELECT
             sr.condition_id,
             c.id AS code_id,
-            sr.is_child_rsg
+            sr.is_child_rsg,
+            sr.source AS source
         FROM stage_relationships sr
         JOIN codes c
             ON  c.system_id = sr.system_id
