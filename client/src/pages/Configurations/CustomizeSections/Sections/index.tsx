@@ -17,8 +17,7 @@ import { useState } from 'react';
 import { Button } from '@components/Button';
 import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
-
-import { Switch } from './Switch';
+import { Switch } from '@components/Switch';
 import { NarrativeSelect } from './NarrativeSelect';
 import { useSectionUpdater } from './useSectionUpdater';
 import { SectionErrorProvider } from './SectionErrorProvider';

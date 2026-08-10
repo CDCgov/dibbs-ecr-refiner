@@ -21,6 +21,7 @@ import type {
 } from 'axios';
 
 import type {
+  ExportConditionDiffParams,
   GetTesDiffDetailsParams,
   HTTPValidationError,
   TesDiffConditionDetails,
@@ -237,6 +238,105 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetTesDiffDetailsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Generates and exports a CSV of condition diffs between specified TES versions.
+ *
+ * Args:
+ *     cur_version(str) : The ceiling TES version to compare against
+ *     prev_version(str) : The floor TES version to compare against
+ *     canonical_url(str) : The condition diff being requested
+ *     db (AsyncDatabaseConnection) : The db connection.
+ * @summary Export Tes Condition Diff
+ */
+export const exportConditionDiff = (
+    params: ExportConditionDiffParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+
+
+    return axios.default.get(
+      `/api/v1/tes/export`,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+
+export const getExportConditionDiffQueryKey = (params?: ExportConditionDiffParams,) => {
+    return [
+    `/api/v1/tes/export`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getExportConditionDiffQueryOptions = <TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportConditionDiffQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportConditionDiff>>> = ({ signal }) => exportConditionDiff(params, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ExportConditionDiffQueryResult = NonNullable<Awaited<ReturnType<typeof exportConditionDiff>>>
+export type ExportConditionDiffQueryError = AxiosError<HTTPValidationError>
+
+
+export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: ExportConditionDiffParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportConditionDiff>>,
+          TError,
+          Awaited<ReturnType<typeof exportConditionDiff>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportConditionDiff>>,
+          TError,
+          Awaited<ReturnType<typeof exportConditionDiff>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Export Tes Condition Diff
+ */
+
+export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
+ params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getExportConditionDiffQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
