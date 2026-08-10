@@ -41,6 +41,7 @@ export * from './discoveredConfigurationsResponse';
 export * from './discoveredConfigurationVersion';
 export * from './eventFilterOption';
 export * from './eventsResponse';
+export * from './exportConditionDiffParams';
 export * from './fileInfoResponse';
 export * from './getCodesParams';
 export * from './getConditionCode';
