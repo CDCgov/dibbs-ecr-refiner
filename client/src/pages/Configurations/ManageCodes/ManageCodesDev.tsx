@@ -31,6 +31,7 @@ import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawe
 import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
+import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -227,12 +228,7 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
         Custom code
       </span>
       <div className="flex flex-row gap-2">
-        <Button
-          className="text-blue-cool-50 text-sm! font-semibold hover:cursor-pointer hover:underline"
-          variant="unstyled"
-        >
-          Edit
-        </Button>
+        <EditCustomCodeButton configurationId={configurationId} id={code.id} />
         <DeleteCustomCodeButton
           configurationId={configurationId}
           id={code.id}

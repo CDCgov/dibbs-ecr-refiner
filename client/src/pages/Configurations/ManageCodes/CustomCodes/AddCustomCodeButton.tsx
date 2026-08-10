@@ -2,14 +2,14 @@ import { Button, ButtonProps } from '@components/Button';
 import { useState } from 'react';
 import { CustomCodeModal } from './CustomCodeModal';
 
-type AddCustomCodesButtonProps = Pick<ButtonProps, 'disabled'> & {
+type AddCustomCodeButtonProps = Pick<ButtonProps, 'disabled'> & {
   configurationId: string;
 };
 
 export function AddCustomCodeButton({
   configurationId,
   disabled,
-}: AddCustomCodesButtonProps) {
+}: AddCustomCodeButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>

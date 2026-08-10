@@ -591,6 +591,193 @@ export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HT
       return useMutation(getDisassociateConditionWithConfigurationMutationOptions(options), queryClient);
     }
     /**
+ * Fetch a custom code by its ID.
+ *
+ * Args:
+ *     configuration_id (UUID): The associated configuration ID
+ *     id (UUID): The custom code ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     CustomCodeResponse: The custom code response object
+ * @summary Get Custom Code
+ */
+export const getCustomCode = (
+    configurationId: string,
+    id: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CustomCodeResponse>> => {
+
+
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/custom-codes/${id}`,options
+    );
+  }
+
+
+
+
+export const getGetCustomCodeQueryKey = (configurationId: string,
+    id: string,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/custom-codes/${id}`
+    ] as const;
+    }
+
+
+export const getGetCustomCodeQueryOptions = <TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(configurationId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomCodeQueryKey(configurationId,id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomCode>>> = ({ signal }) => getCustomCode(configurationId,id, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomCodeQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomCode>>>
+export type GetCustomCodeQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomCode>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomCode>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomCode>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomCode>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Custom Code
+ */
+
+export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomCodeQueryOptions(configurationId,id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Delete a custom code from a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     id (str): The ID of the custom code.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 400 if id is not provided
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration
+ * @summary Delete Custom Code
+ */
+export const deleteCustomCodeFromConfiguration = (
+    configurationId: string,
+    id: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CustomCodeResponse>> => {
+
+
+    return axios.default.delete(
+      `/api/v1/configurations/${configurationId}/custom-codes/${id}`,options
+    );
+  }
+
+
+
+
+export const getDeleteCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;id: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;id: string}, TContext> => {
+
+const mutationKey = ['deleteCustomCodeFromConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, {configurationId: string;id: string}> = (props) => {
+          const {configurationId,id} = props ?? {};
+
+          return  deleteCustomCodeFromConfiguration(configurationId,id,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>>
+
+    export type DeleteCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Delete Custom Code
+ */
+export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;id: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+        TError,
+        {configurationId: string;id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteCustomCodeFromConfigurationMutationOptions(options), queryClient);
+    }
+    /**
  * Add a user-defined custom code to a configuration.
  *
  * Args:
@@ -875,83 +1062,6 @@ export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidatio
         TContext
       > => {
       return useMutation(getConfirmUploadCustomCodesCsvMutationOptions(options), queryClient);
-    }
-    /**
- * Delete a custom code from a configuration.
- *
- * Args:
- *     configuration_id (UUID): The ID of the configuration to modify.
- *     id (str): The ID of the custom code.
- *     user (dict[str, Any]): The logged-in user.
- *     db (AsyncDatabaseConnection): The database connection.
- *
- * Raises:
- *     HTTPException: 400 if id is not provided
- *     HTTPException: 404 if configuration can't be found
- *     HTTPException: 409 if configuration is not a draft and therefore not editable
- *     HTTPException: 500 if configuration can't be updated
- *
- * Returns:
- *     ConfigurationCustomCodeResponse: The updated configuration
- * @summary Delete Custom Code
- */
-export const deleteCustomCodeFromConfiguration = (
-    configurationId: string,
-    id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CustomCodeResponse>> => {
-
-
-    return axios.default.delete(
-      `/api/v1/configurations/${configurationId}/custom-codes/${id}`,options
-    );
-  }
-
-
-
-
-export const getDeleteCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;id: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;id: string}, TContext> => {
-
-const mutationKey = ['deleteCustomCodeFromConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, {configurationId: string;id: string}> = (props) => {
-          const {configurationId,id} = props ?? {};
-
-          return  deleteCustomCodeFromConfiguration(configurationId,id,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>>
-
-    export type DeleteCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
- * @summary Delete Custom Code
- */
-export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;id: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
-        TError,
-        {configurationId: string;id: string},
-        TContext
-      > => {
-      return useMutation(getDeleteCustomCodeFromConfigurationMutationOptions(options), queryClient);
     }
     /**
  * Determines whether a custom code update is valid or not.
