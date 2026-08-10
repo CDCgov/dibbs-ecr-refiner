@@ -27,8 +27,8 @@ export function EditCustomCodeButton({
         variant="unstyled"
         aria-label="Edit custom code"
         disabled={disabled}
-        onClick={() => {
-          refetch();
+        onClick={async () => {
+          await refetch();
           setIsOpen(true);
         }}
       >
