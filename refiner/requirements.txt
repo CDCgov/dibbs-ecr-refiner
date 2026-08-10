@@ -1,6 +1,6 @@
 boto3==1.43.58
 Authlib==1.7.2
-fastapi==0.140.13
+fastapi==0.141.1
 chardet==7.4.3
 itsdangerous==2.2.0
 httpx==0.28.1
