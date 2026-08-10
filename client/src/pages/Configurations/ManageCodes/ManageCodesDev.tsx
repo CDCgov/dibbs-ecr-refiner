@@ -322,49 +322,55 @@ function CodeInformationBar({ id }: { id: string }) {
   const { data: codeCounts, isPending, isError } = useGetCodeCounts(id);
 
   if (isError) return 'Error!';
-
-  return (
-    <div className="bg-blue-cool-5 border-blue-cool-20! flex min-h-20 w-full flex-col gap-2 border px-10 py-4">
-      {isPending ? (
+  if (isPending)
+    return (
+      <div className="bg-blue-cool-5 border-blue-cool-20! flex min-h-20 w-full flex-col gap-2 border px-10 py-4">
         <div className="absolute inset-0 top-10 flex items-center justify-center">
           <Spinner />
         </div>
-      ) : (
-        <>
-          <div className="flex flex-row items-center justify-between">
-            <div>
-              <span className="text-2xl font-bold">
-                {(
-                  codeCounts.data.total_code_count -
-                  codeCounts.data.total_excluded_codes_count
-                ).toLocaleString()}
-              </span>{' '}
-              <span className="text-lg">
-                of {codeCounts.data.total_code_count.toLocaleString()} codes
-                included
-              </span>
-            </div>
-            <div className="flex flex-col gap-4 text-left md:flex-row md:gap-8">
-              <span>
-                {codeCounts.data.total_excluded_codes_count.toLocaleString()}{' '}
-                excluded
-              </span>
-              <span>
-                {codeCounts.data.total_custom_codes_count.toLocaleString()}{' '}
-                custom
-              </span>
-              <span>
-                {codeCounts.data.total_code_sets_count.toLocaleString()}{' '}
-                condition code sets
-              </span>
-            </div>
-          </div>
-          <div
-            aria-hidden
-            className="bg-blue-cool-50 min-h-2 w-full rounded-2xl"
-          />
-        </>
-      )}
+      </div>
+    );
+
+  const includedCount =
+    codeCounts.data.total_code_count -
+    codeCounts.data.total_excluded_codes_count;
+  const total = codeCounts.data.total_code_count;
+  const barFillPercentage = total > 0 ? (includedCount / total) * 100 : 0;
+
+  return (
+    <div className="bg-blue-cool-5 border-blue-cool-20! flex min-h-20 w-full flex-col gap-2 border px-10 py-4">
+      <div className="flex flex-row items-center justify-between">
+        <div>
+          <span className="text-2xl font-bold">
+            {includedCount.toLocaleString()}
+          </span>{' '}
+          <span className="text-lg">
+            of {total.toLocaleString()} codes included
+          </span>
+        </div>
+        <div className="flex flex-col gap-4 text-left md:flex-row md:gap-8">
+          <span>
+            {codeCounts.data.total_excluded_codes_count.toLocaleString()}{' '}
+            excluded
+          </span>
+          <span>
+            {codeCounts.data.total_custom_codes_count.toLocaleString()} custom
+          </span>
+          <span>
+            {codeCounts.data.total_code_sets_count.toLocaleString()} condition
+            code sets
+          </span>
+        </div>
+      </div>
+      <div
+        aria-hidden
+        className="bg-blue-cool-20 relative min-h-2 w-full overflow-hidden rounded-2xl"
+      >
+        <div
+          className="bg-blue-cool-50 absolute inset-y-0 left-0 rounded-2xl transition-all duration-500"
+          style={{ width: `${barFillPercentage}%` }}
+        />
+      </div>
     </div>
   );
 }
