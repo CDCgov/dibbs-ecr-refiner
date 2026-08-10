@@ -1,4 +1,5 @@
 import unittest
+from uuid import UUID
 
 from app.db.conditions.model import DbCondition
 from app.db.configurations.model import DbConfiguration
@@ -8,7 +9,9 @@ from tests.unit.conftest import create_mock_systems
 
 
 async def create_processed_config(
-    config: DbConfiguration, conditions: list[DbCondition]
+    config: DbConfiguration,
+    conditions: list[DbCondition],
+    excluded_codes: dict[UUID, set[tuple[str, str]]] | None = None,
 ):
     mock_systems = create_mock_systems()
     with (
@@ -19,6 +22,10 @@ async def create_processed_config(
         unittest.mock.patch(
             "app.services.configurations.get_id_to_code_system_dict_db",
             new=unittest.mock.AsyncMock(return_value={m.id: m for m in mock_systems}),
+        ),
+        unittest.mock.patch(
+            "app.services.configurations.get_code_exclusions_db",
+            new=unittest.mock.AsyncMock(return_value=excluded_codes or {}),
         ),
     ):
         storage_payload = await convert_config_to_storage_payload(
