@@ -30,6 +30,7 @@ import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
+import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -194,7 +195,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
                 <td>{code.system_name}</td>
                 <td>{code.description}</td>
                 <td>
-                  <SourceCell code={code} />
+                  <SourceCell configurationId={id} code={code} />
                 </td>
                 <td>
                   <IncludeSwitch
@@ -213,10 +214,11 @@ function CodesTable({ id, disabled }: CodesTableProps) {
 }
 
 interface SourceCellProps {
+  configurationId: string;
   code: CodeResponse;
 }
 
-function SourceCell({ code }: SourceCellProps) {
+function SourceCell({ configurationId, code }: SourceCellProps) {
   if (!code.is_custom) return code.source;
 
   return (
@@ -231,12 +233,11 @@ function SourceCell({ code }: SourceCellProps) {
         >
           Edit
         </Button>
-        <Button
-          className="text-state-error-dark text-sm! font-semibold hover:cursor-pointer hover:underline"
-          variant="unstyled"
-        >
-          Delete
-        </Button>
+        <DeleteCustomCodeButton
+          configurationId={configurationId}
+          id={code.id}
+          code={code.code}
+        />
       </div>
     </div>
   );
