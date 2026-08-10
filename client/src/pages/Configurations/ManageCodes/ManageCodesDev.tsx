@@ -1,5 +1,6 @@
 import { useParams } from 'react-router';
 import {
+  getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
   useGetCodesInfinite,
   useGetConfiguration,
@@ -27,6 +28,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
+import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -92,6 +94,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
       getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
     },
   });
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
@@ -216,16 +219,26 @@ function IncludeSwitch({
   code,
   disabled,
 }: IncludeSwitchProps) {
+  const queryClient = useQueryClient();
   const { mutate } = useSetCodesStatus();
 
   const toggleStatus = () => {
-    mutate({
-      configurationId,
-      params: {
-        status: code.status === 'Included' ? 'excluded' : 'included',
+    mutate(
+      {
+        configurationId,
+        params: {
+          status: code.status === 'Included' ? 'excluded' : 'included',
+        },
+        data: [code.id],
       },
-      data: [code.id],
-    });
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodesInfiniteQueryKey(configurationId),
+          });
+        },
+      }
+    );
   };
 
   return (
