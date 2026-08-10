@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi import status as http_status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.codes.db import (
@@ -90,7 +91,7 @@ async def get_codes(
 
     if not config:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Configuration cannot be found.",
         )
 
@@ -152,7 +153,7 @@ async def get_code_counts(
 
     if not config:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Configuration cannot be found.",
         )
 
@@ -160,7 +161,7 @@ async def get_code_counts(
 
     if not code_counts:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to get code count metadata.",
         )
 
@@ -210,7 +211,7 @@ async def set_codes_status(
 
     if not config:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Configuration cannot be found.",
         )
 
