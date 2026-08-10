@@ -66,6 +66,8 @@ export * from './releasesResponse';
 export * from './sectionUpdateInput';
 export * from './serializedFile';
 export * from './serializedFiles';
+export * from './setCodesStatusParams';
+export * from './setCodesStatusStatus';
 export * from './simulatorUploadResponse';
 export * from './tesDiffConditionDetails';
 export * from './tesResponse';

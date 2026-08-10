@@ -3,6 +3,7 @@ import {
   useGetCodeCounts,
   useGetCodesInfinite,
   useGetConfiguration,
+  useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 import { Spinner } from '@components/Spinner';
@@ -25,7 +26,7 @@ import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
-import { GetConfigurationResponse } from '../../../api/schemas';
+import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -67,7 +68,7 @@ export function ManageCodesDev() {
           <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
         </div>
         <CodeInformationBar id={id} />
-        <CodesTable id={configuration.data.id} />
+        <CodesTable id={configuration.data.id} disabled={isDisabled} />
       </SectionContainer>
     </div>
   );
@@ -75,9 +76,10 @@ export function ManageCodesDev() {
 
 interface CodesTableProps {
   id: string;
+  disabled: boolean;
 }
 
-function CodesTable({ id }: CodesTableProps) {
+function CodesTable({ id, disabled }: CodesTableProps) {
   const {
     data,
     isPending,
@@ -128,6 +130,7 @@ function CodesTable({ id }: CodesTableProps) {
             <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
               <th scope="col" className="w-10 text-center">
                 <Checkbox
+                  disabled={disabled}
                   checked={allSelected}
                   onChange={(checked) =>
                     setSelectedIds(
@@ -168,6 +171,7 @@ function CodesTable({ id }: CodesTableProps) {
               >
                 <td className="text-center">
                   <Checkbox
+                    disabled={disabled}
                     checked={selectedIds.has(code.id)}
                     onChange={(checked) =>
                       setSelectedIds((prev) => {
@@ -187,19 +191,51 @@ function CodesTable({ id }: CodesTableProps) {
                 <td>{code.description}</td>
                 <td>{code.source}</td>
                 <td>
-                  <div className="flex flex-row items-center gap-2">
-                    <Switch
-                      defaultChecked={code.status === 'Included'}
-                      disabled={code.is_custom}
-                    />
-                    {code.status}
-                  </div>
+                  <IncludeSwitch
+                    configurationId={id}
+                    code={code}
+                    disabled={disabled}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </InfiniteScroll>
+    </div>
+  );
+}
+
+interface IncludeSwitchProps {
+  configurationId: string;
+  code: CodeResponse;
+  disabled: boolean;
+}
+function IncludeSwitch({
+  configurationId,
+  code,
+  disabled,
+}: IncludeSwitchProps) {
+  const { mutate } = useSetCodesStatus();
+
+  const toggleStatus = () => {
+    mutate({
+      configurationId,
+      params: {
+        status: code.status === 'Included' ? 'excluded' : 'included',
+      },
+      data: [code.id],
+    });
+  };
+
+  return (
+    <div className="flex flex-row items-center gap-2">
+      <Switch
+        checked={code.status === 'Included'}
+        disabled={code.is_custom || disabled}
+        onClick={toggleStatus}
+      />
+      {code.status}
     </div>
   );
 }
