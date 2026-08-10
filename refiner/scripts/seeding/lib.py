@@ -371,6 +371,16 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
 
 
 def parse_valueset_source(vs: dict) -> str | None:
+    # get the condition context that we want to prefix the source from
+    title = vs.get("title", "")
+
+    # if the valueset is an ACG, the title has all the information we need, so
+    # just return a cleaned version
+    match = _ACG_CATEGORY_PATTERN.search(title)
+    if match:
+        return title.strip()
+
+    # otherwise, we need to find the valueSet text nested in the useContext information
     useContext = vs.get("useContext", [])
     if not useContext:
         return None
@@ -378,7 +388,7 @@ def parse_valueset_source(vs: dict) -> str | None:
     for context in useContext:
         for key, value in context.items():
             if key == "valueCodeableConcept":
-                return value.get("text")
+                return f"{title} {value.get('text')}"
 
 
 def map_coverage_level_to_acg_completeness(vs: dict) -> str | None:
@@ -447,12 +457,8 @@ def extract_codes_from_compose(vs: dict) -> set[FhirCodeTuple]:
     """
     Extracts all (system, code, display) tuples from a ValueSet's compose section.
     """
-
+    source = parse_valueset_source(vs)
     codes: set[FhirCodeTuple] = set()
-    sourceInformation = vs.get("useContext")
-    source = ""
-    if sourceInformation:
-        source = sourceInformation[0].get("valueCodeableConcept").get("text")
 
     compose = vs.get("compose")
     if not compose:

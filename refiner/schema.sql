@@ -437,6 +437,14 @@ ALTER TABLE ONLY public.conditions
 
 
 --
+-- Name: conditions_codes conditions_codes_source_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes
+    ADD CONSTRAINT conditions_codes_source_pkey PRIMARY KEY (condition_id, code_id, source);
+
+
+--
 -- Name: conditions_context_groupers conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -458,14 +466,6 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
-
-
---
--- Name: conditions_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions_codes
-    ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
 --

@@ -25,6 +25,7 @@ from lib import (
     load_valuesets_from_all_files,
     parse_child_rsg_details_from_use_context,
     parse_snomed_from_url,
+    parse_valueset_source,
 )
 from psycopg import Cursor
 from psycopg.rows import TupleRow
@@ -81,7 +82,8 @@ class ProcessedCondition(TypedDict):
 type SystemDbId = str
 type SystemOid = str
 type CodeValue = str
-type DbCodedConcept = tuple[SystemDbId, CodeValue]
+type CodeSource = str
+type SourcedCode = tuple[SystemDbId, CodeValue, CodeSource]
 
 type CodeVersion = str
 type SystemCodeTuple = tuple[SystemDbId, CodeVersion, CodeValue]
@@ -95,9 +97,8 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     condition_id: UUID
     condition_url: str
     condition_display_name: str
-    condition_source: str
-    child_rsg_codes: set[DbCodedConcept]
-    non_child_rsg_codes: set[DbCodedConcept]
+    child_rsg_codes: set[SourcedCode]
+    non_child_rsg_codes: set[SourcedCode]
 
 
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
@@ -167,16 +168,16 @@ def _build_codes(
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
 ) -> ProcessedCodePayload:
     snomed_db_id = oid_indexed_system_db_ids[SNOMED_OID]
-    codes_seen_so_far: set[DbCodedConcept] = set()
+    codes_seen_so_far: set[SourcedCode] = set()
     codes_for_codes_table: list[CodeRow] = []
 
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
         cond_version = condition.get("version", "")
-        cond_display = condition.get("title", "")
+        condition_grouper_source = parse_valueset_source(condition)
 
-        condition_child_rsg_snomed_codes: set[DbCodedConcept] = set()
-        condition_non_child_rsg_snomed_codes: set[DbCodedConcept] = set()
+        condition_child_rsg_snomed_codes: set[SourcedCode] = set()
+        condition_non_child_rsg_snomed_codes: set[SourcedCode] = set()
 
         child_tuples: set[FhirCodeTuple] = set()
 
@@ -191,10 +192,8 @@ def _build_codes(
             display = parse_child_rsg_details_from_use_context(
                 child_vs.get("useContext", "")
             )
-            code_tuple = (
-                snomed_db_id,
-                child_rsg_code,
-            )
+            child_source = condition_grouper_source if condition_grouper_source else ""
+            code_tuple = (snomed_db_id, child_rsg_code, child_source)
             condition_child_rsg_snomed_codes.add(code_tuple)
 
             if code_tuple not in codes_seen_so_far:
@@ -231,10 +230,11 @@ def _build_codes(
 
             for c in code_list:
                 code = c.get("code")
-                if not code:
+                source = c.get("source")
+                if not code or not source:
                     continue
 
-                code_tuple = (system_id, code)
+                code_tuple = (system_id, code, source)
                 if code_tuple not in codes_seen_so_far:
                     codes_seen_so_far.add(code_tuple)
                     code_row = CodeRow(
@@ -471,15 +471,11 @@ def _upsert_relationships(
             if not cond_id:
                 continue
 
-            source = cond["condition_source"]
-            if not cond_id:
-                continue
-
-            for system_id, code in cond["child_rsg_codes"]:
+            for system_id, code, source in cond["child_rsg_codes"]:
                 staged_counts[child_rsg_key] += 1
                 yield (cond_id, system_id, code, True, source)
 
-            for system_id, code in cond["non_child_rsg_codes"]:
+            for system_id, code, source in cond["non_child_rsg_codes"]:
                 staged_counts[non_child_rsg_key] += 1
                 yield (cond_id, system_id, code, False, source)
 
