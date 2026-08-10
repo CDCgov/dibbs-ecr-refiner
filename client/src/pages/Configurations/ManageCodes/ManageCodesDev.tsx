@@ -193,7 +193,9 @@ function CodesTable({ id, disabled }: CodesTableProps) {
                 <td>{code.code}</td>
                 <td>{code.system_name}</td>
                 <td>{code.description}</td>
-                <td>{code.source}</td>
+                <td>
+                  <SourceCell code={code} />
+                </td>
                 <td>
                   <IncludeSwitch
                     configurationId={id}
@@ -206,6 +208,36 @@ function CodesTable({ id, disabled }: CodesTableProps) {
           </tbody>
         </table>
       </InfiniteScroll>
+    </div>
+  );
+}
+
+interface SourceCellProps {
+  code: CodeResponse;
+}
+
+function SourceCell({ code }: SourceCellProps) {
+  if (!code.is_custom) return code.source;
+
+  return (
+    <div className="flex flex-col items-center gap-2 xl:flex-row">
+      <span className="text-violet-warm-60 rounded-xs border bg-[#f9f4f9] px-2 py-0.5 text-sm font-bold whitespace-nowrap">
+        Custom code
+      </span>
+      <div className="flex flex-row gap-2">
+        <Button
+          className="text-blue-cool-50 text-sm! font-semibold hover:cursor-pointer hover:underline"
+          variant="unstyled"
+        >
+          Edit
+        </Button>
+        <Button
+          className="text-state-error-dark text-sm! font-semibold hover:cursor-pointer hover:underline"
+          variant="unstyled"
+        >
+          Delete
+        </Button>
+      </div>
     </div>
   );
 }
