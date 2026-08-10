@@ -73,14 +73,15 @@ async def get_codes_db(
     # Handle custom codes first
     if in_custom:
         remaining = limit + 1  # +1 to detect next page
-        custom_params: list = [configuration_id]
+        custom_params: dict = {
+            "configuration_id": configuration_id,
+            "limit": remaining,
+        }
         custom_cursor_clause = ""
 
         if decoded:
-            custom_cursor_clause = "AND c.code > %s"
-            custom_params.append(decoded.code)
-
-        custom_params.append(remaining)
+            custom_cursor_clause = "AND c.code > %(cursor_code)s"
+            custom_params["cursor_code"] = decoded.code
 
         custom_query = f"""
             SELECT
@@ -94,10 +95,10 @@ async def get_codes_db(
                 'included' AS status
             FROM custom_codes c
             JOIN systems s ON s.id = c.system_id
-            WHERE c.configuration_id = %s
+            WHERE c.configuration_id = %(configuration_id)s
             {custom_cursor_clause}
             ORDER BY c.code
-            LIMIT %s;
+            LIMIT %(limit)s;
         """
 
         async with db.get_connection() as conn:
@@ -123,14 +124,16 @@ async def get_codes_db(
 
     # Handle condition-linked codes
     remaining = limit - len(rows) + 1  # +1 to detect next page
-    cond_params: list = [configuration_id]
+    cond_params: dict = {
+        "configuration_id": configuration_id,
+        "limit": remaining,
+    }
     cursor_clause = ""
 
     if not in_custom and decoded:
-        cursor_clause = "AND (cfgc.condition_id, c.code) > (%s, %s)"
-        cond_params += [decoded.condition_id, decoded.code]
-
-    cond_params.append(remaining)
+        cursor_clause = "AND (cfgc.condition_id, c.code) > (%(cursor_condition_id)s, %(cursor_code)s)"
+        cond_params["cursor_condition_id"] = decoded.condition_id
+        cond_params["cursor_code"] = decoded.code
 
     cond_query = f"""
         SELECT
@@ -151,10 +154,10 @@ async def get_codes_db(
             ON e.configuration_id = cfgc.configuration_id
             AND e.condition_id = cfgc.condition_id
             AND e.code_id = cc.code_id
-        WHERE cfgc.configuration_id = %s
+        WHERE cfgc.configuration_id = %(configuration_id)s
         {cursor_clause}
         ORDER BY cfgc.condition_id, c.code
-        LIMIT %s;
+        LIMIT %(limit)s;
     """
 
     async with db.get_connection() as conn:
