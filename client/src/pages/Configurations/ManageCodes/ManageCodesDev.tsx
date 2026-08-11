@@ -359,7 +359,7 @@ function CodeInformationBar({ id }: { id: string }) {
   return (
     <div className="bg-blue-cool-5 border-blue-cool-20! flex min-h-20 w-full flex-col gap-2 border px-10 py-4">
       <div className="flex flex-row items-center justify-between">
-        <div>
+        <div data-testid="codes-included-display">
           <span className="text-2xl font-bold">
             {includedCount.toLocaleString()}
           </span>{' '}
