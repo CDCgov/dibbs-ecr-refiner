@@ -1,7 +1,7 @@
 -- migrate:up
 DROP INDEX IF EXISTS codes_upsert_constraint_idx;
 
-CREATE INDEX IF NOT EXISTS idx_conditions_tes_id 
+CREATE INDEX IF NOT EXISTS idx_conditions_tes_id
     ON conditions (tes_id);
 
 ALTER TABLE conditions_codes ADD COLUMN source_url TEXT DEFAULT '' NOT NULL;
