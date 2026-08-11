@@ -16,7 +16,7 @@ export function AddCustomCodeButton({
     <>
       <Menu>
         <MenuButton
-          className="text-violet-warm-60 flex h-8 flex-row items-center gap-2 rounded-md border-2! bg-white px-2 text-sm! font-bold hover:cursor-pointer hover:bg-[#f9f4f9]!"
+          className="text-violet-warm-60 flex h-8 flex-row items-center gap-2 rounded-md border-2! bg-white px-2 text-sm! font-bold hover:cursor-pointer hover:bg-[#f9f4f9]! whitespace-nowrap"
           aria-label="Add new custom code"
           disabled={disabled}
         >

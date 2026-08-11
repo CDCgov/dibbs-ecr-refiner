@@ -59,18 +59,20 @@ export function ManageCodesDev() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <ConfigurationTitleBar
-          title="Manage codes"
-          subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
-        />
-        <div className="flex w-full flex-row items-center justify-end gap-2">
-          <AddCodeSetsButton
-            id={configuration.data.id}
-            included_conditions={configuration.data.included_conditions}
-            display_name={configuration.data.display_name}
-            disabled={isDisabled}
+        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
+          <ConfigurationTitleBar
+            title="Manage codes"
+            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
           />
-          <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+          <div className="flex flex-col items-start justify-end gap-2 sm:flex-row sm:items-center">
+            <AddCodeSetsButton
+              id={configuration.data.id}
+              included_conditions={configuration.data.included_conditions}
+              display_name={configuration.data.display_name}
+              disabled={isDisabled}
+            />
+            <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+          </div>
         </div>
         <CodeInformationBar id={id} />
         <CodesTable id={configuration.data.id} disabled={isDisabled} />
@@ -304,7 +306,7 @@ function AddCodeSetsButton({
     <>
       <Button
         variant="unstyled"
-        className="border-blue-cool-50! h-8 rounded-md border-2! bg-white px-3 text-sm! hover:cursor-pointer hover:bg-[#eef5f8]!"
+        className="border-blue-cool-50! h-8 rounded-md border-2! bg-white px-3 text-sm! whitespace-nowrap hover:cursor-pointer hover:bg-[#eef5f8]!"
         onClick={() => setIsDrawerOpen(true)}
       >
         <div className="flex flex-row items-center gap-2">
