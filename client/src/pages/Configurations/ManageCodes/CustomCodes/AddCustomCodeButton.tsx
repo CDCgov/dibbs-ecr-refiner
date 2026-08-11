@@ -17,7 +17,7 @@ export function AddCustomCodeButton({
       <Menu>
         <MenuButton
           className="text-violet-warm-60 flex h-8 flex-row items-center gap-2 rounded-md border-2! bg-white px-2 text-sm! font-bold whitespace-nowrap hover:cursor-pointer hover:bg-[#f9f4f9]!"
-          aria-label="Add new custom code"
+          aria-label="Add custom code"
           disabled={disabled}
         >
           <span>Add custom code</span>
@@ -31,19 +31,13 @@ export function AddCustomCodeButton({
           className="ring-opacity-5 border-gray-cool-10 text-md mt-1 flex w-60 flex-col items-start rounded-md bg-white shadow-lg focus-within:outline-none!"
         >
           <MenuItem>
-            <MenuItemButton
-              onClick={() => setIsOpen(true)}
-              ariaLabel="Add new custom code"
-            >
+            <MenuItemButton onClick={() => setIsOpen(true)}>
               Add a single code
             </MenuItemButton>
           </MenuItem>
           <div aria-hidden className="bg-gray-cool-10 my-1 h-px w-full" />
           <MenuItem>
-            <MenuItemButton
-              onClick={() => setIsOpen(true)}
-              ariaLabel="Add new custom code"
-            >
+            <MenuItemButton onClick={() => setIsOpen(true)}>
               Import codes from CSV
             </MenuItemButton>
           </MenuItem>
@@ -62,16 +56,14 @@ export function AddCustomCodeButton({
 
 interface MenuItemButtonProps {
   onClick: () => void;
-  ariaLabel: string;
   children: React.ReactNode;
 }
-function MenuItemButton({ onClick, ariaLabel, children }: MenuItemButtonProps) {
+function MenuItemButton({ onClick, children }: MenuItemButtonProps) {
   return (
     <Button
       className="hover:bg-blue-cool-5 flex w-full p-3 hover:cursor-pointer"
       onClick={onClick}
       variant="unstyled"
-      aria-label={ariaLabel}
     >
       {children}
     </Button>
