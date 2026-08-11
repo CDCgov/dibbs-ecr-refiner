@@ -333,7 +333,12 @@ function AddCodeSetsButton({
 
 function CodeSetButtonSymbol() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="#3a7d95">
+    <svg
+      className="fill-blue-cool-50"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+    >
       <path d="M4 4h7v16H4zm9 0h7v7h-7zm0 9h7v7h-7z" />
     </svg>
   );
