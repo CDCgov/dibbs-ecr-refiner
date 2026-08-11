@@ -83,7 +83,7 @@ async def _get_baseline_tes_diff_db(
     """
 
     query = """
-        SELECT
+        SELECT DISTINCT
             c.canonical_url,
             c.display_name,
             COALESCE(array_agg(cc.code_id)) as added_code_ids,
@@ -121,7 +121,7 @@ async def _get_tes_update_diff_db(
 
     query = """
     WITH curr AS (
-        SELECT
+        SELECT DISTINCT
             c.id as condition_id,
             c.canonical_url,
             cc.code_id,
@@ -131,7 +131,7 @@ async def _get_tes_update_diff_db(
         WHERE c.tes_id = %(cur_tes_id)s
     ),
     prev AS (
-        SELECT
+        SELECT DISTINCT
             c.id as condition_id,
             c.canonical_url,
             c.display_name,

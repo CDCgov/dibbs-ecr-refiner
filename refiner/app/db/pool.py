@@ -21,6 +21,7 @@ class AsyncDatabaseConnection:
         db_password: str,
         min_size: int = 1,
         max_size: int = 10,
+        timeout: int = 60,
         prepare_threshold: int | None = 5,
     ) -> None:
         """
@@ -31,6 +32,7 @@ class AsyncDatabaseConnection:
             db_password (str): The PostgreSQL password.
             min_size (int, optional): Minimum number of connections to maintain in the pool. Defaults to 1.
             max_size (int, optional): Maximum number of connections allowed in the pool. Defaults to 10.
+            timeout (int, optional): Amount of time to wait for DB to be ready, defaults to a minute to allow for db migration/seeding.
             prepare_threshold (int, optional): Number of times a query is executed before it is prepared. Defaults to 5.
         """
         self.connection_url = db_url
@@ -40,6 +42,7 @@ class AsyncDatabaseConnection:
             self.connection_url,
             min_size=min_size,
             max_size=max_size,
+            timeout=timeout,
             open=False,
             kwargs={
                 "password": self.db_password,

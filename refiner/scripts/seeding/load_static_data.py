@@ -1,7 +1,7 @@
 import os
 import time
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TypedDict
 from uuid import UUID, uuid4
@@ -12,6 +12,7 @@ from lib import (
     CODE_SYSTEM_DATA,
     SNOMED_OID,
     CodeRow,
+    ConditionCodePayload,
     ConditionData,
     FhirCodeInfo,
     VsCanonicalUrl,
@@ -167,62 +168,131 @@ def _upsert_tes_data(
     return version_to_tes_id
 
 
+@dataclass
+class BuildCodeContext:
+    """
+    Context for code and code relationships that .
+    """
+
+    db_ids: dict[SystemOid, UUID]
+    unique_code_traces: set[ConditionsCodesTrace] = field(default_factory=set)
+    unique_codes: list[CodeRow] = field(default_factory=list)
+
+    def mark_code_as_seen(
+        self, code_trace: ConditionsCodesTrace, code: str, display: str
+    ):
+        """Tracks trace and registers code row information across build functions."""
+        if code_trace in self.unique_code_traces:
+            return False
+
+        self.unique_code_traces.add(code_trace)
+        self.unique_codes.append(
+            CodeRow(
+                id=uuid4(),
+                code=code,
+                display=display,
+                system_id=str(code_trace.system_db_id),
+            )
+        )
+        return True
+
+
+def _build_child_codes(
+    child_valuesets: list[VsDict],
+    code_context: BuildCodeContext,
+) -> tuple[set[ConditionsCodesTrace], set[FhirCodeInfo]]:
+    snomed_db_id = code_context.db_ids[SNOMED_OID]
+    condition_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
+    child_fhir_info: set[FhirCodeInfo] = set()
+
+    for child_vs in child_valuesets:
+        source_url = child_vs.get("url", "")
+        source_name = parse_valueset_source_name(child_vs)
+
+        child_rsg_code = parse_snomed_from_url(source_url)
+        child_fhir_info.update(extract_codes_from_compose(child_vs))
+
+        if not child_rsg_code:
+            continue
+
+        display = parse_child_rsg_details_from_use_context(
+            child_vs.get("useContext", "")
+        )
+        code_trace = ConditionsCodesTrace(
+            system_db_id=snomed_db_id,
+            code=child_rsg_code,
+            source_url=source_url,
+            source_name=source_name,
+        )
+        code_context.mark_code_as_seen(code_trace, child_rsg_code, display)
+        condition_child_rsg_snomed_codes.add(code_trace)
+
+    return condition_child_rsg_snomed_codes, child_fhir_info
+
+
+def _build_sibling_codes(
+    system_sorted_codes: ConditionCodePayload,
+    code_context: BuildCodeContext,
+    condition_snomed_child_rsgs: set[ConditionsCodesTrace],
+) -> set[ConditionsCodesTrace]:
+    condition_non_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
+
+    for system_oid, code_list in system_sorted_codes.items():
+        system_id = code_context.db_ids.get(system_oid)
+        if not system_id:
+            continue
+
+        for c in code_list:
+            code = c.get("code")
+            source_url = c.get("source_url", "")
+            source_name = c.get("source_name", "")
+            if not code or not source_url or not source_name:
+                continue
+
+            code_trace = ConditionsCodesTrace(
+                system_db_id=system_id,
+                code=code,
+                source_url=source_url,
+                source_name=source_name,
+            )
+
+            code_context.mark_code_as_seen(code_trace, code, c.get("display") or "")
+            if code_trace not in condition_snomed_child_rsgs:
+                # skip code if already marked in child_rsgs so we don't try to
+                # upsert the same code twice in the same transaction and run into
+                # cardinality violations
+                condition_non_child_rsg_snomed_codes.add(code_trace)
+
+    return condition_non_child_rsg_snomed_codes
+
+
 def _build_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
     oid_indexed_system_db_ids: dict[SystemOid, UUID],
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
 ) -> ProcessedCodePayload:
-    snomed_db_id = oid_indexed_system_db_ids[SNOMED_OID]
-    code_traces_seen_so_far: set[ConditionsCodesTrace] = set()
-    codes_for_codes_table: list[CodeRow] = []
+    code_context = BuildCodeContext(db_ids=oid_indexed_system_db_ids)
 
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
         cond_version = condition.get("version", "")
 
-        condition_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
-        condition_non_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
+        if not cond_canonical_url or not cond_version:
+            continue
 
-        child_code_fhir_info: set[FhirCodeInfo] = set()
+        cond_key = (cond_canonical_url, cond_version)
 
-        for child_vs in get_child_rsg_valuesets(
-            parent=condition, all_vs_map=valuesets_map
-        ):
-            source_url = child_vs.get("url", "")
-            source_name = parse_valueset_source_name(child_vs)
+        condition_child_rsg_snomed_codes, child_fhir_info = _build_child_codes(
+            child_valuesets=get_child_rsg_valuesets(
+                parent=condition, all_vs_map=valuesets_map
+            ),
+            code_context=code_context,
+        )
 
-            child_rsg_code = parse_snomed_from_url(source_url)
-            child_code_fhir_info.update(extract_codes_from_compose(child_vs))
-
-            if not child_rsg_code:
-                continue
-
-            display = parse_child_rsg_details_from_use_context(
-                child_vs.get("useContext", "")
-            )
-            code_traces = ConditionsCodesTrace(
-                system_db_id=snomed_db_id,
-                code=child_rsg_code,
-                source_url=source_url,
-                source_name=source_name,
-            )
-            condition_child_rsg_snomed_codes.add(code_traces)
-
-            if code_traces not in code_traces_seen_so_far:
-                code_traces_seen_so_far.add(code_traces)
-                codes_for_codes_table.append(
-                    CodeRow(
-                        id=uuid4(),
-                        code=child_rsg_code,
-                        display=display,
-                        system_id=str(snomed_db_id),
-                    )
-                )
-
-        condition_to_code_relationships[(cond_canonical_url, cond_version)][
-            "child_rsg_codes"
-        ].update(condition_child_rsg_snomed_codes)
+        condition_to_code_relationships[cond_key]["child_rsg_codes"].update(
+            condition_child_rsg_snomed_codes
+        )
 
         # build all codes we need from sibling valuesets
         sibling_tuple_sets = [
@@ -235,52 +305,21 @@ def _build_codes(
             for sibling_tuple in sibling_tuple_set
         }
         system_sorted_codes = categorize_codes_by_system_oid(
-            sibling_code_fhir_info | child_code_fhir_info
+            sibling_code_fhir_info | child_fhir_info
         )
 
-        for system_oid, code_list in system_sorted_codes.items():
-            system_id = oid_indexed_system_db_ids.get(system_oid)
-            if not system_id:
-                continue
+        condition_non_child_rsg_snomed_codes = _build_sibling_codes(
+            system_sorted_codes=system_sorted_codes,
+            code_context=code_context,
+            condition_snomed_child_rsgs=condition_child_rsg_snomed_codes,
+        )
 
-            for c in code_list:
-                code = c.get("code")
-                source_url = c.get("source_url", "")
-                source_name = c.get("source_name", "")
-                if not code or not source_url or not source_name:
-                    print(code)
-                    continue
-
-                code_traces = ConditionsCodesTrace(
-                    system_db_id=system_id,
-                    code=code,
-                    source_url=source_url,
-                    source_name=source_name,
-                )
-
-                if code_traces not in code_traces_seen_so_far:
-                    code_traces_seen_so_far.add(code_traces)
-                    code_row = CodeRow(
-                        id=uuid4(),
-                        code=code,
-                        display=c.get("display") or "",
-                        system_id=str(system_id),
-                    )
-                    codes_for_codes_table.append(code_row)
-                if (
-                    # skip code if already marked in child_rsgs so we don't try to
-                    # upsert the same code twice in the same transaction and run into
-                    # cardinality violations
-                    code_traces not in condition_child_rsg_snomed_codes
-                ):
-                    condition_non_child_rsg_snomed_codes.add(code_traces)
-
-        condition_to_code_relationships[(cond_canonical_url, cond_version)][
-            "non_child_rsg_codes"
-        ].update(condition_non_child_rsg_snomed_codes)
+        condition_to_code_relationships[cond_key]["non_child_rsg_codes"].update(
+            condition_non_child_rsg_snomed_codes
+        )
 
     return ProcessedCodePayload(
-        codes_to_insert=codes_for_codes_table,
+        codes_to_insert=code_context.unique_codes,
         condition_relationships=condition_to_code_relationships,
     )
 

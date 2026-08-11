@@ -179,14 +179,12 @@ async def get_condition_by_id_db(
                 c.coverage_level_date
             FROM conditions c
             JOIN tes t ON t.id = c.tes_id
-            WHERE c.id = %s
+            WHERE c.id = %(id)s
             """
-
-    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"id": id})
             row = await cur.fetchone()
 
     if not row:
@@ -291,7 +289,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     db: AsyncDatabaseConnection, codes: list[str]
 ) -> list[DbCondition]:
     """
-    Given a list of RC SNOMED codes, find their assocaited CG rows.
+    Given a list of RC SNOMED codes, find their associated CG rows.
 
     Finds all conditions that are associated with the given list of child RSG SNOMED codes
     for any potential version of that condition data.
@@ -337,15 +335,13 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             JOIN codes ON crc.code_id = codes.id
             WHERE crc.condition_id = c.id
             AND crc.is_child_rsg
-            AND codes.code = ANY(%s)
+            AND codes.code = ANY(%(codes)s)
         );
     """
 
-    params = (codes,)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"codes": codes})
             rows = await cur.fetchall()
 
     return [DbCondition.from_db_row(row) for row in rows]
@@ -383,14 +379,12 @@ async def get_conditions_by_ids(
             c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
-        WHERE c.id = ANY(%s);
+        WHERE c.id = ANY(%(ids)s);
     """
-
-    params = (ids,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"ids": ids})
             rows = await cur.fetchall()
 
     return [DbCondition.from_db_row(row) for row in rows]
@@ -427,12 +421,12 @@ async def get_primary_conditions_for_configurations_db(
         FROM conditions c
         JOIN configurations_conditions cc ON cc.condition_id = c.id
         JOIN tes t ON t.id = c.tes_id
-        WHERE cc.configuration_id = ANY(%s)
+        WHERE cc.configuration_id = ANY(%(configuration_ids)s)
         AND cc.is_primary = true
     """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, (configuration_ids,))
+            await cur.execute(query, {"configuration_ids": configuration_ids})
             rows = await cur.fetchall()
 
     return {row["configuration_id"]: DbCondition.from_db_row(row) for row in rows}
@@ -487,15 +481,13 @@ async def get_included_conditions_db(
             c.coverage_level_date
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
-        WHERE c.id = ANY(%s)
+        WHERE c.id = ANY(%(included_conditions)s)
         ORDER BY c.id;
     """
 
-    params = (included_conditions,)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"included_conditions": included_conditions})
             rows = await cur.fetchall()
 
     return [DbCondition.from_db_row(row) for row in rows]
@@ -548,17 +540,17 @@ async def get_conditions_with_rsg_codes_db(
         JOIN tes t ON t.id = c.tes_id
         LEFT JOIN conditions_codes as rsg ON rsg.condition_id = c.id
         LEFT JOIN codes ON codes.id = rsg.code_id
-        WHERE t.version = %s AND rsg.is_child_rsg
+        WHERE t.version = %(tes_version)s AND rsg.is_child_rsg
         GROUP BY
             c.id,
             c.display_name
         ORDER BY LOWER(c.display_name);
     """
+
     latest_tes = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
-    params = (latest_tes.version,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"tes_version": latest_tes.version})
             rows = await cur.fetchall()
 
     return [ConditionSummary.from_db_row(r) for r in rows]
