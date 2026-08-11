@@ -27,8 +27,5 @@ ALTER TABLE conditions_codes ADD CONSTRAINT conditions_codes_pkey
 CREATE UNIQUE INDEX IF NOT EXISTS codes_upsert_constraint_idx
     ON codes (system_id, code);
 
-ALTER TABLE conditions_codes DROP PRIMARY KEY, ADD
-    PRIMARY KEY (condition_id, code_id);
-
 ALTER TABLE conditions_codes DROP COLUMN source_name;
 ALTER TABLE conditions_codes DROP COLUMN source_url;
