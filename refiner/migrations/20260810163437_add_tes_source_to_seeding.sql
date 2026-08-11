@@ -9,7 +9,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS code_system_source_constraint_idx
 
 ALTER TABLE conditions_codes DROP CONSTRAINT conditions_codes_pkey;
 
-ALTER TABLE conditions_codes ADD CONSTRAINT conditions_codes_source_pkey 
+ALTER TABLE conditions_codes ADD CONSTRAINT conditions_codes_source_pkey
     PRIMARY KEY (condition_id, code_id, source_url);
 
 -- migrate:down
@@ -23,9 +23,8 @@ ALTER TABLE conditions_codes ADD CONSTRAINT conditions_codes_pkey
 CREATE UNIQUE INDEX IF NOT EXISTS codes_upsert_constraint_idx
     ON codes (system_id, code);
 
-ALTER TABLE conditions_codes DROP PRIMARY KEY, ADD 
+ALTER TABLE conditions_codes DROP PRIMARY KEY, ADD
     PRIMARY KEY (condition_id, code_id);
 
 ALTER TABLE conditions_codes DROP COLUMN source_name;
 ALTER TABLE conditions_codes DROP COLUMN source_url;
-
