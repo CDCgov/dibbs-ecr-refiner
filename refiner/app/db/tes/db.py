@@ -83,7 +83,7 @@ async def _get_baseline_tes_diff_db(
     """
 
     query = """
-        SELECT DISTINCT
+        SELECT
             c.canonical_url,
             c.display_name,
             COALESCE(array_agg(cc.code_id)) as added_code_ids,
