@@ -194,7 +194,8 @@ CREATE TABLE public.conditions_codes (
     condition_id uuid CONSTRAINT conditions_rsg_codes_condition_id_not_null NOT NULL,
     code_id uuid CONSTRAINT conditions_rsg_codes_code_id_not_null NOT NULL,
     is_child_rsg boolean DEFAULT false,
-    source text DEFAULT ''::text NOT NULL
+    source_url text DEFAULT ''::text NOT NULL,
+    source_name text DEFAULT ''::text
 );
 
 
@@ -242,6 +243,19 @@ CREATE TABLE public.configurations_conditions (
     configuration_id uuid NOT NULL,
     condition_id uuid NOT NULL,
     is_primary boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: configurations_conditions_code_exclusions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_conditions_code_exclusions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    configuration_id uuid CONSTRAINT configurations_conditions_code_exclus_configuration_id_not_null NOT NULL,
+    condition_id uuid NOT NULL,
+    code_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -428,7 +442,7 @@ ALTER TABLE ONLY public.conditions
 --
 
 ALTER TABLE ONLY public.conditions_codes
-    ADD CONSTRAINT conditions_codes_source_pkey PRIMARY KEY (condition_id, code_id, source);
+    ADD CONSTRAINT conditions_codes_source_pkey PRIMARY KEY (condition_id, code_id, source_url);
 
 
 --
@@ -453,6 +467,22 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_cod_configuration_id_condition_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_cod_configuration_id_condition_id_key UNIQUE (configuration_id, condition_id, code_id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_code_exclusions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_code_exclusions_pkey PRIMARY KEY (id);
 
 
 --
@@ -656,7 +686,7 @@ CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON pu
 -- Name: code_system_source_constraint_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX code_system_source_constraint_idx ON public.conditions_codes USING btree (condition_id, code_id, source);
+CREATE UNIQUE INDEX code_system_source_constraint_idx ON public.conditions_codes USING btree (condition_id, code_id, source_url);
 
 
 --
@@ -808,6 +838,22 @@ ALTER TABLE ONLY public.conditions_codes
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_tes_id_fkey FOREIGN KEY (tes_id) REFERENCES public.tes(id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_cod_configuration_id_condition_i_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_cod_configuration_id_condition_i_fkey FOREIGN KEY (configuration_id, condition_id) REFERENCES public.configurations_conditions(configuration_id, condition_id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_code_exclusions_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_code_exclusions_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id);
 
 
 --
@@ -978,5 +1024,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260722140510'),
     ('20260728212408'),
     ('20260729154745'),
+    ('20260803202038'),
     ('20260810163313'),
     ('20260810163437');
