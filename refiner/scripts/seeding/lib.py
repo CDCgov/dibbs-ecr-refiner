@@ -76,13 +76,14 @@ _CATEGORY_SLUG_MAP = {
 }
 
 # type aliases
-# a tuple representing a single, raw code: (system, code, display) pulled straight from the fhir ValueSet
+# a tuple representing code information pulled straight from the FHIR ValueSet needed for seeding
 # * display **could** be empty
 type SystemOid = str
 type Code = str
 type Display = str | None
-type Source = str | None
-type FhirCodeTuple = tuple[SystemOid, Code, Display, Source]
+type SourceUrl = str
+type SourceName = str | None
+type FhirCodeInfo = tuple[SystemOid, Code, Display, SourceUrl, SourceName]
 
 
 # a dictionary representing a single code prepared for categorization by a code system
@@ -145,12 +146,12 @@ class ConditionData:
     parent_vs: VsDict
     all_vs_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict]
 
-    child_codes: set[FhirCodeTuple] = field(init=False, default_factory=set)
+    child_codes: set[FhirCodeInfo] = field(init=False, default_factory=set)
     """
     Codes from all child 'Reporting Specification Grouper' (RSG) ValueSets.
     """
 
-    sibling_codes: set[FhirCodeTuple] = field(init=False, default_factory=set)
+    sibling_codes: set[FhirCodeInfo] = field(init=False, default_factory=set)
     """
     Codes from all sibling 'Additional Context Grouper' ValueSets.
     """
@@ -224,7 +225,7 @@ class ConditionData:
         )
 
     @property
-    def all_codes(self) -> set[FhirCodeTuple]:
+    def all_codes(self) -> set[FhirCodeInfo]:
         """
         Generates a union of all codes belonging to the condition.
         """
@@ -370,7 +371,7 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
     return None
 
 
-def parse_valueset_source(vs: dict) -> str | None:
+def parse_valueset_source_name(vs: dict) -> str:
     # get the condition context that we want to prefix the source from
     title = vs.get("title", "")
 
@@ -383,12 +384,14 @@ def parse_valueset_source(vs: dict) -> str | None:
     # otherwise, we need to find the valueSet text nested in the useContext information
     useContext = vs.get("useContext", [])
     if not useContext:
-        return None
+        return ""
 
     for context in useContext:
         for key, value in context.items():
             if key == "valueCodeableConcept":
                 return f"{title} {value.get('text')}"
+
+    return ""
 
 
 def map_coverage_level_to_acg_completeness(vs: dict) -> str | None:
@@ -453,15 +456,19 @@ def is_additional_context_grouper(vs: dict) -> bool:
     return "additional" in name or "additional" in title
 
 
-def extract_codes_from_compose(vs: dict) -> set[FhirCodeTuple]:
+def extract_codes_from_compose(vs: dict) -> set[FhirCodeInfo]:
     """
     Extracts all (system, code, display) tuples from a ValueSet's compose section.
     """
-    source = parse_valueset_source(vs)
-    codes: set[FhirCodeTuple] = set()
-
+    codes: set[FhirCodeInfo] = set()
     compose = vs.get("compose")
+
     if not compose:
+        return codes
+
+    source_name = parse_valueset_source_name(vs)
+    source_url = vs.get("url")
+    if not source_url:
         return codes
 
     for inc in compose.get("include", []):
@@ -472,7 +479,9 @@ def extract_codes_from_compose(vs: dict) -> set[FhirCodeTuple]:
         for concept in inc.get("concept", []):
             code = concept.get("code")
             if code:
-                codes.add((system, code, concept.get("display"), source))
+                codes.add(
+                    (system, code, concept.get("display"), source_url, source_name)
+                )
 
     return codes
 
@@ -558,7 +567,7 @@ def get_sibling_context_valuesets(
 
 
 def categorize_codes_by_system(
-    all_codes: set[FhirCodeTuple],
+    all_codes: set[FhirCodeInfo],
 ) -> ConditionCodePayload:
     """
     Categorizes a set of codes into a dictionary based on their system.
@@ -569,17 +578,22 @@ def categorize_codes_by_system(
         system_name: [] for system_name in SYSTEM_MAP.values()
     }
 
-    for system, code, display, source in all_codes:
+    for system, code, display, source_url, source_name in all_codes:
         if system_key := SYSTEM_MAP.get(system):
             result[system_key].append(
-                {"code": code, "display": display, "source": source}
+                {
+                    "code": code,
+                    "display": display,
+                    "source_url": source_url,
+                    "source_name": source_name,
+                }
             )
 
     return result
 
 
 def categorize_codes_by_system_oid(
-    all_codes: set[FhirCodeTuple],
+    all_codes: set[FhirCodeInfo],
 ) -> ConditionCodePayload:
     """
     Categorizes a set of codes into a dictionary based on their system.
@@ -590,10 +604,15 @@ def categorize_codes_by_system_oid(
         system_oid: [] for system_oid in url_to_oid_map.values()
     }
 
-    for system_url, code, display, source in all_codes:
+    for system_url, code, display, source_url, source_name in all_codes:
         if cur_code_system_oid := url_to_oid_map.get(system_url):
             result[cur_code_system_oid].append(
-                {"code": code, "display": display, "source": source}
+                {
+                    "code": code,
+                    "display": display,
+                    "source_url": source_url,
+                    "source_name": source_name,
+                }
             )
     return result
 

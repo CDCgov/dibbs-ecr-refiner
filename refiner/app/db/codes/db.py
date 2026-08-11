@@ -21,6 +21,7 @@ async def get_rsg_codes_by_condition_id_db(
         LEFT JOIN tes on cond.tes_id = tes.id
         WHERE cc.condition_id = %(condition_id)s AND cc.is_child_rsg;
     """
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCode)) as cur:
             await cur.execute(query, {"condition_id": condition_id})
