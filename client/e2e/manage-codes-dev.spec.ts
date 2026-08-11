@@ -9,6 +9,10 @@ import { clearDb } from './db';
 import { Page } from '@playwright/test';
 import { ConfigurationPage } from './pages/ConfigurationPage';
 
+// This value represents the maximum number of table rows that load per page.
+// Refer to: `refiner/app/api/v1/configurations/codes/codes.py` (`get_codes()` route)
+const MAX_PAGE_SIZE = 100;
+
 /**
  * Temporary helper to navigate to the /view route
  */
@@ -31,7 +35,7 @@ test.describe('Codes management (WIP)', () => {
     await clearDb();
   });
 
-  test('Unaltered page layout check', async ({
+  test('Unaltered, initial page layout check', async ({
     page,
     configurationsPage,
     configurationPage,
@@ -50,6 +54,86 @@ test.describe('Codes management (WIP)', () => {
     await expect(page.getByText('0 custom')).toBeVisible();
     await expect(page.getByText('1 condition code sets')).toBeVisible();
     await expect(page.getByText("You've reached the end")).toBeVisible();
+  });
+
+  test('Custom codes appear at the top of the table', async ({
+    page,
+    configurationPage,
+    api,
+  }) => {
+    const condition = 'Anotia';
+    const config = await api.createConfiguration(condition);
+    const systems = await api.getSystems();
+    await api.uploadCustomCodeCsv(config.id, [
+      {
+        code: '123-4',
+        display: 'test code 1',
+        system_id: systems[0].id,
+      },
+      {
+        code: '432-1',
+        display: 'test code 2',
+        system_id: systems[1].id,
+      },
+    ]);
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'Configurations', level: 1 })
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'Anotia' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Customize eICR sections' })
+    ).toBeVisible();
+    await goToManageCodesDevPage(page, configurationPage);
+
+    // check top two rows
+    await expect(page.locator('table tr').nth(1)).toContainText('123-4');
+    await expect(page.locator('table tr').nth(2)).toContainText('432-1');
+
+    // check stats
+    await expect(page.getByTestId('codes-included-display')).toHaveText(
+      '4 of 4 codes included'
+    );
+    await expect(page.getByText('0 excluded')).toBeVisible();
+    await expect(page.getByText('2 custom')).toBeVisible();
+    await expect(page.getByText('1 condition code sets')).toBeVisible();
+  });
+
+  test('Custom codes cannot be excluded', async ({
+    api,
+    page,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    const config = await api.createConfiguration(condition);
+    const systems = await api.getSystems();
+    await api.uploadCustomCodeCsv(config.id, [
+      {
+        code: 'test-code-1',
+        display: 'My test code',
+        system_id: systems[0].id,
+      },
+    ]);
+
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'Configurations', level: 1 })
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'Anotia' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Customize eICR sections' })
+    ).toBeVisible();
+    await goToManageCodesDevPage(page, configurationPage);
+
+    const row = page.locator('table tr').filter({
+      has: page.locator('td', {
+        hasText: 'test-code-1',
+      }),
+    });
+
+    const switchCell = row.locator('td').last();
+    await expect(switchCell).toHaveText('Included');
+    await expect(switchCell.getByRole('switch')).toBeDisabled();
   });
 
   test('Individual codes can be toggled to be included/excluded', async ({
@@ -163,7 +247,7 @@ test.describe('Codes management (WIP)', () => {
     });
   });
 
-  test.skip('Condition code sets can be added and deleted', async ({
+  test('Condition code sets can be added and deleted', async ({
     page,
     configurationsPage,
     configurationPage,
@@ -171,9 +255,51 @@ test.describe('Codes management (WIP)', () => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
     await goToManageCodesDevPage(page, configurationPage);
+
+    await test.step('Add Acanthamoeba code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('acanth');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Acanthamoeba' })
+        .hover();
+      await page.getByLabel('Add Acanthamoeba').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
+    await test.step('Check page state after addition', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '940 of 940 codes included'
+      );
+      await expect(page.getByText('2 condition code sets')).toBeVisible();
+      await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+    });
+
+    await test.step('Remove Acanthamoeba code set', async () => {
+      await page.getByRole('button', { name: '2 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('acanth');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Acanthamoeba' })
+        .hover();
+      await page.getByLabel('Remove Acanthamoeba').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
+    await test.step('Check page state after removal', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '2 of 2 codes included'
+      );
+      await expect(page.getByText('1 condition code sets')).toBeVisible();
+      await expect(page.locator('table tr')).toHaveCount(3); // two Anotia codes + header row
+    });
   });
 
-  test.skip('More codes load into view as user scrolls down', async ({
+  test('More codes load into view as user scrolls down', async ({
     page,
     configurationsPage,
     configurationPage,
@@ -181,5 +307,28 @@ test.describe('Codes management (WIP)', () => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
     await goToManageCodesDevPage(page, configurationPage);
+
+    await test.step('Add code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('acanth');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Acanthamoeba' })
+        .hover();
+      await page.getByLabel('Add Acanthamoeba').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
+    await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+
+    await page.locator('table tr').last().scrollIntoViewIfNeeded();
+
+    // Scrolling down should add `MAX_PAGE_SIZE` to the table
+    const expectedRowCountAfterLoad = 2 * MAX_PAGE_SIZE + 1;
+    await expect(page.locator('table tr')).toHaveCount(
+      expectedRowCountAfterLoad
+    );
   });
 });
