@@ -63,7 +63,7 @@ export function ManageCodesDev() {
           title="Manage codes"
           subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
         />
-        <div className="flex w-full flex-row justify-end gap-2">
+        <div className="flex w-full flex-row items-center justify-end gap-2">
           <AddCodeSetsButton
             id={configuration.data.id}
             included_conditions={configuration.data.included_conditions}
