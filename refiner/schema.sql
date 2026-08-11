@@ -486,22 +486,6 @@ ALTER TABLE ONLY public.configurations_conditions_code_exclusions
 
 
 --
--- Name: configurations_conditions_code_exclusions configurations_conditions_cod_configuration_id_condition_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configurations_conditions_code_exclusions
-    ADD CONSTRAINT configurations_conditions_cod_configuration_id_condition_id_key UNIQUE (configuration_id, condition_id, code_id);
-
-
---
--- Name: configurations_conditions_code_exclusions configurations_conditions_code_exclusions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configurations_conditions_code_exclusions
-    ADD CONSTRAINT configurations_conditions_code_exclusions_pkey PRIMARY KEY (id);
-
-
---
 -- Name: configurations_conditions configurations_conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

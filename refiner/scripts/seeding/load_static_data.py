@@ -105,9 +105,9 @@ class ConditionToCodeRelationshipTrace(TypedDict):
     non_child_rsg_codes: set[ConditionsCodesTrace]
 
 
+type SystemDbId = UUID
 type SystemOid = str
-type SystemDbId = str
-
+type SystemOidToDbIdMap = dict[SystemOid, SystemDbId]
 type ConditionUniqueIndex = tuple[VsCanonicalUrl, VsVersion]
 
 type ConditionToCodeRelationshipIndex = dict[
@@ -168,24 +168,30 @@ def _upsert_tes_data(
     return version_to_tes_id
 
 
+type CodeValue = str
+type CodedConceptUniqueKey = tuple[SystemDbId, CodeValue]
+
+
 @dataclass
 class BuildCodeContext:
     """
     Context for code and code relationships that .
     """
 
-    db_ids: dict[SystemOid, UUID]
-    unique_code_traces: set[ConditionsCodesTrace] = field(default_factory=set)
+    db_ids: SystemOidToDbIdMap
+    unique_code_traces: set[CodedConceptUniqueKey] = field(default_factory=set)
     unique_codes: list[CodeRow] = field(default_factory=list)
 
     def mark_code_as_seen(
         self, code_trace: ConditionsCodesTrace, code: str, display: str
     ):
         """Tracks trace and registers code row information across build functions."""
-        if code_trace in self.unique_code_traces:
+
+        system_code_tuple = (code_trace.system_db_id, code)
+        if system_code_tuple in self.unique_code_traces:
             return False
 
-        self.unique_code_traces.add(code_trace)
+        self.unique_code_traces.add(system_code_tuple)
         self.unique_codes.append(
             CodeRow(
                 id=uuid4(),
@@ -269,7 +275,7 @@ def _build_sibling_codes(
 def _build_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
-    oid_indexed_system_db_ids: dict[SystemOid, UUID],
+    oid_indexed_system_db_ids: SystemOidToDbIdMap,
     condition_to_code_relationships: ConditionToCodeRelationshipIndex,
 ) -> ProcessedCodePayload:
     code_context = BuildCodeContext(db_ids=oid_indexed_system_db_ids)
@@ -650,7 +656,7 @@ def _build_condition_groupers(
 
 def _build_system_response(
     db_system_response: list[TupleRow | None],
-) -> dict[SystemOid, UUID]:
+) -> SystemOidToDbIdMap:
     response = defaultdict()
     for row in db_system_response:
         if row is None:

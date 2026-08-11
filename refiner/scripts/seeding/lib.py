@@ -372,6 +372,15 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
 
 
 def parse_valueset_source_name(vs: dict) -> str:
+    """
+    Extracts ValueSet TES source from the valueset, if it extists.
+
+    For distinct types of TES valuesets, this function:
+        - Checks "title" for ACG since those valuesets have all the relevant data
+        in that field
+        - Checks useContext.valueCodeableConcept.text for other ValueSets that have the appropriate descriptor
+        - Falls back to an empty string if nothing is found.
+    """
     # get the condition context that we want to prefix the source from
     title = vs.get("title", "")
 
