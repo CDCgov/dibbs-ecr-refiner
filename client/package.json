@@ -34,6 +34,7 @@
     "react": "19.2.8",
     "react-diff-viewer-continued": "4.4.0",
     "react-dom": "19.2.8",
+    "react-infinite-scroll-component": "^7.2.1",
     "react-markdown": "10.1.0",
     "react-router": "8.3.0",
     "react-spinners": "0.17.0",
