@@ -178,65 +178,62 @@ async def get_tes_update_condition_diff_db(
         )
 
     query = """
-        WITH cur AS (
-            SELECT
-                cond.canonical_url,
-                cond.display_name AS condition_name,
-                c.code,
-                s.display_name AS system_name,
-                c.display AS code_name,
-                c.id AS code_id
-            FROM conditions cond
-            LEFT JOIN codes c ON c.id = cc.code_id
-            LEFT JOIN systems s ON c.system_id = s.id
-            WHERE cond.tes_id = %(cur_tes_id)s
-            AND cond.canonical_url = %(cond_url)s
-        ),
-        prev AS (
-            SELECT
-                cond.canonical_url,
-                cond.display_name AS condition_name,
-                c.code,
-                s.display_name AS system_name,
-                c.display AS code_name,
-                c.id AS code_id
-            FROM conditions cond
-            LEFT JOIN codes c ON c.id = cc.code_id
-            LEFT JOIN systems s ON c.system_id = s.id
-            WHERE cond.tes_id = %(prev_tes_id)s 
-            AND cond.canonical_url = %(cond_url)s
-        )
+    WITH combined AS (
         SELECT
-            COALESCE(cur.canonical_url, prev.canonical_url) AS canonical_url,
-            MAX(COALESCE(cur.condition_name, prev.condition_name)) AS condition_name,
-            COALESCE(
-                jsonb_agg(
-                    jsonb_build_object(
-                        'code', cur.code,
-                        'system_name', cur.system_name,
-                        'display', cur.code_name
-                    )
-                ) FILTER (WHERE prev.code_id IS NULL AND cur.code_id IS NOT NULL),
-                '[]'::jsonb
-            ) AS added_codes,
-            COALESCE(
-                jsonb_agg(
-                    jsonb_build_object(
-                        'code', prev.code,
-                        'system_name', prev.system_name,
-                        'display', prev.code_name
-                    )
-                ) FILTER (WHERE cur.code_id IS NULL AND prev.code_id IS NOT NULL),
-                '[]'::jsonb
-            ) AS removed_codes
-        FROM cur
-        FULL OUTER JOIN prev
-            ON cur.canonical_url = prev.canonical_url
+            cond.canonical_url,
+            cond.display_name AS condition_name,
+            cond.tes_id,
+            c.id AS code_id,
+            c.code,
+            c.display AS code_name,
+            s.display_name AS system_name
+        FROM conditions cond
+        JOIN (
+            SELECT DISTINCT condition_id, code_id
+            FROM conditions_codes
+        ) cc ON cc.condition_id = cond.id
+        JOIN codes c ON c.id = cc.code_id
+        LEFT JOIN systems s ON s.id = c.system_id
+        WHERE cond.canonical_url = %(cond_url)s
+            AND cond.tes_id IN (%(cur_tes_id)s, %(prev_tes_id)s)
+    ),
+    cur AS (
+        SELECT * FROM combined WHERE tes_id = %(cur_tes_id)s
+    ),
+    prev AS (
+        SELECT * FROM combined WHERE tes_id = %(prev_tes_id)s
+    )
+    SELECT
+        COALESCE(cur.canonical_url, prev.canonical_url) AS canonical_url,
+        MAX(COALESCE(cur.condition_name, prev.condition_name)) AS condition_name,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'code', cur.code,
+                    'system_name', cur.system_name,
+                    'display', cur.code_name
+                )
+            ) FILTER (WHERE prev.code_id IS NULL AND cur.code_id IS NOT NULL),
+            '[]'::jsonb
+        ) AS added_codes,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'code', prev.code,
+                    'system_name', prev.system_name,
+                    'display', prev.code_name
+                )
+            ) FILTER (WHERE cur.code_id IS NULL AND prev.code_id IS NOT NULL),
+            '[]'::jsonb
+        ) AS removed_codes
+    FROM cur
+    FULL OUTER JOIN prev
+    ON cur.canonical_url = prev.canonical_url
         AND cur.code_id = prev.code_id
-        GROUP BY
-            COALESCE(cur.canonical_url, prev.canonical_url)
-        HAVING
-            COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
+    GROUP BY
+        COALESCE(cur.canonical_url, prev.canonical_url)
+    HAVING
+        COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
         OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
     """
 
@@ -276,37 +273,39 @@ async def _get_tes_update_diff_db(
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
     query = """
-    WITH cur AS (
+    WITH combined AS (
         SELECT DISTINCT
-            c.id as condition_id,
-            c.canonical_url,
-            cc.code_id,
-            c.display_name
-        FROM conditions_codes cc
-        JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id = %(cur_tes_id)s
-    ),
-    prev AS (
-        SELECT DISTINCT
-            c.id as condition_id,
+            c.id AS condition_id,
             c.canonical_url,
             c.display_name,
+            c.tes_id,
             cc.code_id
-        FROM conditions_codes cc
-        JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id = %(prev_tes_id)s
+        FROM conditions c
+        JOIN conditions_codes cc ON cc.condition_id = c.id
+        WHERE c.tes_id IN (%(cur_tes_id)s, %(prev_tes_id)s)
+    ),
+    cur AS (
+        SELECT * FROM combined WHERE tes_id = %(cur_tes_id)s
+    ),
+    prev AS (
+        SELECT * FROM combined WHERE tes_id = %(prev_tes_id)s
     )
-
     SELECT
-        COALESCE(cur.canonical_url, prev.canonical_url) as canonical_url,
+        COALESCE(cur.canonical_url, prev.canonical_url) AS canonical_url,
         MAX(COALESCE(cur.display_name, prev.display_name)) AS display_name,
-        COALESCE(array_agg(cur.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
-        COALESCE(array_agg(prev.code_id) FILTER (where cur.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
+        COALESCE(
+            array_agg(cur.code_id) FILTER (WHERE prev.code_id IS NULL AND cur.code_id IS NOT NULL),
+            '{}'::uuid[]
+        ) AS added_code_ids,
+        COALESCE(
+            array_agg(prev.code_id) FILTER (WHERE cur.code_id IS NULL AND prev.code_id IS NOT NULL),
+            '{}'::uuid[]
+        ) AS removed_code_ids,
         (COUNT(prev.condition_id) = 0) AS is_new
     FROM cur
     FULL OUTER JOIN prev
         ON cur.canonical_url = prev.canonical_url
-        AND cur.code_id = prev.code_id
+    AND cur.code_id = prev.code_id
     GROUP BY
         COALESCE(cur.canonical_url, prev.canonical_url)
     HAVING
