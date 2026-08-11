@@ -313,7 +313,9 @@ function AddCodeSetsButton({
           <span className="bg-blue-cool-50 inline-flex h-5 min-w-5 items-center justify-center rounded-2xl font-bold text-white">
             {included_conditions.filter((ic) => ic.associated).length}
           </span>
-          <span className="font-bold text-[#224a58]">Condition code sets</span>
+          <span className="text-blue-cool-70 font-bold">
+            Condition code sets
+          </span>
           <CodeSetButtonSymbol />
         </div>
       </Button>
