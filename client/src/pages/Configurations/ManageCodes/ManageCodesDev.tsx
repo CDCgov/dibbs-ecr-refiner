@@ -302,7 +302,19 @@ function AddCodeSetsButton({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setIsDrawerOpen(true)}>Condition code sets</Button>
+      <Button
+        variant="unstyled"
+        className="border-blue-cool-50! h-8 rounded-md border-2! bg-white px-3 text-sm! hover:cursor-pointer hover:bg-[#eef5f8]!"
+        onClick={() => setIsDrawerOpen(true)}
+      >
+        <div className="flex flex-row items-center gap-2">
+          <span className="bg-blue-cool-50 inline-flex h-5 min-w-5 items-center justify-center rounded-2xl font-bold text-white">
+            {included_conditions.filter((ic) => ic.associated).length}
+          </span>
+          <span className="font-bold text-[#224a58]">Condition code sets</span>
+          <CodeSetButtonSymbol />
+        </div>
+      </Button>
       <AddConditionCodeSetsDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -312,6 +324,14 @@ function AddCodeSetsButton({
         disabled={disabled}
       />
     </>
+  );
+}
+
+function CodeSetButtonSymbol() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#3a7d95">
+      <path d="M4 4h7v16H4zm9 0h7v7h-7zm0 9h7v7h-7z" />
+    </svg>
   );
 }
 
