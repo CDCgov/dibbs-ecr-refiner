@@ -124,7 +124,7 @@ async def _get_baseline_tes_update_condition_diff_db(
             '{}'::text[] as removed_codes
         FROM conditions_codes cc
         LEFT JOIN conditions cond ON cc.condition_id = cond.id
-        LEFT JOIN codes c ON c.id = cc.code_id
+        LEFT JOIN codes c ON cc.code_id = c.id
         LEFT JOIN tes t ON cond.tes_id = t.id
         LEFT JOIN systems s ON c.system_id = s.id
         WHERE cond.tes_id = %(tes_id)s AND cond.canonical_url = %(cond_url)s
@@ -305,7 +305,7 @@ async def _get_tes_update_diff_db(
     FROM cur
     FULL OUTER JOIN prev
         ON cur.canonical_url = prev.canonical_url
-    AND cur.code_id = prev.code_id
+        AND cur.code_id = prev.code_id
     GROUP BY
         COALESCE(cur.canonical_url, prev.canonical_url)
     HAVING
