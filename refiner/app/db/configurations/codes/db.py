@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 
 from app.db.pool import AsyncDatabaseConnection
 
@@ -152,7 +152,6 @@ async def get_codes_db(
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
-            AND e.condition_id = cfgc.condition_id
             AND e.code_id = cc.code_id
         WHERE cfgc.configuration_id = %(configuration_id)s
         {cursor_clause}
@@ -180,6 +179,56 @@ async def get_codes_db(
 
     rows += cond_rows
     return rows, next_cursor
+
+
+async def set_codes_status_db(
+    configuration_id: UUID,
+    code_ids: list[UUID],
+    status: Literal["included", "excluded"],
+    db: AsyncDatabaseConnection,
+) -> list[UUID]:
+    """
+    Given a list of code IDs and a status, updates the `configurations_conditions_code_exclusions` table.
+
+    If `status="included"` is provided, entries will be deleted from the table.
+    If `status="excluded"` is provided, entries will be added to the table. Since multiple
+    conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
+
+    Args:
+        configuration_id (UUID): ID of the configuration
+        code_ids (list[UUID]): List of code IDs
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list[UUID]: List of impacted code IDs
+    """
+    if status == "included":
+        query = """
+            DELETE FROM configurations_conditions_code_exclusions
+            WHERE configuration_id = %(configuration_id)s
+              AND code_id = ANY(%(code_ids)s)
+            RETURNING code_id
+        """
+    else:
+        query = """
+            INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
+            SELECT %(configuration_id)s, UNNEST(%(code_ids)s::uuid[])
+            ON CONFLICT DO NOTHING
+            RETURNING code_id
+        """
+
+    params = {
+        "configuration_id": configuration_id,
+        "code_ids": code_ids,
+    }
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return [row["code_id"] for row in rows]
 
 
 @dataclass
@@ -215,7 +264,6 @@ async def get_code_count_metadata_db(
     JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
     LEFT JOIN configurations_conditions_code_exclusions e
         ON e.configuration_id = cfgc.configuration_id
-        AND e.condition_id = cfgc.condition_id
         AND e.code_id = cc.code_id
     WHERE cfgc.configuration_id = %(configuration_id)s;
     """
