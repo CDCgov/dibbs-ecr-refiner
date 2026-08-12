@@ -248,7 +248,7 @@ class SourceFilterOption:
     Model to represent a source filter option.
     """
 
-    condition_id: UUID
+    condition_id: UUID | None  # This will be `None` for custom codes
     source: str
     code_count: int
 
@@ -322,7 +322,6 @@ async def get_all_filter_options_db(
 
         SELECT 'source' AS filter_type, source_id::text AS value, source AS label, COUNT(*) AS code_count
         FROM all_codes
-        WHERE source_id IS NOT NULL
         GROUP BY source_id, source
 
         UNION ALL
@@ -351,7 +350,9 @@ async def get_all_filter_options_db(
         elif filter_type == "source":
             sources.append(
                 SourceFilterOption(
-                    condition_id=UUID(value), source=label, code_count=code_count
+                    condition_id=UUID(value) if value is not None else None,
+                    source=label,
+                    code_count=code_count,
                 )
             )
         elif filter_type == "status":
