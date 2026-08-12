@@ -29,11 +29,7 @@ import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
-import {
-  CodeFiltersResponse,
-  CodeResponse,
-  GetConfigurationResponse,
-} from '../../../api/schemas';
+import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
@@ -227,32 +223,31 @@ function CodesTable({ id, disabled }: CodesTableProps) {
   );
 }
 
-interface FiltersProps {
-  configurationId: string;
+interface FilterOption {
+  id: string | number;
+  label: string;
+  count?: number;
 }
 
-function Filters({ configurationId }: FiltersProps) {
-  const {
-    data: filters,
-    isPending,
-    isError,
-  } = useGetCodeFilters(configurationId);
-  const [selected, setSelected] = useState<CodeFiltersResponse[]>([]);
+interface FilterComboboxProps<T extends FilterOption> {
+  label: string;
+  options: T[];
+  selected: T[];
+  onChange: (val: T[]) => void;
+}
 
-  if (isPending) return <Spinner />;
-  if (isError) return 'Error!';
-
+function FilterCombobox<T extends FilterOption>({
+  label,
+  options,
+  selected,
+  onChange,
+}: FilterComboboxProps<T>) {
   return (
-    <Combobox
-      multiple
-      value={selected}
-      onChange={setSelected}
-      onClose={() => {}}
-    >
+    <Combobox multiple value={selected} onChange={onChange} onClose={() => {}}>
       <div className="relative">
-        <ComboboxButton className="flex w-44 items-center justify-between gap-6 rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
           {selected.length <= 0 ? (
-            'Code system'
+            label
           ) : (
             <span>{selected.length} selected</span>
           )}
@@ -275,7 +270,7 @@ function Filters({ configurationId }: FiltersProps) {
         </ComboboxButton>
 
         <ComboboxOptions className="absolute left-0 z-100 mt-1 w-56 rounded-md border border-gray-300! bg-white py-1 shadow-lg focus:outline-none">
-          {filters.data?.map((option) => (
+          {options.map((option) => (
             <ComboboxOption
               key={option.id}
               value={option}
@@ -290,11 +285,13 @@ function Filters({ configurationId }: FiltersProps) {
                     className="h-4 w-4 rounded border-gray-400 accent-blue-600"
                   />
                   <span className="text-md flex-1 text-gray-800">
-                    {option.system_name}
+                    {option.label}
                   </span>
-                  <span className="text-gray-cool-50 text-sm">
-                    {option.code_count.toLocaleString()}
-                  </span>
+                  {option.count !== undefined && (
+                    <span className="text-gray-cool-50 text-sm">
+                      {option.count.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               )}
             </ComboboxOption>
@@ -303,7 +300,7 @@ function Filters({ configurationId }: FiltersProps) {
           <div className="mt-1 border-t border-gray-300 px-4 pt-2 pb-1">
             <Button
               variant="unstyled"
-              onClick={() => setSelected([])}
+              onClick={() => onChange([])}
               className="text-blue-cool-50 hover:text-blue-cool-70 text-sm font-bold hover:cursor-pointer hover:underline"
             >
               Clear selection
@@ -312,6 +309,39 @@ function Filters({ configurationId }: FiltersProps) {
         </ComboboxOptions>
       </div>
     </Combobox>
+  );
+}
+
+function CodeSystemFilter({ configurationId }: { configurationId: string }) {
+  const { data, isPending, isError } = useGetCodeFilters(configurationId);
+  const [selected, setSelected] = useState<FilterOption[]>([]);
+
+  if (isPending) return <Spinner />;
+  if (isError) return 'Error!';
+
+  const options =
+    data.data?.map((f) => ({
+      id: f.id,
+      label: f.system_name,
+      count: f.code_count,
+    })) ?? [];
+
+  return (
+    <FilterCombobox
+      label="Code system"
+      options={options}
+      selected={selected}
+      onChange={setSelected}
+    />
+  );
+}
+
+function Filters({ configurationId }: { configurationId: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium text-black">Filter by:</span>
+      <CodeSystemFilter configurationId={configurationId} />
+    </div>
   );
 }
 
