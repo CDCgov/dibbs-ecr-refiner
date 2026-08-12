@@ -128,7 +128,7 @@ test.describe('Configuration detail flow', () => {
         .getByRole('button', { name: 'Yes, draft a new version' })
         .click();
 
-      await expect(page.getByText('Editing: Version 2')).toBeVisible();
+      await expect(page.getByText('Editing: Version 2 (draft)')).toBeVisible();
       await expect(activateThisVersionButton).toBeVisible();
 
       await activateThisVersionButton.click();
@@ -138,7 +138,7 @@ test.describe('Configuration detail flow', () => {
       await page
         .getByRole('button', { name: 'Yes, switch to Version 2' })
         .click();
-      await expect(page.getByText('Status: Version 2 active')).toBeVisible();
+      await expect(page.getByText('Viewing: Version 2')).toBeVisible();
     });
 
     await test.step('Check "deactivate"', async () => {
