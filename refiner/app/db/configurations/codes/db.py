@@ -231,43 +231,54 @@ async def get_all_filter_options_db(
     Fetches filter options to present to the client.
     """
     query = """
-        WITH all_codes AS (
-            SELECT
-                s.id AS system_id,
-                s.display_name AS system_name,
-                'Custom Code' AS source,
-                'included' AS status
-            FROM custom_codes c
-            JOIN systems s ON s.id = c.system_id
-            WHERE c.configuration_id = %(configuration_id)s
+            WITH all_codes AS (
+                SELECT
+                    s.id AS system_id,
+                    s.display_name AS system_name,
+                    'Custom Code' AS source,
+                    'included' AS status
+                FROM custom_codes c
+                JOIN systems s ON s.id = c.system_id
+                WHERE c.configuration_id = %(configuration_id)s
 
-            UNION ALL
+                UNION ALL
 
-            SELECT
-                s.id AS system_id,
-                s.display_name AS system_name,
-                con.display_name || ' CG' AS source,
-                CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
-            FROM configurations_conditions cfgc
-            JOIN conditions con ON con.id = cfgc.condition_id
-            JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
-            JOIN codes c ON c.id = cc.code_id
-            JOIN systems s ON s.id = c.system_id
-            LEFT JOIN configurations_conditions_code_exclusions e
-                ON e.configuration_id = cfgc.configuration_id
-                AND e.code_id = cc.code_id
-            WHERE cfgc.configuration_id = %(configuration_id)s
-        )
-        SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
-        FROM systems s
-        LEFT JOIN all_codes ac ON ac.system_id = s.id
-        GROUP BY s.id, s.display_name
-        UNION ALL
-        SELECT 'source'      AS filter_type, source AS value, NULL AS label, COUNT(*) AS code_count FROM all_codes GROUP BY source
-        UNION ALL
-        SELECT 'status'      AS filter_type, status AS value, NULL AS label, COUNT(*) AS code_count FROM all_codes GROUP BY status
-        ORDER BY filter_type, code_count DESC;
-    """
+                SELECT
+                    s.id AS system_id,
+                    s.display_name AS system_name,
+                    con.display_name || ' CG' AS source,
+                    CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+                FROM configurations_conditions cfgc
+                JOIN conditions con ON con.id = cfgc.condition_id
+                JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+                JOIN codes c ON c.id = cc.code_id
+                JOIN systems s ON s.id = c.system_id
+                LEFT JOIN configurations_conditions_code_exclusions e
+                    ON e.configuration_id = cfgc.configuration_id
+                    AND e.code_id = cc.code_id
+                WHERE cfgc.configuration_id = %(configuration_id)s
+            )
+            SELECT * FROM (
+                SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
+                FROM systems s
+                LEFT JOIN all_codes ac ON ac.system_id = s.id
+                GROUP BY s.id, s.display_name
+
+                UNION ALL
+
+                SELECT 'source' AS filter_type, source AS value, NULL AS label, COUNT(*) AS code_count
+                FROM all_codes
+                GROUP BY source
+
+                UNION ALL
+
+                SELECT 'status' AS filter_type, s.status AS value, NULL AS label, COUNT(ac.status) AS code_count
+                FROM (VALUES ('included'), ('excluded')) AS s(status)
+                LEFT JOIN all_codes ac ON ac.status = s.status
+                GROUP BY s.status
+            ) AS filter_results
+            ORDER BY filter_type, code_count DESC;
+        """
 
     async with db.get_connection() as conn:
         async with conn.cursor() as cur:
