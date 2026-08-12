@@ -181,6 +181,49 @@ async def get_codes_db(
     return rows, next_cursor
 
 
+@dataclass
+class CodeSystemFilterOption:
+    """
+    Model to represent a code system filter option.
+    """
+
+    system_id: UUID
+    system_name: str
+    code_count: int
+
+
+async def get_code_system_filter_options_db(
+    configuration_id: UUID,
+    db: AsyncDatabaseConnection,
+) -> list[CodeSystemFilterOption]:
+    """
+    Fetch code system search filter information.
+    """
+    query = """
+        SELECT
+            s.id AS system_id,
+            s.display_name AS system_name,
+            COUNT(all_codes.system_id) AS code_count  -- COUNT on nullable col = 0 when no match
+        FROM systems s
+        LEFT JOIN (
+            SELECT system_id FROM custom_codes WHERE configuration_id = %(configuration_id)s
+            UNION ALL
+            SELECT c.system_id
+            FROM configurations_conditions cfgc
+            JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+            JOIN codes c ON c.id = cc.code_id
+            WHERE cfgc.configuration_id = %(configuration_id)s
+        ) AS all_codes ON all_codes.system_id = s.id
+        GROUP BY s.id, s.display_name
+        ORDER BY code_count DESC;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(CodeSystemFilterOption)) as cur:
+            await cur.execute(query, {"configuration_id": configuration_id})
+            return await cur.fetchall()
+
+
 async def set_codes_status_db(
     configuration_id: UUID,
     code_ids: list[UUID],
