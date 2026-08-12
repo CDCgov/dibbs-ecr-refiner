@@ -1,5 +1,7 @@
 import { Button } from '@components/Button';
 import {
+  getGetCodeCountsQueryKey,
+  getGetCodesInfiniteQueryKey,
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
   useEditCustomCodeFromConfiguration,
@@ -148,6 +150,12 @@ function CustomCodeForm({
             await queryClient.invalidateQueries({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodesInfiniteQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeCountsQueryKey(configurationId),
+            });
             showToast({ heading: 'Custom code updated', body: code });
             onClose();
           },
@@ -175,6 +183,12 @@ function CustomCodeForm({
           onSuccess: async () => {
             await queryClient.invalidateQueries({
               queryKey: getGetConfigurationQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodesInfiniteQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeCountsQueryKey(configurationId),
             });
             showToast({ heading: 'Custom code added', body: code });
             onClose();

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
+  getGetCodesInfiniteQueryKey,
+  getGetCodeCountsQueryKey,
 } from '../../../../api/configurations/configurations';
 import { CustomCodeResponse } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
@@ -87,6 +89,14 @@ export function CustomCodesDetail({
                               await queryClient.invalidateQueries({
                                 queryKey:
                                   getGetConfigurationQueryKey(configurationId),
+                              });
+                              await queryClient.invalidateQueries({
+                                queryKey:
+                                  getGetCodesInfiniteQueryKey(configurationId),
+                              });
+                              await queryClient.invalidateQueries({
+                                queryKey:
+                                  getGetCodeCountsQueryKey(configurationId),
                               });
                               showToast({
                                 heading: 'Deleted code',
