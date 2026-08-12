@@ -123,13 +123,9 @@ function CodesTable({ id, disabled }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <div className="flex w-full flex-col items-start justify-between gap-4 md:flex-row">
+      <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
         <Search placeholder="Search by keyword" className="w-70!" />
-        <div className="flex flex-col items-start gap-4 md:flex-row">
-          <Filters configurationId={id} />
-          <div className="border p-2">Source filter</div>
-          <div className="border p-2">Status filter</div>
-        </div>
+        <Filters configurationId={id} />
       </div>
       <InfiniteScroll
         dataLength={codes.length}
@@ -312,35 +308,55 @@ function FilterCombobox<T extends FilterOption>({
   );
 }
 
-function CodeSystemFilter({ configurationId }: { configurationId: string }) {
+function Filters({ configurationId }: { configurationId: string }) {
   const { data, isPending, isError } = useGetCodeFilters(configurationId);
   const [selected, setSelected] = useState<FilterOption[]>([]);
 
   if (isPending) return <Spinner />;
   if (isError) return 'Error!';
 
-  const options =
-    data.data?.map((f) => ({
-      id: f.id,
+  const codeSystemOptions =
+    data.data.code_systems.map((f) => ({
+      id: f.system_id,
       label: f.system_name,
       count: f.code_count,
-    })) ?? [];
+    }));
+
+  const sourceOptions =
+    data.data.sources.map((f) => ({
+      id: f.source,
+      label: f.source,
+      count: f.code_count,
+    }));
+
+  const statusOptions =
+    data.data.statuses.map((f) => ({
+      id: f.status,
+      label: f.status,
+      count: f.code_count,
+    }));
 
   return (
-    <FilterCombobox
-      label="Code system"
-      options={options}
-      selected={selected}
-      onChange={setSelected}
-    />
-  );
-}
-
-function Filters({ configurationId }: { configurationId: string }) {
-  return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col items-start gap-4 lg:flex-row">
       <span className="text-sm font-medium text-black">Filter by:</span>
-      <CodeSystemFilter configurationId={configurationId} />
+      <FilterCombobox
+        label="Code system"
+        options={codeSystemOptions}
+        selected={selected}
+        onChange={setSelected}
+      />
+      <FilterCombobox
+        label="Source"
+        options={sourceOptions}
+        selected={selected}
+        onChange={setSelected}
+      />
+      <FilterCombobox
+        label="Status"
+        options={statusOptions}
+        selected={selected}
+        onChange={setSelected}
+      />
     </div>
   );
 }

@@ -36,7 +36,7 @@ import type {
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
   CodeCountsResponse,
-  CodeFiltersResponse,
+  CodeFilterOptions,
   CodesResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
@@ -2229,7 +2229,7 @@ export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
  */
 export const getCodeFilters = (
     configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CodeFiltersResponse[]>> => {
+ ): Promise<AxiosResponse<CodeFilterOptions>> => {
 
 
     return axios.default.get(
