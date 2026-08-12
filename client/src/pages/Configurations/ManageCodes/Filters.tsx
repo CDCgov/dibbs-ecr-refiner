@@ -124,7 +124,7 @@ export function Filters({
   }));
 
   const sourceOptions = sources.map((f) => ({
-    id: f.condition_id,
+    id: f.condition_id ?? f.source,
     label: f.source,
     count: f.code_count,
   }));
