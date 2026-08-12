@@ -1,6 +1,7 @@
 import { useParams } from 'react-router';
 import {
   getGetCodeCountsQueryKey,
+  getGetCodeFiltersQueryKey,
   getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
   useGetCodesInfinite,
@@ -280,6 +281,9 @@ function IncludeSwitch({
           });
           await queryClient.invalidateQueries({
             queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
           });
         },
       }
