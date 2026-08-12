@@ -243,38 +243,79 @@ function Filters({ configurationId }: FiltersProps) {
   if (isError) return 'Error!';
 
   return (
-    <Combobox
-      multiple // multi-select
-      value={selected}
-      onChange={setSelected}
-      onClose={() => {}}
-    >
-      <ComboboxButton className="border">
-        {selected.length <= 0 ? (
-          'Code system'
-        ) : (
-          <span>{selected.length} selected</span>
-        )}
-      </ComboboxButton>
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium text-black">Filter by:</span>
 
-      <ComboboxOptions>
-        {filters.data?.map((option) => (
-          <ComboboxOption key={option.id} value={option}>
-            {(
-              { selected } // use render prop for checkbox state
-            ) => (
-              <>
-                <input type="checkbox" checked={selected} readOnly />
-                <span>{option.system_name}</span>
-                <span>({option.code_count.toLocaleString()})</span>
-              </>
+      <Combobox
+        multiple
+        value={selected}
+        onChange={setSelected}
+        onClose={() => {}}
+      >
+        <div className="relative">
+          <ComboboxButton className="flex w-44 items-center justify-between gap-6 rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            {selected.length <= 0 ? (
+              'Code system'
+            ) : (
+              <span>{selected.length} selected</span>
             )}
-          </ComboboxOption>
-        ))}
+            <span
+              aria-hidden
+              className="flex items-center gap-2 border-l border-gray-300 pl-3"
+            >
+              <svg
+                className="h-4 w-4 text-gray-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </span>
+          </ComboboxButton>
 
-        <button onClick={() => setSelected([])}>Clear selection</button>
-      </ComboboxOptions>
-    </Combobox>
+          <ComboboxOptions className="absolute left-0 z-100 mt-1 w-56 rounded-md border border-gray-300! bg-white py-1 shadow-lg focus:outline-none">
+            {filters.data?.map((option) => (
+              <ComboboxOption
+                key={option.id}
+                value={option}
+                className="ui-active:bg-gray-50 hover:bg-blue-cool-5 cursor-pointer px-4 py-2 select-none"
+              >
+                {({ selected }) => (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      readOnly
+                      className="h-4 w-4 rounded border-gray-400 accent-blue-600"
+                    />
+                    <span className="text-md flex-1 text-gray-800">
+                      {option.system_name}
+                    </span>
+                    <span className="text-gray-cool-50 text-sm">
+                      {option.code_count.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </ComboboxOption>
+            ))}
+
+            <div className="mt-1 border-t border-gray-300 px-4 pt-2 pb-1">
+              <Button
+                variant="unstyled"
+                onClick={() => setSelected([])}
+                className="text-blue-cool-50 hover:text-blue-cool-70 text-sm font-bold hover:cursor-pointer hover:underline"
+              >
+                Clear selection
+              </Button>
+            </div>
+          </ComboboxOptions>
+        </div>
+      </Combobox>
+    </div>
   );
 }
 
