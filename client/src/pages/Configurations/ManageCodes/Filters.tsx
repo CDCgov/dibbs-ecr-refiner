@@ -121,6 +121,9 @@ export function Filters({
 
   const { code_systems, sources, statuses } = data.data;
 
+  const capitalize = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
+
   const codeSystemOptions = code_systems.map((f) => ({
     id: f.system_id,
     label: f.system_name,
@@ -135,7 +138,7 @@ export function Filters({
 
   const statusOptions = statuses.map((f) => ({
     id: f.status,
-    label: f.status,
+    label: capitalize(f.status),
     count: f.code_count,
   }));
 
