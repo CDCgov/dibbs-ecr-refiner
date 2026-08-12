@@ -209,7 +209,8 @@ class StatusFilterOption:
     Model to represent a status filter option.
     """
 
-    status: str  # "included" | "excluded"
+    label: Literal["Included", "Excluded"]
+    status: Literal["included", "excluded"]
     code_count: int
 
 
@@ -276,10 +277,10 @@ async def get_all_filter_options_db(
 
         UNION ALL
 
-        SELECT 'status' AS filter_type, s.status AS value, NULL AS label, COUNT(ac.status) AS code_count
-        FROM (VALUES ('included'), ('excluded')) AS s(status)
+        SELECT 'status' AS filter_type, s.status AS value, s.status_label AS label, COUNT(ac.status) AS code_count
+        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS s(status, status_label)
         LEFT JOIN all_codes ac ON ac.status = s.status
-        GROUP BY s.status
+        GROUP BY s.status, s.status_label
     ) AS filter_results
     ORDER BY filter_type, code_count DESC;
         """
@@ -304,7 +305,9 @@ async def get_all_filter_options_db(
                 )
             )
         elif filter_type == "status":
-            statuses.append(StatusFilterOption(status=value, code_count=code_count))
+            statuses.append(
+                StatusFilterOption(status=value, label=label, code_count=code_count)
+            )
 
     return CodeFilterOptions(
         code_systems=code_systems,

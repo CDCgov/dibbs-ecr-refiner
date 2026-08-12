@@ -74,6 +74,8 @@ export * from './setCodesStatusStatus';
 export * from './simulatorUploadResponse';
 export * from './sourceFilterOption';
 export * from './statusFilterOption';
+export * from './statusFilterOptionLabel';
+export * from './statusFilterOptionStatus';
 export * from './tesDiffConditionDetails';
 export * from './tesResponse';
 export * from './tesUpdate';

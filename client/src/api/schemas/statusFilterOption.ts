@@ -1,8 +1,11 @@
+import type { StatusFilterOptionLabel } from './statusFilterOptionLabel';
+import type { StatusFilterOptionStatus } from './statusFilterOptionStatus';
 
 /**
  * Model to represent a status filter option.
  */
 export interface StatusFilterOption {
-  status: string;
+  label: StatusFilterOptionLabel;
+  status: StatusFilterOptionStatus;
   code_count: number;
 }
