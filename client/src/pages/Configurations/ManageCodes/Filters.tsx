@@ -7,6 +7,7 @@ import {
   ComboboxOption,
 } from '@headlessui/react';
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
+import { Checkbox } from '@components/Checkbox';
 
 interface FilterOption {
   id: string | number;
@@ -63,11 +64,8 @@ function FilterCombobox<T extends FilterOption>({
             >
               {({ selected }) => (
                 <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selected}
-                    readOnly
-                    className="h-4 w-4 rounded border-gray-400 accent-blue-600"
                   />
                   <span className="text-md flex-1 text-gray-800">
                     {option.label}
