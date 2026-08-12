@@ -140,6 +140,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
             <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
               <th scope="col" className="w-10 text-center">
                 <Checkbox
+                  aria-label="Include all codes in bulk operation"
                   disabled={disabled}
                   checked={allSelected}
                   onChange={(checked) =>
@@ -181,6 +182,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
               >
                 <td className="text-center">
                   <Checkbox
+                    aria-label={`Include ${code.code} in bulk operation`}
                     disabled={disabled}
                     checked={selectedIds.has(code.id)}
                     onChange={(checked) =>
