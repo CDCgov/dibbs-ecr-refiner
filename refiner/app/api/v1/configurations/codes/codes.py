@@ -7,8 +7,9 @@ from fastapi import status as http_status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.codes.db import (
+    CodeFilterOptions,
+    get_all_filter_options_db,
     get_code_count_metadata_db,
-    get_code_system_filter_options_db,
     get_codes_db,
     set_codes_status_db,
 )
@@ -236,7 +237,7 @@ class CodeFiltersResponse:
 
 @router.get(
     "/filters",
-    response_model=list[CodeFiltersResponse],
+    response_model=CodeFilterOptions,
     tags=["configurations"],
     operation_id="getCodeFilters",
 )
@@ -244,7 +245,7 @@ async def get_code_filters(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[CodeFiltersResponse]:
+) -> CodeFilterOptions:
     """
     Fetches code filter information for the client to display.
 
@@ -272,11 +273,4 @@ async def get_code_filters(
             detail="Configuration cannot be found.",
         )
 
-    filters = await get_code_system_filter_options_db(configuration_id=config.id, db=db)
-
-    return [
-        CodeFiltersResponse(
-            id=f.system_id, system_name=f.system_name, code_count=f.code_count
-        )
-        for f in filters
-    ]
+    return await get_all_filter_options_db(configuration_id=config.id, db=db)
