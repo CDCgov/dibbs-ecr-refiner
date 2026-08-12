@@ -119,19 +119,21 @@ export function Filters({
   if (isPending) return <Spinner />;
   if (isError) return 'Error!';
 
-  const codeSystemOptions = data.data.code_systems.map((f) => ({
+  const { code_systems, sources, statuses } = data.data;
+
+  const codeSystemOptions = code_systems.map((f) => ({
     id: f.system_id,
     label: f.system_name,
     count: f.code_count,
   }));
 
-  const sourceOptions = data.data.sources.map((f) => ({
+  const sourceOptions = sources.map((f) => ({
     id: f.source,
     label: f.source,
     count: f.code_count,
   }));
 
-  const statusOptions = data.data.statuses.map((f) => ({
+  const statusOptions = statuses.map((f) => ({
     id: f.status,
     label: f.status,
     count: f.code_count,
