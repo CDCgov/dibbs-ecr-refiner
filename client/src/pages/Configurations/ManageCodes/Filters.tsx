@@ -64,9 +64,7 @@ function FilterCombobox<T extends FilterOption>({
             >
               {({ selected }) => (
                 <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={selected}
-                  />
+                  <Checkbox checked={selected} />
                   <span className="text-md flex-1 text-gray-800">
                     {option.label}
                   </span>
@@ -129,7 +127,7 @@ export function Filters({
   }));
 
   const sourceOptions = sources.map((f) => ({
-    id: f.source,
+    id: f.condition_id,
     label: f.source,
     count: f.code_count,
   }));
