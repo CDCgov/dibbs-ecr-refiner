@@ -55,7 +55,7 @@ function FilterCombobox<T extends FilterOption>({
           </span>
         </ComboboxButton>
 
-        <ComboboxOptions className="absolute left-0 z-100 mt-1 w-56 rounded-md border border-gray-300! bg-white py-1 shadow-lg focus:outline-none">
+        <ComboboxOptions className="absolute left-0 z-100 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg focus:outline-none">
           {options.map((option) => (
             <ComboboxOption
               key={option.id}
