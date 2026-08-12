@@ -33,6 +33,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 import { CodeFilters, Filters } from './Filters';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -144,6 +146,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
             <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
               <th scope="col" className="w-10 text-center">
                 <Checkbox
+                  aria-label="Include all codes in bulk operation"
                   disabled={disabled}
                   checked={allSelected}
                   onChange={(checked) =>
@@ -283,14 +286,18 @@ function IncludeSwitch({
   };
 
   return (
-    <div className="flex flex-row items-center gap-2">
+    <Field className="flex flex-row items-center gap-2">
       <Switch
         checked={code.status === 'Included'}
         disabled={code.is_custom || disabled}
-        onClick={toggleStatus}
+        onChange={toggleStatus}
       />
-      {code.status}
-    </div>
+      <Label
+        aria-label={`Toggle to mark code ${code.code} as ${code.status === 'Included' ? 'excluded' : 'included'}`}
+      >
+        {code.status}
+      </Label>
+    </Field>
   );
 }
 
@@ -312,7 +319,7 @@ function AddCodeSetsButton({
     <>
       <Button
         variant="unstyled"
-        className="border-blue-cool-50! h-8 rounded-md border-2! bg-white px-3 text-sm! whitespace-nowrap hover:cursor-pointer hover:bg-[#eef5f8]!"
+        className="border-blue-cool-50! hover:bg-blue-cool-5! h-8 rounded-md border-2! bg-white px-3 text-sm! whitespace-nowrap hover:cursor-pointer"
         onClick={() => setIsDrawerOpen(true)}
       >
         <div className="flex flex-row items-center gap-2">

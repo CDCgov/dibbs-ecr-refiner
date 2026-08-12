@@ -39,6 +39,7 @@ test.describe('Codes management (WIP)', () => {
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -54,12 +55,14 @@ test.describe('Codes management (WIP)', () => {
     await expect(page.getByText('0 custom')).toBeVisible();
     await expect(page.getByText('1 condition code sets')).toBeVisible();
     await expect(page.getByText("You've reached the end")).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Custom codes appear at the top of the table', async ({
     page,
     configurationPage,
     api,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     const config = await api.createConfiguration(condition);
@@ -97,12 +100,14 @@ test.describe('Codes management (WIP)', () => {
     await expect(page.getByText('0 excluded')).toBeVisible();
     await expect(page.getByText('2 custom')).toBeVisible();
     await expect(page.getByText('1 condition code sets')).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Custom codes cannot be excluded', async ({
     api,
     page,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     const config = await api.createConfiguration(condition);
@@ -134,12 +139,14 @@ test.describe('Codes management (WIP)', () => {
     const switchCell = row.locator('td').last();
     await expect(switchCell).toHaveText('Included');
     await expect(switchCell.getByRole('switch')).toBeDisabled();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Individual codes can be toggled to be included/excluded', async ({
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -165,12 +172,15 @@ test.describe('Codes management (WIP)', () => {
       );
       await expect(page.getByText('1 excluded')).toBeVisible();
     });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Individual custom codes can be added, edited, and deleted', async ({
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -245,12 +255,14 @@ test.describe('Codes management (WIP)', () => {
 
       await expect(page.getByText('123-4')).toBeVisible();
     });
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('Condition code sets can be added and deleted', async ({
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -277,6 +289,8 @@ test.describe('Codes management (WIP)', () => {
       await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
     });
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await test.step('Remove Acanthamoeba code set', async () => {
       await page.getByRole('button', { name: '2 Condition code sets' }).click();
       await page
@@ -297,12 +311,15 @@ test.describe('Codes management (WIP)', () => {
       await expect(page.getByText('1 condition code sets')).toBeVisible();
       await expect(page.locator('table tr')).toHaveCount(3); // two Anotia codes + header row
     });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('More codes load into view as user scrolls down', async ({
     page,
     configurationsPage,
     configurationPage,
+    makeAxeBuilder,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -330,5 +347,7 @@ test.describe('Codes management (WIP)', () => {
     await expect(page.locator('table tr')).toHaveCount(
       expectedRowCountAfterLoad
     );
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 });

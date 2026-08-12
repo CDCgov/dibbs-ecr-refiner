@@ -23,7 +23,7 @@ export function EditCustomCodeButton({
   return (
     <>
       <Button
-        className="text-blue-cool-50 text-sm! font-semibold hover:cursor-pointer hover:underline"
+        className="text-blue-cool-60 text-sm! font-semibold hover:cursor-pointer hover:underline"
         variant="unstyled"
         aria-label="Edit custom code"
         disabled={disabled}
