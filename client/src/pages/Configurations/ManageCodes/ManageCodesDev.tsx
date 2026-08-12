@@ -188,6 +188,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
               >
                 <td className="text-center">
                   <Checkbox
+                    aria-label={`Include ${code.code} in bulk operation`}
                     disabled={disabled}
                     checked={selectedIds.has(code.id)}
                     onChange={(checked) =>
