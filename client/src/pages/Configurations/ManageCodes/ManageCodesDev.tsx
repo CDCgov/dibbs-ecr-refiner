@@ -88,6 +88,12 @@ export function ManageCodesDev() {
   );
 }
 
+interface CodeFilters {
+  codeSystems: FilterOption[];
+  sources: FilterOption[];
+  statuses: FilterOption[];
+}
+
 interface CodesTableProps {
   id: string;
   disabled: boolean;
@@ -109,6 +115,11 @@ function CodesTable({ id, disabled }: CodesTableProps) {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
+  const [filters, setFilters] = useState<CodeFilters>({
+    codeSystems: [],
+    sources: [],
+    statuses: [],
+  });
 
   if (isPending) return 'Loading...';
   if (isError) return 'Error!';
@@ -125,7 +136,11 @@ function CodesTable({ id, disabled }: CodesTableProps) {
       />
       <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
         <Search placeholder="Search by keyword" className="w-70!" />
-        <Filters configurationId={id} />
+        <Filters
+          configurationId={id}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
       </div>
       <InfiniteScroll
         dataLength={codes.length}
@@ -308,33 +323,35 @@ function FilterCombobox<T extends FilterOption>({
   );
 }
 
-function Filters({ configurationId }: { configurationId: string }) {
+interface FiltersProps {
+  configurationId: string;
+  filters: CodeFilters;
+  onFiltersChange: (filters: CodeFilters) => void;
+}
+
+function Filters({ configurationId, filters, onFiltersChange }: FiltersProps) {
   const { data, isPending, isError } = useGetCodeFilters(configurationId);
-  const [selected, setSelected] = useState<FilterOption[]>([]);
 
   if (isPending) return <Spinner />;
   if (isError) return 'Error!';
 
-  const codeSystemOptions =
-    data.data.code_systems.map((f) => ({
-      id: f.system_id,
-      label: f.system_name,
-      count: f.code_count,
-    }));
+  const codeSystemOptions = data.data.code_systems.map((f) => ({
+    id: f.system_id,
+    label: f.system_name,
+    count: f.code_count,
+  }));
 
-  const sourceOptions =
-    data.data.sources.map((f) => ({
-      id: f.source,
-      label: f.source,
-      count: f.code_count,
-    }));
+  const sourceOptions = data.data.sources.map((f) => ({
+    id: f.source,
+    label: f.source,
+    count: f.code_count,
+  }));
 
-  const statusOptions =
-    data.data.statuses.map((f) => ({
-      id: f.status,
-      label: f.status,
-      count: f.code_count,
-    }));
+  const statusOptions = data.data.statuses.map((f) => ({
+    id: f.status,
+    label: f.status,
+    count: f.code_count,
+  }));
 
   return (
     <div className="flex flex-col items-start gap-4 lg:flex-row">
@@ -342,20 +359,20 @@ function Filters({ configurationId }: { configurationId: string }) {
       <FilterCombobox
         label="Code system"
         options={codeSystemOptions}
-        selected={selected}
-        onChange={setSelected}
+        selected={filters.codeSystems}
+        onChange={(val) => onFiltersChange({ ...filters, codeSystems: val })}
       />
       <FilterCombobox
         label="Source"
         options={sourceOptions}
-        selected={selected}
-        onChange={setSelected}
+        selected={filters.sources}
+        onChange={(val) => onFiltersChange({ ...filters, sources: val })}
       />
       <FilterCombobox
         label="Status"
         options={statusOptions}
-        selected={selected}
-        onChange={setSelected}
+        selected={filters.statuses}
+        onChange={(val) => onFiltersChange({ ...filters, statuses: val })}
       />
     </div>
   );
