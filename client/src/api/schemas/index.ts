@@ -12,6 +12,7 @@ export * from './codeCategoryStatus';
 export * from './codeCountsResponse';
 export * from './codedConcept';
 export * from './codedDataLabels';
+export * from './codeFiltersResponse';
 export * from './codeResponse';
 export * from './codeResponseStatus';
 export * from './codeSetStatus';

@@ -3,6 +3,7 @@ import {
   getGetCodeCountsQueryKey,
   getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
+  useGetCodeFilters,
   useGetCodesInfinite,
   useGetConfiguration,
   useSetCodesStatus,
@@ -28,10 +29,20 @@ import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
-import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
+import {
+  CodeFiltersResponse,
+  CodeResponse,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
+import {
+  Combobox,
+  ComboboxOption,
+  ComboboxOptions,
+  ComboboxButton,
+} from '@headlessui/react';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -119,7 +130,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
       <div className="flex w-full flex-col items-start justify-between gap-4 md:flex-row">
         <Search placeholder="Search by keyword" className="w-70!" />
         <div className="flex flex-col items-start gap-4 md:flex-row">
-          <div className="border p-2">Code system filter</div>
+          <Filters configurationId={id} />
           <div className="border p-2">Source filter</div>
           <div className="border p-2">Status filter</div>
         </div>
@@ -213,6 +224,57 @@ function CodesTable({ id, disabled }: CodesTableProps) {
         </table>
       </InfiniteScroll>
     </div>
+  );
+}
+
+interface FiltersProps {
+  configurationId: string;
+}
+
+function Filters({ configurationId }: FiltersProps) {
+  const {
+    data: filters,
+    isPending,
+    isError,
+  } = useGetCodeFilters(configurationId);
+  const [selected, setSelected] = useState<CodeFiltersResponse[]>([]);
+
+  if (isPending) return <Spinner />;
+  if (isError) return 'Error!';
+
+  return (
+    <Combobox
+      multiple // multi-select
+      value={selected}
+      onChange={setSelected}
+      onClose={() => {}}
+    >
+      <ComboboxButton className="border">
+        {selected.length <= 0 ? (
+          'Code system'
+        ) : (
+          <span>{selected.length} selected</span>
+        )}
+      </ComboboxButton>
+
+      <ComboboxOptions>
+        {filters.data?.map((option) => (
+          <ComboboxOption key={option.id} value={option}>
+            {(
+              { selected } // use render prop for checkbox state
+            ) => (
+              <>
+                <input type="checkbox" checked={selected} readOnly />
+                <span>{option.system_name}</span>
+                <span>({option.code_count.toLocaleString()})</span>
+              </>
+            )}
+          </ComboboxOption>
+        ))}
+
+        <button onClick={() => setSelected([])}>Clear selection</button>
+      </ComboboxOptions>
+    </Combobox>
   );
 }
 
