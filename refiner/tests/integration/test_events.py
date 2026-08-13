@@ -338,3 +338,115 @@ class TestEventsCsvExport:
         assert code_set_event["Name"] == test_username
         assert code_set_event["Condition"] == "Influenza (Version 1)"
         assert code_set_event["Date"]
+
+    async def test_code_set_export_has_expected_content(
+        self,
+        setup,
+        authed_client,
+        create_config,
+        get_condition_id,
+    ):
+        """
+        A code-set event export should contain the historical condition's codes
+        using the expected CSV headers.
+        """
+        condition_name = "COVID-19"
+        condition_id = await get_condition_id(condition_name)
+
+        await create_config(condition_id)
+
+        # Get the activity log entry created for the initial code set.
+        events_response = await authed_client.get("/api/v1/events/")
+        assert events_response.status_code == status.HTTP_200_OK
+
+        audit_events = events_response.json()["audit_events"]
+
+        code_set_event = next(
+            event
+            for event in audit_events
+            if event["action_text"] == f"Added '{condition_name}' code set"
+        )
+
+        response = await authed_client.get(
+            f"/api/v1/events/{code_set_event['id']}/codes/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["content-type"].startswith("text/csv")
+
+        event_created_at = datetime.fromisoformat(code_set_event["created_at"])
+        expected_timestamp = event_created_at.strftime("%m%d%y_%H_%M_%S")
+
+        content_disposition = response.headers["content-disposition"]
+
+        assert content_disposition == (
+            f'attachment; filename="'
+            f'{condition_name}_code_set_added_{expected_timestamp}.csv"'
+        )
+
+        rows = parse_csv(response.text)
+
+        assert len(rows) == code_set_event["code_count"]
+        assert len(rows) > 0
+
+        assert list(rows[0].keys()) == [
+            "Condition grouper",
+            "Code",
+            "Code system",
+            "Display name",
+        ]
+
+        assert all(row["Condition grouper"] == condition_name for row in rows)
+        assert all(row["Code"] for row in rows)
+        assert all(row["Code system"] for row in rows)
+
+    async def test_removed_code_set_export_uses_removed_filename(
+        self,
+        setup,
+        authed_client,
+        create_config,
+        get_condition_id,
+        get_event_by_id,
+        test_user_id,
+        test_user_jurisdiction_id,
+        db_pool,
+    ):
+        """
+        A delete_code event should export using "code_set_removed" in the filename.
+        """
+        condition_name = "COVID-19"
+        condition_id = await get_condition_id(condition_name)
+
+        configuration = await create_config(condition_id)
+
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                event_id = await insert_event_db(
+                    event=EventInput(
+                        configuration_id=configuration["id"],
+                        jurisdiction_id=test_user_jurisdiction_id,
+                        user_id=test_user_id,
+                        event_type="delete_code",
+                        action_text=f"Removed '{condition_name}' code set",
+                        condition_id=condition_id,
+                        code_count=1,
+                    ),
+                    cursor=cur,
+                )
+
+        event = await get_event_by_id(event_id)
+        assert event is not None
+
+        response = await authed_client.get(
+            f"/api/v1/events/{event_id}/codes/export"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        event_created_at = event["created_at"]
+        expected_timestamp = event_created_at.strftime("%m%d%y_%H_%M_%S")
+
+        assert response.headers["content-disposition"] == (
+            f'attachment; filename="'
+            f'{condition_name}_code_set_removed_{expected_timestamp}.csv"'
+        )

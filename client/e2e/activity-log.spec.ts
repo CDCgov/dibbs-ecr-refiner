@@ -189,4 +189,36 @@ test.describe('Activity log', () => {
       /^Activity_Log_Export_\d{6}_\d{2}_\d{2}_\d{2}\.csv$/
     );
   });
+
+  test('Code set Export as CSV link downloads the added code set', async ({
+    page,
+    activityLogPage,
+    api,
+  }) => {
+    const condition = 'COVID-19';
+
+    await api.createConfiguration(condition);
+    await activityLogPage.goto();
+
+    const codeSetRow = page
+      .getByRole('row')
+      .filter({ hasText: `Added '${condition}' code set` });
+
+    await expect(codeSetRow).toBeVisible();
+
+    const exportLink = codeSetRow.getByRole('link', {
+      name: 'Export as CSV',
+    });
+
+    await expect(exportLink).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await exportLink.click();
+
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(
+      /^COVID-19_code_set_added_\d{6}_\d{2}_\d{2}_\d{2}\.csv$/
+    );
+  });
 });
