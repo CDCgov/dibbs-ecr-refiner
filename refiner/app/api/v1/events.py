@@ -22,6 +22,7 @@ from app.db.events.db import (
     get_events_by_jd_db,
     is_event_valid,
 )
+from app.db.events.models import CodeSetEvent
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.file_exports import get_export_timestamp
