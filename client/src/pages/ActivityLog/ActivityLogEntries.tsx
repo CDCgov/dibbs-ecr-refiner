@@ -22,13 +22,21 @@ export function ActivityLogEntries({
   const formatDatetime = useDatetimeFormatter();
 
   return (
-    <Table striped fullWidth>
+    <Table className="table-auto" striped fullWidth>
       <thead>
         <tr>
-          <th scope="col">{nameHeader} </th>
-          <th scope="col">{conditionHeader} </th>
-          <th scope="col">{actionHeader}</th>
-          <th scope="col">{dateHeader}</th>
+          <th scope="col" className="w-[16%]">
+            {nameHeader}
+          </th>
+          <th scope="col" className="w-[22%]">
+            {conditionHeader}
+          </th>
+          <th scope="col" className="w-[46%]">
+            {actionHeader}
+          </th>
+          <th scope="col" className="w-[16%]">
+            {dateHeader}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -56,7 +64,7 @@ export function ActivityLogEntries({
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
                   <div className="flex flex-col items-start gap-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       <span>
                         {r.action_text}
                         {r.code_count != null
