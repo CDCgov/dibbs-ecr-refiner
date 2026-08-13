@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
 import { CodeFilters, FilterOption } from './Filters';
 
@@ -38,6 +38,19 @@ export function useFilterState(configurationId: string) {
     () => pruneFilters(filters, availableFilters),
     [filters, availableFilters]
   );
+
+  useEffect(() => {
+    const pruned = pruneFilters(filters, availableFilters);
+    const changed =
+      pruned.codeSystems.length !== filters.codeSystems.length ||
+      pruned.sources.length !== filters.sources.length ||
+      pruned.statuses.length !== filters.statuses.length;
+
+    if (changed) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFilters(pruned);
+    }
+  }, [availableFilters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { filters: activeFilters, setFilters };
 }
