@@ -293,14 +293,7 @@ async def get_events_export(
     output = StringIO()
     writer = csv.writer(output)
     # CSV file headers
-    writer.writerow(
-        [
-            "Condition grouper",
-            "Code",
-            "Code system",
-            "Display name",
-        ]
-    )
+    writer.writerow(["Name", "Condition", "Action", "Date"])  # CSV file headers
 
     async for event in get_all_events_by_jd_db(
         jurisdiction_id=user.jurisdiction_id, canonical_url=canonical_url, db=db
