@@ -16,6 +16,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -231,6 +245,18 @@ CREATE TABLE public.configurations_conditions (
 
 
 --
+-- Name: configurations_conditions_code_exclusions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_conditions_code_exclusions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    configuration_id uuid CONSTRAINT configurations_conditions_code_exclus_configuration_id_not_null NOT NULL,
+    code_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: configurations_locks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -286,9 +312,7 @@ CREATE TABLE public.events (
     configuration_id uuid NOT NULL,
     event_type public.event_type_enum NOT NULL,
     action_text text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    condition_id uuid,
-    code_count integer
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -440,6 +464,22 @@ ALTER TABLE ONLY public.conditions
 
 ALTER TABLE ONLY public.conditions_codes
     ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_code_exc_configuration_id_code_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_code_exc_configuration_id_code_id_key UNIQUE (configuration_id, code_id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_code_exclusions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_code_exclusions_pkey PRIMARY KEY (id);
 
 
 --
@@ -791,6 +831,22 @@ ALTER TABLE ONLY public.conditions
 
 
 --
+-- Name: configurations_conditions_code_exclusions configurations_conditions_code_exclusions_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_code_exclusions_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id);
+
+
+--
+-- Name: configurations_conditions_code_exclusions configurations_conditions_code_exclusions_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions_code_exclusions
+    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+
+
+--
 -- Name: configurations_conditions configurations_conditions_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -868,14 +924,6 @@ ALTER TABLE ONLY public.custom_codes
 
 ALTER TABLE ONLY public.custom_codes
     ADD CONSTRAINT custom_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
-
-
---
--- Name: events events_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.events
-    ADD CONSTRAINT events_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
 
 
 --
@@ -966,4 +1014,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260722140510'),
     ('20260728212408'),
     ('20260729154745'),
-    ('20260813133341');
+    ('20260803202038'),
+    ('20260810165940');

@@ -48,6 +48,65 @@ from app.services.terminology import CodeSystemKey
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
 
+@router.get(
+    "/{id}",
+    response_model=CustomCodeResponse,
+    tags=["configurations"],
+    operation_id="getCustomCode",
+)
+async def get_custom_code(
+    configuration_id: UUID,
+    id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> CustomCodeResponse:
+    """
+    Fetch a custom code by its ID.
+
+    Args:
+        configuration_id (UUID): The associated configuration ID
+        id (UUID): The custom code ID
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+
+    Returns:
+        CustomCodeResponse: The custom code response object
+    """
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    code = await get_custom_code_by_id_db(id=id, db=db)
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to find custom code with ID: {id}.",
+        )
+
+    systems = await get_code_systems_db(db=db)
+
+    return CustomCodeResponse(
+        id=code.id,
+        display=code.display,
+        code=code.code,
+        system_id=code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=code.system_id, systems=systems
+        ).display_name,
+    )
+
+
 @dataclass(frozen=True)
 class ConfigurationCustomCodeResponse:
     """
