@@ -434,7 +434,7 @@ describe('Configuration sections', () => {
 
     await user.click(switchElement);
 
-    const errorMessage = within(row).queryByRole('alert');
+    const errorMessage = await within(row).findByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
       /To reconstruct narrative, refine must be selected/
@@ -527,7 +527,7 @@ describe('Configuration sections', () => {
 
     await user.click(switchElement);
 
-    const errorMessage = within(row).queryByRole('alert');
+    const errorMessage = await within(row).findByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
       /To keep narrative on match, refine must be selected/
