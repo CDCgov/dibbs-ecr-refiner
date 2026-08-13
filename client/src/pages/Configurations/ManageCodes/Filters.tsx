@@ -9,7 +9,7 @@ import {
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
 import { Checkbox } from '@components/Checkbox';
 
-interface FilterOption {
+export interface FilterOption {
   id: string | number;
   label: string;
   count?: number;

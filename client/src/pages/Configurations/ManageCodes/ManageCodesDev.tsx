@@ -33,7 +33,8 @@ import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
-import { CodeFilters, Filters } from './Filters';
+import { Filters } from './Filters';
+import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 
@@ -106,11 +107,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
-  const [filters, setFilters] = useState<CodeFilters>({
-    codeSystems: [],
-    sources: [],
-    statuses: [],
-  });
+  const { filters, setFilters } = useFilterState(id);
 
   if (isPending) return 'Loading...';
   if (isError) return 'Error!';
