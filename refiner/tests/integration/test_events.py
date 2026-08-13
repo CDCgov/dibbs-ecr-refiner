@@ -437,9 +437,7 @@ class TestEventsCsvExport:
         event = await get_event_by_id(event_id)
         assert event is not None
 
-        response = await authed_client.get(
-            f"/api/v1/events/{event_id}/codes/export"
-        )
+        response = await authed_client.get(f"/api/v1/events/{event_id}/codes/export")
 
         assert response.status_code == status.HTTP_200_OK
 
