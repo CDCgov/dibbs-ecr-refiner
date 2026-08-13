@@ -322,7 +322,10 @@ function AddCodeSetsButton({
       <Button
         variant="unstyled"
         className="border-blue-cool-50! hover:bg-blue-cool-5! h-8 rounded-md border-2! bg-white px-3 text-sm! whitespace-nowrap hover:cursor-pointer"
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={(e) => {
+          e.currentTarget.blur();
+          setIsDrawerOpen(true);
+        }}
       >
         <div className="flex flex-row items-center gap-2">
           <span className="bg-blue-cool-50 inline-flex h-5 min-w-5 items-center justify-center rounded-2xl font-bold text-white">
