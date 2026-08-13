@@ -403,6 +403,21 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: valuesets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.valuesets (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    external_id text NOT NULL,
+    url text NOT NULL,
+    parent_url text,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: active_payload_schema_reactivations active_payload_schema_reactivations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -656,6 +671,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: valuesets valuesets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.valuesets
+    ADD CONSTRAINT valuesets_pkey PRIMARY KEY (id);
 
 
 --
@@ -940,6 +963,14 @@ ALTER TABLE ONLY public.events_custom_code_uploads
 
 ALTER TABLE ONLY public.codes
     ADD CONSTRAINT fk_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions_codes fk_conditions_valuesets_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes
+    ADD CONSTRAINT fk_conditions_valuesets_fkey FOREIGN KEY (valueset_id) REFERENCES public.valuesets(id) ON DELETE CASCADE;
 
 
 --
