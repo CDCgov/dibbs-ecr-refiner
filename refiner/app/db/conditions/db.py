@@ -220,6 +220,9 @@ async def get_condition_codes_by_condition_id_db(
     For a given condition ID, unnests and combines all terminology codes
     (LOINC, SNOMED, ICD-10, RxNorm, CVX) from their respective JSONB columns
     into a single, flat list of GetConditionCode objects.
+
+    Codes are deduplicated by code system and code so the exported code count
+    matches the historical code count stored on the event.
     """
 
     query = """
@@ -228,14 +231,19 @@ async def get_condition_codes_by_condition_id_db(
                 FROM conditions
                 WHERE id = %s
             )
-            SELECT DISTINCT code, system, description
+            SELECT
+                code,
+                system,
+                MIN(description) AS description
             FROM (
                 SELECT
                     code_elem->>'code' AS code,
                     'LOINC' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.loinc_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -244,7 +252,9 @@ async def get_condition_codes_by_condition_id_db(
                     'SNOMED' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.snomed_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -253,7 +263,9 @@ async def get_condition_codes_by_condition_id_db(
                     'ICD-10' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.icd10_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -262,7 +274,9 @@ async def get_condition_codes_by_condition_id_db(
                     'RxNorm' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.rxnorm_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -271,9 +285,12 @@ async def get_condition_codes_by_condition_id_db(
                     'CVX' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.CVX_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.cvx_codes, '[]'::jsonb)
+                ) AS code_elem
             ) t
             WHERE code IS NOT NULL
+            GROUP BY system, code
             ORDER BY system, code;
             """
 

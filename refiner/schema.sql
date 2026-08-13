@@ -16,20 +16,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS '';
-
-
---
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -300,7 +286,9 @@ CREATE TABLE public.events (
     configuration_id uuid NOT NULL,
     event_type public.event_type_enum NOT NULL,
     action_text text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    condition_id uuid,
+    code_count integer
 );
 
 
@@ -883,6 +871,14 @@ ALTER TABLE ONLY public.custom_codes
 
 
 --
+-- Name: events events_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT events_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
+
+
+--
 -- Name: events_custom_code_uploads events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -969,4 +965,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260716184236'),
     ('20260722140510'),
     ('20260728212408'),
-    ('20260729154745');
+    ('20260729154745'),
+    ('20260813133341');

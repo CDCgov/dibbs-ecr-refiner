@@ -13,7 +13,7 @@ from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 
 from ..pool import AsyncDatabaseConnection
-from .model import EventInput
+from .model import CodeSetEvent, EventInput
 
 
 @dataclass(frozen=True)
@@ -40,8 +40,9 @@ class AuditEvent:
     username: str
     configuration_name: str
     configuration_version: int
-    condition_id: UUID
+    condition_id: UUID | None
     action_text: str
+    code_count: int | None
     created_at: datetime
     has_custom_code_upload_events: bool
 
@@ -119,6 +120,40 @@ async def is_event_valid(
             return row is not None
 
 
+async def get_code_set_event_by_id_db(
+    event_id: UUID,
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+) -> CodeSetEvent | None:
+    """
+    Returns the event information needed to export a historical code set.
+
+    Only returns an event belonging to the provided jurisdiction.
+    """
+
+    query = """
+        SELECT
+            e.id,
+            e.condition_id,
+            cond.display_name AS condition_name,
+            e.code_count,
+            e.event_type,
+            e.created_at
+        FROM events e
+        LEFT JOIN conditions cond
+            ON cond.id = e.condition_id
+        WHERE e.id = %s
+        AND e.jurisdiction_id = %s
+    """
+
+    params = (event_id, jurisdiction_id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(CodeSetEvent)) as cur:
+            await cur.execute(query, params)
+            return await cur.fetchone()
+
+
 async def get_event_filter_options_db(
     jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> list[DbEventFilterOption]:
@@ -168,7 +203,9 @@ async def get_events_by_jd_db(
             c.name AS configuration_name,
             c.version AS configuration_version,
             cond.id AS condition_id,
+            e.condition_id,
             e.action_text,
+            e.code_count,
             e.created_at,
             EXISTS (
                 SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
@@ -330,9 +367,13 @@ async def insert_event_db(
             jurisdiction_id,
             configuration_id,
             event_type,
-            action_text
+            action_text,
+            condition_id,
+            code_count
         )
         VALUES (
+            %s,
+            %s,
             %s,
             %s,
             %s,
@@ -347,6 +388,8 @@ async def insert_event_db(
         event.configuration_id,
         event.event_type,
         event.action_text,
+        event.condition_id,
+        event.code_count,
     )
 
     await cursor.execute(query, params)
