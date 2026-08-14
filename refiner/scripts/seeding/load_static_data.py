@@ -586,12 +586,12 @@ def _upsert_relationships(
             copy.write_row(row)
 
     cursor.execute("ANALYZE stage_relationships;")
-    cursor.execute("TRUNCATE conditions_codes;")
+    cursor.execute("TRUNCATE conditions_codes_temp;")
 
     logger.info("🔗 Linking codes table to relationship joins...")
 
     cursor.execute("""
-        INSERT INTO conditions_codes (condition_id, code_id, is_child_rsg, valueset_id)
+        INSERT INTO conditions_codes_temp (condition_id, code_id, is_child_rsg, valueset_id)
         SELECT
             sr.condition_id,
             c.id AS code_id,
@@ -611,7 +611,7 @@ def _upsert_relationships(
         f"({staged_counts[child_rsg_key]:,} child_rsg, {staged_counts[non_child_rsg_key]:,} non_child_rsg)."
     )
 
-    cursor.execute("ANALYZE conditions_codes;")
+    cursor.execute("ANALYZE conditions_codes_temp;")
 
 
 def _upsert_codes(
