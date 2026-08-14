@@ -19,6 +19,7 @@ class AsyncDatabaseConnection:
         self,
         db_url: str,
         db_password: str,
+        timeout: int,
         min_size: int = 1,
         max_size: int = 10,
         prepare_threshold: int | None = 5,
@@ -41,6 +42,7 @@ class AsyncDatabaseConnection:
             min_size=min_size,
             max_size=max_size,
             open=False,
+            timeout=timeout,
             kwargs={
                 "password": self.db_password,
                 "prepare_threshold": prepare_threshold,
@@ -91,7 +93,10 @@ class AsyncDatabaseConnection:
 
 
 def create_db(
-    db_url: str, db_password: str, prepare_threshold: int | None = 5
+    db_url: str,
+    db_password: str,
+    prepare_threshold: int | None = 5,
+    timeout: int = 30,
 ) -> AsyncDatabaseConnection:
     """
     Creates a new database connection.
@@ -100,12 +105,16 @@ def create_db(
         db_url (str): The database connection URL
         db_password (str): The database password
         prepare_threshold (int | None): Number of times a query is executed before it is prepared. Defaults to 5.
+        timeout (int | None): Number of times a query is executed before it is prepared. Defaults to 5.
 
     Returns:
         AsyncDatabaseConnection: The database connection
     """
     return AsyncDatabaseConnection(
-        db_url=db_url, db_password=db_password, prepare_threshold=prepare_threshold
+        db_url=db_url,
+        db_password=db_password,
+        prepare_threshold=prepare_threshold,
+        timeout=timeout,
     )
 
 

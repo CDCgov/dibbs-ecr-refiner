@@ -14,7 +14,7 @@ class DbConditionsContextGrouper:
 
     id: UUID
     condition_id: UUID
-    name: str
+    display_name: str
     category: str
     canonical_url: str
     code_count: int
