@@ -40,9 +40,9 @@ function FilterCombobox<T extends FilterOption>({
 
   return (
     <Combobox multiple value={selected} onChange={handleChange}>
-      <div className="relative">
-        <ComboboxInput className="sr-only focus:outline-2" />
-        <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      <div className="has-[input:focus-within]:outline-blue-40v relative has-[input:focus-within]:outline-5 has-[input:focus-within]:-outline-offset-2">
+        <ComboboxInput className="sr-only" />
+        <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm hover:cursor-pointer">
           {selected.length <= 0 ? (
             label
           ) : (
@@ -104,7 +104,7 @@ function FilterCombobox<T extends FilterOption>({
           */}
           <ComboboxOption
             value={CLEAR_OPTION}
-            className="mt-1 border-t border-gray-300 px-4 pt-2 pb-1"
+            className="data-focus:bg-blue-cool-5 mt-1 border-t border-gray-300 px-4 pt-2 pb-1"
           >
             <span className="text-blue-cool-50 hover:text-blue-cool-70 font-bold hover:cursor-pointer hover:underline">
               Clear selection
