@@ -9,6 +9,8 @@ from app.core.exceptions import (
     DatabaseConnectionError,
 )
 
+DEFAULT_TIMEOUT: int = 30
+
 
 class AsyncDatabaseConnection:
     """
@@ -19,7 +21,7 @@ class AsyncDatabaseConnection:
         self,
         db_url: str,
         db_password: str,
-        timeout: int,
+        timeout: int = DEFAULT_TIMEOUT,
         min_size: int = 1,
         max_size: int = 10,
         prepare_threshold: int | None = 5,
@@ -30,6 +32,7 @@ class AsyncDatabaseConnection:
         Args:
             db_url (str): The PostgreSQL connection string.
             db_password (str): The PostgreSQL password.
+            timeout (int, optional): Time given for the connection pool to resolve a connection. Defaults to 30.
             min_size (int, optional): Minimum number of connections to maintain in the pool. Defaults to 1.
             max_size (int, optional): Maximum number of connections allowed in the pool. Defaults to 10.
             prepare_threshold (int, optional): Number of times a query is executed before it is prepared. Defaults to 5.
@@ -95,8 +98,8 @@ class AsyncDatabaseConnection:
 def create_db(
     db_url: str,
     db_password: str,
+    timeout: int = DEFAULT_TIMEOUT,
     prepare_threshold: int | None = 5,
-    timeout: int = 30,
 ) -> AsyncDatabaseConnection:
     """
     Creates a new database connection.
@@ -104,8 +107,8 @@ def create_db(
     Args:
         db_url (str): The database connection URL
         db_password (str): The database password
+        timeout (int): Number of times a query is executed before it is prepared. Defaults to 30.
         prepare_threshold (int | None): Number of times a query is executed before it is prepared. Defaults to 5.
-        timeout (int | None): Number of times a query is executed before it is prepared. Defaults to 5.
 
     Returns:
         AsyncDatabaseConnection: The database connection
