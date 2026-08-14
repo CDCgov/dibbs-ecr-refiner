@@ -165,7 +165,7 @@ async def get_condition_by_id_db(
                 t.version,
                 ARRAY(
                     SELECT codes.code
-                    FROM conditions_codes crc
+                    FROM conditions_codes_temp crc
                     JOIN codes ON crc.code_id = codes.id
                     WHERE crc.condition_id = c.id AND crc.is_child_rsg
                 ) as child_rsg_snomed_codes,
@@ -317,7 +317,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -333,7 +333,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
         JOIN tes t ON t.id = c.tes_id
         WHERE EXISTS (
             SELECT 1
-            FROM conditions_codes crc
+            FROM conditions_codes_temp crc
             JOIN codes ON crc.code_id = codes.id
             WHERE crc.condition_id = c.id
             AND crc.is_child_rsg
@@ -369,7 +369,7 @@ async def get_conditions_by_ids(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -412,7 +412,7 @@ async def get_primary_conditions_for_configurations_db(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -473,7 +473,7 @@ async def get_included_conditions_db(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -546,7 +546,7 @@ async def get_conditions_with_rsg_codes_db(
             JSONB_AGG(JSONB_BUILD_OBJECT('display', codes.display, 'code', codes.code)) as rsg_codes
         FROM conditions as c
         JOIN tes t ON t.id = c.tes_id
-        LEFT JOIN conditions_codes as rsg ON rsg.condition_id = c.id
+        LEFT JOIN conditions_codes_temp as rsg ON rsg.condition_id = c.id
         LEFT JOIN codes ON codes.id = rsg.code_id
         WHERE t.version = %s AND rsg.is_child_rsg
         GROUP BY
