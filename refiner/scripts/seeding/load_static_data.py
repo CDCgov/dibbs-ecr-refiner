@@ -601,7 +601,7 @@ def _upsert_relationships(
         JOIN codes c
             ON  c.system_id = sr.system_id
             AND c.code = sr.code
-        JOIN conditions_valuesets v
+        JOIN valuesets v
             ON v.canonical_url = sr.valueset_url;
     """)
 
@@ -671,7 +671,7 @@ def _upsert_valuesets(
     logger.info("⏳ Starting valuesets upsert process...")
 
     upsert_query = """
-    INSERT INTO conditions_valuesets (
+    INSERT INTO valuesets (
         condition_id,
         display_name,
         category,
@@ -701,11 +701,11 @@ def _upsert_valuesets(
         completeness = EXCLUDED.completeness,
         parent_url   = EXCLUDED.parent_url
     WHERE
-        conditions_valuesets.display_name IS DISTINCT FROM EXCLUDED.display_name
-        OR conditions_valuesets.category IS DISTINCT FROM EXCLUDED.category
-        OR conditions_valuesets.code_count IS DISTINCT FROM EXCLUDED.code_count
-        OR conditions_valuesets.completeness IS DISTINCT FROM EXCLUDED.completeness
-        OR conditions_valuesets.parent_url IS DISTINCT FROM EXCLUDED.parent_url;
+        valuesets.display_name IS DISTINCT FROM EXCLUDED.display_name
+        OR valuesets.category IS DISTINCT FROM EXCLUDED.category
+        OR valuesets.code_count IS DISTINCT FROM EXCLUDED.code_count
+        OR valuesets.completeness IS DISTINCT FROM EXCLUDED.completeness
+        OR valuesets.parent_url IS DISTINCT FROM EXCLUDED.parent_url;
     """
 
     valueset_params = [

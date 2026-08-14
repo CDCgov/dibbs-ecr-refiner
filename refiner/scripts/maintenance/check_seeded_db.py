@@ -17,7 +17,7 @@ TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0", "5.0.0"]
 
 TABLES_TO_CHECK = [
     "conditions",
-    "conditions_valuesets",
+    "valuesets",
     "configurations",
     "jurisdictions",
     "schema_migrations",
@@ -104,21 +104,21 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "All Context Groupers Reference Valid Conditions",
         "query": """
             SELECT COUNT(*) AS count
-            FROM conditions_valuesets cg
-            LEFT JOIN conditions c ON cg.condition_id = c.id
+            FROM valuesets v
+            LEFT JOIN conditions c ON v.condition_id = c.id
             WHERE c.id IS NULL;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
         "failure_message": "Found context grouper rows with orphaned condition_id references.",
     },
     {
-        "title": "Context Grouper Categories are Known Values",
+        "title": "Valuesets Categories are Known Values",
         "query": """
             SELECT COUNT(*) AS count
-            FROM conditions_valuesets
+            FROM valuesets
             WHERE category NOT IN (
                 'medication', 'immunization', 'symptom',
-                'specimen_source', 'diagnosis', 'clinical_lab_result'
+                'specimen_source', 'diagnosis', 'clinical_lab_result', 'reporting_specification_grouper'
             );
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -129,7 +129,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "No Context Groupers with Zero Code Counts",
         "query": """
             SELECT COUNT(*) AS count
-            FROM conditions_valuesets
+            FROM valuesets
             WHERE code_count = 0;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -339,7 +339,7 @@ def display_acg_category_stats(cursor: Cursor, console: Console) -> None:
             cg.category,
             COUNT(*) AS grouper_count,
             SUM(cg.code_count) AS total_codes
-        FROM conditions_valuesets cg
+        FROM valuesets cg
         JOIN conditions c ON cg.condition_id = c.id
         JOIN tes t ON t.id = c.tes_id
         WHERE t.version = (
