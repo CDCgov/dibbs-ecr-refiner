@@ -91,7 +91,16 @@ interface CodesTableProps {
   disabled: boolean;
 }
 
+type ParamValue =
+  | string
+  | number
+  | boolean
+  | (string | number | boolean)[]
+  | null
+  | undefined;
+
 function CodesTable({ id, disabled }: CodesTableProps) {
+  const { filters, setFilters } = useFilterState(id);
   const {
     data,
     isPending,
@@ -99,15 +108,36 @@ function CodesTable({ id, disabled }: CodesTableProps) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useGetCodesInfinite(id, undefined, {
-    query: {
-      getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
+  } = useGetCodesInfinite(
+    id,
+    {
+      code_systems: filters.codeSystems.map((cs) => cs.id),
+      sources: filters.sources.map((s) => s.id),
+      statuses: filters.statuses.map((s) => s.id),
     },
-  });
+    {
+      query: {
+        getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
+      },
+      // TODO: revisit this
+      axios: {
+        paramsSerializer: (params: Record<string, ParamValue>) => {
+          const searchParams = new URLSearchParams();
+          for (const [key, value] of Object.entries(params)) {
+            if (Array.isArray(value)) {
+              value.forEach((v) => searchParams.append(key, String(v)));
+            } else if (value !== null && value !== undefined) {
+              searchParams.append(key, String(value));
+            }
+          }
+          return searchParams.toString();
+        },
+      },
+    }
+  );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
-  const { filters, setFilters } = useFilterState(id);
 
   if (isPending) return 'Loading...';
   if (isError) return 'Error!';
