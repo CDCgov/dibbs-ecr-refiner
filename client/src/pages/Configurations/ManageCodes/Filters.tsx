@@ -41,7 +41,7 @@ function FilterCombobox<T extends FilterOption>({
   return (
     <Combobox multiple value={selected} onChange={handleChange}>
       <div className="has-[input:focus-within]:outline-blue-40v relative has-[input:focus-within]:outline-5 has-[input:focus-within]:-outline-offset-2">
-        <ComboboxInput className="sr-only" />
+        <ComboboxInput aria-label={label} className="sr-only" />
         <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm hover:cursor-pointer">
           {selected.length <= 0 ? (
             label
