@@ -12,9 +12,7 @@ from lib import (
     CODE_SYSTEM_DATA,
     SNOMED_OID,
     CodeRow,
-    ConditionCodePayload,
     ConditionData,
-    FhirCodeInfo,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
@@ -25,8 +23,10 @@ from lib import (
     get_sibling_context_valuesets,
     is_condition_grouper,
     load_valuesets_from_all_files,
+    map_coverage_level_to_acg_completeness,
     parse_child_rsg_details_from_use_context,
     parse_snomed_from_url,
+    parse_valueset_category,
     parse_valueset_source_name,
 )
 from psycopg import Cursor
@@ -77,9 +77,13 @@ class ValuesetRow(TypedDict):
     A context grouper row to upsert into the DB.
     """
 
-    url: str
+    condition_version: str
+    canonical_url: str
     parent_url: str
     display_name: str
+    code_count: int
+    category: str | None
+    completeness: str | None
 
 
 class ProcessedCondition(TypedDict):
@@ -217,15 +221,27 @@ class BuildCodeContext:
         )
         return True
 
-    def mark_valueset_as_seen(self, url: str, parent_url: str, display_name: str):
+    def mark_valueset_as_seen(
+        self, valueset: VsDict, condition_url: str, condition_version: str
+    ):
         """Tracks trace and registers code row information across build functions."""
-        if url in self.unique_valuesets:
+        url = valueset.get("url", "")
+
+        if not url or url in self.unique_valuesets:
             return False
+
+        name = parse_valueset_source_name(valueset)
 
         # TODO: should we also include the parent condition groupers in the
         # table that map into the conditions?
         self.unique_valuesets[url] = ValuesetRow(
-            url=url, parent_url=parent_url, display_name=display_name
+            canonical_url=url,
+            parent_url=condition_url,
+            display_name=name,
+            category=parse_valueset_category(name),
+            code_count=len(extract_codes_from_compose(valueset)),
+            completeness=map_coverage_level_to_acg_completeness(valueset),
+            condition_version=condition_version,
         )
         return True
 
@@ -234,20 +250,25 @@ def _build_child_codes(
     child_valuesets: list[VsDict],
     code_context: BuildCodeContext,
     condition_grouper_url: str,
-) -> tuple[set[ConditionsCodesTrace], set[FhirCodeInfo]]:
+    condition_version: str,
+) -> tuple[set[ConditionsCodesTrace], list[VsDict]]:
     snomed_db_id = code_context.db_ids[SNOMED_OID]
     condition_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
-    child_fhir_info: set[FhirCodeInfo] = set()
+    child_vs_list: list[VsDict] = []
 
     for child_vs in child_valuesets:
-        source_url = child_vs.get("url", "")
-        source_name = parse_valueset_source_name(child_vs)
+        code_context.mark_valueset_as_seen(
+            valueset=child_vs,
+            condition_url=condition_grouper_url,
+            condition_version=condition_version,
+        )
 
+        source_url = child_vs.get("url", "")
         child_rsg_code = parse_snomed_from_url(source_url)
-        child_fhir_info.update(extract_codes_from_compose(child_vs))
 
         if not child_rsg_code:
             continue
+        child_vs_list.append(child_vs)
 
         display = parse_child_rsg_details_from_use_context(
             child_vs.get("useContext", "")
@@ -263,56 +284,63 @@ def _build_child_codes(
             display=display,
             valueset_url=source_url,
         )
-        code_context.mark_valueset_as_seen(
-            url=source_url, display_name=source_name, parent_url=condition_grouper_url
-        )
+
         condition_child_rsg_snomed_codes.add(code_trace)
 
-    return condition_child_rsg_snomed_codes, child_fhir_info
+    return condition_child_rsg_snomed_codes, child_vs_list
 
 
 def _build_sibling_codes(
-    system_sorted_codes: ConditionCodePayload,
+    condition_valuesets: list[VsDict],
     code_context: BuildCodeContext,
     condition_snomed_child_rsgs: set[ConditionsCodesTrace],
     condition_grouper_url: str,
+    condition_version: str,
 ) -> set[ConditionsCodesTrace]:
+
     condition_non_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
 
-    for system_oid, code_list in system_sorted_codes.items():
-        system_id = code_context.db_ids.get(system_oid)
-        if not system_id:
-            continue
+    for vs in condition_valuesets:
+        code_context.mark_valueset_as_seen(
+            valueset=vs,
+            condition_url=condition_grouper_url,
+            condition_version=condition_version,
+        )
 
-        for c in code_list:
-            code = c.get("code")
-            source_url = c.get("source_url", "")
-            source_name = c.get("source_name", "")
-            if not code or not source_url or not source_name:
+        system_sorted_codes = categorize_codes_by_system_oid(
+            extract_codes_from_compose(vs)
+        )
+
+        for system_oid, code_list in system_sorted_codes.items():
+            system_id = code_context.db_ids.get(system_oid)
+            if not system_id:
                 continue
 
-            code_trace = ConditionsCodesTrace(
-                system_db_id=system_id,
-                code=code,
-                valueset_url=source_url,
-            )
+            for c in code_list:
+                code = c.code
+                source_url = c.source_url
+                source_name = c.source_name
+                if not code or not source_url or not source_name:
+                    continue
 
-            code_context.mark_code_as_seen(
-                code_trace,
-                code,
-                c.get("display") or "",
-                valueset_url=source_url,
-            )
-            code_context.mark_valueset_as_seen(
-                url=source_url,
-                display_name=source_name,
-                parent_url=condition_grouper_url,
-            )
-            if code_trace not in condition_snomed_child_rsgs:
-                # skip code if already marked in child_rsgs so we don't try to
-                # upsert the same code twice in the same transaction and run into
-                # cardinality violations
-                condition_non_child_rsg_snomed_codes.add(code_trace)
+                code_trace = ConditionsCodesTrace(
+                    system_db_id=system_id,
+                    code=code,
+                    valueset_url=source_url,
+                )
+
+                code_context.mark_code_as_seen(
+                    code_trace,
+                    code,
+                    c.display or "",
+                    valueset_url=source_url,
+                )
+
+                if code_trace not in condition_snomed_child_rsgs:
+                    # skip code if already marked in child_rsgs so we don't try to
+                    # upsert the same code twice in the same transaction and run into
+                    # cardinality violations
+                    condition_non_child_rsg_snomed_codes.add(code_trace)
 
     return condition_non_child_rsg_snomed_codes
 
@@ -334,12 +362,13 @@ def _build_codes(
 
         cond_key = (cond_canonical_url, cond_version)
 
-        condition_child_rsg_snomed_codes, child_fhir_info = _build_child_codes(
+        condition_child_rsg_snomed_codes, child_valuesets = _build_child_codes(
             child_valuesets=get_child_rsg_valuesets(
                 parent=condition, all_vs_map=valuesets_map
             ),
             code_context=code_context,
             condition_grouper_url=cond_canonical_url,
+            condition_version=cond_version,
         )
 
         condition_to_code_relationships[cond_key]["child_rsg_codes"].update(
@@ -347,24 +376,15 @@ def _build_codes(
         )
 
         # build all codes we need from sibling valuesets
-        sibling_tuple_sets = [
-            extract_codes_from_compose(sibling_vs)
-            for sibling_vs in get_sibling_context_valuesets(condition, valuesets_map)
-        ]
-        sibling_code_fhir_info = {
-            sibling_tuple
-            for sibling_tuple_set in sibling_tuple_sets
-            for sibling_tuple in sibling_tuple_set
-        }
-        system_sorted_codes = categorize_codes_by_system_oid(
-            sibling_code_fhir_info | child_fhir_info
-        )
+        sibling_valuesets = get_sibling_context_valuesets(condition, valuesets_map)
+        sibling_valuesets.extend(child_valuesets)
 
         condition_non_child_rsg_snomed_codes = _build_sibling_codes(
-            system_sorted_codes=system_sorted_codes,
+            condition_valuesets=sibling_valuesets,
             code_context=code_context,
             condition_snomed_child_rsgs=condition_child_rsg_snomed_codes,
             condition_grouper_url=cond_canonical_url,
+            condition_version=cond_version,
         )
 
         condition_to_code_relationships[cond_key]["non_child_rsg_codes"].update(
@@ -399,7 +419,7 @@ def _build_processed_conditions(
     return results
 
 
-def _upsert_conditions_and_groupers(
+def _upsert_conditions(
     cursor: Cursor,
     processed: list[ProcessedCondition],
 ) -> RelationshipsToInsert:
@@ -408,7 +428,6 @@ def _upsert_conditions_and_groupers(
 
     Each condition is upserted using a CTE that returns the row's id
     regardless of whether the row was inserted, updated, or unchanged.
-    Context grouper rows are then upserted as children of that condition.
 
     Both upserts use IS DISTINCT FROM to avoid touching rows where
     nothing has changed, preventing spurious updated_at timestamps.
@@ -478,35 +497,6 @@ def _upsert_conditions_and_groupers(
         LIMIT 1
     """
 
-    context_grouper_upsert_query = """
-        INSERT INTO conditions_context_groupers (
-            condition_id,
-            name,
-            category,
-            canonical_url,
-            code_count,
-            completeness
-        )
-        VALUES (
-            %(condition_id)s,
-            %(name)s,
-            %(category)s,
-            %(canonical_url)s,
-            %(code_count)s,
-            %(completeness)s
-        )
-        ON CONFLICT (condition_id, canonical_url)
-        DO UPDATE SET
-            name = EXCLUDED.name,
-            category = EXCLUDED.category,
-            code_count = EXCLUDED.code_count,
-            completeness = EXCLUDED.completeness
-        WHERE
-            conditions_context_groupers.name IS DISTINCT FROM EXCLUDED.name
-            OR conditions_context_groupers.category IS DISTINCT FROM EXCLUDED.category
-            OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
-            OR conditions_context_groupers.completeness IS DISTINCT FROM EXCLUDED.completeness
-    """
     condition_to_code_relationships: dict[
         ConditionUniqueIndex, ConditionToCodeToValuesetTrace
     ] = defaultdict()
@@ -538,24 +528,6 @@ def _upsert_conditions_and_groupers(
         condition_to_code_relationships[
             (condition_canonical_url, condition_version)
         ] = condition_payload
-
-        groupers = item.get("context_groupers", [])
-        if not groupers:
-            continue
-
-        grouper_params = [
-            {
-                "condition_id": cond_id,
-                "name": cg["name"],
-                "category": cg["category"],
-                "canonical_url": cg["canonical_url"],
-                "code_count": cg["code_count"],
-                "completeness": cg["completeness"],
-            }
-            for cg in groupers
-        ]
-
-        cursor.executemany(context_grouper_upsert_query, grouper_params)
 
     return condition_to_code_relationships
 
@@ -630,8 +602,8 @@ def _upsert_relationships(
         JOIN codes c
             ON  c.system_id = sr.system_id
             AND c.code = sr.code
-        JOIN valuesets v
-            ON v.url = sr.valueset_url;
+        JOIN conditions_valuesets v
+            ON v.canonical_url = sr.valueset_url;
     """)
 
     inserted_count = cursor.rowcount
@@ -699,47 +671,60 @@ def _upsert_valuesets(
 ) -> None:
     logger.info("⏳ Starting valuesets upsert process...")
 
-    cursor.execute("""
-        CREATE TEMP TABLE IF NOT EXISTS stage_valuesets (
-            id UUID NOT NULL,
-            url UUID NOT NULL,
-            parent_url TEXT NOT NULL,
-            display_name TEXT
-        ) ON COMMIT DROP
-    """)
-    cursor.execute("TRUNCATE stage_valuesets")
+    upsert_query = """
+    INSERT INTO conditions_valuesets (
+        condition_id,
+        display_name,
+        category,
+        canonical_url,
+        code_count,
+        completeness,
+        parent_url
+    )
+    VALUES (
+        (
+            SELECT c.id FROM conditions c
+            LEFT JOIN tes t ON t.id = c.tes_id
+            WHERE c.canonical_url = %(parent_url)s AND t.version = %(version)s
+        ),
+        %(display_name)s,
+        %(category)s,
+        %(canonical_url)s,
+        %(code_count)s,
+        %(completeness)s,
+        %(parent_url)s
+    )
+    ON CONFLICT (condition_id, canonical_url)
+    DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        category     = EXCLUDED.category,
+        code_count   = EXCLUDED.code_count,
+        completeness = EXCLUDED.completeness,
+        parent_url   = EXCLUDED.parent_url
+    WHERE
+        conditions_valuesets.display_name IS DISTINCT FROM EXCLUDED.display_name
+        OR conditions_valuesets.category IS DISTINCT FROM EXCLUDED.category
+        OR conditions_valuesets.code_count IS DISTINCT FROM EXCLUDED.code_count
+        OR conditions_valuesets.completeness IS DISTINCT FROM EXCLUDED.completeness
+        OR conditions_valuesets.parent_url IS DISTINCT FROM EXCLUDED.parent_url;
+    """
 
-    def valueset_generator():
-        for valueset in data:
-            yield (
-                valueset["url"],
-                valueset["parent_url"],
-                valueset["display_name"],
-            )
+    valueset_params = [
+        {
+            "display_name": v["display_name"],
+            "category": v["category"],
+            "canonical_url": v["canonical_url"],
+            "code_count": v["code_count"],
+            "completeness": v["completeness"],
+            "parent_url": v["parent_url"],
+            "version": v["condition_version"],
+        }
+        for v in data
+    ]
 
-    logger.info("🚀 Streaming valuesets into stage table...")
-    with cursor.copy(
-        "COPY stage_valuesets (url, parent_url, display_name) FROM STDIN"
-    ) as copy:
-        for record in valueset_generator():
-            copy.write_row(record)
+    cursor.executemany(upsert_query, valueset_params)
 
-    logger.info(f"📥 Staged {len(data)} unique valueset rows.")
-    cursor.execute("ANALYZE stage_valuesets;")
-
-    cursor.execute("""
-        INSERT INTO codes (id, system_id, code, display)
-        SELECT s.id, s.system_id, s.code, s.display
-        FROM stage_codes s
-        LEFT JOIN codes c
-            ON  s.system_id = c.system_id
-            AND s.code = c.code
-        WHERE c.id IS NULL
-        ORDER BY s.system_id, s.code
-        ON CONFLICT (system_id, code) DO NOTHING;
-    """)
-
-    logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in codes table.")
+    logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in valuesets table.")
 
 
 def _build_condition_groupers(
@@ -857,7 +842,7 @@ def load_tes_data(
         return
 
     logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
-    condition_to_code_relationships = _upsert_conditions_and_groupers(
+    condition_to_code_relationships = _upsert_conditions(
         cursor=cursor,
         processed=processed,
     )
@@ -871,12 +856,12 @@ def load_tes_data(
         condition_groupers=condition_groupers,
     )
 
-    _upsert_codes(
-        cursor=cursor, data=condition_to_code_relationships["codes_to_insert"]
-    )
-
     _upsert_valuesets(
         cursor=cursor, data=condition_to_code_relationships["valuesets_to_insert"]
+    )
+
+    _upsert_codes(
+        cursor=cursor, data=condition_to_code_relationships["codes_to_insert"]
     )
 
     _upsert_relationships(

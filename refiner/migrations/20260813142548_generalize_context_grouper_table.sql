@@ -4,6 +4,9 @@ ALTER TABLE conditions_context_groupers ADD COLUMN parent_url TEXT;
 ALTER TABLE conditions_context_groupers RENAME TO conditions_valuesets;
 
 ALTER TABLE conditions_codes
+    DROP CONSTRAINT IF EXISTS conditions_codes_pkey;
+
+ALTER TABLE conditions_codes
     ADD COLUMN valueset_id UUID,
     ADD CONSTRAINT fk_conditions_valuesets_fkey
     FOREIGN KEY (valueset_id) 

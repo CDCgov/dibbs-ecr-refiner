@@ -511,14 +511,14 @@ async def get_context_groupers_by_condition_id_db(
         SELECT
             id,
             condition_id,
-            name,
+            display_name,
             category,
             canonical_url,
             code_count,
             completeness,
             created_at,
             updated_at
-        FROM conditions_context_groupers
+        FROM conditions_valuesets
         WHERE condition_id = %s
     """
     params = (condition_id,)

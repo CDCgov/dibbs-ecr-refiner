@@ -83,7 +83,20 @@ type Code = str
 type Display = str | None
 type SourceUrl = str
 type SourceName = str | None
-type FhirCodeInfo = tuple[SystemOid, Code, Display, SourceUrl, SourceName]
+
+
+@dataclass(frozen=True)
+class FhirCodeInfo:
+    """Class for code-related information we're pulling from the TES artifacts."""
+
+    system_url: str
+    code: str
+    display: str
+    source_url: str
+    source_name: str
+
+
+type SystemSortedFhirInfo = dict[SystemOid, list[FhirCodeInfo]]
 
 
 # a dictionary representing a single code prepared for categorization by a code system
@@ -193,17 +206,6 @@ class ConditionData:
         ):
             codes = extract_codes_from_compose(sibling_vs)
             self.sibling_codes.update(codes)
-
-            name = sibling_vs.get("title") or sibling_vs.get("name") or ""
-            self.context_groupers.append(
-                ContextGrouperInfo(
-                    name=name,
-                    category=parse_acg_category(name),
-                    canonical_url=sibling_vs.get("url", ""),
-                    code_count=len(codes),
-                    completeness=map_coverage_level_to_acg_completeness(sibling_vs),
-                )
-            )
 
     def _sort_codes(self, codes: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
@@ -374,7 +376,7 @@ def parse_coverage_level(vs: dict) -> CoverageLevel | None:
 
 def parse_valueset_source_name(vs: dict) -> str:
     """
-    Extracts ValueSet TES source from the valueset, if it extists.
+    Extracts ValueSet TES source from the valueset, if it exists.
 
     For distinct types of TES valuesets, this function:
         - Checks "title" for ACG since those valuesets have all the relevant data
@@ -430,9 +432,9 @@ def map_coverage_level_to_acg_completeness(vs: dict) -> str | None:
     return None
 
 
-def parse_acg_category(name: str) -> str:
+def parse_valueset_category(name: str) -> str:
     """
-    Extracts a normalized category slug from an Additional Context Grouper name.
+    Extracts a normalized category slug from an Additional Context Grouper name or a generalized category for Reporting Specification Groupers.
 
     Examples:
         "Pertussis Additional Context Medication Codes" -> "medication"
@@ -440,12 +442,16 @@ def parse_acg_category(name: str) -> str:
         "Unknown Format" -> "other"
     """
 
-    match = _ACG_CATEGORY_PATTERN.search(name)
-    if not match:
-        logger.warning(f"Could not parse ACG category from name: '{name}'")
+    acg_match = _ACG_CATEGORY_PATTERN.search(name)
+    rsg_match = "reporting specification grouper" in name.lower()
+    if rsg_match:
+        return "reporting_specification_grouper"
+
+    if not acg_match or rsg_match:
+        logger.warning(f"Could not parse category from name: '{name}'")
         return "other"
 
-    raw_category = match.group(1).strip().lower()
+    raw_category = acg_match.group(1).strip().lower()
     slug = _CATEGORY_SLUG_MAP.get(raw_category)
 
     if slug is None:
@@ -470,6 +476,7 @@ def extract_codes_from_compose(vs: dict) -> set[FhirCodeInfo]:
     """
     Extracts all (system, code, display) tuples from a ValueSet's compose section.
     """
+
     codes: set[FhirCodeInfo] = set()
     compose = vs.get("compose")
 
@@ -490,7 +497,13 @@ def extract_codes_from_compose(vs: dict) -> set[FhirCodeInfo]:
             code = concept.get("code")
             if code:
                 codes.add(
-                    (system, code, concept.get("display"), source_url, source_name)
+                    FhirCodeInfo(
+                        system_url=system,
+                        code=code,
+                        display=concept.get("display"),
+                        source_url=source_url,
+                        source_name=source_name,
+                    )
                 )
 
     return codes
@@ -532,7 +545,7 @@ def get_child_rsg_valuesets(
 def get_sibling_context_valuesets(
     parent: dict,
     all_vs_map: dict[tuple[str, str], dict],
-) -> list[dict]:
+) -> list[VsDict]:
     """
     Finds the Additional Context Grouper ValueSets referenced by a parent.
 
@@ -560,7 +573,7 @@ def get_sibling_context_valuesets(
     reference graph.
     """
 
-    siblings: list[dict] = []
+    siblings: list[VsDict] = []
 
     compose = parent.get("compose")
     if not compose:
@@ -588,14 +601,14 @@ def categorize_codes_by_system(
         system_name: [] for system_name in SYSTEM_MAP.values()
     }
 
-    for system, code, display, source_url, source_name in all_codes:
-        if system_key := SYSTEM_MAP.get(system):
+    for info in all_codes:
+        if system_key := SYSTEM_MAP.get(info.system_url):
             result[system_key].append(
                 {
-                    "code": code,
-                    "display": display,
-                    "source_url": source_url,
-                    "source_name": source_name,
+                    "code": info.code,
+                    "display": info.display,
+                    "source_url": info.source_url,
+                    "source_name": info.source_name,
                 }
             )
 
@@ -604,26 +617,19 @@ def categorize_codes_by_system(
 
 def categorize_codes_by_system_oid(
     all_codes: set[FhirCodeInfo],
-) -> ConditionCodePayload:
+) -> SystemSortedFhirInfo:
     """
     Categorizes a set of codes into a dictionary based on their system.
     """
     url_to_oid_map = {c["url"]: c["oid"] for c in CODE_SYSTEM_DATA.values()}
     # the key is a "system_name", and the value is an empty list that will hold CodePayloads
-    result: ConditionCodePayload = {
+    result: SystemSortedFhirInfo = {
         system_oid: [] for system_oid in url_to_oid_map.values()
     }
 
-    for system_url, code, display, source_url, source_name in all_codes:
-        if cur_code_system_oid := url_to_oid_map.get(system_url):
-            result[cur_code_system_oid].append(
-                {
-                    "code": code,
-                    "display": display,
-                    "source_url": source_url,
-                    "source_name": source_name,
-                }
-            )
+    for info in all_codes:
+        if cur_code_system_oid := url_to_oid_map.get(info.system_url):
+            result[cur_code_system_oid].append(info)
     return result
 
 
