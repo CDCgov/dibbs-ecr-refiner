@@ -297,7 +297,6 @@ def _build_sibling_codes(
     condition_grouper_url: str,
     condition_version: str,
 ) -> set[ConditionsCodesTrace]:
-
     condition_non_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
 
     for vs in condition_valuesets:

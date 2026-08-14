@@ -9,7 +9,7 @@ ALTER TABLE conditions_codes
 ALTER TABLE conditions_codes
     ADD COLUMN valueset_id UUID,
     ADD CONSTRAINT fk_conditions_valuesets_fkey
-    FOREIGN KEY (valueset_id) 
+    FOREIGN KEY (valueset_id)
     REFERENCES conditions_valuesets (id)
     ON DELETE CASCADE;
 
@@ -22,4 +22,3 @@ ALTER TABLE conditions_codes DROP COLUMN valueset_id;
 ALTER TABLE conditions_valuesets RENAME COLUMN display_name TO name;
 ALTER TABLE conditions_valuesets DROP COLUMN parent_url;
 ALTER TABLE conditions_valuesets RENAME TO conditions_context_groupers;
-
