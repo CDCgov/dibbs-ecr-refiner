@@ -456,10 +456,14 @@ test.describe('Codes management - data loading and interactions', () => {
       await page.getByRole('button', { name: 'Add custom code' }).click();
       await page.getByRole('button', { name: 'Add a single code' }).click();
 
-      await page.getByLabel('Code', { exact: true }).fill(code);
-      await page.getByLabel('Code system').selectOption({ label: system });
-      await page.getByLabel('Display name').fill(name);
-      await page.getByRole('button', { name: 'Add custom code' }).click();
+      const modal = page.getByRole('dialog');
+
+      await modal.getByLabel('Code', { exact: true }).fill(code);
+      await modal
+        .getByLabel('Code system', { exact: true })
+        .selectOption({ label: system });
+      await modal.getByLabel('Display name').fill(name);
+      await modal.getByRole('button', { name: 'Add custom code' }).click();
       await expect(
         page.getByRole('heading', { name: 'Manage codes', level: 2 })
       ).toBeVisible();
