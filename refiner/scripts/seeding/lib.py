@@ -294,6 +294,7 @@ class CodeRow(TypedDict):
     display: str
     code: str
     system_id: str
+    valueset_url: str
 
 
 def get_db_connection(db_url: str, db_password: str) -> psycopg.Connection:

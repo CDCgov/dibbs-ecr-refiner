@@ -193,7 +193,8 @@ CREATE TABLE public.conditions (
 CREATE TABLE public.conditions_codes (
     condition_id uuid CONSTRAINT conditions_rsg_codes_condition_id_not_null NOT NULL,
     code_id uuid CONSTRAINT conditions_rsg_codes_code_id_not_null NOT NULL,
-    is_child_rsg boolean DEFAULT false
+    is_child_rsg boolean DEFAULT false,
+    valueset_id uuid
 );
 
 
@@ -399,6 +400,20 @@ CREATE TABLE public.users (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     notifications jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+
+
+--
+-- Name: valuesets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.valuesets (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    url text NOT NULL,
+    parent_url text,
+    display_name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -656,6 +671,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: valuesets valuesets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.valuesets
+    ADD CONSTRAINT valuesets_pkey PRIMARY KEY (id);
 
 
 --
@@ -943,6 +966,14 @@ ALTER TABLE ONLY public.codes
 
 
 --
+-- Name: conditions_codes fk_conditions_valuesets_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes
+    ADD CONSTRAINT fk_conditions_valuesets_fkey FOREIGN KEY (valueset_id) REFERENCES public.valuesets(id) ON DELETE CASCADE;
+
+
+--
 -- Name: events fk_events_configurations; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1015,4 +1046,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260728212408'),
     ('20260729154745'),
     ('20260803202038'),
-    ('20260813142528');
+    ('20260813142528'),
+    ('20260813142548');
