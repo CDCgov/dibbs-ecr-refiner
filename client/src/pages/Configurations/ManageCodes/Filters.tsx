@@ -4,6 +4,7 @@ import {
   ComboboxButton,
   ComboboxOptions,
   ComboboxOption,
+  ComboboxInput,
 } from '@headlessui/react';
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
 import classNames from 'classnames';
@@ -39,88 +40,78 @@ function FilterCombobox<T extends FilterOption>({
 
   return (
     <Combobox multiple value={selected} onChange={handleChange}>
-      {({ open }) => (
-        <div className="relative">
-          <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            {selected.length <= 0 ? (
-              label
-            ) : (
-              <span>{selected.length} selected</span>
-            )}
-            <span className="flex items-center gap-2 border-l border-gray-300 pl-3">
-              <ChevronDownIcon />
-            </span>
-          </ComboboxButton>
-
-          {open && (
-            <div className="absolute left-0 z-100 mt-1 w-56 rounded-md border border-gray-300! bg-white shadow-lg">
-              <ComboboxOptions
-                static
-                className="max-h-100 overflow-y-scroll py-1 focus:outline-none"
-              >
-                {options.map((option) => (
-                  <ComboboxOption
-                    key={option.id}
-                    value={option}
-                    className="ui-active:bg-gray-50 hover:bg-blue-cool-5 cursor-pointer px-4 py-2 select-none"
-                  >
-                    {({ selected }) => (
-                      <div className="flex items-center gap-3">
-                        <span
-                          aria-hidden="true"
-                          className={classNames(
-                            'flex size-4 shrink-0 items-center justify-center border',
-                            {
-                              'border-violet-warm-60 bg-violet-warm-60':
-                                selected,
-                              'border-gray-400 bg-white': !selected,
-                            }
-                          )}
-                        >
-                          {selected && (
-                            <svg
-                              className="stroke-white"
-                              viewBox="0 0 14 14"
-                              fill="none"
-                            >
-                              <path
-                                d="M3 8L6 11L11 3.5"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          )}
-                        </span>
-                        <span className="text-md flex-1 text-gray-800">
-                          {option.label}
-                        </span>
-                        {option.count !== undefined && (
-                          <span className="text-gray-cool-50 text-sm">
-                            {option.count.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </ComboboxOption>
-                ))}
-
-                {/*
-                  This needs special handling to be a valid ComboboxOption.
-                */}
-                <ComboboxOption
-                  value={CLEAR_OPTION}
-                  className="mt-1 border-t border-gray-300 px-4 pt-2 pb-1"
-                >
-                  <span className="text-blue-cool-50 hover:text-blue-cool-70 font-bold hover:cursor-pointer hover:underline">
-                    Clear selection
-                  </span>
-                </ComboboxOption>
-              </ComboboxOptions>
-            </div>
+      <div className="relative">
+        <ComboboxInput className="sr-only focus:outline-2" />
+        <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          {selected.length <= 0 ? (
+            label
+          ) : (
+            <span>{selected.length} selected</span>
           )}
-        </div>
-      )}
+          <span className="flex items-center gap-2 border-l border-gray-300 pl-3">
+            <ChevronDownIcon />
+          </span>
+        </ComboboxButton>
+        <ComboboxOptions className="absolute left-0 z-100 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg">
+          {options.map((option) => (
+            <ComboboxOption
+              key={option.id}
+              value={option}
+              className="hover:bg-blue-cool-5 data-focus:bg-blue-cool-5 cursor-pointer px-4 py-2 select-none"
+            >
+              {({ selected }) => (
+                <div className="flex items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className={classNames(
+                      'flex size-4 shrink-0 items-center justify-center border',
+                      {
+                        'border-violet-warm-60 bg-violet-warm-60': selected,
+                        'border-gray-400 bg-white': !selected,
+                      }
+                    )}
+                  >
+                    {selected && (
+                      <svg
+                        className="stroke-white"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                      >
+                        <path
+                          d="M3 8L6 11L11 3.5"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="text-md flex-1 text-gray-800">
+                    {option.label}
+                  </span>
+                  {option.count !== undefined && (
+                    <span className="text-gray-cool-50 text-sm">
+                      {option.count.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              )}
+            </ComboboxOption>
+          ))}
+
+          {/*
+                This needs special handling to be a valid ComboboxOption.
+          */}
+          <ComboboxOption
+            value={CLEAR_OPTION}
+            className="mt-1 border-t border-gray-300 px-4 pt-2 pb-1"
+          >
+            <span className="text-blue-cool-50 hover:text-blue-cool-70 font-bold hover:cursor-pointer hover:underline">
+              Clear selection
+            </span>
+          </ComboboxOption>
+        </ComboboxOptions>
+      </div>
     </Combobox>
   );
 }
