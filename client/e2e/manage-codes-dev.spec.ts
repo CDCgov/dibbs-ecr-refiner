@@ -26,7 +26,76 @@ async function goToManageCodesDevPage(
   await page.goto(newUrl);
 }
 
-test.describe('Codes management (WIP)', () => {
+test.describe('Codes management - filters', () => {
+  test.beforeEach(async ({ configurationsPage }) => {
+    await clearDb();
+    await configurationsPage.goto();
+  });
+  test.afterEach(async () => {
+    await clearDb();
+  });
+
+  test('Page loads with no filters selected', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await expect(page.getByText('Filter by:')).toBeVisible();
+
+    const codeSystemFilterButton = page.getByRole('button', {
+      name: 'Code system',
+    });
+    await expect(codeSystemFilterButton).toBeVisible();
+    await codeSystemFilterButton.click();
+    const codeSystemOptions = page
+      .getByRole('listbox', { name: 'Code system' })
+      .getByRole('option');
+
+    await expect(page.getByRole('listbox')).toBeVisible();
+
+    // all 6 systems should be present + clear selection
+    await expect(codeSystemOptions).toHaveCount(7);
+
+    await page.keyboard.press('Escape');
+    const sourcesFilterButton = page.getByRole('button', { name: 'Source' });
+    await expect(sourcesFilterButton).toBeVisible();
+    await sourcesFilterButton.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    const sourcesOptions = page
+      .getByRole('listbox', { name: 'Source' })
+      .getByRole('option');
+
+    // only the condition + clear selection
+    await expect(sourcesOptions).toHaveCount(2);
+
+    await page.keyboard.press('Escape');
+    const statusFilterButton = page.getByRole('button', { name: 'Status' });
+    await expect(statusFilterButton).toBeVisible();
+    await statusFilterButton.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    const statusOptions = page
+      .getByRole('listbox', { name: 'Status' })
+      .getByRole('option');
+
+    // Both included and excluded + clear selection
+    await expect(statusOptions).toHaveCount(3);
+    await page.keyboard.press('Escape');
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+});
+
+test.describe('Codes management - data loading and interactions', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await clearDb();
     await configurationsPage.goto();
