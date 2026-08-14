@@ -61,9 +61,9 @@ class CodesResponse:
 
 
 def _get_filter_input(
-    code_systems: list[str | int] = Query(default=[]),
-    sources: list[str | int] = Query(default=[]),
-    statuses: list[str | int] = Query(default=[]),
+    code_systems: list[str] = Query(default=[]),
+    sources: list[str] = Query(default=[]),
+    statuses: list[str] = Query(default=[]),
 ) -> FilterInput:
     return FilterInput(
         code_systems=code_systems,
