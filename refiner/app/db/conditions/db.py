@@ -518,7 +518,7 @@ async def get_context_groupers_by_condition_id_db(
             completeness,
             created_at,
             updated_at
-        FROM conditions_valuesets
+        FROM valuesets
         WHERE condition_id = %s
     """
     params = (condition_id,)

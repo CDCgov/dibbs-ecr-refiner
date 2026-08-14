@@ -7,23 +7,24 @@ ALTER TABLE conditions_context_groupers RENAME TO valuesets;
 ALTER TABLE conditions_codes
     DROP CONSTRAINT IF EXISTS conditions_codes_pkey;
 
+-- create a new temp table to allow for unique primary key
 CREATE TABLE conditions_codes_temp (
-    condition_id UUID CONSTRAINT ,
-    code_id uuid CONSTRAINT conditions_rsg_codes_code_id_not_null NOT NULL,
-    valueset_id uuid
+    condition_id UUID NOT NULL,
+    code_id UUID NOT NULL,
+    valueset_id UUID NOT NULL,
     is_child_rsg boolean DEFAULT false,
     
-    UNIQUE (condition_id, canonical_url, valueset_id)
+    PRIMARY KEY (condition_id, code_id, valueset_id),
 
     CONSTRAINT fk_condition_id_fkey
         FOREIGN KEY(condition_id) 
         REFERENCES conditions(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
 
     CONSTRAINT fk_valueset_id_fkey
         FOREIGN KEY(valueset_id) 
         REFERENCES valuesets(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
 
     CONSTRAINT fk_code_id_fkey
         FOREIGN KEY(code_id) 
@@ -33,13 +34,8 @@ CREATE TABLE conditions_codes_temp (
 
 
 -- migrate:down
-ALTER TABLE conditions_codes
-    DROP CONSTRAINT IF EXISTS fk_conditions_valuesets_fkey;
-
 DROP TABLE conditions_codes_temp;
 
-ALTER TABLE conditions_codes DROP COLUMN valueset_id;
-
-ALTER TABLE conditions_valuesets RENAME COLUMN display_name TO name;
-ALTER TABLE conditions_valuesets DROP COLUMN parent_url;
-ALTER TABLE conditions_valuesets RENAME TO conditions_context_groupers;
+ALTER TABLE valuesets RENAME COLUMN display_name TO name;
+ALTER TABLE valuesets DROP COLUMN parent_url;
+ALTER TABLE valuesets RENAME TO conditions_context_groupers;
