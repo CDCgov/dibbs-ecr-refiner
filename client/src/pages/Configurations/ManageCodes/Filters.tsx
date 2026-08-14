@@ -6,6 +6,7 @@ import {
   ComboboxOption,
 } from '@headlessui/react';
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
+import classNames from 'classnames';
 
 const CLEAR_OPTION = { id: '__clear__', label: '' } as const;
 
@@ -67,11 +68,14 @@ function FilterCombobox<T extends FilterOption>({
                       <div className="flex items-center gap-3">
                         <span
                           aria-hidden="true"
-                          className={`flex size-4 shrink-0 items-center justify-center border ${
-                            selected
-                              ? 'border-violet-warm-60 bg-violet-warm-60'
-                              : 'border-gray-400 bg-white'
-                          }`}
+                          className={classNames(
+                            'flex size-4 shrink-0 items-center justify-center border',
+                            {
+                              'border-violet-warm-60 bg-violet-warm-60':
+                                selected,
+                              'border-gray-400 bg-white': !selected,
+                            }
+                          )}
                         >
                           {selected && (
                             <svg
