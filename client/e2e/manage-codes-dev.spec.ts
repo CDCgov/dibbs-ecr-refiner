@@ -93,6 +93,199 @@ test.describe('Codes management - filters', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
+
+  test('User can filter on code system', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    const codeSystemFilterButton = page.getByTestId('code-system-button');
+    const codeSystemOptions = page.getByTestId('code-system-options');
+
+    await expect(codeSystemFilterButton).toBeVisible();
+    await codeSystemFilterButton.click();
+
+    const loincOption = codeSystemOptions.getByRole('option', {
+      name: 'LOINC',
+      exact: false,
+    });
+    const cvxOption = codeSystemOptions.getByRole('option', {
+      name: 'CVX',
+      exact: false,
+    });
+
+    await loincOption.click();
+    await page.keyboard.press('Escape');
+    await expect(codeSystemFilterButton).toContainText('1 selected');
+
+    await codeSystemFilterButton.click();
+    await expect(cvxOption).toBeVisible();
+    await cvxOption.click();
+    await page.keyboard.press('Escape');
+    await expect(codeSystemFilterButton).toContainText('2 selected');
+
+    await codeSystemFilterButton.click();
+    const clearButton = codeSystemOptions.getByRole('option', {
+      name: 'Clear selection',
+    });
+    await expect(clearButton).toBeVisible();
+    await clearButton.click();
+    await page.keyboard.press('Escape');
+    await expect(codeSystemFilterButton).toContainText('Code system');
+  });
+
+  test('User can filter on source', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    await test.step('Add Acanthamoeba code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('acanth');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Acanthamoeba' })
+        .hover();
+      await page.getByLabel('Add Acanthamoeba').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
+    await test.step('Check source filter', async () => {
+      const sourceFilterButton = page.getByTestId('source-button');
+      const sourceOptions = page.getByTestId('source-options');
+
+      await expect(sourceFilterButton).toBeVisible();
+      await sourceFilterButton.click();
+
+      // should show added code set as an option
+      const acanthamoebaOption = sourceOptions.getByRole('option', {
+        name: 'Acanthamoeba',
+        exact: false,
+      });
+
+      const anotiaOption = sourceOptions.getByRole('option', {
+        name: 'Anotia',
+        exact: false,
+      });
+
+      await expect(acanthamoebaOption).toBeVisible();
+      await expect(anotiaOption).toBeVisible();
+
+      await acanthamoebaOption.click();
+      await page.keyboard.press('Escape');
+      await expect(sourceFilterButton).toContainText('1 selected');
+    });
+  });
+
+  test('User can filter on status', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    const sourceFilterButton = page.getByTestId('status-button');
+    const sourceOptions = page.getByTestId('status-options');
+
+    await expect(sourceFilterButton).toBeVisible();
+    await sourceFilterButton.click();
+
+    const includedOption = sourceOptions.getByRole('option', {
+      name: 'Included',
+      exact: false,
+    });
+
+    const excludedOption = sourceOptions.getByRole('option', {
+      name: 'Excluded',
+      exact: false,
+    });
+
+    await expect(includedOption).toBeVisible();
+    await expect(excludedOption).toBeVisible();
+
+    await excludedOption.click();
+    await page.keyboard.press('Escape');
+    await expect(sourceFilterButton).toContainText('1 selected');
+  });
+
+  test('Deleting all custom codes removes it as a filter option', async ({
+    page,
+    configurationPage,
+    api,
+  }) => {
+    const sourceFilterButton = page.getByTestId('source-button');
+    const sourceOptions = page.getByTestId('source-options');
+    const customCodeOption = sourceOptions.getByRole('option', {
+      name: 'Custom Code',
+      exact: false,
+    });
+
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+      await api.uploadCustomCodeCsv(config.id, [
+        {
+          code: '123-4',
+          display: 'mock custom code',
+          system_id: systems[0].id,
+        },
+      ]);
+    });
+
+    await test.step('Navigate to management page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Anotia' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await goToManageCodesDevPage(page, configurationPage);
+    });
+
+    await test.step('Select custom code in source filter', async () => {
+      await expect(page.locator('table tr').nth(1)).toContainText('123-4');
+
+      await expect(sourceFilterButton).toBeVisible();
+      await sourceFilterButton.click();
+
+      await customCodeOption.click();
+      await page.keyboard.press('Escape');
+      await expect(sourceFilterButton).toHaveText('1 selected');
+    });
+
+    await test.step('Delete custom code and check that filter updated', async () => {
+      const customCodeRow = page.locator('table tr').nth(1);
+      await expect(customCodeRow).toBeVisible();
+      await customCodeRow.getByRole('button', { name: 'Delete' }).click();
+      await expect(sourceFilterButton).toHaveText('Source');
+      await sourceFilterButton.click();
+      await expect(customCodeOption).not.toBeVisible();
+    });
+  });
 });
 
 test.describe('Codes management - data loading and interactions', () => {

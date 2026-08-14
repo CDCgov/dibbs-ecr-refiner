@@ -21,6 +21,7 @@ interface FilterComboboxProps<T extends FilterOption> {
   label: string;
   options: T[];
   selected: T[];
+  testId: string;
   onChange: (val: T[]) => void;
 }
 
@@ -28,6 +29,7 @@ function FilterCombobox<T extends FilterOption>({
   label,
   options,
   selected,
+  testId,
   onChange,
 }: FilterComboboxProps<T>) {
   const handleChange = (values: (T | typeof CLEAR_OPTION)[]) => {
@@ -42,7 +44,10 @@ function FilterCombobox<T extends FilterOption>({
     <Combobox multiple value={selected} onChange={handleChange}>
       <div className="has-[input:focus-within]:outline-blue-40v relative has-[input:focus-within]:outline-5 has-[input:focus-within]:-outline-offset-2">
         <ComboboxInput aria-label={label} className="sr-only" />
-        <ComboboxButton className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm hover:cursor-pointer">
+        <ComboboxButton
+          data-testid={`${testId}-button`}
+          className="flex w-44 items-center justify-between gap-6 border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm hover:cursor-pointer"
+        >
           {selected.length <= 0 ? (
             label
           ) : (
@@ -52,7 +57,10 @@ function FilterCombobox<T extends FilterOption>({
             <ChevronDownIcon />
           </span>
         </ComboboxButton>
-        <ComboboxOptions className="absolute left-0 z-100 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg">
+        <ComboboxOptions
+          data-testid={`${testId}-options`}
+          className="absolute left-0 z-100 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg"
+        >
           {options.map((option) => (
             <ComboboxOption
               key={option.id}
@@ -182,18 +190,21 @@ export function Filters({
         label="Code system"
         options={codeSystemOptions}
         selected={filters.codeSystems}
+        testId="code-system"
         onChange={(val) => onFiltersChange({ ...filters, codeSystems: val })}
       />
       <FilterCombobox
         label="Source"
         options={sourceOptions}
         selected={filters.sources}
+        testId="source"
         onChange={(val) => onFiltersChange({ ...filters, sources: val })}
       />
       <FilterCombobox
         label="Status"
         options={statusOptions}
         selected={filters.statuses}
+        testId="status"
         onChange={(val) => onFiltersChange({ ...filters, statuses: val })}
       />
     </div>
