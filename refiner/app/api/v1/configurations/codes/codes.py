@@ -224,17 +224,6 @@ async def set_codes_status(
     return impacted_code_ids
 
 
-@dataclass
-class CodeFiltersResponse:
-    """
-    Model for code filters response.
-    """
-
-    id: UUID
-    system_name: str
-    code_count: int
-
-
 @router.get(
     "/filters",
     response_model=CodeFilterOptions,
@@ -251,14 +240,14 @@ async def get_code_filters(
 
     Args:
         configuration_id (UUID): The configuration ID
-        user (DbUser, optional): _description_. The logged-in user
-        db (AsyncDatabaseConnection, optional): The database connection
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
 
     Raises:
         HTTPException: 404 if the configuration couldn't be found
 
     Returns:
-        CodeFiltersResponse: The code filters
+        CodeFilterOptions: The code filters
     """
 
     config = await get_configuration_by_id_db(
