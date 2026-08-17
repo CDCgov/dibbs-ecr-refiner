@@ -9,8 +9,6 @@ from app.core.exceptions import (
     DatabaseConnectionError,
 )
 
-DEFAULT_MIN_POOL_CONNECTIONS = 1
-
 
 class AsyncDatabaseConnection:
     """
@@ -21,7 +19,7 @@ class AsyncDatabaseConnection:
         self,
         db_url: str,
         db_password: str,
-        min_size: int = DEFAULT_MIN_POOL_CONNECTIONS,
+        min_size: int = 1,
         max_size: int = 10,
         prepare_threshold: int | None = 5,
     ) -> None:
@@ -95,7 +93,7 @@ class AsyncDatabaseConnection:
 def create_db(
     db_url: str,
     db_password: str,
-    min_size: int = DEFAULT_MIN_POOL_CONNECTIONS,
+    min_size: int = 1,
     prepare_threshold: int | None = 5,
 ) -> AsyncDatabaseConnection:
     """
