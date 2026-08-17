@@ -108,7 +108,7 @@ async def _get_baseline_tes_update_condition_diff_db(
     cond_url: str,
 ) -> ConditionDiffExportData:
     query = """
-        SELECT
+        SELECT DISTINCT
             cond.canonical_url,
             cond.display_name AS condition_name,
             COALESCE(
@@ -179,7 +179,7 @@ async def get_tes_update_condition_diff_db(
 
     query = """
         WITH cur AS (
-            SELECT
+            SELECT DISTINCT
                 cond.canonical_url,
                 cond.display_name as condition_name,
                 c.code,
@@ -194,7 +194,7 @@ async def get_tes_update_condition_diff_db(
             WHERE cond.tes_id = %(cur_tes_id)s AND cond.canonical_url = %(cond_url)s
         ),
         prev AS (
-            SELECT
+            SELECT DISTINCT
                 cond.canonical_url,
                 cond.display_name as condition_name,
                 c.code,
@@ -273,7 +273,7 @@ async def _get_tes_update_diff_db(
 
     query = """
     WITH cur AS (
-        SELECT
+        SELECT DISTINCT
             c.id as condition_id,
             c.canonical_url,
             cc.code_id,
@@ -283,7 +283,7 @@ async def _get_tes_update_diff_db(
         WHERE c.tes_id = %(cur_tes_id)s
     ),
     prev AS (
-        SELECT
+        SELECT DISTINCT
             c.id as condition_id,
             c.canonical_url,
             c.display_name,
