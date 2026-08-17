@@ -84,7 +84,7 @@ async def get_codes_db(
         skip_custom = bool(sources) and "Custom Code" not in sources
 
         if not skip_custom:
-            remaining = limit + 1
+            remaining = limit + 1  # +1 to detect next page
             custom_params: dict = {
                 "configuration_id": configuration_id,
                 "limit": remaining,
@@ -141,7 +141,7 @@ async def get_codes_db(
                 rows = custom_rows
 
     # Handle condition-linked codes
-    remaining = limit - len(rows) + 1
+    remaining = limit - len(rows) + 1  # +1 to detect next page
     cond_params: dict = {
         "configuration_id": configuration_id,
         "limit": remaining,
