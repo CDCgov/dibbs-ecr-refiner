@@ -192,8 +192,7 @@ class BuildCodeContext:
     """
 
     db_ids: SystemOidToDbIdMap
-    unique_code_traces: set[CodedConceptUniqueKey] = field(default_factory=set)
-    unique_codes: list[CodeRow] = field(default_factory=list)
+    unique_codes: dict[tuple[UUID, str], CodeRow] = field(default_factory=dict)
     unique_valuesets: dict[str, ValuesetRow] = field(default_factory=dict)
 
     def mark_code_as_seen(
@@ -206,25 +205,23 @@ class BuildCodeContext:
         """Tracks trace and registers code row information across build functions."""
 
         system_code_tuple = (code_trace.system_db_id, code)
-        if system_code_tuple in self.unique_code_traces:
+        if system_code_tuple in self.unique_codes.keys():
             return False
 
-        self.unique_code_traces.add(system_code_tuple)
-        self.unique_codes.append(
-            CodeRow(
-                id=uuid4(),
-                code=code,
-                display=display,
-                system_id=str(code_trace.system_db_id),
-                valueset_url=valueset_url,
-            )
+        self.unique_codes[system_code_tuple] = CodeRow(
+            id=uuid4(),
+            code=code,
+            display=display,
+            system_id=str(code_trace.system_db_id),
+            valueset_url=valueset_url,
         )
+
         return True
 
     def mark_valueset_as_seen(
         self, valueset: VsDict, condition_url: str, condition_version: str
     ):
-        """Tracks trace and registers code row information across build functions."""
+        """Tracks trace and registers valueset information across build functions."""
         url = valueset.get("url", "")
 
         if not url or url in self.unique_valuesets:
@@ -391,7 +388,7 @@ def _build_codes(
         )
 
     return ProcessedCodePayload(
-        codes_to_insert=code_context.unique_codes,
+        codes_to_insert=list(code_context.unique_codes.values()),
         valuesets_to_insert=list(code_context.unique_valuesets.values()),
         condition_relationships=condition_to_code_relationships,
     )
