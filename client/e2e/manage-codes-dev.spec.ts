@@ -106,6 +106,19 @@ test.describe('Codes management - filters', () => {
       page.getByRole('heading', { name: 'Manage codes', level: 2 })
     ).toBeVisible();
 
+    await test.step('Add Alpha-gal Syndrome code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('alph');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Alpha-gal Syndrome' })
+        .hover();
+      await page.getByLabel('Add Alpha-gal Syndrome').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
     const codeSystemFilterButton = page.getByTestId('code-system-button');
     const codeSystemOptions = page.getByTestId('code-system-options');
 
@@ -130,6 +143,17 @@ test.describe('Codes management - filters', () => {
     await cvxOption.click();
     await page.keyboard.press('Escape');
     await expect(codeSystemFilterButton).toContainText('2 selected');
+
+    await test.step('Check that table results only has expected codes', async () => {
+      // table only has LOINC codes (neither condition has CVX codes)
+      const tableRows = page.getByRole('table').getByRole('row');
+      const rowCount = await tableRows.count();
+      for (let i = 1; i < rowCount; i++) {
+        await expect(tableRows.nth(i).getByRole('cell').nth(2)).toHaveText(
+          'LOINC'
+        );
+      }
+    });
 
     await codeSystemFilterButton.click();
     const clearButton = codeSystemOptions.getByRole('option', {
@@ -191,6 +215,15 @@ test.describe('Codes management - filters', () => {
       await page.keyboard.press('Escape');
       await expect(sourceFilterButton).toContainText('1 selected');
     });
+
+    await test.step('Check that table results only has Acanthamoeba codes', async () => {
+      const tableRows = page.getByRole('table').getByRole('row');
+      const rowCount = await tableRows.count();
+      for (let i = 1; i < rowCount; i++) {
+        const sourceCell = tableRows.nth(i).getByRole('cell').nth(4);
+        await expect(sourceCell).toHaveText('Acanthamoeba CG');
+      }
+    });
   });
 
   test('User can filter on status', async ({
@@ -207,9 +240,20 @@ test.describe('Codes management - filters', () => {
 
     const sourceFilterButton = page.getByTestId('status-button');
     const sourceOptions = page.getByTestId('status-options');
+    const table = page.getByRole('table');
+    const tableRows = table.getByRole('row');
 
-    await expect(sourceFilterButton).toBeVisible();
-    await sourceFilterButton.click();
+    await test.step('Check the page on load', async () => {
+      await expect(table).toBeVisible();
+      const initialCount = await tableRows.count(); // this includes the header row
+      expect(initialCount).toBe(3);
+    });
+
+    await test.step('Exclude a code', async () => {
+      const statusCell = tableRows.nth(1).getByRole('cell').last();
+      const statusSwitch = statusCell.getByRole('switch');
+      await statusSwitch.click();
+    });
 
     const includedOption = sourceOptions.getByRole('option', {
       name: 'Included',
@@ -221,12 +265,22 @@ test.describe('Codes management - filters', () => {
       exact: false,
     });
 
-    await expect(includedOption).toBeVisible();
-    await expect(excludedOption).toBeVisible();
+    await test.step('Check that both "Include" and "Excluded" options are available', async () => {
+      await expect(sourceFilterButton).toBeVisible();
+      await sourceFilterButton.click();
 
-    await excludedOption.click();
-    await page.keyboard.press('Escape');
-    await expect(sourceFilterButton).toContainText('1 selected');
+      await expect(includedOption).toBeVisible();
+      await expect(excludedOption).toBeVisible();
+    });
+
+    await test.step('Filter on "Excluded" codes and check result table rows', async () => {
+      await excludedOption.click();
+      await page.keyboard.press('Escape');
+      await expect(sourceFilterButton).toContainText('1 selected');
+
+      const newCount = await tableRows.count();
+      expect(newCount).toBe(2);
+    });
   });
 
   test('Deleting all custom codes removes it as a filter option', async ({
