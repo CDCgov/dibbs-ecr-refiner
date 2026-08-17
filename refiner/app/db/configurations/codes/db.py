@@ -73,6 +73,7 @@ async def get_codes_db(
     in_custom = decoded.in_custom if decoded else True
 
     # filters
+    search = filters.search
     sources = filters.sources
     code_systems = filters.code_systems
     statuses = filters.statuses
@@ -104,6 +105,12 @@ async def get_codes_db(
             # doesn't include "included" then skip custom codes entirely
             if statuses and "included" not in [s.lower() for s in statuses]:
                 skip_custom = True
+
+            if search:
+                custom_clauses.append(
+                    "AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+                )
+                custom_params["search"] = f"%{search}%"
 
             if not skip_custom:
                 custom_query = f"""
@@ -177,6 +184,12 @@ async def get_codes_db(
         elif "excluded" in db_statuses and "included" not in db_statuses:
             cond_clauses.append("AND e.code_id IS NOT NULL")
         # No clause is needed if both are present
+
+    if search:
+        cond_clauses.append(
+            "AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+        )
+        cond_params["search"] = f"%{search}%"
 
     cond_query = f"""
         SELECT

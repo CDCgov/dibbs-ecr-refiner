@@ -37,6 +37,7 @@ import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { useDebouncedCallback } from 'use-debounce';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -96,7 +97,7 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
     <>
       <CodeInformationBar id={id} />
       <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
-        <Search placeholder="Search by keyword" className="w-70!" />
+        <SearchFilter filters={filters} setFilters={setFilters} />
         <Filters
           configurationId={id}
           filters={filters}
@@ -105,6 +106,31 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
       </div>
       <CodesTable id={id} disabled={disabled} filters={filters} />
     </>
+  );
+}
+
+interface SearchFilterProps {
+  filters: CodeFilters;
+  setFilters: React.Dispatch<React.SetStateAction<CodeFilters>>;
+}
+
+function SearchFilter({ filters, setFilters }: SearchFilterProps) {
+  const [inputValue, setInputValue] = useState(filters.search ?? '');
+
+  const debouncedUpdate = useDebouncedCallback((value: string) => {
+    setFilters((prev) => ({ ...prev, search: value || undefined }));
+  }, 500);
+
+  return (
+    <Search
+      placeholder="Search by keyword"
+      className="w-70!"
+      value={inputValue}
+      onChange={(e) => {
+        setInputValue(e.target.value);
+        debouncedUpdate(e.target.value);
+      }}
+    />
   );
 }
 
@@ -136,6 +162,7 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
       code_systems: filters.codeSystems.map((cs) => cs.id),
       sources: filters.sources.map((s) => s.id),
       statuses: filters.statuses.map((s) => s.id),
+      search: filters.search,
     },
     {
       query: {

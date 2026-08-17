@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
 import { CodeFilters, FilterOption } from './Filters';
 
 export function useFilterState(configurationId: string) {
   const [filters, setFilters] = useState<CodeFilters>({
+    search: undefined,
     codeSystems: [],
     sources: [],
     statuses: [],
@@ -35,7 +36,10 @@ export function useFilterState(configurationId: string) {
 
   // match filters in use with filters that are available
   const activeFilters = useMemo(
-    () => pruneFilters(filters, availableFilters),
+    () => ({
+      ...pruneFilters(filters, availableFilters),
+      search: filters.search,
+    }),
     [filters, availableFilters]
   );
 
@@ -48,11 +52,20 @@ export function useFilterState(configurationId: string) {
 
     if (changed) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFilters(pruned);
+      setFilters({ ...pruned, search: filters.search });
     }
   }, [availableFilters]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { filters: activeFilters, setFilters };
+  const clearFilters = useCallback(() => {
+    setFilters({
+      codeSystems: [],
+      sources: [],
+      statuses: [],
+      search: undefined,
+    });
+  }, []);
+
+  return { filters: activeFilters, setFilters, clearFilters };
 }
 
 /**
