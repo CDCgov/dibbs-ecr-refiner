@@ -607,8 +607,6 @@ def categorize_codes_by_system(
                 {
                     "code": info.code,
                     "display": info.display,
-                    "source_url": info.source_url,
-                    "source_name": info.source_name,
                 }
             )
 
