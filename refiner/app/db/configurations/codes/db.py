@@ -94,11 +94,11 @@ async def get_codes_db(
             custom_cursor_clause = ""
 
             if decoded:
-                custom_cursor_clause = "AND c.code > %(cursor_code)s"
+                custom_cursor_clause = " AND c.code > %(cursor_code)s"
                 custom_params["cursor_code"] = decoded.code
 
             if code_systems:
-                custom_clauses.append("AND s.id = ANY(%(code_systems)s::uuid[])")
+                custom_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
                 custom_params["code_systems"] = code_systems
 
             # Custom codes are always "included" so if the statuses filter
@@ -108,7 +108,7 @@ async def get_codes_db(
 
             if search:
                 custom_clauses.append(
-                    "AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+                    " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
                 )
                 custom_params["search"] = f"%{search}%"
 
@@ -157,12 +157,12 @@ async def get_codes_db(
     cursor_clause = ""
 
     if not in_custom and decoded:
-        cursor_clause = "AND (cfgc.condition_id, c.code) > (%(cursor_condition_id)s, %(cursor_code)s)"
+        cursor_clause = " AND (cfgc.condition_id, c.code) > (%(cursor_condition_id)s, %(cursor_code)s)"
         cond_params["cursor_condition_id"] = decoded.condition_id
         cond_params["cursor_code"] = decoded.code
 
     if code_systems:
-        cond_clauses.append("AND s.id = ANY(%(code_systems)s::uuid[])")
+        cond_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
         cond_params["code_systems"] = code_systems
 
     # Since "Custom Code" is not a valid UUID we need to strip it before filtering condition grouper codes on their UUID
@@ -173,21 +173,21 @@ async def get_codes_db(
         return rows, next_cursor
 
     if condition_sources:
-        cond_clauses.append("AND cfgc.condition_id = ANY(%(sources)s::uuid[])")
+        cond_clauses.append(" AND cfgc.condition_id = ANY(%(sources)s::uuid[])")
         cond_params["sources"] = condition_sources
 
     if statuses:
         # Map client values to DB values
         db_statuses = [s.lower() for s in statuses]
         if "included" in db_statuses and "excluded" not in db_statuses:
-            cond_clauses.append("AND e.code_id IS NULL")
+            cond_clauses.append(" AND e.code_id IS NULL")
         elif "excluded" in db_statuses and "included" not in db_statuses:
-            cond_clauses.append("AND e.code_id IS NOT NULL")
+            cond_clauses.append(" AND e.code_id IS NOT NULL")
         # No clause is needed if both are present
 
     if search:
         cond_clauses.append(
-            "AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+            " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
         )
         cond_params["search"] = f"%{search}%"
 
