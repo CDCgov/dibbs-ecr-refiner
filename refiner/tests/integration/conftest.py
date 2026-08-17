@@ -399,13 +399,14 @@ async def reset_db(db_pool):
             await cur.execute("DELETE FROM configurations")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def db_pool(setup):
     # setup as a dependency guarantees that the pool isn't created until migrations have run
     db = create_db(
         db_url=config.DB_URL,
         db_password=config.DB_PASSWORD,
         prepare_threshold=None,
+        min_size=0,
     )
     await db.connect()
 
@@ -529,15 +530,6 @@ def setup(request):
 
     refiner_service.start()
 
-    print("⚙️ Restarting refiner server")
-    _restart_service(service="server", compose_path=path)
-
-    print("⚙️ Restarting refiner Lambda")
-    _restart_service(service="lambda", compose_path=path)
-
-    refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
-    print("✨ Message refiner services ready to test!")
-
     print("☄️ Clearing data...")
     refiner_service.exec_in_container(
         [
@@ -615,6 +607,15 @@ def setup(request):
     )
 
     print("🏃‍♀️ Database is ready!")
+
+    print("⚙️ Restarting refiner server")
+    _restart_service(service="server", compose_path=path)
+
+    print("⚙️ Restarting refiner Lambda")
+    _restart_service(service="lambda", compose_path=path)
+
+    refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
+    print("✨ Message refiner services ready to test!")
 
     def teardown():
         """

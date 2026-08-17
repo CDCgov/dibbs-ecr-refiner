@@ -609,6 +609,7 @@ def _upsert_relationships(
     )
 
     cursor.execute("ANALYZE conditions_codes_temp;")
+    return
 
 
 def _upsert_codes(
@@ -659,6 +660,7 @@ def _upsert_codes(
     """)
 
     logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in codes table.")
+    return
 
 
 def _upsert_valuesets(
@@ -721,6 +723,7 @@ def _upsert_valuesets(
     cursor.executemany(upsert_query, valueset_params)
 
     logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in valuesets table.")
+    return
 
 
 def _build_condition_groupers(
