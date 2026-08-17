@@ -93,7 +93,6 @@ class AsyncDatabaseConnection:
 def create_db(
     db_url: str,
     db_password: str,
-    min_size: int = 1,
     prepare_threshold: int | None = 5,
 ) -> AsyncDatabaseConnection:
     """
@@ -102,7 +101,6 @@ def create_db(
     Args:
         db_url (str): The database connection URL
         db_password (str): The database password
-        min_size (int): Minimum number of connections to maintain in the pool. Defaults to 1.
         prepare_threshold (int | None): Number of times a query is executed before it is prepared. Defaults to 5.
 
     Returns:
@@ -112,7 +110,6 @@ def create_db(
         db_url=db_url,
         db_password=db_password,
         prepare_threshold=prepare_threshold,
-        min_size=min_size,
     )
 
 
