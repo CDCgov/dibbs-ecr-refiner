@@ -26,6 +26,76 @@ async function goToManageCodesDevPage(
   await page.goto(newUrl);
 }
 
+test.describe('Codes management - search', () => {
+  test.beforeEach(async ({ configurationsPage }) => {
+    await clearDb();
+    await configurationsPage.goto();
+  });
+  test.afterEach(async () => {
+    await clearDb();
+  });
+
+  test('User entering search text will filter the table', async ({
+    api,
+    page,
+    configurationPage,
+  }) => {
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+      await api.uploadCustomCodeCsv(config.id, [
+        {
+          code: '123-4',
+          display: 'mock custom code',
+          system_id: systems[0].id,
+        },
+      ]);
+    });
+
+    await test.step('Navigate to management page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Anotia' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await goToManageCodesDevPage(page, configurationPage);
+    });
+
+    const table = page.getByRole('table');
+    await expect(table).toBeVisible();
+    const tableRowCount = await table.getByRole('row').count();
+    expect(tableRowCount).toBe(4); // include header
+
+    await test.step('Enter search query', async () => {
+      const searchBox = page.getByRole('searchbox', {
+        name: 'Search by keyword',
+        exact: true,
+      });
+
+      await expect(searchBox).toBeVisible();
+      await searchBox.fill('mock custom');
+
+      // wait for response so test doesn't fail waiting for debounce
+      await page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes('search=mock+custom') &&
+          res.status() === 200
+      );
+    });
+
+    await test.step('Check search results', async () => {
+      await expect(table).toBeVisible();
+      const newRowCount = await table.getByRole('row').count();
+      expect(newRowCount).toBe(2); // custom code and header only
+    });
+  });
+});
+
 test.describe('Codes management - filters', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await clearDb();
