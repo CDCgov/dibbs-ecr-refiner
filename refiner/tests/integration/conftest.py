@@ -406,7 +406,6 @@ async def db_pool(setup):
         db_url=config.DB_URL,
         db_password=config.DB_PASSWORD,
         prepare_threshold=None,
-        timeout=60,
     )
     await db.connect()
 
