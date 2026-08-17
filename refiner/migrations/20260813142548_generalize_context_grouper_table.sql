@@ -13,21 +13,21 @@ CREATE TABLE conditions_codes_temp (
     code_id UUID NOT NULL,
     valueset_id UUID NOT NULL,
     is_child_rsg boolean DEFAULT false,
-    
+
     PRIMARY KEY (condition_id, code_id, valueset_id),
 
     CONSTRAINT fk_condition_id_fkey
-        FOREIGN KEY(condition_id) 
+        FOREIGN KEY(condition_id)
         REFERENCES conditions(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_valueset_id_fkey
-        FOREIGN KEY(valueset_id) 
+        FOREIGN KEY(valueset_id)
         REFERENCES valuesets(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_code_id_fkey
-        FOREIGN KEY(code_id) 
+        FOREIGN KEY(code_id)
         REFERENCES codes(id)
         ON DELETE CASCADE
 );
