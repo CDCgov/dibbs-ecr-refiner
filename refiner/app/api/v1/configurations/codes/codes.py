@@ -97,9 +97,6 @@ async def get_codes(
         db (AsyncDatabaseConnection): Database connection
     """
 
-    # TODO: delete this
-    # print("!FILTERS!", filters.code_systems, filters.sources, filters.statuses)
-
     # Number of codes pulled per batch
     CODES_LIMIT = 100
 
