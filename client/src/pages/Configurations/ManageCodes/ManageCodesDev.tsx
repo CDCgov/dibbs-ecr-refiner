@@ -1,6 +1,7 @@
 import { useParams } from 'react-router';
 import {
   getGetCodeCountsQueryKey,
+  getGetCodeFiltersQueryKey,
   getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
   useGetCodesInfinite,
@@ -32,6 +33,8 @@ import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
+import { Filters } from './Filters';
+import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 
@@ -104,6 +107,7 @@ function CodesTable({ id, disabled }: CodesTableProps) {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
+  const { filters, setFilters } = useFilterState(id);
 
   if (isPending) return 'Loading...';
   if (isError) return 'Error!';
@@ -118,13 +122,13 @@ function CodesTable({ id, disabled }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <div className="flex w-full flex-col items-start justify-between gap-4 md:flex-row">
+      <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
         <Search placeholder="Search by keyword" className="w-70!" />
-        <div className="flex flex-col items-start gap-4 md:flex-row">
-          <div className="border p-2">Code system filter</div>
-          <div className="border p-2">Source filter</div>
-          <div className="border p-2">Status filter</div>
-        </div>
+        <Filters
+          configurationId={id}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
       </div>
       <InfiniteScroll
         dataLength={codes.length}
@@ -274,6 +278,9 @@ function IncludeSwitch({
           });
           await queryClient.invalidateQueries({
             queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
           });
         },
       }

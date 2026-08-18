@@ -232,6 +232,142 @@ async def set_codes_status_db(
 
 
 @dataclass
+class CodeSystemFilterOption:
+    """
+    Model to represent a code system filter option.
+    """
+
+    system_id: UUID
+    system_name: str
+    code_count: int
+
+
+@dataclass
+class SourceFilterOption:
+    """
+    Model to represent a source filter option.
+    """
+
+    condition_id: UUID | None  # This will be `None` for custom codes
+    source: str
+    code_count: int
+
+
+@dataclass
+class StatusFilterOption:
+    """
+    Model to represent a status filter option.
+    """
+
+    label: Literal["Included", "Excluded"]
+    status: Literal["included", "excluded"]
+    code_count: int
+
+
+@dataclass
+class CodeFilterOptions:
+    """
+    Model to represent all filter options available to the client.
+    """
+
+    code_systems: list[CodeSystemFilterOption]
+    sources: list[SourceFilterOption]
+    statuses: list[StatusFilterOption]
+
+
+async def get_all_filter_options_db(
+    configuration_id: UUID,
+    db: AsyncDatabaseConnection,
+) -> CodeFilterOptions:
+    """
+    Fetches filter options to present to the client.
+    """
+    query = """
+    WITH all_codes AS (
+        SELECT
+            s.id AS system_id,
+            s.display_name AS system_name,
+            NULL::uuid AS source_id,
+            'Custom Code' AS source,
+            'included' AS status
+        FROM custom_codes c
+        JOIN systems s ON s.id = c.system_id
+        WHERE c.configuration_id = %(configuration_id)s
+
+        UNION ALL
+
+        SELECT
+            s.id AS system_id,
+            s.display_name AS system_name,
+            con.id AS source_id,
+            con.display_name || ' CG' AS source,
+            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+        FROM configurations_conditions cfgc
+        JOIN conditions con ON con.id = cfgc.condition_id
+        JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+        JOIN codes c ON c.id = cc.code_id
+        JOIN systems s ON s.id = c.system_id
+        LEFT JOIN configurations_conditions_code_exclusions e
+            ON e.configuration_id = cfgc.configuration_id
+            AND e.code_id = cc.code_id
+        WHERE cfgc.configuration_id = %(configuration_id)s
+    )
+    SELECT * FROM (
+        SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
+        FROM systems s
+        LEFT JOIN all_codes ac ON ac.system_id = s.id
+        GROUP BY s.id, s.display_name
+
+        UNION ALL
+
+        SELECT 'source' AS filter_type, source_id::text AS value, source AS label, COUNT(*) AS code_count
+        FROM all_codes
+        GROUP BY source_id, source
+
+        UNION ALL
+
+        SELECT 'status' AS filter_type, s.status AS value, s.status_label AS label, COUNT(ac.status) AS code_count
+        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS s(status, status_label)
+        LEFT JOIN all_codes ac ON ac.status = s.status
+        GROUP BY s.status, s.status_label
+    ) AS filter_results
+    ORDER BY filter_type, code_count DESC;
+        """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, {"configuration_id": configuration_id})
+            rows = await cur.fetchall()
+
+    code_systems, sources, statuses = [], [], []
+    for filter_type, value, label, code_count in rows:
+        if filter_type == "code_system":
+            code_systems.append(
+                CodeSystemFilterOption(
+                    system_id=UUID(value), system_name=label, code_count=code_count
+                )
+            )
+        elif filter_type == "source":
+            sources.append(
+                SourceFilterOption(
+                    condition_id=UUID(value) if value is not None else None,
+                    source=label,
+                    code_count=code_count,
+                )
+            )
+        elif filter_type == "status":
+            statuses.append(
+                StatusFilterOption(status=value, label=label, code_count=code_count)
+            )
+
+    return CodeFilterOptions(
+        code_systems=code_systems,
+        sources=sources,
+        statuses=statuses,
+    )
+
+
+@dataclass
 class DbCodeResultCountMetadata:
     """
     Code count metadata.
