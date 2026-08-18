@@ -1849,6 +1849,7 @@ export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationEr
  *
  * Args:
  *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
  *     cursor (str | None): The cursor for the page to start from
  *     user (DbUser): The logged-in user
  *     logger (Logger): The standard logger
@@ -2217,14 +2218,23 @@ export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
  *
  * Args:
  *     configuration_id (UUID): The configuration ID
+<<<<<<< HEAD
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+=======
  *     user (DbUser, optional): _description_. The logged-in user
  *     db (AsyncDatabaseConnection, optional): The database connection
+>>>>>>> main
  *
  * Raises:
  *     HTTPException: 404 if the configuration couldn't be found
  *
  * Returns:
+<<<<<<< HEAD
+ *     CodeFilterOptions: The code filters
+=======
  *     CodeFiltersResponse: The code filters
+>>>>>>> main
  * @summary Get Code Filters
  */
 export const getCodeFilters = (
