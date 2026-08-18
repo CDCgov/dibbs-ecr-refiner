@@ -529,6 +529,15 @@ def setup(request):
 
     refiner_service.start()
 
+    print("⚙️ Restarting refiner server")
+    _restart_service(service="server", compose_path=path)
+
+    print("⚙️ Restarting refiner Lambda")
+    _restart_service(service="lambda", compose_path=path)
+
+    refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
+    print("✨ Message refiner services ready to test!")
+
     print("☄️ Clearing data...")
     refiner_service.exec_in_container(
         [
@@ -606,15 +615,6 @@ def setup(request):
     )
 
     print("🏃‍♀️ Database is ready!")
-
-    print("⚙️ Restarting refiner server")
-    _restart_service(service="server", compose_path=path)
-
-    print("⚙️ Restarting refiner Lambda")
-    _restart_service(service="lambda", compose_path=path)
-
-    refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
-    print("✨ Message refiner services ready to test!")
 
     def teardown():
         """
