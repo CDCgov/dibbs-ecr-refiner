@@ -24,12 +24,10 @@ class ValidationError(BaseApplicationException):
     """
 
 
-
 class InputValidationError(ValidationError):
     """
     Raised when input data fails validation.
     """
-
 
 
 class XMLValidationError(ValidationError):
@@ -38,12 +36,10 @@ class XMLValidationError(ValidationError):
     """
 
 
-
 class SectionValidationError(ValidationError):
     """
     Raised when ECR sections fail validation.
     """
-
 
 
 class XMLParsingError(BaseApplicationException):
@@ -52,19 +48,16 @@ class XMLParsingError(BaseApplicationException):
     """
 
 
-
 class ConditionCodeError(BaseApplicationException):
     """
     Raised when processing condition codes fails.
     """
 
 
-
 class StructureValidationError(BaseApplicationException):
     """
     Raised when XML structure doesn't match expected format.
     """
-
 
 
 # processing Exceptions
@@ -74,12 +67,10 @@ class ProcessingError(BaseApplicationException):
     """
 
 
-
 class FileProcessingError(ProcessingError):
     """
     Raised when file processing fails.
     """
-
 
 
 class ZipValidationError(BaseApplicationException):
@@ -88,19 +79,16 @@ class ZipValidationError(BaseApplicationException):
     """
 
 
-
 class ZipSizeError(BaseApplicationException):
     """
     Raised when the uploaded ZIP is too big for processing.
     """
 
 
-
 class XMLProcessingError(ProcessingError):
     """
     Raised when XML processing fails.
     """
-
 
 
 # resource Exceptions
@@ -110,19 +98,16 @@ class ResourceError(BaseApplicationException):
     """
 
 
-
 class ResourceNotFoundError(ResourceError):
     """
     Raised when a requested resource is not found.
     """
 
 
-
 class ResourceAccessError(ResourceError):
     """
     Raised when access to a resource is denied or fails.
     """
-
 
 
 # service-specific Exceptions
@@ -132,19 +117,16 @@ class ECRError(BaseApplicationException):
     """
 
 
-
 class ECRRefinementError(ECRError):
     """
     Raised when ECR refinement fails.
     """
 
 
-
 class ECRMappingError(ECRError):
     """
     Raised when mapping ECR data fails.
     """
-
 
 
 # integration Exceptions
@@ -154,19 +136,16 @@ class IntegrationError(BaseApplicationException):
     """
 
 
-
 class ExternalServiceError(IntegrationError):
     """
     Raised when an external service call fails.
     """
 
 
-
 class ConfigurationError(BaseApplicationException):
     """
     Raised when there's a configuration-related error.
     """
-
 
 
 # database-specific exceptions
@@ -176,12 +155,10 @@ class DatabaseError(BaseApplicationException):
     """
 
 
-
 class DatabaseConnectionError(DatabaseError):
     """
     Raised when database connection fails.
     """
-
 
 
 class DatabaseQueryError(DatabaseError):
@@ -190,12 +167,10 @@ class DatabaseQueryError(DatabaseError):
     """
 
 
-
 class DatabaseDataError(DatabaseError):
     """
     Raised when database data is invalid or corrupt.
     """
-
 
 
 class RefinementException(Exception):

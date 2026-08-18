@@ -25,7 +25,6 @@ class XSLTTransformationError(Exception):
     """Custom exception for XSLT transformation errors."""
 
 
-
 def _transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> bytes:
     """
     Transforms CDA XML to HTML using the specified XSLT stylesheet.
