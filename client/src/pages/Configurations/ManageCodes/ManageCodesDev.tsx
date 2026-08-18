@@ -164,18 +164,22 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
     (c) => selectedIds.has(c.id) && c.is_custom
   );
 
+  const hasCodesSelected = selectedIds.size > 0;
+
   return (
     <div className="flex flex-col items-end gap-4">
       <SourceModal
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <ControlPanel
-        configurationId={id}
-        selectedCodeIds={selectedIds}
-        selectedCustomCodes={selectedCustomCodes}
-        clearSelections={() => setSelectedIds(new Set())}
-      />
+      {hasCodesSelected ? (
+        <ControlPanel
+          configurationId={id}
+          selectedCodeIds={selectedIds}
+          selectedCustomCodes={selectedCustomCodes}
+          clearSelections={() => setSelectedIds(new Set())}
+        />
+      ) : null}
       <InfiniteScroll
         dataLength={codes.length}
         next={fetchNextPage}
