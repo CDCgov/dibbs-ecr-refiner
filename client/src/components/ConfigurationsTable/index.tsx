@@ -4,6 +4,7 @@ import {
   GetConfigurationsResponse,
 } from '../../api/schemas';
 import { Table } from '../Table';
+import { StatusIndicator } from '../StatusIndicator';
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
 }
@@ -56,25 +57,13 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   {name}
                 </Link>
               </td>
-              <td data-label={statusHeader} className="p-0! align-middle">
-                {isActive ? (
-                  <span className="text-success-dark flex items-center px-4 py-2">
-                    <span
-                      className="bg-state-success-dark mr-1 inline-block h-3 w-3"
-                      aria-hidden
-                    />
-                    enabled
-                  </span>
-                ) : (
-                  <span className="text-gray-cool-60 flex items-center px-4 py-2">
-                    <span
-                      className="bg-gray-cool-60 mr-1 inline-block h-3 w-3"
-                      aria-hidden
-                    />
-                    disabled
-                  </span>
-                )}
-              </td>
+               <td data-label={statusHeader} className="p-0! align-middle">
+                 <StatusIndicator
+                   isActive={isActive}
+                   className="px-4 py-2"
+                 />
+               </td>
+
             </tr>
           );
         })}
