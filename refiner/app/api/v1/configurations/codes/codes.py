@@ -61,11 +61,13 @@ class CodesResponse:
 
 
 def _get_filter_input(
+    search: str | None = None,
     code_systems: list[str] = Query(default=[]),
     sources: list[str] = Query(default=[]),
     statuses: list[str] = Query(default=[]),
 ) -> FilterInput:
     return FilterInput(
+        search=search,
         code_systems=code_systems,
         sources=sources,
         statuses=statuses,
