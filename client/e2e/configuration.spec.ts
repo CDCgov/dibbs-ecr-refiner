@@ -833,7 +833,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     const codedDataSwitch = sectionRow.getByRole('switch').nth(1);
 
     // Setup: Set Narrative to 'Keep on match'
-    await narrativeSelect.selectOption('keep_on_match');
+    await narrativeSelect.selectOption({ label: 'Keep on match' });
     await expect(narrativeSelect).toHaveValue('keep_on_match');
 
     // 1. Trigger Error: Switch to 'Keep original'
@@ -939,7 +939,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     const codedDataSwitch = sectionRow.getByRole('switch').nth(1);
 
     // Setup: Set Narrative to 'Keep on match'
-    await narrativeSelect.selectOption('keep_on_match');
+    await narrativeSelect.selectOption({ label: 'Keep on match' });
     await expect(narrativeSelect).toHaveValue('keep_on_match');
 
     // 1. Trigger Error: Switch to 'Keep original'
