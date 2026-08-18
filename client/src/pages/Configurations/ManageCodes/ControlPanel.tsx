@@ -10,6 +10,14 @@ import {
   useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@components/Modal';
+import { useState } from 'react';
 
 interface ControlPanelProps {
   configurationId: string;
@@ -26,6 +34,7 @@ export function ControlPanel({
   const toast = useToast();
   const queryClient = useQueryClient();
   const { mutate } = useSetCodesStatus();
+  const [isOpen, setIsOpen] = useState(false);
 
   // These custom codes can be deleted
   const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
@@ -35,7 +44,7 @@ export function ControlPanel({
     new Set([...selectedCodeIds].filter((id) => !customCodeIds.has(id)))
   );
 
-  const setStatus = (status: CodeResponseStatus) => {
+  const updateSelectedCodesStatus = (status: CodeResponseStatus) => {
     mutate(
       {
         configurationId,
@@ -57,7 +66,7 @@ export function ControlPanel({
           });
           toast({
             heading: `Code ${status}`,
-            body: `${selectedCodeIds.size} codes ${status.toLowerCase()} in this configuration.`,
+            body: `${status === 'Included' ? selectedCodeIds.size : codeSetCodeIds.length} codes ${status.toLowerCase()} in this configuration.`,
           });
           clearSelections();
         },
@@ -67,57 +76,130 @@ export function ControlPanel({
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl bg-white px-6 py-4 shadow">
-      <div className="flex flex-row items-center justify-center gap-4">
-        <span className="font-bold whitespace-nowrap">
-          {selectedCodeIds.size} selected
-        </span>
-        <div aria-hidden className="h-8 border border-gray-400!" />
-        <div className="flex flex-row gap-6">
-          <Button
-            variant="unstyled"
-            className="text-blue-cool-50 hover:bg-blue-cool-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
-            onClick={() => setStatus('Included')}
-          >
-            Include
-          </Button>
-          <Button
-            variant="unstyled"
-            className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
-            onClick={() => setStatus('Excluded')}
-          >
-            Exclude
-          </Button>
-          {hasCustomCodesSelected ? (
-            <Menu as="div" className="relative">
-              <MenuButton
-                as={Button}
-                aria-label="More options"
-                variant="unstyled"
-                className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4 py-2 text-sm! font-bold hover:cursor-pointer"
-              >
-                ...
-              </MenuButton>
-              <MenuItems
-                portal
-                anchor="top end"
-                className="rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
-              >
-                <MenuItem>
-                  <Button
-                    variant="unstyled"
-                    className="data-focus:bg-state-error-lighter text-state-error-dark flex flex-row items-center p-3 text-left text-sm! font-bold whitespace-nowrap data-focus:cursor-pointer"
-                    onClick={() => {}}
-                  >
-                    <DeleteIcon />
-                    Delete {selectedCustomCodes.length} custom codes
-                  </Button>
-                </MenuItem>
-              </MenuItems>
-            </Menu>
-          ) : null}
+    <>
+      <ExclusionWarningModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        customCodeCount={customCodeIds.size}
+        totalCodeCount={selectedCodeIds.size}
+        updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
+      />
+
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl bg-white px-6 py-4 shadow">
+        <div className="flex flex-row items-center justify-center gap-4">
+          <span className="font-bold whitespace-nowrap">
+            {selectedCodeIds.size} selected
+          </span>
+          <div aria-hidden className="h-8 border border-gray-400!" />
+          <div className="flex flex-row gap-6">
+            <Button
+              variant="unstyled"
+              className="text-blue-cool-50 hover:bg-blue-cool-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
+              onClick={() => updateSelectedCodesStatus('Included')}
+            >
+              Include
+            </Button>
+            <Button
+              variant="unstyled"
+              className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
+              onClick={() => {
+                if (customCodeIds.size === 0) {
+                  updateSelectedCodesStatus('Excluded');
+                } else {
+                  setIsOpen(true);
+                }
+              }}
+            >
+              Exclude
+            </Button>
+            {hasCustomCodesSelected ? (
+              <Menu as="div" className="relative">
+                <MenuButton
+                  as={Button}
+                  aria-label="More options"
+                  variant="unstyled"
+                  className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4 py-2 text-sm! font-bold hover:cursor-pointer"
+                >
+                  ...
+                </MenuButton>
+                <MenuItems
+                  portal
+                  anchor="top end"
+                  className="rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+                >
+                  <MenuItem>
+                    <Button
+                      variant="unstyled"
+                      className="data-focus:bg-state-error-lighter text-state-error-dark flex flex-row items-center p-3 text-left text-sm! font-bold whitespace-nowrap data-focus:cursor-pointer"
+                      onClick={() => {}}
+                    >
+                      <DeleteIcon />
+                      Delete {selectedCustomCodes.length} custom codes
+                    </Button>
+                  </MenuItem>
+                </MenuItems>
+              </Menu>
+            ) : null}
+          </div>
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+interface ExclusionWarningModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  customCodeCount: number;
+  totalCodeCount: number;
+  updateCodesToExcluded: () => void;
+}
+
+function ExclusionWarningModal({
+  isOpen,
+  onClose,
+  customCodeCount,
+  totalCodeCount,
+  updateCodesToExcluded,
+}: ExclusionWarningModalProps) {
+  const excludeableCodeCount = totalCodeCount - customCodeCount;
+
+  return (
+    <Modal open={isOpen} onClose={onClose} position="center">
+      <ModalHeader>
+        <ModalTitle>Exclude codes</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <div className="flex flex-col gap-4">
+          <p>
+            {excludeableCodeCount} of {totalCodeCount} selected codes will be
+            excluded from this configuration.
+          </p>
+          <p className="border-l-3! border-l-[#d54309] bg-[#fdf3f2] px-4 py-3">
+            {customCodeCount} custom codes can't be excluded. Custom codes can
+            only be deleted to remove them from this configuration.
+          </p>
+        </div>
+      </ModalBody>
+      <ModalFooter align="left">
+        <div className="flex flex-row items-center gap-6">
+          <Button
+            onClick={() => {
+              updateCodesToExcluded();
+              onClose();
+            }}
+          >
+            Exclude {excludeableCodeCount} codes
+          </Button>
+          <Button
+            variant="unstyled"
+            className="text-violet-warm-60 font-bold hover:cursor-pointer"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+        </div>
+      </ModalFooter>
+    </Modal>
   );
 }
