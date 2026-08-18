@@ -1,4 +1,7 @@
-import { Switch as HeadlessSwitch, SwitchProps as HeadlessSwitchProps } from '@headlessui/react';
+import {
+  Switch as HeadlessSwitch,
+  SwitchProps as HeadlessSwitchProps,
+} from '@headlessui/react';
 import classNames from 'classnames';
 
 interface CustomSwitchProps extends HeadlessSwitchProps {

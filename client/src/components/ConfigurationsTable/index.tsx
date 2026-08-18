@@ -57,13 +57,9 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   {name}
                 </Link>
               </td>
-               <td data-label={statusHeader} className="p-0! align-middle">
-                 <StatusIndicator
-                   isActive={isActive}
-                   className="px-4 py-2"
-                 />
-               </td>
-
+              <td data-label={statusHeader} className="p-0! align-middle">
+                <StatusIndicator isActive={isActive} className="px-4 py-2" />
+              </td>
             </tr>
           );
         })}

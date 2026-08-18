@@ -357,16 +357,16 @@ function IncludeSwitch({
   const { clearError } = useSectionError();
 
   return (
-      <Switch
-        variant="violet"
-        aria-label={`Include ${currentSection.name} section rules in refined document.`}
-        checked={currentSection.include}
-        disabled={disabled}
-        onChange={(checked) => {
-          clearError();
-          updateSection(currentSection, { include: checked });
-        }}
-      />
+    <Switch
+      variant="violet"
+      aria-label={`Include ${currentSection.name} section rules in refined document.`}
+      checked={currentSection.include}
+      disabled={disabled}
+      onChange={(checked) => {
+        clearError();
+        updateSection(currentSection, { include: checked });
+      }}
+    />
   );
 }
 
@@ -431,12 +431,12 @@ function RefineSwitch({
               <span className="italic">{retainLabelText}</span>
             )}
           </Label>
-           <Switch
-             variant="blue"
-             disabled={disabled}
-             checked={toggled}
-             onChange={handleSwitchChange}
-           />
+          <Switch
+            variant="blue"
+            disabled={disabled}
+            checked={toggled}
+            onChange={handleSwitchChange}
+          />
         </Field>
       </div>
       {showError && (
