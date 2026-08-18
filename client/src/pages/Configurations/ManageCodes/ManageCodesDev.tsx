@@ -1,12 +1,8 @@
 import { useParams } from 'react-router';
 import {
-  getGetCodeCountsQueryKey,
-  getGetCodeFiltersQueryKey,
-  getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
   useGetCodesInfinite,
   useGetConfiguration,
-  useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 import { Spinner } from '@components/Spinner';
@@ -27,16 +23,12 @@ import {
 import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
-import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
-import { Field } from '@components/Field';
-import { Label } from '@components/Label';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { DeleteIcon } from './DeleteIcon';
 
@@ -308,13 +300,7 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
                 <td>
                   <SourceCell configurationId={id} code={code} />
                 </td>
-                <td>
-                  <IncludeSwitch
-                    configurationId={id}
-                    code={code}
-                    disabled={disabled}
-                  />
-                </td>
+                <td>{code.status}</td>
               </tr>
             ))}
           </tbody>
@@ -346,60 +332,6 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
         />
       </div>
     </div>
-  );
-}
-
-interface IncludeSwitchProps {
-  configurationId: string;
-  code: CodeResponse;
-  disabled: boolean;
-}
-function IncludeSwitch({
-  configurationId,
-  code,
-  disabled,
-}: IncludeSwitchProps) {
-  const queryClient = useQueryClient();
-  const { mutate } = useSetCodesStatus();
-
-  const toggleStatus = () => {
-    mutate(
-      {
-        configurationId,
-        params: {
-          status: code.status === 'Included' ? 'excluded' : 'included',
-        },
-        data: [code.id],
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodesInfiniteQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeCountsQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeFiltersQueryKey(configurationId),
-          });
-        },
-      }
-    );
-  };
-
-  return (
-    <Field className="flex flex-row items-center gap-2">
-      <Switch
-        checked={code.status === 'Included'}
-        disabled={code.is_custom || disabled}
-        onChange={toggleStatus}
-      />
-      <Label
-        aria-label={`Toggle to mark code ${code.code} as ${code.status === 'Included' ? 'excluded' : 'included'}`}
-      >
-        {code.status}
-      </Label>
-    </Field>
   );
 }
 
