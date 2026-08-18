@@ -150,11 +150,14 @@ async def _update_session_expiry_time(
     if expires_at - now < RENEW_THRESHOLD:
         new_expiration = now + SESSION_TTL
         try:
-            async with db.get_connection() as conn, with conn.cursor(row_factory=dict_row) as cur:
-                    await cur.execute(
-                        "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
-                        (new_expiration, token_hash),
-                    )
+            async with (
+                db.get_connection() as conn,
+                conn.cursor(row_factory=dict_row) as cur,
+            ):
+                await cur.execute(
+                    "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
+                    (new_expiration, token_hash),
+                )
             set_session_cookie(
                 response=response,
                 app_config=get_app_config(),
