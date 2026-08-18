@@ -7,6 +7,8 @@ from fastapi import status as http_status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.codes.db import (
+    CodeFilterOptions,
+    get_all_filter_options_db,
     get_code_count_metadata_db,
     get_codes_db,
     set_codes_status_db,
@@ -220,3 +222,44 @@ async def set_codes_status(
     )
 
     return impacted_code_ids
+
+
+@router.get(
+    "/filters",
+    response_model=CodeFilterOptions,
+    tags=["configurations"],
+    operation_id="getCodeFilters",
+)
+async def get_code_filters(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> CodeFilterOptions:
+    """
+    Fetches code filter information for the client to display.
+
+    Args:
+        configuration_id (UUID): The configuration ID
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if the configuration couldn't be found
+
+    Returns:
+        CodeFilterOptions: The code filters
+    """
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Configuration cannot be found.",
+        )
+
+    return await get_all_filter_options_db(configuration_id=config.id, db=db)
