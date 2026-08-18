@@ -143,8 +143,9 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
       },
       axios: {
-        // This serializer allows us to pass the filter array values to the server in
-        // the expected format
+        // This serializer allows us to pass the filter array values to the server in the expected format.
+        // For example:
+        // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
         paramsSerializer: (params: Record<string, ParamValue>) => {
           const searchParams = new URLSearchParams();
           for (const [key, value] of Object.entries(params)) {
