@@ -94,6 +94,89 @@ test.describe('Codes management - search', () => {
       expect(newRowCount).toBe(2); // custom code and header only
     });
   });
+
+  test('Searching works in tandem with other filters applied', async ({
+    page,
+    api,
+    configurationPage,
+  }) => {
+    const condition = 'Amebiasis';
+    await test.step('Set up configuration', async () => {
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+      await api.uploadCustomCodeCsv(config.id, [
+        {
+          code: 'A06.22',
+          display: 'Amebic',
+          system_id: systems.find((s) => s.display_name === 'ICD-10')!.id,
+        },
+      ]);
+    });
+
+    await test.step('Navigate to management page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: condition }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await goToManageCodesDevPage(page, configurationPage);
+    });
+
+    await test.step('Filter by ICD-10', async () => {
+      const codeSystemFilterButton = page.getByTestId('code-system-button');
+      const codeSystemOptions = page.getByTestId('code-system-options');
+
+      await expect(codeSystemFilterButton).toBeVisible();
+      await codeSystemFilterButton.click();
+
+      const icd10Option = codeSystemOptions.getByRole('option', {
+        name: 'ICD-10',
+        exact: false,
+      });
+
+      await icd10Option.click();
+      await page.keyboard.press('Escape');
+      await expect(codeSystemFilterButton).toContainText('1 selected');
+    });
+
+    const searchText = 'amebi';
+    await test.step('Enter search query', async () => {
+      const searchBox = page.getByRole('searchbox', {
+        name: 'Search by keyword',
+        exact: true,
+      });
+
+      await expect(searchBox).toBeVisible();
+      await searchBox.fill(searchText);
+
+      // wait for response so test doesn't fail waiting for debounce
+      await page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`search=${searchText}`) &&
+          res.status() === 200
+      );
+    });
+
+    await test.step('Check table results', async () => {
+      const table = page.getByRole('table');
+      const tableRows = table.getByRole('row');
+      const rowCount = await tableRows.count();
+
+      // start at 1 to skip header
+      for (let i = 1; i < rowCount; i++) {
+        const systemCell = tableRows.nth(i).getByRole('cell').nth(2);
+        const descriptionCell = tableRows.nth(i).getByRole('cell').nth(3);
+        await expect(systemCell).toHaveText('ICD-10');
+        await expect(descriptionCell).toContainText(
+          new RegExp(searchText, 'i')
+        ); // ignore casing
+      }
+    });
+  });
 });
 
 test.describe('Codes management - filters', () => {
