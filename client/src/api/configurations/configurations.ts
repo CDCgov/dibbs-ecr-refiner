@@ -36,6 +36,7 @@ import type {
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
   CodeCountsResponse,
+  CodeFilterOptions,
   CodesResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
@@ -1848,6 +1849,7 @@ export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationEr
  *
  * Args:
  *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
  *     cursor (str | None): The cursor for the page to start from
  *     user (DbUser): The logged-in user
  *     logger (Logger): The standard logger
@@ -2211,3 +2213,105 @@ export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
       > => {
       return useMutation(getSetCodesStatusMutationOptions(options), queryClient);
     }
+    /**
+ * Fetches code filter information for the client to display.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if the configuration couldn't be found
+ *
+ * Returns:
+ *     CodeFilterOptions: The code filters
+ * @summary Get Code Filters
+ */
+export const getCodeFilters = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CodeFilterOptions>> => {
+
+
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/filters`,options
+    );
+  }
+
+
+
+
+export const getGetCodeFiltersQueryKey = (configurationId: string,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/filters`
+    ] as const;
+    }
+
+
+export const getGetCodeFiltersQueryOptions = <TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCodeFiltersQueryKey(configurationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodeFilters>>> = ({ signal }) => getCodeFilters(configurationId, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCodeFiltersQueryResult = NonNullable<Awaited<ReturnType<typeof getCodeFilters>>>
+export type GetCodeFiltersQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodeFilters>>,
+          TError,
+          Awaited<ReturnType<typeof getCodeFilters>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCodeFilters>>,
+          TError,
+          Awaited<ReturnType<typeof getCodeFilters>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Code Filters
+ */
+
+export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCodeFiltersQueryOptions(configurationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
