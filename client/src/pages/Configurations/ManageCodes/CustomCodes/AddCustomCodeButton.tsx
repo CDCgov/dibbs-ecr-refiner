@@ -73,7 +73,7 @@ function MenuItemButton({ onClick, children }: MenuItemButtonProps) {
 function DownArrow() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="#864381">
-      <path data-dc-tpl="130" d="M7 10l5 5 5-5z" />
+      <path d="M7 10l5 5 5-5z" />
     </svg>
   );
 }
