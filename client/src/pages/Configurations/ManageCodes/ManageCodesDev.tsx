@@ -174,6 +174,33 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
+      <div className="fixed bottom-5 left-1/2 w-120 -translate-x-1/2 rounded-xl bg-white p-4 shadow">
+        <div className="flex flex-row items-center gap-4 justify-center">
+          <span className="font-bold whitespace-nowrap">X selected</span>
+          <div aria-hidden className="h-8 border border-gray-400!" />
+          <div className="flex flex-row gap-6">
+            <Button
+              variant="unstyled"
+              className="text-blue-cool-50 hover:bg-blue-cool-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
+            >
+              Include
+            </Button>
+            <Button
+              variant="unstyled"
+              className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
+            >
+              Exclude
+            </Button>
+            <Button
+              aria-label="More options"
+              variant="unstyled"
+              className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4 text-sm! font-bold hover:cursor-pointer"
+            >
+              ...
+            </Button>
+          </div>
+        </div>
+      </div>
       <InfiniteScroll
         dataLength={codes.length}
         next={fetchNextPage}
