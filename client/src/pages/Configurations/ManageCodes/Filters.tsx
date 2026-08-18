@@ -138,6 +138,7 @@ function ChevronDownIcon() {
 }
 
 export interface CodeFilters {
+  search?: string;
   codeSystems: FilterOption[];
   sources: FilterOption[];
   statuses: FilterOption[];
