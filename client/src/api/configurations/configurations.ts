@@ -2217,14 +2217,14 @@ export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
  *
  * Args:
  *     configuration_id (UUID): The configuration ID
- *     user (DbUser, optional): _description_. The logged-in user
- *     db (AsyncDatabaseConnection, optional): The database connection
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
  *
  * Raises:
  *     HTTPException: 404 if the configuration couldn't be found
  *
  * Returns:
- *     CodeFiltersResponse: The code filters
+ *     CodeFilterOptions: The code filters
  * @summary Get Code Filters
  */
 export const getCodeFilters = (
@@ -2308,3 +2308,9 @@ export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilte
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
