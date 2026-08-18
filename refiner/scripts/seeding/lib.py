@@ -75,15 +75,6 @@ _CATEGORY_SLUG_MAP = {
     "clinical lab results": "clinical_lab_result",
 }
 
-# type aliases
-# a tuple representing code information pulled straight from the FHIR ValueSet needed for seeding
-# * display **could** be empty
-type SystemOid = str
-type Code = str
-type Display = str | None
-type SourceUrl = str
-type SourceName = str | None
-
 
 @dataclass(frozen=True)
 class FhirCodeInfo:
@@ -96,6 +87,7 @@ class FhirCodeInfo:
     source_name: str
 
 
+type SystemOid = str
 type SystemSortedFhirInfo = dict[SystemOid, list[FhirCodeInfo]]
 
 
