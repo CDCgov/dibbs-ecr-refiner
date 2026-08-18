@@ -168,7 +168,7 @@ async def get_condition(
     Returns:
         GetCondition: Info about the condition
     """
-    condition = await get_condition_by_id_db(condition_id=id, db=db)
+    condition = await get_condition_by_id_db(id=condition_id, db=db)
 
     if not condition:
         raise HTTPException(
