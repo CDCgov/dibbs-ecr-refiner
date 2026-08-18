@@ -352,12 +352,23 @@ async def _get_cur_and_prev_tes_records_db(
 
 
 async def get_configurations_set_to_tes_version(
-    cur_tes_version: str, db: AsyncDatabaseConnection
+    latest_tes_version: str, db: AsyncDatabaseConnection
 ) -> DbTesConfigsToUpdateResponse:
-    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
-    if not cur_tes_record:
-        return DbTesConfigsToUpdateResponse(existing_drafts=[], drafts_to_create=[])
+    """
+    Returns metadata for all TES drafts and active versions that are outdated.
 
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        latest_tes_version (str): The current TES version.
+
+    Returns:
+        DbTesConfigsToUpdateResponse: An object consisting of existing drafts and drafts to create that aren't the latest TES ID.
+    """
+    cur_tes_record = await _get_tes_by_version_number_db(
+        db=db, version=latest_tes_version
+    )
+    if not cur_tes_record:
+        raise ValueError(f"Record of TES version {latest_tes_version} not found")
     query = """
         SELECT
             conf.id as configuration_id,
@@ -368,7 +379,7 @@ async def get_configurations_set_to_tes_version(
         LEFT JOIN configurations_conditions cc ON cc.configuration_id = conf.id
         LEFT JOIN conditions cond ON cc.condition_id = cond.id
         LEFT JOIN tes t ON cond.tes_id = t.id
-        WHERE t.id = %(cur_tes_id)s AND conf.status=%(status)s
+        WHERE t.id <> %(cur_tes_id)s AND conf.status=%(status)s
         GROUP BY conf.id, conf.name
     """
 
