@@ -189,8 +189,11 @@ async def get_configurations_to_update(
 
     """
 
-    existing_drafts = await get_configurations_set_to_tes_version(
+    configs_to_update = await get_configurations_set_to_tes_version(
         db=db, cur_tes_version=cur_tes_version
     )
 
-    return TesConfigsToUpdateResponse(existing_drafts=[], drafts_to_create=[])
+    return TesConfigsToUpdateResponse(
+        existing_drafts=configs_to_update.existing_drafts,
+        drafts_to_create=configs_to_update.drafts_to_create,
+    )
