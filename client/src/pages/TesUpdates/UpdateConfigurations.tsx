@@ -21,9 +21,6 @@ export function UpdateConfigurations() {
 
   return (
     <div>
-      <div className="bg-blue-cool-70 -mx-20 -mt-8 mb-8 px-20 py-3 text-white">
-        {'Tes Updates > Updates'}{' '}
-      </div>
       <Title className="pb-4">Update configurations</Title>
       <h2 className="text-[1.25rem]">Update to latest release</h2>
       <p>

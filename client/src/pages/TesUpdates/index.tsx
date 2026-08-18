@@ -58,7 +58,21 @@ export function TesUpdates() {
           </div>
         </>
       )}
-      {tesStage === 'action' && <UpdateConfigurations />}
+      {tesStage === 'action' && (
+        <>
+          <div className="bg-blue-cool-70 -mx-20 -mt-8 mb-8 px-20 py-3 text-white">
+            <Button
+              className="cursor-pointer"
+              variant="unstyled"
+              onClick={() => setTesStage('summary')}
+            >
+              Tes Updates
+            </Button>
+            {' > Updates'}
+          </div>
+          <UpdateConfigurations />
+        </>
+      )}
     </div>
   );
 }

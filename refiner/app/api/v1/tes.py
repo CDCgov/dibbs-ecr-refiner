@@ -188,12 +188,17 @@ async def get_configurations_to_update(
         with a list of existing drafts and drafts to create
 
     """
+    try:
+        configs_to_update = await get_configurations_set_to_tes_version(
+            db=db, latest_tes_version=cur_tes_version
+        )
+        return TesConfigsToUpdateResponse(
+            existing_drafts=configs_to_update.existing_drafts,
+            drafts_to_create=configs_to_update.drafts_to_create,
+        )
 
-    configs_to_update = await get_configurations_set_to_tes_version(
-        db=db, cur_tes_version=cur_tes_version
-    )
-
-    return TesConfigsToUpdateResponse(
-        existing_drafts=configs_to_update.existing_drafts,
-        drafts_to_create=configs_to_update.drafts_to_create,
-    )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"TES record for version {cur_tes_version} not found.",
+        )
