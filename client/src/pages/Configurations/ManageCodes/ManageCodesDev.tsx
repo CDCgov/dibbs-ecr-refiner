@@ -24,7 +24,6 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
@@ -37,7 +36,7 @@ import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
-import { useDebouncedCallback } from 'use-debounce';
+import { SearchFilter } from './SearchBar';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -109,31 +108,6 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
   );
 }
 
-interface SearchFilterProps {
-  filters: CodeFilters;
-  setFilters: React.Dispatch<React.SetStateAction<CodeFilters>>;
-}
-
-function SearchFilter({ filters, setFilters }: SearchFilterProps) {
-  const [inputValue, setInputValue] = useState(filters.search ?? '');
-
-  const debouncedUpdate = useDebouncedCallback((value: string) => {
-    setFilters((prev) => ({ ...prev, search: value || undefined }));
-  }, 500);
-
-  return (
-    <Search
-      placeholder="Search by keyword"
-      className="w-70!"
-      value={inputValue}
-      onChange={(e) => {
-        setInputValue(e.target.value);
-        debouncedUpdate(e.target.value);
-      }}
-    />
-  );
-}
-
 interface CodesTableProps {
   id: string;
   disabled: boolean;
@@ -168,8 +142,9 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
       query: {
         getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
       },
-      // TODO: revisit this
       axios: {
+        // This serializer allows us to pass the filter array values to the server in
+        // the expected format
         paramsSerializer: (params: Record<string, ParamValue>) => {
           const searchParams = new URLSearchParams();
           for (const [key, value] of Object.entries(params)) {
