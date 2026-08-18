@@ -21,6 +21,7 @@ export function ControlPanel({
   configurationId,
   selectedCodeIds,
   selectedCustomCodes,
+  clearSelections,
 }: ControlPanelProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -58,6 +59,7 @@ export function ControlPanel({
             heading: `Code ${status}`,
             body: `${selectedCodeIds.size} codes ${status.toLowerCase()} in this configuration.`,
           });
+          clearSelections();
         },
       }
     );
