@@ -11,7 +11,7 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Checkbox } from '@components/Checkbox';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import {
   Modal,
@@ -156,6 +156,11 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedIds(new Set());
+  }, [filters]);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
