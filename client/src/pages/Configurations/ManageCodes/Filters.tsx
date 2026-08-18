@@ -106,10 +106,6 @@ function FilterCombobox<T extends FilterOption>({
               )}
             </ComboboxOption>
           ))}
-
-          {/*
-                This needs special handling to be a valid ComboboxOption.
-          */}
           <ComboboxOption
             value={CLEAR_OPTION}
             className="data-focus:bg-blue-cool-5 mt-1 border-t border-gray-300 px-4 pt-2 pb-1"

@@ -55,8 +55,11 @@ from scripts.validation.validate_document_xsd import build_schema, display_xsd_r
 
 get_app_config.cache_clear()
 get_auth_config.cache_clear()
-get_db_config.cache_clear()
 get_aws_config.cache_clear()
+get_db_config.cache_clear()
+
+config = get_db_config()
+
 
 # Session info
 TEST_SESSION_TOKEN = "test-token"
@@ -400,8 +403,8 @@ async def reset_db(db_pool):
 async def db_pool(setup):
     # setup as a dependency guarantees that the pool isn't created until migrations have run
     db = create_db(
-        db_url=get_db_config().DB_URL,
-        db_password=get_db_config().DB_PASSWORD,
+        db_url=config.DB_URL,
+        db_password=config.DB_PASSWORD,
         prepare_threshold=None,
     )
     await db.connect()
