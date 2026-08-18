@@ -142,15 +142,19 @@ async def get_code_set_event_by_id_db(
         FROM events e
         LEFT JOIN conditions cond
             ON cond.id = e.condition_id
-        WHERE e.id = %s
-        AND e.jurisdiction_id = %s
+        WHERE e.id = %(event_id)s
+        AND e.jurisdiction_id = %(jurisdiction_id)s
     """
-
-    params = (event_id, jurisdiction_id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(CodeSetEvent)) as cur:
-            await cur.execute(query, params)
+            await cur.execute(
+                query,
+                {
+                    "event_id": event_id,
+                    "jurisdiction_id": jurisdiction_id,
+                },
+            )
             return await cur.fetchone()
 
 
@@ -372,27 +376,29 @@ async def insert_event_db(
             code_count
         )
         VALUES (
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s
+            %(user_id)s,
+            %(jurisdiction_id)s,
+            %(configuration_id)s,
+            %(event_type)s,
+            %(action_text)s,
+            %(condition_id)s,
+            %(code_count)s,
         )
         RETURNING id;
     """
-    params = (
-        event.user_id,
-        event.jurisdiction_id,
-        event.configuration_id,
-        event.event_type,
-        event.action_text,
-        event.condition_id,
-        event.code_count,
-    )
 
-    await cursor.execute(query, params)
+    await cursor.execute(
+        query,
+        {
+            "user_id": event.user_id,
+            "jurisdiction_id": event.jurisdiction_id,
+            "configuration_id": event.configuration_id,
+            "event_type": event.event_type,
+            "action_text": event.action_text,
+            "condition_id": event.condition_id,
+            "code_count": event.code_count,
+        },
+    )
     row = await cursor.fetchone()
     if row is None:
         raise Exception(f"Unable to insert event with type: {event.event_type}")

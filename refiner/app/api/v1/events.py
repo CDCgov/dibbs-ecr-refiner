@@ -364,7 +364,7 @@ async def get_event_codes_export(
         )
 
     codes = await get_condition_codes_by_condition_id_db(
-        id=event.condition_id,
+        condition_id=event.condition_id,
         db=db,
     )
 

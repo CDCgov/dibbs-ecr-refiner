@@ -400,6 +400,9 @@ class TestEventsCsvExport:
         assert all(row["Code"] for row in rows)
         assert all(row["Code system"] for row in rows)
 
+        # Spot check a known code from the COVID-19 TES code set.
+        assert "1003863006" in (row["Code"] for row in rows)
+
     async def test_removed_code_set_export_uses_removed_filename(
         self,
         setup,

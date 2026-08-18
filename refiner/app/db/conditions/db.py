@@ -212,7 +212,7 @@ class GetConditionCode:
 
 
 async def get_condition_codes_by_condition_id_db(
-    id: UUID, db: AsyncDatabaseConnection
+    condition_id: UUID, db: AsyncDatabaseConnection
 ) -> list[GetConditionCode]:
     """
     For a condition ID, flatten all codes into a GetConditionCode shape.
@@ -229,7 +229,7 @@ async def get_condition_codes_by_condition_id_db(
             WITH c AS (
                 SELECT *
                 FROM conditions
-                WHERE id = %s
+                WHERE id = %(condition_id)s
             )
             SELECT
                 code,
@@ -294,11 +294,9 @@ async def get_condition_codes_by_condition_id_db(
             ORDER BY system, code;
             """
 
-    params = (id,)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"condition_id": condition_id})
             rows = await cur.fetchall()
 
     return list(rows)
