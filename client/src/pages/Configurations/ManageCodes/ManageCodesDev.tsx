@@ -320,9 +320,7 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
 
   return (
     <div className="flex flex-col items-center gap-2 xl:flex-row">
-      <span className="text-violet-warm-60 rounded-xs border bg-[#f9f4f9] px-2 py-0.5 text-sm font-bold whitespace-nowrap">
-        Custom code
-      </span>
+      <span>Custom code</span>
       <div className="flex flex-row gap-2">
         <EditCustomCodeButton configurationId={configurationId} id={code.id} />
         <DeleteCustomCodeButton
