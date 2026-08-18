@@ -605,7 +605,7 @@ def _upsert_relationships(
     inserted_count = cursor.rowcount
     logger.info(
         f"📥 Inserted {inserted_count:,} total relationships "
-        f"({staged_counts[child_rsg_key]:,} child_rsg, {staged_counts[non_child_rsg_key]:,} non_child_rsg)."
+        f"(unique counts: {staged_counts[child_rsg_key]:,} child_rsg, {staged_counts[non_child_rsg_key]:,} non_child_rsg)."
     )
 
     cursor.execute("ANALYZE conditions_codes_temp;")
