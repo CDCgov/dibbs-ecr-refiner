@@ -31,11 +31,13 @@ async def get_custom_codes_by_configuration_id_db(
     """
     params = {"configuration_id": configuration_id}
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCustomCode)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_custom_code_by_id_db(
@@ -60,14 +62,16 @@ async def get_custom_code_by_id_db(
     """
     params = {"id": id}
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCustomCode)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
-            return row
+        if not row:
+            return None
+        return row
 
 
 async def insert_custom_code_db(
@@ -95,28 +99,27 @@ async def insert_custom_code_db(
         "system_id": system_id,
     }
 
-    async with db.get_connection() as conn:
-        async with conn.transaction():
-            async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
-                await cur.execute(query, params)
-                row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.transaction():
+        async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
 
-                if not row:
-                    return None
+            if not row:
+                return None
 
-            async with conn.cursor(row_factory=dict_row) as event_cur:
-                await insert_event_db(
-                    event=EventInput(
-                        jurisdiction_id=config.jurisdiction_id,
-                        user_id=user_id,
-                        configuration_id=config.id,
-                        event_type="add_code",
-                        action_text=f"Added custom code '{code}'",
-                    ),
-                    cursor=event_cur,
-                )
+        async with conn.cursor(row_factory=dict_row) as event_cur:
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=config.id,
+                    event_type="add_code",
+                    action_text=f"Added custom code '{code}'",
+                ),
+                cursor=event_cur,
+            )
 
-            return row
+        return row
 
 
 async def insert_custom_codes_db(
@@ -142,23 +145,22 @@ async def insert_custom_codes_db(
         val for c in custom_codes for val in (config.id, c.display, c.code, c.system_id)
     ]
 
-    async with db.get_connection() as conn:
-        async with conn.transaction():
-            async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
-                await cur.execute(query, params)
-                rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.transaction():
+        async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
 
-            async with conn.cursor(row_factory=dict_row) as event_cur:
-                # Insert a single audit event if codes were added
-                await insert_custom_code_upload_events_db(
-                    configuration=config,
-                    user_id=user_id,
-                    custom_codes=rows,
-                    code_systems=code_systems,
-                    cursor=event_cur,
-                )
+        async with conn.cursor(row_factory=dict_row) as event_cur:
+            # Insert a single audit event if codes were added
+            await insert_custom_code_upload_events_db(
+                configuration=config,
+                user_id=user_id,
+                custom_codes=rows,
+                code_systems=code_systems,
+                cursor=event_cur,
+            )
 
-            return rows
+        return rows
 
 
 async def delete_custom_code_db(
@@ -178,28 +180,27 @@ async def delete_custom_code_db(
             """
     params = {"id": id}
 
-    async with db.get_connection() as conn:
-        async with conn.transaction():
-            async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
-                await cur.execute(query, params)
-                row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.transaction():
+        async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
 
-                if not row:
-                    return None
+            if not row:
+                return None
 
-            async with conn.cursor(row_factory=dict_row) as event_cur:
-                await insert_event_db(
-                    event=EventInput(
-                        jurisdiction_id=config.jurisdiction_id,
-                        user_id=user_id,
-                        configuration_id=config.id,
-                        event_type="delete_code",
-                        action_text=f"Removed custom code '{row.code}'",
-                    ),
-                    cursor=event_cur,
-                )
+        async with conn.cursor(row_factory=dict_row) as event_cur:
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=config.id,
+                    event_type="delete_code",
+                    action_text=f"Removed custom code '{row.code}'",
+                ),
+                cursor=event_cur,
+            )
 
-            return row
+        return row
 
 
 async def edit_custom_code_db(
@@ -231,65 +232,64 @@ async def edit_custom_code_db(
         "id": custom_code.id,
     }
 
-    async with db.get_connection() as conn:
-        async with conn.transaction():
-            async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
-                await cur.execute(query, params)
-                row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.transaction():
+        async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
 
-                if not row:
-                    return None
+            if not row:
+                return None
 
-                # Collect all event messages
-                events_to_insert = []
+            # Collect all event messages
+            events_to_insert = []
 
-                # 1. Code changed
-                if code != custom_code.code:
-                    events_to_insert.append(
-                        EventInput(
-                            jurisdiction_id=config.jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config.id,
-                            event_type="edit_code",
-                            action_text=f"Updated custom code from '{custom_code.code}' to '{code}'",
-                        )
+            # 1. Code changed
+            if code != custom_code.code:
+                events_to_insert.append(
+                    EventInput(
+                        jurisdiction_id=config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config.id,
+                        event_type="edit_code",
+                        action_text=f"Updated custom code from '{custom_code.code}' to '{code}'",
+                    )
+                )
+
+            # 2. Name changed
+            if display != custom_code.display:
+                events_to_insert.append(
+                    EventInput(
+                        jurisdiction_id=config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config.id,
+                        event_type="edit_code",
+                        action_text=f"Updated name for custom code '{custom_code.code}' from '{custom_code.display}' to '{display}'",
+                    )
+                )
+
+            # 3. System changed
+            if system.id != custom_code.system_id:
+                prev_system = await get_code_system_by_id_db(
+                    id=custom_code.system_id, db=db
+                )
+                if prev_system is None:
+                    raise ValueError(
+                        f"Could not find code system with ID {custom_code.system_id}"
                     )
 
-                # 2. Name changed
-                if display != custom_code.display:
-                    events_to_insert.append(
-                        EventInput(
-                            jurisdiction_id=config.jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config.id,
-                            event_type="edit_code",
-                            action_text=f"Updated name for custom code '{custom_code.code}' from '{custom_code.display}' to '{display}'",
-                        )
+                events_to_insert.append(
+                    EventInput(
+                        jurisdiction_id=config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config.id,
+                        event_type="edit_code",
+                        action_text=f"Updated system for custom code '{custom_code.code}' from '{prev_system.display_name}' to '{system.display_name}'",
                     )
+                )
 
-                # 3. System changed
-                if system.id != custom_code.system_id:
-                    prev_system = await get_code_system_by_id_db(
-                        id=custom_code.system_id, db=db
-                    )
-                    if prev_system is None:
-                        raise ValueError(
-                            f"Could not find code system with ID {custom_code.system_id}"
-                        )
+        # Insert all generated events
+        async with conn.cursor(row_factory=dict_row) as event_cur:
+            for event in events_to_insert:
+                await insert_event_db(event=event, cursor=event_cur)
 
-                    events_to_insert.append(
-                        EventInput(
-                            jurisdiction_id=config.jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config.id,
-                            event_type="edit_code",
-                            action_text=f"Updated system for custom code '{custom_code.code}' from '{prev_system.display_name}' to '{system.display_name}'",
-                        )
-                    )
-
-            # Insert all generated events
-            async with conn.cursor(row_factory=dict_row) as event_cur:
-                for event in events_to_insert:
-                    await insert_event_db(event=event, cursor=event_cur)
-
-            return row
+        return row

@@ -82,7 +82,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
             created_by=mock_user.username,
-            created_at=datetime.now(),
+            created_at=datetime.now(tz=UTC),
             last_activated_at=None,
             last_activated_by=None,
         )

@@ -25,11 +25,13 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
     FROM tes
     ORDER BY version
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTes)) as cur,
+    ):
+        await cur.execute(query)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def _get_tes_by_version_number_db(
@@ -58,14 +60,16 @@ async def _get_tes_by_version_number_db(
 
     params = (version,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query=query, params=params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTes)) as cur,
+    ):
+        await cur.execute(query=query, params=params)
+        row = await cur.fetchone()
 
-            if not row:
-                raise ValueError(f"No record found for TES version {version}")
-            return row
+        if not row:
+            raise ValueError(f"No record found for TES version {version}")
+        return row
 
 
 async def _get_baseline_tes_diff_db(
@@ -95,11 +99,13 @@ async def _get_baseline_tes_diff_db(
         GROUP BY c.canonical_url, c.display_name
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur:
-            await cur.execute(query, {"tes_id": tes_id})
-            result = await cur.fetchall()
-            return result
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur,
+    ):
+        await cur.execute(query, {"tes_id": tes_id})
+        result = await cur.fetchall()
+        return result
 
 
 async def _get_baseline_tes_update_condition_diff_db(
@@ -133,21 +139,23 @@ async def _get_baseline_tes_update_condition_diff_db(
             cond.display_name;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur:
-            await cur.execute(
-                query,
-                {
-                    "tes_id": tes_record.id,
-                    "cond_url": cond_url,
-                },
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur,
+    ):
+        await cur.execute(
+            query,
+            {
+                "tes_id": tes_record.id,
+                "cond_url": cond_url,
+            },
+        )
+        result = await cur.fetchone()
+        if not result:
+            raise ValueError(
+                f"Condition with URL {cond_url} not found for TES versions {tes_record.version} "
             )
-            result = await cur.fetchone()
-            if not result:
-                raise ValueError(
-                    f"Condition with URL {cond_url} not found for TES versions {tes_record.version} "
-                )
-            return result
+        return result
 
 
 async def get_tes_update_condition_diff_db(
@@ -236,22 +244,24 @@ async def get_tes_update_condition_diff_db(
             OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur:
-            await cur.execute(
-                query,
-                {
-                    "cur_tes_id": cur_tes_record.id,
-                    "prev_tes_id": prev_tes_record.id,
-                    "cond_url": cond_url,
-                },
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur,
+    ):
+        await cur.execute(
+            query,
+            {
+                "cur_tes_id": cur_tes_record.id,
+                "prev_tes_id": prev_tes_record.id,
+                "cond_url": cond_url,
+            },
+        )
+        result = await cur.fetchone()
+        if not result:
+            raise ValueError(
+                f"Condition with URL {cond_url} not found for TES versions {cur_version} or {prev_version} "
             )
-            result = await cur.fetchone()
-            if not result:
-                raise ValueError(
-                    f"Condition with URL {cond_url} not found for TES versions {cur_version} or {prev_version} "
-                )
-            return result
+        return result
 
 
 async def _get_tes_update_diff_db(
@@ -310,13 +320,13 @@ async def _get_tes_update_diff_db(
         OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur:
-            await cur.execute(
-                query, {"cur_tes_id": cur_tes_id, "prev_tes_id": prev_tes_id}
-            )
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur,
+    ):
+        await cur.execute(query, {"cur_tes_id": cur_tes_id, "prev_tes_id": prev_tes_id})
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_tes_version_diff_db(

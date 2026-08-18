@@ -33,10 +33,9 @@ async def _get_conditions_by_canonical_urls_and_version_db(
         version,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     found_urls = {row["canonical_url"] for row in rows}
     missing = set(canonical_urls) - found_urls
@@ -142,10 +141,12 @@ async def get_conditions_by_version_db(
 
     params = (version,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbConditionBase)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return rows
 
@@ -184,10 +185,9 @@ async def get_condition_by_id_db(
 
     params = (id,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if not row:
         return None
@@ -279,10 +279,12 @@ async def get_condition_codes_by_condition_id_db(
 
     params = (id,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(GetConditionCode)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return list(rows)
 
@@ -343,10 +345,9 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
 
     params = (codes,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [DbCondition.from_db_row(row) for row in rows]
 

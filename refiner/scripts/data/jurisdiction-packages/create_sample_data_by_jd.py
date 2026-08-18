@@ -1,7 +1,7 @@
 import csv
 import subprocess
 import zipfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypedDict
 
@@ -90,7 +90,7 @@ def modify_rr(rr_bytes: bytes, old_value: str, new_value: str) -> bytes:
 
 def create_metadata(git_info: GitInfo, jurisdiction: Jurisdiction) -> bytes:
     """Generates the content of the metadata file."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
     metadata_content = f"""Generated at: {timestamp}
 Routing Code: {jurisdiction["RoutingCode"]}
 Jurisdiction: {jurisdiction["Jurisdiction"]}

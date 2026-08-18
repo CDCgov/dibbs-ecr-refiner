@@ -19,7 +19,7 @@ os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
 
 from copy import deepcopy
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 from zipfile import ZipFile
@@ -107,8 +107,8 @@ def mock_user():
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
         notifications={},
     )
 

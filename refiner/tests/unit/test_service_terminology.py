@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -98,8 +98,8 @@ class TestTerminologyService:
                     code="B",
                     display="Custom LOINC",
                     system_id=loinc.id,
-                    updated_at=datetime.now(),
-                    created_at=datetime.now(),
+                    updated_at=datetime.now(tz=UTC),
+                    created_at=datetime.now(tz=UTC),
                     configuration_id=mock_config_id,
                 )
             ],
@@ -124,8 +124,8 @@ class TestTerminologyService:
                     code="DUP",
                     display="Custom",
                     system_id=loinc.id,
-                    updated_at=datetime.now(),
-                    created_at=datetime.now(),
+                    updated_at=datetime.now(tz=UTC),
+                    created_at=datetime.now(tz=UTC),
                     configuration_id=mock_config_id,
                 )
             ]

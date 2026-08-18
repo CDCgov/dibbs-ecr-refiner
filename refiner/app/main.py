@@ -140,13 +140,15 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
         """
 
         try:
-            async with db.get_connection() as conn:
-                async with conn.cursor(row_factory=dict_row) as cursor:
-                    await cursor.execute("SELECT 1")
-                    return JSONResponse(
-                        status_code=status.HTTP_200_OK,
-                        content=jsonable_encoder({"status": "OK", "db": "OK"}),
-                    )
+            async with (
+                db.get_connection() as conn,
+                conn.cursor(row_factory=dict_row) as cursor,
+            ):
+                await cursor.execute("SELECT 1")
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK,
+                    content=jsonable_encoder({"status": "OK", "db": "OK"}),
+                )
         except Exception:
             return JSONResponse(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

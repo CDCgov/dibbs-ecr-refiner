@@ -101,10 +101,12 @@ async def get_codes_db(
             LIMIT %(limit)s;
         """
 
-        async with db.get_connection() as conn:
-            async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
-                await cur.execute(custom_query, custom_params)
-                custom_rows = await cur.fetchall()
+        async with (
+            db.get_connection() as conn,
+            conn.cursor(row_factory=class_row(DbCodeResult)) as cur,
+        ):
+            await cur.execute(custom_query, custom_params)
+            custom_rows = await cur.fetchall()
 
         if len(custom_rows) >= remaining:
             # More custom code pages remain, don't go to condition codes yet
@@ -159,10 +161,12 @@ async def get_codes_db(
         LIMIT %(limit)s;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
-            await cur.execute(cond_query, cond_params)
-            cond_rows = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeResult)) as cur,
+    ):
+        await cur.execute(cond_query, cond_params)
+        cond_rows = await cur.fetchall()
 
     if len(cond_rows) > limit - len(rows):
         cond_rows = cond_rows[: remaining - 1]
@@ -223,10 +227,9 @@ async def set_codes_status_db(
         "code_ids": code_ids,
     }
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [row["code_id"] for row in rows]
 
@@ -269,10 +272,12 @@ async def get_code_count_metadata_db(
     """
 
     params = {"configuration_id": configuration_id}
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeResultCountMetadata)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                return None
-            return row
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeResultCountMetadata)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        if not row:
+            return None
+        return row
