@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { CodeFilters } from './Filters';
 
-interface SearchFilterProps {
+interface SearchBarProps {
   filters: CodeFilters;
   setFilters: React.Dispatch<React.SetStateAction<CodeFilters>>;
 }
-export function SearchFilter({ filters, setFilters }: SearchFilterProps) {
+export function SearchBar({ filters, setFilters }: SearchBarProps) {
   const DEBOUNCE_TIME_MS = 500;
 
   const [inputValue, setInputValue] = useState(filters.search ?? '');

@@ -36,7 +36,7 @@ import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
-import { SearchFilter } from './SearchBar';
+import { SearchBar } from './SearchBar';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -96,7 +96,7 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
     <>
       <CodeInformationBar id={id} />
       <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
-        <SearchFilter filters={filters} setFilters={setFilters} />
+        <SearchBar filters={filters} setFilters={setFilters} />
         <Filters
           configurationId={id}
           filters={filters}
