@@ -3,7 +3,13 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.db.tes.model import ConditionDiffExportData, DbTes, DbTesConditionUpdate
+from app.db.tes.model import (
+    ConditionDiffExportData,
+    DbTes,
+    DbTesConditionUpdate,
+    DbTesConfigsToUpdateResponse,
+    TesConfigToUpdate,
+)
 
 
 async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]:
@@ -52,15 +58,13 @@ async def _get_tes_by_version_number_db(
         created_at,
         updated_at
     FROM tes
-    WHERE version = %s
+    WHERE version = %(version)s
     ORDER BY version
     """
 
-    params = (version,)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query=query, params=params)
+            await cur.execute(query=query, params={"version": version})
             row = await cur.fetchone()
 
             if not row:
@@ -345,3 +349,39 @@ async def _get_cur_and_prev_tes_records_db(
     )
 
     return (cur_tes_record, prev_tes_record)
+
+
+async def get_configurations_set_to_tes_version(
+    cur_tes_version: str, db: AsyncDatabaseConnection
+) -> DbTesConfigsToUpdateResponse:
+    cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_tes_version)
+    if not cur_tes_record:
+        return DbTesConfigsToUpdateResponse(existing_drafts=[], drafts_to_create=[])
+
+    query = """
+        SELECT
+            conf.id as configuration_id,
+            conf.name as configuration_name,
+            COALESCE(array_agg(cond.display_name)) as codesets_to_update,
+            MAX(COALESCE(t.version)) as configuration_tes_version
+        FROM configurations conf
+        LEFT JOIN configurations_conditions cc ON cc.configuration_id = conf.id
+        LEFT JOIN conditions cond ON cc.condition_id = cond.id
+        LEFT JOIN tes t ON cond.tes_id = t.id
+        WHERE t.id = %(cur_tes_id)s AND conf.status=%(status)s
+        GROUP BY conf.id, conf.name
+    """
+
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(TesConfigToUpdate)) as cur,
+    ):
+        await cur.execute(query, {"cur_tes_id": cur_tes_record.id, "status": "draft"})
+        draft_rows = await cur.fetchall()
+
+        await cur.execute(query, {"cur_tes_id": cur_tes_record.id, "status": "active"})
+        active_rows = await cur.fetchall()
+
+        return DbTesConfigsToUpdateResponse(
+            existing_drafts=draft_rows, drafts_to_create=active_rows
+        )
