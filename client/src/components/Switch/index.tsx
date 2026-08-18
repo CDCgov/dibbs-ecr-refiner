@@ -1,13 +1,13 @@
-import { Switch as HeadlessSwitch, SwitchProps } from '@headlessui/react';
+import { Switch as HeadlessSwitch, SwitchProps as HeadlessSwitchProps } from '@headlessui/react';
 import classNames from 'classnames';
 
-interface CustomSwitchProps extends SwitchProps {
-  variant?: 'include' | 'coded-data';
+interface CustomSwitchProps extends HeadlessSwitchProps {
+  variant?: 'violet' | 'blue';
 }
 
-export function Switch({ variant = 'include', ...props }: CustomSwitchProps) {
+export function Switch({ variant = 'violet', ...props }: CustomSwitchProps) {
   const checkedBgClass =
-    variant === 'include'
+    variant === 'violet'
       ? 'data-checked:bg-violet-warm-60'
       : 'data-checked:bg-blue-cool-50';
 
