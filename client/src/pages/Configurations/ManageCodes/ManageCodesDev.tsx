@@ -171,8 +171,10 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         onClose={() => setIsSourceModalOpen(false)}
       />
       <ControlPanel
+        configurationId={id}
         selectedCodeIds={selectedIds}
         selectedCustomCodes={selectedCustomCodes}
+        clearSelections={() => setSelectedIds(new Set())}
       />
       <InfiniteScroll
         dataLength={codes.length}

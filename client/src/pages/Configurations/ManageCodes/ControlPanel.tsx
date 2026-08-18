@@ -1,16 +1,68 @@
 import { Button } from '@components/Button';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
-import { CodeResponse } from '../../../api/schemas';
+import { CodeResponse, CodeResponseStatus } from '../../../api/schemas';
 import { DeleteIcon } from './DeleteIcon';
+import { useToast } from '../../../hooks/useToast';
+import {
+  getGetCodeCountsQueryKey,
+  getGetCodeFiltersQueryKey,
+  getGetCodesInfiniteQueryKey,
+  useSetCodesStatus,
+} from '../../../api/configurations/configurations';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ControlPanelProps {
+  configurationId: string;
   selectedCodeIds: Set<string>;
   selectedCustomCodes: CodeResponse[];
+  clearSelections: () => void;
 }
 export function ControlPanel({
+  configurationId,
   selectedCodeIds,
   selectedCustomCodes,
 }: ControlPanelProps) {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const { mutate } = useSetCodesStatus();
+
+  // These custom codes can be deleted
+  const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
+
+  // These code set codes can be either included or excluded
+  const codeSetCodeIds = Array.from(
+    new Set([...selectedCodeIds].filter((id) => !customCodeIds.has(id)))
+  );
+
+  const setStatus = (status: CodeResponseStatus) => {
+    mutate(
+      {
+        configurationId,
+        params: {
+          status: status === 'Included' ? 'included' : 'excluded',
+        },
+        data: codeSetCodeIds,
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodesInfiniteQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
+          });
+          toast({
+            heading: `Code ${status}`,
+            body: `${selectedCodeIds.size} codes ${status.toLowerCase()} in this configuration.`,
+          });
+        },
+      }
+    );
+  };
+
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl bg-white px-6 py-4 shadow">
@@ -23,12 +75,14 @@ export function ControlPanel({
           <Button
             variant="unstyled"
             className="text-blue-cool-50 hover:bg-blue-cool-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
+            onClick={() => setStatus('Included')}
           >
             Include
           </Button>
           <Button
             variant="unstyled"
             className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
+            onClick={() => setStatus('Excluded')}
           >
             Exclude
           </Button>
