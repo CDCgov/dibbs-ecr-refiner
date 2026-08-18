@@ -24,7 +24,6 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
@@ -33,10 +32,11 @@ import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
-import { Filters } from './Filters';
+import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { SearchBar } from './SearchBar';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -79,19 +79,50 @@ export function ManageCodesDev() {
             <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
           </div>
         </div>
-        <CodeInformationBar id={id} />
-        <CodesTable id={configuration.data.id} disabled={isDisabled} />
+        <CodesPanel id={configuration.data.id} disabled={isDisabled} />
       </SectionContainer>
     </div>
+  );
+}
+
+interface CodesPanelProps {
+  id: string;
+  disabled: boolean;
+}
+
+function CodesPanel({ id, disabled }: CodesPanelProps) {
+  const { filters, setFilters } = useFilterState(id);
+  return (
+    <>
+      <CodeInformationBar id={id} />
+      <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
+        <SearchBar filters={filters} setFilters={setFilters} />
+        <Filters
+          configurationId={id}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      </div>
+      <CodesTable id={id} disabled={disabled} filters={filters} />
+    </>
   );
 }
 
 interface CodesTableProps {
   id: string;
   disabled: boolean;
+  filters: CodeFilters;
 }
 
-function CodesTable({ id, disabled }: CodesTableProps) {
+type ParamValue =
+  | string
+  | number
+  | boolean
+  | (string | number | boolean)[]
+  | null
+  | undefined;
+
+function CodesTable({ id, disabled, filters }: CodesTableProps) {
   const {
     data,
     isPending,
@@ -99,17 +130,41 @@ function CodesTable({ id, disabled }: CodesTableProps) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useGetCodesInfinite(id, undefined, {
-    query: {
-      getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
+  } = useGetCodesInfinite(
+    id,
+    {
+      code_systems: filters.codeSystems.map((cs) => cs.id),
+      sources: filters.sources.map((s) => s.id),
+      statuses: filters.statuses.map((s) => s.id),
+      search: filters.search,
     },
-  });
+    {
+      query: {
+        getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
+      },
+      axios: {
+        // This serializer allows us to pass the filter array values to the server in the expected format.
+        // For example:
+        // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
+        paramsSerializer: (params: Record<string, ParamValue>) => {
+          const searchParams = new URLSearchParams();
+          for (const [key, value] of Object.entries(params)) {
+            if (Array.isArray(value)) {
+              value.forEach((v) => searchParams.append(key, String(v)));
+            } else if (value !== null && value !== undefined) {
+              searchParams.append(key, String(value));
+            }
+          }
+          return searchParams.toString();
+        },
+      },
+    }
+  );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
-  const { filters, setFilters } = useFilterState(id);
 
-  if (isPending) return 'Loading...';
+  if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
@@ -122,14 +177,6 @@ function CodesTable({ id, disabled }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
-        <Search placeholder="Search by keyword" className="w-70!" />
-        <Filters
-          configurationId={id}
-          filters={filters}
-          onFiltersChange={setFilters}
-        />
-      </div>
       <InfiniteScroll
         dataLength={codes.length}
         next={fetchNextPage}
