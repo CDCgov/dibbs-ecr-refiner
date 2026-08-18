@@ -111,18 +111,17 @@ async def get_logged_in_user(
 async def _fetch_session_user(
     token_hash: str, db: AsyncDatabaseConnection
 ) -> dict | None:
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(
+            """
                 SELECT users.*, sessions.expires_at
                 FROM sessions
                 JOIN users ON sessions.user_id = users.id
                 WHERE sessions.token_hash = %s AND sessions.expires_at > %s
                 """,
-                (token_hash, dt.now(UTC)),
-            )
-            return await cur.fetchone()
+            (token_hash, dt.now(UTC)),
+        )
+        return await cur.fetchone()
 
 
 async def _update_session_expiry_time(
@@ -151,12 +150,14 @@ async def _update_session_expiry_time(
     if expires_at - now < RENEW_THRESHOLD:
         new_expiration = now + SESSION_TTL
         try:
-            async with db.get_connection() as conn:
-                async with conn.cursor(row_factory=dict_row) as cur:
-                    await cur.execute(
-                        "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
-                        (new_expiration, token_hash),
-                    )
+            async with (
+                db.get_connection() as conn,
+                conn.cursor(row_factory=dict_row) as cur,
+            ):
+                await cur.execute(
+                    "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
+                    (new_expiration, token_hash),
+                )
             set_session_cookie(
                 response=response,
                 app_config=get_app_config(),

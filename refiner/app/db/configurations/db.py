@@ -96,23 +96,22 @@ async def insert_custom_section_db(
         "custom",
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                return None
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        if not row:
+            return None
 
-            await insert_event_db(
-                event=EventInput(
-                    configuration_id=config.id,
-                    jurisdiction_id=config.jurisdiction_id,
-                    user_id=user_id,
-                    event_type="create_custom_section",
-                    action_text=f"Custom section '{name}' with code '{code}' created",
-                ),
-                cursor=cur,
-            )
+        await insert_event_db(
+            event=EventInput(
+                configuration_id=config.id,
+                jurisdiction_id=config.jurisdiction_id,
+                user_id=user_id,
+                event_type="create_custom_section",
+                action_text=f"Custom section '{name}' with code '{code}' created",
+            ),
+            cursor=cur,
+        )
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
@@ -158,23 +157,22 @@ async def delete_custom_section_db(
     if not section_name:
         return None
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                return None
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        if not row:
+            return None
 
-            await insert_event_db(
-                event=EventInput(
-                    jurisdiction_id=config.jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=config.id,
-                    event_type="delete_custom_section",
-                    action_text=f'Deleted custom section "{section_name}" with code "{custom_section_input.code}"',
-                ),
-                cursor=cur,
-            )
+        await insert_event_db(
+            event=EventInput(
+                jurisdiction_id=config.jurisdiction_id,
+                user_id=user_id,
+                configuration_id=config.id,
+                event_type="delete_custom_section",
+                action_text=f'Deleted custom section "{section_name}" with code "{custom_section_input.code}"',
+            ),
+            cursor=cur,
+        )
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
@@ -292,106 +290,105 @@ async def insert_configuration_db(
         id
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            next_version = await _get_next_configuration_version_db(
-                canonical_url=latest_condition.canonical_url,
-                jurisdiction_id=jurisdiction_id,
-                cursor=cur,
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        next_version = await _get_next_configuration_version_db(
+            canonical_url=latest_condition.canonical_url,
+            jurisdiction_id=jurisdiction_id,
+            cursor=cur,
+        )
+
+        if config_to_clone:
+            params = (
+                jurisdiction_id,
+                # always set name to condition display name
+                config_to_clone.name,
+                # cloned by this user
+                user_id,
+                next_version,
+            )
+        else:
+            params = (
+                jurisdiction_id,
+                # always set name to condition display name
+                latest_condition.display_name,
+                # created by this user
+                user_id,
+                next_version,
             )
 
-            if config_to_clone:
-                params = (
-                    jurisdiction_id,
-                    # always set name to condition display name
-                    config_to_clone.name,
-                    # cloned by this user
-                    user_id,
-                    next_version,
-                )
-            else:
-                params = (
-                    jurisdiction_id,
-                    # always set name to condition display name
-                    latest_condition.display_name,
-                    # created by this user
-                    user_id,
-                    next_version,
-                )
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        if not row:
+            return None
 
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                return None
+        config_id = row["id"]
 
-            config_id = row["id"]
-
-            # Insert either cloned sections or brand new sections as part of the same transaction
-            if config_to_clone:
-                await _insert_configuration_sections_db(
-                    configuration_id=config_id,
-                    sections_to_insert=clone_section_processing_instructions(
-                        clone_from=config_to_clone.section_processing,
-                        clone_to=get_default_sections(),
-                        logger=get_logger(),
-                    ),
-                    cursor=cur,
-                )
-
-                # Clone custom codes
-                if config_to_clone.custom_codes:
-                    await cur.executemany(
-                        """
-                        INSERT INTO custom_codes (configuration_id, code, display, system_id)
-                        VALUES (%s, %s, %s, %s)
-                        """,
-                        [
-                            (config_id, cc.code, cc.display, cc.system_id)
-                            for cc in config_to_clone.custom_codes
-                        ],
-                    )
-            else:
-                await _insert_configuration_sections_db(
-                    configuration_id=config_id,
-                    sections_to_insert=get_default_sections(),
-                    cursor=cur,
-                )
-
-            await insert_event_db(
-                event=EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=config_id,
-                    event_type="create_configuration",
-                    action_text="Created configuration",
+        # Insert either cloned sections or brand new sections as part of the same transaction
+        if config_to_clone:
+            await _insert_configuration_sections_db(
+                configuration_id=config_id,
+                sections_to_insert=clone_section_processing_instructions(
+                    clone_from=config_to_clone.section_processing,
+                    clone_to=get_default_sections(),
+                    logger=get_logger(),
                 ),
                 cursor=cur,
             )
 
-            if config_to_clone:
-                included_condition_ids = await get_latest_tes_condition_ids_db(
-                    ids=config_to_clone.included_conditions, db=db
+            # Clone custom codes
+            if config_to_clone.custom_codes:
+                await cur.executemany(
+                    """
+                        INSERT INTO custom_codes (configuration_id, code, display, system_id)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                    [
+                        (config_id, cc.code, cc.display, cc.system_id)
+                        for cc in config_to_clone.custom_codes
+                    ],
                 )
-                condition_ids_to_insert = included_condition_ids
-                if latest_condition.id not in condition_ids_to_insert:
-                    condition_ids_to_insert = [
-                        latest_condition.id,
-                        *condition_ids_to_insert,
-                    ]
-            else:
-                condition_ids_to_insert = [latest_condition.id]
+        else:
+            await _insert_configuration_sections_db(
+                configuration_id=config_id,
+                sections_to_insert=get_default_sections(),
+                cursor=cur,
+            )
 
-            await cur.executemany(
-                """
+        await insert_event_db(
+            event=EventInput(
+                jurisdiction_id=jurisdiction_id,
+                user_id=user_id,
+                configuration_id=config_id,
+                event_type="create_configuration",
+                action_text="Created configuration",
+            ),
+            cursor=cur,
+        )
+
+        if config_to_clone:
+            included_condition_ids = await get_latest_tes_condition_ids_db(
+                ids=config_to_clone.included_conditions, db=db
+            )
+            condition_ids_to_insert = included_condition_ids
+            if latest_condition.id not in condition_ids_to_insert:
+                condition_ids_to_insert = [
+                    latest_condition.id,
+                    *condition_ids_to_insert,
+                ]
+        else:
+            condition_ids_to_insert = [latest_condition.id]
+
+        await cur.executemany(
+            """
                 INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
                 VALUES (%s, %s, %s)
                 ON CONFLICT DO NOTHING
                 """,
-                [
-                    (config_id, cond_id, cond_id == latest_condition.id)
-                    for cond_id in condition_ids_to_insert
-                ],
-            )
+            [
+                (config_id, cond_id, cond_id == latest_condition.id)
+                for cond_id in condition_ids_to_insert
+            ],
+        )
 
     return await get_configuration_by_id_db(
         id=row["id"], jurisdiction_id=jurisdiction_id, db=db
@@ -414,10 +411,9 @@ async def get_configurations_db(
 
     query += " ORDER BY name ASC;"
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            config_rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        config_rows = await cur.fetchall()
 
     if not config_rows:
         return []
@@ -445,10 +441,9 @@ async def get_configurations_by_ids_db(
         jurisdiction_id,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [DbConfiguration.from_db_row(row) for row in rows]
 
@@ -486,10 +481,9 @@ async def is_config_valid_to_insert_db(
         jurisdiction_id,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return len(rows) == 0
 
@@ -524,24 +518,23 @@ async def associate_condition_codeset_with_configuration_db(
 
     params = (config.id, condition.id)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
+        if not row:
+            return None
 
-            await insert_event_db(
-                event=EventInput(
-                    jurisdiction_id=config.jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=config.id,
-                    event_type="add_code",
-                    action_text=f"Added '{condition.display_name}' code set",
-                ),
-                cursor=cur,
-            )
+        await insert_event_db(
+            event=EventInput(
+                jurisdiction_id=config.jurisdiction_id,
+                user_id=user_id,
+                configuration_id=config.id,
+                event_type="add_code",
+                action_text=f"Added '{condition.display_name}' code set",
+            ),
+            cursor=cur,
+        )
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
@@ -578,24 +571,23 @@ async def disassociate_condition_codeset_with_configuration_db(
 
     params = (config.id, condition.id)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
+        if not row:
+            return None
 
-            await insert_event_db(
-                event=EventInput(
-                    jurisdiction_id=config.jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=config.id,
-                    event_type="delete_code",
-                    action_text=f"Removed '{condition.display_name}' code set",
-                ),
-                cursor=cur,
-            )
+        await insert_event_db(
+            event=EventInput(
+                jurisdiction_id=config.jurisdiction_id,
+                user_id=user_id,
+                configuration_id=config.id,
+                event_type="delete_code",
+                action_text=f"Removed '{condition.display_name}' code set",
+            ),
+            cursor=cur,
+        )
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
@@ -665,10 +657,12 @@ async def get_total_condition_code_counts_by_configuration_db(
     """
 
     params = (config_id,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchall()
 
     return row
 
@@ -697,10 +691,12 @@ async def _get_configuration_section_by_code(
         AND code = %s
     """
     params = (configuration_id, code)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
-            await cur.execute(query, params)
-            return await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur,
+    ):
+        await cur.execute(query, params)
+        return await cur.fetchone()
 
 
 def _bool_label(value: bool) -> Literal["enabled", "disabled"]:
@@ -823,17 +819,16 @@ async def update_configuration_section_db(
         current_code,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
+        if not row:
+            return None
 
-            # Insert all generated section events
-            for event in section_events:
-                await insert_event_db(event=event, cursor=cur)
+        # Insert all generated section events
+        for event in section_events:
+            await insert_event_db(event=event, cursor=cur)
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
@@ -857,10 +852,9 @@ async def get_latest_config_db(
         LIMIT 1
     """
     params = (jurisdiction_id, condition_canonical_url)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     if len(rows) < 1:
         return None
@@ -888,10 +882,9 @@ async def get_active_config_db(
         AND c.status = 'active';
     """
     params = (jurisdiction_id, condition_canonical_url)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if not row:
         return None
@@ -928,12 +921,12 @@ async def get_configuration_versions_db(
     """
 
     params = (jurisdiction_id, condition_canonical_url)
-    async with db.get_connection() as conn:
-        async with conn.cursor(
-            row_factory=class_row(GetConfigurationResponseVersion)
-        ) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(GetConfigurationResponseVersion)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return rows
 
@@ -972,10 +965,12 @@ async def get_configurations_summary_db(
         ORDER BY LOWER(name)
     """
     params = (jurisdiction_id,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConfigurationSummary)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbConfigurationSummary)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return rows
 

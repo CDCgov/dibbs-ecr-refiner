@@ -102,19 +102,21 @@ class TestEventsCsvExport:
         configuration = await create_config(condition_id)
         configuration_id = configuration["id"]
 
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                event_id = await insert_event_db(
-                    event=EventInput(
-                        configuration_id=configuration_id,
-                        jurisdiction_id=test_user_jurisdiction_id,
-                        action_text="Test event",
-                        event_type="add_code",
-                        user_id=test_user_id,
-                    ),
-                    cursor=cur,
-                )
-                assert event_id is not None
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            event_id = await insert_event_db(
+                event=EventInput(
+                    configuration_id=configuration_id,
+                    jurisdiction_id=test_user_jurisdiction_id,
+                    action_text="Test event",
+                    event_type="add_code",
+                    user_id=test_user_id,
+                ),
+                cursor=cur,
+            )
+            assert event_id is not None
         response = await authed_client.get(get_url(timezone))
         assert response.status_code == status.HTTP_200_OK
 

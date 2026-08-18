@@ -89,13 +89,12 @@ async def get_event_count_by_condition_db(
         AND (%s::TEXT IS NULL OR cond.id IS NOT NULL);
     """
     params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                raise DatabaseQueryError("Could not retrieve total event count.")
-            return int(row["total_count"])
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        if not row:
+            raise DatabaseQueryError("Could not retrieve total event count.")
+        return int(row["total_count"])
 
 
 async def is_event_valid(
@@ -112,11 +111,10 @@ async def is_event_valid(
     AND jurisdiction_id = %s
     """
     params = (id, jurisdiction_id)
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            return row is not None
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        return row is not None
 
 
 async def get_event_filter_options_db(
@@ -141,10 +139,12 @@ async def get_event_filter_options_db(
     ) sub
     ORDER BY LOWER(name)
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbEventFilterOption)) as cur:
-            await cur.execute(query, (jurisdiction_id,))
-            return await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbEventFilterOption)) as cur,
+    ):
+        await cur.execute(query, (jurisdiction_id,))
+        return await cur.fetchall()
 
 
 async def get_events_by_jd_db(
@@ -193,11 +193,13 @@ async def get_events_by_jd_db(
         offset,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
-            await cur.execute(query, params)
-            events_rows = await cur.fetchall()
-            return events_rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(AuditEvent)) as cur,
+    ):
+        await cur.execute(query, params)
+        events_rows = await cur.fetchall()
+        return events_rows
 
 
 async def get_all_events_by_jd_db(
@@ -240,12 +242,14 @@ async def get_all_events_by_jd_db(
     """
     params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(CsvEvent)) as cur:
-            await cur.execute(query, params)
-            while chunk := await cur.fetchmany(500):
-                for row in chunk:
-                    yield row
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(CsvEvent)) as cur,
+    ):
+        await cur.execute(query, params)
+        while chunk := await cur.fetchmany(500):
+            for row in chunk:
+                yield row
 
 
 async def get_custom_code_upload_events_by_event_id(
@@ -266,11 +270,13 @@ async def get_custom_code_upload_events_by_event_id(
     """
     params = (event_id,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCustomCodeUploadEvent)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCustomCodeUploadEvent)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def insert_custom_code_upload_events_db(

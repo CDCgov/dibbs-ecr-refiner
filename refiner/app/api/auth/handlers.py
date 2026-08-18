@@ -270,7 +270,9 @@ class UserResponse(BaseModel):
             NotificationKeys.MOST_RECENT_APP_UPDATE
         )
         app_update_ack_dt = _map_to_aware_dt(
-            app_update_ack_str if app_update_ack_str else datetime.min
+            app_update_ack_str
+            if app_update_ack_str
+            else datetime.min.replace(tzinfo=UTC)
         )
 
         should_show_app_update = latest_release_dt > app_update_ack_dt
@@ -285,7 +287,9 @@ class UserResponse(BaseModel):
         )
 
         tes_update_ack_dt = _map_to_aware_dt(
-            tes_update_ack_str if tes_update_ack_str else datetime.min
+            tes_update_ack_str
+            if tes_update_ack_str
+            else datetime.min.replace(tzinfo=UTC)
         )
 
         should_show_tes_update = latest_tes_release_dt > tes_update_ack_dt

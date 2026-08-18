@@ -135,37 +135,36 @@ async def activate_configuration_db(
 
     activated_config_id = None
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            if not current_active_config:
-                # just activate the configuration without deactivating
-                activated_config_id = await _activate_configuration_db(
-                    configuration_id=configuration_id,
-                    activated_by_user_id=activated_by_user_id,
-                    jurisdiction_id=jurisdiction_id,
-                    s3_url=s3_url,
-                    cur=cur,
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        if not current_active_config:
+            # just activate the configuration without deactivating
+            activated_config_id = await _activate_configuration_db(
+                configuration_id=configuration_id,
+                activated_by_user_id=activated_by_user_id,
+                jurisdiction_id=jurisdiction_id,
+                s3_url=s3_url,
+                cur=cur,
+            )
+        else:
+            # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
+            deactivated_config = await _deactivate_configuration_db(
+                configuration_id=current_active_config.id,
+                user_id=activated_by_user_id,
+                jurisdiction_id=jurisdiction_id,
+                cur=cur,
+            )
+            if not deactivated_config:
+                raise Exception(
+                    "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
                 )
-            else:
-                # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
-                deactivated_config = await _deactivate_configuration_db(
-                    configuration_id=current_active_config.id,
-                    user_id=activated_by_user_id,
-                    jurisdiction_id=jurisdiction_id,
-                    cur=cur,
-                )
-                if not deactivated_config:
-                    raise Exception(
-                        "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
-                    )
 
-                activated_config_id = await _activate_configuration_db(
-                    configuration_id=configuration_id,
-                    activated_by_user_id=activated_by_user_id,
-                    jurisdiction_id=jurisdiction_id,
-                    s3_url=s3_url,
-                    cur=cur,
-                )
+            activated_config_id = await _activate_configuration_db(
+                configuration_id=configuration_id,
+                activated_by_user_id=activated_by_user_id,
+                jurisdiction_id=jurisdiction_id,
+                s3_url=s3_url,
+                cur=cur,
+            )
     if not activated_config_id:
         return None
 
@@ -184,16 +183,18 @@ async def deactivate_configuration_db(
     Deactivate the specified configuration and return relevant status info.
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as internal_cur:
-            deactivated_config_id = await _deactivate_configuration_db(
-                configuration_id=configuration_id,
-                user_id=user_id,
-                jurisdiction_id=jurisdiction_id,
-                cur=internal_cur,
-            )
-            if not deactivated_config_id:
-                return None
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=dict_row) as internal_cur,
+    ):
+        deactivated_config_id = await _deactivate_configuration_db(
+            configuration_id=configuration_id,
+            user_id=user_id,
+            jurisdiction_id=jurisdiction_id,
+            cur=internal_cur,
+        )
+        if not deactivated_config_id:
+            return None
 
     return await get_configuration_by_id_db(
         id=deactivated_config_id, jurisdiction_id=jurisdiction_id, db=db
