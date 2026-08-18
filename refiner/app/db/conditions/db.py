@@ -389,10 +389,9 @@ async def get_conditions_by_ids(
 
     params = (ids,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [DbCondition.from_db_row(row) for row in rows]
 
@@ -431,10 +430,9 @@ async def get_primary_conditions_for_configurations_db(
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, (configuration_ids,))
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, (configuration_ids,))
+        rows = await cur.fetchall()
 
     return {row["configuration_id"]: DbCondition.from_db_row(row) for row in rows}
 
@@ -494,10 +492,9 @@ async def get_included_conditions_db(
 
     params = (included_conditions,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [DbCondition.from_db_row(row) for row in rows]
 
@@ -523,13 +520,13 @@ async def get_context_groupers_by_condition_id_db(
         WHERE condition_id = %s
     """
     params = (condition_id,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(
-            row_factory=class_row(DbConditionsContextGrouper)
-        ) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbConditionsContextGrouper)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_conditions_with_rsg_codes_db(
@@ -557,9 +554,8 @@ async def get_conditions_with_rsg_codes_db(
     """
     latest_tes = get_latest_tes_version(await get_loaded_tes_versions_db(db=db))
     params = (latest_tes.version,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [ConditionSummary.from_db_row(r) for r in rows]

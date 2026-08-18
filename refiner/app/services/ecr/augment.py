@@ -91,7 +91,7 @@ _SEED_FIELD_SEPARATOR: Final[str] = "|"
 # families of output within a jurisdiction. cannot collide with any
 # real grouper UUID because UUIDs have a fixed 36-character hyphenated
 # shape that the literal does not satisfy
-REMAINDER_SCOPE: Final[Literal["remainder"]] = "remainder"
+REMAINDER_SCOPE: Final = "remainder"
 
 # The within-jurisdiction scope discriminator for RR-side derivations:
 # either a condition grouper UUID (per-condition pair output) or the

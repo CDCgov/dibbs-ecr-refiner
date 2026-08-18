@@ -293,10 +293,12 @@ async def get_condition_by_id(db_pool):
     """
 
     async def _get(id: UUID):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
                     SELECT
                         c.id,
                         c.canonical_url,
@@ -320,11 +322,11 @@ async def get_condition_by_id(db_pool):
                     JOIN tes t ON t.id = c.tes_id
                     WHERE c.id = %s
                     """,
-                    (id,),
-                )
-                result = await cur.fetchone()
-                assert result, f"Condition with ID '{id}' not found."
-                return result
+                (id,),
+            )
+            result = await cur.fetchone()
+            assert result, f"Condition with ID '{id}' not found."
+            return result
 
     return _get
 
@@ -338,21 +340,23 @@ async def get_condition_id(db_pool):
     """
 
     async def _get(name: str, version: str = DEFAULT_TES_VERSION) -> UUID:
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
                     SELECT c.id
                     FROM conditions c
                     JOIN tes t ON t.id = c.tes_id
                     WHERE c.display_name = %s
                     AND t.version = %s
                     """,
-                    (name, version),
-                )
-                result = await cur.fetchone()
-                assert result, f"Condition '{name}' version '{version}' not found"
-                return result["id"]
+                (name, version),
+            )
+            result = await cur.fetchone()
+            assert result, f"Condition '{name}' version '{version}' not found"
+            return result["id"]
 
     return _get
 
@@ -366,19 +370,21 @@ async def get_event_by_id(db_pool):
     """
 
     async def _get(id: UUID):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
                     SELECT *
                     FROM events
                     WHERE id = %s
                     """,
-                    (id,),
-                )
-                result = await cur.fetchone()
-                assert result, f"Event with ID '{id}' not found"
-                return result
+                (id,),
+            )
+            result = await cur.fetchone()
+            assert result, f"Event with ID '{id}' not found"
+            return result
 
     return _get
 
@@ -390,10 +396,9 @@ async def reset_db(db_pool):
     """
     yield
     # run after each test
-    async with db_pool.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute("DELETE FROM custom_codes")
-            await cur.execute("DELETE FROM configurations")
+    async with db_pool.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute("DELETE FROM custom_codes")
+        await cur.execute("DELETE FROM configurations")
 
 
 @pytest_asyncio.fixture(scope="session")

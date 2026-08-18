@@ -152,9 +152,7 @@ def parse_svrl(svrl_result_string: str) -> list[dict[str, str]]:
         role = assertion.get("role", "").upper()
         if role in ["FATAL", "ERROR"]:
             severity = "ERROR"
-        elif role == "WARN":
-            severity = "WARNING"
-        elif "SHOULD" in message:
+        elif role == "WARN" or "SHOULD" in message:
             severity = "WARNING"
         else:
             severity = "ERROR"

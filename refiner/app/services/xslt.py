@@ -24,7 +24,6 @@ def _get_path_to_xslt_stylesheet() -> Path:
 class XSLTTransformationError(Exception):
     """Custom exception for XSLT transformation errors."""
 
-    pass
 
 
 def _transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> bytes:

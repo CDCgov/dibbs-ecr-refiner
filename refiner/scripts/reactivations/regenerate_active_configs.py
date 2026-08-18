@@ -434,18 +434,17 @@ async def update_reactivation_tracking_record_db(
         WHERE id = %s;
     """
 
-    async with db.get_connection() as connection:
-        async with connection.cursor() as cursor:
-            await cursor.execute(
-                query,
-                (
-                    status,
-                    success_count,
-                    failure_count,
-                    reactivation_id,
-                ),
-            )
-            await connection.commit()
+    async with db.get_connection() as connection, connection.cursor() as cursor:
+        await cursor.execute(
+            query,
+            (
+                status,
+                success_count,
+                failure_count,
+                reactivation_id,
+            ),
+        )
+        await connection.commit()
 
 
 async def regenerate_active_configuration(

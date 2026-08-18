@@ -1,7 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, datetime
 from io import BytesIO
 from logging import Logger
 from typing import Any
@@ -303,6 +303,6 @@ def get_refined_user_zip_key(user_id: UUID, jurisdiction_id: str, filename: str)
     """
     Creates a refiner user zip file key.
     """
-    today = date.today().isoformat()
+    today = datetime.now(UTC).date().isoformat()
     key = f"test-artifacts/{jurisdiction_id}/{today}/{user_id}/{filename}"
     return key

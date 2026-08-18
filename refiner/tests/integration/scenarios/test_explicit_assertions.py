@@ -77,7 +77,7 @@ HL7_NS: Final[dict[str, str]] = {"hl7": "urn:hl7-org:v3"}
 # =============================================================================
 
 
-def _refine(scenario, config, *, configuration_version: int | None = None):  # noqa: ANN001 - RefinementResult, avoid import cycle
+def _refine(scenario, config, *, configuration_version: int | None = None):
     """
     Run the production refinement path for a scenario's config.
 

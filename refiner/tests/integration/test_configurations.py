@@ -148,31 +148,33 @@ class TestConfigurations:
             PRIMARY_CONDITION, previous_tes_version
         )
 
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
                     INSERT INTO configurations (jurisdiction_id, name, created_by, version)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
-                    (
-                        test_user_jurisdiction_id,
-                        PRIMARY_CONDITION,
-                        test_user_id,
-                        1,
-                    ),
-                )
-                row = await cur.fetchone()
-                old_config_id = row["id"]
+                (
+                    test_user_jurisdiction_id,
+                    PRIMARY_CONDITION,
+                    test_user_id,
+                    1,
+                ),
+            )
+            row = await cur.fetchone()
+            old_config_id = row["id"]
 
-                await cur.execute(
-                    """
+            await cur.execute(
+                """
                     INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
                     VALUES (%s, %s, true)
                     """,
-                    (old_config_id, old_condition_id),
-                )
+                (old_config_id, old_condition_id),
+            )
 
         assert old_config_id is not None
 

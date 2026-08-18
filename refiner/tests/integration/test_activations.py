@@ -73,14 +73,13 @@ async def get_audit_events(authed_client):
 
 
 async def clear_reactivation_tracking_records(*, db_pool) -> None:
-    async with db_pool.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
+    async with db_pool.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
                 DELETE FROM active_payload_schema_reactivations;
                 """
-            )
-            await conn.commit()
+        )
+        await conn.commit()
 
 
 async def create_complete_reactivation_tracking_record(
@@ -90,10 +89,9 @@ async def create_complete_reactivation_tracking_record(
     success_count: int = 1,
     failure_count: int = 0,
 ) -> None:
-    async with db_pool.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
+    async with db_pool.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
                 INSERT INTO active_payload_schema_reactivations (
                     target_schema_version,
                     status,
@@ -104,20 +102,22 @@ async def create_complete_reactivation_tracking_record(
                 )
                 VALUES (%s, 'COMPLETE', NOW(), NOW(), %s, %s);
                 """,
-                (
-                    target_schema_version,
-                    success_count,
-                    failure_count,
-                ),
-            )
-            await conn.commit()
+            (
+                target_schema_version,
+                success_count,
+                failure_count,
+            ),
+        )
+        await conn.commit()
 
 
 async def get_reactivation_tracking_rows(*, db_pool):
-    async with db_pool.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
+    async with (
+        db_pool.get_connection() as conn,
+        conn.cursor(row_factory=dict_row) as cur,
+    ):
+        await cur.execute(
+            """
                 SELECT
                     id,
                     target_schema_version,
@@ -129,8 +129,8 @@ async def get_reactivation_tracking_rows(*, db_pool):
                 FROM active_payload_schema_reactivations
                 ORDER BY created_at, id;
                 """
-            )
-            return await cur.fetchall()
+        )
+        return await cur.fetchall()
 
 
 def upload_regenerated_payload_to_localstack(config_payload, config_metadata, logger):
