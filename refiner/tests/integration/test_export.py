@@ -136,10 +136,10 @@ class TestConfigurationExportCodesCsv:
         await associate_codeset(config_id, byssinosis_id)
 
         amebiasis_codes = await get_condition_codes_by_condition_id_db(
-            id=amebiasis_id, db=db_pool
+            condition_id=amebiasis_id, db=db_pool
         )
         byssinosis_codes = await get_condition_codes_by_condition_id_db(
-            id=byssinosis_id, db=db_pool
+            condition_id=byssinosis_id, db=db_pool
         )
         expected_code_rows = len(amebiasis_codes) + len(byssinosis_codes)
 
