@@ -66,9 +66,9 @@ test.describe('Codes management - search', () => {
     });
 
     const table = page.getByRole('table');
+    const tableRows = table.getByRole('row');
     await expect(table).toBeVisible();
-    const tableRowCount = await table.getByRole('row').count();
-    expect(tableRowCount).toBe(4); // include header
+    await expect(tableRows).toHaveCount(4); // include header
 
     await test.step('Enter search query', async () => {
       const searchBox = page.getByRole('searchbox', {
@@ -90,8 +90,7 @@ test.describe('Codes management - search', () => {
 
     await test.step('Check search results', async () => {
       await expect(table).toBeVisible();
-      const newRowCount = await table.getByRole('row').count();
-      expect(newRowCount).toBe(2); // custom code and header only
+      await expect(table.getByRole('row')).toHaveCount(2); // custom code and header only
     });
   });
 
@@ -164,6 +163,8 @@ test.describe('Codes management - search', () => {
     await test.step('Check table results', async () => {
       const table = page.getByRole('table');
       const tableRows = table.getByRole('row');
+
+      await expect(tableRows.first()).toBeVisible(); // make sure table is ready
       const rowCount = await tableRows.count();
 
       // start at 1 to skip header
