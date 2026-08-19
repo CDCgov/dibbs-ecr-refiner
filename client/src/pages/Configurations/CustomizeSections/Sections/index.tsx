@@ -107,7 +107,7 @@ export function Sections({
             <thead className="bg-page-bg border-gray-cool-70 sticky top-0 z-10 border-b-2">
               <tr className="text-gray-cool-60">
                 <th scope="col" className="w-20 py-3">
-                  <div className="flex justify-end gap-1 pr-6">
+                  <div className="flex justify-center gap-1">
                     <span>Include</span>
                     <Tooltip
                       position="right"
@@ -118,8 +118,8 @@ export function Sections({
                 <th scope="col" className="w-70 text-left">
                   Section name
                 </th>
-                <th scope="col" className="w-60 pr-8">
-                  <div className="flex justify-end gap-1">
+                <th scope="col" className="w-60">
+                  <div className="flex justify-center gap-1">
                     <span>Coded data</span>
                     <Tooltip
                       position="left"
@@ -168,9 +168,9 @@ export function Sections({
                       setSelectedSection={() => onSelectedSection(section)}
                     />
                   </td>
-                  <td className="flex h-21 justify-end pr-8">
+                   <td className="flex h-21 justify-center">
                     {section.include ? (
-                      <div className="flex flex-col items-end justify-center">
+                       <div className="flex flex-col items-center justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
                             className="text-gray-cool-90 whitespace-nowrap italic"
