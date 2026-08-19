@@ -136,12 +136,12 @@ jobs:
 
       - name: Install Playwright Browsers (with deps)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
         working-directory: client
 
       - name: Install Playwright Browsers (no deps)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install
+        run: npx playwright install chromium
         working-directory: client
 
       - name: Start Application
