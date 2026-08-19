@@ -22,7 +22,7 @@ from app.db.code_systems.db import (
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.custom_codes.db import (
-    delete_custom_code_db,
+    delete_custom_codes_db,
     edit_custom_code_db,
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
@@ -561,15 +561,17 @@ async def delete_custom_code(
             detail=f"Failed to find custom code to delete with ID: {id}",
         )
 
-    deleted_code = await delete_custom_code_db(
-        config=config, id=custom_code.id, user_id=user.id, db=db
+    deleted_codes = await delete_custom_codes_db(
+        config=config, ids=[custom_code.id], user_id=user.id, db=db
     )
 
-    if not deleted_code:
+    if len(deleted_codes) < 1:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to delete custom code.",
         )
+
+    deleted_code = deleted_codes[0]
 
     systems = await get_code_systems_db(db=db)
 
