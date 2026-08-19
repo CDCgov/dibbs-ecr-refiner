@@ -164,7 +164,7 @@ test.describe('Codes management - search', () => {
       const table = page.getByRole('table');
       const tableRows = table.getByRole('row');
 
-      await expect(tableRows.first()).toBeVisible(); // make sure table is ready
+      await expect(tableRows.nth(1)).toBeVisible(); // make sure table is ready
       const rowCount = await tableRows.count();
 
       // start at 1 to skip header
@@ -252,6 +252,7 @@ test.describe('Codes management - filters', () => {
     page,
     configurationsPage,
     configurationPage,
+    api,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -271,6 +272,9 @@ test.describe('Codes management - filters', () => {
         .hover();
       await page.getByLabel('Add Alpha-gal Syndrome').click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
     });
 
     const codeSystemFilterButton = page.getByTestId('code-system-button');
@@ -289,20 +293,40 @@ test.describe('Codes management - filters', () => {
     });
 
     await test.step('Select code system filter options', async () => {
+      const systems = await api.getSystems();
+      const cvxId = systems.find((s) => s.display_name === 'CVX')!.id;
+      const loincID = systems.find((s) => s.display_name === 'LOINC')!.id;
+
       await loincOption.click();
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toContainText('1 selected');
+
+      await page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`code_systems=${loincID}`) &&
+          res.status() === 200
+      );
 
       await codeSystemFilterButton.click();
       await expect(cvxOption).toBeVisible();
       await cvxOption.click();
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toContainText('2 selected');
+
+      await page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`code_systems=${loincID}`) &&
+          res.request().url().includes(`code_systems=${cvxId}`) &&
+          res.status() === 200
+      );
     });
 
     await test.step('Check that table results only has LOINC codes', async () => {
       // This condition has no CVX codes which is why only LOINC appear
       const tableRows = page.getByRole('table').getByRole('row');
+      await expect(tableRows.nth(1)).toBeVisible(); // make sure table is ready
       const rowCount = await tableRows.count();
       for (let i = 1; i < rowCount; i++) {
         const codeSystemCell = tableRows.nth(i).getByRole('cell').nth(2);
