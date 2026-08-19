@@ -77,15 +77,16 @@ test.describe('Codes management - search', () => {
       });
 
       await expect(searchBox).toBeVisible();
-      await searchBox.fill('mock custom');
 
       // wait for response so test doesn't fail waiting for debounce
-      await page.waitForResponse(
+      const searchResp = page.waitForResponse(
         (res) =>
           res.url().includes('/codes') &&
           res.request().url().includes('search=mock+custom') &&
           res.status() === 200
       );
+      await searchBox.fill('mock custom');
+      await searchResp;
     });
 
     await test.step('Check search results', async () => {
@@ -149,15 +150,16 @@ test.describe('Codes management - search', () => {
       });
 
       await expect(searchBox).toBeVisible();
-      await searchBox.fill(searchText);
 
       // wait for response so test doesn't fail waiting for debounce
-      await page.waitForResponse(
+      const searchResp = page.waitForResponse(
         (res) =>
           res.url().includes('/codes') &&
           res.request().url().includes(`search=${searchText}`) &&
           res.status() === 200
       );
+      await searchBox.fill(searchText);
+      await searchResp;
     });
 
     await test.step('Check table results', async () => {
@@ -297,30 +299,35 @@ test.describe('Codes management - filters', () => {
       const cvxId = systems.find((s) => s.display_name === 'CVX')!.id;
       const loincID = systems.find((s) => s.display_name === 'LOINC')!.id;
 
-      await loincOption.click();
-      await page.keyboard.press('Escape');
-      await expect(codeSystemFilterButton).toContainText('1 selected');
-
-      await page.waitForResponse(
+      const loincFilterResponse = page.waitForResponse(
         (res) =>
           res.url().includes('/codes') &&
           res.request().url().includes(`code_systems=${loincID}`) &&
           res.status() === 200
       );
 
-      await codeSystemFilterButton.click();
-      await expect(cvxOption).toBeVisible();
-      await cvxOption.click();
-      await page.keyboard.press('Escape');
-      await expect(codeSystemFilterButton).toContainText('2 selected');
+      await loincOption.click();
+      await loincFilterResponse;
 
-      await page.waitForResponse(
+      await page.keyboard.press('Escape');
+      await expect(codeSystemFilterButton).toContainText('1 selected');
+
+      const cvxFilterResponse = page.waitForResponse(
         (res) =>
           res.url().includes('/codes') &&
           res.request().url().includes(`code_systems=${loincID}`) &&
           res.request().url().includes(`code_systems=${cvxId}`) &&
           res.status() === 200
       );
+
+      await codeSystemFilterButton.click();
+      await expect(cvxOption).toBeVisible();
+
+      await cvxOption.click();
+      await cvxFilterResponse;
+
+      await page.keyboard.press('Escape');
+      await expect(codeSystemFilterButton).toContainText('2 selected');
     });
 
     await test.step('Check that table results only has LOINC codes', async () => {
