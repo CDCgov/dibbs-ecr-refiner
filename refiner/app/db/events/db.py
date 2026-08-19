@@ -360,8 +360,8 @@ async def insert_custom_code_upload_events_db(
 
 async def insert_event_db(
     event: EventInput,
-    cursor: AsyncCursor[Any],
-) -> UUID:
+    cursor: AsyncCursor,
+) -> UUID | None:
     """
     Inserts an event into the `events` table.
     """
@@ -382,7 +382,7 @@ async def insert_event_db(
             %(event_type)s,
             %(action_text)s,
             %(condition_id)s,
-            %(code_count)s,
+            %(code_count)s
         )
         RETURNING id;
     """
@@ -399,7 +399,10 @@ async def insert_event_db(
             "code_count": event.code_count,
         },
     )
+
     row = await cursor.fetchone()
-    if row is None:
-        raise Exception(f"Unable to insert event with type: {event.event_type}")
-    return row["id"]
+
+    if row:
+        return row["id"]
+
+    return None
