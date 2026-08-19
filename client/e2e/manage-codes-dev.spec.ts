@@ -401,8 +401,7 @@ test.describe('Codes management - filters', () => {
 
     await test.step('Check the page on load', async () => {
       await expect(table).toBeVisible();
-      const initialCount = await tableRows.count(); // this includes the header row
-      expect(initialCount).toBe(3);
+      await expect(tableRows).toHaveCount(3);
     });
 
     await test.step('Exclude a code', async () => {
