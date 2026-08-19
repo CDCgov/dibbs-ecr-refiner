@@ -24,7 +24,6 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { Search } from '@components/Search';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Switch } from '@components/Switch';
@@ -37,6 +36,7 @@ import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { SearchBar } from './SearchBar';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -96,7 +96,7 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
     <>
       <CodeInformationBar id={id} />
       <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
-        <Search placeholder="Search by keyword" className="w-70!" />
+        <SearchBar filters={filters} setFilters={setFilters} />
         <Filters
           configurationId={id}
           filters={filters}
@@ -136,13 +136,16 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
       code_systems: filters.codeSystems.map((cs) => cs.id),
       sources: filters.sources.map((s) => s.id),
       statuses: filters.statuses.map((s) => s.id),
+      search: filters.search,
     },
     {
       query: {
         getNextPageParam: (lastPage) => lastPage.data.next_cursor ?? undefined,
       },
-      // TODO: revisit this
       axios: {
+        // This serializer allows us to pass the filter array values to the server in the expected format.
+        // For example:
+        // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
         paramsSerializer: (params: Record<string, ParamValue>) => {
           const searchParams = new URLSearchParams();
           for (const [key, value] of Object.entries(params)) {
