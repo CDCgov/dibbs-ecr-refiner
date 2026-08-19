@@ -434,8 +434,7 @@ test.describe('Codes management - filters', () => {
       await page.keyboard.press('Escape');
       await expect(sourceFilterButton).toContainText('1 selected');
 
-      const newCount = await tableRows.count();
-      expect(newCount).toBe(2);
+      await expect(tableRows).toHaveCount(2);
     });
   });
 
