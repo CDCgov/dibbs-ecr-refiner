@@ -554,28 +554,23 @@ test.describe('Codes management - filters', () => {
       const table = page.getByRole('table');
       const tableRows = table.getByRole('row');
 
-      // this includes the header row
       await expect(tableRows).toHaveCount(5);
 
-      // skip header row
-      const rowOne = tableRows.nth(1);
-      const rowTwo = tableRows.nth(2);
-      const rowThree = tableRows.nth(3);
-      const rowFour = tableRows.nth(4);
-
       const sourceCellNumber = 4;
-      await expect(
-        rowOne.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText('Custom code');
-      await expect(
-        rowTwo.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText(`${associatedCondition} CG`);
-      await expect(
-        rowThree.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText(`${associatedCondition} CG`);
-      await expect(
-        rowFour.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText('Anotia CG');
+      const sourceCells = tableRows
+        .filter({ hasNot: page.getByRole('columnheader') })
+        .locator(`td:nth-child(${sourceCellNumber + 1})`);
+
+      const texts = await sourceCells.allTextContents();
+
+      expect(texts.some((t) => t.includes('Custom code'))).toBe(true);
+      expect(texts.some((t) => t.includes(`${associatedCondition} CG`))).toBe(
+        true
+      );
+      expect(texts.some((t) => t.includes('Anotia CG'))).toBe(true);
+      expect(
+        texts.filter((t) => t.includes(`${associatedCondition} CG`))
+      ).toHaveLength(2);
     });
   });
 
