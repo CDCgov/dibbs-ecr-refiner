@@ -101,14 +101,16 @@ test.describe('Codes management - search', () => {
     configurationPage,
   }) => {
     const condition = 'Amebiasis';
+    const systems = await api.getSystems();
+    const icd10Id = systems.find((s) => s.display_name === 'ICD-10')!.id;
     await test.step('Set up configuration', async () => {
       const config = await api.createConfiguration(condition);
-      const systems = await api.getSystems();
+
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: 'A06.22',
           display: 'Amebic',
-          system_id: systems.find((s) => s.display_name === 'ICD-10')!.id,
+          system_id: icd10Id,
         },
       ]);
     });
@@ -137,7 +139,16 @@ test.describe('Codes management - search', () => {
         exact: false,
       });
 
+      const codeSystemResp = page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`code_systems=${icd10Id}`) &&
+          res.status() === 200
+      );
+
       await icd10Option.click();
+      await codeSystemResp;
+
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toContainText('1 selected');
     });
@@ -376,6 +387,9 @@ test.describe('Codes management - filters', () => {
         .hover();
       await page.getByLabel('Add Acanthamoeba').click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
     });
 
     await test.step('Check source filter', async () => {
@@ -406,6 +420,7 @@ test.describe('Codes management - filters', () => {
 
     await test.step('Check that table results only has Acanthamoeba codes', async () => {
       const tableRows = page.getByRole('table').getByRole('row');
+      await expect(tableRows.nth(1)).toBeVisible(); // make sure table is loaded
       const rowCount = await tableRows.count();
       for (let i = 1; i < rowCount; i++) {
         const sourceCell = tableRows.nth(i).getByRole('cell').nth(4);
@@ -513,6 +528,9 @@ test.describe('Codes management - filters', () => {
         .hover();
       await page.getByLabel(`Add ${associatedCondition}`).click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
     });
 
     await test.step('Configure code system filter', async () => {
@@ -549,15 +567,15 @@ test.describe('Codes management - filters', () => {
       await sourceFilterButton.click();
 
       await expect(sourceOptions).toBeVisible();
-      const sourceOptionCount = await sourceOptions.getByRole('option').count();
-      expect(sourceOptionCount).toBe(4); // both CGs + custom code + clear selection
+      await expect(sourceOptions.getByRole('option')).toHaveCount(4); // both CGs + custom code + clear selection
 
       // use all 3 options
-      const optionCountExcludingClearSelectionButton = sourceOptionCount - 1;
+      const optionCountExcludingClearSelectionButton = 3;
       for (let i = 0; i < optionCountExcludingClearSelectionButton; i++) {
         const option = sourceOptions.getByRole('option').nth(i);
         await expect(option).toBeVisible();
         await option.click();
+        await expect(option).toHaveAttribute('aria-selected', 'true');
       }
       await page.keyboard.press('Escape');
       await expect(sourceFilterButton).toHaveText('3 selected');
@@ -576,6 +594,7 @@ test.describe('Codes management - filters', () => {
       await expect(statusOptions).toBeVisible();
       await expect(includedOption).toBeVisible();
       await includedOption.click();
+      await expect(includedOption).toHaveAttribute('aria-selected', 'true');
 
       await page.keyboard.press('Escape');
       await expect(statusFilterButton).toHaveText('1 selected');
