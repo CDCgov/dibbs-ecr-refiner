@@ -198,7 +198,7 @@ async def get_codes_db(
             COALESCE(
                 ARRAY_AGG(DISTINCT v.display_name) FILTER (WHERE v.display_name IS NOT NULL),
                 '{{}}'::text[]
-            ) || ARRAY[con.display_name || ' CG'] AS source,
+            ) AS source,
             c.code,
             c.display AS description,
             c.system_id,
@@ -367,21 +367,22 @@ async def get_all_filter_options_db(
         UNION ALL
 
         SELECT
-            s.id AS system_id,
-            s.display_name AS system_name,
-            ARRAY_REMOVE(ARRAY[v.id, con.id], NULL) AS source_ids,
-            ARRAY_REMOVE(ARRAY[v.display_name, con.display_name || ' CG'], NULL) AS sources,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+            MAX(s.id::text)::uuid AS system_id,
+            MAX(s.display_name) AS system_name,
+            COALESCE(ARRAY_AGG(v.id), '{}') AS source_ids,
+            COALESCE(ARRAY_AGG(v.display_name), '{}') AS sources,
+            CASE WHEN COALESCE(ARRAY_AGG(e.code_id), '{}') = '{}' THEN 'included' ELSE 'excluded' END AS status
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
-        LEFT JOIN valuesets v ON v.id = cc.valueset_id
+        JOIN valuesets v ON cc.valueset_id = v.id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
             AND e.code_id = cc.code_id
         WHERE cfgc.configuration_id = %(configuration_id)s
+        GROUP BY cfgc.configuration_id, con.id
     )
     SELECT * FROM (
         SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
@@ -391,10 +392,10 @@ async def get_all_filter_options_db(
 
         UNION ALL
 
-        SELECT 
-            'source' AS filter_type, 
-            src.source_id::text AS value, 
-            src.source AS label, 
+        SELECT
+            'source' AS filter_type,
+            src.source_id::text AS value,
+            src.source AS label,
             COUNT(*) AS code_count
         FROM all_codes,
         LATERAL UNNEST(all_codes.source_ids, all_codes.sources) AS src(source_id, source)
