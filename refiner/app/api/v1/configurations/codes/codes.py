@@ -2,11 +2,14 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.api.v1.configurations.codes.model import FilterInput
 from app.db.configurations.codes.db import (
+    CodeFilterOptions,
+    get_all_filter_options_db,
     get_code_count_metadata_db,
     get_codes_db,
     set_codes_status_db,
@@ -57,6 +60,20 @@ class CodesResponse:
     codes: list[CodeResponse]
 
 
+def _get_filter_input(
+    search: str | None = None,
+    code_systems: list[str] = Query(default=[]),
+    sources: list[str] = Query(default=[]),
+    statuses: list[str] = Query(default=[]),
+) -> FilterInput:
+    return FilterInput(
+        search=search,
+        code_systems=code_systems,
+        sources=sources,
+        statuses=statuses,
+    )
+
+
 @router.get(
     "/codes",
     response_model=CodesResponse,
@@ -66,6 +83,7 @@ class CodesResponse:
 async def get_codes(
     configuration_id: UUID,
     cursor: str | None = None,
+    filters: FilterInput = Depends(_get_filter_input),
     db: AsyncDatabaseConnection = Depends(get_db),
     user: DbUser = Depends(get_logged_in_user),
 ) -> CodesResponse:
@@ -74,6 +92,7 @@ async def get_codes(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
+        filters (FilterInput): Filter input coming from the client
         cursor (str | None): The cursor for the page to start from
         user (DbUser): The logged-in user
         logger (Logger): The standard logger
@@ -96,7 +115,11 @@ async def get_codes(
         )
 
     codes, next_cursor = await get_codes_db(
-        configuration_id=config.id, db=db, limit=CODES_LIMIT, cursor=cursor
+        configuration_id=config.id,
+        limit=CODES_LIMIT,
+        cursor=cursor,
+        filters=filters,
+        db=db,
     )
 
     return CodesResponse(
@@ -220,3 +243,44 @@ async def set_codes_status(
     )
 
     return impacted_code_ids
+
+
+@router.get(
+    "/filters",
+    response_model=CodeFilterOptions,
+    tags=["configurations"],
+    operation_id="getCodeFilters",
+)
+async def get_code_filters(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> CodeFilterOptions:
+    """
+    Fetches code filter information for the client to display.
+
+    Args:
+        configuration_id (UUID): The configuration ID
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if the configuration couldn't be found
+
+    Returns:
+        CodeFilterOptions: The code filters
+    """
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Configuration cannot be found.",
+        )
+
+    return await get_all_filter_options_db(configuration_id=config.id, db=db)
