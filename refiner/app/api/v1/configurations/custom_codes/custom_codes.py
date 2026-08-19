@@ -586,6 +586,91 @@ async def delete_custom_code(
     )
 
 
+class BulkDeleteCustomCodesInput(BaseModel):
+    """
+    Input model for a bulk custom codes deletion request.
+    """
+
+    ids: list[UUID]
+
+
+@router.post(
+    "/bulk-delete",
+    response_model=list[CustomCodeResponse],
+    tags=["configurations"],
+    operation_id="deleteCustomCodes",
+)
+async def bulk_delete_custom_codes(
+    configuration_id: UUID,
+    body: BulkDeleteCustomCodesInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[CustomCodeResponse]:
+    """
+    Deletes custom codes in bulk for a given configuration.
+
+    Args:
+        configuration_id (UUID): The ID of the configuration to modify.
+        body (BulkDeleteCustomCodesInput): The input body containing IDs of the custom codes.
+        user (DbUser): The logged-in user.
+        db (AsyncDatabaseConnection): The database connection.
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
+        HTTPException: 500 if configuration can't be updated
+
+    Returns:
+        ConfigurationCustomCodeResponse: The updated configuration
+    """
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    await ConfigurationLock.raise_if_locked_by_other(
+        configuration_id,
+        user.id,
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    deleted_codes = await delete_custom_codes_db(
+        config=config, ids=body.ids, user_id=user.id, db=db
+    )
+
+    if len(deleted_codes) < 1:
+        return []
+
+    systems = await get_code_systems_db(db=db)
+
+    return [
+        CustomCodeResponse(
+            id=deleted_code.id,
+            display=deleted_code.display,
+            code=deleted_code.code,
+            system_id=deleted_code.system_id,
+            system_name=find_code_system_by_id_or_raise(
+                id=deleted_code.system_id, systems=systems
+            ).display_name,
+        )
+        for deleted_code in deleted_codes
+    ]
+
+
 class ValidateCustomCodeInput(BaseModel):
     """
     Input model when validating a config's custom code.
