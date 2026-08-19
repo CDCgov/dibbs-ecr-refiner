@@ -554,6 +554,7 @@ test.describe('Codes management - filters', () => {
       const table = page.getByRole('table');
       const tableRows = table.getByRole('row');
 
+      // this includes the header row
       await expect(tableRows).toHaveCount(5);
 
       const sourceCellNumber = 4;
