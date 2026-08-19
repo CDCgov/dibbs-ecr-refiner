@@ -1,6 +1,7 @@
 import { useParams } from 'react-router';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { Spinner } from '@components/Spinner';
+import { Button } from '@components/Button';
 import { SectionModalState, Sections } from './Sections';
 import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
@@ -34,20 +35,17 @@ export function CustomizeSections() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <ConfigurationTitleBar
-          title="Customize eICR sections"
-          subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
-          actionButton={
-            !isDisabled
-              ? {
-                  text: 'Add custom section +',
-                  onClick: () =>
-                    setModalState({ isOpen: true, selectedSection: null }),
-                  disabled: isDisabled,
-                }
-              : undefined
-          }
-        />
+        <div className="flex items-center justify-between mb-4">
+          <ConfigurationTitleBar
+            title="Customize eICR sections"
+            subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
+          />
+          {!isDisabled && (
+            <Button onClick={() => setModalState({ isOpen: true, selectedSection: null })}>
+              Add custom section +
+            </Button>
+          )}
+        </div>
         <Sections
           configuration={configuration.data}
           disabled={isDisabled}
