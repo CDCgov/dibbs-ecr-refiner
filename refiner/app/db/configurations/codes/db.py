@@ -369,9 +369,7 @@ async def get_all_filter_options_db(
         SELECT
             s.id AS system_id,
             s.display_name AS system_name,
-            -- Pair valueset ID and condition ID into an array
             ARRAY_REMOVE(ARRAY[v.id, con.id], NULL) AS source_ids,
-            -- Pair valueset display_name and condition CG into an array
             ARRAY_REMOVE(ARRAY[v.display_name, con.display_name || ' CG'], NULL) AS sources,
             CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
         FROM configurations_conditions cfgc
