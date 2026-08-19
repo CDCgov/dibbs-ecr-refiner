@@ -18,7 +18,7 @@ class DbCodeResult:
 
     id: UUID
     condition_id: UUID | None
-    source: str
+    source: list[str]
     code: str
     description: str
     system_id: UUID
@@ -117,7 +117,7 @@ async def get_codes_db(
                     SELECT
                         c.id,
                         NULL::uuid AS condition_id,
-                        'Custom Code' AS source,
+                        ARRAY['Custom Code'] AS source,
                         c.code,
                         c.display AS description,
                         c.system_id,
@@ -195,7 +195,10 @@ async def get_codes_db(
         SELECT
             c.id,
             cfgc.condition_id,
-            con.display_name || ' CG' AS source,
+            COALESCE(
+                ARRAY_AGG(DISTINCT v.display_name) FILTER (WHERE v.display_name IS NOT NULL),
+                '{{}}'::text[]
+            ) || ARRAY[con.display_name || ' CG'] AS source,
             c.code,
             c.display AS description,
             c.system_id,
@@ -206,12 +209,22 @@ async def get_codes_db(
         JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
+        LEFT JOIN valuesets v ON v.id = cc.valueset_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
             AND e.code_id = cc.code_id
         WHERE cfgc.configuration_id = %(configuration_id)s
         {cursor_clause}
         {"".join(cond_clauses)}
+        GROUP BY
+            c.id,
+            cfgc.condition_id,
+            con.display_name,
+            c.code,
+            c.display,
+            c.system_id,
+            s.display_name,
+            e.code_id
         ORDER BY cfgc.condition_id, c.code
         LIMIT %(limit)s;
     """
@@ -344,8 +357,8 @@ async def get_all_filter_options_db(
         SELECT
             s.id AS system_id,
             s.display_name AS system_name,
-            NULL::uuid AS source_id,
-            'Custom Code' AS source,
+            ARRAY[NULL::uuid] AS source_ids,
+            ARRAY['Custom Code'] AS sources,
             'included' AS status
         FROM custom_codes c
         JOIN systems s ON s.id = c.system_id
@@ -356,12 +369,15 @@ async def get_all_filter_options_db(
         SELECT
             s.id AS system_id,
             s.display_name AS system_name,
-            con.id AS source_id,
-            con.display_name || ' CG' AS source,
+            -- Pair valueset ID and condition ID into an array
+            ARRAY_REMOVE(ARRAY[v.id, con.id], NULL) AS source_ids,
+            -- Pair valueset display_name and condition CG into an array
+            ARRAY_REMOVE(ARRAY[v.display_name, con.display_name || ' CG'], NULL) AS sources,
             CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
-        JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+        JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
+        LEFT JOIN valuesets v ON v.id = cc.valueset_id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
@@ -377,9 +393,14 @@ async def get_all_filter_options_db(
 
         UNION ALL
 
-        SELECT 'source' AS filter_type, source_id::text AS value, source AS label, COUNT(*) AS code_count
-        FROM all_codes
-        GROUP BY source_id, source
+        SELECT 
+            'source' AS filter_type, 
+            src.source_id::text AS value, 
+            src.source AS label, 
+            COUNT(*) AS code_count
+        FROM all_codes,
+        LATERAL UNNEST(all_codes.source_ids, all_codes.sources) AS src(source_id, source)
+        GROUP BY src.source_id, src.source
 
         UNION ALL
 
