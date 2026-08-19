@@ -4,6 +4,7 @@ import { useGetConfigurationsToUpdate } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { Checkbox } from '@components/Checkbox';
 import { Button } from '@components/Button';
+import { useState } from 'react';
 
 export function UpdateConfigurations() {
   const {
@@ -13,11 +14,49 @@ export function UpdateConfigurations() {
     // todo don't hard code this
   } = useGetConfigurationsToUpdate({ cur_tes_version: '6.0.0' });
 
+  const [selectedConfigurations, setSelectedConfigurations] = useState<
+    string[]
+  >([]);
+
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
   const drafts_to_create = response.data.drafts_to_create;
   const existing_drafts = response.data.existing_drafts;
+
+  function handleIndividualSelection(configurationId: string) {
+    if (selectedConfigurations.includes(configurationId)) {
+      setSelectedConfigurations(
+        selectedConfigurations.filter((c) => c !== configurationId)
+      );
+    } else {
+      setSelectedConfigurations([...selectedConfigurations, configurationId]);
+    }
+  }
+
+  function handleBulkSelection(
+    selectionType: 'existing_drafts' | 'drafts_to_create'
+  ) {
+    const draftsToHandle = (
+      selectionType === 'drafts_to_create' ? drafts_to_create : existing_drafts
+    ).map((d) => d.configuration_id);
+
+    const someDraftInSelection = draftsToHandle.some((c) => {
+      return selectedConfigurations.includes(c);
+    });
+
+    if (someDraftInSelection) {
+      // deselect all
+      setSelectedConfigurations(
+        selectedConfigurations.filter((s) => !draftsToHandle.includes(s))
+      );
+    } else {
+      // add all the relevant items in
+      setSelectedConfigurations((prev) => [
+        ...new Set([...prev, ...draftsToHandle]),
+      ]);
+    }
+  }
 
   return (
     <div>
@@ -39,7 +78,14 @@ export function UpdateConfigurations() {
                 scope="col"
                 className="flex items-center gap-2 bg-white! pl-0! font-bold"
               >
-                <Checkbox />
+                <Checkbox
+                  checked={drafts_to_create.some((c) =>
+                    selectedConfigurations.includes(c.configuration_id)
+                  )}
+                  onClick={() => {
+                    handleBulkSelection('drafts_to_create');
+                  }}
+                />
                 Configuration
               </th>
               <th scope="col" className="bg-white! pl-0! font-bold">
@@ -55,9 +101,16 @@ export function UpdateConfigurations() {
               return (
                 <tr key={d.configuration_id}>
                   <td className="flex items-center gap-2 pl-0!">
-                    <Checkbox />
+                    <Checkbox
+                      onClick={() => {
+                        handleIndividualSelection(d.configuration_id);
+                      }}
+                      checked={selectedConfigurations.includes(
+                        d.configuration_id
+                      )}
+                    />
                     {d.configuration_name}
-                  </td>{' '}
+                  </td>
                   <td className="pl-0!">{d.configuration_tes_version}</td>
                   <td className="pl-0!">{d.codesets_to_update.join(', ')}</td>
                 </tr>
@@ -76,7 +129,14 @@ export function UpdateConfigurations() {
                 scope="col"
                 className="flex items-center gap-2 bg-white! pl-0! font-bold"
               >
-                <Checkbox />
+                <Checkbox
+                  onClick={() => {
+                    handleBulkSelection('existing_drafts');
+                  }}
+                  checked={existing_drafts.some((c) =>
+                    selectedConfigurations.includes(c.configuration_id)
+                  )}
+                />
                 Configuration
               </th>
               <th scope="col" className="bg-white! pl-0! font-bold">
@@ -92,7 +152,14 @@ export function UpdateConfigurations() {
               return (
                 <tr key={d.configuration_id}>
                   <td className="flex items-center gap-2 pl-0!">
-                    <Checkbox />
+                    <Checkbox
+                      onClick={() => {
+                        handleIndividualSelection(d.configuration_id);
+                      }}
+                      checked={selectedConfigurations.includes(
+                        d.configuration_id
+                      )}
+                    />
                     {d.configuration_name}
                   </td>
                   <td className="pl-0!">{d.configuration_tes_version}</td>
