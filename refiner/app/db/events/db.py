@@ -373,7 +373,8 @@ async def insert_event_db(
             event_type,
             action_text,
             condition_id,
-            code_count
+            code_count,
+            created_at
         )
         VALUES (
             %(user_id)s,
@@ -382,7 +383,8 @@ async def insert_event_db(
             %(event_type)s,
             %(action_text)s,
             %(condition_id)s,
-            %(code_count)s
+            %(code_count)s,
+            statement_timestamp()
         )
         RETURNING id;
     """
