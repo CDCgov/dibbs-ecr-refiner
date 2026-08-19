@@ -360,7 +360,7 @@ async def insert_custom_code_upload_events_db(
 
 async def insert_event_db(
     event: EventInput,
-    cursor: AsyncCursor,
+    cursor: AsyncCursor[Any],
 ) -> UUID | None:
     """
     Inserts an event into the `events` table.
