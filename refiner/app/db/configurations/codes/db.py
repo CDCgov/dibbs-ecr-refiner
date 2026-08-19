@@ -391,10 +391,10 @@ async def get_all_filter_options_db(
 
         UNION ALL
 
-        SELECT 
-            'source' AS filter_type, 
-            src.source_id::text AS value, 
-            src.source AS label, 
+        SELECT
+            'source' AS filter_type,
+            src.source_id::text AS value,
+            src.source AS label,
             COUNT(*) AS code_count
         FROM all_codes,
         LATERAL UNNEST(all_codes.source_ids, all_codes.sources) AS src(source_id, source)
