@@ -2,6 +2,8 @@ import { Table } from '@components/Table';
 import { Title } from '@components/Title';
 import { useGetConfigurationsToUpdate } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
+import { Checkbox } from '@components/Checkbox';
+import { Button } from '@components/Button';
 
 export function UpdateConfigurations() {
   const {
@@ -17,8 +19,6 @@ export function UpdateConfigurations() {
   const drafts_to_create = response.data.drafts_to_create;
   const existing_drafts = response.data.existing_drafts;
 
-  console.log(drafts_to_create, existing_drafts);
-
   return (
     <div>
       <Title className="pb-4">Update configurations</Title>
@@ -28,62 +28,83 @@ export function UpdateConfigurations() {
         apply the latest TES release. Drafts will need to be activated in order
         to receive the most up to date eCRs.
       </p>
+      <div className="bg-white px-10 py-6">
+        <Table className="mt-0 mb-4 border-none">
+          <caption className="text-lg! font-bold">
+            Update existing drafts
+          </caption>
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                className="flex items-center gap-2 bg-white! pl-0! font-bold"
+              >
+                <Checkbox />
+                Configuration
+              </th>
+              <th scope="col" className="bg-white! pl-0! font-bold">
+                Current TES version
+              </th>
+              <th scope="col" className="bg-white! pl-0! font-bold">
+                Code sets
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {drafts_to_create.map((d) => {
+              return (
+                <tr key={d.configuration_id}>
+                  <td className="flex items-center gap-2 pl-0!">
+                    <Checkbox />
+                    {d.configuration_name}
+                  </td>{' '}
+                  <td className="pl-0!">{d.configuration_tes_version}</td>
+                  <td className="pl-0!">{d.codesets_to_update.join(', ')}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
 
-      <h3>Update existing drafts</h3>
-      <Table fullWidth>
-        <thead>
-          <tr>
-            <th scope="col" className="bg-white! font-bold">
-              Configuration
-            </th>
-            <th scope="col" className="bg-white! font-bold">
-              Current TES version
-            </th>
-            <th scope="col" className="bg-white! font-bold">
-              Code sets
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {drafts_to_create.map((d) => {
-            return (
-              <tr key={d.configuration_id}>
-                <td>{d.configuration_name}</td>
-                <td>{d.configuration_tes_version}</td>
-                <td>{d.codesets_to_update.join(', ')}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+        <Table className="mt-0 mb-4 border-none">
+          <caption className="mb-0 text-lg! font-bold">
+            Create Draft To Update
+          </caption>
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                className="flex items-center gap-2 bg-white! pl-0! font-bold"
+              >
+                <Checkbox />
+                Configuration
+              </th>
+              <th scope="col" className="bg-white! pl-0! font-bold">
+                Current TES version
+              </th>
+              <th scope="col" className="bg-white! pl-0! font-bold">
+                Code sets
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {existing_drafts.map((d) => {
+              return (
+                <tr key={d.configuration_id}>
+                  <td className="flex items-center gap-2 pl-0!">
+                    <Checkbox />
+                    {d.configuration_name}
+                  </td>
+                  <td className="pl-0!">{d.configuration_tes_version}</td>
+                  <td className="pl-0!">{d.codesets_to_update.join(', ')}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
 
-      <h3>Create Draft To Update</h3>
-      <Table fullWidth>
-        <thead>
-          <tr>
-            <th scope="col" className="bg-white! font-bold">
-              Configuration
-            </th>
-            <th scope="col" className="bg-white! font-bold">
-              Current TES version
-            </th>
-            <th scope="col" className="bg-white! font-bold">
-              Code sets
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {existing_drafts.map((d) => {
-            return (
-              <tr key={d.configuration_id}>
-                <td>{d.configuration_name}</td>
-                <td>{d.configuration_tes_version}</td>
-                <td>{d.codesets_to_update.join(', ')}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+        <Button>Apply updates</Button>
+      </div>
     </div>
   );
 }
