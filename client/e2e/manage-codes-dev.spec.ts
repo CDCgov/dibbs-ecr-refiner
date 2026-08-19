@@ -408,6 +408,7 @@ test.describe('Codes management - filters', () => {
       const statusCell = tableRows.nth(1).getByRole('cell').last();
       const statusSwitch = statusCell.getByRole('switch');
       await statusSwitch.click();
+      await expect(statusCell).toContainText('Excluded');
     });
 
     const includedOption = sourceOptions.getByRole('option', {
