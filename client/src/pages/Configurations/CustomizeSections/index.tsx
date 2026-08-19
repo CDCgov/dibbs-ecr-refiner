@@ -35,13 +35,17 @@ export function CustomizeSections() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <ConfigurationTitleBar
             title="Customize eICR sections"
             subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
           />
           {!isDisabled && (
-            <Button onClick={() => setModalState({ isOpen: true, selectedSection: null })}>
+            <Button
+              onClick={() =>
+                setModalState({ isOpen: true, selectedSection: null })
+              }
+            >
               Add custom section +
             </Button>
           )}

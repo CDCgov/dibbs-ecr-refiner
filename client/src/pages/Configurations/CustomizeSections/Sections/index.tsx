@@ -168,9 +168,9 @@ export function Sections({
                       setSelectedSection={() => onSelectedSection(section)}
                     />
                   </td>
-                   <td className="flex h-21 justify-center">
+                  <td className="flex h-21 justify-center">
                     {section.include ? (
-                       <div className="flex flex-col items-center justify-center">
+                      <div className="flex flex-col items-center justify-center">
                         {isNarrativeSection(section.code) ? (
                           <span
                             className="text-gray-cool-90 whitespace-nowrap italic"
