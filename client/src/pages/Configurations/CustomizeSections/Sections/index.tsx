@@ -107,10 +107,10 @@ export function Sections({
             <thead className="bg-page-bg border-gray-cool-70 sticky top-0 z-10 border-b-2">
               <tr className="text-gray-cool-60">
                 <th scope="col" className="w-20 py-3">
-                  <div className="flex justify-end gap-1 pr-2">
+                  <div className="flex justify-end gap-1 pr-6">
                     <span>Include</span>
                     <Tooltip
-                      position="top"
+                      position="right"
                       label="Turn a section on to include it in the refined eICR, or off to leave it out entirely."
                     />
                   </div>
@@ -122,7 +122,7 @@ export function Sections({
                   <div className="flex justify-end gap-1">
                     <span>Coded data</span>
                     <Tooltip
-                      position="top"
+                      position="left"
                       label="Turn on Refine to filter this section's coded entries down to the codes in your configuration. Off keeps all coded data."
                     />
                   </div>
