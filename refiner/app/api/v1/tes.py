@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 

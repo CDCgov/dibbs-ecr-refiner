@@ -237,9 +237,3 @@ export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-

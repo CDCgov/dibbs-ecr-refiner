@@ -45,17 +45,17 @@ export async function makeOldTesVersionConfiguration(
   await db.query(
     `WITH condition_to_insert AS (
         SELECT c.display_name AS condition_name, c.id AS condition_id
-        FROM conditions c 
+        FROM conditions c
         LEFT JOIN tes t ON c.tes_id = t.id
-        WHERE c.display_name = '${conditionName}' AND t.version = '5.0.0' 
+        WHERE c.display_name = '${conditionName}' AND t.version = '5.0.0'
     ),
     inserted_config AS (
-        INSERT INTO configurations (version, jurisdiction_id, status, name, created_by) 
-        SELECT 
-            1, 
-            'SDDH', 
-            '${status}', 
-            condition_name, 
+        INSERT INTO configurations (version, jurisdiction_id, status, name, created_by)
+        SELECT
+            1,
+            'SDDH',
+            '${status}',
+            condition_name,
             (SELECT id FROM users WHERE username = 'refiner')
         FROM condition_to_insert
         RETURNING id, name
