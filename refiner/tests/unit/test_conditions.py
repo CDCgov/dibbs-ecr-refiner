@@ -59,7 +59,7 @@ async def test_get_condition_found(monkeypatch, authed_client):
     async def fake_get_condition_by_id_db(id, db):
         return fake_condition if id == condition_id else None
 
-    async def fake_get_condition_codes_by_condition_id_db(id, db):
+    async def fake_get_condition_codes_by_condition_id_db(condition_id, db):
         return fake_codes
 
     monkeypatch.setattr(

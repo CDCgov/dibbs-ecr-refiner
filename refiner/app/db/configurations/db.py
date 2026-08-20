@@ -393,6 +393,20 @@ async def insert_configuration_db(
                 ],
             )
 
+            if next_version == 1:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config_id,
+                        event_type="add_code",
+                        action_text=f"Added '{latest_condition.display_name}' code set",
+                        condition_id=latest_condition.id,
+                        code_count=latest_condition.get_total_code_count(),
+                    ),
+                    cursor=cur,
+                )
+
     return await get_configuration_by_id_db(
         id=row["id"], jurisdiction_id=jurisdiction_id, db=db
     )
@@ -539,6 +553,8 @@ async def associate_condition_codeset_with_configuration_db(
                     configuration_id=config.id,
                     event_type="add_code",
                     action_text=f"Added '{condition.display_name}' code set",
+                    condition_id=condition.id,
+                    code_count=condition.get_total_code_count(),
                 ),
                 cursor=cur,
             )
@@ -593,6 +609,8 @@ async def disassociate_condition_codeset_with_configuration_db(
                     configuration_id=config.id,
                     event_type="delete_code",
                     action_text=f"Removed '{condition.display_name}' code set",
+                    condition_id=condition.id,
+                    code_count=condition.get_total_code_count(),
                 ),
                 cursor=cur,
             )

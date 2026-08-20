@@ -80,10 +80,12 @@ class TestConfigurations:
         assert response.json()["name"] == "Drowning and Submersion"
 
         # Assert that associated config creation event was logged
+        # as well as condition added event for condition code
+        # detail count and export
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == status.HTTP_200_OK
         audit_events = response.json()["audit_events"]
-        assert len(audit_events) == 1
+        assert len(audit_events) == 2
 
         creation_event = audit_events[0]
         assert creation_event is not None
@@ -98,7 +100,7 @@ class TestConfigurations:
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == status.HTTP_200_OK
         failure_audit_events = response.json()["audit_events"]
-        assert len(failure_audit_events) == 1
+        assert len(failure_audit_events) == 2
 
     async def test_newly_created_configurations_always_use_latest_tes_version(
         self,

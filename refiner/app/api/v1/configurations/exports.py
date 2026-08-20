@@ -177,7 +177,9 @@ async def _build_config_csv(
         )
 
         for cond in conditions:
-            codes = await get_condition_codes_by_condition_id_db(id=cond.id, db=db)
+            codes = await get_condition_codes_by_condition_id_db(
+                condition_id=cond.id, db=db
+            )
             for code in codes:
                 writer.writerow(
                     [
