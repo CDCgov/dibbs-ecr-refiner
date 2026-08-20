@@ -125,6 +125,7 @@ jobs:
 
       - name: Cache Playwright Browsers
         uses: actions/cache@v5
+        id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('client/package-lock.json') }}
@@ -133,8 +134,14 @@ jobs:
             ${{ runner.os }}-playwright-
             ${{ runner.os }}-
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright Browsers (with deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: client
+
+      - name: Install Playwright Browsers (no deps)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install chromium
         working-directory: client
 
       - name: Start Application

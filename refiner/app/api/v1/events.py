@@ -11,15 +11,18 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.exceptions import DatabaseConnectionError, DatabaseQueryError
+from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.db.events.db import (
     AuditEvent,
     get_all_events_by_jd_db,
+    get_code_set_event_by_id_db,
     get_custom_code_upload_events_by_event_id,
     get_event_count_by_condition_db,
     get_event_filter_options_db,
     get_events_by_jd_db,
     is_event_valid,
 )
+from app.db.events.model import CodeSetEvent
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.file_exports import get_export_timestamp
@@ -289,6 +292,7 @@ async def get_events_export(
     """
     output = StringIO()
     writer = csv.writer(output)
+    # CSV file headers
     writer.writerow(["Name", "Condition", "Action", "Date"])  # CSV file headers
 
     async for event in get_all_events_by_jd_db(
@@ -313,3 +317,102 @@ async def get_events_export(
             "Content-Disposition": f'attachment; filename="{_get_exported_file_name()}"'
         },
     )
+
+
+@router.get(
+    "/{event_id}/codes/export",
+    tags=["events"],
+    response_class=Response,
+)
+async def get_event_codes_export(
+    event_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Exports the historical condition codes associated with a code-set event.
+    """
+
+    event = await get_code_set_event_by_id_db(
+        event_id=event_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No event found for ID: {event_id}",
+        )
+
+    if event.event_type not in {"add_code", "delete_code"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This event is not a code set event.",
+        )
+
+    if event.condition_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This event does not have an associated condition.",
+        )
+
+    if event.condition_name is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to determine condition name for this event.",
+        )
+
+    codes = await get_condition_codes_by_condition_id_db(
+        condition_id=event.condition_id,
+        db=db,
+    )
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(
+        [
+            "Condition grouper",
+            "Code",
+            "Code system",
+            "Display name",
+        ]
+    )
+
+    for code in codes:
+        writer.writerow(
+            [
+                event.condition_name,
+                code.code,
+                code.system,
+                code.description,
+            ]
+        )
+
+    file_name = _get_code_set_export_file_name(event)
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="{file_name}"',
+        },
+    )
+
+
+def _get_code_set_export_file_name(event: CodeSetEvent) -> str:
+    """
+    Returns the filename for a historical code set export.
+    """
+
+    if event.condition_name is None:
+        raise ValueError("Code set event does not have an associated condition name.")
+
+    action = "added" if event.event_type == "add_code" else "removed"
+
+    timestamp = event.created_at.strftime("%m%d%y_%H_%M_%S")
+
+    condition_name = event.condition_name.replace(" ", "_")
+
+    return f"{condition_name}_code_set_{action}_{timestamp}.csv"

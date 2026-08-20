@@ -71,7 +71,7 @@ export function ActivityLog() {
           />
         </div>
       </div>
-      <div className="mt-6 flex flex-col">
+      <div className="mt-5 flex flex-col">
         <ActivityLogEntries
           filteredLogEntries={eventResponse.data.audit_events}
         />

@@ -176,7 +176,7 @@ async def get_condition(
         )
 
     condition_codes = await get_condition_codes_by_condition_id_db(
-        id=condition.id, db=db
+        condition_id=condition.id, db=db
     )
 
     code_set_status = _get_code_set_status(condition.coverage_level)
