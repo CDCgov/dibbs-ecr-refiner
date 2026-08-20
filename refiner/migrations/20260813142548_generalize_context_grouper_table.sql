@@ -35,7 +35,8 @@ CREATE TABLE conditions_codes_temp (
 
 -- migrate:down
 DROP TABLE conditions_codes_temp;
-
+ALTER TABLE conditions_codes ADD CONSTRAINT conditions_codes_pkey
+    PRIMARY KEY (condition_id, code_id);
 ALTER TABLE valuesets RENAME COLUMN display_name TO name;
 ALTER TABLE valuesets DROP COLUMN parent_url;
 ALTER TABLE valuesets RENAME TO conditions_context_groupers;
