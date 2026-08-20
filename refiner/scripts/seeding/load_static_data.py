@@ -250,7 +250,6 @@ def _build_child_codes(
     condition_grouper_url: str,
     condition_version: str,
 ) -> tuple[set[ConditionsCodesTrace], list[VsDict]]:
-
     snomed_db_id = code_context.db_ids[SNOMED_OID]
     condition_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
     child_vs_list: list[VsDict] = []
