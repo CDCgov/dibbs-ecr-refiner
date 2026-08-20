@@ -26,6 +26,270 @@ async function goToManageCodesDevPage(
   await page.goto(newUrl);
 }
 
+test.describe('Codes management - custom code interactions', () => {
+  test.beforeEach(async ({ configurationsPage }) => {
+    await clearDb();
+    await configurationsPage.goto();
+  });
+  test.afterEach(async () => {
+    await clearDb();
+  });
+
+  test('Custom codes cannot be excluded', async ({
+    api,
+    page,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    const config = await api.createConfiguration(condition);
+    const systems = await api.getSystems();
+    await api.uploadCustomCodeCsv(config.id, [
+      {
+        code: 'test-code-1',
+        display: 'My test code',
+        system_id: systems[0].id,
+      },
+    ]);
+
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'Configurations', level: 1 })
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'Anotia' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Customize eICR sections' })
+    ).toBeVisible();
+    await goToManageCodesDevPage(page, configurationPage);
+
+    const row = page.getByRole('table').getByRole('row').nth(1);
+    const statusCell = row.getByRole('cell').last();
+
+    await expect(statusCell).toHaveText('Included');
+
+    const checkbox = row.getByRole('cell').first();
+    await checkbox.click();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+    await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+
+    const modal = page.getByRole('dialog');
+
+    await expect(
+      modal.getByRole('heading', { name: 'Exclude codes', level: 2 })
+    ).toBeVisible();
+    await expect(
+      modal.getByText('None of the selected codes can be excluded.')
+    ).toBeVisible();
+    await expect(modal.getByRole('button')).toHaveCount(2); // Only 'cancel' and 'X' buttons available
+    await modal.getByRole('button', { name: 'Cancel' }).click();
+
+    await expect(controlPanel).toBeVisible();
+
+    // should be no change
+    await expect(statusCell).toHaveText('Included');
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+
+  test('Individual custom codes can be added, edited, and deleted', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+
+    const code = '123-4';
+    const system = 'CVX';
+    const name = 'code name';
+
+    await test.step('Add custom code', async () => {
+      await page.getByRole('button', { name: 'Add custom code' }).click();
+      await page.getByRole('button', { name: 'Add a single code' }).click();
+
+      const modal = page.getByRole('dialog');
+
+      await modal.getByLabel('Code', { exact: true }).fill(code);
+      await modal
+        .getByLabel('Code system', { exact: true })
+        .selectOption({ label: system });
+      await modal.getByLabel('Display name').fill(name);
+      await modal.getByRole('button', { name: 'Add custom code' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Manage codes', level: 2 })
+      ).toBeVisible();
+      await page.getByText('Custom code added').click();
+    });
+
+    await test.step('Validate added code', async () => {
+      const row = page.locator('table tr').filter({
+        has: page.locator('td', {
+          hasText: code,
+        }),
+      });
+      const codeNumberCell = row.locator('td').nth(1);
+      const systemCell = row.locator('td').nth(2);
+      const descriptionCell = row.locator('td').nth(3);
+      const sourceCell = row.locator('td').nth(4);
+
+      await expect(codeNumberCell).toHaveText(code);
+      await expect(systemCell).toHaveText(system);
+      await expect(descriptionCell).toHaveText(name);
+
+      await expect(sourceCell).toContainText('Custom code');
+      await expect(
+        sourceCell.getByRole('button', { name: 'Edit' })
+      ).toBeVisible();
+      await expect(
+        sourceCell.getByRole('button', { name: 'Delete' })
+      ).toBeVisible();
+    });
+
+    await test.step('Edit custom code', async () => {
+      const row = page.locator('table tr').filter({
+        has: page.locator('td', {
+          hasText: code,
+        }),
+      });
+      await row.getByRole('button', { name: 'Edit' }).click();
+
+      await expect(
+        page.getByRole('heading', { name: 'Edit custom code', level: 2 })
+      ).toBeVisible();
+      await expect(page.getByLabel('Code', { exact: true })).toHaveValue(code);
+      await expect(
+        page.getByLabel('Code system').locator('option:checked')
+      ).toHaveText(system);
+      await expect(page.getByLabel('Display name')).toHaveValue(name);
+
+      await page.getByLabel('Code', { exact: true }).fill('new code');
+      await page.getByLabel('Display name').focus();
+      await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled();
+      await page.getByRole('button', { name: 'Update' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Manage codes', level: 2 })
+      ).toBeVisible();
+
+      await expect(page.getByText('123-4')).toBeVisible();
+    });
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+});
+
+test.describe('Codes management - code set interactions', () => {
+  test.beforeEach(async ({ configurationsPage }) => {
+    await clearDb();
+    await configurationsPage.goto();
+  });
+  test.afterEach(async () => {
+    await clearDb();
+  });
+
+  test('Condition code sets can be added and deleted', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+
+    await test.step('Add Acanthamoeba code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('acanth');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Acanthamoeba' })
+        .hover();
+      await page.getByLabel('Add Acanthamoeba').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
+    await test.step('Check page state after addition', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '940 of 940 codes included'
+      );
+      await expect(page.getByText('2 condition code sets')).toBeVisible();
+      await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+    });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await test.step('Remove Acanthamoeba code set', async () => {
+      await page.getByRole('button', { name: '2 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('acanth');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Acanthamoeba' })
+        .hover();
+      await page.getByLabel('Remove Acanthamoeba').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+    });
+
+    await test.step('Check page state after removal', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '2 of 2 codes included'
+      );
+      await expect(page.getByText('1 condition code sets')).toBeVisible();
+      await expect(page.locator('table tr')).toHaveCount(3); // two Anotia codes + header row
+    });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+});
+
+test.describe('Codes management - code interactions', () => {
+  test.beforeEach(async ({ configurationsPage }) => {
+    await clearDb();
+    await configurationsPage.goto();
+  });
+  test.afterEach(async () => {
+    await clearDb();
+  });
+
+  test('Individual codes can be toggled to be included/excluded', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+
+    const row = page.getByRole('table').getByRole('row').nth(1);
+    const checkbox = row.getByRole('cell').first().getByRole('checkbox');
+    const statusCell = row.getByRole('cell').last();
+
+    await expect(checkbox).toBeVisible();
+    await expect(checkbox).toBeEnabled();
+    await expect(statusCell).toContainText('Included');
+
+    await checkbox.click();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+    await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+
+    await test.step('Check stats bar', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '1 of 2 codes included'
+      );
+      await expect(page.getByText('1 excluded')).toBeVisible();
+    });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+});
+
 test.describe('Codes management - search', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await clearDb();
@@ -452,9 +716,15 @@ test.describe('Codes management - filters', () => {
     });
 
     await test.step('Exclude a code', async () => {
+      const checkbox = tableRows.nth(1).getByRole('checkbox');
+      await checkbox.click();
+
+      const controlPanel = page.getByTestId('control-panel');
+      await expect(controlPanel).toBeVisible();
+
+      await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+
       const statusCell = tableRows.nth(1).getByRole('cell').last();
-      const statusSwitch = statusCell.getByRole('switch');
-      await statusSwitch.click();
       await expect(statusCell).toContainText('Excluded');
     });
 
@@ -684,7 +954,7 @@ test.describe('Codes management - filters', () => {
   });
 });
 
-test.describe('Codes management - data loading and interactions', () => {
+test.describe('Codes management - data loading', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await clearDb();
     await configurationsPage.goto();
@@ -758,222 +1028,6 @@ test.describe('Codes management - data loading and interactions', () => {
     await expect(page.getByText('0 excluded')).toBeVisible();
     await expect(page.getByText('2 custom')).toBeVisible();
     await expect(page.getByText('1 condition code sets')).toBeVisible();
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
-  test('Custom codes cannot be excluded', async ({
-    api,
-    page,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    const config = await api.createConfiguration(condition);
-    const systems = await api.getSystems();
-    await api.uploadCustomCodeCsv(config.id, [
-      {
-        code: 'test-code-1',
-        display: 'My test code',
-        system_id: systems[0].id,
-      },
-    ]);
-
-    await page.reload();
-    await expect(
-      page.getByRole('heading', { name: 'Configurations', level: 1 })
-    ).toBeVisible();
-    await page.getByRole('link', { name: 'Anotia' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'Customize eICR sections' })
-    ).toBeVisible();
-    await goToManageCodesDevPage(page, configurationPage);
-
-    const row = page.locator('table tr').filter({
-      has: page.locator('td', {
-        hasText: 'test-code-1',
-      }),
-    });
-
-    const switchCell = row.locator('td').last();
-    await expect(switchCell).toHaveText('Included');
-    await expect(switchCell.getByRole('switch')).toBeDisabled();
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
-  test('Individual codes can be toggled to be included/excluded', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-
-    // get the row by description text
-    const row = page.locator('table tr').filter({
-      has: page.locator('td', {
-        hasText: 'Congenital absence of (ear) auricle',
-      }),
-    });
-
-    const switchCell = row.locator('td').last();
-
-    await expect(switchCell).toHaveText('Included');
-    const includeExcludeSwitch = switchCell.getByRole('switch');
-    await includeExcludeSwitch.click();
-    await expect(switchCell).toHaveText('Excluded');
-
-    await test.step('Check stats bar', async () => {
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '1 of 2 codes included'
-      );
-      await expect(page.getByText('1 excluded')).toBeVisible();
-    });
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
-  test('Individual custom codes can be added, edited, and deleted', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-
-    const code = '123-4';
-    const system = 'CVX';
-    const name = 'code name';
-
-    await test.step('Add custom code', async () => {
-      await page.getByRole('button', { name: 'Add custom code' }).click();
-      await page.getByRole('button', { name: 'Add a single code' }).click();
-
-      const modal = page.getByRole('dialog');
-
-      await modal.getByLabel('Code', { exact: true }).fill(code);
-      await modal
-        .getByLabel('Code system', { exact: true })
-        .selectOption({ label: system });
-      await modal.getByLabel('Display name').fill(name);
-      await modal.getByRole('button', { name: 'Add custom code' }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
-      ).toBeVisible();
-      await page.getByText('Custom code added').click();
-    });
-
-    await test.step('Validate added code', async () => {
-      const row = page.locator('table tr').filter({
-        has: page.locator('td', {
-          hasText: code,
-        }),
-      });
-      const codeNumberCell = row.locator('td').nth(1);
-      const systemCell = row.locator('td').nth(2);
-      const descriptionCell = row.locator('td').nth(3);
-      const sourceCell = row.locator('td').nth(4);
-
-      await expect(codeNumberCell).toHaveText(code);
-      await expect(systemCell).toHaveText(system);
-      await expect(descriptionCell).toHaveText(name);
-
-      await expect(sourceCell).toContainText('Custom code');
-      await expect(
-        sourceCell.getByRole('button', { name: 'Edit' })
-      ).toBeVisible();
-      await expect(
-        sourceCell.getByRole('button', { name: 'Delete' })
-      ).toBeVisible();
-    });
-
-    await test.step('Edit custom code', async () => {
-      const row = page.locator('table tr').filter({
-        has: page.locator('td', {
-          hasText: code,
-        }),
-      });
-      await row.getByRole('button', { name: 'Edit' }).click();
-
-      await expect(
-        page.getByRole('heading', { name: 'Edit custom code', level: 2 })
-      ).toBeVisible();
-      await expect(page.getByLabel('Code', { exact: true })).toHaveValue(code);
-      await expect(
-        page.getByLabel('Code system').locator('option:checked')
-      ).toHaveText(system);
-      await expect(page.getByLabel('Display name')).toHaveValue(name);
-
-      await page.getByLabel('Code', { exact: true }).fill('new code');
-      await page.getByLabel('Display name').focus();
-      await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled();
-      await page.getByRole('button', { name: 'Update' }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
-      ).toBeVisible();
-
-      await expect(page.getByText('123-4')).toBeVisible();
-    });
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
-  test('Condition code sets can be added and deleted', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-
-    await test.step('Add Acanthamoeba code set', async () => {
-      await page.getByRole('button', { name: '1 Condition code sets' }).click();
-      await page
-        .getByRole('searchbox', { name: 'Search by condition name' })
-        .fill('acanth');
-      await page
-        .getByRole('listitem')
-        .filter({ hasText: 'Acanthamoeba' })
-        .hover();
-      await page.getByLabel('Add Acanthamoeba').click();
-      await page.getByRole('button', { name: 'Close drawer' }).click();
-    });
-
-    await test.step('Check page state after addition', async () => {
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '940 of 940 codes included'
-      );
-      await expect(page.getByText('2 condition code sets')).toBeVisible();
-      await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
-    });
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    await test.step('Remove Acanthamoeba code set', async () => {
-      await page.getByRole('button', { name: '2 Condition code sets' }).click();
-      await page
-        .getByRole('searchbox', { name: 'Search by condition name' })
-        .fill('acanth');
-      await page
-        .getByRole('listitem')
-        .filter({ hasText: 'Acanthamoeba' })
-        .hover();
-      await page.getByLabel('Remove Acanthamoeba').click();
-      await page.getByRole('button', { name: 'Close drawer' }).click();
-    });
-
-    await test.step('Check page state after removal', async () => {
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '2 of 2 codes included'
-      );
-      await expect(page.getByText('1 condition code sets')).toBeVisible();
-      await expect(page.locator('table tr')).toHaveCount(3); // two Anotia codes + header row
-    });
-
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
