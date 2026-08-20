@@ -1,4 +1,4 @@
-import { StatusIndicator } from '../../../components/StatusIndicator';
+import { StatusIndicator } from '@components/StatusIndicator';
 
 interface StatusProps {
   version: number | null;

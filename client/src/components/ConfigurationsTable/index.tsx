@@ -4,7 +4,7 @@ import {
   GetConfigurationsResponse,
 } from '../../api/schemas';
 import { Table } from '../Table';
-import { StatusIndicator } from '../StatusIndicator';
+import { StatusIndicator } from '@components/StatusIndicator';
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
 }
