@@ -12,7 +12,7 @@ import classNames from 'classnames';
 const CLEAR_OPTION = { id: '__clear__', label: '' } as const;
 
 export interface FilterOption {
-  id: string | number;
+  id: string;
   label: string;
   count?: number;
 }
@@ -138,6 +138,7 @@ function ChevronDownIcon() {
 }
 
 export interface CodeFilters {
+  search?: string;
   codeSystems: FilterOption[];
   sources: FilterOption[];
   statuses: FilterOption[];
