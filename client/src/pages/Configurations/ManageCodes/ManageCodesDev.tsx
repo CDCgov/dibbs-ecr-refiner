@@ -201,13 +201,13 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
                   }
                 />
               </th>
-              <th scope="col" className="w-[10%]">
+              <th scope="col" className="w-[15%]">
                 Code no.
               </th>
-              <th scope="col" className="w-[5%]">
+              <th scope="col" className="w-[10%]">
                 System
               </th>
-              <th scope="col" className="w-[40%]">
+              <th scope="col" className="w-[30%]">
                 Description
               </th>
               <th scope="col" className="w-[35%]">
