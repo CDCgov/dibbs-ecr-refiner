@@ -66,9 +66,9 @@ test.describe('Codes management - search', () => {
     });
 
     const table = page.getByRole('table');
+    const tableRows = table.getByRole('row');
     await expect(table).toBeVisible();
-    const tableRowCount = await table.getByRole('row').count();
-    expect(tableRowCount).toBe(4); // include header
+    await expect(tableRows).toHaveCount(4); // include header
 
     await test.step('Enter search query', async () => {
       const searchBox = page.getByRole('searchbox', {
@@ -77,21 +77,21 @@ test.describe('Codes management - search', () => {
       });
 
       await expect(searchBox).toBeVisible();
-      await searchBox.fill('mock custom');
 
       // wait for response so test doesn't fail waiting for debounce
-      await page.waitForResponse(
+      const searchResp = page.waitForResponse(
         (res) =>
           res.url().includes('/codes') &&
           res.request().url().includes('search=mock+custom') &&
           res.status() === 200
       );
+      await searchBox.fill('mock custom');
+      await searchResp;
     });
 
     await test.step('Check search results', async () => {
       await expect(table).toBeVisible();
-      const newRowCount = await table.getByRole('row').count();
-      expect(newRowCount).toBe(2); // custom code and header only
+      await expect(table.getByRole('row')).toHaveCount(2); // custom code and header only
     });
   });
 
@@ -101,14 +101,16 @@ test.describe('Codes management - search', () => {
     configurationPage,
   }) => {
     const condition = 'Amebiasis';
+    const systems = await api.getSystems();
+    const icd10Id = systems.find((s) => s.display_name === 'ICD-10')!.id;
     await test.step('Set up configuration', async () => {
       const config = await api.createConfiguration(condition);
-      const systems = await api.getSystems();
+
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: 'A06.22',
           display: 'Amebic',
-          system_id: systems.find((s) => s.display_name === 'ICD-10')!.id,
+          system_id: icd10Id,
         },
       ]);
     });
@@ -137,7 +139,16 @@ test.describe('Codes management - search', () => {
         exact: false,
       });
 
+      const codeSystemResp = page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`code_systems=${icd10Id}`) &&
+          res.status() === 200
+      );
+
       await icd10Option.click();
+      await codeSystemResp;
+
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toContainText('1 selected');
     });
@@ -150,20 +161,23 @@ test.describe('Codes management - search', () => {
       });
 
       await expect(searchBox).toBeVisible();
-      await searchBox.fill(searchText);
 
       // wait for response so test doesn't fail waiting for debounce
-      await page.waitForResponse(
+      const searchResp = page.waitForResponse(
         (res) =>
           res.url().includes('/codes') &&
           res.request().url().includes(`search=${searchText}`) &&
           res.status() === 200
       );
+      await searchBox.fill(searchText);
+      await searchResp;
     });
 
     await test.step('Check table results', async () => {
       const table = page.getByRole('table');
       const tableRows = table.getByRole('row');
+
+      await expect(tableRows.nth(1)).toBeVisible(); // make sure table is ready
       const rowCount = await tableRows.count();
 
       // start at 1 to skip header
@@ -251,6 +265,7 @@ test.describe('Codes management - filters', () => {
     page,
     configurationsPage,
     configurationPage,
+    api,
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
@@ -270,6 +285,9 @@ test.describe('Codes management - filters', () => {
         .hover();
       await page.getByLabel('Add Alpha-gal Syndrome').click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
     });
 
     const codeSystemFilterButton = page.getByTestId('code-system-button');
@@ -288,13 +306,37 @@ test.describe('Codes management - filters', () => {
     });
 
     await test.step('Select code system filter options', async () => {
+      const systems = await api.getSystems();
+      const cvxId = systems.find((s) => s.display_name === 'CVX')!.id;
+      const loincID = systems.find((s) => s.display_name === 'LOINC')!.id;
+
+      const loincFilterResponse = page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`code_systems=${loincID}`) &&
+          res.status() === 200
+      );
+
       await loincOption.click();
+      await loincFilterResponse;
+
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toContainText('1 selected');
 
+      const cvxFilterResponse = page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes(`code_systems=${loincID}`) &&
+          res.request().url().includes(`code_systems=${cvxId}`) &&
+          res.status() === 200
+      );
+
       await codeSystemFilterButton.click();
       await expect(cvxOption).toBeVisible();
+
       await cvxOption.click();
+      await cvxFilterResponse;
+
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toContainText('2 selected');
     });
@@ -302,6 +344,7 @@ test.describe('Codes management - filters', () => {
     await test.step('Check that table results only has LOINC codes', async () => {
       // This condition has no CVX codes which is why only LOINC appear
       const tableRows = page.getByRole('table').getByRole('row');
+      await expect(tableRows.nth(1)).toBeVisible(); // make sure table is ready
       const rowCount = await tableRows.count();
       for (let i = 1; i < rowCount; i++) {
         const codeSystemCell = tableRows.nth(i).getByRole('cell').nth(2);
@@ -344,6 +387,9 @@ test.describe('Codes management - filters', () => {
         .hover();
       await page.getByLabel('Add Acanthamoeba').click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
     });
 
     await test.step('Check source filter', async () => {
@@ -374,6 +420,7 @@ test.describe('Codes management - filters', () => {
 
     await test.step('Check that table results only has Acanthamoeba codes', async () => {
       const tableRows = page.getByRole('table').getByRole('row');
+      await expect(tableRows.nth(1)).toBeVisible(); // make sure table is loaded
       const rowCount = await tableRows.count();
       for (let i = 1; i < rowCount; i++) {
         const sourceCell = tableRows.nth(i).getByRole('cell').nth(4);
@@ -401,14 +448,14 @@ test.describe('Codes management - filters', () => {
 
     await test.step('Check the page on load', async () => {
       await expect(table).toBeVisible();
-      const initialCount = await tableRows.count(); // this includes the header row
-      expect(initialCount).toBe(3);
+      await expect(tableRows).toHaveCount(3);
     });
 
     await test.step('Exclude a code', async () => {
       const statusCell = tableRows.nth(1).getByRole('cell').last();
       const statusSwitch = statusCell.getByRole('switch');
       await statusSwitch.click();
+      await expect(statusCell).toContainText('Excluded');
     });
 
     const includedOption = sourceOptions.getByRole('option', {
@@ -434,8 +481,7 @@ test.describe('Codes management - filters', () => {
       await page.keyboard.press('Escape');
       await expect(sourceFilterButton).toContainText('1 selected');
 
-      const newCount = await tableRows.count();
-      expect(newCount).toBe(2);
+      await expect(tableRows).toHaveCount(2);
     });
   });
 
@@ -482,6 +528,9 @@ test.describe('Codes management - filters', () => {
         .hover();
       await page.getByLabel(`Add ${associatedCondition}`).click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
     });
 
     await test.step('Configure code system filter', async () => {
@@ -518,15 +567,15 @@ test.describe('Codes management - filters', () => {
       await sourceFilterButton.click();
 
       await expect(sourceOptions).toBeVisible();
-      const sourceOptionCount = await sourceOptions.getByRole('option').count();
-      expect(sourceOptionCount).toBe(4); // both CGs + custom code + clear selection
+      await expect(sourceOptions.getByRole('option')).toHaveCount(4); // both CGs + custom code + clear selection
 
       // use all 3 options
-      const optionCountExcludingClearSelectionButton = sourceOptionCount - 1;
+      const optionCountExcludingClearSelectionButton = 3;
       for (let i = 0; i < optionCountExcludingClearSelectionButton; i++) {
         const option = sourceOptions.getByRole('option').nth(i);
         await expect(option).toBeVisible();
         await option.click();
+        await expect(option).toHaveAttribute('aria-selected', 'true');
       }
       await page.keyboard.press('Escape');
       await expect(sourceFilterButton).toHaveText('3 selected');
@@ -545,6 +594,7 @@ test.describe('Codes management - filters', () => {
       await expect(statusOptions).toBeVisible();
       await expect(includedOption).toBeVisible();
       await includedOption.click();
+      await expect(includedOption).toHaveAttribute('aria-selected', 'true');
 
       await page.keyboard.press('Escape');
       await expect(statusFilterButton).toHaveText('1 selected');
@@ -557,25 +607,21 @@ test.describe('Codes management - filters', () => {
       // this includes the header row
       await expect(tableRows).toHaveCount(5);
 
-      // skip header row
-      const rowOne = tableRows.nth(1);
-      const rowTwo = tableRows.nth(2);
-      const rowThree = tableRows.nth(3);
-      const rowFour = tableRows.nth(4);
-
       const sourceCellNumber = 4;
-      await expect(
-        rowOne.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText('Custom code');
-      await expect(
-        rowTwo.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText(`${associatedCondition} CG`);
-      await expect(
-        rowThree.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText(`${associatedCondition} CG`);
-      await expect(
-        rowFour.getByRole('cell').nth(sourceCellNumber)
-      ).toContainText('Anotia CG');
+      const sourceCells = tableRows
+        .filter({ hasNot: page.getByRole('columnheader') })
+        .locator(`td:nth-child(${sourceCellNumber + 1})`);
+
+      const texts = await sourceCells.allTextContents();
+
+      expect(texts.some((t) => t.includes('Custom code'))).toBe(true);
+      expect(texts.some((t) => t.includes(`${associatedCondition} CG`))).toBe(
+        true
+      );
+      expect(texts.some((t) => t.includes('Anotia CG'))).toBe(true);
+      expect(
+        texts.filter((t) => t.includes(`${associatedCondition} CG`))
+      ).toHaveLength(2);
     });
   });
 
