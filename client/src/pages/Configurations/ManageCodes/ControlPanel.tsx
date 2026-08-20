@@ -170,7 +170,7 @@ function CustomCodeDeletionMenu({
         <MenuItems
           portal
           anchor="top end"
-          className="rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+          className="z-100 rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
         >
           <MenuItem>
             <Button
