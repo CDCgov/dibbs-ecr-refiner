@@ -1,3 +1,4 @@
+import io
 import os
 import time
 from collections import defaultdict
@@ -535,18 +536,17 @@ def _upsert_relationships(
     cursor: Cursor,
     condition_to_code_relationships: RelationshipsToInsert,
 ) -> None:
-    logger.info("⏳ Refreshing relationships table...")
 
-    cursor.execute("""
-        CREATE TEMP TABLE IF NOT EXISTS stage_relationships (
-            condition_id UUID NOT NULL,
-            system_id UUID NOT NULL,
-            code TEXT NOT NULL,
-            is_child_rsg BOOLEAN NOT NULL,
-            valueset_url TEXT NOT NULL
-        ) ON COMMIT DROP
-    """)
-    cursor.execute("TRUNCATE stage_relationships")
+    # 1. Build valueset_url -> valueset_id dictionary
+    cursor.execute("SELECT canonical_url, id FROM valuesets;")
+    valueset_map = {row[0]: row[1] for row in cursor.fetchall()}
+
+    # 2. Build (system_id, code) -> code_id dictionary
+    cursor.execute("SELECT system_id, code, id FROM codes;")
+    code_map = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+
+    logger.info("⏳ Refreshing relationships table...")
+    cursor.execute("TRUNCATE conditions_codes_temp;")
 
     child_rsg_key = "child_rsg"
     non_child_rsg_key = "non_child_rsg"
@@ -559,53 +559,33 @@ def _upsert_relationships(
                 continue
 
             for code in cond["child_rsg_codes"]:
+                code_id = code_map.get((code.system_db_id, code.code))
+                valueset_id = valueset_map.get(code.valueset_url)
+
+                if not code_id or not valueset_id:
+                    continue
+
                 staged_counts[child_rsg_key] += 1
-                yield (
-                    cond_id,
-                    code.system_db_id,
-                    code.code,
-                    True,
-                    code.valueset_url,
-                )
+                yield (cond_id, code_id, True, valueset_id)
 
             for code in cond["non_child_rsg_codes"]:
-                staged_counts[non_child_rsg_key] += 1
-                yield (
-                    cond_id,
-                    code.system_db_id,
-                    code.code,
-                    False,
-                    code.valueset_url,
-                )
+                code_id = code_map.get((code.system_db_id, code.code))
+                valueset_id = valueset_map.get(code.valueset_url)
 
-    logger.info("🚀 Streaming relationships into stage table...")
+                if not code_id or not valueset_id:
+                    continue
+
+                staged_counts[non_child_rsg_key] += 1
+                yield (cond_id, code_id, False, valueset_id)
+
+    logger.info("🚀 Streaming relationships into conditions_codes table...")
     with cursor.copy(
-        """COPY stage_relationships (condition_id, system_id, code, is_child_rsg, valueset_url) FROM STDIN"""
+        "COPY conditions_codes_temp (condition_id, code_id, is_child_rsg, valueset_id) FROM STDIN"
     ) as copy:
         for row in relationship_generator():
             copy.write_row(row)
 
-    cursor.execute("ANALYZE stage_relationships;")
-    cursor.execute("TRUNCATE conditions_codes_temp;")
-
-    logger.info("🔗 Linking codes table to relationship joins...")
-
-    cursor.execute("""
-        INSERT INTO conditions_codes_temp (condition_id, code_id, is_child_rsg, valueset_id)
-        SELECT
-            sr.condition_id,
-            c.id AS code_id,
-            sr.is_child_rsg,
-            v.id
-        FROM stage_relationships sr
-        JOIN codes c
-            ON  c.system_id = sr.system_id
-            AND c.code = sr.code
-        JOIN valuesets v
-            ON v.canonical_url = sr.valueset_url;
-    """)
-
-    inserted_count = cursor.rowcount
+    inserted_count = sum(staged_counts.values())
     logger.info(
         f"📥 Inserted {inserted_count:,} total relationships "
         f"(unique counts: {staged_counts[child_rsg_key]:,} child_rsg, {staged_counts[non_child_rsg_key]:,} non_child_rsg)."
@@ -658,7 +638,6 @@ def _upsert_codes(
             ON  s.system_id = c.system_id
             AND s.code = c.code
         WHERE c.id IS NULL
-        ORDER BY s.system_id, s.code
         ON CONFLICT (system_id, code) DO NOTHING;
     """)
 
