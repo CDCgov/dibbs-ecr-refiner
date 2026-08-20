@@ -42,11 +42,13 @@ export function CustomizeSections() {
           />
           {!isDisabled && (
             <Button
+              variant="secondary"
+              className="m-0! p-2! px-4! text-sm! whitespace-nowrap"
               onClick={() =>
                 setModalState({ isOpen: true, selectedSection: null })
               }
             >
-              Add custom section <span aria-hidden>+</span>'
+              Add custom section <span aria-hidden>+</span>
             </Button>
           )}
         </div>
