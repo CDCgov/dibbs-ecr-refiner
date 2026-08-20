@@ -195,10 +195,7 @@ async def get_codes_db(
         SELECT
             c.id,
             cfgc.condition_id,
-            COALESCE(
-                ARRAY_AGG(DISTINCT v.display_name) FILTER (WHERE v.display_name IS NOT NULL),
-                ARRAY[con.display_name || ' RSG']
-            ) AS source,
+            COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
             c.code,
             c.display AS description,
             c.system_id,
@@ -364,7 +361,7 @@ async def get_all_filter_options_db(
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = con.id
-        LEFT JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
+        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e

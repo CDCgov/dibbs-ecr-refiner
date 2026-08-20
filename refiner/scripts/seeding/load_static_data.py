@@ -193,7 +193,7 @@ class BuildCodeContext:
 
     db_ids: SystemOidToDbIdMap
     unique_codes: dict[tuple[UUID, str], CodeRow] = field(default_factory=dict)
-    unique_valuesets: dict[str, ValuesetRow] = field(default_factory=dict)
+    unique_valuesets: dict[tuple[str, str], ValuesetRow] = field(default_factory=dict)
 
     def mark_code_as_seen(
         self,
@@ -223,22 +223,23 @@ class BuildCodeContext:
     ):
         """Tracks trace and registers valueset information across build functions."""
         url = valueset.get("url", "")
+        valueset_key = (url, condition_version)
 
-        if not url or url in self.unique_valuesets:
+        if not url or valueset_key in self.unique_valuesets:
             return False
 
         name = parse_valueset_source_name(valueset)
 
         # TODO: should we also include the parent condition groupers in the
         # table that map into the conditions?
-        self.unique_valuesets[url] = ValuesetRow(
+        self.unique_valuesets[valueset_key] = ValuesetRow(
             canonical_url=url,
+            condition_version=condition_version,
             parent_url=condition_url,
             display_name=name,
             category=parse_valueset_category(name),
             code_count=len(extract_codes_from_compose(valueset)),
             completeness=map_coverage_level_to_acg_completeness(valueset),
-            condition_version=condition_version,
         )
         return True
 
@@ -249,6 +250,7 @@ def _build_child_codes(
     condition_grouper_url: str,
     condition_version: str,
 ) -> tuple[set[ConditionsCodesTrace], list[VsDict]]:
+
     snomed_db_id = code_context.db_ids[SNOMED_OID]
     condition_child_rsg_snomed_codes: set[ConditionsCodesTrace] = set()
     child_vs_list: list[VsDict] = []
