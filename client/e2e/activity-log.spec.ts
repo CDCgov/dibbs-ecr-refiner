@@ -59,25 +59,62 @@ test.describe('Activity log', () => {
   }) => {
     const conditionOne = 'COVID-19';
     const conditionTwo = 'Zika Virus Disease';
+
     await api.createConfiguration(conditionOne);
     await api.createConfiguration(conditionTwo);
+
     await activityLogPage.goto();
+
     const rowData = await activityLogPage.getTableRows();
-    expect(rowData).toHaveLength(2);
 
-    const expectedAction = 'Created configuration';
-    const rowOne = rowData.find((r) => r.condition.includes(conditionOne));
-    expect(rowOne).toBeTruthy();
+    // Each version 1 configuration creates:
+    // 1. Created configuration
+    // 2. Added '<Condition>' code set
+    expect(rowData).toHaveLength(4);
 
-    const rowTwo = rowData.find((r) => r.condition.includes(conditionTwo));
-    expect(rowTwo).toBeTruthy();
+    const conditionOneRows = rowData.filter((r) =>
+      r.condition.includes(conditionOne)
+    );
+    const conditionTwoRows = rowData.filter((r) =>
+      r.condition.includes(conditionTwo)
+    );
 
-    expect(rowOne?.action).toBe(expectedAction);
-    expect(rowTwo?.action).toBe(expectedAction);
+    expect(conditionOneRows).toHaveLength(2);
+    expect(conditionTwoRows).toHaveLength(2);
+
+    expect(
+      conditionOneRows.some((r) => r.action === 'Created configuration')
+    ).toBe(true);
+    expect(
+      conditionOneRows.some((r) =>
+        r.action.includes(`Added '${conditionOne}' code set`)
+      )
+    ).toBe(true);
+
+    expect(
+      conditionTwoRows.some((r) => r.action === 'Created configuration')
+    ).toBe(true);
+    expect(
+      conditionTwoRows.some((r) =>
+        r.action.includes(`Added '${conditionTwo}' code set`)
+      )
+    ).toBe(true);
 
     await activityLogPage.selectConditionFromDropdown(conditionOne);
+
     const conditionOneOnlyRows = await activityLogPage.getTableRows();
-    expect(conditionOneOnlyRows).toHaveLength(1);
+
+    expect(conditionOneOnlyRows).toHaveLength(2);
+
+    expect(
+      conditionOneOnlyRows.some((r) => r.action === 'Created configuration')
+    ).toBe(true);
+    expect(
+      conditionOneOnlyRows.some((r) =>
+        r.action.includes(`Added '${conditionOne}' code set`)
+      )
+    ).toBe(true);
+
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
@@ -150,6 +187,38 @@ test.describe('Activity log', () => {
 
     expect(download.suggestedFilename()).toMatch(
       /^Activity_Log_Export_\d{6}_\d{2}_\d{2}_\d{2}\.csv$/
+    );
+  });
+
+  test('Code set Export as CSV link downloads the added code set', async ({
+    page,
+    activityLogPage,
+    api,
+  }) => {
+    const condition = 'COVID-19';
+
+    await api.createConfiguration(condition);
+    await activityLogPage.goto();
+
+    const codeSetRow = page
+      .getByRole('row')
+      .filter({ hasText: `Added '${condition}' code set` });
+
+    await expect(codeSetRow).toBeVisible();
+
+    const exportLink = codeSetRow.getByRole('link', {
+      name: 'Export as CSV',
+    });
+
+    await expect(exportLink).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await exportLink.click();
+
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(
+      /^COVID-19_code_set_added_\d{6}_\d{2}_\d{2}_\d{2}\.csv$/
     );
   });
 });
