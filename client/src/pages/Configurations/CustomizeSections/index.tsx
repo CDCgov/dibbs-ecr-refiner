@@ -46,7 +46,7 @@ export function CustomizeSections() {
                 setModalState({ isOpen: true, selectedSection: null })
               }
             >
-              Add custom section +
+              Add custom section <span aria-hidden>+</span>'
             </Button>
           )}
         </div>
