@@ -71,6 +71,13 @@ export function ControlPanel({
           });
           clearSelections();
         },
+        onError: () => {
+          toast({
+            heading: 'Codes could not be updated',
+            body: 'Code status updates were unsuccessful. Please try again.',
+            variant: 'error',
+          });
+        },
       }
     );
   };
