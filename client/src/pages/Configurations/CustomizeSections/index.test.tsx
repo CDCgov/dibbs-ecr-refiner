@@ -265,8 +265,8 @@ describe('Configuration sections', () => {
 
     renderPage();
 
-    expect(screen.getByText('Add custom section +')).toBeInTheDocument();
-    await user.click(screen.getByText('Add custom section +'));
+    expect(screen.getByText('Add custom section')).toBeInTheDocument();
+    await user.click(screen.getByText('Add custom section'));
 
     expect(
       screen.getByText('Add a custom section', { selector: 'h2' })
