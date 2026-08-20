@@ -38,6 +38,13 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
             return rows
 
 
+async def _get_latest_tes_record_db(db: AsyncDatabaseConnection) -> DbTes:
+    """Get the most recent record."""
+
+    all_records = await get_loaded_tes_versions_db(db=db)
+    return all_records[-1]
+
+
 async def _get_tes_by_version_number_db(
     db: AsyncDatabaseConnection, version: str
 ) -> DbTes:
@@ -352,7 +359,7 @@ async def _get_cur_and_prev_tes_records_db(
 
 
 async def get_configurations_set_to_tes_version(
-    latest_tes_version: str, db: AsyncDatabaseConnection
+    db: AsyncDatabaseConnection,
 ) -> DbTesConfigsToUpdateResponse:
     """
     Returns metadata for all TES drafts and active versions that are outdated.
@@ -364,11 +371,8 @@ async def get_configurations_set_to_tes_version(
     Returns:
         DbTesConfigsToUpdateResponse: An object consisting of existing drafts and drafts to create that aren't the latest TES ID.
     """
-    cur_tes_record = await _get_tes_by_version_number_db(
-        db=db, version=latest_tes_version
-    )
-    if not cur_tes_record:
-        raise ValueError(f"Record of TES version {latest_tes_version} not found")
+    cur_tes_record = await _get_latest_tes_record_db(db=db)
+
     query = """
         SELECT
             conf.id as configuration_id,

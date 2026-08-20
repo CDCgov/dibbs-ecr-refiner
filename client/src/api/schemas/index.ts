@@ -53,7 +53,6 @@ export * from './getConditionsResponse';
 export * from './getConfigurationResponse';
 export * from './getConfigurationResponseVersion';
 export * from './getConfigurationsResponse';
-export * from './getConfigurationsToUpdateParams';
 export * from './getEventsExportApiV1EventsExportGetParams';
 export * from './getEventsParams';
 export * from './getTesDiffDetailsParams';
