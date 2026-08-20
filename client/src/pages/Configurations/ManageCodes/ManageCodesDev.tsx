@@ -201,10 +201,16 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
                   }
                 />
               </th>
-              <th scope="col">Code no.</th>
-              <th scope="col">System</th>
-              <th scope="col">Description</th>
-              <th scope="col">
+              <th scope="col" className="w-[10%]">
+                Code no.
+              </th>
+              <th scope="col" className="w-[5%]">
+                System
+              </th>
+              <th scope="col" className="w-[40%]">
+                Description
+              </th>
+              <th scope="col" className="w-[35%]">
                 <div className="flex flex-row items-center gap-1">
                   <span>Source</span>
                   <Button
@@ -217,7 +223,9 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
                   </Button>
                 </div>
               </th>
-              <th scope="col">Status</th>
+              <th scope="col" className="w-[10%]">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody className="divide-gray-cool-20 divide-y">
