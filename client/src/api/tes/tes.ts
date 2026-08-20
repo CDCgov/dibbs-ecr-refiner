@@ -448,9 +448,3 @@ export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof g
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
