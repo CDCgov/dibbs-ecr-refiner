@@ -535,11 +535,9 @@ def _upsert_relationships(
     cursor: Cursor,
     condition_to_code_relationships: RelationshipsToInsert,
 ) -> None:
-    # 1. Build valueset_url -> valueset_id dictionary
-    cursor.execute("SELECT canonical_url, id FROM valuesets;")
-    valueset_map = {row[0]: row[1] for row in cursor.fetchall()}
+    cursor.execute("SELECT condition_id, canonical_url, id FROM valuesets;")
+    valueset_map = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
 
-    # 2. Build (system_id, code) -> code_id dictionary
     cursor.execute("SELECT system_id, code, id FROM codes;")
     code_map = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
 
@@ -557,8 +555,9 @@ def _upsert_relationships(
                 continue
 
             for code in cond["child_rsg_codes"]:
+                # Pass the tuple (cond_id, canonical_url) to get the exact valueset
                 code_id = code_map.get((code.system_db_id, code.code))
-                valueset_id = valueset_map.get(code.valueset_url)
+                valueset_id = valueset_map.get((cond_id, code.valueset_url))
 
                 if not code_id or not valueset_id:
                     continue
@@ -568,7 +567,7 @@ def _upsert_relationships(
 
             for code in cond["non_child_rsg_codes"]:
                 code_id = code_map.get((code.system_db_id, code.code))
-                valueset_id = valueset_map.get(code.valueset_url)
+                valueset_id = valueset_map.get((cond_id, code.valueset_url))
 
                 if not code_id or not valueset_id:
                     continue
