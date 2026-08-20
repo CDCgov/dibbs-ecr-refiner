@@ -197,7 +197,7 @@ async def get_codes_db(
             cfgc.condition_id,
             COALESCE(
                 ARRAY_AGG(DISTINCT v.display_name) FILTER (WHERE v.display_name IS NOT NULL),
-                '{{}}'::text[]
+                ARRAY[con.display_name || ' RSG']
             ) AS source,
             c.code,
             c.display AS description,
@@ -206,9 +206,9 @@ async def get_codes_db(
             CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
-        JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
-        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
+        JOIN conditions_codes_temp cc ON cc.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
+        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
@@ -354,7 +354,7 @@ async def get_all_filter_options_db(
     """
     query = """
     WITH base_codes AS (
-        -- Standard codes linked through conditions and valuesets
+        -- Standard codes linked through conditions
         SELECT
             c.id AS code_id,
             s.id AS system_id,
@@ -364,7 +364,7 @@ async def get_all_filter_options_db(
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = con.id
-        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
+        LEFT JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
@@ -386,7 +386,7 @@ async def get_all_filter_options_db(
         WHERE c.configuration_id = %(configuration_id)s
     )
     SELECT * FROM (
-        -- Group by Code System
+        -- 1. Group by Code System
         SELECT
             'code_system' AS filter_type,
             s.id::text AS value,
@@ -398,10 +398,10 @@ async def get_all_filter_options_db(
 
         UNION ALL
 
-        -- Group by Source / Valueset
+        -- 2. Group by Source / Valueset
         SELECT
             'source' AS filter_type,
-            COALESCE(bc.source_id::text, 'custom') AS value,
+            bc.source_id::text AS value,
             bc.source_name AS label,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM base_codes bc
@@ -409,7 +409,7 @@ async def get_all_filter_options_db(
 
         UNION ALL
 
-        -- Group by Status (Included vs Excluded)
+        -- 3. Group by Status (Included vs Excluded)
         SELECT
             'status' AS filter_type,
             st.status AS value,
