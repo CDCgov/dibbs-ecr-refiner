@@ -164,7 +164,7 @@ async def get_condition_by_id_db(
                 c.display_name,
                 t.version,
                 ARRAY(
-                    SELECT codes.code
+                    SELECT DISTINCT codes.code
                     FROM conditions_codes_temp crc
                     JOIN codes ON crc.code_id = codes.id
                     WHERE crc.condition_id = c.id AND crc.is_child_rsg
@@ -179,14 +179,12 @@ async def get_condition_by_id_db(
                 c.coverage_level_date
             FROM conditions c
             JOIN tes t ON t.id = c.tes_id
-            WHERE c.id = %s
+            WHERE c.id = %(id)s
             """
-
-    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"id": id})
             row = await cur.fetchone()
 
     if not row:
