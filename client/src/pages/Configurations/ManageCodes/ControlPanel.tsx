@@ -223,6 +223,13 @@ function CustomCodeDeletionModal({
           });
           clearSelections();
         },
+        onError: () => {
+          toast({
+            heading: 'Codes could not be updated',
+            body: 'Deleting custom codes was unsuccessful. Please try again.',
+            variant: 'error',
+          });
+        },
       }
     );
   };
