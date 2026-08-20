@@ -93,7 +93,10 @@ export function ControlPanel({
         updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
       />
 
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl bg-white px-6 py-4 shadow">
+      <div
+        data-testid="control-panel"
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl bg-white px-6 py-4 shadow"
+      >
         <div className="flex flex-row items-center justify-center gap-4">
           <span className="font-bold whitespace-nowrap">
             {selectedCodeIds.size} selected
@@ -294,6 +297,8 @@ function ExclusionWarningModal({
 }: ExclusionWarningModalProps) {
   const excludeableCodeCount = totalCodeCount - customCodeCount;
 
+  const isCustomCodesOnly = excludeableCodeCount === 0;
+
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
       <ModalHeader>
@@ -302,8 +307,11 @@ function ExclusionWarningModal({
       <ModalBody>
         <div className="flex flex-col gap-4">
           <p>
-            {excludeableCodeCount} of {totalCodeCount} selected codes will be
-            excluded from this configuration.
+            {isCustomCodesOnly
+              ? 'None of the selected codes can be excluded.'
+              : `
+            ${excludeableCodeCount} of ${totalCodeCount} selected codes will be
+            excluded from this configuration.`}
           </p>
           <p className="border-l-3! border-l-[#d54309] bg-[#fdf3f2] px-4 py-3">
             {customCodeCount} custom codes can't be excluded. Custom codes can
@@ -313,14 +321,16 @@ function ExclusionWarningModal({
       </ModalBody>
       <ModalFooter align="left">
         <div className="flex flex-row items-center gap-6">
-          <Button
-            onClick={() => {
-              updateCodesToExcluded();
-              onClose();
-            }}
-          >
-            Exclude {excludeableCodeCount} codes
-          </Button>
+          {isCustomCodesOnly ? null : (
+            <Button
+              onClick={() => {
+                updateCodesToExcluded();
+                onClose();
+              }}
+            >
+              Exclude {excludeableCodeCount} codes
+            </Button>
+          )}
           <Button
             variant="unstyled"
             className="text-violet-warm-60 font-bold hover:cursor-pointer"
