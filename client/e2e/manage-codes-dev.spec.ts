@@ -35,6 +35,54 @@ test.describe('Codes management - custom code interactions', () => {
     await clearDb();
   });
 
+  test('Including a custom code has no effect', async ({
+    api,
+    page,
+    configurationPage,
+  }) => {
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+      await api.uploadCustomCodeCsv(config.id, [
+        {
+          code: 'test-code-1',
+          display: 'My test code',
+          system_id: systems[0].id,
+        },
+      ]);
+    });
+
+    await test.step('Navigate to page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Anotia' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await goToManageCodesDevPage(page, configurationPage);
+    });
+
+    await test.step('Set all codes to be Included', async () => {
+      const tableRows = page.getByRole('table').getByRole('row');
+      const selectAllCheckbox = tableRows
+        .first()
+        .getByRole('cell')
+        .getByRole('checkbox');
+      await selectAllCheckbox.click();
+      await expect(selectAllCheckbox).toBeChecked();
+
+      const controlPanel = page.getByTestId('control-panel');
+      await expect(controlPanel).toBeVisible();
+      await expect(controlPanel).toContainText('3 selected');
+      await controlPanel.getByRole('button', { name: 'Include' }).click();
+
+      await expect(tableRows).not.toContainText('Excluded');
+    });
+  });
+
   test('Custom codes cannot be excluded', async ({
     api,
     page,
