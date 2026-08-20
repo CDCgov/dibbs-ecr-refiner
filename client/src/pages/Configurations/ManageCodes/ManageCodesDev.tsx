@@ -277,7 +277,7 @@ interface SourceCellProps {
 }
 
 function SourceCell({ configurationId, code }: SourceCellProps) {
-  if (!code.is_custom) return code.source;
+  if (!code.is_custom) return code.source.join(', ');
 
   return (
     <div className="flex flex-col items-center gap-2 xl:flex-row">

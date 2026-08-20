@@ -173,7 +173,7 @@ async def get_codes_db(
         return rows, next_cursor
 
     if condition_sources:
-        cond_clauses.append(" AND cfgc.condition_id = ANY(%(sources)s::uuid[])")
+        cond_clauses.append(" AND v.id = ANY(%(sources)s::uuid[])")
         cond_params["sources"] = condition_sources
 
     if statuses:
@@ -207,9 +207,9 @@ async def get_codes_db(
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
+        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
-        LEFT JOIN valuesets v ON v.id = cc.valueset_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
             AND e.code_id = cc.code_id
@@ -353,66 +353,75 @@ async def get_all_filter_options_db(
     Fetches filter options to present to the client.
     """
     query = """
-    WITH all_codes AS (
+    WITH base_codes AS (
+        -- Standard codes linked through conditions and valuesets
         SELECT
-            MAX(s.id::text)::uuid AS system_id,
-            MAX(s.display_name) AS system_name,
-            ARRAY[NULL::uuid] AS source_ids,
-            ARRAY['Custom Code'] AS sources,
-            ARRAY_AGG(DISTINCT c.id) AS code_count,
-            'included' AS status
-        FROM custom_codes c
-        JOIN systems s ON s.id = c.system_id
-        WHERE c.configuration_id = %(configuration_id)s
-        GROUP BY c.configuration_id
-
-        UNION ALL
-
-        SELECT
-            MAX(s.id::text)::uuid AS system_id,
-            MAX(s.display_name) AS system_name,
-            ARRAY_AGG(DISTINCT v.id) FILTER (WHERE v.id IS NOT NULL) AS source_ids,
-            ARRAY_AGG(DISTINCT v.display_name) FILTER (WHERE v.display_name IS NOT NULL) AS sources,
-            ARRAY_AGG(DISTINCT c.id) AS code_count,
-            CASE WHEN COUNT(e.code_id) = 0 THEN 'included' ELSE 'excluded' END AS status
+            c.id AS code_id,
+            s.id AS system_id,
+            v.id AS source_id,
+            v.display_name AS source_name,
+            CASE WHEN e.code_id IS NOT NULL THEN 'excluded' ELSE 'included' END AS status
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = con.id
-        JOIN valuesets v ON v.id = cc.valueset_id
+        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
             AND e.code_id = cc.code_id
         WHERE cfgc.configuration_id = %(configuration_id)s
-        GROUP BY v.id
+
+        UNION ALL
+
+        -- Custom codes added to configuration
+        SELECT
+            c.id AS code_id,
+            s.id AS system_id,
+            NULL::uuid AS source_id,
+            'Custom Code' AS source_name,
+            'included' AS status
+        FROM custom_codes c
+        JOIN systems s ON s.id = c.system_id
+        WHERE c.configuration_id = %(configuration_id)s
     )
     SELECT * FROM (
-        SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
+        -- Group by Code System
+        SELECT
+            'code_system' AS filter_type,
+            s.id::text AS value,
+            s.display_name AS label,
+            COUNT(DISTINCT bc.code_id) AS code_count
         FROM systems s
-        LEFT JOIN all_codes ac ON ac.system_id = s.id
+        LEFT JOIN base_codes bc ON bc.system_id = s.id
         GROUP BY s.id, s.display_name
 
         UNION ALL
 
+        -- Group by Source / Valueset
         SELECT
             'source' AS filter_type,
-            src.source_id::text AS value,
-            src.source AS label,
-            SUM(cardinality(all_codes.code_count)) AS code_count
-        FROM all_codes,
-        LATERAL UNNEST(all_codes.source_ids, all_codes.sources) AS src(source_id, source)
-        GROUP BY src.source_id, src.source
+            COALESCE(bc.source_id::text, 'custom') AS value,
+            bc.source_name AS label,
+            COUNT(DISTINCT bc.code_id) AS code_count
+        FROM base_codes bc
+        GROUP BY bc.source_id, bc.source_name
 
         UNION ALL
 
-        SELECT 'status' AS filter_type, s.status AS value, s.status_label AS label, COUNT(ac.status) AS code_count
-        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS s(status, status_label)
-        LEFT JOIN all_codes ac ON ac.status = s.status
-        GROUP BY s.status, s.status_label
+        -- Group by Status (Included vs Excluded)
+        SELECT
+            'status' AS filter_type,
+            st.status AS value,
+            st.status_label AS label,
+            COUNT(DISTINCT bc.code_id) AS code_count
+        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS st(status, status_label)
+        LEFT JOIN base_codes bc ON bc.status = st.status
+        GROUP BY st.status, st.status_label
+
     ) AS filter_results
     ORDER BY filter_type, code_count DESC;
-        """
+    """
 
     async with db.get_connection() as conn:
         async with conn.cursor() as cur:
@@ -428,8 +437,6 @@ async def get_all_filter_options_db(
                 )
             )
         elif filter_type == "source":
-            print("source")
-            print(sources)
             sources.append(
                 SourceFilterOption(
                     condition_id=UUID(value) if value is not None else None,
@@ -470,8 +477,8 @@ async def get_code_count_metadata_db(
 
     query = """
     SELECT
-        COUNT(*) AS total_code_count,
-        COUNT(*) FILTER (WHERE e.code_id IS NOT NULL) AS excluded_code_count,
+        COUNT(DISTINCT c.id) AS total_code_count,
+        COUNT(DISTINCT e.code_id) AS excluded_code_count,
         COUNT(DISTINCT cfgc.condition_id) AS code_set_count,
         (
             SELECT COUNT(*)
@@ -480,6 +487,7 @@ async def get_code_count_metadata_db(
         ) AS custom_code_count
     FROM configurations_conditions cfgc
     JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
+    JOIN codes c ON c.id = cc.code_id
     LEFT JOIN configurations_conditions_code_exclusions e
         ON e.configuration_id = cfgc.configuration_id
         AND e.code_id = cc.code_id
