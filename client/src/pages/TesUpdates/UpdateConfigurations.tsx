@@ -85,6 +85,7 @@ export function UpdateConfigurations() {
                   onClick={() => {
                     handleBulkSelection('drafts_to_create');
                   }}
+                  aria-label="Bulk select drafts to create"
                 />
                 Configuration
               </th>
@@ -108,6 +109,7 @@ export function UpdateConfigurations() {
                       checked={selectedConfigurations.includes(
                         d.configuration_id
                       )}
+                      aria-label={`Select ${d.configuration_name}`}
                     />
                     {d.configuration_name}
                   </td>
@@ -136,6 +138,7 @@ export function UpdateConfigurations() {
                   checked={existing_drafts.some((c) =>
                     selectedConfigurations.includes(c.configuration_id)
                   )}
+                  aria-label="Bulk select existing drafts"
                 />
                 Configuration
               </th>
@@ -159,6 +162,7 @@ export function UpdateConfigurations() {
                       checked={selectedConfigurations.includes(
                         d.configuration_id
                       )}
+                      aria-label={`Select ${d.configuration_name}`}
                     />
                     {d.configuration_name}
                   </td>

@@ -1,8 +1,13 @@
+import { clearDb, makeOldTesVersionConfiguration } from './db';
 import { expect, test } from './fixtures';
 
 test.describe('TES updates page', () => {
   test.beforeEach(async ({ tesUpdatesPage }) => {
+    await clearDb();
     await tesUpdatesPage.goto();
+  });
+  test.afterEach(async () => {
+    await clearDb();
   });
 
   test('Page is accessible and has expected content', async ({
@@ -37,5 +42,28 @@ test.describe('TES updates page', () => {
     expect(zikaDownload.suggestedFilename()).toMatch(
       /Zika-Virus-Disease_TES_v6.0.0_change_summary.csv$/
     );
+  });
+
+  test('View updates renders drafts that need to be updated', async ({
+    makeAxeBuilder,
+    tesUpdatesPage,
+    page,
+  }) => {
+    await makeOldTesVersionConfiguration('Cysticercosis', 'draft');
+    await makeOldTesVersionConfiguration('Diphyllobothriasis', 'active');
+
+    await tesUpdatesPage.goToUpdateActionsPage();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    expect(
+      page
+        .getByRole('table', { name: 'Create Draft To Update' })
+        .getByText('Diphyllobothriasis')
+    ).toBeDefined();
+    expect(
+      page
+        .getByRole('table', { name: 'Create Draft To Update' })
+        .getByText('Cysticercosis')
+    ).toBeDefined();
   });
 });
