@@ -411,7 +411,7 @@ test.describe('Codes management - code interactions', () => {
     await clearDb();
   });
 
-  test('Individual codes can be toggled to be included/excluded', async ({
+  test('Code set codes can be included and excluded', async ({
     page,
     configurationsPage,
     configurationPage,
@@ -435,11 +435,30 @@ test.describe('Codes management - code interactions', () => {
     await expect(controlPanel).toBeVisible();
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
 
-    await test.step('Check stats bar', async () => {
+    await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
         '1 of 2 codes included'
       );
       await expect(page.getByText('1 excluded')).toBeVisible();
+      await expect(controlPanel).not.toBeVisible();
+    });
+
+    const selectAllCheckbox = page.getByRole('table').getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+    await expect(controlPanel).toBeVisible();
+
+    await controlPanel.getByRole('button', { name: 'Include' }).click();
+    await expect(controlPanel).not.toBeVisible();
+
+    await test.step('Check stats bar after including all', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '2 of 2 codes included'
+      );
+      await expect(page.getByText('0 excluded')).toBeVisible();
+      await expect(controlPanel).not.toBeVisible();
     });
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
