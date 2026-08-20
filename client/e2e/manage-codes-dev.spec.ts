@@ -63,14 +63,18 @@ test.describe('Codes management - custom code interactions', () => {
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
       await goToManageCodesDevPage(page, configurationPage);
+      await expect(
+        page.getByRole('heading', { name: 'Manage codes', level: 2 })
+      ).toBeVisible();
     });
 
     await test.step('Set all codes to be Included', async () => {
-      const tableRows = page.getByRole('table').getByRole('row');
-      const selectAllCheckbox = tableRows
-        .first()
-        .getByRole('cell')
-        .getByRole('checkbox');
+      const table = page.getByRole('table');
+      await expect(table).toBeVisible();
+
+      const selectAllCheckbox = table.getByRole('checkbox', {
+        name: 'Include all codes in bulk operation',
+      });
       await selectAllCheckbox.click();
       await expect(selectAllCheckbox).toBeChecked();
 
@@ -78,8 +82,81 @@ test.describe('Codes management - custom code interactions', () => {
       await expect(controlPanel).toBeVisible();
       await expect(controlPanel).toContainText('3 selected');
       await controlPanel.getByRole('button', { name: 'Include' }).click();
+      await expect(controlPanel).not.toBeVisible();
 
-      await expect(tableRows).not.toContainText('Excluded');
+      const statusCells = table.locator('tbody tr td:last-child');
+      for (const cell of await statusCells.all()) {
+        await expect(cell).not.toContainText('Excluded');
+      }
+    });
+  });
+
+  test('Custom codes can be deleted in bulk', async ({
+    api,
+    page,
+    configurationPage,
+  }) => {
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+      await api.uploadCustomCodeCsv(config.id, [
+        {
+          code: 'test-code-1',
+          display: 'My test code',
+          system_id: systems[0].id,
+        },
+        {
+          code: 'test-code-2',
+          display: 'My secondary test code',
+          system_id: systems[1].id,
+        },
+      ]);
+    });
+
+    await test.step('Navigate to page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Anotia' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await goToManageCodesDevPage(page, configurationPage);
+    });
+
+    await test.step('Bulk delete custom codes', async () => {
+      const table = page.getByRole('table');
+      await expect(table).toBeVisible();
+
+      const selectAllCheckbox = table.getByRole('checkbox', {
+        name: 'Include all codes in bulk operation',
+      });
+      await selectAllCheckbox.click();
+      await expect(selectAllCheckbox).toBeChecked();
+
+      const controlPanel = page.getByTestId('control-panel');
+      await expect(controlPanel).toBeVisible();
+      await expect(controlPanel).toContainText('4 selected');
+      await controlPanel.getByRole('button', { name: 'More options' }).click();
+
+      const customCodeDeletionButton = page.getByText('Delete 2 custom codes');
+      await expect(customCodeDeletionButton).toBeVisible();
+      await customCodeDeletionButton.click();
+
+      await expect(
+        page.getByText('2 custom codes will be deleted')
+      ).toBeVisible();
+      const deleteButton = page.getByRole('button', { name: 'Delete 2 codes' });
+      await expect(deleteButton).toBeVisible();
+      await deleteButton.click();
+      await expect(controlPanel).not.toBeVisible();
+
+      const sourceCells = table.locator('tbody tr td:nth-last-child(2)');
+      for (const cell of await sourceCells.all()) {
+        await expect(cell).not.toContainText('Custom code');
+      }
     });
   });
 
