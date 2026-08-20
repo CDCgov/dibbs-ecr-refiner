@@ -35,6 +35,37 @@ test.describe('Codes management - custom code interactions', () => {
     await clearDb();
   });
 
+  test('Custom code options are only available in the control panel when custom codes are selected', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+
+    const table = page.getByRole('table');
+    await expect(table).toBeVisible();
+
+    const selectAllCheckbox = table.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+    await expect(
+      controlPanel.getByRole('button', { name: 'Include' })
+    ).toBeVisible();
+    await expect(
+      controlPanel.getByRole('button', { name: 'Exclude' })
+    ).toBeVisible();
+    await expect(
+      controlPanel.getByRole('button', { name: 'More options' })
+    ).not.toBeVisible();
+  });
+
   test('Including a custom code has no effect', async ({
     api,
     page,
