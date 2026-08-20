@@ -91,7 +91,8 @@ interface CodesPanelProps {
 }
 
 function CodesPanel({ id, disabled }: CodesPanelProps) {
-  const { filters, setFilters } = useFilterState(id);
+  const { filters, setFilters, clearFilters, isFilterActive } =
+    useFilterState(id);
   return (
     <>
       <CodeInformationBar id={id} />
@@ -103,7 +104,13 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
           onFiltersChange={setFilters}
         />
       </div>
-      <CodesTable id={id} disabled={disabled} filters={filters} />
+      <CodesTable
+        id={id}
+        disabled={disabled}
+        filters={filters}
+        onClearFilters={clearFilters}
+        isFilterActive={isFilterActive}
+      />
     </>
   );
 }
@@ -112,6 +119,8 @@ interface CodesTableProps {
   id: string;
   disabled: boolean;
   filters: CodeFilters;
+  isFilterActive: boolean;
+  onClearFilters: () => void;
 }
 
 type ParamValue =
@@ -122,7 +131,13 @@ type ParamValue =
   | null
   | undefined;
 
-function CodesTable({ id, disabled, filters }: CodesTableProps) {
+function CodesTable({
+  id,
+  disabled,
+  filters,
+  isFilterActive,
+  onClearFilters,
+}: CodesTableProps) {
   const {
     data,
     isPending,
@@ -183,7 +198,9 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         hasMore={!!hasNextPage}
         loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
         endMessage={
-          <p className="text-center italic">You've reached the end.</p>
+          codes.length > 0 ? (
+            <p className="text-center italic">You've reached the end.</p>
+          ) : null
         }
       >
         <table className="w-full table-fixed">
@@ -221,49 +238,73 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
             </tr>
           </thead>
           <tbody className="divide-gray-cool-20 divide-y">
-            {codes.map((code) => (
-              <tr
-                key={code.id}
-                className={classNames(
-                  'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
-                  {
-                    italic: code.status === 'Excluded',
-                  }
-                )}
-              >
-                <td className="text-center">
-                  <Checkbox
-                    aria-label={`Include ${code.code} in bulk operation`}
-                    disabled={disabled}
-                    checked={selectedIds.has(code.id)}
-                    onChange={(checked) =>
-                      setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        if (checked) {
-                          next.add(code.id);
-                        } else {
-                          next.delete(code.id);
-                        }
-                        return next;
-                      })
-                    }
-                  />
-                </td>
-                <td>{code.code}</td>
-                <td>{code.system_name}</td>
-                <td>{code.description}</td>
-                <td>
-                  <SourceCell configurationId={id} code={code} />
-                </td>
-                <td>
-                  <IncludeSwitch
-                    configurationId={id}
-                    code={code}
-                    disabled={disabled}
-                  />
+            {codes.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="text-gray-cool-60 px-4 py-8 text-center"
+                >
+                  <div className='flex flex-col items-center justify-center gap-4'>
+
+
+                  <span className='text-lg font-bold'>No codes match your search or filters.</span>
+                  {isFilterActive && (
+                    <Button
+                      variant="tertiary"
+                      onClick={onClearFilters}
+                      className="p-0!"
+                    >
+                      Clear search and filters
+                    </Button>
+                  )}
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              codes.map((code) => (
+                <tr
+                  key={code.id}
+                  className={classNames(
+                    'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
+                    {
+                      italic: code.status === 'Excluded',
+                    }
+                  )}
+                >
+                  <td className="text-center">
+                    <Checkbox
+                      aria-label={`Include ${code.code} in bulk operation`}
+                      disabled={disabled}
+                      checked={selectedIds.has(code.id)}
+                      onChange={(checked) =>
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (checked) {
+                            next.add(code.id);
+                          } else {
+                            next.delete(code.id);
+                          }
+                          return next;
+                        })
+                      }
+                    />
+                  </td>
+                  <td>{code.code}</td>
+                  <td>{code.system_name}</td>
+                  <td>{code.description}</td>
+                  <td>
+                    <SourceCell configurationId={id} code={code} />
+                  </td>
+                  <td>
+                    <IncludeSwitch
+                      configurationId={id}
+                      code={code}
+                      disabled={disabled}
+                    />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </InfiniteScroll>

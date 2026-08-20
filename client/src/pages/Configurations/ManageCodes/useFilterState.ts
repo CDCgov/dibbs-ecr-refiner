@@ -65,7 +65,13 @@ export function useFilterState(configurationId: string) {
     });
   }, []);
 
-  return { filters: activeFilters, setFilters, clearFilters };
+  const isFilterActive =
+    !!activeFilters.search ||
+    activeFilters.codeSystems.length > 0 ||
+    activeFilters.sources.length > 0 ||
+    activeFilters.statuses.length > 0;
+
+  return { filters: activeFilters, setFilters, clearFilters, isFilterActive };
 }
 
 /**
