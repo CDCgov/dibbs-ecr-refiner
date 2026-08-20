@@ -22,13 +22,21 @@ export function ActivityLogEntries({
   const formatDatetime = useDatetimeFormatter();
 
   return (
-    <Table striped fullWidth>
+    <Table className="table-auto" striped fullWidth>
       <thead>
         <tr>
-          <th scope="col">{nameHeader} </th>
-          <th scope="col">{conditionHeader} </th>
-          <th scope="col">{actionHeader}</th>
-          <th scope="col">{dateHeader}</th>
+          <th scope="col" className="w-[16%]">
+            {nameHeader}
+          </th>
+          <th scope="col" className="w-[22%]">
+            {conditionHeader}
+          </th>
+          <th scope="col" className="w-[46%]">
+            {actionHeader}
+          </th>
+          <th scope="col" className="w-[16%]">
+            {dateHeader}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -55,8 +63,20 @@ export function ActivityLogEntries({
                   </div>
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
-                  <p className="flex flex-col items-start gap-1">
-                    <span>{r.action_text}</span>
+                  <div className="flex flex-col items-start gap-1">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <span>
+                        {r.action_text}
+                        {r.code_count != null
+                          ? ` (${r.code_count.toLocaleString()} codes)`
+                          : null}
+                      </span>
+
+                      {r.condition_id && r.code_count != null ? (
+                        <CodeSetExportLink eventId={r.id} />
+                      ) : null}
+                    </div>
+
                     {r.has_custom_code_upload_events ? (
                       <ViewAllCustomCodeEventsButton
                         eventId={r.id}
@@ -64,7 +84,7 @@ export function ActivityLogEntries({
                         importDate={date}
                       />
                     ) : null}
-                  </p>
+                  </div>
                 </td>
                 <td data-label={dateHeader}>
                   <div className="flex flex-col">
@@ -158,5 +178,22 @@ function ViewAllCustomCodeEventsButton({
         </ModalBody>
       </Modal>
     </>
+  );
+}
+
+interface CodeSetExportLinkProps {
+  eventId: string;
+}
+
+function CodeSetExportLink({ eventId }: CodeSetExportLinkProps) {
+  return (
+    <Button
+      className="p-0!"
+      variant="tertiary"
+      href={`/api/v1/events/${eventId}/codes/export`}
+      anchorProps={{ download: true }}
+    >
+      Export as CSV
+    </Button>
   );
 }
