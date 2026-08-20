@@ -7,12 +7,7 @@ import { Button } from '@components/Button';
 import { useState } from 'react';
 
 export function UpdateConfigurations() {
-  const {
-    data: response,
-    isPending,
-    isError,
-    // todo don't hard code this
-  } = useGetConfigurationsToUpdate({ cur_tes_version: '6.0.0' });
+  const { data: response, isPending, isError } = useGetConfigurationsToUpdate();
 
   const [selectedConfigurations, setSelectedConfigurations] = useState<
     string[]

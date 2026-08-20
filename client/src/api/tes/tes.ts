@@ -22,7 +22,6 @@ import type {
 
 import type {
   ExportConditionDiffParams,
-  GetConfigurationsToUpdateParams,
   GetTesDiffDetailsParams,
   HTTPValidationError,
   TesConfigsToUpdateResponse,
@@ -357,7 +356,6 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
  * Collects information needed to render the TES configs that need updating for a given TES release.
  *
  * Args:
- *     cur_tes_version(str) : The current TES version
  *     db (AsyncDatabaseConnection) : The db connection.
  *
  * Returns:
@@ -366,37 +364,35 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
  * @summary Get Configurations To Update
  */
 export const getConfigurationsToUpdate = (
-    params: GetConfigurationsToUpdateParams, options?: AxiosRequestConfig
+     options?: AxiosRequestConfig
  ): Promise<AxiosResponse<TesConfigsToUpdateResponse>> => {
 
 
     return axios.default.get(
-      `/api/v1/tes/configurations-to-update`,{
-    ...options,
-        params: {...params, ...options?.params},}
+      `/api/v1/tes/configurations-to-update`,options
     );
   }
 
 
 
 
-export const getGetConfigurationsToUpdateQueryKey = (params?: GetConfigurationsToUpdateParams,) => {
+export const getGetConfigurationsToUpdateQueryKey = () => {
     return [
-    `/api/v1/tes/configurations-to-update`, ...(params ? [params] : [])
+    `/api/v1/tes/configurations-to-update`
     ] as const;
     }
 
 
-export const getGetConfigurationsToUpdateQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<HTTPValidationError>>(params: GetConfigurationsToUpdateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getGetConfigurationsToUpdateQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationsToUpdateQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationsToUpdateQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationsToUpdate>>> = ({ signal }) => getConfigurationsToUpdate(params, { signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationsToUpdate>>> = ({ signal }) => getConfigurationsToUpdate({ signal, ...axiosOptions });
 
 
 
@@ -406,11 +402,11 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 }
 
 export type GetConfigurationsToUpdateQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationsToUpdate>>>
-export type GetConfigurationsToUpdateQueryError = AxiosError<HTTPValidationError>
+export type GetConfigurationsToUpdateQueryError = AxiosError<unknown>
 
 
-export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<HTTPValidationError>>(
- params: GetConfigurationsToUpdateParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfigurationsToUpdate>>,
           TError,
@@ -419,8 +415,8 @@ export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof g
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<HTTPValidationError>>(
- params: GetConfigurationsToUpdateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfigurationsToUpdate>>,
           TError,
@@ -429,20 +425,20 @@ export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof g
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<HTTPValidationError>>(
- params: GetConfigurationsToUpdateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get Configurations To Update
  */
 
-export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<HTTPValidationError>>(
- params: GetConfigurationsToUpdateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetConfigurationsToUpdateQueryOptions(params,options)
+  const queryOptions = getGetConfigurationsToUpdateQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
