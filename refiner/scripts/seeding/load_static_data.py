@@ -193,7 +193,9 @@ class BuildCodeContext:
 
     db_ids: SystemOidToDbIdMap
     unique_codes: dict[tuple[UUID, str], CodeRow] = field(default_factory=dict)
-    unique_valuesets: dict[tuple[str, str], ValuesetRow] = field(default_factory=dict)
+    unique_valuesets: dict[tuple[str, str, str], ValuesetRow] = field(
+        default_factory=dict
+    )
 
     def mark_code_as_seen(
         self,
@@ -223,9 +225,9 @@ class BuildCodeContext:
     ):
         """Tracks trace and registers valueset information across build functions."""
         url = valueset.get("url", "")
-        valueset_key = (url, condition_version)
+        valueset_key = (condition_url, condition_version, url)
 
-        if not url or valueset_key in self.unique_valuesets:
+        if not url or valueset_key in self.unique_valuesets.keys():
             return False
 
         name = parse_valueset_source_name(valueset)
@@ -670,7 +672,42 @@ def _upsert_valuesets(
 ) -> None:
     logger.info("⏳ Starting valuesets upsert process...")
 
-    upsert_query = """
+    cursor.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS stage_valuesets (
+            display_name TEXT,
+            category TEXT,
+            canonical_url TEXT NOT NULL,
+            code_count INT,
+            completeness TEXT,
+            parent_url TEXT NOT NULL,
+            version TEXT NOT NULL
+        ) ON COMMIT DROP
+    """)
+    cursor.execute("TRUNCATE stage_valuesets")
+
+    def valueset_generator():
+        for v in data:
+            yield (
+                v["display_name"],
+                v["category"],
+                v["canonical_url"],
+                v["code_count"],
+                v["completeness"],
+                v["parent_url"],
+                v["condition_version"],
+            )
+
+    logger.info("🚀 Streaming valuesets into stage table...")
+    with cursor.copy(
+        "COPY stage_valuesets (display_name, category, canonical_url, code_count, completeness, parent_url, version) FROM STDIN"
+    ) as copy:
+        for record in valueset_generator():
+            copy.write_row(record)
+
+    logger.info(f"📥 Staged {len(data)} unique valueset rows.")
+    cursor.execute("ANALYZE stage_valuesets;")
+
+    cursor.execute("""
     INSERT INTO valuesets (
         condition_id,
         display_name,
@@ -680,19 +717,17 @@ def _upsert_valuesets(
         completeness,
         parent_url
     )
-    VALUES (
-        (
-            SELECT c.id FROM conditions c
-            LEFT JOIN tes t ON t.id = c.tes_id
-            WHERE c.canonical_url = %(parent_url)s AND t.version = %(version)s
-        ),
-        %(display_name)s,
-        %(category)s,
-        %(canonical_url)s,
-        %(code_count)s,
-        %(completeness)s,
-        %(parent_url)s
-    )
+    SELECT
+        c.id,
+        s.display_name,
+        s.category,
+        s.canonical_url,
+        s.code_count,
+        s.completeness,
+        s.parent_url
+    FROM stage_valuesets s
+    INNER JOIN conditions c ON s.parent_url = c.canonical_url
+    INNER JOIN tes t ON t.id = c.tes_id AND s.version = t.version
     ON CONFLICT (condition_id, canonical_url)
     DO UPDATE SET
         display_name = EXCLUDED.display_name,
@@ -706,24 +741,9 @@ def _upsert_valuesets(
         OR valuesets.code_count IS DISTINCT FROM EXCLUDED.code_count
         OR valuesets.completeness IS DISTINCT FROM EXCLUDED.completeness
         OR valuesets.parent_url IS DISTINCT FROM EXCLUDED.parent_url;
-    """
+    """)
 
-    valueset_params = [
-        {
-            "display_name": v["display_name"],
-            "category": v["category"],
-            "canonical_url": v["canonical_url"],
-            "code_count": v["code_count"],
-            "completeness": v["completeness"],
-            "parent_url": v["parent_url"],
-            "version": v["condition_version"],
-        }
-        for v in data
-    ]
-
-    cursor.executemany(upsert_query, valueset_params)
-
-    logger.info(f"✨ {cursor.rowcount:,} total new rows inserted in valuesets table.")
+    logger.info(f"✨ {cursor.rowcount:,} total valuesets seeded.")
     return
 
 

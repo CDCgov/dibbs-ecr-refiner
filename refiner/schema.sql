@@ -16,6 +16,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -1049,6 +1063,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260729154745'),
     ('20260803202038'),
     ('20260810165940'),
-    ('20260813133341');
+    ('20260813133341'),
     ('20260813142528'),
     ('20260813142548');

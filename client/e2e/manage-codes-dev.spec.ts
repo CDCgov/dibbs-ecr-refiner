@@ -424,7 +424,9 @@ test.describe('Codes management - filters', () => {
       const rowCount = await tableRows.count();
       for (let i = 1; i < rowCount; i++) {
         const sourceCell = tableRows.nth(i).getByRole('cell').nth(4);
-        await expect(sourceCell).toHaveText('Acanthamoeba RSG');
+        await expect(sourceCell).toHaveText(
+          'Acanthamoeba Reporting Specification Grouper'
+        );
       }
     });
   });
@@ -615,12 +617,18 @@ test.describe('Codes management - filters', () => {
       const texts = await sourceCells.allTextContents();
 
       expect(texts.some((t) => t.includes('Custom code'))).toBe(true);
-      expect(texts.some((t) => t.includes(`${associatedCondition} RSG`))).toBe(
-        true
-      );
-      expect(texts.some((t) => t.includes('Anotia RSG'))).toBe(true);
       expect(
-        texts.filter((t) => t.includes(`${associatedCondition} RSG`))
+        texts.some((t) =>
+          t.includes(`${associatedCondition} Reporting Specification Grouper`)
+        )
+      ).toBe(true);
+      expect(
+        texts.some((t) => t.includes('Anotia Reporting Specification Grouper'))
+      ).toBe(true);
+      expect(
+        texts.filter((t) =>
+          t.includes(`${associatedCondition} Reporting Specification Grouper`)
+        )
       ).toHaveLength(2);
     });
   });
