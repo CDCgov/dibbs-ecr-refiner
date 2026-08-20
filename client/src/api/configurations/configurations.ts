@@ -35,6 +35,7 @@ import type {
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  BulkDeleteCustomCodesInput,
   CodeCountsResponse,
   CodeFilterOptions,
   CodesResponse,
@@ -1063,6 +1064,83 @@ export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidatio
         TContext
       > => {
       return useMutation(getConfirmUploadCustomCodesCsvMutationOptions(options), queryClient);
+    }
+    /**
+ * Deletes custom codes in bulk for a given configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     body (BulkDeleteCustomCodesInput): The input body containing IDs of the custom codes.
+ *     user (DbUser): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration
+ * @summary Bulk Delete Custom Codes
+ */
+export const deleteCustomCodes = (
+    configurationId: string,
+    bulkDeleteCustomCodesInput: BulkDeleteCustomCodesInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CustomCodeResponse[]>> => {
+
+
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/custom-codes/bulk-delete`,
+      bulkDeleteCustomCodesInput,options
+    );
+  }
+
+
+
+
+export const getDeleteCustomCodesMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodes>>, TError,{configurationId: string;data: BulkDeleteCustomCodesInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodes>>, TError,{configurationId: string;data: BulkDeleteCustomCodesInput}, TContext> => {
+
+const mutationKey = ['deleteCustomCodes'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodes>>, {configurationId: string;data: BulkDeleteCustomCodesInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  deleteCustomCodes(configurationId,data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCustomCodesMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomCodes>>>
+    export type DeleteCustomCodesMutationBody = BulkDeleteCustomCodesInput
+    export type DeleteCustomCodesMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Bulk Delete Custom Codes
+ */
+export const useDeleteCustomCodes = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodes>>, TError,{configurationId: string;data: BulkDeleteCustomCodesInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCustomCodes>>,
+        TError,
+        {configurationId: string;data: BulkDeleteCustomCodesInput},
+        TContext
+      > => {
+      return useMutation(getDeleteCustomCodesMutationOptions(options), queryClient);
     }
     /**
  * Determines whether a custom code update is valid or not.

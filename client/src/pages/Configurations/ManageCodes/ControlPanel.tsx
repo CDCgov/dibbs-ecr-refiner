@@ -7,6 +7,7 @@ import {
   getGetCodeCountsQueryKey,
   getGetCodeFiltersQueryKey,
   getGetCodesInfiniteQueryKey,
+  useDeleteCustomCodes,
   useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
@@ -113,37 +114,152 @@ export function ControlPanel({
               Exclude
             </Button>
             {hasCustomCodesSelected ? (
-              <Menu as="div" className="relative">
-                <MenuButton
-                  as={Button}
-                  aria-label="More options"
-                  variant="unstyled"
-                  className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4 py-2 text-sm! font-bold hover:cursor-pointer"
-                >
-                  ...
-                </MenuButton>
-                <MenuItems
-                  portal
-                  anchor="top end"
-                  className="rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
-                >
-                  <MenuItem>
-                    <Button
-                      variant="unstyled"
-                      className="data-focus:bg-state-error-lighter text-state-error-dark flex flex-row items-center p-3 text-left text-sm! font-bold whitespace-nowrap data-focus:cursor-pointer"
-                      onClick={() => {}}
-                    >
-                      <DeleteIcon />
-                      Delete {selectedCustomCodes.length} custom codes
-                    </Button>
-                  </MenuItem>
-                </MenuItems>
-              </Menu>
+              <CustomCodeDeletionMenu
+                configurationId={configurationId}
+                customCodeIds={selectedCustomCodes.map((cc) => cc.id)}
+                clearSelections={clearSelections}
+              />
             ) : null}
           </div>
         </div>
       </div>
     </>
+  );
+}
+
+interface CustomCodeDeletionMenuProps {
+  configurationId: string;
+  customCodeIds: string[];
+  clearSelections: () => void;
+}
+
+function CustomCodeDeletionMenu({
+  configurationId,
+  customCodeIds,
+  clearSelections,
+}: CustomCodeDeletionMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <CustomCodeDeletionModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        customCodeIds={customCodeIds}
+        clearSelections={clearSelections}
+        configurationId={configurationId}
+      />
+      <Menu as="div" className="relative">
+        <MenuButton
+          as={Button}
+          aria-label="More options"
+          variant="unstyled"
+          className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4 py-2 text-sm! font-bold hover:cursor-pointer"
+        >
+          ...
+        </MenuButton>
+        <MenuItems
+          portal
+          anchor="top end"
+          className="rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+        >
+          <MenuItem>
+            <Button
+              variant="unstyled"
+              className="data-focus:bg-state-error-lighter text-state-error-dark flex flex-row items-center p-3 text-left text-sm! font-bold whitespace-nowrap data-focus:cursor-pointer"
+              onClick={() => setIsOpen(true)}
+            >
+              <DeleteIcon />
+              Delete {customCodeIds.length} custom codes
+            </Button>
+          </MenuItem>
+        </MenuItems>
+      </Menu>
+    </>
+  );
+}
+
+interface CustomCodeDeletionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  customCodeIds: string[];
+  configurationId: string;
+  clearSelections: () => void;
+}
+
+function CustomCodeDeletionModal({
+  isOpen,
+  onClose,
+  customCodeIds,
+  configurationId,
+  clearSelections,
+}: CustomCodeDeletionModalProps) {
+  const queryClient = useQueryClient();
+  const { mutate } = useDeleteCustomCodes();
+  const toast = useToast();
+  const customCodeCount = customCodeIds.length;
+
+  const deleteCustomCodes = () => {
+    mutate(
+      {
+        configurationId,
+        data: {
+          ids: customCodeIds,
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodesInfiniteQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
+          });
+          toast({
+            heading: 'Codes updated',
+            body: `${customCodeCount} custom codes deleted.`,
+          });
+          clearSelections();
+        },
+      }
+    );
+  };
+
+  return (
+    <Modal open={isOpen} onClose={onClose} position="center">
+      <ModalHeader>
+        <ModalTitle>{customCodeCount} custom codes will be deleted</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p>
+          Custom codes can only be deleted from a configuration. Codes found
+          within TES code sets will be excluded, not deleted.
+        </p>
+      </ModalBody>
+      <ModalFooter align="left">
+        <div className="flex flex-row items-center gap-6">
+          <Button
+            variant="unstyled"
+            className="bg-state-error-dark rounded p-4 font-bold text-white hover:cursor-pointer hover:bg-[#8b0a03]"
+            onClick={() => {
+              deleteCustomCodes();
+              onClose();
+            }}
+          >
+            Delete {customCodeCount} codes
+          </Button>
+          <Button
+            variant="unstyled"
+            className="text-violet-warm-60 font-bold hover:cursor-pointer"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+        </div>
+      </ModalFooter>
+    </Modal>
   );
 }
 
