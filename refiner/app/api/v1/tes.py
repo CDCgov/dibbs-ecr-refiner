@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
+    get_configurations_set_to_tes_version,
     get_loaded_tes_versions_db,
     get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
-from app.db.tes.model import TesUpdate
+from app.db.tes.model import TesConfigToUpdate, TesUpdate
 from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
@@ -126,6 +127,9 @@ async def export_tes_condition_diff(
         canonical_url(str) : The condition diff being requested
         db (AsyncDatabaseConnection) : The db connection.
 
+    Returns:
+            Response: an HTTP response that gives the browser a CSV file to download
+
     """
     try:
         condition_diff = await get_tes_update_condition_diff_db(
@@ -150,3 +154,39 @@ async def export_tes_condition_diff(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Condition with URL {canonical_url} not found for TES versions {cur_version} or {prev_version}.",
         )
+
+
+@dataclass
+class TesConfigsToUpdateResponse:
+    """
+    The response needed for rendering of the TES update configuration page.
+    """
+
+    existing_drafts: list[TesConfigToUpdate]
+    drafts_to_create: list[TesConfigToUpdate]
+
+
+@router.get(
+    "/configurations-to-update",
+    tags=["tes"],
+    operation_id="getConfigurationsToUpdate",
+)
+async def get_configurations_to_update(
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> TesConfigsToUpdateResponse:
+    """
+    Collects information needed to render the TES configs that need updating for a given TES release.
+
+    Args:
+        db (AsyncDatabaseConnection) : The db connection.
+
+    Returns:
+        TesConfigsToUpdateResponse: information about TES configs to update,
+        with a list of existing drafts and drafts to create
+
+    """
+    configs_to_update = await get_configurations_set_to_tes_version(db=db)
+    return TesConfigsToUpdateResponse(
+        existing_drafts=configs_to_update.existing_drafts,
+        drafts_to_create=configs_to_update.drafts_to_create,
+    )
