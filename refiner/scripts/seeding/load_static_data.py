@@ -1,4 +1,3 @@
-import io
 import os
 import time
 from collections import defaultdict
@@ -536,7 +535,6 @@ def _upsert_relationships(
     cursor: Cursor,
     condition_to_code_relationships: RelationshipsToInsert,
 ) -> None:
-
     # 1. Build valueset_url -> valueset_id dictionary
     cursor.execute("SELECT canonical_url, id FROM valuesets;")
     valueset_map = {row[0]: row[1] for row in cursor.fetchall()}
