@@ -6,6 +6,7 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
+from app.api.v1.configurations.codes.model import FilterInput
 from app.db.pool import AsyncDatabaseConnection
 
 
@@ -51,6 +52,7 @@ async def get_codes_db(
     configuration_id: UUID,
     db: AsyncDatabaseConnection,
     limit: int,
+    filters: FilterInput,
     cursor: str | None = None,
 ) -> tuple[list[DbCodeResult], str | None]:
     """
@@ -68,59 +70,82 @@ async def get_codes_db(
     next_cursor: str | None = None
 
     decoded = _decode_cursor(cursor) if cursor else None
-    in_custom = decoded.in_custom if decoded else True  # start in custom
+    in_custom = decoded.in_custom if decoded else True
+
+    # filters
+    search = filters.search
+    sources = filters.sources
+    code_systems = filters.code_systems
+    statuses = filters.statuses
 
     # Handle custom codes first
     if in_custom:
-        remaining = limit + 1  # +1 to detect next page
-        custom_params: dict = {
-            "configuration_id": configuration_id,
-            "limit": remaining,
-        }
-        custom_cursor_clause = ""
+        # "Custom Code" is the hard-coded source for custom codes.
+        # Exclude this section entirely if sources are filtered and "Custom Code" isn't among them
+        skip_custom = bool(sources) and "Custom Code" not in sources
 
-        if decoded:
-            custom_cursor_clause = "AND c.code > %(cursor_code)s"
-            custom_params["cursor_code"] = decoded.code
+        if not skip_custom:
+            remaining = limit + 1  # +1 to detect next page
+            custom_params: dict = {
+                "configuration_id": configuration_id,
+                "limit": remaining,
+            }
+            custom_clauses = []
+            custom_cursor_clause = ""
 
-        custom_query = f"""
-            SELECT
-                c.id,
-                NULL::uuid AS condition_id,
-                'Custom Code' AS source,
-                c.code,
-                c.display AS description,
-                c.system_id,
-                s.display_name AS system_name,
-                'included' AS status
-            FROM custom_codes c
-            JOIN systems s ON s.id = c.system_id
-            WHERE c.configuration_id = %(configuration_id)s
-            {custom_cursor_clause}
-            ORDER BY c.code
-            LIMIT %(limit)s;
-        """
+            if decoded:
+                custom_cursor_clause = " AND c.code > %(cursor_code)s"
+                custom_params["cursor_code"] = decoded.code
 
-        async with db.get_connection() as conn:
-            async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
-                await cur.execute(custom_query, custom_params)
-                custom_rows = await cur.fetchall()
+            if code_systems:
+                custom_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
+                custom_params["code_systems"] = code_systems
 
-        if len(custom_rows) >= remaining:
-            # More custom code pages remain, don't go to condition codes yet
-            rows = custom_rows[:limit]
-            last = rows[-1]
-            next_cursor = _encode_cursor(
-                DbCodeCursor(
-                    condition_id=None,
-                    code=last.code,
-                    in_custom=True,
+            # Custom codes are always "included" so if the statuses filter
+            # doesn't include "included" then skip custom codes entirely
+            if statuses and "included" not in [s.lower() for s in statuses]:
+                skip_custom = True
+
+            if search:
+                custom_clauses.append(
+                    " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
                 )
-            )
-            return rows, next_cursor
+                custom_params["search"] = f"%{search}%"
 
-        # Carry custom codes forward
-        rows = custom_rows
+            if not skip_custom:
+                custom_query = f"""
+                    SELECT
+                        c.id,
+                        NULL::uuid AS condition_id,
+                        'Custom Code' AS source,
+                        c.code,
+                        c.display AS description,
+                        c.system_id,
+                        s.display_name AS system_name,
+                        'included' AS status
+                    FROM custom_codes c
+                    JOIN systems s ON s.id = c.system_id
+                    WHERE c.configuration_id = %(configuration_id)s
+                    {custom_cursor_clause}
+                    {"".join(custom_clauses)}
+                    ORDER BY c.code
+                    LIMIT %(limit)s;
+                """
+
+                async with db.get_connection() as conn:
+                    async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
+                        await cur.execute(custom_query, custom_params)
+                        custom_rows = await cur.fetchall()
+
+                if len(custom_rows) >= remaining:
+                    rows = custom_rows[:limit]
+                    last = rows[-1]
+                    next_cursor = _encode_cursor(
+                        DbCodeCursor(condition_id=None, code=last.code, in_custom=True)
+                    )
+                    return rows, next_cursor
+
+                rows = custom_rows
 
     # Handle condition-linked codes
     remaining = limit - len(rows) + 1  # +1 to detect next page
@@ -128,12 +153,43 @@ async def get_codes_db(
         "configuration_id": configuration_id,
         "limit": remaining,
     }
+    cond_clauses = []
     cursor_clause = ""
 
     if not in_custom and decoded:
-        cursor_clause = "AND (cfgc.condition_id, c.code) > (%(cursor_condition_id)s, %(cursor_code)s)"
+        cursor_clause = " AND (cfgc.condition_id, c.code) > (%(cursor_condition_id)s, %(cursor_code)s)"
         cond_params["cursor_condition_id"] = decoded.condition_id
         cond_params["cursor_code"] = decoded.code
+
+    if code_systems:
+        cond_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
+        cond_params["code_systems"] = code_systems
+
+    # Since "Custom Code" is not a valid UUID we need to strip it before filtering condition grouper codes on their UUID
+    condition_sources = [s for s in sources if s != "Custom Code"]
+
+    # If sources were specified but none are condition grouper UUIDs, skip condition grouper codes entirely
+    if sources and not condition_sources:
+        return rows, next_cursor
+
+    if condition_sources:
+        cond_clauses.append(" AND cfgc.condition_id = ANY(%(sources)s::uuid[])")
+        cond_params["sources"] = condition_sources
+
+    if statuses:
+        # Map client values to DB values
+        db_statuses = [s.lower() for s in statuses]
+        if "included" in db_statuses and "excluded" not in db_statuses:
+            cond_clauses.append(" AND e.code_id IS NULL")
+        elif "excluded" in db_statuses and "included" not in db_statuses:
+            cond_clauses.append(" AND e.code_id IS NOT NULL")
+        # No clause is needed if both are present
+
+    if search:
+        cond_clauses.append(
+            " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+        )
+        cond_params["search"] = f"%{search}%"
 
     cond_query = f"""
         SELECT
@@ -155,6 +211,7 @@ async def get_codes_db(
             AND e.code_id = cc.code_id
         WHERE cfgc.configuration_id = %(configuration_id)s
         {cursor_clause}
+        {"".join(cond_clauses)}
         ORDER BY cfgc.condition_id, c.code
         LIMIT %(limit)s;
     """
@@ -229,6 +286,142 @@ async def set_codes_status_db(
             rows = await cur.fetchall()
 
     return [row["code_id"] for row in rows]
+
+
+@dataclass
+class CodeSystemFilterOption:
+    """
+    Model to represent a code system filter option.
+    """
+
+    system_id: UUID
+    system_name: str
+    code_count: int
+
+
+@dataclass
+class SourceFilterOption:
+    """
+    Model to represent a source filter option.
+    """
+
+    condition_id: UUID | None  # This will be `None` for custom codes
+    source: str
+    code_count: int
+
+
+@dataclass
+class StatusFilterOption:
+    """
+    Model to represent a status filter option.
+    """
+
+    label: Literal["Included", "Excluded"]
+    status: Literal["included", "excluded"]
+    code_count: int
+
+
+@dataclass
+class CodeFilterOptions:
+    """
+    Model to represent all filter options available to the client.
+    """
+
+    code_systems: list[CodeSystemFilterOption]
+    sources: list[SourceFilterOption]
+    statuses: list[StatusFilterOption]
+
+
+async def get_all_filter_options_db(
+    configuration_id: UUID,
+    db: AsyncDatabaseConnection,
+) -> CodeFilterOptions:
+    """
+    Fetches filter options to present to the client.
+    """
+    query = """
+    WITH all_codes AS (
+        SELECT
+            s.id AS system_id,
+            s.display_name AS system_name,
+            NULL::uuid AS source_id,
+            'Custom Code' AS source,
+            'included' AS status
+        FROM custom_codes c
+        JOIN systems s ON s.id = c.system_id
+        WHERE c.configuration_id = %(configuration_id)s
+
+        UNION ALL
+
+        SELECT
+            s.id AS system_id,
+            s.display_name AS system_name,
+            con.id AS source_id,
+            con.display_name || ' CG' AS source,
+            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+        FROM configurations_conditions cfgc
+        JOIN conditions con ON con.id = cfgc.condition_id
+        JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+        JOIN codes c ON c.id = cc.code_id
+        JOIN systems s ON s.id = c.system_id
+        LEFT JOIN configurations_conditions_code_exclusions e
+            ON e.configuration_id = cfgc.configuration_id
+            AND e.code_id = cc.code_id
+        WHERE cfgc.configuration_id = %(configuration_id)s
+    )
+    SELECT * FROM (
+        SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
+        FROM systems s
+        LEFT JOIN all_codes ac ON ac.system_id = s.id
+        GROUP BY s.id, s.display_name
+
+        UNION ALL
+
+        SELECT 'source' AS filter_type, source_id::text AS value, source AS label, COUNT(*) AS code_count
+        FROM all_codes
+        GROUP BY source_id, source
+
+        UNION ALL
+
+        SELECT 'status' AS filter_type, s.status AS value, s.status_label AS label, COUNT(ac.status) AS code_count
+        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS s(status, status_label)
+        LEFT JOIN all_codes ac ON ac.status = s.status
+        GROUP BY s.status, s.status_label
+    ) AS filter_results
+    ORDER BY filter_type, code_count DESC;
+        """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, {"configuration_id": configuration_id})
+            rows = await cur.fetchall()
+
+    code_systems, sources, statuses = [], [], []
+    for filter_type, value, label, code_count in rows:
+        if filter_type == "code_system":
+            code_systems.append(
+                CodeSystemFilterOption(
+                    system_id=UUID(value), system_name=label, code_count=code_count
+                )
+            )
+        elif filter_type == "source":
+            sources.append(
+                SourceFilterOption(
+                    condition_id=UUID(value) if value is not None else None,
+                    source=label,
+                    code_count=code_count,
+                )
+            )
+        elif filter_type == "status":
+            statuses.append(
+                StatusFilterOption(status=value, label=label, code_count=code_count)
+            )
+
+    return CodeFilterOptions(
+        code_systems=code_systems,
+        sources=sources,
+        statuses=statuses,
+    )
 
 
 @dataclass

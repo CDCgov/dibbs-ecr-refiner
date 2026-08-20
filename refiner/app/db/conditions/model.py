@@ -118,6 +118,24 @@ class DbCondition(DbConditionBase):
             + self.cvx_codes
         )
 
+    def get_total_code_count(self) -> int:
+        """
+        Returns the total number of unique codes across all code systems.
+
+        Codes are deduplicated within each code system.
+        The same code value in different code systems is counted separately.
+        """
+        return sum(
+            len({coding.code for coding in codes})
+            for codes in (
+                self.snomed_codes,
+                self.loinc_codes,
+                self.icd10_codes,
+                self.rxnorm_codes,
+                self.cvx_codes,
+            )
+        )
+
 
 class ConditionMapValueDict(TypedDict):
     """
