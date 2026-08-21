@@ -290,7 +290,10 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                 }}
                 placeholder="Start typing to search (3 characters minimum)"
               />
-              <ComboboxOptions anchor="bottom" className="max-h-85!">
+              <ComboboxOptions
+                anchor="bottom"
+                className="z-[var(--z-dropdown)] max-h-85!"
+              >
                 {({ option: condition }) => {
                   const matchResult = results.find(
                     (r) => r.item.id === condition.id

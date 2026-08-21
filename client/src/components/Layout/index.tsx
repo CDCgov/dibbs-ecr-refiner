@@ -2,7 +2,8 @@ import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 import { NavigationBar } from '../NavigationBar';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Menu, MenuButton, MenuItem } from '@headlessui/react';
+import { BaseMenuItems } from '@components/Dropdown';
 import { ExternalLink } from '../ExternalLink';
 import { LayoutContainer } from './LayoutContainer';
 export { LayoutContainer };
@@ -41,7 +42,7 @@ export function Header({ displayName }: HeaderProps) {
   const loggedInHeaderContent = (
     <>
       <NavigationBar />
-      <Menu>
+      <Menu as="div">
         <MenuButton
           aria-label="Open settings menu"
           className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none"
@@ -50,7 +51,7 @@ export function Header({ displayName }: HeaderProps) {
           {displayName}
           <DropdownCaretIcon />
         </MenuButton>
-        <MenuItems
+        <BaseMenuItems
           anchor="bottom"
           className="ring-opacity-5 absolute right-0 mt-0.5 flex w-40 origin-top-right flex-col gap-2 rounded-md bg-white shadow-lg focus-within:outline-none!"
         >
@@ -79,7 +80,7 @@ export function Header({ displayName }: HeaderProps) {
               Log out
             </a>
           </MenuItem>
-        </MenuItems>
+        </BaseMenuItems>
       </Menu>
     </>
   );
