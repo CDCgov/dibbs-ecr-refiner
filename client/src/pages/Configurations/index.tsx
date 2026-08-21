@@ -82,7 +82,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const hasMultipleConfigs = configs.length > 0;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-1 flex-col">
       <AppUpdateBanner
         isVisible={
           user.notifications.to_render[
@@ -99,7 +99,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         }
         refreshUser={refreshUser}
       />
-      <section className="mx-auto w-full max-w-screen-xl flex-1 p-3">
+      <section className="mx-auto w-full max-w-screen-xl p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
           <p>

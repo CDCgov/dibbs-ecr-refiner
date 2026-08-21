@@ -1,5 +1,5 @@
 import React from 'react';
-import cn from 'classnames';
+import classNames from 'classnames';
 
 export const LAYOUT_MAX_WIDTH = 'max-w-[1200px]';
 
@@ -44,9 +44,9 @@ export function LayoutContainer({
   // If breakout is true, we use the banner-breakout utility.
   if (breakout) {
     return (
-      <div className={cn('banner-breakout', background)}>
+      <div className={classNames('banner-breakout', background)}>
         <div
-          className={cn(
+          className={classNames(
             'banner-breakout-content mx-auto w-full',
             maxWidth,
             padding,
@@ -63,8 +63,8 @@ export function LayoutContainer({
   // that carries the background color.
   if (fullWidthBackground) {
     return (
-      <div className={cn(background)}>
-        <div className={cn('mx-auto w-full', maxWidth, padding, className)}>
+      <div className={classNames(background, className)}>
+        <div className={classNames('mx-auto w-full', maxWidth, padding)}>
           {children}
         </div>
       </div>
@@ -74,7 +74,13 @@ export function LayoutContainer({
   // Otherwise, the container itself carries the background and is centered.
   return (
     <div
-      className={cn('mx-auto w-full', maxWidth, padding, background, className)}
+      className={classNames(
+        'mx-auto w-full',
+        maxWidth,
+        padding,
+        background,
+        className
+      )}
     >
       {children}
     </div>

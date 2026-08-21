@@ -25,7 +25,7 @@ export function Overrides() {
     configuration.data.is_locked || !configuration.data.is_draft;
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <Header configuration={configuration.data} />
       <SectionContainer>
         <div className="mb-4 flex items-center justify-between">
@@ -36,6 +36,7 @@ export function Overrides() {
             any group omitted here is removed regardless of your Customize eICR
             sections and Manage codes selections."
           />
+
           {!isDisabled && (
             <Button
               variant="secondary"

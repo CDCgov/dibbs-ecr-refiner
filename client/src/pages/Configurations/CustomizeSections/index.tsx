@@ -32,7 +32,7 @@ export function CustomizeSections() {
     configuration.data.is_locked || !configuration.data.is_draft;
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <Header configuration={configuration.data} />
       <SectionContainer>
         <div className="mb-4 flex items-center justify-between">

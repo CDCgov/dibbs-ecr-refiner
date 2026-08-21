@@ -22,9 +22,9 @@ export function Layout({ displayName, children }: LayoutProps) {
       <LayoutContainer
         background="bg-primary-container"
         fullWidthBackground={true}
-        className="flex grow"
+        className="flex flex-1"
       >
-        <main id="main-content" className="flex grow flex-col">
+        <main id="main-content" className="flex flex-1 flex-col">
           {children}
         </main>
       </LayoutContainer>

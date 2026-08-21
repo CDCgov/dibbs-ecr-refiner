@@ -33,7 +33,10 @@ export function NavigationContainer({
 
 export function SectionContainer({ children }: { children: React.ReactNode }) {
   return (
-    <LayoutContainer breakout={true} className="flex flex-col gap-8 py-9">
+    <LayoutContainer
+      breakout={true}
+      className="flex flex-1 flex-col gap-8 py-9"
+    >
       <section className="h-full w-full">{children}</section>
     </LayoutContainer>
   );
