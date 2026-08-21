@@ -244,19 +244,19 @@ function CodesTable({
                   colSpan={6}
                   className="text-gray-cool-60 px-4 py-8 text-center"
                 >
-                  <div className='flex flex-col items-center justify-center gap-4'>
-
-
-                  <span className='text-lg font-bold'>No codes match your search or filters.</span>
-                  {isFilterActive && (
-                    <Button
-                      variant="tertiary"
-                      onClick={onClearFilters}
-                      className="p-0!"
-                    >
-                      Clear search and filters
-                    </Button>
-                  )}
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    <span className="text-lg font-bold">
+                      No codes match your search or filters.
+                    </span>
+                    {isFilterActive && (
+                      <Button
+                        variant="tertiary"
+                        onClick={onClearFilters}
+                        className="p-0!"
+                      >
+                        Clear search and filters
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
