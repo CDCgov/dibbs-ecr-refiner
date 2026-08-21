@@ -1,4 +1,5 @@
-import { MenuButton, MenuItems, MenuItem, Menu } from '@headlessui/react';
+import { MenuItem } from '@headlessui/react';
+import { BaseMenu, BaseMenuButton, BaseMenuItems } from '@components/Dropdown';
 import { Link } from 'react-router';
 import {
   GetConfigurationResponseVersion,
@@ -23,18 +24,26 @@ export function VersionMenu({
   const step = useGetStep();
 
   return (
-    <Menu as="div" className="z-50">
-      <MenuButton>
+    <BaseMenu as="div">
+      <BaseMenuButton>
         {/* NOTE: using data-testid in order to make this simple to grab in test code.
               `findByText` won't work due to the span breaking up the text.
           */}
         <div data-testid="selected-version-label" className="cursor-pointer">
           {status === 'draft' ? 'Editing' : 'Viewing'}:{' '}
-          <span className="font-bold">Version {currentVersion}</span>
+          <span className="font-bold">
+            Version {currentVersion}
+            {status === 'draft' && (
+              <span className="text-state-warning-darker font-normal italic">
+                {' '}
+                (draft)
+              </span>
+            )}
+          </span>
           <ArrowDropDownIcon />
         </div>
-      </MenuButton>
-      <MenuItems className="absolute mt-1 ml-4 flex max-h-100 flex-col overflow-y-auto rounded-lg bg-white px-4 py-2 shadow-lg">
+      </BaseMenuButton>
+      <BaseMenuItems className="absolute mt-1 ml-4 flex max-h-100 flex-col overflow-y-auto rounded-lg bg-white px-4 py-2 shadow-lg">
         {versions.map((config, i) => (
           <Fragment key={config.id}>
             <MenuItem>
@@ -66,8 +75,8 @@ export function VersionMenu({
             )}
           </Fragment>
         ))}
-      </MenuItems>
-    </Menu>
+      </BaseMenuItems>
+    </BaseMenu>
   );
 }
 

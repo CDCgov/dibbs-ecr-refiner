@@ -1,5 +1,6 @@
 import { InfoIcon } from '@components/Icons/InfoIcon';
 import classNames from 'classnames';
+import { LayoutContainer } from '@components/Layout/LayoutContainer';
 
 interface ConfigLockBannerProps {
   lockedByName: string | null | undefined;
@@ -14,23 +15,30 @@ export function ConfigLockBanner({
 }: ConfigLockBannerProps) {
   if (!lockedByName || !lockedByEmail) return null;
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={classNames(
-        'bg-state-warning-lighter border-b-state-warning! flex w-full flex-col gap-4 px-8 py-4 shadow-lg md:flex-row md:justify-between lg:px-20',
+    <LayoutContainer
+      breakout
+      background={classNames(
+        'bg-state-warning-lighter border-b-state-warning! shadow-lg',
         className
       )}
+      maxWidth="max-w-7xl"
+      padding="px-8 py-4 lg:px-20"
     >
-      <div className="flex items-center gap-2">
-        <InfoIcon className="fill-state-warning-darker shrink-0" />
-        <p className="text-state-warning-darker">
-          <strong>View only:</strong> [
-          <span className="font-bold">{lockedByName}</span>/
-          <span className="font-bold">{lockedByEmail}</span>] currently has this
-          configuration open.
-        </p>
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex w-full flex-col gap-4 md:flex-row md:justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <InfoIcon className="fill-state-warning-darker shrink-0" />
+          <p className="text-state-warning-darker">
+            <strong>View only:</strong> [
+            <span className="font-bold">{lockedByName}</span>/
+            <span className="font-bold">{lockedByEmail}</span>] currently has
+            this configuration open.
+          </p>
+        </div>
       </div>
-    </div>
+    </LayoutContainer>
   );
 }

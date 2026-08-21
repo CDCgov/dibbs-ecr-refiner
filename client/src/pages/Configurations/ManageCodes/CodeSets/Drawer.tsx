@@ -66,7 +66,7 @@ export function Drawer({
       <div>
         <div
           className={classNames(
-            'bg-gray-2 fixed top-0 z-11049 flex h-full w-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 shadow-2xl transition-all duration-300 ease-linear',
+            'bg-gray-2 fixed top-0 z-[var(--z-drawer)] flex h-full w-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 shadow-2xl transition-all duration-300 ease-linear',
             {
               'pointer-events-auto right-0 opacity-100': isOpen,
               'pointer-events-none right-[-60%] opacity-0': !isOpen,

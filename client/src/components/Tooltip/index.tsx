@@ -114,7 +114,7 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
             id={tooltipId}
             role="tooltip"
             style={getTooltipStyle(position, triggerRect)}
-            className="bg-gray-90 pointer-events-none z-50 w-max max-w-xs rounded-sm p-2 font-normal text-white"
+            className="bg-gray-70 pointer-events-none z-[var(--z-modal-dropdown)] w-max max-w-xs rounded-sm p-5 font-normal text-white"
           >
             {label}
             <span
@@ -136,15 +136,15 @@ function InfoIcon() {
     <svg
       aria-hidden
       xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
       className="fill-blue-cool-50"
     >
       <path
         fillRule="evenodd"
         clipRule="evenodd"
-        d="M9.16675 5.83366H10.8334V7.50033H9.16675V5.83366ZM9.16675 9.16699H10.8334V14.167H9.16675V9.16699ZM10.0001 1.66699C5.40008 1.66699 1.66675 5.40033 1.66675 10.0003C1.66675 14.6003 5.40008 18.3337 10.0001 18.3337C14.6001 18.3337 18.3334 14.6003 18.3334 10.0003C18.3334 5.40033 14.6001 1.66699 10.0001 1.66699ZM10.0001 16.667C6.32508 16.667 3.33341 13.6753 3.33341 10.0003C3.33341 6.32533 6.32508 3.33366 10.0001 3.33366C13.6751 3.33366 16.6667 6.32533 16.6667 10.0003C16.6667 13.6753 13.6751 16.667 10.0001 16.667Z"
+        d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
       />
     </svg>
   );

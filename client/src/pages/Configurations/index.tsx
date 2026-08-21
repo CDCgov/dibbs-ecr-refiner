@@ -82,7 +82,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const hasMultipleConfigs = configs.length > 0;
 
   return (
-    <>
+    <div className="flex flex-1 flex-col">
       <AppUpdateBanner
         isVisible={
           user.notifications.to_render[
@@ -99,7 +99,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         }
         refreshUser={refreshUser}
       />
-      <section className="mx-auto p-3">
+      <section className="mx-auto w-full max-w-screen-xl p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
           <p>
@@ -134,7 +134,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
           data={searchText ? results.map((r) => r.item) : configs}
         />
       </section>
-    </>
+    </div>
   );
 }
 
@@ -290,7 +290,10 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                 }}
                 placeholder="Start typing to search (3 characters minimum)"
               />
-              <ComboboxOptions anchor="bottom" className="max-h-85!">
+              <ComboboxOptions
+                anchor="bottom"
+                className="z-[var(--z-dropdown)] max-h-85!"
+              >
                 {({ option: condition }) => {
                   const matchResult = results.find(
                     (r) => r.item.id === condition.id

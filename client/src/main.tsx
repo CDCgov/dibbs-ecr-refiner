@@ -6,6 +6,7 @@ import '@fontsource-variable/merriweather';
 import '@fontsource-variable/public-sans';
 import '@trussworks/react-uswds/lib/index.css';
 import './tailwind.css';
+import './styles/breakout.css';
 import './styles/index.scss';
 import {
   MutationCache,

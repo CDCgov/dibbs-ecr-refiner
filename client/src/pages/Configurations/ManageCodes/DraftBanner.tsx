@@ -12,6 +12,7 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { InfoIcon } from '@components/Icons/InfoIcon';
+import { LayoutContainer } from '@components/Layout/LayoutContainer';
 import { useGetStep } from './useGetStep';
 
 interface DraftBannerProps {
@@ -33,30 +34,37 @@ export function DraftBanner({
   const editDraftText =
     'Previous versions cannot be modified. You can edit the existing draft.';
   return (
-    <div className="bg-state-warning-lighter border-b-state-warning! flex w-full flex-col gap-4 border-b px-8 py-2 shadow-lg md:flex-row md:justify-between lg:px-20">
-      <div className="flex items-center gap-2">
-        <InfoIcon className="fill-state-warning-darker shrink-0" />
-        <p className="text-state-warning-darker font-bold">
-          {draftId ? editDraftText : newDraftText}
-        </p>
+    <LayoutContainer
+      breakout
+      background="bg-state-warning-lighter border-b-state-warning! shadow-lg"
+      maxWidth="max-w-7xl"
+      padding="px-8 py-2 lg:px-20"
+    >
+      <div className="flex w-full flex-col gap-4 border-b py-0 md:flex-row md:justify-between">
+        <div className="flex items-center gap-2">
+          <InfoIcon className="fill-state-warning-darker shrink-0" />
+          <p className="text-state-warning-darker font-bold">
+            {draftId ? editDraftText : newDraftText}
+          </p>
+        </div>
+        {draftId ? (
+          <Button
+            to={`/configurations/${draftId}/${step}`}
+            className="self-start"
+          >
+            Go to draft
+          </Button>
+        ) : (
+          <Button onClick={() => setIsOpen(true)}>Draft a new version</Button>
+        )}
+        <NewDraftModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          conditionId={conditionId}
+          version={latestVersion}
+        />
       </div>
-      {draftId ? (
-        <Button
-          to={`/configurations/${draftId}/${step}`}
-          className="self-start"
-        >
-          Go to draft
-        </Button>
-      ) : (
-        <Button onClick={() => setIsOpen(true)}>Draft a new version</Button>
-      )}
-      <NewDraftModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        conditionId={conditionId}
-        version={latestVersion}
-      />
-    </div>
+    </LayoutContainer>
   );
 }
 

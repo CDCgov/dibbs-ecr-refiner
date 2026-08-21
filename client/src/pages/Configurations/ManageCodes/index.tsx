@@ -56,7 +56,7 @@ export function ManageCodes() {
   });
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <Header configuration={configuration.data} />
       <SectionContainer>
         <ConfigurationTitleBar
