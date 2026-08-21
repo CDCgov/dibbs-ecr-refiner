@@ -91,7 +91,9 @@ class AsyncDatabaseConnection:
 
 
 def create_db(
-    db_url: str, db_password: str, prepare_threshold: int | None = 5
+    db_url: str,
+    db_password: str,
+    prepare_threshold: int | None = 5,
 ) -> AsyncDatabaseConnection:
     """
     Creates a new database connection.
@@ -105,7 +107,9 @@ def create_db(
         AsyncDatabaseConnection: The database connection
     """
     return AsyncDatabaseConnection(
-        db_url=db_url, db_password=db_password, prepare_threshold=prepare_threshold
+        db_url=db_url,
+        db_password=db_password,
+        prepare_threshold=prepare_threshold,
     )
 
 

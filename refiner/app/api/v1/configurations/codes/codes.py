@@ -29,7 +29,7 @@ class CodeResponse:
 
     id: UUID
     condition_id: UUID | None
-    source: str
+    source: list[str]
     code: str
     description: str
     system_id: UUID
