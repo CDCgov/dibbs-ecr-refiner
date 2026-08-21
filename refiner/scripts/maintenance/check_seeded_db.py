@@ -17,7 +17,7 @@ TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0", "5.0.0"]
 
 TABLES_TO_CHECK = [
     "conditions",
-    "conditions_context_groupers",
+    "valuesets",
     "configurations",
     "jurisdictions",
     "schema_migrations",
@@ -38,7 +38,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "query": """
             SELECT COUNT(*) AS count
             FROM conditions c
-            WHERE NOT EXISTS (SELECT 1 FROM conditions_codes crc WHERE crc.condition_id = c.id);
+            WHERE NOT EXISTS (SELECT 1 FROM conditions_codes_temp crc WHERE crc.condition_id = c.id);
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
         "failure_message": "Found conditions with no child SNOMED codes, indicating an aggregation error.",
@@ -51,7 +51,7 @@ DB_CHECKS: list[dict[str, Any]] = [
                 SELECT
                     code_id,
                     COUNT(DISTINCT c.canonical_url) as url_count
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN conditions c ON crc.condition_id = c.id AND crc.is_child_rsg
                 GROUP BY code_id
                 HAVING COUNT(DISTINCT c.canonical_url) > 1
@@ -104,21 +104,21 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "All Context Groupers Reference Valid Conditions",
         "query": """
             SELECT COUNT(*) AS count
-            FROM conditions_context_groupers cg
-            LEFT JOIN conditions c ON cg.condition_id = c.id
+            FROM valuesets v
+            LEFT JOIN conditions c ON v.condition_id = c.id
             WHERE c.id IS NULL;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
         "failure_message": "Found context grouper rows with orphaned condition_id references.",
     },
     {
-        "title": "Context Grouper Categories are Known Values",
+        "title": "Valuesets Categories are Known Values",
         "query": """
             SELECT COUNT(*) AS count
-            FROM conditions_context_groupers
+            FROM valuesets
             WHERE category NOT IN (
                 'medication', 'immunization', 'symptom',
-                'specimen_source', 'diagnosis', 'clinical_lab_result'
+                'specimen_source', 'diagnosis', 'clinical_lab_result', 'reporting_specification_grouper'
             );
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -129,7 +129,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "No Context Groupers with Zero Code Counts",
         "query": """
             SELECT COUNT(*) AS count
-            FROM conditions_context_groupers
+            FROM valuesets
             WHERE code_count = 0;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -339,7 +339,7 @@ def display_acg_category_stats(cursor: Cursor, console: Console) -> None:
             cg.category,
             COUNT(*) AS grouper_count,
             SUM(cg.code_count) AS total_codes
-        FROM conditions_context_groupers cg
+        FROM valuesets cg
         JOIN conditions c ON cg.condition_id = c.id
         JOIN tes t ON t.id = c.tes_id
         WHERE t.version = (

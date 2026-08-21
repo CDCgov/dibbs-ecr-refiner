@@ -863,7 +863,9 @@ test.describe('Codes management - filters', () => {
       const rowCount = await tableRows.count();
       for (let i = 1; i < rowCount; i++) {
         const sourceCell = tableRows.nth(i).getByRole('cell').nth(4);
-        await expect(sourceCell).toHaveText('Acanthamoeba CG');
+        await expect(sourceCell).toHaveText(
+          'Acanthamoeba Reporting Specification Grouper'
+        );
       }
     });
   });
@@ -1012,7 +1014,7 @@ test.describe('Codes management - filters', () => {
       await sourceFilterButton.click();
 
       await expect(sourceOptions).toBeVisible();
-      await expect(sourceOptions.getByRole('option')).toHaveCount(4); // both CGs + custom code + clear selection
+      await expect(sourceOptions.getByRole('option')).toHaveCount(4); // both RSGs + custom code + clear selection
 
       // use all 3 options
       const optionCountExcludingClearSelectionButton = 3;
@@ -1060,12 +1062,18 @@ test.describe('Codes management - filters', () => {
       const texts = await sourceCells.allTextContents();
 
       expect(texts.some((t) => t.includes('Custom code'))).toBe(true);
-      expect(texts.some((t) => t.includes(`${associatedCondition} CG`))).toBe(
-        true
-      );
-      expect(texts.some((t) => t.includes('Anotia CG'))).toBe(true);
       expect(
-        texts.filter((t) => t.includes(`${associatedCondition} CG`))
+        texts.some((t) =>
+          t.includes(`${associatedCondition} Reporting Specification Grouper`)
+        )
+      ).toBe(true);
+      expect(
+        texts.some((t) => t.includes('Anotia Reporting Specification Grouper'))
+      ).toBe(true);
+      expect(
+        texts.filter((t) =>
+          t.includes(`${associatedCondition} Reporting Specification Grouper`)
+        )
       ).toHaveLength(2);
     });
   });

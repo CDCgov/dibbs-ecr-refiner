@@ -21,7 +21,7 @@ def seed_database(db_url: str, db_password: str) -> None:
             logger.info("🧹 Clearing specified data tables...")
 
             for table in [
-                "conditions_context_groupers",
+                "valuesets",
                 "configurations_conditions",
                 "conditions",
                 "jurisdictions",

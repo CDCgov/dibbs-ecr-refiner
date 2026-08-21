@@ -15,7 +15,7 @@ async def get_rsg_codes_by_condition_id_db(
 
     query = """
         SELECT c.display, c.code, tes.version, c.system_id
-        FROM conditions_codes as cc
+        FROM conditions_codes_temp as cc
         LEFT JOIN codes c on c.id = cc.code_id
         LEFT JOIN conditions cond on cond.id = %(condition_id)s
         LEFT JOIN tes on cond.tes_id = tes.id

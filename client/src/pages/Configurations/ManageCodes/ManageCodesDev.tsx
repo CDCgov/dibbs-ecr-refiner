@@ -212,10 +212,16 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
                   }
                 />
               </th>
-              <th scope="col">Code no.</th>
-              <th scope="col">System</th>
-              <th scope="col">Description</th>
-              <th scope="col">
+              <th scope="col" className="w-[15%]">
+                Code no.
+              </th>
+              <th scope="col" className="w-[10%]">
+                System
+              </th>
+              <th scope="col" className="w-[30%]">
+                Description
+              </th>
+              <th scope="col" className="w-[35%]">
                 <div className="flex flex-row items-center gap-1">
                   <span>Source</span>
                   <Button
@@ -228,7 +234,9 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
                   </Button>
                 </div>
               </th>
-              <th scope="col">Status</th>
+              <th scope="col" className="w-[10%]">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody className="divide-gray-cool-20 divide-y">
@@ -282,7 +290,7 @@ interface SourceCellProps {
 }
 
 function SourceCell({ configurationId, code }: SourceCellProps) {
-  if (!code.is_custom) return code.source;
+  if (!code.is_custom) return code.source.join(', ');
 
   return (
     <div className="flex flex-col items-center gap-2 xl:flex-row">
