@@ -7,7 +7,6 @@ import { ExternalLink } from '../ExternalLink';
 import { LayoutContainer } from './LayoutContainer';
 export { LayoutContainer };
 
-
 interface LayoutProps {
   children: React.ReactNode;
   displayName: string;

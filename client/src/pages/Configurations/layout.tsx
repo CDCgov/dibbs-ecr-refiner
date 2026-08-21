@@ -19,7 +19,11 @@ export function NavigationContainer({
   children: React.ReactNode;
 }) {
   return (
-    <LayoutContainer breakout={true} background="bg-white" className="border-b border-gray-400">
+    <LayoutContainer
+      breakout={true}
+      background="bg-white"
+      className="border-b border-gray-400"
+    >
       <div className="flex flex-col items-start gap-4 border-t border-gray-400 md:flex-row md:items-end">
         {children}
       </div>
@@ -30,9 +34,7 @@ export function NavigationContainer({
 export function SectionContainer({ children }: { children: React.ReactNode }) {
   return (
     <LayoutContainer breakout={true} className="flex flex-col gap-8 py-9">
-      <section className="h-full w-full">
-        {children}
-      </section>
+      <section className="h-full w-full">{children}</section>
     </LayoutContainer>
   );
 }

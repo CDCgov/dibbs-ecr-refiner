@@ -81,61 +81,61 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
 
   const hasMultipleConfigs = configs.length > 0;
 
-    return (
-      <div className="flex flex-col">
-        <AppUpdateBanner
-          isVisible={
-            user.notifications.to_render[
-              NotificationKeys.most_recent_app_update
-            ] ?? false
-          }
-          refreshUser={refreshUser}
-        />
-        <TesUpdateBanner
-          isVisible={
-            user.notifications.to_render[
-              NotificationKeys.most_recent_tes_update
-            ] ?? false
-          }
-          refreshUser={refreshUser}
-        />
-        <section className="mx-auto p-3 flex-1 w-full max-w-screen-xl">
-          <div className="flex flex-col gap-4 py-10">
-            <Title>Configurations</Title>
-            <p>
-              Configurations define which patient data is included in refined eCRs
-              for each reportable condition
-            </p>
-          </div>
-          <div
-            className={classNames(
-              'flex flex-col gap-10 sm:flex-row sm:items-start',
-              {
-                'justify-between': hasMultipleConfigs,
-                'justify-end': !hasMultipleConfigs,
-              }
-            )}
-          >
-            {hasMultipleConfigs ? (
-              <Search
-                placeholder="Search configurations"
-                id="search-configurations"
-                name="search"
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            ) : null}
+  return (
+    <div className="flex flex-col">
+      <AppUpdateBanner
+        isVisible={
+          user.notifications.to_render[
+            NotificationKeys.most_recent_app_update
+          ] ?? false
+        }
+        refreshUser={refreshUser}
+      />
+      <TesUpdateBanner
+        isVisible={
+          user.notifications.to_render[
+            NotificationKeys.most_recent_tes_update
+          ] ?? false
+        }
+        refreshUser={refreshUser}
+      />
+      <section className="mx-auto w-full max-w-screen-xl flex-1 p-3">
+        <div className="flex flex-col gap-4 py-10">
+          <Title>Configurations</Title>
+          <p>
+            Configurations define which patient data is included in refined eCRs
+            for each reportable condition
+          </p>
+        </div>
+        <div
+          className={classNames(
+            'flex flex-col gap-10 sm:flex-row sm:items-start',
+            {
+              'justify-between': hasMultipleConfigs,
+              'justify-end': !hasMultipleConfigs,
+            }
+          )}
+        >
+          {hasMultipleConfigs ? (
+            <Search
+              placeholder="Search configurations"
+              id="search-configurations"
+              name="search"
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          ) : null}
 
-            <Button className="m-0!" onClick={() => setIsOpen(true)}>
-              Set up new configuration
-            </Button>
-            <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
-          </div>
-          <ConfigurationsTable
-            data={searchText ? results.map((r) => r.item) : configs}
-          />
-        </section>
-      </div>
-    );
+          <Button className="m-0!" onClick={() => setIsOpen(true)}>
+            Set up new configuration
+          </Button>
+          <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
+        </div>
+        <ConfigurationsTable
+          data={searchText ? results.map((r) => r.item) : configs}
+        />
+      </section>
+    </div>
+  );
 }
 
 function useDismissNotification(key: NotificationKeys, sideEffect: () => void) {

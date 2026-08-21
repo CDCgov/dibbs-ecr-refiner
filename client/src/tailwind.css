@@ -19,7 +19,7 @@
     @apply min-h-dvh;
   }
   body {
-    @apply min-h-full m-0;
+    @apply m-0 min-h-full;
   }
   #root {
     @apply min-h-full;
