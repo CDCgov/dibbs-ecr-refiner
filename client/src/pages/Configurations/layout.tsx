@@ -1,3 +1,4 @@
+import { LayoutContainer } from '@components/Layout/LayoutContainer';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
@@ -18,25 +19,29 @@ export function NavigationContainer({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-gray-400 bg-white px-8 lg:px-20">
+    <LayoutContainer breakout={true} background="bg-white" className="border-b border-gray-400">
       <div className="flex flex-col items-start gap-4 border-t border-gray-400 md:flex-row md:items-end">
         {children}
       </div>
-    </div>
+    </LayoutContainer>
   );
 }
 
 export function SectionContainer({ children }: { children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-8 px-8 py-9 lg:px-20">
-      {children}
-    </section>
+    <LayoutContainer breakout={true} className="flex flex-col gap-8 py-9">
+      <section className="h-full w-full">
+        {children}
+      </section>
+    </LayoutContainer>
   );
 }
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white px-8 py-6 shadow-lg lg:px-20">{children}</div>
+    <LayoutContainer breakout={true} background="bg-white" className="py-6">
+      {children}
+    </LayoutContainer>
   );
 }
 

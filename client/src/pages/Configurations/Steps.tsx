@@ -26,11 +26,13 @@ export function Steps({ configurationId }: StepsProps) {
           Manage codes
         </StepLink>
       </li>
+      {/*
       <li>
         <StepLink to={`/configurations/${configurationId}/overrides`}>
           Apply overrides
         </StepLink>
       </li>
+      */}
       <li>
         <StepLink to={`/configurations/${configurationId}/test`}>
           Test & export

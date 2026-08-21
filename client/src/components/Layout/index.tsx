@@ -4,6 +4,9 @@ import CdcLogo from '../../assets/cdc-logo.svg';
 import { NavigationBar } from '../NavigationBar';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ExternalLink } from '../ExternalLink';
+import { LayoutContainer } from './LayoutContainer';
+export { LayoutContainer };
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,17 +15,20 @@ interface LayoutProps {
 
 export function Layout({ displayName, children }: LayoutProps) {
   return (
-    <div className="bg-page-bg flex min-h-screen flex-col">
+    <div className="bg-page-bg flex min-h-dvh flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
       <Header displayName={displayName} />
-      <main
-        id="main-content"
-        className="bg-primary-container flex grow flex-col"
+      <LayoutContainer
+        background="bg-primary-container"
+        fullWidthBackground={true}
+        className="flex grow"
       >
-        {children}
-      </main>
+        <main id="main-content" className="flex grow flex-col">
+          {children}
+        </main>
+      </LayoutContainer>
       <Footer />
     </div>
   );
@@ -81,18 +87,20 @@ export function Header({ displayName }: HeaderProps) {
 
   return (
     <header>
-      <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 sm:flex-row sm:items-center xl:px-20">
-        <Link to="/" aria-label="Link back to the home configurations page">
-          <div className="my-4 flex items-center gap-3">
-            <img src={DibbsLogo} alt="DIBBs" role="presentation" />
-            <span className="font-merriweather text-2xl font-bold text-white">
-              eCR Refiner
-            </span>
-          </div>
-        </Link>
+      <LayoutContainer background="bg-blue-cool-80" breakout={true}>
+        <div className="flex flex-col items-start justify-between gap-4 py-4 sm:flex-row sm:items-center">
+          <Link to="/" aria-label="Link back to the home configurations page">
+            <div className="flex items-center gap-3">
+              <img src={DibbsLogo} alt="DIBBs" role="presentation" />
+              <span className="font-merriweather text-2xl font-bold text-white">
+                eCR Refiner
+              </span>
+            </div>
+          </Link>
 
-        {displayName && loggedInHeaderContent}
-      </div>
+          {displayName && loggedInHeaderContent}
+        </div>
+      </LayoutContainer>
     </header>
   );
 }

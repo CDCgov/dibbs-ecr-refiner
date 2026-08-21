@@ -23,7 +23,7 @@ export function VersionMenu({
   const step = useGetStep();
 
   return (
-    <Menu as="div" className="z-50">
+    <Menu as="div" className="z-[var(--z-dropdown)]">
       <MenuButton>
         {/* NOTE: using data-testid in order to make this simple to grab in test code.
               `findByText` won't work due to the span breaking up the text.

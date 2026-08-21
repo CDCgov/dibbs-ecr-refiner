@@ -59,7 +59,7 @@ function FilterCombobox<T extends FilterOption>({
         </ComboboxButton>
         <ComboboxOptions
           data-testid={`${testId}-options`}
-          className="absolute left-0 z-100 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg"
+          className="absolute left-0 z-[var(--z-dropdown)] mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg"
         >
           {options.map((option) => (
             <ComboboxOption

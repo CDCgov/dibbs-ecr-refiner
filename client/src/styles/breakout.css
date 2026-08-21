@@ -1,0 +1,28 @@
+/* Breakout utilities for full-width banners nested in constrained containers */
+
+.banner-breakout {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: auto;
+  margin-left: -50vw;
+  margin-right: 0;
+}
+
+.banner-breakout-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.banner-breakout-content {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
