@@ -51,6 +51,15 @@
   .border-thin {
     @apply border-1;
   }
+  .banner-breakout {
+    @apply w-screen relative left-1/2 -ml-[50vw] mr-0;
+  }
+  .banner-breakout-bg {
+    @apply absolute inset-0 -z-[1];
+  }
+  .banner-breakout-content {
+    @apply relative z-[1] mx-auto px-4;
+  }
 }
 
 @theme {
