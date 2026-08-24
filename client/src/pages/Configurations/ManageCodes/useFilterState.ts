@@ -71,7 +71,15 @@ export function useFilterState(configurationId: string) {
     activeFilters.sources.length > 0 ||
     activeFilters.statuses.length > 0;
 
-  return { filters: activeFilters, setFilters, clearFilters, isFilterActive };
+  const filtersKey = JSON.stringify(filters);
+
+  return {
+    filters: activeFilters,
+    setFilters,
+    clearFilters,
+    isFilterActive,
+    filtersKey,
+  };
 }
 
 /**
