@@ -1,12 +1,14 @@
 from collections import defaultdict
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.db.code_systems.db import DbCodeSystem
+from app.db.codes.model import DbCoding
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
-from ..db.conditions.model import DbCondition, DbConditionCoding
 from ..db.configurations.model import DbNarrativeAction
 
 # NOTE:
@@ -18,21 +20,6 @@ from ..db.configurations.model import DbNarrativeAction
 # =============================================================================
 type CodeSystemKey = str
 type Oid = str
-
-
-def index_condition_code_list_by_system(
-    condition: DbCondition, system_keys_to_index_by: list[CodeSystemKey]
-) -> dict[CodeSystemKey, list[DbConditionCoding]]:
-    """
-    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
-    """
-    result: dict[CodeSystemKey, list[DbConditionCoding]] = defaultdict(list)
-    for s in system_keys_to_index_by:
-        # TODO: replace this string mapping with proper read to the codes table
-        condition_column_index = f"{s}_codes"
-        result[s] = getattr(condition, condition_column_index, [])
-
-    return result
 
 
 @dataclass(frozen=True)
@@ -52,6 +39,27 @@ class Coding:
 
 
 type Code = str
+
+
+def index_code_list_by_system_key(
+    codes: list[DbCoding], code_systems: dict[UUID, DbCodeSystem]
+) -> dict[CodeSystemKey, list[dict]]:
+    """
+    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
+    """
+    result: dict[CodeSystemKey, list[dict]] = defaultdict(list)
+    for c in codes:
+        if c.system_id not in code_systems:
+            raise ValueError(
+                f"System indexing ahead in serialization with value {c.system_id} not found in provided map {code_systems}"
+            )
+
+        system = code_systems[c.system_id]
+        result[system.key].append(
+            asdict(Coding(code=c.code, display=c.display, system_oid=c.system_oid))
+        )
+
+    return result
 
 
 @dataclass(frozen=True)

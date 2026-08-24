@@ -5,12 +5,10 @@ from logging import Logger
 from typing import Any
 
 from app.db.code_systems.db import (
-    get_code_system_by_key_db,
     get_id_to_code_system_dict_db,
 )
+from app.db.codes.db import get_pruned_configuration_codes_db
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
-from app.db.conditions.model import DbConditionCoding
-from app.db.configurations.exclusions.db import get_code_exclusions_db
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
@@ -20,9 +18,6 @@ from app.db.configurations.model import (
     DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
-from app.services.code_systems import (
-    get_allowed_code_system_keys,
-)
 from app.services.ecr.policy import (
     NARRATIVE_ONLY_SECTIONS,
     SECTION_PROCESSING_SKIP,
@@ -37,7 +32,7 @@ from app.services.terminology import (
     CodeSystemKey,
     CodeSystemSets,
     Coding,
-    index_condition_code_list_by_system,
+    index_code_list_by_system_key,
 )
 
 
@@ -217,8 +212,19 @@ async def convert_config_to_storage_payload(
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
-    coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
     code_systems = await get_id_to_code_system_dict_db(db=db)
+
+    conditions = await get_included_conditions_db(
+        included_conditions=configuration.included_conditions, db=db
+    )
+    configuration_codes = await get_pruned_configuration_codes_db(
+        configuration_id=configuration.id, db=db
+    )
+
+    # map each db code list to its target dict + OID
+    coding_by_code_system: dict[str, list[dict]] = index_code_list_by_system_key(
+        codes=configuration_codes, code_systems=code_systems
+    )
 
     # custom codes
     for cc in configuration.custom_codes:
@@ -241,49 +247,6 @@ async def convert_config_to_storage_payload(
                 )
             )
         )
-
-    conditions = await get_included_conditions_db(
-        included_conditions=configuration.included_conditions, db=db
-    )
-    systems_keys_to_index_by = await get_allowed_code_system_keys(db=db)
-    excluded_codes = await get_code_exclusions_db(
-        configuration_id=configuration.id, db=db
-    )
-    # condition codes -> build both the flat set and per-system dicts
-    for condition in conditions:
-        # exclusions are scoped to (configuration, condition), so they are applied
-        # here rather than to the merged dict below: this loop is the last point
-        # where a code's originating condition is still known, and it is the only
-        # loop custom codes never pass through -- so an exclusion can never strip a
-        # hand-added custom code that happens to share a (system, code) pair.
-        excluded_for_condition = excluded_codes.get(condition.id, set())
-
-        # map each db code list to its target dict + OID
-        code_system_map: dict[CodeSystemKey, list[DbConditionCoding]] = (
-            index_condition_code_list_by_system(
-                condition=condition, system_keys_to_index_by=systems_keys_to_index_by
-            )
-        )
-
-        for key, code_list in code_system_map.items():
-            system_metadata = await get_code_system_by_key_db(key=key, db=db)
-            if system_metadata is None:
-                raise ValueError(
-                    f"System of name {key} doesn't match supported systems"
-                )
-            coding_by_code_system[system_metadata.key].extend(
-                [
-                    asdict(
-                        Coding(
-                            code=c.code,
-                            display=c.display,
-                            system_oid=system_metadata.oid,
-                        )
-                    )
-                    for c in code_list
-                    if (key, c.code) not in excluded_for_condition
-                ]
-            )
 
     sections = [
         asdict(section_process) for section_process in configuration.section_processing

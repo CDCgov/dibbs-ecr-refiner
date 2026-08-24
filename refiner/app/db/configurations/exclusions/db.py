@@ -38,9 +38,9 @@ async def get_code_exclusions_db(
     FROM configurations_conditions_code_exclusions e
     JOIN codes c ON c.id = e.code_id
     JOIN systems s ON s.id = c.system_id
-    WHERE e.configuration_id = %s
+    WHERE e.configuration_id = %(configuration_id)s
     """
-    params = (configuration_id,)
+    params = {"configuration_id": configuration_id}
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

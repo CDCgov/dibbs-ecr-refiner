@@ -2,7 +2,7 @@ from uuid import UUID
 
 from psycopg.rows import class_row
 
-from app.db.codes.model import DbCode
+from app.db.codes.model import DbCode, DbCoding
 from app.db.pool import AsyncDatabaseConnection
 
 
@@ -17,7 +17,7 @@ async def get_rsg_codes_by_condition_id_db(
         SELECT c.display, c.code, tes.version, c.system_id
         FROM conditions_codes_temp as cc
         LEFT JOIN codes c on c.id = cc.code_id
-        LEFT JOIN conditions cond on cond.id = %(condition_id)s
+        LEFT JOIN conditions cond on cond.id = cc.condition_id
         LEFT JOIN tes on cond.tes_id = tes.id
         WHERE cc.condition_id = %(condition_id)s AND cc.is_child_rsg;
     """
@@ -26,3 +26,32 @@ async def get_rsg_codes_by_condition_id_db(
             await cur.execute(query, {"condition_id": condition_id})
 
             return await cur.fetchall()
+
+
+async def get_pruned_configuration_codes_db(
+    configuration_id: UUID, db: AsyncDatabaseConnection
+):
+
+    query = """
+        SELECT DISTINCT c.display, c.code, s.id as system_id, t.version, s.oid as system_oid
+        FROM configurations_conditions as cc
+        JOIN conditions_codes_temp cond_codes ON cond_codes.condition_id = cc.condition_id
+        JOIN codes c ON c.id = cond_codes.code_id
+        JOIN conditions cond ON cond.id = cc.condition_id
+        JOIN systems s ON c.system_id = s.id
+        JOIN tes t ON t.id = cond.tes_id
+
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM configurations_conditions_code_exclusions ce
+            WHERE ce.configuration_id = %(configuration_id)s AND ce.code_id = c.id
+        );
+    """
+
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCoding)) as cur,
+    ):
+        await cur.execute(query, {"configuration_id": configuration_id})
+
+        return await cur.fetchall()
