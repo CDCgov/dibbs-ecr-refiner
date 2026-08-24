@@ -178,7 +178,19 @@
   --color-red-warm-10v: #fce1d4;
 }
 
+@layer utilities {
+  .z-base { z-index: var(--z-base); }
+  .z-sticky { z-index: var(--z-sticky); }
+  .z-banner { z-index: var(--z-banner); }
+  .z-dropdown { z-index: var(--z-dropdown); }
+  .z-drawer { z-index: var(--z-drawer); }
+  .z-modal-backdrop { z-index: var(--z-modal-backdrop); }
+  .z-modal-content { z-index: var(--z-modal-content); }
+  .z-modal-dropdown { z-index: var(--z-modal-dropdown); }
+}
+
 /**
+
   * README:
   * Overriding USWDS Table styles with TailwindCSS. This helps standardize the
   * look of USWDS Tables for the eCR Refiner application.

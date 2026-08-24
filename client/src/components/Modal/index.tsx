@@ -64,7 +64,7 @@ function Modal({
   return (
     <ModalContext.Provider value={{ onClose }}>
       <Dialog open={open} onClose={onClose} unmount>
-        <DialogBackdrop className="fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/60" />
+        <DialogBackdrop className="fixed inset-0 z-modal-backdrop bg-black/60" />
 
         <div
           className={classNames(
