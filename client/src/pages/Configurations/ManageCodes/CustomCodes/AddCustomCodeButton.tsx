@@ -5,11 +5,13 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
 type AddCustomCodeButtonProps = Pick<ButtonProps, 'disabled'> & {
   configurationId: string;
+  setIsUploadingCustomCodes: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function AddCustomCodeButton({
   configurationId,
   disabled,
+  setIsUploadingCustomCodes,
 }: AddCustomCodeButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -37,7 +39,7 @@ export function AddCustomCodeButton({
           </MenuItem>
           <div aria-hidden className="bg-gray-cool-10 my-1 h-px w-full" />
           <MenuItem>
-            <MenuItemButton onClick={() => setIsOpen(true)}>
+            <MenuItemButton onClick={() => setIsUploadingCustomCodes(true)}>
               Import codes from CSV
             </MenuItemButton>
           </MenuItem>

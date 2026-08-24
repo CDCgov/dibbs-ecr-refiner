@@ -37,6 +37,7 @@ import { useFilterState } from './useFilterState';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { SearchBar } from './SearchBar';
+import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -44,6 +45,7 @@ import { SearchBar } from './SearchBar';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
+  const [isUploadingCustomCodes, setIsUploadingCustomCodes] = useState(false);
 
   // acquire lock on mount, schedule release on unmount
   useConfigLock(id);
@@ -76,10 +78,22 @@ export function ManageCodesDev() {
               display_name={configuration.data.display_name}
               disabled={isDisabled}
             />
-            <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+            <AddCustomCodeButton
+              configurationId={id}
+              disabled={isDisabled}
+              setIsUploadingCustomCodes={setIsUploadingCustomCodes}
+            />
           </div>
         </div>
-        <CodesPanel id={configuration.data.id} disabled={isDisabled} />
+        {isUploadingCustomCodes ? (
+          <ImportCustomCodes
+            configurationId={id}
+            disabled={isDisabled}
+            onSuccess={() => setIsUploadingCustomCodes(false)}
+          />
+        ) : (
+          <CodesPanel id={configuration.data.id} disabled={isDisabled} />
+        )}
       </SectionContainer>
     </div>
   );
