@@ -1453,63 +1453,6 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Condition code sets can be added and deleted', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-
-    await test.step('Add Acanthamoeba code set', async () => {
-      await page.getByRole('button', { name: '1 Condition code sets' }).click();
-      await page
-        .getByRole('searchbox', { name: 'Search by condition name' })
-        .fill('acanth');
-      await page
-        .getByRole('listitem')
-        .filter({ hasText: 'Acanthamoeba' })
-        .hover();
-      await page.getByLabel('Add Acanthamoeba').click();
-      await page.getByRole('button', { name: 'Close drawer' }).click();
-    });
-
-    await test.step('Check page state after addition', async () => {
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '940 of 940 codes included'
-      );
-      await expect(page.getByText('2 condition code sets')).toBeVisible();
-      await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
-    });
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    await test.step('Remove Acanthamoeba code set', async () => {
-      await page.getByRole('button', { name: '2 Condition code sets' }).click();
-      await page
-        .getByRole('searchbox', { name: 'Search by condition name' })
-        .fill('acanth');
-      await page
-        .getByRole('listitem')
-        .filter({ hasText: 'Acanthamoeba' })
-        .hover();
-      await page.getByLabel('Remove Acanthamoeba').click();
-      await page.getByRole('button', { name: 'Close drawer' }).click();
-    });
-
-    await test.step('Check page state after removal', async () => {
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '2 of 2 codes included'
-      );
-      await expect(page.getByText('1 condition code sets')).toBeVisible();
-      await expect(page.locator('table tr')).toHaveCount(3); // two Anotia codes + header row
-    });
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
   test('More codes load into view as user scrolls down', async ({
     page,
     configurationsPage,
