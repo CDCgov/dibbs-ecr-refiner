@@ -11,6 +11,12 @@ export function SearchBar({ filters, setFilters }: SearchBarProps) {
   const DEBOUNCE_TIME_MS = 500;
 
   const [inputValue, setInputValue] = useState(filters.search ?? '');
+  const [prevSearch, setPrevSearch] = useState(filters.search);
+
+  if (prevSearch !== filters.search) {
+    setPrevSearch(filters.search);
+    setInputValue(filters.search ?? '');
+  }
 
   const debouncedUpdate = useDebouncedCallback((value: string) => {
     setFilters((prev) => ({ ...prev, search: value || undefined }));
