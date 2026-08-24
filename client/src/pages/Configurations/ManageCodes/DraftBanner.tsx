@@ -37,7 +37,8 @@ export function DraftBanner({
     <LayoutContainer
       breakout
       background="bg-yellow-vivid-5v border-b-3 border-yellow-vivid-30v"
-      padding="md"
+      padding="none"
+      className="px-8 py-4 lg:px-20"
       maxWidth="max-w-7xl"
     >
       <div className="w-full">
