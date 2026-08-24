@@ -334,8 +334,8 @@ async def test_delete_custom_code_from_configuration(
 
     monkeypatch.setattr(
         custom_codes_module,
-        "delete_custom_code_db",
-        AsyncMock(return_value=custom_code_to_delete),
+        "delete_custom_codes_db",
+        AsyncMock(return_value=[custom_code_to_delete]),
     )
 
     monkeypatch.setattr(
