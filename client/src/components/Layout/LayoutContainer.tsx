@@ -7,10 +7,10 @@ type LayoutPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 
 const PADDING_MAP: Record<LayoutPadding, string> = {
   none: '',
-  sm: 'px-4 py-3',
-  md: 'px-8 py-4',
-  lg: 'px-8 lg:px-20 py-6',
-  xl: 'px-12 lg:px-24 py-8',
+  sm: 'px-4',
+  md: 'px-8',
+  lg: 'px-8 lg:px-20',
+  xl: 'px-12 lg:px-24',
 };
 
 interface LayoutContainerProps {
@@ -53,7 +53,12 @@ export function LayoutContainer({
   // If breakout is true, we use the banner-breakout utility.
   if (breakout) {
     return (
-      <div className={classNames('banner-breakout', background)}>
+      <div
+        className={classNames(
+          'banner-breakout flex flex-1 flex-col',
+          background
+        )}
+      >
         <div
           className={classNames(
             'banner-breakout-content mx-auto w-full',
