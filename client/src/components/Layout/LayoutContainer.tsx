@@ -6,11 +6,11 @@ export const LAYOUT_MAX_WIDTH = 'max-w-[1200px]';
 interface LayoutContainerProps {
   /** The content to be rendered inside the container */
   children: React.ReactNode;
-  /**
-   * The maximum width of the container.
-   * Defaults to 'max-w-360'.
-   */
-  maxWidth?: typeof LAYOUT_MAX_WIDTH | 'max-w-7xl' | 'max-w-full' | string;
+   /**
+    * The maximum width of the container.
+    * Defaults to LAYOUT_MAX_WIDTH.
+    */
+   maxWidth?: typeof LAYOUT_MAX_WIDTH | 'max-w-7xl' | 'max-w-full';
 
   /** Additional CSS classes for the inner container */
   className?: string;
