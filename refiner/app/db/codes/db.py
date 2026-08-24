@@ -31,7 +31,6 @@ async def get_rsg_codes_by_condition_id_db(
 async def get_pruned_configuration_codes_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
 ):
-
     query = """
         SELECT DISTINCT c.display, c.code, s.id as system_id, t.version, s.oid as system_oid
         FROM configurations_conditions as cc

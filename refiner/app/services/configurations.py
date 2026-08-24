@@ -1,5 +1,4 @@
 import re
-from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -29,7 +28,6 @@ from app.services.ecr.specification import (
 )
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
-    CodeSystemKey,
     CodeSystemSets,
     Coding,
     index_code_list_by_system_key,
