@@ -38,7 +38,7 @@ export function DraftBanner({
       breakout
       background="bg-state-warning-lighter border-b-state-warning! shadow-lg"
       maxWidth="max-w-7xl"
-      padding="px-8 py-2 lg:px-20"
+      padding="md"
     >
       <div className="flex w-full flex-col gap-4 border-b py-0 md:flex-row md:justify-between">
         <div className="flex items-center gap-2">

@@ -22,7 +22,7 @@ export function ConfigLockBanner({
         className
       )}
       maxWidth="max-w-7xl"
-      padding="px-8 py-4 lg:px-20"
+      padding="md"
     >
       <div
         role="status"

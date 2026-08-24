@@ -18,7 +18,7 @@ export function NotificationBanner({
       breakout
       background="drop-shadow-nav bg-blue-100"
       maxWidth="max-w-7xl"
-      padding="px-4 py-3"
+      padding="sm"
     >
       <div className="flex items-center justify-center">
         <div className="flex flex-1 items-center justify-center gap-10">

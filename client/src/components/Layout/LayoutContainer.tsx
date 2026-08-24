@@ -3,6 +3,16 @@ import classNames from 'classnames';
 
 export const LAYOUT_MAX_WIDTH = 'max-w-[1200px]';
 
+type LayoutPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+
+const PADDING_MAP: Record<LayoutPadding, string> = {
+  none: '',
+  sm: 'px-4 py-3',
+  md: 'px-8 py-4',
+  lg: 'px-8 lg:px-20 py-6',
+  xl: 'px-12 lg:px-24 py-8',
+};
+
 interface LayoutContainerProps {
   /** The content to be rendered inside the container */
   children: React.ReactNode;
@@ -20,11 +30,10 @@ interface LayoutContainerProps {
   /** When true, use breakout CSS for full-width effect */
   breakout?: boolean;
   /**
-    * Tailwind padding classes.
-
-   * Defaults to 'px-8 lg:px-20'.
+   * Structured padding level.
+   * Defaults to 'lg'.
    */
-  padding?: string;
+  padding?: LayoutPadding;
 }
 
 /**
@@ -37,8 +46,10 @@ export function LayoutContainer({
   className,
   background,
   breakout = false,
-  padding = 'px-8 lg:px-20',
+  padding = 'lg',
 }: LayoutContainerProps) {
+  const paddingClasses = PADDING_MAP[padding];
+
   // If breakout is true, we use the banner-breakout utility.
   if (breakout) {
     return (
@@ -47,7 +58,7 @@ export function LayoutContainer({
           className={classNames(
             'banner-breakout-content mx-auto w-full',
             maxWidth,
-            padding,
+            paddingClasses,
             className
           )}
         >
@@ -63,7 +74,7 @@ export function LayoutContainer({
       className={classNames(
         'mx-auto w-full',
         maxWidth,
-        padding,
+        paddingClasses,
         background,
         className
       )}
