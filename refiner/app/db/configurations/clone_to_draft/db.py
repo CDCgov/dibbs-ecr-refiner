@@ -1,6 +1,6 @@
 import dataclasses
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 from uuid import UUID
 
 from psycopg import AsyncCursor
