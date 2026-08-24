@@ -36,33 +36,40 @@ export function DraftBanner({
   return (
     <LayoutContainer
       breakout
-      background="bg-state-warning-lighter border-b-state-warning! shadow-lg"
-      maxWidth="max-w-7xl"
+      background="bg-yellow-vivid-5v border-b-3 border-yellow-vivid-30v"
       padding="md"
+      maxWidth="max-w-7xl"
     >
-      <div className="flex w-full flex-col gap-4 border-b py-0 md:flex-row md:justify-between">
-        <div className="flex items-center gap-2">
-          <InfoIcon className="fill-state-warning-darker shrink-0" />
-          <p className="text-state-warning-darker font-bold">
-            {draftId ? editDraftText : newDraftText}
-          </p>
+      <div className="w-full">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <InfoIcon className="fill-violet-warm-70 shrink-0" />
+            <p className="text-violet-warm-70 font-bold">
+              {draftId ? editDraftText : newDraftText}
+            </p>
+          </div>
+          {draftId ? (
+            <Button
+              to={`/configurations/${draftId}/${step}`}
+              className="bg-violet-warm-60 self-start text-white"
+            >
+              Go to draft
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setIsOpen(true)}
+              className="bg-violet-warm-60 text-white"
+            >
+              Draft a new version
+            </Button>
+          )}
+          <NewDraftModal
+            isOpen={isOpen}
+            onClose={() => setIsOpen(false)}
+            conditionId={conditionId}
+            version={latestVersion}
+          />
         </div>
-        {draftId ? (
-          <Button
-            to={`/configurations/${draftId}/${step}`}
-            className="self-start"
-          >
-            Go to draft
-          </Button>
-        ) : (
-          <Button onClick={() => setIsOpen(true)}>Draft a new version</Button>
-        )}
-        <NewDraftModal
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          conditionId={conditionId}
-          version={latestVersion}
-        />
       </div>
     </LayoutContainer>
   );
