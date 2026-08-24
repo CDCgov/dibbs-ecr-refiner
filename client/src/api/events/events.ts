@@ -348,3 +348,100 @@ export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnTyp
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+/**
+ * Exports the historical condition codes associated with a code-set event.
+ * @summary Get Event Codes Export
+ */
+export const getEventCodesExportApiV1EventsEventIdCodesExportGet = (
+    eventId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+
+
+    return axios.default.get(
+      `/api/v1/events/${eventId}/codes/export`,options
+    );
+  }
+
+
+
+
+export const getGetEventCodesExportApiV1EventsEventIdCodesExportGetQueryKey = (eventId: string,) => {
+    return [
+    `/api/v1/events/${eventId}/codes/export`
+    ] as const;
+    }
+
+
+export const getGetEventCodesExportApiV1EventsEventIdCodesExportGetQueryOptions = <TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEventCodesExportApiV1EventsEventIdCodesExportGetQueryKey(eventId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>> = ({ signal }) => getEventCodesExportApiV1EventsEventIdCodesExportGet(eventId, { signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: eventId !== null && eventId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEventCodesExportApiV1EventsEventIdCodesExportGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>>
+export type GetEventCodesExportApiV1EventsEventIdCodesExportGetQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Event Codes Export
+ */
+
+export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEventCodesExportApiV1EventsEventIdCodesExportGetQueryOptions(eventId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
