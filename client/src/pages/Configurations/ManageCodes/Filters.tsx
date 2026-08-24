@@ -66,6 +66,7 @@ function FilterCombobox<T extends FilterOption>({
               key={option.id}
               value={option}
               className="hover:bg-blue-cool-5 data-focus:bg-blue-cool-5 cursor-pointer px-4 py-2 select-none"
+              data-testid={option.id}
             >
               {({ selected }) => (
                 <div className="flex items-center gap-3">

@@ -89,7 +89,7 @@ async def _get_baseline_tes_diff_db(
             COALESCE(array_agg(cc.code_id)) as added_code_ids,
             '{}'::text[] as removed_code_ids,
             TRUE as is_new
-        FROM conditions_codes cc
+        FROM conditions_codes_temp cc
         JOIN conditions c ON cc.condition_id = c.id
         WHERE c.tes_id = %(tes_id)s
         GROUP BY c.canonical_url, c.display_name
@@ -108,7 +108,7 @@ async def _get_baseline_tes_update_condition_diff_db(
     cond_url: str,
 ) -> ConditionDiffExportData:
     query = """
-        SELECT
+        SELECT DISTINCT
             cond.canonical_url,
             cond.display_name AS condition_name,
             COALESCE(
@@ -122,7 +122,7 @@ async def _get_baseline_tes_update_condition_diff_db(
                 '[]'::jsonb
             ) AS added_codes,
             '{}'::text[] as removed_codes
-        FROM conditions_codes cc
+        FROM conditions_codes_temp cc
         LEFT JOIN conditions cond ON cc.condition_id = cond.id
         LEFT JOIN codes c ON cc.code_id = c.id
         LEFT JOIN tes t ON cond.tes_id = t.id
@@ -179,14 +179,14 @@ async def get_tes_update_condition_diff_db(
 
     query = """
         WITH cur AS (
-            SELECT
+            SELECT DISTINCT
                 cond.canonical_url,
                 cond.display_name as condition_name,
                 c.code,
                 s.display_name as system_name,
                 c.display as code_name,
                 c.id as code_id
-            FROM conditions_codes cc
+            FROM conditions_codes_temp cc
             LEFT JOIN conditions cond ON cc.condition_id = cond.id
             LEFT JOIN codes c ON cc.code_id = c.id
             LEFT JOIN tes t ON cond.tes_id = t.id
@@ -194,14 +194,14 @@ async def get_tes_update_condition_diff_db(
             WHERE cond.tes_id = %(cur_tes_id)s AND cond.canonical_url = %(cond_url)s
         ),
         prev AS (
-            SELECT
+            SELECT DISTINCT
                 cond.canonical_url,
                 cond.display_name as condition_name,
                 c.code,
                 s.display_name as system_name,
                 c.display as code_name,
                 c.id as code_id
-            FROM conditions_codes cc
+            FROM conditions_codes_temp cc
             LEFT JOIN conditions cond ON cc.condition_id = cond.id
             LEFT JOIN codes c ON cc.code_id = c.id
             LEFT JOIN tes t ON cond.tes_id = t.id
@@ -273,22 +273,22 @@ async def _get_tes_update_diff_db(
 
     query = """
     WITH cur AS (
-        SELECT
+        SELECT DISTINCT
             c.id as condition_id,
             c.canonical_url,
             cc.code_id,
             c.display_name
-        FROM conditions_codes cc
+        FROM conditions_codes_temp cc
         JOIN conditions c ON cc.condition_id = c.id
         WHERE c.tes_id = %(cur_tes_id)s
     ),
     prev AS (
-        SELECT
+        SELECT DISTINCT
             c.id as condition_id,
             c.canonical_url,
             c.display_name,
             cc.code_id
-        FROM conditions_codes cc
+        FROM conditions_codes_temp cc
         JOIN conditions c ON cc.condition_id = c.id
         WHERE c.tes_id = %(prev_tes_id)s
     )

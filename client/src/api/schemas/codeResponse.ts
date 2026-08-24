@@ -6,7 +6,7 @@ import type { CodeResponseStatus } from './codeResponseStatus';
 export interface CodeResponse {
   id: string;
   condition_id: string | null;
-  source: string;
+  source: string[];
   code: string;
   description: string;
   system_id: string;
