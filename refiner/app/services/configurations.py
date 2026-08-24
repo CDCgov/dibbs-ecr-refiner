@@ -29,7 +29,6 @@ from app.services.ecr.specification import (
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
     CodeSystemSets,
-    Coding,
     index_code_list_by_system_key,
 )
 
