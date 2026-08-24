@@ -1,12 +1,8 @@
 import { useParams } from 'react-router';
 import {
-  getGetCodeCountsQueryKey,
-  getGetCodeFiltersQueryKey,
-  getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
   useGetCodesInfinite,
   useGetConfiguration,
-  useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 import { Spinner } from '@components/Spinner';
@@ -26,16 +22,13 @@ import {
 } from '@components/Modal';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
-import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
-import { Field } from '@components/Field';
-import { Label } from '@components/Label';
+import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 
@@ -105,7 +98,8 @@ interface CodesPanelProps {
 }
 
 function CodesPanel({ id, disabled }: CodesPanelProps) {
-  const { filters, setFilters } = useFilterState(id);
+  const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
+    useFilterState(id);
   return (
     <>
       <CodeInformationBar id={id} />
@@ -117,7 +111,14 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
           onFiltersChange={setFilters}
         />
       </div>
-      <CodesTable id={id} disabled={disabled} filters={filters} />
+      <CodesTable
+        key={filtersKey}
+        id={id}
+        disabled={disabled}
+        filters={filters}
+        onClearFilters={clearFilters}
+        isFilterActive={isFilterActive}
+      />
     </>
   );
 }
@@ -126,6 +127,8 @@ interface CodesTableProps {
   id: string;
   disabled: boolean;
   filters: CodeFilters;
+  isFilterActive: boolean;
+  onClearFilters: () => void;
 }
 
 type ParamValue =
@@ -136,7 +139,13 @@ type ParamValue =
   | null
   | undefined;
 
-function CodesTable({ id, disabled, filters }: CodesTableProps) {
+function CodesTable({
+  id,
+  disabled,
+  filters,
+  isFilterActive,
+  onClearFilters,
+}: CodesTableProps) {
   const {
     data,
     isPending,
@@ -184,6 +193,11 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
   const allSelected = codes.length > 0 && selectedIds.size === codes.length;
+  const selectedCustomCodes = codes.filter(
+    (c) => selectedIds.has(c.id) && c.is_custom
+  );
+
+  const hasCodesSelected = selectedIds.size > 0;
 
   return (
     <div className="flex flex-col items-end gap-4">
@@ -191,13 +205,23 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
+      {hasCodesSelected ? (
+        <ControlPanel
+          configurationId={id}
+          selectedCodeIds={selectedIds}
+          selectedCustomCodes={selectedCustomCodes}
+          clearSelections={() => setSelectedIds(new Set())}
+        />
+      ) : null}
       <InfiniteScroll
         dataLength={codes.length}
         next={fetchNextPage}
         hasMore={!!hasNextPage}
         loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
         endMessage={
-          <p className="text-center italic">You've reached the end.</p>
+          codes.length > 0 ? (
+            <p className="text-center italic">You've reached the end.</p>
+          ) : null
         }
       >
         <table className="w-full table-fixed">
@@ -243,49 +267,67 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
             </tr>
           </thead>
           <tbody className="divide-gray-cool-20 divide-y">
-            {codes.map((code) => (
-              <tr
-                key={code.id}
-                className={classNames(
-                  'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
-                  {
-                    italic: code.status === 'Excluded',
-                  }
-                )}
-              >
-                <td className="text-center">
-                  <Checkbox
-                    aria-label={`Include ${code.code} in bulk operation`}
-                    disabled={disabled}
-                    checked={selectedIds.has(code.id)}
-                    onChange={(checked) =>
-                      setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        if (checked) {
-                          next.add(code.id);
-                        } else {
-                          next.delete(code.id);
-                        }
-                        return next;
-                      })
-                    }
-                  />
-                </td>
-                <td>{code.code}</td>
-                <td>{code.system_name}</td>
-                <td>{code.description}</td>
-                <td>
-                  <SourceCell configurationId={id} code={code} />
-                </td>
-                <td>
-                  <IncludeSwitch
-                    configurationId={id}
-                    code={code}
-                    disabled={disabled}
-                  />
+            {codes.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="text-gray-cool-60 px-4 py-8 text-center"
+                >
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    <span className="text-lg font-bold">
+                      No codes match your search or filters.
+                    </span>
+                    {isFilterActive && (
+                      <Button
+                        variant="tertiary"
+                        onClick={onClearFilters}
+                        className="p-0!"
+                      >
+                        Clear search and filters
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              codes.map((code) => (
+                <tr
+                  key={code.id}
+                  className={classNames(
+                    'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
+                    {
+                      italic: code.status === 'Excluded',
+                    }
+                  )}
+                >
+                  <td className="text-center">
+                    <Checkbox
+                      aria-label={`Include ${code.code} in bulk operation`}
+                      disabled={disabled}
+                      checked={selectedIds.has(code.id)}
+                      onChange={(checked) =>
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (checked) {
+                            next.add(code.id);
+                          } else {
+                            next.delete(code.id);
+                          }
+                          return next;
+                        })
+                      }
+                    />
+                  </td>
+                  <td>{code.code}</td>
+                  <td>{code.system_name}</td>
+                  <td>{code.description}</td>
+                  <td>
+                    <SourceCell configurationId={id} code={code} />
+                  </td>
+                  <td>{code.status}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </InfiniteScroll>
@@ -303,9 +345,7 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
 
   return (
     <div className="flex flex-col items-center gap-2 xl:flex-row">
-      <span className="text-violet-warm-60 rounded-xs border bg-[#f9f4f9] px-2 py-0.5 text-sm font-bold whitespace-nowrap">
-        Custom code
-      </span>
+      <span>Custom code</span>
       <div className="flex flex-row gap-2">
         <EditCustomCodeButton configurationId={configurationId} id={code.id} />
         <DeleteCustomCodeButton
@@ -315,60 +355,6 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
         />
       </div>
     </div>
-  );
-}
-
-interface IncludeSwitchProps {
-  configurationId: string;
-  code: CodeResponse;
-  disabled: boolean;
-}
-function IncludeSwitch({
-  configurationId,
-  code,
-  disabled,
-}: IncludeSwitchProps) {
-  const queryClient = useQueryClient();
-  const { mutate } = useSetCodesStatus();
-
-  const toggleStatus = () => {
-    mutate(
-      {
-        configurationId,
-        params: {
-          status: code.status === 'Included' ? 'excluded' : 'included',
-        },
-        data: [code.id],
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodesInfiniteQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeCountsQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeFiltersQueryKey(configurationId),
-          });
-        },
-      }
-    );
-  };
-
-  return (
-    <Field className="flex flex-row items-center gap-2">
-      <Switch
-        checked={code.status === 'Included'}
-        disabled={code.is_custom || disabled}
-        onChange={toggleStatus}
-      />
-      <Label
-        aria-label={`Toggle to mark code ${code.code} as ${code.status === 'Included' ? 'excluded' : 'included'}`}
-      >
-        {code.status}
-      </Label>
-    </Field>
   );
 }
 

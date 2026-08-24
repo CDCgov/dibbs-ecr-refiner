@@ -161,45 +161,46 @@ async def insert_custom_codes_db(
             return rows
 
 
-async def delete_custom_code_db(
+async def delete_custom_codes_db(
     config: DbConfiguration,
-    id: UUID,
+    ids: list[UUID],
     user_id: UUID,
     db: AsyncDatabaseConnection,
-) -> DbCustomCode | None:
+) -> list[DbCustomCode]:
     """
-    Given a config and custom code ID, deletes the custom code from the configuration.
+    Given a config and custom code IDs, deletes the custom codes from the configuration.
     """
 
     query = """
             DELETE FROM custom_codes
-            WHERE id = %(id)s
+            WHERE id = ANY(%(ids)s::uuid[])
             RETURNING *;
             """
-    params = {"id": id}
+    params = {"ids": ids}
 
     async with db.get_connection() as conn:
         async with conn.transaction():
             async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
                 await cur.execute(query, params)
-                row = await cur.fetchone()
+                rows = await cur.fetchall()
 
-                if not row:
-                    return None
+                if not rows:
+                    return []
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                await insert_event_db(
-                    event=EventInput(
-                        jurisdiction_id=config.jurisdiction_id,
-                        user_id=user_id,
-                        configuration_id=config.id,
-                        event_type="delete_code",
-                        action_text=f"Removed custom code '{row.code}'",
-                    ),
-                    cursor=event_cur,
-                )
+                for row in rows:
+                    await insert_event_db(
+                        event=EventInput(
+                            jurisdiction_id=config.jurisdiction_id,
+                            user_id=user_id,
+                            configuration_id=config.id,
+                            event_type="delete_code",
+                            action_text=f"Removed custom code '{row.code}'",
+                        ),
+                        cursor=event_cur,
+                    )
 
-            return row
+        return rows
 
 
 async def edit_custom_code_db(
