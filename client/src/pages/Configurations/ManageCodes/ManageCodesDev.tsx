@@ -177,6 +177,13 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
+      {/*
+        Using `scrollableTarget` does not seem to be removing `overflow: auto` for some reason,
+        which is why it's being removed from the scroll component manually.
+
+        Others appear to be having similar issues with `scrollableTarget`:
+        https://github.com/ankeetmaini/react-infinite-scroll-component/issues/62
+       */}
       <div
         id="codes-table-scroll-container"
         className="h-[calc(100vh-20rem)] overflow-auto [&_.infinite-scroll-component]:overflow-visible!"
