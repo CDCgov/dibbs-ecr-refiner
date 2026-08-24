@@ -30,6 +30,9 @@ async def get_rsg_codes_by_condition_id_db(
 async def get_pruned_configuration_codes_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
 ) -> list[DbCode]:
+    """
+    Function to get the list of configuration codes, minus exclusions for final serialization.
+    """
 
     query = """
         SELECT DISTINCT c.display, c.code, c.system_id
