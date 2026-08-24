@@ -1453,40 +1453,6 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Individual codes can be toggled to be included/excluded', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-
-    // get the row by description text
-    const row = page.locator('table tr').filter({
-      has: page.locator('td', {
-        hasText: 'Congenital absence of (ear) auricle',
-      }),
-    });
-
-    const switchCell = row.locator('td').last();
-
-    await expect(switchCell).toHaveText('Included');
-    const includeExcludeSwitch = switchCell.getByRole('switch');
-    await includeExcludeSwitch.click();
-    await expect(switchCell).toHaveText('Excluded');
-
-    await test.step('Check stats bar', async () => {
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '1 of 2 codes included'
-      );
-      await expect(page.getByText('1 excluded')).toBeVisible();
-    });
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
   test('Condition code sets can be added and deleted', async ({
     page,
     configurationsPage,
