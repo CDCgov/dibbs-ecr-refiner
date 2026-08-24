@@ -6,6 +6,9 @@ import {
   useAssociateConditionWithConfiguration,
   useDisassociateConditionWithConfiguration,
   getGetConfigurationQueryKey,
+  getGetCodeCountsQueryKey,
+  getGetCodesInfiniteQueryKey,
+  getGetCodeFiltersQueryKey,
 } from '../../../../api/configurations/configurations';
 import { IncludedCondition } from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
@@ -53,6 +56,15 @@ export function ConditionCodeSetListItem({
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodesInfiniteQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
+          });
         },
         onError: (error) => {
           const errorDetail =
@@ -82,6 +94,15 @@ export function ConditionCodeSetListItem({
 
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodesInfiniteQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
           });
         },
         onError: (error) => {

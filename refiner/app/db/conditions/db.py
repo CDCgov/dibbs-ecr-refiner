@@ -164,8 +164,8 @@ async def get_condition_by_id_db(
                 c.display_name,
                 t.version,
                 ARRAY(
-                    SELECT codes.code
-                    FROM conditions_codes crc
+                    SELECT DISTINCT codes.code
+                    FROM conditions_codes_temp crc
                     JOIN codes ON crc.code_id = codes.id
                     WHERE crc.condition_id = c.id AND crc.is_child_rsg
                 ) as child_rsg_snomed_codes,
@@ -179,14 +179,12 @@ async def get_condition_by_id_db(
                 c.coverage_level_date
             FROM conditions c
             JOIN tes t ON t.id = c.tes_id
-            WHERE c.id = %s
+            WHERE c.id = %(id)s
             """
-
-    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"id": id})
             row = await cur.fetchone()
 
     if not row:
@@ -212,7 +210,7 @@ class GetConditionCode:
 
 
 async def get_condition_codes_by_condition_id_db(
-    id: UUID, db: AsyncDatabaseConnection
+    condition_id: UUID, db: AsyncDatabaseConnection
 ) -> list[GetConditionCode]:
     """
     For a condition ID, flatten all codes into a GetConditionCode shape.
@@ -220,22 +218,30 @@ async def get_condition_codes_by_condition_id_db(
     For a given condition ID, unnests and combines all terminology codes
     (LOINC, SNOMED, ICD-10, RxNorm, CVX) from their respective JSONB columns
     into a single, flat list of GetConditionCode objects.
+
+    Codes are deduplicated by code system and code so the exported code count
+    matches the historical code count stored on the event.
     """
 
     query = """
             WITH c AS (
                 SELECT *
                 FROM conditions
-                WHERE id = %s
+                WHERE id = %(condition_id)s
             )
-            SELECT DISTINCT code, system, description
+            SELECT
+                code,
+                system,
+                MIN(description) AS description
             FROM (
                 SELECT
                     code_elem->>'code' AS code,
                     'LOINC' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.loinc_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -244,7 +250,9 @@ async def get_condition_codes_by_condition_id_db(
                     'SNOMED' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.snomed_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -253,7 +261,9 @@ async def get_condition_codes_by_condition_id_db(
                     'ICD-10' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.icd10_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -262,7 +272,9 @@ async def get_condition_codes_by_condition_id_db(
                     'RxNorm' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.rxnorm_codes, '[]'::jsonb)
+                ) AS code_elem
 
                 UNION ALL
 
@@ -271,17 +283,18 @@ async def get_condition_codes_by_condition_id_db(
                     'CVX' AS system,
                     code_elem->>'display' AS description
                 FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.CVX_codes, '[]'::jsonb)) AS code_elem
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    COALESCE(c.cvx_codes, '[]'::jsonb)
+                ) AS code_elem
             ) t
             WHERE code IS NOT NULL
+            GROUP BY system, code
             ORDER BY system, code;
             """
 
-    params = (id,)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"condition_id": condition_id})
             rows = await cur.fetchall()
 
     return list(rows)
@@ -317,7 +330,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -333,7 +346,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
         JOIN tes t ON t.id = c.tes_id
         WHERE EXISTS (
             SELECT 1
-            FROM conditions_codes crc
+            FROM conditions_codes_temp crc
             JOIN codes ON crc.code_id = codes.id
             WHERE crc.condition_id = c.id
             AND crc.is_child_rsg
@@ -369,7 +382,7 @@ async def get_conditions_by_ids(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -412,7 +425,7 @@ async def get_primary_conditions_for_configurations_db(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -473,7 +486,7 @@ async def get_included_conditions_db(
             t.version,
             ARRAY(
                 SELECT codes.code
-                FROM conditions_codes crc
+                FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
@@ -511,14 +524,14 @@ async def get_context_groupers_by_condition_id_db(
         SELECT
             id,
             condition_id,
-            name,
+            display_name,
             category,
             canonical_url,
             code_count,
             completeness,
             created_at,
             updated_at
-        FROM conditions_context_groupers
+        FROM valuesets
         WHERE condition_id = %s
     """
     params = (condition_id,)
@@ -546,7 +559,7 @@ async def get_conditions_with_rsg_codes_db(
             JSONB_AGG(JSONB_BUILD_OBJECT('display', codes.display, 'code', codes.code)) as rsg_codes
         FROM conditions as c
         JOIN tes t ON t.id = c.tes_id
-        LEFT JOIN conditions_codes as rsg ON rsg.condition_id = c.id
+        LEFT JOIN conditions_codes_temp as rsg ON rsg.condition_id = c.id
         LEFT JOIN codes ON codes.id = rsg.code_id
         WHERE t.version = %s AND rsg.is_child_rsg
         GROUP BY

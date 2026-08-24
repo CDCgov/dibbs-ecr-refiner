@@ -23,8 +23,13 @@ export async function deleteAllConfigurations(): Promise<void> {
 
 export async function clearDb(): Promise<void> {
   await deleteAllCustomCodes();
+  await deleteAllCodeExclusions();
   await deleteAllConfigurations();
   await clearUserNotifications();
+}
+
+export async function deleteAllCodeExclusions(): Promise<void> {
+  await db.query('DELETE FROM configurations_conditions_code_exclusions');
 }
 
 export async function clearUserNotifications(): Promise<void> {

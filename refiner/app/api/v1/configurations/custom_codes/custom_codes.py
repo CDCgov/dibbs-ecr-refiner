@@ -22,7 +22,7 @@ from app.db.code_systems.db import (
 )
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.custom_codes.db import (
-    delete_custom_code_db,
+    delete_custom_codes_db,
     edit_custom_code_db,
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
@@ -46,6 +46,65 @@ from app.services.logger import get_logger
 from app.services.terminology import CodeSystemKey
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
+
+
+@router.get(
+    "/{id}",
+    response_model=CustomCodeResponse,
+    tags=["configurations"],
+    operation_id="getCustomCode",
+)
+async def get_custom_code(
+    configuration_id: UUID,
+    id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> CustomCodeResponse:
+    """
+    Fetch a custom code by its ID.
+
+    Args:
+        configuration_id (UUID): The associated configuration ID
+        id (UUID): The custom code ID
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+
+    Returns:
+        CustomCodeResponse: The custom code response object
+    """
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    code = await get_custom_code_by_id_db(id=id, db=db)
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to find custom code with ID: {id}.",
+        )
+
+    systems = await get_code_systems_db(db=db)
+
+    return CustomCodeResponse(
+        id=code.id,
+        display=code.display,
+        code=code.code,
+        system_id=code.system_id,
+        system_name=find_code_system_by_id_or_raise(
+            id=code.system_id, systems=systems
+        ).display_name,
+    )
 
 
 @dataclass(frozen=True)
@@ -502,15 +561,17 @@ async def delete_custom_code(
             detail=f"Failed to find custom code to delete with ID: {id}",
         )
 
-    deleted_code = await delete_custom_code_db(
-        config=config, id=custom_code.id, user_id=user.id, db=db
+    deleted_codes = await delete_custom_codes_db(
+        config=config, ids=[custom_code.id], user_id=user.id, db=db
     )
 
-    if not deleted_code:
+    if len(deleted_codes) < 1:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to delete custom code.",
         )
+
+    deleted_code = deleted_codes[0]
 
     systems = await get_code_systems_db(db=db)
 
@@ -523,6 +584,91 @@ async def delete_custom_code(
             id=deleted_code.system_id, systems=systems
         ).display_name,
     )
+
+
+class BulkDeleteCustomCodesInput(BaseModel):
+    """
+    Input model for a bulk custom codes deletion request.
+    """
+
+    ids: list[UUID]
+
+
+@router.post(
+    "/bulk-delete",
+    response_model=list[CustomCodeResponse],
+    tags=["configurations"],
+    operation_id="deleteCustomCodes",
+)
+async def bulk_delete_custom_codes(
+    configuration_id: UUID,
+    body: BulkDeleteCustomCodesInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[CustomCodeResponse]:
+    """
+    Deletes custom codes in bulk for a given configuration.
+
+    Args:
+        configuration_id (UUID): The ID of the configuration to modify.
+        body (BulkDeleteCustomCodesInput): The input body containing IDs of the custom codes.
+        user (DbUser): The logged-in user.
+        db (AsyncDatabaseConnection): The database connection.
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
+        HTTPException: 500 if configuration can't be updated
+
+    Returns:
+        ConfigurationCustomCodeResponse: The updated configuration
+    """
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    await ConfigurationLock.raise_if_locked_by_other(
+        configuration_id,
+        user.id,
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    deleted_codes = await delete_custom_codes_db(
+        config=config, ids=body.ids, user_id=user.id, db=db
+    )
+
+    if len(deleted_codes) < 1:
+        return []
+
+    systems = await get_code_systems_db(db=db)
+
+    return [
+        CustomCodeResponse(
+            id=deleted_code.id,
+            display=deleted_code.display,
+            code=deleted_code.code,
+            system_id=deleted_code.system_id,
+            system_name=find_code_system_by_id_or_raise(
+                id=deleted_code.system_id, systems=systems
+            ).display_name,
+        )
+        for deleted_code in deleted_codes
+    ]
 
 
 class ValidateCustomCodeInput(BaseModel):
