@@ -22,7 +22,7 @@ export function Layout({ displayName, children }: LayoutProps) {
       <Header displayName={displayName} />
       <LayoutContainer
         background="bg-primary-container"
-        fullWidthBackground={true}
+        breakout={true}
         className="flex flex-1"
       >
         <main id="main-content" className="flex flex-1 flex-col">

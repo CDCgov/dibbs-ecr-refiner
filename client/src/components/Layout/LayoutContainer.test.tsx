@@ -46,15 +46,16 @@ describe('LayoutContainer', () => {
     expect(container?.className).toContain('bg-red-500');
   });
 
-  it('handles fullWidthBackground correctly', () => {
+  it('handles breakout mode for full-width backgrounds', () => {
     render(
-      <LayoutContainer background="bg-blue-500" fullWidthBackground>
+      <LayoutContainer background="bg-blue-500" breakout>
         <div data-testid="child">Child Content</div>
       </LayoutContainer>
     );
     const innerContainer = screen.getByTestId('child').parentElement;
     const outerContainer = innerContainer?.parentElement;
 
+    expect(outerContainer?.className).toContain('banner-breakout');
     expect(outerContainer?.className).toContain('bg-blue-500');
     expect(innerContainer?.className).toContain('mx-auto');
   });

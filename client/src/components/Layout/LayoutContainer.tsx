@@ -16,8 +16,7 @@ interface LayoutContainerProps {
   className?: string;
   /** Tailwind background class for the container */
   background?: string;
-  /** Whether the background should extend infinitely across the screen */
-  fullWidthBackground?: boolean;
+
   /** When true, use breakout CSS for full-width effect */
   breakout?: boolean;
   /**
@@ -37,7 +36,6 @@ export function LayoutContainer({
   maxWidth = LAYOUT_MAX_WIDTH,
   className,
   background,
-  fullWidthBackground = false,
   breakout = false,
   padding = 'px-8 lg:px-20',
 }: LayoutContainerProps) {
@@ -53,18 +51,6 @@ export function LayoutContainer({
             className
           )}
         >
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  // If fullWidthBackground is true, we wrap the centered container in a full-width div
-  // that carries the background color.
-  if (fullWidthBackground) {
-    return (
-      <div className={classNames(background, className)}>
-        <div className={classNames('mx-auto w-full', maxWidth, padding)}>
           {children}
         </div>
       </div>
