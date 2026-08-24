@@ -1,10 +1,10 @@
 boto3==1.43.69
 Authlib==1.7.2
 fastapi==0.141.1
-chardet==7.5.1
+chardet==7.6.0
 itsdangerous==2.2.0
 httpx==0.28.1
-lxml==6.1.1
+lxml==6.1.2
 packaging==26.3
 psycopg[binary]==3.3.4
 psycopg[pool]==3.3.4
