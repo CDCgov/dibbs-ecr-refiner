@@ -1,5 +1,4 @@
 import re
-from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -29,7 +28,6 @@ from app.services.ecr.specification import (
 )
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
-    CodeSystemKey,
     CodeSystemSets,
     Coding,
     index_code_list_by_system_key,
@@ -212,41 +210,21 @@ async def convert_config_to_storage_payload(
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
-    code_systems = await get_id_to_code_system_dict_db(db=db)
 
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
+    code_systems = await get_id_to_code_system_dict_db(db=db)
+
     configuration_codes = await get_pruned_configuration_codes_db(
         configuration_id=configuration.id, db=db
     )
+    codes_to_index = configuration_codes + configuration.custom_codes
 
     # map each db code list to its target dict + OID
     coding_by_code_system: dict[str, list[dict]] = index_code_list_by_system_key(
-        codes=configuration_codes, code_systems=code_systems
+        codes=codes_to_index, code_systems=code_systems
     )
-
-    # custom codes
-    for cc in configuration.custom_codes:
-        cur_code_system = code_systems[cc.system_id]
-
-        if cur_code_system is None:
-            raise ValueError(
-                f"System with ID {cc.system_id} doesn't match supported systems"
-            )
-
-        system_to_extend = cur_code_system.key
-
-        # route custom codes to the correct system dict
-        coding_by_code_system[system_to_extend].append(
-            asdict(
-                Coding(
-                    code=cc.code,
-                    display=cc.display,
-                    system_oid=cur_code_system.oid,
-                )
-            )
-        )
 
     sections = [
         asdict(section_process) for section_process in configuration.section_processing

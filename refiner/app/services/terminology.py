@@ -6,7 +6,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.db.code_systems.db import DbCodeSystem
-from app.db.codes.model import DbCoding
+from app.db.codes.model import DbCode
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.configurations.model import DbNarrativeAction
@@ -42,7 +43,7 @@ type Code = str
 
 
 def index_code_list_by_system_key(
-    codes: list[DbCoding], code_systems: dict[UUID, DbCodeSystem]
+    codes: list[DbCode | DbCustomCode], code_systems: dict[UUID, DbCodeSystem]
 ) -> dict[CodeSystemKey, list[dict]]:
     """
     Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
@@ -56,7 +57,7 @@ def index_code_list_by_system_key(
 
         system = code_systems[c.system_id]
         result[system.key].append(
-            asdict(Coding(code=c.code, display=c.display, system_oid=c.system_oid))
+            asdict(Coding(code=c.code, display=c.display, system_oid=system.oid))
         )
 
     return result
