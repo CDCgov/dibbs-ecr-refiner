@@ -68,7 +68,7 @@ function Modal({
 
         <div
           className={classNames(
-            'fixed inset-0 z-modal-backdrop flex justify-center overflow-auto pt-15',
+            'z-modal-backdrop fixed inset-0 flex justify-center overflow-auto pt-15',
             {
               'items-center': position === 'center',
               'items-start': position === 'top',
@@ -77,7 +77,7 @@ function Modal({
         >
           <DialogPanel
             className={classNames(
-              `border-base-lighter relative z-modal-content w-full max-w-${maxWidth} rounded-sm border bg-white p-6 shadow-lg`,
+              `border-base-lighter z-modal-content relative w-full max-w-${maxWidth} rounded-sm border bg-white p-6 shadow-lg`,
               className
             )}
           >
