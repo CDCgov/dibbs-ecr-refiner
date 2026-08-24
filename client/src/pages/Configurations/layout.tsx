@@ -21,8 +21,7 @@ export function NavigationContainer({
   return (
     <LayoutContainer
       breakout={true}
-      background="bg-white"
-      className="border-b border-gray-400"
+      background="bg-white border-b border-gray-400"
     >
       <div className="flex flex-col items-start gap-4 border-t border-gray-400 md:flex-row md:items-end">
         {children}
