@@ -65,12 +65,19 @@ export function useFilterState(configurationId: string) {
     });
   }, []);
 
+  const isFilterActive =
+    !!activeFilters.search ||
+    activeFilters.codeSystems.length > 0 ||
+    activeFilters.sources.length > 0 ||
+    activeFilters.statuses.length > 0;
+
   const filtersKey = JSON.stringify(filters);
 
   return {
     filters: activeFilters,
     setFilters,
     clearFilters,
+    isFilterActive,
     filtersKey,
   };
 }

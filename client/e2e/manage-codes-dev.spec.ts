@@ -1135,6 +1135,81 @@ test.describe('Codes management - filters', () => {
       await expect(customCodeOption).not.toBeVisible();
     });
   });
+
+  test('All filters can be cleared when no results are found', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+  }) => {
+    const clearButton = page.getByRole('button', {
+      name: 'Clear search and filters',
+    });
+    const codeSystemFilterButton = page.getByTestId('code-system-button');
+    const searchBox = page.getByRole('searchbox', {
+      name: 'Search by keyword',
+      exact: true,
+    });
+    const table = page.getByRole('table');
+
+    await test.step('Check page on load', async () => {
+      const condition = 'Anotia';
+      await configurationsPage.createConfiguration(condition);
+      await goToManageCodesDevPage(page, configurationPage);
+      await expect(
+        page.getByRole('heading', { name: 'Manage codes', level: 2 })
+      ).toBeVisible();
+
+      await expect(table).toBeVisible();
+      await expect(clearButton).not.toBeVisible();
+      await expect(page.getByText("You've reached the end.")).toBeVisible();
+    });
+
+    await test.step('Configure code system filter', async () => {
+      const codeSystemOptions = page.getByTestId('code-system-options');
+
+      const snomedOption = codeSystemOptions.getByRole('option', {
+        name: 'SNOMED',
+        exact: false,
+      });
+
+      await expect(codeSystemFilterButton).toBeVisible();
+      await codeSystemFilterButton.click();
+
+      await expect(snomedOption).toBeVisible();
+
+      await snomedOption.click();
+
+      await page.keyboard.press('Escape');
+      await expect(codeSystemFilterButton).toHaveText('1 selected');
+    });
+
+    await test.step('Enter search query', async () => {
+      await expect(searchBox).toBeVisible();
+
+      // wait for response so test doesn't fail waiting for debounce
+      const searchResp = page.waitForResponse(
+        (res) =>
+          res.url().includes('/codes') &&
+          res.request().url().includes('search=nothing+to+find') &&
+          res.status() === 200
+      );
+      await searchBox.fill('nothing to find');
+      await searchResp;
+    });
+
+    await test.step("Use 'clear filters' button", async () => {
+      await expect(
+        page.getByText('No codes match your search or filters.')
+      ).toBeVisible();
+
+      await expect(clearButton).toBeVisible();
+      await clearButton.click();
+
+      await expect(searchBox).toHaveValue('');
+      await expect(codeSystemFilterButton).toHaveText('Code system');
+      await expect(page.getByRole('table')).toBeVisible();
+    });
+  });
 });
 
 test.describe('Codes management - data loading', () => {
