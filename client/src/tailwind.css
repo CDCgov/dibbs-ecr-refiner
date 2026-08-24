@@ -59,6 +59,16 @@
   --color-primary-container: var(--color-page-bg);
   --color-page-bg: #f5f8fa;
   --drop-shadow-base: drop-shadow(0px 4px 8px rgb(0, 0, 0, 0.15));
+  --drop-shadow-nav: var(--drop-shadow-base);
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-banner: 20;
+  --z-dropdown: 30;
+  --z-drawer: 40;
+  --z-modal-backdrop: 50;
+  --z-modal-content: 60;
+  --z-modal-dropdown: 70;
 
   /* Color reference */
   /* https://designsystem.digital.gov/design-tokens/color/system-tokens/ */

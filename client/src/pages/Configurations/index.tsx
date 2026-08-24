@@ -292,7 +292,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               />
               <ComboboxOptions
                 anchor="bottom"
-                className="z-[var(--z-dropdown)] max-h-85!"
+                className="z-dropdown max-h-85!"
               >
                 {({ option: condition }) => {
                   const matchResult = results.find(

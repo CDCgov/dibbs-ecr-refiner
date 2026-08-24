@@ -129,7 +129,7 @@ function ComboboxOptions({
       anchor="bottom start"
       transition
       className={classNames(
-        'z-[var(--z-modal-dropdown)] max-h-52! w-(--input-width) overflow-y-auto border',
+        'z-modal-dropdown max-h-52! w-(--input-width) overflow-y-auto border',
 
         'border-gray-cool-60 bg-white',
         'transition duration-100 ease-in empty:invisible data-leave:data-closed:opacity-0',

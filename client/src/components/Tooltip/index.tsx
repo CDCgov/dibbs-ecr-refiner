@@ -114,7 +114,7 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
             id={tooltipId}
             role="tooltip"
             style={getTooltipStyle(position, triggerRect)}
-            className="bg-gray-70 pointer-events-none z-[var(--z-modal-dropdown)] w-max max-w-xs rounded-sm p-5 font-normal text-white"
+            className="bg-gray-70 pointer-events-none z-modal-dropdown w-max max-w-xs rounded-sm p-5 font-normal text-white"
           >
             {label}
             <span

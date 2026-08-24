@@ -249,7 +249,7 @@ function Header({ children }: { children: React.ReactNode }) {
   return (
     <div
       role="columnheader"
-      className="sticky top-0 z-[var(--z-sticky)] h-10 bg-white pb-2 text-left font-semibold"
+      className="sticky top-0 z-sticky h-10 bg-white pb-2 text-left font-semibold"
     >
       {children}
     </div>
