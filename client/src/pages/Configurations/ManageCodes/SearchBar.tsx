@@ -1,5 +1,5 @@
 import { Search } from '@components/Search';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { CodeFilters } from './Filters';
 
@@ -11,15 +11,16 @@ export function SearchBar({ filters, setFilters }: SearchBarProps) {
   const DEBOUNCE_TIME_MS = 500;
 
   const [inputValue, setInputValue] = useState(filters.search ?? '');
+  const [prevSearch, setPrevSearch] = useState(filters.search);
+
+  if (prevSearch !== filters.search) {
+    setPrevSearch(filters.search);
+    setInputValue(filters.search ?? '');
+  }
 
   const debouncedUpdate = useDebouncedCallback((value: string) => {
     setFilters((prev) => ({ ...prev, search: value || undefined }));
   }, DEBOUNCE_TIME_MS);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setInputValue(filters.search ?? '');
-  }, [filters.search]);
 
   return (
     <Search
