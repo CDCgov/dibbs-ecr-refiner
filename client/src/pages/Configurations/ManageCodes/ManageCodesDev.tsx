@@ -11,7 +11,7 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Checkbox } from '@components/Checkbox';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import {
   Modal,
@@ -84,7 +84,7 @@ interface CodesPanelProps {
 }
 
 function CodesPanel({ id, disabled }: CodesPanelProps) {
-  const { filters, setFilters } = useFilterState(id);
+  const { filters, setFilters, filtersKey } = useFilterState(id);
   return (
     <>
       <CodeInformationBar id={id} />
@@ -96,7 +96,12 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
           onFiltersChange={setFilters}
         />
       </div>
-      <CodesTable id={id} disabled={disabled} filters={filters} />
+      <CodesTable
+        key={filtersKey}
+        id={id}
+        disabled={disabled}
+        filters={filters}
+      />
     </>
   );
 }
@@ -156,11 +161,6 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedIds(new Set());
-  }, [filters]);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';

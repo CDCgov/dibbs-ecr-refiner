@@ -65,7 +65,14 @@ export function useFilterState(configurationId: string) {
     });
   }, []);
 
-  return { filters: activeFilters, setFilters, clearFilters };
+  const filtersKey = JSON.stringify(filters);
+
+  return {
+    filters: activeFilters,
+    setFilters,
+    clearFilters,
+    filtersKey,
+  };
 }
 
 /**
