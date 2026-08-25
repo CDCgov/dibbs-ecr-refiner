@@ -220,6 +220,59 @@ class TestConfigurations:
         new_codes = resp.json()["codes"]
         assert all(code["status"] == "Included" for code in new_codes)
 
+    async def test_clone_code_exclusions_partial_exclusions(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Only the excluded subset of codes is carried over to the cloned config.
+        """
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+
+        # create a draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        original_config_id = resp.json()["id"]
+
+        # get codes and exclude only the first half
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        half = len(codes) // 2
+        excluded_ids = {code["id"] for code in codes[:half]}
+        included_ids = {code["id"] for code in codes[half:]}
+
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
+            json=list(excluded_ids),
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # activate
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create the new cloned draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        new_config_id = resp.json()["id"]
+
+        # check that only the excluded subset was cloned
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        new_codes = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(new_codes[id]["status"] == "Excluded" for id in excluded_ids)
+        assert all(new_codes[id]["status"] == "Included" for id in included_ids)
+
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
         setup,
