@@ -191,132 +191,145 @@ function CodesTable({
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      {hasCodesSelected ? (
-        <ControlPanel
-          configurationId={id}
-          selectedCodeIds={selectedIds}
-          selectedCustomCodes={selectedCustomCodes}
-          clearSelections={() => setSelectedIds(new Set())}
-        />
-      ) : null}
-      <InfiniteScroll
-        dataLength={codes.length}
-        next={fetchNextPage}
-        hasMore={!!hasNextPage}
-        loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
-        endMessage={
-          codes.length > 0 ? (
-            <p className="text-center italic">You've reached the end.</p>
-          ) : null
-        }
+      {/*
+        Using `scrollableTarget` does not seem to be removing `overflow: auto` for some reason,
+        which is why it's being removed from the scroll component manually.
+
+        Others appear to be having similar issues with `scrollableTarget`:
+        https://github.com/ankeetmaini/react-infinite-scroll-component/issues/62
+       */}
+      <div
+        id="codes-table-scroll-container"
+        className="h-[calc(100vh-20rem)] overflow-auto [&_.infinite-scroll-component]:overflow-visible!"
       >
-        <table className="w-full table-fixed">
-          <thead className="bg-gray-cool-5 z-sticky sticky top-0">
-            <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
-              <th scope="col" className="w-10 text-center">
-                <Checkbox
-                  aria-label="Include all codes in bulk operation"
-                  disabled={disabled}
-                  checked={allSelected}
-                  onChange={(checked) =>
-                    setSelectedIds(
-                      checked ? new Set(codes.map((c) => c.id)) : new Set()
-                    )
-                  }
-                />
-              </th>
-              <th scope="col" className="w-[15%]">
-                Code no.
-              </th>
-              <th scope="col" className="w-[10%]">
-                System
-              </th>
-              <th scope="col" className="w-[30%]">
-                Description
-              </th>
-              <th scope="col" className="w-[35%]">
-                <div className="flex flex-row items-center gap-1">
-                  <span>Source</span>
-                  <Button
-                    variant="tertiary"
-                    onClick={() => setIsSourceModalOpen(true)}
-                    className="p-0!"
-                    aria-label="Open reporting specification details modal"
-                  >
-                    <QuestionIcon />
-                  </Button>
-                </div>
-              </th>
-              <th scope="col" className="w-[10%]">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
-            {codes.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="text-gray-cool-60 px-4 py-8 text-center"
-                >
-                  <div className="flex flex-col items-center justify-center gap-4">
-                    <span className="text-lg font-bold">
-                      No codes match your search or filters.
-                    </span>
-                    {isFilterActive && (
-                      <Button
-                        variant="tertiary"
-                        onClick={onClearFilters}
-                        className="p-0!"
-                      >
-                        Clear search and filters
-                      </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              codes.map((code) => (
-                <tr
-                  key={code.id}
-                  className={classNames(
-                    'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
-                    {
-                      italic: code.status === 'Excluded',
+        {hasCodesSelected ? (
+          <ControlPanel
+            configurationId={id}
+            selectedCodeIds={selectedIds}
+            selectedCustomCodes={selectedCustomCodes}
+            clearSelections={() => setSelectedIds(new Set())}
+          />
+        ) : null}
+        <InfiniteScroll
+          dataLength={codes.length}
+          next={fetchNextPage}
+          hasMore={!!hasNextPage}
+          loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
+          endMessage={
+            codes.length > 0 ? (
+              <p className="text-center italic">You've reached the end.</p>
+            ) : null
+          }
+          scrollableTarget="codes-table-scroll-container"
+        >
+          <table className="w-full table-fixed">
+            <thead className="bg-gray-cool-5 z-sticky sticky top-0">
+              <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
+                <th scope="col" className="w-10 text-center">
+                  <Checkbox
+                    aria-label="Include all codes in bulk operation"
+                    disabled={disabled}
+                    checked={allSelected}
+                    onChange={(checked) =>
+                      setSelectedIds(
+                        checked ? new Set(codes.map((c) => c.id)) : new Set()
+                      )
                     }
-                  )}
-                >
-                  <td className="text-center">
-                    <Checkbox
-                      aria-label={`Include ${code.code} in bulk operation`}
-                      disabled={disabled}
-                      checked={selectedIds.has(code.id)}
-                      onChange={(checked) =>
-                        setSelectedIds((prev) => {
-                          const next = new Set(prev);
-                          if (checked) {
-                            next.add(code.id);
-                          } else {
-                            next.delete(code.id);
-                          }
-                          return next;
-                        })
-                      }
-                    />
+                  />
+                </th>
+                <th scope="col" className="w-[15%]">
+                  Code no.
+                </th>
+                <th scope="col" className="w-[10%]">
+                  System
+                </th>
+                <th scope="col" className="w-[30%]">
+                  Description
+                </th>
+                <th scope="col" className="w-[35%]">
+                  <div className="flex flex-row items-center gap-1">
+                    <span>Source</span>
+                    <Button
+                      variant="tertiary"
+                      onClick={() => setIsSourceModalOpen(true)}
+                      className="p-0!"
+                      aria-label="Open reporting specification details modal"
+                    >
+                      <QuestionIcon />
+                    </Button>
+                  </div>
+                </th>
+                <th scope="col" className="w-[10%]">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-gray-cool-20 divide-y">
+              {codes.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="text-gray-cool-60 px-4 py-8 text-center"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <span className="text-lg font-bold">
+                        No codes match your search or filters.
+                      </span>
+                      {isFilterActive && (
+                        <Button
+                          variant="tertiary"
+                          onClick={onClearFilters}
+                          className="p-0!"
+                        >
+                          Clear search and filters
+                        </Button>
+                      )}
+                    </div>
                   </td>
-                  <td>{code.code}</td>
-                  <td>{code.system_name}</td>
-                  <td>{code.description}</td>
-                  <td>
-                    <SourceCell configurationId={id} code={code} />
-                  </td>
-                  <td>{code.status}</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </InfiniteScroll>
+              ) : (
+                codes.map((code) => (
+                  <tr
+                    key={code.id}
+                    className={classNames(
+                      'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
+                      {
+                        italic: code.status === 'Excluded',
+                      }
+                    )}
+                  >
+                    <td className="text-center">
+                      <Checkbox
+                        aria-label={`Include ${code.code} in bulk operation`}
+                        disabled={disabled}
+                        checked={selectedIds.has(code.id)}
+                        onChange={(checked) =>
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (checked) {
+                              next.add(code.id);
+                            } else {
+                              next.delete(code.id);
+                            }
+                            return next;
+                          })
+                        }
+                      />
+                    </td>
+                    <td>{code.code}</td>
+                    <td>{code.system_name}</td>
+                    <td>{code.description}</td>
+                    <td>
+                      <SourceCell configurationId={id} code={code} />
+                    </td>
+                    <td>{code.status}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </InfiniteScroll>
+      </div>
     </div>
   );
 }
