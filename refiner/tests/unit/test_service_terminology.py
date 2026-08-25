@@ -67,14 +67,9 @@ def mock_db_functions(monkeypatch, mock_all_systems):
         "app.services.configurations.get_id_to_code_system_dict_db",
         AsyncMock(return_value={m.id: m for m in mock_all_systems}),
     )
-
     monkeypatch.setattr(
-        "app.services.configurations.get_code_system_by_key_db",
-        AsyncMock(
-            side_effect=lambda key, db: next(
-                m for m in mock_all_systems if m.key == key
-            ),
-        ),
+        "app.services.configurations.get_pruned_configuration_codes_db",
+        AsyncMock(return_value=[]),
     )
 
 

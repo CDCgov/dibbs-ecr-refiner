@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, TypedDict
 from uuid import UUID
 
-from app.db.codes.model import CodedConcept
+from app.db.codes.model import CodedConcept, DbCode
 
 
 @dataclass
@@ -21,18 +21,6 @@ class DbConditionsContextGrouper:
     completeness: str | None
     created_at: datetime
     updated_at: datetime
-
-
-@dataclass
-class DbConditionCoding:
-    """
-    Model for code/display pairs from conditions table JSONB columns.
-
-    Note: System is implicit in the column name (e.g., snomed_codes, loinc_codes).
-    """
-
-    code: str
-    display: str
 
 
 @dataclass
@@ -62,13 +50,9 @@ class DbCondition(DbConditionBase):
     # jsonb columns storing code/display pairs
     # this data is extracted from flat files from the TES
     # and seeded from CG's RSG and ACG children
-    snomed_codes: list[DbConditionCoding]
-    loinc_codes: list[DbConditionCoding]
-    icd10_codes: list[DbConditionCoding]
-    rxnorm_codes: list[DbConditionCoding]
-    cvx_codes: list[DbConditionCoding]
     # coverage level from the crmi-curationCoverageLevel extension
     # on the condition grouper ValueSet; null when the extension is not present
+    codes: list[DbCode]
     coverage_level: str | None = None
     coverage_level_reason: str | None = None
     coverage_level_date: datetime | None = None
@@ -90,11 +74,6 @@ class DbCondition(DbConditionBase):
             canonical_url=row["canonical_url"],
             version=row["version"],
             child_rsg_snomed_codes=row.get("child_rsg_snomed_codes") or [],
-            snomed_codes=[DbConditionCoding(**c) for c in row["snomed_codes"]],
-            loinc_codes=[DbConditionCoding(**c) for c in row["loinc_codes"]],
-            icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],
-            rxnorm_codes=[DbConditionCoding(**c) for c in row["rxnorm_codes"]],
-            cvx_codes=[DbConditionCoding(**c) for c in row["cvx_codes"]],
             coverage_level=row.get("coverage_level"),
             coverage_level_reason=row.get("coverage_level_reason"),
             coverage_level_date=row.get("coverage_level_date"),

@@ -248,12 +248,6 @@ async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch, code_system, get_mock_system
 ):
     # Mock adding read of systems information to a config
-    monkeypatch.setattr(
-        "app.services.configurations.get_code_system_by_key_db",
-        AsyncMock(
-            return_value=get_mock_system(code_system.key),
-        ),
-    )
 
     monkeypatch.setattr(
         custom_codes_module,

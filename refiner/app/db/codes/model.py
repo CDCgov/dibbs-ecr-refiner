@@ -27,5 +27,4 @@ class DbCode(CodedConcept):
     DB model for code stored in the codes table.
     """
 
-    version: str
     system_id: UUID
