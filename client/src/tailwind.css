@@ -35,7 +35,7 @@
     @apply m-0 p-0;
   }
   label + select {
-    @apply !mt-2;
+    @apply mt-2!;
   }
 
   h2 {
@@ -49,16 +49,16 @@
 }
 @layer utilities {
   .border-thin {
-    @apply border-1;
+    @apply border;
   }
   .banner-breakout {
-    @apply relative right-1/2 left-1/2 -mr-[50vw] -ml-[50vw] w-screen max-w-screen;
+    @apply relative right-1/2 left-1/2 mr-[-50vw] ml-[-50vw] w-screen max-w-screen;
   }
   .banner-breakout-bg {
-    @apply absolute inset-0 -z-[1];
+    @apply absolute inset-0 z-[-1];
   }
   .banner-breakout-content {
-    @apply relative z-[1] mx-auto;
+    @apply relative z-1 mx-auto flex flex-col;
   }
 }
 
@@ -215,7 +215,7 @@
   */
 
 .usa-table {
-  @apply border-gray-cool-30 w-full max-w-[1208px] table-auto !border-separate rounded-lg border-1 md:table-fixed;
+  @apply border-gray-cool-30 w-full max-w-302 table-auto border-separate! rounded-lg border md:table-fixed;
 }
 /* round the four corner cells */
 .usa-table tr:last-child td:first-child {
@@ -229,7 +229,7 @@
   background-color: white !important;
 }
 .usa-table--striped tbody tr:nth-child(even) td {
-  @apply !bg-gray-cool-2;
+  @apply bg-gray-cool-2!;
 }
 
 .usa-table tr:last-child th:first-child {
@@ -250,7 +250,7 @@
 
 .usa-table th,
 .usa-table tr:not(:last-child) td {
-  @apply !border-gray-cool-60 !border-b;
+  @apply border-gray-cool-60! border-b!;
 }
 
 .usa-table tbody tr:hover th,
@@ -259,7 +259,7 @@
 }
 
 .usa-table--borderless thead th {
-  @apply text-gray-cool-60 bg-gray-cool-5 py-3 leading-[26px];
+  @apply text-gray-cool-60 bg-gray-cool-5 py-3 leading-6.5;
 }
 
 .usa-table--stacked th[data-label]:before,
