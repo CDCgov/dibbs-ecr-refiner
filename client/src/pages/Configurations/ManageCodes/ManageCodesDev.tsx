@@ -57,22 +57,24 @@ export function ManageCodesDev() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
-          <ConfigurationTitleBar
-            title="Manage codes"
-            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
-          />
-          <div className="flex flex-col items-start justify-end gap-2 sm:flex-row sm:items-center">
-            <AddCodeSetsButton
-              id={configuration.data.id}
-              included_conditions={configuration.data.included_conditions}
-              display_name={configuration.data.display_name}
-              disabled={isDisabled}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
+            <ConfigurationTitleBar
+              title="Manage codes"
+              subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
             />
-            <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+            <div className="flex flex-col items-start justify-end gap-2 sm:flex-row sm:items-center">
+              <AddCodeSetsButton
+                id={configuration.data.id}
+                included_conditions={configuration.data.included_conditions}
+                display_name={configuration.data.display_name}
+                disabled={isDisabled}
+              />
+              <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+            </div>
           </div>
+          <CodesPanel id={configuration.data.id} disabled={isDisabled} />
         </div>
-        <CodesPanel id={configuration.data.id} disabled={isDisabled} />
       </SectionContainer>
     </div>
   );
