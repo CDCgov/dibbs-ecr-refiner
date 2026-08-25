@@ -74,13 +74,13 @@ export function UpdateConfigurations() {
                 className="flex items-center gap-2 bg-white! pl-0! font-bold"
               >
                 <Checkbox
-                  checked={drafts_to_create.some((c) =>
+                  onClick={() => {
+                    handleBulkSelection('existing_drafts');
+                  }}
+                  checked={existing_drafts.some((c) =>
                     selectedConfigurations.includes(c.configuration_id)
                   )}
-                  onClick={() => {
-                    handleBulkSelection('drafts_to_create');
-                  }}
-                  aria-label="Bulk select drafts to create"
+                  aria-label="Bulk select existing drafts"
                 />
                 Configuration
               </th>
@@ -126,14 +126,15 @@ export function UpdateConfigurations() {
                 scope="col"
                 className="flex items-center gap-2 bg-white! pl-0! font-bold"
               >
+                {' '}
                 <Checkbox
-                  onClick={() => {
-                    handleBulkSelection('existing_drafts');
-                  }}
-                  checked={existing_drafts.some((c) =>
+                  checked={drafts_to_create.some((c) =>
                     selectedConfigurations.includes(c.configuration_id)
                   )}
-                  aria-label="Bulk select existing drafts"
+                  onClick={() => {
+                    handleBulkSelection('drafts_to_create');
+                  }}
+                  aria-label="Bulk select drafts to create"
                 />
                 Configuration
               </th>
