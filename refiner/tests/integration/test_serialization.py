@@ -1,4 +1,5 @@
 import pytest
+from fastapi import status
 
 from app.db.configurations.db import get_configuration_by_id_db
 from app.services.configurations import convert_config_to_storage_payload
@@ -44,10 +45,11 @@ class TestSerialization:
     async def test_exclusion_excludes_code_from_serialization(
         self,
         create_config,
-        exclude_codes,
+        get_code_ids_by_value,
         get_condition_id,
         test_user_jurisdiction_id,
         db_pool,
+        authed_client,
     ):
         condition_name = "Ophthalmia Neonatorum"
         condition_id = await get_condition_id(condition_name)
@@ -76,14 +78,20 @@ class TestSerialization:
                 assert c["display"] and c["display"] != ""
                 assert c["system"] in OID_TO_SYSTEM_KEY_MAP.keys()
 
+        # exclude codes and ensure the payloads on reserialization pick up the change
         codes_to_exclude = ["12236161000119108", "276680000"]
-
-        await exclude_codes(
-            configuration_id=config_id,
-            condition_id=condition_id,
-            code_values=codes_to_exclude,
-            code_status="excluded",
+        code_ids_to_exclude = await get_code_ids_by_value(
+            condition_id=condition_id, code_values=codes_to_exclude
         )
+
+        payload = {
+            "code_ids": [str(c["id"]) for c in code_ids_to_exclude],
+            "status": "excluded",
+        }
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
 
         payload_with_exclusion = await convert_config_to_storage_payload(
             configuration=ophtalmia_config, db=db_pool

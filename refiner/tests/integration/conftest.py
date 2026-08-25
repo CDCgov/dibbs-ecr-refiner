@@ -7,8 +7,6 @@ from uuid import UUID
 import pytest
 import pytest_asyncio
 
-from app.api.v1.configurations.codes.model import CodeStatus
-
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
@@ -271,17 +269,15 @@ async def create_config(authed_client):
     return _get
 
 
-@pytest_asyncio.fixture
-async def exclude_codes(authed_client, db_pool):
+@pytest_asyncio.fixture(scope="session")
+async def get_code_ids_by_value(db_pool):
     """
     Returns a function that excludes codes in a configuration
     """
 
     async def _get(
-        configuration_id: UUID,
         condition_id: UUID,
         code_values: list[str],
-        code_status: CodeStatus,
     ):
         async with (
             db_pool.get_connection() as conn,
@@ -296,17 +292,7 @@ async def exclude_codes(authed_client, db_pool):
                 """,
                 {"code_values": code_values, "condition_id": condition_id},
             )
-            code_ids = await cur.fetchall()
-
-            payload = {
-                "code_ids": [str(c["id"]) for c in code_ids],
-                "status": code_status,
-            }
-            response = await authed_client.post(
-                f"/api/v1/configurations/{configuration_id}/set-status", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            return response.json()
+            return await cur.fetchall()
 
     return _get
 
@@ -346,7 +332,7 @@ async def get_condition_by_id(db_pool):
                         c.id,
                         c.canonical_url,
                         c.display_name,
-                        t.version,
+                        MAX(t.version) as version,
                         ARRAY(
                             SELECT codes.code
                             FROM conditions_codes_temp crc
