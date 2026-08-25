@@ -1,15 +1,9 @@
-from collections import defaultdict
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass, field
-from logging import Logger
-from uuid import UUID
+from dataclasses import dataclass, field
 
 from pydantic import BaseModel
 
-from app.db.code_systems.model import DbCodeSystem
-from app.db.codes.model import DbCode
-from app.db.configurations.custom_codes.model import DbCustomCode
-from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP, OTHER_OID
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.configurations.model import DbNarrativeAction
 

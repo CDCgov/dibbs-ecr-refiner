@@ -3,6 +3,8 @@ from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
+from refiner.app.api.v1.code_systems import index_code_list_by_system_key
+
 from app.db.code_systems.db import (
     get_id_to_code_system_dict_db,
 )
@@ -30,7 +32,6 @@ from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
     CodeSystemSets,
 )
-from refiner.app.api.v1.code_systems import index_code_list_by_system_key
 
 
 def get_default_sections() -> list[DbConfigurationSectionProcessing]:
