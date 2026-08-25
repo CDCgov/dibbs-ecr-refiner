@@ -49,10 +49,10 @@ export function ControlPanel({
     mutate(
       {
         configurationId,
-        params: {
+        data: {
           status: status === 'Included' ? 'included' : 'excluded',
+          code_ids: codeSetCodeIds,
         },
-        data: codeSetCodeIds,
       },
       {
         onSuccess: async () => {

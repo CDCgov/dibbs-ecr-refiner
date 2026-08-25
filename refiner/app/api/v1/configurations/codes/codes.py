@@ -4,9 +4,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
+from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.codes.model import FilterInput
+from app.api.v1.configurations.codes.model import CodeStatus, FilterInput
 from app.db.configurations.codes.db import (
     CodeFilterOptions,
     get_all_filter_options_db,
@@ -196,6 +197,11 @@ async def get_code_counts(
     )
 
 
+class SetStatusRequest(BaseModel):
+    code_ids: list[UUID]
+    status: CodeStatus
+
+
 @router.post(
     "/set-status",
     response_model=list[UUID],
@@ -204,8 +210,7 @@ async def get_code_counts(
 )
 async def set_codes_status(
     configuration_id: UUID,
-    code_ids: list[UUID],
-    status: Literal["included", "excluded"],
+    body: SetStatusRequest,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[UUID]:
@@ -239,7 +244,7 @@ async def set_codes_status(
         )
 
     impacted_code_ids = await set_codes_status_db(
-        configuration_id=config.id, code_ids=code_ids, status=status, db=db
+        configuration_id=config.id, code_ids=body.code_ids, status=body.status, db=db
     )
 
     return impacted_code_ids

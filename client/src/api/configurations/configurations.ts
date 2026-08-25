@@ -52,7 +52,7 @@ import type {
   HTTPValidationError,
   SectionUpdateInput,
   SerializedFiles,
-  SetCodesStatusParams,
+  SetStatusRequest,
   UpdateCustomCodeInput,
   UpdateSectionProcessingResponse,
   UploadCustomCodesCsvInput,
@@ -2231,16 +2231,13 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
  */
 export const setCodesStatus = (
     configurationId: string,
-    setCodesStatusBody: string[],
-    params: SetCodesStatusParams, options?: AxiosRequestConfig
+    setStatusRequest: SetStatusRequest, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<string[]>> => {
 
 
     return axios.default.post(
       `/api/v1/configurations/${configurationId}/set-status`,
-      setCodesStatusBody,{
-    ...options,
-        params: {...params, ...options?.params},}
+      setStatusRequest,options
     );
   }
 
@@ -2248,8 +2245,8 @@ export const setCodesStatus = (
 
 
 export const getSetCodesStatusMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: string[];params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: string[];params: SetCodesStatusParams}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: SetStatusRequest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: SetStatusRequest}, TContext> => {
 
 const mutationKey = ['setCodesStatus'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -2261,10 +2258,10 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodesStatus>>, {configurationId: string;data: string[];params: SetCodesStatusParams}> = (props) => {
-          const {configurationId,data,params} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodesStatus>>, {configurationId: string;data: SetStatusRequest}> = (props) => {
+          const {configurationId,data} = props ?? {};
 
-          return  setCodesStatus(configurationId,data,params,axiosOptions)
+          return  setCodesStatus(configurationId,data,axiosOptions)
         }
 
 
@@ -2275,18 +2272,18 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SetCodesStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setCodesStatus>>>
-    export type SetCodesStatusMutationBody = string[]
+    export type SetCodesStatusMutationBody = SetStatusRequest
     export type SetCodesStatusMutationError = AxiosError<HTTPValidationError>
 
     /**
  * @summary Set Codes Status
  */
 export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: string[];params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: SetStatusRequest}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setCodesStatus>>,
         TError,
-        {configurationId: string;data: string[];params: SetCodesStatusParams},
+        {configurationId: string;data: SetStatusRequest},
         TContext
       > => {
       return useMutation(getSetCodesStatusMutationOptions(options), queryClient);
@@ -2387,3 +2384,9 @@ export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilte
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+

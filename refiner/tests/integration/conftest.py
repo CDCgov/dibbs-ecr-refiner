@@ -7,6 +7,8 @@ from uuid import UUID
 import pytest
 import pytest_asyncio
 
+from app.api.v1.configurations.codes.model import CodeStatus
+
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
@@ -270,6 +272,46 @@ async def create_config(authed_client):
 
 
 @pytest_asyncio.fixture
+async def exclude_codes(authed_client, db_pool):
+    """
+    Returns a function that excludes codes in a configuration
+    """
+
+    async def _get(
+        configuration_id: UUID,
+        condition_id: UUID,
+        code_values: list[str],
+        code_status: CodeStatus,
+    ):
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
+                    SELECT c.id
+                    FROM codes c
+                    JOIN conditions_codes_temp cc ON cc.code_id = c.id
+                    WHERE c.code = ANY(%(code_values)s) AND cc.condition_id=%(condition_id)s
+                """,
+                {"code_values": code_values, "condition_id": condition_id},
+            )
+            code_ids = await cur.fetchall()
+
+            payload = {
+                "code_ids": [str(c["id"]) for c in code_ids],
+                "status": code_status,
+            }
+            response = await authed_client.post(
+                f"/api/v1/configurations/{configuration_id}/set-status", json=payload
+            )
+            assert response.status_code == status.HTTP_200_OK
+            return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
 async def get_config_by_id(authed_client):
     """
     Returns a function that fetches a configuration object given its ID.
@@ -311,19 +353,22 @@ async def get_condition_by_id(db_pool):
                             JOIN codes ON crc.code_id = codes.id
                             WHERE crc.condition_id = c.id AND crc.is_child_rsg
                         ) as child_rsg_snomed_codes,
-                        c.snomed_codes,
-                        c.loinc_codes,
-                        c.icd10_codes,
-                        c.rxnorm_codes,
-                        c.cvx_codes,
-                        c.coverage_level,
-                        c.coverage_level_reason,
-                        c.coverage_level_date
-                    FROM conditions c
-                    JOIN tes t ON t.id = c.tes_id
-                    WHERE c.id = %s
+                         JSONB_AGG(
+                            JSON_BUILD_OBJECT(
+                            'code', codes.code,
+                            'display', codes.display,
+                            'system_id', codes.system_id,
+                            'system_name', s.display_name
+                        )) as codes
+                        FROM conditions c
+                        JOIN tes t ON t.id = c.tes_id
+                        JOIN conditions_codes_temp cc ON cc.condition_id = c.id
+                        JOIN codes ON codes.id = cc.code_id
+                        JOIN systems s ON codes.system_id = s.id
+                        WHERE c.id = %(id)s
+                        GROUP BY c.id
                     """,
-                    (id,),
+                    {"id": id},
                 )
                 result = await cur.fetchone()
                 assert result, f"Condition with ID '{id}' not found."
