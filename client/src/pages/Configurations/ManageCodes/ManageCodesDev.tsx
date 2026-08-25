@@ -30,6 +30,7 @@ import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
 import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
+import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -37,6 +38,7 @@ import { SearchBar } from './SearchBar';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
+  const [isUploadingCustomCodes, setIsUploadingCustomCodes] = useState(false);
 
   // acquire lock on mount, schedule release on unmount
   useConfigLock(id);
@@ -57,22 +59,34 @@ export function ManageCodesDev() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
-          <ConfigurationTitleBar
-            title="Manage codes"
-            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
-          />
-          <div className="flex flex-col items-start justify-end gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
+            <ConfigurationTitleBar
+              title="Manage codes"
+              subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
+            />
             <AddCodeSetsButton
               id={configuration.data.id}
               included_conditions={configuration.data.included_conditions}
               display_name={configuration.data.display_name}
               disabled={isDisabled}
             />
-            <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+            <AddCustomCodeButton
+              configurationId={id}
+              disabled={isDisabled}
+              setIsUploadingCustomCodes={setIsUploadingCustomCodes}
+            />
           </div>
+          {isUploadingCustomCodes ? (
+            <ImportCustomCodes
+              configurationId={id}
+              disabled={isDisabled}
+              onSuccess={() => setIsUploadingCustomCodes(false)}
+            />
+          ) : (
+            <CodesPanel id={configuration.data.id} disabled={isDisabled} />
+          )}
         </div>
-        <CodesPanel id={configuration.data.id} disabled={isDisabled} />
       </SectionContainer>
     </div>
   );

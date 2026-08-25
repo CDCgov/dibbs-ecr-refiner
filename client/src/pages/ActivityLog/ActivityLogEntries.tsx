@@ -64,13 +64,13 @@ export function ActivityLogEntries({
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
                   <div className="flex flex-col items-start gap-1">
-                    <div className="flex flex-col items-start gap-2">
-                      <div className="wrap-break-word">
+                    <div className="flex items-center gap-2">
+                      <span>
                         {r.action_text}
                         {r.code_count != null
                           ? ` (${r.code_count.toLocaleString()} codes)`
                           : null}
-                      </div>
+                      </span>
 
                       {r.condition_id && r.code_count != null ? (
                         <CodeSetExportLink eventId={r.id} />
@@ -193,7 +193,7 @@ function CodeSetExportLink({ eventId }: CodeSetExportLinkProps) {
       href={`/api/v1/events/${eventId}/codes/export`}
       anchorProps={{ download: true }}
     >
-      Export as CSV
+      <span className="whitespace-nowrap">Export as CSV</span>
     </Button>
   );
 }

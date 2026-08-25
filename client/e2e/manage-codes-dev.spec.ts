@@ -248,6 +248,170 @@ test.describe('Codes management - custom code interactions', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
+  test('Custom codes can be imported using the CSV upload screen', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+
+    await expect(page.getByRole('table')).toBeVisible();
+    const addCustomCodesButton = page.getByRole('button', {
+      name: 'Add custom code',
+    });
+    await expect(addCustomCodesButton).toBeVisible();
+
+    await addCustomCodesButton.click();
+
+    const importCsvButton = page.getByRole('button', {
+      name: 'Import codes from CSV',
+    });
+    await expect(importCsvButton).toBeVisible();
+
+    await importCsvButton.click();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await expect(page.getByRole('table')).not.toBeVisible();
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Import from CSV',
+        exact: true,
+        level: 2,
+      })
+    ).toBeVisible();
+
+    const csvWithBadHeaders = `cod,code_system,display_name
+      6789,ICD-10,ICD-10 Example
+      `;
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'bad_headers.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvWithBadHeaders),
+    });
+
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: /^CSV must contain headers: code, code_system, display_name/,
+      })
+    ).toBeVisible();
+
+    const csvWithBadSystem = `code,code_system,display_name
+      6789,ICD-1,ICD-10 Example`;
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'bad_system.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvWithBadSystem),
+    });
+
+    await expect(page.getByText('Row 2', { exact: false })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Invalid system: ICD-1. [code_system] must be one of [SNOMED, LOINC, ICD-10, RxNorm, CVX, Other]'
+      )
+    ).toBeVisible();
+    await page.getByRole('button', { name: '← Back' }).click();
+
+    await expect(addCustomCodesButton).toBeVisible();
+    await addCustomCodesButton.click();
+    await expect(importCsvButton).toBeVisible();
+    await importCsvButton.click();
+
+    const downloadPath =
+      await configurationPage.downloadCustomCodeCsvTemplate();
+    await configurationPage.uploadCustomCodeCsv(downloadPath);
+    const saveAllButton = page.getByRole('button', {
+      name: 'Confirm & save codes',
+    });
+    const deleteAllButton = page.getByRole('button', {
+      name: 'Undo & delete codes',
+    });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await expect(saveAllButton).toBeVisible();
+    await expect(deleteAllButton).toBeVisible();
+
+    await expect(
+      page.getByText('Other Example', { exact: true })
+    ).toBeVisible();
+    await page.getByRole('searchbox', { name: 'Search codes' }).fill('oth');
+    const editButton = page.getByRole('button', {
+      name: 'Edit',
+      exact: true,
+    });
+    const deleteButton = page.getByRole('button', {
+      name: 'Delete',
+      exact: true,
+    });
+    await expect(editButton).toBeVisible();
+    await expect(deleteButton).toBeVisible();
+
+    await editButton.click();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await expect(
+      page.getByRole('heading', { name: `Edit 1111111-other`, level: 2 })
+    ).toBeVisible();
+    const testCode = 'test code ~';
+    await page.getByLabel('Code', { exact: true }).fill(testCode);
+    await page.getByLabel('Code system').selectOption({ label: 'CVX' });
+    await page.getByLabel('Display name').fill('test display_name');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await page
+      .getByRole('searchbox', { name: 'Search codes' })
+      .fill('test display_name');
+
+    await editButton.click();
+    await expect(
+      page.getByRole('heading', { name: `Edit ${testCode}`, level: 2 })
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Close this window' }).click();
+    await expect(
+      page.getByText('Other Example', { exact: true })
+    ).not.toBeVisible();
+    await page.getByRole('searchbox', { name: 'Search codes' }).clear();
+
+    const rows = page.locator('table tbody tr');
+    await page.getByRole('searchbox', { name: 'Search codes' }).fill('test');
+
+    const firstRow = rows.first();
+    // first row should have the most recent updated values
+    await expect(firstRow.getByText(testCode)).toBeVisible();
+    await expect(firstRow.getByText('test display_name')).toBeVisible();
+    await expect(firstRow.getByText('CVX')).toBeVisible();
+
+    await firstRow.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText(testCode)).not.toBeVisible();
+    await page.getByRole('searchbox', { name: 'Search codes' }).clear();
+
+    expect(await rows.all()).toHaveLength(5); // 6 code systems minus one
+
+    await page.getByRole('button', { name: 'Confirm & save codes' }).click();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Confirm & save codes?',
+        exact: true,
+        level: 2,
+      })
+    ).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await page.getByRole('button', { name: 'Yes, save codes' }).click();
+
+    const savedCodeTableRows = page.locator('table tbody tr');
+    await expect(savedCodeTableRows.getByText('ICD-10 Example')).toBeVisible();
+    await expect(savedCodeTableRows.getByText('LOINC Example')).toBeVisible();
+
+    // make sure we're returned to the starting screen
+    await expect(page.getByTestId('codes-included-display')).toBeVisible();
+  });
+
   test('Individual custom codes can be added, edited, and deleted', async ({
     page,
     configurationsPage,
