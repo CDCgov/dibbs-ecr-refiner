@@ -27,7 +27,7 @@ export function ConfigTest() {
   if (!id || isError) return 'Error!';
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <Header configuration={configuration.data} />
       <SectionContainer>
         <div className="flex flex-wrap justify-between">
