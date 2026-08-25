@@ -66,7 +66,7 @@ export function TesUpdates() {
               variant="unstyled"
               onClick={() => setTesStage('summary')}
             >
-              Tes Updates
+              TES Updates
             </Button>
             {' > Updates'}
           </div>
