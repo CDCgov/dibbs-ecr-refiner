@@ -29,8 +29,8 @@ from app.services.ecr.specification import (
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
     CodeSystemSets,
-    index_code_list_by_system_key,
 )
+from refiner.app.api.v1.code_systems import index_code_list_by_system_key
 
 
 def get_default_sections() -> list[DbConfigurationSectionProcessing]:

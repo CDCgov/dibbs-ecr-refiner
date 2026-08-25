@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field
+from logging import Logger
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.model import DbCode
 from app.db.configurations.custom_codes.model import DbCustomCode
-from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP, OTHER_OID
 
 from ..db.configurations.model import DbNarrativeAction
 
@@ -21,27 +22,6 @@ from ..db.configurations.model import DbNarrativeAction
 # =============================================================================
 type CodeSystemKey = str
 type Oid = str
-
-
-def index_code_list_by_system_key(
-    codes: list[DbCode | DbCustomCode], code_systems: dict[UUID, DbCodeSystem]
-) -> dict[CodeSystemKey, list[dict]]:
-    """
-    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
-    """
-    result: dict[CodeSystemKey, list[dict]] = defaultdict(list)
-    for c in codes:
-        if c.system_id not in code_systems:
-            raise ValueError(
-                f"System indexing ahead in serialization with value {c.system_id} not found in provided map {code_systems}"
-            )
-
-        system = code_systems[c.system_id]
-        result[system.key].append(
-            asdict(Coding(code=c.code, display=c.display, system_oid=system.oid))
-        )
-
-    return result
 
 
 @dataclass(frozen=True)
