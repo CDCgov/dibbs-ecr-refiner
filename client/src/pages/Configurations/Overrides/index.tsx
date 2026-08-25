@@ -1,17 +1,15 @@
+import { Header, SectionContainer } from '../layout';
 import { useParams } from 'react-router';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
-import { Spinner } from '@components/Spinner';
-import { Button } from '@components/Button';
-import { SectionModalState, Sections } from './Sections';
-import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
-import { useState } from 'react';
+import { Button } from '@components/Button';
+import { Spinner } from '@components/Spinner';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 
-export function CustomizeSections() {
+export function Overrides() {
   const { id } = useParams<{ id: string }>();
 
-  // acquire lock on mount, schedule release on unmount
+  // lock on mount, schedule release on unmount
   useConfigLock(id);
 
   const {
@@ -19,11 +17,6 @@ export function CustomizeSections() {
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
-
-  const [modalState, setModalState] = useState<SectionModalState>({
-    isOpen: false,
-    selectedSection: null,
-  });
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -37,27 +30,33 @@ export function CustomizeSections() {
       <SectionContainer>
         <div className="mb-4 flex items-center justify-between">
           <ConfigurationTitleBar
-            title="Customize eICR sections"
-            subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
+            title="Apply overrides"
+            subtitle="Choose which code groups to omit from the refined output.
+            Selections here take priority over previous configuration choices —
+            any group omitted here is removed regardless of your Customize eICR
+            sections and Manage codes selections."
           />
+
           {!isDisabled && (
             <Button
               variant="secondary"
               className="m-0! p-2! px-4! text-sm! whitespace-nowrap"
-              onClick={() =>
-                setModalState({ isOpen: true, selectedSection: null })
-              }
+              onClick={() => {}}
             >
-              Add custom section <span aria-hidden>+</span>
+              Add code group <span aria-hidden>+</span>
             </Button>
           )}
         </div>
-        <Sections
-          configuration={configuration.data}
-          disabled={isDisabled}
-          modalState={modalState}
-          setModalState={setModalState}
-        />
+
+        <div className="bg-gray-cool-5 rounded-lg border border-gray-200 p-8 text-center">
+          <h2 className="mb-4 text-2xl font-semibold text-gray-700">
+            Coming Soon
+          </h2>
+          <p className="text-gray-700">
+            The Overrides functionality is currently under development and will
+            be available in a future release.
+          </p>
+        </div>
       </SectionContainer>
     </div>
   );

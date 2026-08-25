@@ -10,26 +10,19 @@
 }
 
 @layer base {
-  /* To lock the document height to the viewport and prevent unwanted
-   * page-level scrolling, the html and body elements have been switched from
-   * h-full to a fixed height: 100dvh. We applied overflow: hidden to the
-   * html element to ensure the outer document remains static, while setting
-   * overflow-y: auto on the body to handle internal content scrolling. This
-   * configuration uses modern Dynamic Viewport Units to provide a consistent
-   * full-screen layout across both desktop and mobile browsers.
+  /* To ensure pages always fill at least the viewport height, we establish a
+   * height cascade: html (min-h-dvh) -> body (min-h-full) -> #root (min-h-full).
+   * Using dvh (Dynamic Viewport Height) ensures compatibility with mobile browser
+   * address bars.
    */
-  html,
-  body {
-    @apply h-dvh;
-  }
   html {
-    @apply overflow-hidden;
+    @apply min-h-dvh;
   }
   body {
-    @apply m-0 overflow-y-auto;
+    @apply m-0 min-h-full;
   }
   #root {
-    @apply h-full;
+    @apply min-h-full;
   }
 
   h1,
@@ -58,13 +51,33 @@
   .border-thin {
     @apply border-1;
   }
+  .banner-breakout {
+    @apply relative right-1/2 left-1/2 -mr-[50vw] -ml-[50vw] w-screen max-w-screen;
+  }
+  .banner-breakout-bg {
+    @apply absolute inset-0 -z-[1];
+  }
+  .banner-breakout-content {
+    @apply relative z-[1] mx-auto;
+  }
 }
 
 @theme {
   --font-public-sans: 'Public Sans Variable', 'sans-serif';
   --font-merriweather: 'Merriweather Variable', 'serif';
-  --color-primary-container: #3a7d950d;
+  --color-primary-container: var(--color-page-bg);
+  --color-page-bg: #f5f8fa;
   --drop-shadow-base: drop-shadow(0px 4px 8px rgb(0, 0, 0, 0.15));
+  --drop-shadow-nav: var(--drop-shadow-base);
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-banner: 20;
+  --z-dropdown: 30;
+  --z-drawer: 40;
+  --z-modal-backdrop: 50;
+  --z-modal-content: 60;
+  --z-modal-dropdown: 70;
 
   /* Color reference */
   /* https://designsystem.digital.gov/design-tokens/color/system-tokens/ */
@@ -134,7 +147,7 @@
   --color-state-success-dark: #216e1f;
   --color-state-warning-lighter: #fff5c2;
   --color-state-warning: #ddaa01;
-  --color-state-warning-darker: #5c4809;
+  --color-state-warning-darker: #c04a00;
   --color-state-error-lighter: #f4e3db;
   --color-state-error-light: #fdb8ae;
   --color-state-error: #fb5a47;
@@ -165,7 +178,35 @@
   --color-red-warm-10v: #fce1d4;
 }
 
+@layer utilities {
+  .z-base {
+    z-index: var(--z-base);
+  }
+  .z-sticky {
+    z-index: var(--z-sticky);
+  }
+  .z-banner {
+    z-index: var(--z-banner);
+  }
+  .z-dropdown {
+    z-index: var(--z-dropdown);
+  }
+  .z-drawer {
+    z-index: var(--z-drawer);
+  }
+  .z-modal-backdrop {
+    z-index: var(--z-modal-backdrop);
+  }
+  .z-modal-content {
+    z-index: var(--z-modal-content);
+  }
+  .z-modal-dropdown {
+    z-index: var(--z-modal-dropdown);
+  }
+}
+
 /**
+
   * README:
   * Overriding USWDS Table styles with TailwindCSS. This helps standardize the
   * look of USWDS Tables for the eCR Refiner application.
