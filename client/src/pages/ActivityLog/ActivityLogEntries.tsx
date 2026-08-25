@@ -64,7 +64,7 @@ export function ActivityLogEntries({
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
                   <div className="flex flex-col items-start gap-1">
-                    <div className="flex items-center gap-2 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
                       <span>
                         {r.action_text}
                         {r.code_count != null
