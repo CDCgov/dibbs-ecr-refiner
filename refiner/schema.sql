@@ -737,6 +737,13 @@ CREATE INDEX idx_conditions_codes_condition_id ON public.conditions_codes USING 
 
 
 --
+-- Name: idx_configuration_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_configuration_status ON public.configurations USING btree (status);
+
+
+--
 -- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1065,4 +1072,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260810165940'),
     ('20260813133341'),
     ('20260813142528'),
-    ('20260813142548');
+    ('20260813142548'),
+    ('20260825151652');

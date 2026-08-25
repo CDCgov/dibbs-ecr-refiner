@@ -3,7 +3,13 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.db.tes.model import ConditionDiffExportData, DbTes, DbTesConditionUpdate
+from app.db.tes.model import (
+    ConditionDiffExportData,
+    DbTes,
+    DbTesConditionUpdate,
+    DbTesConfigsToUpdateResponse,
+    TesConfigToUpdate,
+)
 
 
 async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]:
@@ -32,6 +38,13 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
             return rows
 
 
+async def _get_latest_tes_record_db(db: AsyncDatabaseConnection) -> DbTes:
+    """Get the most recent record."""
+
+    all_records = await get_loaded_tes_versions_db(db=db)
+    return all_records[-1]
+
+
 async def _get_tes_by_version_number_db(
     db: AsyncDatabaseConnection, version: str
 ) -> DbTes:
@@ -52,15 +65,13 @@ async def _get_tes_by_version_number_db(
         created_at,
         updated_at
     FROM tes
-    WHERE version = %s
+    WHERE version = %(version)s
     ORDER BY version
     """
 
-    params = (version,)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query=query, params=params)
+            await cur.execute(query=query, params={"version": version})
             row = await cur.fetchone()
 
             if not row:
@@ -272,42 +283,29 @@ async def _get_tes_update_diff_db(
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
     query = """
-    WITH cur AS (
-        SELECT DISTINCT
-            c.id as condition_id,
-            c.canonical_url,
-            cc.code_id,
-            c.display_name
-        FROM conditions_codes_temp cc
-        JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id = %(cur_tes_id)s
-    ),
-    prev AS (
-        SELECT DISTINCT
-            c.id as condition_id,
+   WITH tes_records AS (
+        SELECT
             c.canonical_url,
             c.display_name,
-            cc.code_id
+            cc.code_id,
+            BOOL_OR(c.tes_id = %(cur_tes_id)s) AS in_cur,
+            BOOL_OR(c.tes_id = %(prev_tes_id)s) AS in_prev
         FROM conditions_codes_temp cc
         JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id = %(prev_tes_id)s
+        WHERE c.tes_id IN (%(cur_tes_id)s, %(prev_tes_id)s)
+        GROUP BY c.canonical_url, c.display_name, cc.code_id
     )
-
     SELECT
-        COALESCE(cur.canonical_url, prev.canonical_url) as canonical_url,
-        MAX(COALESCE(cur.display_name, prev.display_name)) AS display_name,
-        COALESCE(array_agg(cur.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
-        COALESCE(array_agg(prev.code_id) FILTER (where cur.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
-        (COUNT(prev.condition_id) = 0) AS is_new
-    FROM cur
-    FULL OUTER JOIN prev
-        ON cur.canonical_url = prev.canonical_url
-        AND cur.code_id = prev.code_id
-    GROUP BY
-        COALESCE(cur.canonical_url, prev.canonical_url)
+        canonical_url,
+        display_name,
+        COALESCE(ARRAY_AGG(code_id) FILTER (WHERE in_cur AND NOT in_prev), '{}'::uuid[]) AS added_code_ids,
+        COALESCE(ARRAY_AGG(code_id) FILTER (WHERE in_prev AND NOT in_cur), '{}'::uuid[]) AS removed_code_ids,
+        NOT BOOL_OR(in_prev) AS is_new
+    FROM tes_records
+    GROUP BY canonical_url, display_name
     HAVING
-        COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
-        OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
+        COUNT(*) FILTER (WHERE in_cur AND NOT in_prev) > 0
+        OR COUNT(*) FILTER (WHERE in_prev AND NOT in_cur) > 0;
     """
 
     async with db.get_connection() as conn:
@@ -345,3 +343,47 @@ async def _get_cur_and_prev_tes_records_db(
     )
 
     return (cur_tes_record, prev_tes_record)
+
+
+async def get_configurations_set_to_tes_version(
+    db: AsyncDatabaseConnection,
+) -> DbTesConfigsToUpdateResponse:
+    """
+    Returns metadata for all TES drafts and active versions that are outdated.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        latest_tes_version (str): The current TES version.
+
+    Returns:
+        DbTesConfigsToUpdateResponse: An object consisting of existing drafts and drafts to create that aren't the latest TES ID.
+    """
+    cur_tes_record = await _get_latest_tes_record_db(db=db)
+
+    query = """
+        SELECT
+            conf.id as configuration_id,
+            conf.name as configuration_name,
+            COALESCE(array_agg(cond.display_name)) as codesets_to_update,
+            MAX(COALESCE(t.version)) as configuration_tes_version
+        FROM configurations conf
+        LEFT JOIN configurations_conditions cc ON cc.configuration_id = conf.id
+        LEFT JOIN conditions cond ON cc.condition_id = cond.id
+        LEFT JOIN tes t ON cond.tes_id = t.id
+        WHERE t.id <> %(cur_tes_id)s AND conf.status=%(status)s
+        GROUP BY conf.id, conf.name
+    """
+
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(TesConfigToUpdate)) as cur,
+    ):
+        await cur.execute(query, {"cur_tes_id": cur_tes_record.id, "status": "draft"})
+        draft_rows = await cur.fetchall()
+
+        await cur.execute(query, {"cur_tes_id": cur_tes_record.id, "status": "active"})
+        active_rows = await cur.fetchall()
+
+        return DbTesConfigsToUpdateResponse(
+            existing_drafts=draft_rows, drafts_to_create=active_rows
+        )

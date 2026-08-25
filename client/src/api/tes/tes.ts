@@ -24,6 +24,7 @@ import type {
   ExportConditionDiffParams,
   GetTesDiffDetailsParams,
   HTTPValidationError,
+  TesConfigsToUpdateResponse,
   TesDiffConditionDetails,
   TesResponse
 } from '../schemas';
@@ -257,6 +258,9 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
  *     prev_version(str) : The floor TES version to compare against
  *     canonical_url(str) : The condition diff being requested
  *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *         Response: an HTTP response that gives the browser a CSV file to download
  * @summary Export Tes Condition Diff
  */
 export const exportConditionDiff = (
@@ -337,6 +341,104 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getExportConditionDiffQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Collects information needed to render the TES configs that need updating for a given TES release.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *     TesConfigsToUpdateResponse: information about TES configs to update,
+ *     with a list of existing drafts and drafts to create
+ * @summary Get Configurations To Update
+ */
+export const getConfigurationsToUpdate = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<TesConfigsToUpdateResponse>> => {
+
+
+    return axios.default.get(
+      `/api/v1/tes/configurations-to-update`,options
+    );
+  }
+
+
+
+
+export const getGetConfigurationsToUpdateQueryKey = () => {
+    return [
+    `/api/v1/tes/configurations-to-update`
+    ] as const;
+    }
+
+
+export const getGetConfigurationsToUpdateQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationsToUpdateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationsToUpdate>>> = ({ signal }) => getConfigurationsToUpdate({ signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetConfigurationsToUpdateQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationsToUpdate>>>
+export type GetConfigurationsToUpdateQueryError = AxiosError<unknown>
+
+
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Configurations To Update
+ */
+
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetConfigurationsToUpdateQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
