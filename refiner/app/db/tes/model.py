@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.db.conditions.model import CodeResponse
+from app.db.codes.model import DbCode
 
 
 @dataclass
@@ -51,18 +51,16 @@ class ConditionDiffExportData:
 
     canonical_url: str
     condition_name: str
-    added_codes: list[CodeResponse]
-    removed_codes: list[CodeResponse]
+    added_codes: list[DbCode]
+    removed_codes: list[DbCode]
 
     def __post_init__(self):
         """Helper to transform nested JSON returned from SQL into CodeDisplay objects."""
         self.added_codes = [
-            c if isinstance(c, CodeResponse) else CodeResponse(**c)
-            for c in self.added_codes
+            c if isinstance(c, DbCode) else DbCode(**c) for c in self.added_codes
         ]
         self.removed_codes = [
-            c if isinstance(c, CodeResponse) else CodeResponse(**c)
-            for c in self.removed_codes
+            c if isinstance(c, DbCode) else DbCode(**c) for c in self.removed_codes
         ]
 
 

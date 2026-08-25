@@ -11,7 +11,7 @@ from fastapi import status
 import app.api.v1.configurations.custom_codes.custom_codes as custom_codes_module
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
-from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.conditions.model import DbCode, DbCondition
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.labels import (
     CODED_DATA_LABELS,
@@ -26,7 +26,7 @@ from app.db.configurations.model import (
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
-from tests.unit.conftest import create_mock_systems
+from tests.unit.conftest import create_mock_systems, get_mock_system_id_by_name
 
 
 @pytest.fixture
@@ -65,11 +65,38 @@ def mock_db_functions(
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
-        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
-        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
-        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
-        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
-        cvx_codes=[DbConditionCoding("15251", "Hypertension CVX")],
+        codes=[
+            DbCode(
+                code="11111",
+                display="Hypertension SNOMED",
+                system_id=get_mock_system_id_by_name("SNOMED"),
+                system_name="SNOMED",
+            ),
+            DbCode(
+                code="22222",
+                display="Hypertension LOINC",
+                system_id=get_mock_system_id_by_name("LOINC"),
+                system_name="LOINC",
+            ),
+            DbCode(
+                code="I10",
+                display="Essential hypertension",
+                system_id=get_mock_system_id_by_name("ICD-10"),
+                system_name="ICD-10",
+            ),
+            DbCode(
+                code="33333",
+                display="Hypertension RXNORM",
+                system_id=get_mock_system_id_by_name("RxNorm"),
+                system_name="RxNorm",
+            ),
+            DbCode(
+                code="124124",
+                display="Hypertension CVX",
+                system_id=get_mock_system_id_by_name("CVX"),
+                system_name="CVX",
+            ),
+        ],
     )
 
     monkeypatch.setattr(

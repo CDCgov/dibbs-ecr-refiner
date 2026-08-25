@@ -2,12 +2,12 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
+from app.db.codes.model import DbCode
 from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
 from .model import (
-    CodeResponse,
     ConditionSummary,
     DbCondition,
     DbConditionBase,
@@ -199,9 +199,9 @@ async def get_condition_by_id_db(
 
 async def get_condition_codes_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
-) -> list[CodeResponse]:
+) -> list[DbCode]:
     """
-    For a condition ID, flatten all codes into a CodeResponse shape.
+    For a condition ID, flatten all codes into a DbCode shape.
 
     For a given condition ID, organizes joins into the relevant tables to return
     the list of codes corresponding to the condition.
@@ -224,7 +224,7 @@ async def get_condition_codes_by_condition_id_db(
             """
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(CodeResponse)) as cur:
+        async with conn.cursor(row_factory=class_row(DbCode)) as cur:
             await cur.execute(query, {"condition_id": condition_id})
             rows = await cur.fetchall()
 

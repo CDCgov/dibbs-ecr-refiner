@@ -11,17 +11,6 @@ async def create_processed_config(
     config: DbConfiguration, conditions: list[DbCondition]
 ):
     mock_systems = create_mock_systems()
-    codes = [
-        item
-        for c in conditions
-        for item in [
-            *c.snomed_codes,
-            *c.loinc_codes,
-            *c.rxnorm_codes,
-            *c.cvx_codes,
-            *c.icd10_codes,
-        ]
-    ]
     with (
         unittest.mock.patch(
             "app.services.configurations.get_included_conditions_db",
@@ -33,7 +22,10 @@ async def create_processed_config(
         ),
         unittest.mock.patch(
             "app.services.configurations.get_pruned_configuration_codes_db",
-            new=unittest.mock.AsyncMock(return_value=codes),
+            new=unittest.mock.AsyncMock(
+                return_value=config.custom_codes
+                + [item for c in conditions for item in c.codes]
+            ),
         ),
     ):
         storage_payload = await convert_config_to_storage_payload(

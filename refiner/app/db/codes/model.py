@@ -19,3 +19,4 @@ class DbCode(CodedConcept):
     """
 
     system_id: UUID
+    system_name: str

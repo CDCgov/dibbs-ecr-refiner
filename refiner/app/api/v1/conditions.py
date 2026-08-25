@@ -8,7 +8,6 @@ from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_code_systems_db
 from app.db.codes.model import CodedConcept, DbCode
 from app.db.conditions.model import (
-    CodeResponse,
     DbConditionsContextGrouper,
 )
 
@@ -98,7 +97,7 @@ class GetConditionResponse:
     id: UUID
     display_name: str
     completeness_status: CompletenessStatus
-    codes: list[CodeResponse]
+    codes: list[DbCode]
     systems: list[CodeSystemsReponse]
 
 

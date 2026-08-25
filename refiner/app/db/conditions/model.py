@@ -35,15 +35,6 @@ class DbConditionBase:
     version: str
 
 
-@dataclass(frozen=True)
-class CodeResponse(DbCode):
-    """
-    Display information needed for code information on the frontend.
-    """
-
-    system_name: str
-
-
 @dataclass
 class DbCondition(DbConditionBase):
     """
@@ -61,7 +52,7 @@ class DbCondition(DbConditionBase):
     # and seeded from CG's RSG and ACG children
     # coverage level from the crmi-curationCoverageLevel extension
     # on the condition grouper ValueSet; null when the extension is not present
-    codes: list[CodeResponse]
+    codes: list[DbCode]
     coverage_level: str | None = None
     coverage_level_reason: str | None = None
     coverage_level_date: datetime | None = None
@@ -89,7 +80,7 @@ class DbCondition(DbConditionBase):
             coverage_level_date=row.get("coverage_level_date"),
         )
 
-    def get_codes_from_all_systems(self) -> list[CodeResponse]:
+    def get_codes_from_all_systems(self) -> list[DbCode]:
         """
         Returns all codes from all systems.
 
