@@ -1,5 +1,6 @@
 import { Button } from '@components/Button';
-import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
+import { Menu, MenuButton, MenuItem } from '@headlessui/react';
+import { BaseMenuItems } from '@components/Dropdown';
 import { CodeResponse, CodeResponseStatus } from '../../../api/schemas';
 import { DeleteIcon } from './DeleteIcon';
 import { useToast } from '../../../hooks/useToast';
@@ -167,7 +168,7 @@ function CustomCodeDeletionMenu({
         >
           ...
         </MenuButton>
-        <MenuItems
+        <BaseMenuItems
           portal
           anchor="top end"
           className="z-100 rounded bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
@@ -182,7 +183,7 @@ function CustomCodeDeletionMenu({
               Delete {customCodeIds.length} custom codes
             </Button>
           </MenuItem>
-        </MenuItems>
+        </BaseMenuItems>
       </Menu>
     </>
   );

@@ -35,8 +35,8 @@ export function Success({
   }
 
   return (
-    <div>
-      <div className="flex place-items-center justify-between gap-4 pr-2">
+    <div className="flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-7xl place-items-center justify-between gap-4 pr-2">
         <Title>eCR refinement results</Title>
         <SelectContainer>
           <Field>
@@ -51,12 +51,14 @@ export function Success({
           </Field>
         </SelectContainer>
       </div>
-      <Diff
-        condition={selectedCondition}
-        unrefined_eicr={unrefined_eicr}
-        refined_download_key={refined_download_key}
-        renderDiff={selectedCondition.render_diff}
-      />
+      <div className="w-full">
+        <Diff
+          condition={selectedCondition}
+          unrefined_eicr={unrefined_eicr}
+          refined_download_key={refined_download_key}
+          renderDiff={selectedCondition.render_diff}
+        />
+      </div>
     </div>
   );
 }

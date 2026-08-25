@@ -72,3 +72,23 @@ class ExportDiffInput(BaseModel):
     canonical_url: str
     cur_tes_version: str
     prev_tes_version: str
+
+
+@dataclass(frozen=True)
+class TesConfigToUpdate:
+    """A configuration to update with new TES codes."""
+
+    configuration_id: UUID
+    configuration_name: str
+    codesets_to_update: list[str]
+    configuration_tes_version: str
+
+
+@dataclass
+class DbTesConfigsToUpdateResponse:
+    """
+    The response needed for rendering of the TES update configuration page.
+    """
+
+    existing_drafts: list[TesConfigToUpdate]
+    drafts_to_create: list[TesConfigToUpdate]

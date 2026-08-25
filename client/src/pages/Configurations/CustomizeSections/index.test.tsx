@@ -46,7 +46,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     name: 'Immunizations section',
     action: 'retain',
     include: true,
-    code: 'imm',
+    code: '11369-6',
     narrative: 'remove',
     versions: ['3.1', '3.1.1'],
     section_type: 'standard',
@@ -123,7 +123,7 @@ const sectionsWithKeepOnMatch: DbConfigurationSectionProcessing[] = [
     name: 'Immunizations section',
     action: 'retain',
     include: true,
-    code: 'imm',
+    code: '11369-6',
     narrative: 'keep_on_match',
     versions: ['3.1', '3.1.1'],
     section_type: 'standard',
@@ -159,9 +159,15 @@ describe('Configuration sections', () => {
     const getRow = (index: number) => {
       const row = rows[index];
       return {
-        checkbox: within(row).getByRole('checkbox'),
+        includeSwitch: within(row).getByLabelText(
+          /Include .* section rules in refined document/i
+        ),
+
         nameCell: within(row).getAllByRole('cell')[1],
-        codedDataSwitch: within(row).queryByRole('switch'),
+        codedDataSwitch: within(row).queryByRole('switch', {
+          name: /Refine .* section|Keep original for .* section/i,
+        }),
+
         narrativeSelect: within(row).queryByRole('combobox'),
       };
     };
@@ -171,26 +177,30 @@ describe('Configuration sections', () => {
     const imm = getRow(3);
     const custom = getRow(4);
 
-    expect(history.checkbox).toBeChecked();
+    expect(history.includeSwitch).toBeChecked();
+
     expect(history.nameCell).toHaveTextContent('History section');
     expect(history.codedDataSwitch).toBeInTheDocument();
     expect(history.codedDataSwitch).toBeChecked();
     expect(history.narrativeSelect).toBeInTheDocument();
     expect(history.narrativeSelect).toHaveValue('remove');
 
-    expect(med.checkbox).not.toBeChecked();
+    expect(med.includeSwitch).not.toBeChecked();
+
     expect(med.nameCell).toHaveTextContent('Med section');
     expect(med.codedDataSwitch).not.toBeInTheDocument();
     expect(med.narrativeSelect).not.toBeInTheDocument();
 
-    expect(imm.checkbox).toBeChecked();
+    expect(imm.includeSwitch).toBeChecked();
+
     expect(imm.nameCell).toHaveTextContent('Immunizations section');
     expect(imm.codedDataSwitch).toBeInTheDocument();
     expect(imm.codedDataSwitch).not.toBeChecked();
     expect(imm.narrativeSelect).toBeInTheDocument();
     expect(imm.narrativeSelect).toHaveValue('remove');
 
-    expect(custom.checkbox).toBeChecked();
+    expect(custom.includeSwitch).toBeChecked();
+
     expect(custom.nameCell).toHaveTextContent(
       'Mock custom sectionCustommock-custom-sectionEdit|Delete'
     );
@@ -223,7 +233,11 @@ describe('Configuration sections', () => {
     const rows = screen.getAllByRole('row');
     const medRow = rows[2];
 
-    expect(within(medRow).queryByRole('switch')).not.toBeInTheDocument();
+    expect(
+      within(medRow).queryByRole('switch', {
+        name: /Refine Med section section/i,
+      })
+    ).not.toBeInTheDocument();
     expect(within(medRow).queryByRole('combobox')).not.toBeInTheDocument();
   });
 
@@ -413,12 +427,14 @@ describe('Configuration sections', () => {
       throw new Error('Could not find table row for "Results section"');
     }
 
-    const switchElement = within(row).getByRole('switch');
+    const switchElement = within(row).getByRole('switch', {
+      name: /Refine Results section section/i,
+    });
     expect(switchElement).toBeChecked();
 
     await user.click(switchElement);
 
-    const errorMessage = within(row).queryByRole('alert');
+    const errorMessage = await within(row).findByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
       /To reconstruct narrative, refine must be selected/
@@ -504,12 +520,14 @@ describe('Configuration sections', () => {
       throw new Error('Could not find table row for "Results section"');
     }
 
-    const switchElement = within(row).getByRole('switch');
+    const switchElement = within(row).getByRole('switch', {
+      name: /Refine Results section section/i,
+    });
     expect(switchElement).toBeChecked();
 
     await user.click(switchElement);
 
-    const errorMessage = within(row).queryByRole('alert');
+    const errorMessage = await within(row).findByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
       /To keep narrative on match, refine must be selected/
@@ -524,8 +542,6 @@ describe('Configuration sections', () => {
     const infoButtons = screen.getAllByText('More information');
     await user.click(infoButtons[1]);
 
-    expect(
-      screen.getByText('Narrative data', { selector: 'h2' })
-    ).toBeInTheDocument();
+    expect(screen.getByText('Narrative data')).toBeInTheDocument();
   });
 });

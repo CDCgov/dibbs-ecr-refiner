@@ -10,6 +10,7 @@ import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { FileUploadWarning } from '@components/FileUploadWarning';
 import { Success } from './Success';
 import { Title } from '@components/Title';
+import { LayoutContainer } from '@components/Layout';
 
 type Status =
   | 'run-simulator'
@@ -91,59 +92,65 @@ export function Simulator() {
     };
   }
 
-  return (
-    <div className="flex px-10 md:px-20">
-      <div className="flex flex-1 flex-col py-10">
-        {status === 'run-simulator' && (
-          <>
-            <SimulateRefinerDescription />
-            <RunSimulation
-              onClickSampleFile={runSimulationWithSampleFile}
-              onClickCustomFile={runSimulationWithCustomFile}
-              selectedFile={selectedFile}
-              setSelectedFile={setSelectedFile}
-            />
-          </>
-        )}
-
-        {status === 'pending' && (
-          <>
-            <SimulateRefinerDescription />
-            <Uploading />
-          </>
-        )}
-
-        {status === 'reportable-conditions' && configurationsResponse?.data && (
-          <>
-            <SimulateRefinerDescription />
-            <ReportableConditionsResults
-              configurationSets={configurationsResponse.data.sets}
-              startOver={reset}
-              runRefinement={executeSimulator}
-            />
-          </>
-        )}
-        {status === 'success' &&
-          configurationsResponse?.data &&
-          refinementResponse?.data && (
-            <Success
-              refined_conditions={refinementResponse.data.refined_conditions}
-              unrefined_eicr={refinementResponse.data.unrefined_eicr}
-              refined_download_key={
-                refinementResponse.data.refined_download_key
-              }
-            />
-          )}
-        {status === 'error' && (
-          <FileUploadWarning
-            errorMessage={
-              (refinementErrorMessage || configurationsErrorMessage) ?? ''
-            }
-            reset={reset}
+  if (status === 'success') {
+    return (
+      <LayoutContainer
+        breakout={true}
+        maxWidth="max-w-full"
+        padding="none"
+        className="px-0 py-10"
+      >
+        {configurationsResponse?.data && refinementResponse?.data && (
+          <Success
+            refined_conditions={refinementResponse.data.refined_conditions}
+            unrefined_eicr={refinementResponse.data.unrefined_eicr}
+            refined_download_key={refinementResponse.data.refined_download_key}
           />
         )}
-      </div>
-    </div>
+      </LayoutContainer>
+    );
+  }
+
+  return (
+    <LayoutContainer padding="lg" className="py-10">
+      {status === 'run-simulator' && (
+        <>
+          <SimulateRefinerDescription />
+          <RunSimulation
+            onClickSampleFile={runSimulationWithSampleFile}
+            onClickCustomFile={runSimulationWithCustomFile}
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+          />
+        </>
+      )}
+
+      {status === 'pending' && (
+        <>
+          <SimulateRefinerDescription />
+          <Uploading />
+        </>
+      )}
+
+      {status === 'reportable-conditions' && configurationsResponse?.data && (
+        <>
+          <SimulateRefinerDescription />
+          <ReportableConditionsResults
+            configurationSets={configurationsResponse.data.sets}
+            startOver={reset}
+            runRefinement={executeSimulator}
+          />
+        </>
+      )}
+      {status === 'error' && (
+        <FileUploadWarning
+          errorMessage={
+            (refinementErrorMessage || configurationsErrorMessage) ?? ''
+          }
+          reset={reset}
+        />
+      )}
+    </LayoutContainer>
   );
 }
 
