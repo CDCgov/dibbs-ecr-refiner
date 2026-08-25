@@ -128,13 +128,13 @@ class TestConfigurations:
     async def test_clone_code_exclusions_copies_valid_exclusions(
         self,
         setup,
-        db_pool,
         authed_client,
-        test_user_jurisdiction_id,
-        test_user_id,
         get_condition_id,
-        default_tes_version,
     ):
+        """
+        Tests that a cloned configuration will copy the original config's
+        excluded codes.
+        """
         # Create a draft
         condition_id = await get_condition_id("Anotia")
         payload = {"condition_id": str(condition_id)}
@@ -186,6 +186,39 @@ class TestConfigurations:
         new_codes = resp.json()["codes"]
         assert len(new_codes) == len(codes)
         assert all(code["status"] == "Excluded" for code in new_codes)
+
+    async def test_clone_code_exclusions_no_exclusions_on_source(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        If the source config has no exclusions, the clone starts fully included (no entries in table).
+        """
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+
+        # create and activate a draft with no exclusions
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        original_config_id = resp.json()["id"]
+
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create new draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        new_config_id = resp.json()["id"]
+
+        # expect all codes to be included
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        new_codes = resp.json()["codes"]
+        assert all(code["status"] == "Included" for code in new_codes)
 
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
