@@ -185,9 +185,9 @@ async def _build_config_csv(
                     [
                         "TES condition grouper code",
                         cond.display_name,
-                        code.system,
+                        code.system_name,
                         code.code,
-                        code.description,
+                        code.display,
                     ]
                 )
 

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.db.code_systems.db import DbCodeSystem
+from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.model import DbCode
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP

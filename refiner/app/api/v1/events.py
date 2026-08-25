@@ -385,8 +385,8 @@ async def get_event_codes_export(
             [
                 event.condition_name,
                 code.code,
-                code.system,
-                code.description,
+                code.system_name,
+                code.display,
             ]
         )
 

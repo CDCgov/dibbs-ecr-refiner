@@ -6,4 +6,5 @@ export interface DbCode {
   code: string;
   display: string;
   system_id: string;
+  system_name: string;
 }

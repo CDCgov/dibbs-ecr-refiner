@@ -64,13 +64,13 @@ export function ActivityLogEntries({
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
                   <div className="flex flex-col items-start gap-1">
-                    <div className="flex items-center gap-2 whitespace-nowrap">
-                      <span>
+                    <div className="flex flex-col items-start gap-2">
+                      <div className="wrap-break-word">
                         {r.action_text}
                         {r.code_count != null
                           ? ` (${r.code_count.toLocaleString()} codes)`
                           : null}
-                      </span>
+                      </div>
 
                       {r.condition_id && r.code_count != null ? (
                         <CodeSetExportLink eventId={r.id} />

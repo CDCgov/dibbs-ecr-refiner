@@ -1,9 +1,6 @@
 
 export * from './addCustomCodeInput';
 export * from './addSectionInput';
-export * from './appApiV1ConfigurationsCodesCodesCodeResponse';
-export * from './appApiV1ConfigurationsCodesCodesCodeResponseStatus';
-export * from './appDbConditionsModelCodeResponse';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
@@ -17,6 +14,8 @@ export * from './codeCountsResponse';
 export * from './codedConcept';
 export * from './codedDataLabels';
 export * from './codeFilterOptions';
+export * from './codeResponse';
+export * from './codeResponseStatus';
 export * from './codeSetStatus';
 export * from './codesResponse';
 export * from './codeSystemFilterOption';

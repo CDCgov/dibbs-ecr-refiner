@@ -1,9 +1,9 @@
-import type { AppApiV1ConfigurationsCodesCodesCodeResponse } from './appApiV1ConfigurationsCodesCodesCodeResponse';
+import type { CodeResponse } from './codeResponse';
 
 /**
  * Codes and metadata to return to the client.
  */
 export interface CodesResponse {
   next_cursor: string | null;
-  codes: AppApiV1ConfigurationsCodesCodesCodeResponse[];
+  codes: CodeResponse[];
 }

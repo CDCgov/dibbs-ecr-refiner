@@ -73,7 +73,7 @@ class DbCondition(DbConditionBase):
             display_name=row["display_name"],
             canonical_url=row["canonical_url"],
             version=row["version"],
-            codes=row["codes"],
+            codes=[DbCode(**c) for c in row["codes"]],
             child_rsg_snomed_codes=row.get("child_rsg_snomed_codes") or [],
             coverage_level=row.get("coverage_level"),
             coverage_level_reason=row.get("coverage_level_reason"),

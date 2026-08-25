@@ -53,12 +53,14 @@ async def get_pruned_configuration_codes_db(
                 WHERE ce.configuration_id = %(configuration_id)s AND ce.code_id = c.id
             )
 
-            UNION
+            UNION ALL
 
             -- Custom codes
-            SELECT cc_code.display, cc_code.code, cc_code.system_id, cc_code.system_name
+            SELECT cc_code.display, cc_code.code, cc_code.system_id, s.display_name
             FROM configurations_conditions cc
             JOIN custom_codes cc_code ON cc_code.configuration_id = cc.configuration_id
+            JOIN systems s ON cc_code.system_id = s.id
+
             WHERE cc.configuration_id = %(configuration_id)s
         ) combined_codes;
     """
