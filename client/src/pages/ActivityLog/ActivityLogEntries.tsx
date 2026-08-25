@@ -193,7 +193,7 @@ function CodeSetExportLink({ eventId }: CodeSetExportLinkProps) {
       href={`/api/v1/events/${eventId}/codes/export`}
       anchorProps={{ download: true }}
     >
-      Export as CSV
+      <span className="whitespace-nowrap">Export as CSV</span>
     </Button>
   );
 }
