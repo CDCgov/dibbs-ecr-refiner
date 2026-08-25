@@ -865,7 +865,7 @@ ALTER TABLE ONLY public.configurations_conditions_code_exclusions
 --
 
 ALTER TABLE ONLY public.configurations_conditions_code_exclusions
-    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -1073,4 +1073,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260813133341'),
     ('20260813142528'),
     ('20260813142548'),
-    ('20260825151652');
+    ('20260825151652'),
+    ('20260825194320');
