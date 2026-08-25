@@ -283,42 +283,29 @@ async def _get_tes_update_diff_db(
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
     query = """
-    WITH cur AS (
-        SELECT DISTINCT
-            c.id as condition_id,
-            c.canonical_url,
-            cc.code_id,
-            c.display_name
-        FROM conditions_codes_temp cc
-        JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id = %(cur_tes_id)s
-    ),
-    prev AS (
-        SELECT DISTINCT
-            c.id as condition_id,
+   WITH tes_records AS (
+        SELECT
             c.canonical_url,
             c.display_name,
-            cc.code_id
+            cc.code_id,
+            BOOL_OR(c.tes_id = %(cur_tes_id)s) AS in_cur,
+            BOOL_OR(c.tes_id = %(prev_tes_id)s) AS in_prev
         FROM conditions_codes_temp cc
         JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id = %(prev_tes_id)s
+        WHERE c.tes_id IN (%(cur_tes_id)s, %(prev_tes_id)s)
+        GROUP BY c.canonical_url, c.display_name, cc.code_id
     )
-
     SELECT
-        COALESCE(cur.canonical_url, prev.canonical_url) as canonical_url,
-        MAX(COALESCE(cur.display_name, prev.display_name)) AS display_name,
-        COALESCE(array_agg(cur.code_id) FILTER (where prev.code_id IS NULL), '{}'::uuid[]) as added_code_ids,
-        COALESCE(array_agg(prev.code_id) FILTER (where cur.code_id IS NULL), '{}'::uuid[]) as removed_code_ids,
-        (COUNT(prev.condition_id) = 0) AS is_new
-    FROM cur
-    FULL OUTER JOIN prev
-        ON cur.canonical_url = prev.canonical_url
-        AND cur.code_id = prev.code_id
-    GROUP BY
-        COALESCE(cur.canonical_url, prev.canonical_url)
+        canonical_url,
+        display_name,
+        COALESCE(ARRAY_AGG(code_id) FILTER (WHERE in_cur AND NOT in_prev), '{}'::uuid[]) AS added_code_ids,
+        COALESCE(ARRAY_AGG(code_id) FILTER (WHERE in_prev AND NOT in_cur), '{}'::uuid[]) AS removed_code_ids,
+        NOT BOOL_OR(in_prev) AS is_new
+    FROM tes_records
+    GROUP BY canonical_url, display_name
     HAVING
-        COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
-        OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
+        COUNT(*) FILTER (WHERE in_cur AND NOT in_prev) > 0
+        OR COUNT(*) FILTER (WHERE in_prev AND NOT in_cur) > 0;
     """
 
     async with db.get_connection() as conn:

@@ -93,7 +93,7 @@ export function UpdateConfigurations() {
             </tr>
           </thead>
           <tbody>
-            {drafts_to_create.map((d) => {
+            {existing_drafts.map((d) => {
               return (
                 <tr key={d.configuration_id}>
                   <td className="flex items-center gap-2 pl-0!">
@@ -146,7 +146,7 @@ export function UpdateConfigurations() {
             </tr>
           </thead>
           <tbody>
-            {existing_drafts.map((d) => {
+            {drafts_to_create.map((d) => {
               return (
                 <tr key={d.configuration_id}>
                   <td className="flex items-center gap-2 pl-0!">

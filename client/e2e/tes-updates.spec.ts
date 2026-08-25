@@ -62,7 +62,7 @@ test.describe('TES updates page', () => {
     ).toBeDefined();
     expect(
       page
-        .getByRole('table', { name: 'Create Draft To Update' })
+        .getByRole('table', { name: 'Update existing drafts' })
         .getByText('Cysticercosis')
     ).toBeDefined();
   });
