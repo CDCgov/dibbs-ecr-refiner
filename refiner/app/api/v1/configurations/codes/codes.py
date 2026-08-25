@@ -198,6 +198,8 @@ async def get_code_counts(
 
 
 class SetStatusRequest(BaseModel):
+    """Request body class for code status change."""
+
     code_ids: list[UUID]
     status: CodeStatus
 
@@ -219,8 +221,9 @@ async def set_codes_status(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        code_ids (list[UUID]): List of code IDs
-        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        body (SetStatusRequest): body for code status request, which includes
+            code_ids (list[UUID]): List of code IDs
+            status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
