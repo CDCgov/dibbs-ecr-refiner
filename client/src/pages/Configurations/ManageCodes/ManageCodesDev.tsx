@@ -223,7 +223,7 @@ function CodesTable({
           scrollableTarget="codes-table-scroll-container"
         >
           <table className="w-full table-fixed">
-            <thead className="bg-gray-cool-5 sticky top-0 z-10">
+            <thead className="bg-gray-cool-5 z-sticky sticky top-0">
               <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
                 <th scope="col" className="w-10 text-center">
                   <Checkbox

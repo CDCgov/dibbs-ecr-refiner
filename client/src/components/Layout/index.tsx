@@ -2,8 +2,11 @@ import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 import { NavigationBar } from '../NavigationBar';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Menu, MenuButton, MenuItem } from '@headlessui/react';
+import { BaseMenuItems } from '@components/Dropdown';
 import { ExternalLink } from '../ExternalLink';
+import { LayoutContainer } from './LayoutContainer';
+export { LayoutContainer };
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,17 +15,20 @@ interface LayoutProps {
 
 export function Layout({ displayName, children }: LayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="bg-page-bg flex min-h-dvh flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
       <Header displayName={displayName} />
-      <main
-        id="main-content"
-        className="bg-primary-container flex grow flex-col"
+      <LayoutContainer
+        background="bg-primary-container"
+        breakout={true}
+        className="flex flex-1"
       >
-        {children}
-      </main>
+        <main id="main-content" className="flex min-h-0 flex-1 flex-col">
+          {children}
+        </main>
+      </LayoutContainer>
       <Footer />
     </div>
   );
@@ -36,15 +42,16 @@ export function Header({ displayName }: HeaderProps) {
   const loggedInHeaderContent = (
     <>
       <NavigationBar />
-      <Menu>
+      <Menu as="div">
         <MenuButton
           aria-label="Open settings menu"
           className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none"
         >
           <PersonIcon />
           {displayName}
+          <DropdownCaretIcon />
         </MenuButton>
-        <MenuItems
+        <BaseMenuItems
           anchor="bottom"
           className="ring-opacity-5 absolute right-0 mt-0.5 flex w-40 origin-top-right flex-col gap-2 rounded-md bg-white shadow-lg focus-within:outline-none!"
         >
@@ -73,25 +80,27 @@ export function Header({ displayName }: HeaderProps) {
               Log out
             </a>
           </MenuItem>
-        </MenuItems>
+        </BaseMenuItems>
       </Menu>
     </>
   );
 
   return (
     <header>
-      <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 sm:flex-row sm:items-center xl:px-20">
-        <Link to="/" aria-label="Link back to the home configurations page">
-          <div className="my-4 flex items-center gap-3">
-            <img src={DibbsLogo} alt="DIBBs" role="presentation" />
-            <span className="font-merriweather text-2xl text-white">
-              eCR Refiner
-            </span>
-          </div>
-        </Link>
+      <LayoutContainer background="bg-blue-cool-80" breakout={true}>
+        <div className="flex flex-col items-start justify-between gap-4 py-4 sm:flex-row sm:items-center">
+          <Link to="/" aria-label="Link back to the home configurations page">
+            <div className="flex items-center gap-3">
+              <img src={DibbsLogo} alt="DIBBs" role="presentation" />
+              <span className="font-merriweather text-2xl font-bold text-white">
+                eCR Refiner
+              </span>
+            </div>
+          </Link>
 
-        {displayName && loggedInHeaderContent}
-      </div>
+          {displayName && loggedInHeaderContent}
+        </div>
+      </LayoutContainer>
     </header>
   );
 }
@@ -164,6 +173,14 @@ function PersonIcon() {
       fill="currentColor"
     >
       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
+  );
+}
+
+function DropdownCaretIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" aria-hidden>
+      <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
     </svg>
   );
 }
