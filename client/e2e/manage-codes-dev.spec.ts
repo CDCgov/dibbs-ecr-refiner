@@ -1476,15 +1476,18 @@ test.describe('Codes management - data loading', () => {
       await page.getByRole('button', { name: 'Close drawer' }).click();
     });
 
-    await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+    const tableRows = page.getByRole('table').getByRole('row');
 
-    await page.locator('table tr').last().scrollIntoViewIfNeeded();
+    await expect(tableRows).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+
+    await tableRows.last().scrollIntoViewIfNeeded();
 
     // Scrolling down should add `MAX_PAGE_SIZE` to the table
     const expectedRowCountAfterLoad = 2 * MAX_PAGE_SIZE + 1;
-    await expect(page.locator('table tr')).toHaveCount(
-      expectedRowCountAfterLoad
-    );
+    await expect(tableRows).toHaveCount(expectedRowCountAfterLoad);
+
+    // table headers should be sticky
+    await expect(tableRows.first()).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
