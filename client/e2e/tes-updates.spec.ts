@@ -55,15 +55,22 @@ test.describe('TES updates page', () => {
     await tesUpdatesPage.goToUpdateActionsPage();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    expect(
-      page
-        .getByRole('table', { name: 'Create Draft To Update' })
-        .getByText('Diphyllobothriasis')
-    ).toBeDefined();
-    expect(
-      page
-        .getByRole('table', { name: 'Update existing drafts' })
-        .getByText('Cysticercosis')
-    ).toBeDefined();
+    const updateTable = page.getByRole('table', {
+      name: 'Update existing drafts',
+    });
+
+    await expect(
+      updateTable.getByRole('cell', { name: 'Cysticercosis', exact: true })
+    ).toBeVisible();
+    await expect(updateTable.getByText('Diphyllobothriasis')).toBeHidden();
+
+    const createTable = page.getByRole('table', {
+      name: 'Create Draft To Update',
+    });
+
+    await expect(
+      createTable.getByRole('cell', { name: 'Diphyllobothriasis', exact: true })
+    ).toBeVisible();
+    await expect(createTable.getByText('Cysticercosis')).toBeHidden();
   });
 });
