@@ -184,6 +184,7 @@ async def get_tes_update_condition_diff_db(
                 cond.display_name as condition_name,
                 c.code,
                 s.display_name as system_name,
+                s.id as system_id,
                 c.display as code_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
@@ -199,6 +200,7 @@ async def get_tes_update_condition_diff_db(
                 cond.display_name as condition_name,
                 c.code,
                 s.display_name as system_name,
+                s.id as system_id,
                 c.display as code_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
@@ -215,6 +217,7 @@ async def get_tes_update_condition_diff_db(
                 jsonb_build_object(
                 'code', cur.code,
                 'system_name', cur.system_name,
+                'system_id', cur.system_id,
                 'display', cur.code_name
                 ))
             FILTER (WHERE prev.code_id IS NULL), '[]'::jsonb) as added_codes,
@@ -222,6 +225,7 @@ async def get_tes_update_condition_diff_db(
                 jsonb_build_object(
                     'code', prev.code,
                     'system_name', prev.system_name,
+                    'system_id', prev.system_id,
                     'display', prev.code_name
                 ))
             FILTER (WHERE cur.code_id IS NULL), '[]'::jsonb) as removed_codes

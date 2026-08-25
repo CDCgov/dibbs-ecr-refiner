@@ -48,7 +48,7 @@ export function ConditionCodeTable({
   const filteredCodes = useMemo(() => {
     return selectedCodeSystem === 'all'
       ? codes
-      : codes.filter((code) => code.system === selectedCodeSystem);
+      : codes.filter((code) => code.system_id === selectedCodeSystem);
   }, [codes, selectedCodeSystem]);
 
   const { searchText, setSearchText, results } = useSearch(filteredCodes, {
@@ -102,7 +102,7 @@ export function ConditionCodeTable({
   const resultsByCode = useMemo(() => {
     return new Map(
       results.map((result) => [
-        `${result.item.system}-${result.item.code}-${result.item.description}`,
+        `${result.item.system_id}-${result.item.code}-${result.item.display}`,
         result,
       ])
     );
@@ -204,11 +204,11 @@ export function ConditionCodeTable({
               {virtualItems.map((virtualRow) => {
                 const code = visibleCodes[virtualRow.index];
                 const matchingResult = resultsByCode.get(
-                  `${code.system}-${code.code}-${code.description}`
+                  `${code.system_id}-${code.code}-${code.display}`
                 );
                 return (
                   <div
-                    key={`${code.system}-${code.code}-${virtualRow.index}`}
+                    key={`${code.system_id}-${code.code}-${virtualRow.index}`}
                     role="row"
                     className="contents"
                   >
@@ -220,11 +220,11 @@ export function ConditionCodeTable({
                       )}
                     </div>
                     <div role="cell" className="text-gray-cool-60 pb-6">
-                      {code.system}
+                      {code.system_name}
                     </div>
                     <div role="cell" className="pb-6">
                       {highlightMatches(
-                        code.description,
+                        code.display,
                         matchingResult?.matches,
                         'description'
                       )}
@@ -278,7 +278,7 @@ function CodeSystemSelection({
             All code systems
           </option>
           {codeSystems.map((s) => (
-            <option key={s.id} value={s.display_name}>
+            <option key={s.id} value={s.id}>
               {s.display_name}
             </option>
           ))}

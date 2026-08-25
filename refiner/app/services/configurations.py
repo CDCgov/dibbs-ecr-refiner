@@ -8,8 +8,8 @@ from app.db.code_systems.db import (
     get_code_system_by_key_db,
     get_id_to_code_system_dict_db,
 )
+from app.db.codes.model import DbCode
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
-from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
@@ -248,7 +248,7 @@ async def convert_config_to_storage_payload(
     # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
         # map each db code list to its target dict + OID
-        code_system_map: dict[CodeSystemKey, list[DbConditionCoding]] = (
+        code_system_map: dict[CodeSystemKey, list[DbCode]] = (
             index_condition_code_list_by_system(
                 condition=condition, system_keys_to_index_by=systems_keys_to_index_by
             )

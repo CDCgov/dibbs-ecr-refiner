@@ -35,6 +35,15 @@ class DbConditionBase:
     version: str
 
 
+@dataclass(frozen=True)
+class CodeResponse(DbCode):
+    """
+    Display information needed for code information on the frontend.
+    """
+
+    system_name: str
+
+
 @dataclass
 class DbCondition(DbConditionBase):
     """
@@ -52,7 +61,7 @@ class DbCondition(DbConditionBase):
     # and seeded from CG's RSG and ACG children
     # coverage level from the crmi-curationCoverageLevel extension
     # on the condition grouper ValueSet; null when the extension is not present
-    codes: list[DbCode]
+    codes: list[CodeResponse]
     coverage_level: str | None = None
     coverage_level_reason: str | None = None
     coverage_level_date: datetime | None = None
@@ -73,13 +82,14 @@ class DbCondition(DbConditionBase):
             display_name=row["display_name"],
             canonical_url=row["canonical_url"],
             version=row["version"],
+            codes=row["codes"],
             child_rsg_snomed_codes=row.get("child_rsg_snomed_codes") or [],
             coverage_level=row.get("coverage_level"),
             coverage_level_reason=row.get("coverage_level_reason"),
             coverage_level_date=row.get("coverage_level_date"),
         )
 
-    def get_codes_from_all_systems(self) -> list[DbConditionCoding]:
+    def get_codes_from_all_systems(self) -> list[CodeResponse]:
         """
         Returns all codes from all systems.
 
@@ -89,13 +99,7 @@ class DbCondition(DbConditionBase):
         Returns:
             DbCondition: The condition object
         """
-        return (
-            self.snomed_codes
-            + self.loinc_codes
-            + self.icd10_codes
-            + self.rxnorm_codes
-            + self.cvx_codes
-        )
+        return self.codes
 
     def get_total_code_count(self) -> int:
         """
@@ -104,16 +108,7 @@ class DbCondition(DbConditionBase):
         Codes are deduplicated within each code system.
         The same code value in different code systems is counted separately.
         """
-        return sum(
-            len({coding.code for coding in codes})
-            for codes in (
-                self.snomed_codes,
-                self.loinc_codes,
-                self.icd10_codes,
-                self.rxnorm_codes,
-                self.cvx_codes,
-            )
-        )
+        return len(self.codes)
 
 
 class ConditionMapValueDict(TypedDict):

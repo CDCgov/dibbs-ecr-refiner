@@ -6,11 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_code_systems_db
-from app.db.codes.model import CodedConcept
-from app.db.conditions.model import DbConditionsContextGrouper
+from app.db.codes.model import CodedConcept, DbCode
+from app.db.conditions.model import (
+    CodeResponse,
+    DbConditionsContextGrouper,
+)
 
 from ...db.conditions.db import (
-    GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
     get_conditions_with_rsg_codes_db,
@@ -96,7 +98,7 @@ class GetConditionResponse:
     id: UUID
     display_name: str
     completeness_status: CompletenessStatus
-    codes: list[GetConditionCode]
+    codes: list[CodeResponse]
     systems: list[CodeSystemsReponse]
 
 
