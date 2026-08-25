@@ -2384,9 +2384,3 @@ export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilte
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
