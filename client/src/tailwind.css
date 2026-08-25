@@ -52,13 +52,13 @@
     @apply border-1;
   }
   .banner-breakout {
-    @apply relative left-1/2 mr-0 -ml-[50vw] w-screen;
+    @apply relative right-1/2 left-1/2 -mr-[50vw] -ml-[50vw] w-screen max-w-screen;
   }
   .banner-breakout-bg {
     @apply absolute inset-0 -z-[1];
   }
   .banner-breakout-content {
-    @apply relative z-[1] mx-auto px-4;
+    @apply relative z-[1] mx-auto;
   }
 }
 

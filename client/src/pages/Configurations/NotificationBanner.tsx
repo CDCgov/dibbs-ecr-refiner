@@ -1,6 +1,10 @@
 import { Button } from '@components/Button';
 import { CloseIcon } from '@components/Icons/CloseIcon';
 import { InfoIcon } from '@components/Icons/InfoIcon';
+import {
+  LayoutContainer,
+  LAYOUT_MAX_WIDTH,
+} from '@components/Layout/LayoutContainer';
 
 interface NotificationBannerProps {
   message: string;
@@ -13,29 +17,33 @@ export function NotificationBanner({
   children,
 }: NotificationBannerProps) {
   return (
-    <div className="drop-shadow-nav relative left-1/2 mr-0 ml-[-50vw] w-screen bg-blue-100">
-      <div className="mx-auto w-full max-w-7xl px-4 py-3">
-        <div className="flex items-center justify-center">
-          <div className="flex flex-1 items-center justify-center gap-10">
-            <div className="flex items-center justify-between gap-2">
-              <InfoIcon className="fill-blue-40v shrink-0" />
-              <span className="w-30 font-bold text-blue-500 md:w-75">
-                {message}
-              </span>
-            </div>
-            {children}
+    <LayoutContainer
+      breakout
+      background="bg-blue-100 drop-shadow-nav"
+      maxWidth={LAYOUT_MAX_WIDTH}
+      padding="lg"
+      className="py-3"
+    >
+      <div className="flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center gap-10">
+          <div className="flex items-center justify-between gap-2">
+            <InfoIcon className="fill-blue-40v shrink-0" />
+            <span className="w-30 font-bold text-blue-500 md:w-75">
+              {message}
+            </span>
           </div>
-          <Button
-            type="button"
-            variant="unstyled"
-            className="hover:cursor-pointer hover:opacity-75 focus:outline-none"
-            onClick={onDismiss}
-          >
-            <CloseIcon size={24} className="fill-blue-500" />
-            <span className="sr-only">Dismiss notification for {message}</span>
-          </Button>
+          {children}
         </div>
+        <Button
+          type="button"
+          variant="unstyled"
+          className="hover:cursor-pointer hover:opacity-75 focus:outline-none"
+          onClick={onDismiss}
+        >
+          <CloseIcon size={24} className="fill-blue-500" />
+          <span className="sr-only">Dismiss notification for {message}</span>
+        </Button>
       </div>
-    </div>
+    </LayoutContainer>
   );
 }

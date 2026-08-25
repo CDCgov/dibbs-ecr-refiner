@@ -1,6 +1,9 @@
 import { InfoIcon } from '@components/Icons/InfoIcon';
 import classNames from 'classnames';
-import { LayoutContainer } from '@components/Layout/LayoutContainer';
+import {
+  LayoutContainer,
+  LAYOUT_MAX_WIDTH,
+} from '@components/Layout/LayoutContainer';
 
 interface ConfigLockBannerProps {
   lockedByName: string | null | undefined;
@@ -21,7 +24,7 @@ export function ConfigLockBanner({
         'bg-state-warning-lighter border-b-state-warning! shadow-lg',
         className
       )}
-      maxWidth="max-w-7xl"
+      maxWidth={LAYOUT_MAX_WIDTH}
       padding="md"
     >
       <div
