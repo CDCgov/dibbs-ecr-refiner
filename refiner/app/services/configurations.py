@@ -1,5 +1,4 @@
 import re
-from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -210,7 +209,6 @@ async def convert_config_to_storage_payload(
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
-    coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
