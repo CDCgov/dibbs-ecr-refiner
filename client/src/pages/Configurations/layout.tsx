@@ -43,7 +43,11 @@ export function SectionContainer({ children }: { children: React.ReactNode }) {
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {
   return (
-    <LayoutContainer breakout={true} background="bg-white" className="py-6">
+    <LayoutContainer
+      breakout={true}
+      background="bg-white"
+      className="z-dropdown py-6"
+    >
       {children}
     </LayoutContainer>
   );
@@ -62,7 +66,7 @@ export function Header({ configuration }: HeaderProps) {
           <div className="flex flex-col">
             <Status version={configuration.active_version} />
             <div className="flex flex-row items-center gap-2">
-              <Title>{configuration.display_name}</Title>
+              <Title className="max-w-xl">{configuration.display_name}</Title>
               <Button
                 variant="tertiary"
                 onClick={() => setIsRsgDetailsModalOpen(true)}
