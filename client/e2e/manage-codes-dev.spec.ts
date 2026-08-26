@@ -111,7 +111,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('3 selected');
+      await expect(controlPanel).toContainText('2 selected');
       await controlPanel.getByRole('button', { name: 'Include' }).click();
       await expect(controlPanel).not.toBeVisible();
 
@@ -169,7 +169,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('4 selected');
+      await expect(controlPanel).toContainText('3 selected');
       await controlPanel.getByRole('button', { name: 'More options' }).click();
 
       const customCodeDeletionButton = page.getByText('Delete 2 custom codes');

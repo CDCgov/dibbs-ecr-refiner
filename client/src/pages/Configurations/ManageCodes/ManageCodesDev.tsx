@@ -192,8 +192,14 @@ function CodesTable({
 
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
-  const allSelected = codes.length > 0 && selectedIds.size === codes.length;
-  const selectedCustomCodes = codes.filter(
+  const codesWithoutPrimaryConditionRsgCodes = codes.filter(
+    (c) => !c.is_primary_condition_rsg
+  );
+
+  const allSelected =
+    codesWithoutPrimaryConditionRsgCodes.length > 0 &&
+    selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length;
+  const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
   );
 
