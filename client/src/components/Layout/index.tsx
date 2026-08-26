@@ -5,8 +5,9 @@ import { NavigationBar } from '../NavigationBar';
 import { Menu, MenuButton, MenuItem } from '@headlessui/react';
 import { BaseMenuItems } from '@components/Dropdown';
 import { ExternalLink } from '../ExternalLink';
-import { LayoutContainer } from './LayoutContainer';
-export { LayoutContainer };
+import { LayoutContainer, LAYOUT_MAX_WIDTH } from './LayoutContainer';
+import { AlertBreakoutContainer } from './AlertBreakoutContainer';
+export { LayoutContainer, AlertBreakoutContainer, LAYOUT_MAX_WIDTH };
 
 interface LayoutProps {
   children: React.ReactNode;
