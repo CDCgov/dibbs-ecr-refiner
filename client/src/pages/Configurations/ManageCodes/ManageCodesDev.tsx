@@ -31,6 +31,7 @@ import { useFilterState } from './useFilterState';
 import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
+import { Tooltip } from '@components/Tooltip';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -334,7 +335,12 @@ function CodesTable({
                   >
                     <td className="text-center">
                       {code.is_primary_condition_rsg ? (
-                        <LockIcon />
+                        <Tooltip
+                          position="right"
+                          label="Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR."
+                        >
+                          <LockIcon />
+                        </Tooltip>
                       ) : (
                         <Checkbox
                           aria-label={`Include ${code.code} in bulk operation`}
