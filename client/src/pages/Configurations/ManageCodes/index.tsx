@@ -2,7 +2,7 @@ import { useParams } from 'react-router';
 import { Button } from '@components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Header, SectionContainer } from '../layout';
-import { useRef, useState, forwardRef } from 'react';
+import { useRef, useState, forwardRef, useEffect } from 'react';
 
 import classNames from 'classnames';
 import {
@@ -38,6 +38,7 @@ export function ManageCodes() {
   // acquire lock on mount, schedule release on unmount
   useConfigLock(id);
 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const {
     data: configuration,
     isPending,
@@ -68,30 +69,41 @@ export function ManageCodes() {
         <Builder
           id={configuration.data.id}
           code_sets={sortedCodeSets}
-          included_conditions={configuration.data.included_conditions}
           custom_codes={configuration.data.custom_codes}
-          display_name={configuration.data.display_name}
           disabled={isDisabled}
+          isDrawerOpen={isDrawerOpen}
+          setIsDrawerOpen={setIsDrawerOpen}
         />
       </SectionContainer>
+      <AddConditionCodeSetsDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        conditions={configuration.data.included_conditions}
+        configurationId={configuration.data.id}
+        reportable_condition_display_name={configuration.data.display_name}
+        disabled={isDisabled}
+      />
     </div>
   );
 }
 
 type BuilderProps = Pick<
   GetConfigurationResponse,
-  'id' | 'code_sets' | 'custom_codes' | 'included_conditions' | 'display_name'
-> & { disabled: boolean };
+  'id' | 'code_sets' | 'custom_codes'
+> & {
+  disabled: boolean;
+  isDrawerOpen: boolean;
+  setIsDrawerOpen: (open: boolean) => void;
+};
 
 function Builder({
   id,
   code_sets,
   custom_codes,
-  included_conditions,
-  display_name: default_condition_name,
   disabled,
+  isDrawerOpen,
+  setIsDrawerOpen,
 }: BuilderProps) {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tableView, setTableView] = useState<TableView>('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
@@ -105,10 +117,12 @@ function Builder({
     {}
   );
 
-  // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
-  if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-    onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
-  }
+  useEffect(() => {
+    // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
+    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
+    }
+  }, [code_sets, tableView]);
 
   function onCodesetClick(name: string, id: string) {
     setSelectedCodesetName(name);
@@ -162,7 +176,9 @@ function Builder({
                   className="mr-0! flex h-8 flex-row items-center px-3! py-2!"
                   id="open-codesets"
                   aria-label="Add new code set to configuration"
-                  onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                  onClick={() => {
+                    setIsDrawerOpen(!isDrawerOpen);
+                  }}
                   disabled={disabled}
                 >
                   ADD
@@ -283,14 +299,6 @@ function Builder({
           ) : null}
         </div>
       </div>
-      <AddConditionCodeSetsDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        conditions={included_conditions}
-        configurationId={id}
-        reportable_condition_display_name={default_condition_name}
-        disabled={disabled}
-      />
     </div>
   );
 }
