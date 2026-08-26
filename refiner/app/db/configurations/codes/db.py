@@ -24,6 +24,7 @@ class DbCodeResult:
     system_id: UUID
     system_name: str
     status: Literal["included", "excluded"]
+    is_child_rsg: bool
 
 
 @dataclass
@@ -50,6 +51,7 @@ def _decode_cursor(cursor: str) -> DbCodeCursor:
 
 async def get_codes_db(
     configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
     db: AsyncDatabaseConnection,
     limit: int,
     filters: FilterInput,
@@ -122,7 +124,8 @@ async def get_codes_db(
                         c.display AS description,
                         c.system_id,
                         s.display_name AS system_name,
-                        'included' AS status
+                        'included' AS status,
+                        FALSE AS is_child_rsg
                     FROM custom_codes c
                     JOIN systems s ON s.id = c.system_id
                     WHERE c.configuration_id = %(configuration_id)s
@@ -151,6 +154,7 @@ async def get_codes_db(
     remaining = limit - len(rows) + 1  # +1 to detect next page
     cond_params: dict = {
         "configuration_id": configuration_id,
+        "primary_condition_id": configuration_primary_condition_id,
         "limit": remaining,
     }
     cond_clauses = []
@@ -200,7 +204,8 @@ async def get_codes_db(
             c.display AS description,
             c.system_id,
             s.display_name AS system_name,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
+            BOOL_OR(cc.is_child_rsg AND cfgc.condition_id = %(primary_condition_id)s) AS is_child_rsg
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = con.id

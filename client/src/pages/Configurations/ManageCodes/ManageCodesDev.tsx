@@ -246,7 +246,13 @@ function CodesTable({
                     checked={allSelected}
                     onChange={(checked) =>
                       setSelectedIds(
-                        checked ? new Set(codes.map((c) => c.id)) : new Set()
+                        checked
+                          ? new Set(
+                              codes
+                                .filter((c) => !c.is_primary_condition_rsg)
+                                .map((c) => c.id)
+                            )
+                          : new Set()
                       )
                     }
                   />
@@ -313,22 +319,26 @@ function CodesTable({
                     )}
                   >
                     <td className="text-center">
-                      <Checkbox
-                        aria-label={`Include ${code.code} in bulk operation`}
-                        disabled={disabled}
-                        checked={selectedIds.has(code.id)}
-                        onChange={(checked) =>
-                          setSelectedIds((prev) => {
-                            const next = new Set(prev);
-                            if (checked) {
-                              next.add(code.id);
-                            } else {
-                              next.delete(code.id);
-                            }
-                            return next;
-                          })
-                        }
-                      />
+                      {code.is_primary_condition_rsg ? (
+                        <LockIcon />
+                      ) : (
+                        <Checkbox
+                          aria-label={`Include ${code.code} in bulk operation`}
+                          disabled={disabled}
+                          checked={selectedIds.has(code.id)}
+                          onChange={(checked) =>
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (checked) {
+                                next.add(code.id);
+                              } else {
+                                next.delete(code.id);
+                              }
+                              return next;
+                            })
+                          }
+                        />
+                      )}
                     </td>
                     <td>{code.code}</td>
                     <td>{code.system_name}</td>
@@ -345,6 +355,23 @@ function CodesTable({
         </InfiniteScroll>
       </div>
     </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      data-dc-tpl="742"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="#71767a"
+    >
+      <path
+        data-dc-tpl="743"
+        d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm3 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"
+      />
+    </svg>
   );
 }
 

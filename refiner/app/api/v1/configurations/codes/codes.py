@@ -36,6 +36,7 @@ class CodeResponse:
     system_name: str
     status: Literal["Included", "Excluded"]
     is_custom: bool
+    is_primary_condition_rsg: bool
 
 
 @dataclass
@@ -116,6 +117,7 @@ async def get_codes(
 
     codes, next_cursor = await get_codes_db(
         configuration_id=config.id,
+        configuration_primary_condition_id=config.condition_id,
         limit=CODES_LIMIT,
         cursor=cursor,
         filters=filters,
@@ -127,6 +129,7 @@ async def get_codes(
         codes=[
             CodeResponse(
                 is_custom=c.condition_id is None,
+                is_primary_condition_rsg=c.is_child_rsg,
                 status="Included" if c.status == "included" else "Excluded",
                 id=c.id,
                 condition_id=c.condition_id,
