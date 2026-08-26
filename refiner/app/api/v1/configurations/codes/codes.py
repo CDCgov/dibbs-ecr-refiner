@@ -242,6 +242,12 @@ async def set_codes_status(
             detail="Configuration cannot be found.",
         )
 
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
     try:
         impacted_code_ids = await set_codes_status_db(
             configuration_id=config.id,
