@@ -255,6 +255,13 @@ async def set_codes_status(
         primary_condition = await get_primary_condition_db(
             configuration_id=config.id, db=db
         )
+
+        if not primary_condition:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Could not find configuration's primary condition.",
+            )
+
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Configuration's primary condition ({primary_condition.display_name}) RSG codes cannot be modified.",
