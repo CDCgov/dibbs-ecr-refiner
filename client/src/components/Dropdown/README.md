@@ -6,16 +6,17 @@ This guide documents the z-index system for dropdowns and overlays to prevent vi
 
 We use a centralized z-index system defined in `client/src/styles/z-index.css`. All overlay components must use these CSS variables.
 
-| Variable             | Value | Usage                          |
-| :------------------- | :---- | :----------------------------- |
-| `--z-base`           | 0     | Default page content           |
-| `--z-sticky`         | 10    | Sticky headers/footers         |
-| `--z-banner`         | 20    | Top-level notification banners |
-| `--z-dropdown`       | 30    | Standard page-level dropdowns  |
-| `--z-drawer`         | 40    | Side drawers/panels            |
-| `--z-modal-backdrop` | 50    | Modal background dimming       |
-| `--z-modal-content`  | 60    | Modal dialog boxes             |
-| `--z-modal-dropdown` | 70    | Dropdowns inside modals        |
+| Variable                 | Value | Usage                             |
+| :----------------------- | :---- | :-------------------------------- |
+| `--z-base`               | 0     | Default page content              |
+| `--z-sticky`             | 10    | Sticky headers/footers            |
+| `--z-banner`             | 20    | Top-level notification banners    |
+| `--z-banner-interactive` | 25    | Banners with interactive elements |
+| `--z-dropdown`           | 30    | Standard page-level dropdowns     |
+| `--z-drawer`             | 40    | Side drawers/panels               |
+| `--z-modal-backdrop`     | 50    | Modal background dimming          |
+| `--z-modal-content`      | 60    | Modal dialog boxes                |
+| `--z-modal-dropdown`     | 70    | Dropdowns inside modals           |
 
 ## Component Usage
 

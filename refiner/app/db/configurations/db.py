@@ -254,6 +254,43 @@ async def _get_next_configuration_version_db(
     return max_version + 1
 
 
+async def _clone_code_exclusions(
+    clone_from_config: DbConfiguration,
+    new_configuration_id: UUID,
+    condition_ids: list[UUID],
+    cursor: AsyncCursor[CursorType],
+) -> None:
+    """
+    Clones code exclusion rows from one configuration to a new one.
+
+    Skips any `code_id` that is not associated with any of the
+    given `condition_id`s in `conditions_codes_temp`.
+    """
+
+    await cursor.execute(
+        """
+        INSERT INTO configurations_conditions_code_exclusions
+            (configuration_id, code_id)
+        SELECT
+            %(new_configuration_id)s,
+            excl.code_id
+        FROM configurations_conditions_code_exclusions excl
+        WHERE excl.configuration_id = %(source_configuration_id)s
+          AND EXISTS (
+              SELECT 1
+              FROM conditions_codes_temp cct
+              WHERE cct.code_id = excl.code_id
+                AND cct.condition_id = ANY(%(condition_ids)s)
+          )
+        """,
+        {
+            "new_configuration_id": new_configuration_id,
+            "source_configuration_id": clone_from_config.id,
+            "condition_ids": condition_ids,
+        },
+    )
+
+
 async def insert_configuration_db(
     condition: DbCondition,
     user_id: UUID,
@@ -392,6 +429,14 @@ async def insert_configuration_db(
                     for cond_id in condition_ids_to_insert
                 ],
             )
+
+            if config_to_clone:
+                await _clone_code_exclusions(
+                    clone_from_config=config_to_clone,
+                    new_configuration_id=config_id,
+                    condition_ids=condition_ids_to_insert,
+                    cursor=cur,
+                )
 
             if next_version == 1:
                 await insert_event_db(
