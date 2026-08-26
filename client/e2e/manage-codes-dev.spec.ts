@@ -585,7 +585,12 @@ test.describe('Codes management - code interactions', () => {
     await configurationsPage.createConfiguration(condition);
     await goToManageCodesDevPage(page, configurationPage);
 
-    const row = page.getByRole('table').getByRole('row').nth(1);
+    const row = page
+      .getByRole('table')
+      .locator('tbody tr')
+      .filter({ has: page.getByRole('checkbox') })
+      .first();
+
     const checkbox = row.getByRole('cell').first().getByRole('checkbox');
     const statusCell = row.getByRole('cell').last();
 
@@ -1057,7 +1062,14 @@ test.describe('Codes management - filters', () => {
     });
 
     await test.step('Exclude a code', async () => {
-      const checkbox = tableRows.nth(1).getByRole('checkbox');
+      const row = page
+        .getByRole('table')
+        .locator('tbody tr')
+        .filter({ has: page.getByRole('checkbox') })
+        .first();
+
+      const checkbox = row.getByRole('cell').first().getByRole('checkbox');
+
       await checkbox.click();
 
       const controlPanel = page.getByTestId('control-panel');
@@ -1065,7 +1077,7 @@ test.describe('Codes management - filters', () => {
 
       await controlPanel.getByRole('button', { name: 'Exclude' }).click();
 
-      const statusCell = tableRows.nth(1).getByRole('cell').last();
+      const statusCell = row.getByRole('cell').last();
       await expect(statusCell).toContainText('Excluded');
     });
 
