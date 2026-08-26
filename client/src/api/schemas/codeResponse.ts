@@ -13,4 +13,5 @@ export interface CodeResponse {
   system_name: string;
   status: CodeResponseStatus;
   is_custom: boolean;
+  is_primary_condition_rsg: boolean;
 }

@@ -4,10 +4,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
-from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.codes.model import CodeStatus, FilterInput
+from app.api.v1.configurations.codes.model import FilterInput
+from app.db.conditions.db import get_primary_condition_db
 from app.db.configurations.codes.db import (
     CodeFilterOptions,
     get_all_filter_options_db,
@@ -37,6 +37,7 @@ class CodeResponse:
     system_name: str
     status: Literal["Included", "Excluded"]
     is_custom: bool
+    is_primary_condition_rsg: bool
 
 
 @dataclass
@@ -117,6 +118,7 @@ async def get_codes(
 
     codes, next_cursor = await get_codes_db(
         configuration_id=config.id,
+        configuration_primary_condition_id=config.condition_id,
         limit=CODES_LIMIT,
         cursor=cursor,
         filters=filters,
@@ -128,6 +130,7 @@ async def get_codes(
         codes=[
             CodeResponse(
                 is_custom=c.condition_id is None,
+                is_primary_condition_rsg=c.is_child_rsg,
                 status="Included" if c.status == "included" else "Excluded",
                 id=c.id,
                 condition_id=c.condition_id,
@@ -197,13 +200,6 @@ async def get_code_counts(
     )
 
 
-class SetStatusRequest(BaseModel):
-    """Request body class for code status change."""
-
-    code_ids: list[UUID]
-    status: CodeStatus
-
-
 @router.post(
     "/set-status",
     response_model=list[UUID],
@@ -212,7 +208,8 @@ class SetStatusRequest(BaseModel):
 )
 async def set_codes_status(
     configuration_id: UUID,
-    body: SetStatusRequest,
+    code_ids: list[UUID],
+    status: Literal["included", "excluded"],
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[UUID]:
@@ -221,9 +218,8 @@ async def set_codes_status(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        body (SetStatusRequest): body for code status request, which includes
-            code_ids (list[UUID]): List of code IDs
-            status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        code_ids (list[UUID]): List of code IDs
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
@@ -246,11 +242,30 @@ async def set_codes_status(
             detail="Configuration cannot be found.",
         )
 
-    impacted_code_ids = await set_codes_status_db(
-        configuration_id=config.id, code_ids=body.code_ids, status=body.status, db=db
-    )
+    try:
+        impacted_code_ids = await set_codes_status_db(
+            configuration_id=config.id,
+            configuration_primary_condition_id=config.condition_id,
+            code_ids=code_ids,
+            status=status,
+            db=db,
+        )
+        return impacted_code_ids
+    except ValueError:
+        primary_condition = await get_primary_condition_db(
+            configuration_id=config.id, db=db
+        )
 
-    return impacted_code_ids
+        if not primary_condition:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Could not find configuration's primary condition.",
+            )
+
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Configuration's primary condition ({primary_condition.display_name}) RSG codes cannot be modified.",
+        )
 
 
 @router.get(
