@@ -1049,6 +1049,60 @@ class TestConfigurationsExclusions:
         assert all(new_codes[c["id"]]["status"] == "Excluded" for c in excludable_codes)
         assert all(new_codes[c["id"]]["status"] == "Included" for c in rsg_codes)
 
+    async def test_primary_condition_rsg_codes_cannot_be_excluded(
+        self, setup, authed_client, get_condition_id, associate_codeset
+    ):
+        """
+        Primary condition RSG codes cannot be excluded. Non-RSG codes
+        (including associated condition RSG codes, which appear as regular
+        codes from the API's perspective) can still be excluded.
+        """
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        config_id = resp.json()["id"]
+
+        # associate a code set
+        alpha_gal_id = await get_condition_id("Alpha-gal Syndrome")
+        await associate_codeset(config_id, alpha_gal_id)
+
+        resp = await authed_client.get(f"/api/v1/configurations/{config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        # This should only flag Anotia RSG codes. RSG codes from Alpha-gal are valid
+        # to exclude.
+        primary_rsg_codes = [c for c in codes if c["is_primary_condition_rsg"]]
+        excludable_codes = [c for c in codes if not c["is_primary_condition_rsg"]]
+
+        assert primary_rsg_codes, "Expected at least one primary condition RSG code"
+        assert excludable_codes, "Expected at least one excludable code"
+
+        # attempting to exclude primary RSG codes should fail
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
+            json=[c["id"] for c in primary_rsg_codes],
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+        # non-primary RSG codes can be excluded
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
+            json=[c["id"] for c in excludable_codes],
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        resp = await authed_client.get(f"/api/v1/configurations/{config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        refetched = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(refetched[c["id"]]["status"] == "Excluded" for c in excludable_codes)
+        assert all(
+            refetched[c["id"]]["status"] == "Included" for c in primary_rsg_codes
+        )
+
     async def test_clone_code_exclusions_no_exclusions_on_source(
         self,
         setup,
