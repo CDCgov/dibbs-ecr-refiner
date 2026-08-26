@@ -43,7 +43,11 @@ export function SectionContainer({ children }: { children: React.ReactNode }) {
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {
   return (
-    <LayoutContainer breakout={true} background="bg-white" className="py-6 z-dropdown">
+    <LayoutContainer
+      breakout={true}
+      background="bg-white"
+      className="z-dropdown py-6"
+    >
       {children}
     </LayoutContainer>
   );
