@@ -154,7 +154,7 @@ class TestConfigurations:
         # set all codes as 'excluded'
         resp = await authed_client.post(
             f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
-            json=[str(code["id"]) for code in codes],
+            json=[code["id"] for code in codes],
         )
         assert resp.status_code == status.HTTP_200_OK
 
