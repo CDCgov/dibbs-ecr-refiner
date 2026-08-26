@@ -11,6 +11,7 @@ We use a centralized z-index system defined in `client/src/styles/z-index.css`. 
 | `--z-base`           | 0     | Default page content           |
 | `--z-sticky`         | 10    | Sticky headers/footers         |
 | `--z-banner`         | 20    | Top-level notification banners |
+| `--z-banner-interactive` | 25    | Banners with interactive elements |
 | `--z-dropdown`       | 30    | Standard page-level dropdowns  |
 | `--z-drawer`         | 40    | Side drawers/panels            |
 | `--z-modal-backdrop` | 50    | Modal background dimming       |

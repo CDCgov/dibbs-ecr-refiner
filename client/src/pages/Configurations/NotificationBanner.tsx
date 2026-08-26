@@ -17,7 +17,6 @@ export function NotificationBanner({
     <AlertBreakoutContainer
       background="bg-blue-100 drop-shadow-nav"
       maxWidth={LAYOUT_MAX_WIDTH}
-      padding="lg"
       className="py-3"
     >
       <div className="flex items-center justify-center">
