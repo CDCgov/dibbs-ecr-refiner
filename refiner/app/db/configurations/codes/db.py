@@ -291,8 +291,8 @@ async def set_codes_status_db(
             SELECT cc.code_id
             FROM conditions_codes_temp cc
             WHERE cc.condition_id = %(primary_condition_id)s
-              AND cc.is_child_rsg = true
-              AND cc.code_id = ANY(%(code_ids)s)
+            AND cc.is_child_rsg = true
+            AND cc.code_id = ANY(%(code_ids)s::uuid[])
         """
         async with db.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
@@ -305,7 +305,7 @@ async def set_codes_status_db(
 
         query = """
             INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
-            SELECT %(configuration_id)s, UNNEST(%(code_ids)s)
+            SELECT %(configuration_id)s::uuid, UNNEST(%(code_ids)s::uuid[])
             ON CONFLICT DO NOTHING
             RETURNING code_id
         """
@@ -313,7 +313,7 @@ async def set_codes_status_db(
         query = """
             DELETE FROM configurations_conditions_code_exclusions
             WHERE configuration_id = %(configuration_id)s
-              AND code_id = ANY(%(code_ids)s)
+            AND code_id = ANY(%(code_ids)s)
             RETURNING code_id
         """
 
