@@ -7,6 +7,7 @@ from fastapi import status as http_status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.codes.model import FilterInput
+from app.db.conditions.db import get_primary_condition_db
 from app.db.configurations.codes.db import (
     CodeFilterOptions,
     get_all_filter_options_db,
@@ -241,11 +242,23 @@ async def set_codes_status(
             detail="Configuration cannot be found.",
         )
 
-    impacted_code_ids = await set_codes_status_db(
-        configuration_id=config.id, code_ids=code_ids, status=status, db=db
-    )
-
-    return impacted_code_ids
+    try:
+        impacted_code_ids = await set_codes_status_db(
+            configuration_id=config.id,
+            configuration_primary_condition_id=config.condition_id,
+            code_ids=code_ids,
+            status=status,
+            db=db,
+        )
+        return impacted_code_ids
+    except ValueError:
+        primary_condition = await get_primary_condition_db(
+            configuration_id=config.id, db=db
+        )
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Configuration's primary condition ({primary_condition.display_name}) RSG codes cannot be modified.",
+        )
 
 
 @router.get(
