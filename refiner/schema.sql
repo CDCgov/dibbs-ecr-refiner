@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
@@ -14,6 +14,20 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
 
 --
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
@@ -184,19 +198,14 @@ CREATE TABLE public.conditions_codes (
 
 
 --
--- Name: conditions_context_groupers; Type: TABLE; Schema: public; Owner: -
+-- Name: conditions_codes_temp; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.conditions_context_groupers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
+CREATE TABLE public.conditions_codes_temp (
     condition_id uuid NOT NULL,
-    name text NOT NULL,
-    category text NOT NULL,
-    canonical_url text NOT NULL,
-    code_count integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    completeness text
+    code_id uuid NOT NULL,
+    valueset_id uuid NOT NULL,
+    is_child_rsg boolean DEFAULT false
 );
 
 
@@ -391,6 +400,24 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: valuesets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.valuesets (
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT conditions_context_groupers_id_not_null NOT NULL,
+    condition_id uuid CONSTRAINT conditions_context_groupers_condition_id_not_null NOT NULL,
+    display_name text CONSTRAINT conditions_context_groupers_name_not_null NOT NULL,
+    category text CONSTRAINT conditions_context_groupers_category_not_null NOT NULL,
+    canonical_url text CONSTRAINT conditions_context_groupers_canonical_url_not_null NOT NULL,
+    code_count integer DEFAULT 0 CONSTRAINT conditions_context_groupers_code_count_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT conditions_context_groupers_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT conditions_context_groupers_updated_at_not_null NOT NULL,
+    completeness text,
+    parent_url text
+);
+
+
+--
 -- Name: active_payload_schema_reactivations active_payload_schema_reactivations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -423,18 +450,26 @@ ALTER TABLE ONLY public.conditions
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes_temp conditions_codes_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_context_groupers
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT conditions_codes_temp_pkey PRIMARY KEY (condition_id, code_id, valueset_id);
+
+
+--
+-- Name: valuesets conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.valuesets
     ADD CONSTRAINT conditions_context_groupers_condition_id_canonical_url_key UNIQUE (condition_id, canonical_url);
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: valuesets conditions_context_groupers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_context_groupers
+ALTER TABLE ONLY public.valuesets
     ADD CONSTRAINT conditions_context_groupers_pkey PRIMARY KEY (id);
 
 
@@ -444,14 +479,6 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
-
-
---
--- Name: conditions_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions_codes
-    ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
 --
@@ -671,14 +698,14 @@ CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON pu
 -- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX conditions_context_groupers_category_idx ON public.conditions_context_groupers USING btree (category);
+CREATE INDEX conditions_context_groupers_category_idx ON public.valuesets USING btree (category);
 
 
 --
 -- Name: conditions_context_groupers_condition_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX conditions_context_groupers_condition_id_idx ON public.conditions_context_groupers USING btree (condition_id);
+CREATE INDEX conditions_context_groupers_condition_id_idx ON public.valuesets USING btree (condition_id);
 
 
 --
@@ -710,6 +737,13 @@ CREATE INDEX idx_conditions_codes_condition_id ON public.conditions_codes USING 
 
 
 --
+-- Name: idx_configuration_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_configuration_status ON public.configurations USING btree (status);
+
+
+--
 -- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -731,10 +765,10 @@ CREATE TRIGGER update_codes_updated_at BEFORE UPDATE ON public.codes FOR EACH RO
 
 
 --
--- Name: conditions_context_groupers update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: valuesets update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER update_conditions_context_groupers_updated_at BEFORE UPDATE ON public.conditions_context_groupers FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+CREATE TRIGGER update_conditions_context_groupers_updated_at BEFORE UPDATE ON public.valuesets FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -787,10 +821,10 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: valuesets conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_context_groupers
+ALTER TABLE ONLY public.valuesets
     ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
@@ -931,11 +965,27 @@ ALTER TABLE ONLY public.events_custom_code_uploads
 
 
 --
+-- Name: conditions_codes_temp fk_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT fk_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
+
+
+--
 -- Name: codes fk_codes_system_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.codes
     ADD CONSTRAINT fk_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions_codes_temp fk_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT fk_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
 --
@@ -952,6 +1002,14 @@ ALTER TABLE ONLY public.events
 
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: conditions_codes_temp fk_valueset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT fk_valueset_id_fkey FOREIGN KEY (valueset_id) REFERENCES public.valuesets(id) ON DELETE CASCADE;
 
 
 --
@@ -1012,4 +1070,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260729154745'),
     ('20260803202038'),
     ('20260810165940'),
-    ('20260813133341');
+    ('20260813133341'),
+    ('20260813142528'),
+    ('20260813142548'),
+    ('20260825151652');

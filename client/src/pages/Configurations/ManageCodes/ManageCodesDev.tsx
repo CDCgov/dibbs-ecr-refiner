@@ -1,12 +1,8 @@
 import { useParams } from 'react-router';
 import {
-  getGetCodeCountsQueryKey,
-  getGetCodeFiltersQueryKey,
-  getGetCodesInfiniteQueryKey,
   useGetCodeCounts,
   useGetCodesInfinite,
   useGetConfiguration,
-  useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 import { Spinner } from '@components/Spinner';
@@ -26,17 +22,16 @@ import {
 } from '@components/Modal';
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { Switch } from '@components/Switch';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
 import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
-import { useQueryClient } from '@tanstack/react-query';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 import { CodeFilters, Filters } from './Filters';
 import { useFilterState } from './useFilterState';
-import { Field } from '@components/Field';
-import { Label } from '@components/Label';
+import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
+import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
+import { Tooltip } from '@components/Tooltip';
 
 /**
  * TODO: This component will live under the /manage-codes route once complete.
@@ -44,6 +39,7 @@ import { SearchBar } from './SearchBar';
 
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
+  const [isUploadingCustomCodes, setIsUploadingCustomCodes] = useState(false);
 
   // acquire lock on mount, schedule release on unmount
   useConfigLock(id);
@@ -64,22 +60,34 @@ export function ManageCodesDev() {
     <div>
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
-          <ConfigurationTitleBar
-            title="Manage codes"
-            subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
-          />
-          <div className="flex flex-col items-start justify-end gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
+            <ConfigurationTitleBar
+              title="Manage codes"
+              subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
+            />
             <AddCodeSetsButton
               id={configuration.data.id}
               included_conditions={configuration.data.included_conditions}
               display_name={configuration.data.display_name}
               disabled={isDisabled}
             />
-            <AddCustomCodeButton configurationId={id} disabled={isDisabled} />
+            <AddCustomCodeButton
+              configurationId={id}
+              disabled={isDisabled}
+              setIsUploadingCustomCodes={setIsUploadingCustomCodes}
+            />
           </div>
+          {isUploadingCustomCodes ? (
+            <ImportCustomCodes
+              configurationId={id}
+              disabled={isDisabled}
+              onSuccess={() => setIsUploadingCustomCodes(false)}
+            />
+          ) : (
+            <CodesPanel id={configuration.data.id} disabled={isDisabled} />
+          )}
         </div>
-        <CodesPanel id={configuration.data.id} disabled={isDisabled} />
       </SectionContainer>
     </div>
   );
@@ -91,7 +99,8 @@ interface CodesPanelProps {
 }
 
 function CodesPanel({ id, disabled }: CodesPanelProps) {
-  const { filters, setFilters } = useFilterState(id);
+  const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
+    useFilterState(id);
   return (
     <>
       <CodeInformationBar id={id} />
@@ -103,7 +112,14 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
           onFiltersChange={setFilters}
         />
       </div>
-      <CodesTable id={id} disabled={disabled} filters={filters} />
+      <CodesTable
+        key={filtersKey}
+        id={id}
+        disabled={disabled}
+        filters={filters}
+        onClearFilters={clearFilters}
+        isFilterActive={isFilterActive}
+      />
     </>
   );
 }
@@ -112,6 +128,8 @@ interface CodesTableProps {
   id: string;
   disabled: boolean;
   filters: CodeFilters;
+  isFilterActive: boolean;
+  onClearFilters: () => void;
 }
 
 type ParamValue =
@@ -122,7 +140,13 @@ type ParamValue =
   | null
   | undefined;
 
-function CodesTable({ id, disabled, filters }: CodesTableProps) {
+function CodesTable({
+  id,
+  disabled,
+  filters,
+  isFilterActive,
+  onClearFilters,
+}: CodesTableProps) {
   const {
     data,
     isPending,
@@ -169,7 +193,18 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
 
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
-  const allSelected = codes.length > 0 && selectedIds.size === codes.length;
+  const codesWithoutPrimaryConditionRsgCodes = codes.filter(
+    (c) => !c.is_primary_condition_rsg
+  );
+
+  const allSelected =
+    codesWithoutPrimaryConditionRsgCodes.length > 0 &&
+    selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length;
+  const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
+    (c) => selectedIds.has(c.id) && c.is_custom
+  );
+
+  const hasCodesSelected = selectedIds.size > 0;
 
   return (
     <div className="flex flex-col items-end gap-4">
@@ -177,97 +212,178 @@ function CodesTable({ id, disabled, filters }: CodesTableProps) {
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <InfiniteScroll
-        dataLength={codes.length}
-        next={fetchNextPage}
-        hasMore={!!hasNextPage}
-        loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
-        endMessage={
-          <p className="text-center italic">You've reached the end.</p>
-        }
+      {/*
+        Using `scrollableTarget` does not seem to be removing `overflow: auto` for some reason,
+        which is why it's being removed from the scroll component manually.
+
+        Others appear to be having similar issues with `scrollableTarget`:
+        https://github.com/ankeetmaini/react-infinite-scroll-component/issues/62
+       */}
+      <div
+        id="codes-table-scroll-container"
+        className="h-[calc(100vh-20rem)] overflow-auto [&_.infinite-scroll-component]:overflow-visible!"
       >
-        <table className="w-full table-fixed">
-          <thead className="bg-gray-cool-5 sticky top-0 z-10">
-            <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
-              <th scope="col" className="w-10 text-center">
-                <Checkbox
-                  aria-label="Include all codes in bulk operation"
-                  disabled={disabled}
-                  checked={allSelected}
-                  onChange={(checked) =>
-                    setSelectedIds(
-                      checked ? new Set(codes.map((c) => c.id)) : new Set()
-                    )
-                  }
-                />
-              </th>
-              <th scope="col">Code no.</th>
-              <th scope="col">System</th>
-              <th scope="col">Description</th>
-              <th scope="col">
-                <div className="flex flex-row items-center gap-1">
-                  <span>Source</span>
-                  <Button
-                    variant="tertiary"
-                    onClick={() => setIsSourceModalOpen(true)}
-                    className="p-0!"
-                    aria-label="Open reporting specification details modal"
-                  >
-                    <QuestionIcon />
-                  </Button>
-                </div>
-              </th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
-            {codes.map((code) => (
-              <tr
-                key={code.id}
-                className={classNames(
-                  'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
-                  {
-                    italic: code.status === 'Excluded',
-                  }
-                )}
-              >
-                <td className="text-center">
+        {hasCodesSelected ? (
+          <ControlPanel
+            configurationId={id}
+            selectedCodeIds={selectedIds}
+            selectedCustomCodes={selectedCustomCodes}
+            clearSelections={() => setSelectedIds(new Set())}
+          />
+        ) : null}
+        <InfiniteScroll
+          dataLength={codes.length}
+          next={fetchNextPage}
+          hasMore={!!hasNextPage}
+          loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
+          endMessage={
+            codes.length > 0 ? (
+              <p className="text-center italic">You've reached the end.</p>
+            ) : null
+          }
+          scrollableTarget="codes-table-scroll-container"
+        >
+          <table className="w-full table-fixed">
+            <thead className="bg-gray-cool-5 z-sticky sticky top-0">
+              <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
+                <th scope="col" className="w-10 text-center">
                   <Checkbox
-                    aria-label={`Include ${code.code} in bulk operation`}
+                    aria-label="Include all codes in bulk operation"
                     disabled={disabled}
-                    checked={selectedIds.has(code.id)}
+                    checked={allSelected}
                     onChange={(checked) =>
-                      setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        if (checked) {
-                          next.add(code.id);
-                        } else {
-                          next.delete(code.id);
-                        }
-                        return next;
-                      })
+                      setSelectedIds(
+                        checked
+                          ? new Set(
+                              codesWithoutPrimaryConditionRsgCodes.map(
+                                (c) => c.id
+                              )
+                            )
+                          : new Set()
+                      )
                     }
                   />
-                </td>
-                <td>{code.code}</td>
-                <td>{code.system_name}</td>
-                <td>{code.description}</td>
-                <td>
-                  <SourceCell configurationId={id} code={code} />
-                </td>
-                <td>
-                  <IncludeSwitch
-                    configurationId={id}
-                    code={code}
-                    disabled={disabled}
-                  />
-                </td>
+                </th>
+                <th scope="col" className="w-[15%]">
+                  Code no.
+                </th>
+                <th scope="col" className="w-[10%]">
+                  System
+                </th>
+                <th scope="col" className="w-[30%]">
+                  Description
+                </th>
+                <th scope="col" className="w-[35%]">
+                  <div className="flex flex-row items-center gap-1">
+                    <span>Source</span>
+                    <Button
+                      variant="tertiary"
+                      onClick={() => setIsSourceModalOpen(true)}
+                      className="p-0!"
+                      aria-label="Open reporting specification details modal"
+                    >
+                      <QuestionIcon />
+                    </Button>
+                  </div>
+                </th>
+                <th scope="col" className="w-[10%]">
+                  Status
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </InfiniteScroll>
+            </thead>
+            <tbody className="divide-gray-cool-20 divide-y">
+              {codes.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="text-gray-cool-60 px-4 py-8 text-center"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <span className="text-lg font-bold">
+                        No codes match your search or filters.
+                      </span>
+                      {isFilterActive && (
+                        <Button
+                          variant="tertiary"
+                          onClick={onClearFilters}
+                          className="p-0!"
+                        >
+                          Clear search and filters
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                codes.map((code) => (
+                  <tr
+                    key={code.id}
+                    className={classNames(
+                      'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
+                      {
+                        italic: code.status === 'Excluded',
+                      }
+                    )}
+                  >
+                    <td className="text-center">
+                      {code.is_primary_condition_rsg ? (
+                        <Tooltip
+                          position="right"
+                          label="Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR."
+                        >
+                          <LockIcon />
+                        </Tooltip>
+                      ) : (
+                        <Checkbox
+                          aria-label={`Include ${code.code} in bulk operation`}
+                          disabled={disabled}
+                          checked={selectedIds.has(code.id)}
+                          onChange={(checked) =>
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (checked) {
+                                next.add(code.id);
+                              } else {
+                                next.delete(code.id);
+                              }
+                              return next;
+                            })
+                          }
+                        />
+                      )}
+                    </td>
+                    <td>{code.code}</td>
+                    <td>{code.system_name}</td>
+                    <td>{code.description}</td>
+                    <td>
+                      <SourceCell configurationId={id} code={code} />
+                    </td>
+                    <td>{code.status}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </InfiniteScroll>
+      </div>
     </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      data-testid="lock-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="#71767a"
+    >
+      <path
+        data-dc-tpl="743"
+        d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm3 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"
+      />
+    </svg>
   );
 }
 
@@ -277,13 +393,11 @@ interface SourceCellProps {
 }
 
 function SourceCell({ configurationId, code }: SourceCellProps) {
-  if (!code.is_custom) return code.source;
+  if (!code.is_custom) return code.source.join(', ');
 
   return (
     <div className="flex flex-col items-center gap-2 xl:flex-row">
-      <span className="text-violet-warm-60 rounded-xs border bg-[#f9f4f9] px-2 py-0.5 text-sm font-bold whitespace-nowrap">
-        Custom code
-      </span>
+      <span>Custom code</span>
       <div className="flex flex-row gap-2">
         <EditCustomCodeButton configurationId={configurationId} id={code.id} />
         <DeleteCustomCodeButton
@@ -293,60 +407,6 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
         />
       </div>
     </div>
-  );
-}
-
-interface IncludeSwitchProps {
-  configurationId: string;
-  code: CodeResponse;
-  disabled: boolean;
-}
-function IncludeSwitch({
-  configurationId,
-  code,
-  disabled,
-}: IncludeSwitchProps) {
-  const queryClient = useQueryClient();
-  const { mutate } = useSetCodesStatus();
-
-  const toggleStatus = () => {
-    mutate(
-      {
-        configurationId,
-        params: {
-          status: code.status === 'Included' ? 'excluded' : 'included',
-        },
-        data: [code.id],
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodesInfiniteQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeCountsQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeFiltersQueryKey(configurationId),
-          });
-        },
-      }
-    );
-  };
-
-  return (
-    <Field className="flex flex-row items-center gap-2">
-      <Switch
-        checked={code.status === 'Included'}
-        disabled={code.is_custom || disabled}
-        onChange={toggleStatus}
-      />
-      <Label
-        aria-label={`Toggle to mark code ${code.code} as ${code.status === 'Included' ? 'excluded' : 'included'}`}
-      >
-        {code.status}
-      </Label>
-    </Field>
   );
 }
 

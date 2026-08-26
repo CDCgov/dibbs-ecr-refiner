@@ -2,10 +2,10 @@ import { Spinner } from '@components/Spinner';
 import {
   Combobox,
   ComboboxButton,
-  ComboboxOptions,
   ComboboxOption,
   ComboboxInput,
 } from '@headlessui/react';
+import { BaseComboboxOptions } from '@components/Dropdown';
 import { useGetCodeFilters } from '../../../api/configurations/configurations';
 import classNames from 'classnames';
 
@@ -57,15 +57,16 @@ function FilterCombobox<T extends FilterOption>({
             <ChevronDownIcon />
           </span>
         </ComboboxButton>
-        <ComboboxOptions
+        <BaseComboboxOptions
           data-testid={`${testId}-options`}
-          className="absolute left-0 z-100 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg"
+          className="absolute left-0 mt-1 max-h-100 w-56 overflow-y-scroll rounded-md border border-gray-300! bg-white py-1 shadow-lg"
         >
           {options.map((option) => (
             <ComboboxOption
               key={option.id}
               value={option}
               className="hover:bg-blue-cool-5 data-focus:bg-blue-cool-5 cursor-pointer px-4 py-2 select-none"
+              data-testid={option.id}
             >
               {({ selected }) => (
                 <div className="flex items-center gap-3">
@@ -114,7 +115,7 @@ function FilterCombobox<T extends FilterOption>({
               Clear selection
             </span>
           </ComboboxOption>
-        </ComboboxOptions>
+        </BaseComboboxOptions>
       </div>
     </Combobox>
   );

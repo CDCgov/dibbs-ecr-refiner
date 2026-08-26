@@ -1,6 +1,7 @@
 import { Button } from '@components/Button';
 import { CloseIcon } from '@components/Icons/CloseIcon';
 import { InfoIcon } from '@components/Icons/InfoIcon';
+import { AlertBreakoutContainer, LAYOUT_MAX_WIDTH } from '@components/Layout';
 
 interface NotificationBannerProps {
   message: string;
@@ -13,8 +14,12 @@ export function NotificationBanner({
   children,
 }: NotificationBannerProps) {
   return (
-    <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
-      <div className="mx-auto flex max-w-7xl items-center justify-center">
+    <AlertBreakoutContainer
+      background="bg-blue-100 drop-shadow-nav"
+      maxWidth={LAYOUT_MAX_WIDTH}
+      className="py-3"
+    >
+      <div className="flex items-center justify-center">
         <div className="flex flex-1 items-center justify-center gap-10">
           <div className="flex items-center justify-between gap-2">
             <InfoIcon className="fill-blue-40v shrink-0" />
@@ -34,6 +39,6 @@ export function NotificationBanner({
           <span className="sr-only">Dismiss notification for {message}</span>
         </Button>
       </div>
-    </div>
+    </AlertBreakoutContainer>
   );
 }

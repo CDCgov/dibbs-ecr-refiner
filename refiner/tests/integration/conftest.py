@@ -307,7 +307,7 @@ async def get_condition_by_id(db_pool):
                         t.version,
                         ARRAY(
                             SELECT codes.code
-                            FROM conditions_codes crc
+                            FROM conditions_codes_temp crc
                             JOIN codes ON crc.code_id = codes.id
                             WHERE crc.condition_id = c.id AND crc.is_child_rsg
                         ) as child_rsg_snomed_codes,
@@ -395,6 +395,7 @@ async def reset_db(db_pool):
     # run after each test
     async with db_pool.get_connection() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("DELETE from configurations_conditions_code_exclusions")
             await cur.execute("DELETE FROM custom_codes")
             await cur.execute("DELETE FROM configurations")
 

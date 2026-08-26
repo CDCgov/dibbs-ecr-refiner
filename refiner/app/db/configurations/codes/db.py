@@ -18,12 +18,13 @@ class DbCodeResult:
 
     id: UUID
     condition_id: UUID | None
-    source: str
+    source: list[str]
     code: str
     description: str
     system_id: UUID
     system_name: str
     status: Literal["included", "excluded"]
+    is_child_rsg: bool
 
 
 @dataclass
@@ -50,6 +51,7 @@ def _decode_cursor(cursor: str) -> DbCodeCursor:
 
 async def get_codes_db(
     configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
     db: AsyncDatabaseConnection,
     limit: int,
     filters: FilterInput,
@@ -117,12 +119,13 @@ async def get_codes_db(
                     SELECT
                         c.id,
                         NULL::uuid AS condition_id,
-                        'Custom Code' AS source,
+                        ARRAY['Custom Code'] AS source,
                         c.code,
                         c.display AS description,
                         c.system_id,
                         s.display_name AS system_name,
-                        'included' AS status
+                        'included' AS status,
+                        FALSE AS is_child_rsg
                     FROM custom_codes c
                     JOIN systems s ON s.id = c.system_id
                     WHERE c.configuration_id = %(configuration_id)s
@@ -151,6 +154,7 @@ async def get_codes_db(
     remaining = limit - len(rows) + 1  # +1 to detect next page
     cond_params: dict = {
         "configuration_id": configuration_id,
+        "primary_condition_id": configuration_primary_condition_id,
         "limit": remaining,
     }
     cond_clauses = []
@@ -173,7 +177,7 @@ async def get_codes_db(
         return rows, next_cursor
 
     if condition_sources:
-        cond_clauses.append(" AND cfgc.condition_id = ANY(%(sources)s::uuid[])")
+        cond_clauses.append(" AND v.id = ANY(%(sources)s::uuid[])")
         cond_params["sources"] = condition_sources
 
     if statuses:
@@ -195,16 +199,18 @@ async def get_codes_db(
         SELECT
             c.id,
             cfgc.condition_id,
-            con.display_name || ' CG' AS source,
+            COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
             c.code,
             c.display AS description,
             c.system_id,
             s.display_name AS system_name,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
+            BOOL_OR(cc.is_child_rsg AND cfgc.condition_id = %(primary_condition_id)s) AS is_child_rsg
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
-        JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+        JOIN conditions_codes_temp cc ON cc.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
+        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
@@ -212,6 +218,15 @@ async def get_codes_db(
         WHERE cfgc.configuration_id = %(configuration_id)s
         {cursor_clause}
         {"".join(cond_clauses)}
+        GROUP BY
+            c.id,
+            cfgc.condition_id,
+            con.display_name,
+            c.code,
+            c.display,
+            c.system_id,
+            s.display_name,
+            e.code_id
         ORDER BY cfgc.condition_id, c.code
         LIMIT %(limit)s;
     """
@@ -240,6 +255,7 @@ async def get_codes_db(
 
 async def set_codes_status_db(
     configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
     status: Literal["included", "excluded"],
     db: AsyncDatabaseConnection,
@@ -251,8 +267,12 @@ async def set_codes_status_db(
     If `status="excluded"` is provided, entries will be added to the table. Since multiple
     conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
 
+    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
+    as these cannot be excluded.
+
     Args:
         configuration_id (UUID): ID of the configuration
+        configuration_primary_condition_id (UUID): ID of the configuration's primary condition
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
@@ -260,25 +280,42 @@ async def set_codes_status_db(
     Returns:
         list[UUID]: List of impacted code IDs
     """
-    if status == "included":
+    params = {
+        "configuration_id": configuration_id,
+        "code_ids": code_ids,
+        "primary_condition_id": configuration_primary_condition_id,
+    }
+
+    if status == "excluded":
+        rsg_check_query = """
+            SELECT cc.code_id
+            FROM conditions_codes_temp cc
+            WHERE cc.condition_id = %(primary_condition_id)s
+            AND cc.is_child_rsg = true
+            AND cc.code_id = ANY(%(code_ids)s::uuid[])
+        """
+        async with db.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(rsg_check_query, params)
+                rsg_rows = await cur.fetchall()
+
+        if rsg_rows:
+            rsg_ids = [row["code_id"] for row in rsg_rows]
+            raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
+
         query = """
-            DELETE FROM configurations_conditions_code_exclusions
-            WHERE configuration_id = %(configuration_id)s
-              AND code_id = ANY(%(code_ids)s)
+            INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
+            SELECT %(configuration_id)s::uuid, UNNEST(%(code_ids)s::uuid[])
+            ON CONFLICT DO NOTHING
             RETURNING code_id
         """
     else:
         query = """
-            INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
-            SELECT %(configuration_id)s, UNNEST(%(code_ids)s::uuid[])
-            ON CONFLICT DO NOTHING
+            DELETE FROM configurations_conditions_code_exclusions
+            WHERE configuration_id = %(configuration_id)s
+            AND code_id = ANY(%(code_ids)s)
             RETURNING code_id
         """
-
-    params = {
-        "configuration_id": configuration_id,
-        "code_ids": code_ids,
-    }
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -340,56 +377,75 @@ async def get_all_filter_options_db(
     Fetches filter options to present to the client.
     """
     query = """
-    WITH all_codes AS (
+    WITH base_codes AS (
+        -- Standard codes linked through conditions
         SELECT
+            c.id AS code_id,
             s.id AS system_id,
-            s.display_name AS system_name,
-            NULL::uuid AS source_id,
-            'Custom Code' AS source,
-            'included' AS status
-        FROM custom_codes c
-        JOIN systems s ON s.id = c.system_id
-        WHERE c.configuration_id = %(configuration_id)s
-
-        UNION ALL
-
-        SELECT
-            s.id AS system_id,
-            s.display_name AS system_name,
-            con.id AS source_id,
-            con.display_name || ' CG' AS source,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+            v.id AS source_id,
+            v.display_name AS source_name,
+            CASE WHEN e.code_id IS NOT NULL THEN 'excluded' ELSE 'included' END AS status
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
-        JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+        JOIN conditions_codes_temp cc ON cc.condition_id = con.id
+        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
         JOIN codes c ON c.id = cc.code_id
         JOIN systems s ON s.id = c.system_id
         LEFT JOIN configurations_conditions_code_exclusions e
             ON e.configuration_id = cfgc.configuration_id
             AND e.code_id = cc.code_id
         WHERE cfgc.configuration_id = %(configuration_id)s
+
+        UNION ALL
+
+        -- Custom codes added to configuration
+        SELECT
+            c.id AS code_id,
+            s.id AS system_id,
+            NULL::uuid AS source_id,
+            'Custom Code' AS source_name,
+            'included' AS status
+        FROM custom_codes c
+        JOIN systems s ON s.id = c.system_id
+        WHERE c.configuration_id = %(configuration_id)s
     )
     SELECT * FROM (
-        SELECT 'code_system' AS filter_type, s.id::text AS value, s.display_name AS label, COUNT(ac.system_id) AS code_count
+        -- 1. Group by Code System
+        SELECT
+            'code_system' AS filter_type,
+            s.id::text AS value,
+            s.display_name AS label,
+            COUNT(DISTINCT bc.code_id) AS code_count
         FROM systems s
-        LEFT JOIN all_codes ac ON ac.system_id = s.id
+        LEFT JOIN base_codes bc ON bc.system_id = s.id
         GROUP BY s.id, s.display_name
 
         UNION ALL
 
-        SELECT 'source' AS filter_type, source_id::text AS value, source AS label, COUNT(*) AS code_count
-        FROM all_codes
-        GROUP BY source_id, source
+        -- 2. Group by Source / Valueset
+        SELECT
+            'source' AS filter_type,
+            bc.source_id::text AS value,
+            bc.source_name AS label,
+            COUNT(DISTINCT bc.code_id) AS code_count
+        FROM base_codes bc
+        GROUP BY bc.source_id, bc.source_name
 
         UNION ALL
 
-        SELECT 'status' AS filter_type, s.status AS value, s.status_label AS label, COUNT(ac.status) AS code_count
-        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS s(status, status_label)
-        LEFT JOIN all_codes ac ON ac.status = s.status
-        GROUP BY s.status, s.status_label
+        -- 3. Group by Status (Included vs Excluded)
+        SELECT
+            'status' AS filter_type,
+            st.status AS value,
+            st.status_label AS label,
+            COUNT(DISTINCT bc.code_id) AS code_count
+        FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS st(status, status_label)
+        LEFT JOIN base_codes bc ON bc.status = st.status
+        GROUP BY st.status, st.status_label
+
     ) AS filter_results
     ORDER BY filter_type, code_count DESC;
-        """
+    """
 
     async with db.get_connection() as conn:
         async with conn.cursor() as cur:
@@ -445,8 +501,8 @@ async def get_code_count_metadata_db(
 
     query = """
     SELECT
-        COUNT(*) AS total_code_count,
-        COUNT(*) FILTER (WHERE e.code_id IS NOT NULL) AS excluded_code_count,
+        COUNT(DISTINCT c.id) AS total_code_count,
+        COUNT(DISTINCT e.code_id) AS excluded_code_count,
         COUNT(DISTINCT cfgc.condition_id) AS code_set_count,
         (
             SELECT COUNT(*)
@@ -454,7 +510,8 @@ async def get_code_count_metadata_db(
             WHERE cc2.configuration_id = %(configuration_id)s
         ) AS custom_code_count
     FROM configurations_conditions cfgc
-    JOIN conditions_codes cc ON cc.condition_id = cfgc.condition_id
+    JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
+    JOIN codes c ON c.id = cc.code_id
     LEFT JOIN configurations_conditions_code_exclusions e
         ON e.configuration_id = cfgc.configuration_id
         AND e.code_id = cc.code_id

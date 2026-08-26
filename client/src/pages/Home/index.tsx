@@ -4,34 +4,36 @@ import { Footer, Header } from '@components/Layout';
 
 export function Home() {
   return (
-    <>
+    <div className="flex min-h-dvh flex-col">
       <Header />
-      <div className="bg-blue-cool-10 flex flex-1 flex-col items-center justify-center gap-16 py-20 lg:p-38">
-        <div className="flex max-w-268 flex-col items-center gap-16 lg:flex-row">
-          <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
-            <div className="flex flex-col items-start gap-4">
-              <h1 className="font-merriweather font-bold lg:text-5xl!">
-                Focus on what matters.
-              </h1>
-              <p className="text-lg font-normal lg:text-2xl">
-                eCR Refiner tailors each case report to retain only the data
-                jurisdictions need — providing tools for reducing file size,
-                increasing data relevancy, and safeguarding sensitive patient
-                information.
-              </p>
+      <div className="flex flex-1 flex-col">
+        <div className="bg-blue-cool-10 flex flex-1 flex-col items-center justify-center gap-16 py-20 lg:p-38">
+          <div className="flex max-w-268 flex-col items-center gap-16 lg:flex-row">
+            <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
+              <div className="flex flex-col items-start gap-4">
+                <h1 className="font-merriweather font-bold lg:text-5xl!">
+                  Focus on what matters.
+                </h1>
+                <p className="text-lg font-normal lg:text-2xl">
+                  eCR Refiner tailors each case report to retain only the data
+                  jurisdictions need — providing tools for reducing file size,
+                  increasing data relevancy, and safeguarding sensitive patient
+                  information.
+                </p>
+              </div>
+              <div>
+                <Button className="px-6 py-4 text-[1.38rem]" href="/api/login">
+                  Log in
+                </Button>
+              </div>
             </div>
-            <div>
-              <Button className="px-6 py-4 text-[1.38rem]" href="/api/login">
-                Log in
-              </Button>
-            </div>
+            <img className="lg:w-1/3" src={IllustrationImg} alt="" />
           </div>
-          <img className="lg:w-1/3" src={IllustrationImg} alt="" />
         </div>
+        <HowItWorks />
       </div>
-      <HowItWorks />
       <Footer />
-    </>
+    </div>
   );
 }
 

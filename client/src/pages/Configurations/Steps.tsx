@@ -6,11 +6,7 @@ interface StepsContainer {
 }
 
 export function StepsContainer({ children }: StepsContainer) {
-  return (
-    <div className="flex min-h-14 items-center gap-4 rounded-lg py-4">
-      {children}
-    </div>
-  );
+  return <div className="flex min-h-10 items-end py-1.5">{children}</div>;
 }
 
 interface StepsProps {
@@ -19,7 +15,7 @@ interface StepsProps {
 
 export function Steps({ configurationId }: StepsProps) {
   return (
-    <ol className="flex list-inside flex-col gap-11 sm:flex-row sm:gap-10">
+    <ol className="flex list-inside flex-col gap-8 sm:flex-row sm:gap-10">
       <li>
         <StepLink to={`/configurations/${configurationId}/customize-sections`}>
           Customize eICR sections
@@ -30,6 +26,13 @@ export function Steps({ configurationId }: StepsProps) {
           Manage codes
         </StepLink>
       </li>
+      {/*
+      <li>
+        <StepLink to={`/configurations/${configurationId}/overrides`}>
+          Apply overrides
+        </StepLink>
+      </li>
+      */}
       <li>
         <StepLink to={`/configurations/${configurationId}/test`}>
           Test & export
@@ -45,7 +48,7 @@ function StepLink({ to, className, children, ...props }: NavLinkProps) {
       to={to}
       className={({ isActive }) =>
         classNames('text-blue-cool-80 hover:underline', className, {
-          'border-blue-cool-30 text-blue-cool-80 border-b-4 pb-1 font-bold':
+          'border-blue-cool-30 text-blue-cool-80 -mb-1 border-b-4 pb-1 font-bold':
             isActive,
         })
       }

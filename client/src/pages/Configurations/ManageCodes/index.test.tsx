@@ -213,7 +213,7 @@ describe('Manage codes page', () => {
 
   it("should render the configuration's inactive status", async () => {
     renderPage();
-    expect(await screen.findByText('Status: Inactive')).toBeInTheDocument();
+    expect(await screen.findByText('disabled')).toBeInTheDocument();
   });
 
   it("should render the configuration's active status", async () => {
@@ -228,9 +228,7 @@ describe('Manage codes page', () => {
       },
     });
     renderPage();
-    expect(
-      await screen.findByText('Status: Version 1 active')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('enabled')).toBeInTheDocument();
   });
 
   it('should render banner to make a new draft configuration', async () => {
