@@ -66,7 +66,7 @@ export function Header({ configuration }: HeaderProps) {
           <div className="flex flex-col">
             <Status version={configuration.active_version} />
             <div className="flex flex-row items-center gap-2">
-              <Title>{configuration.display_name}</Title>
+              <Title className="max-w-xl">{configuration.display_name}</Title>
               <Button
                 variant="tertiary"
                 onClick={() => setIsRsgDetailsModalOpen(true)}
