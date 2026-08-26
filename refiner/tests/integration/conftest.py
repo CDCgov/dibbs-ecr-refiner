@@ -395,6 +395,7 @@ async def reset_db(db_pool):
     # run after each test
     async with db_pool.get_connection() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("DELETE from configurations_conditions_code_exclusions")
             await cur.execute("DELETE FROM custom_codes")
             await cur.execute("DELETE FROM configurations")
 
