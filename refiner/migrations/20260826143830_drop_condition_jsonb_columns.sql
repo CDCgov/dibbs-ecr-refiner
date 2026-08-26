@@ -35,7 +35,7 @@ ALTER TABLE conditions
     ADD COLUMN cvx_codes jsonb;
 
 WITH codes_to_add AS (
-    SELECT 
+    SELECT
         crc.condition_id,
         JSONB_AGG(
             JSONB_BUILD_OBJECT('code', c.code, 'display', c.display)
@@ -60,7 +60,7 @@ WITH codes_to_add AS (
     GROUP BY crc.condition_id
 )
 UPDATE conditions cond
-SET 
+SET
     loinc_codes = COALESCE(cta.loinc_codes, '[]'::jsonb),
     snomed_codes = COALESCE(cta.snomed_codes, '[]'::jsonb),
     cvx_codes = COALESCE(cta.cvx_codes, '[]'::jsonb),
