@@ -125,154 +125,6 @@ class TestConfigurations:
         config = await get_config_by_id(config_id)
         assert config["condition_id"] == str(await get_condition_id("Glanders"))
 
-    async def test_clone_code_exclusions_copies_valid_exclusions(
-        self,
-        setup,
-        authed_client,
-        get_condition_id,
-    ):
-        """
-        Tests that a cloned configuration will copy the original config's
-        excluded codes.
-        """
-        # Create a draft
-        condition_id = await get_condition_id("Anotia")
-        payload = {"condition_id": str(condition_id)}
-        resp = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert resp.status_code == status.HTTP_200_OK
-
-        original_config_id = resp.json()["id"]
-
-        # get codes
-        resp = await authed_client.get(
-            f"/api/v1/configurations/{original_config_id}/codes"
-        )
-        assert resp.status_code == status.HTTP_200_OK
-        codes = resp.json()["codes"]
-
-        assert all(code["status"] == "Included" for code in codes)
-
-        # set all codes as 'excluded'
-        resp = await authed_client.post(
-            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
-            json=[code["id"] for code in codes],
-        )
-        assert resp.status_code == status.HTTP_200_OK
-
-        # refetch to confirm exclusions were applied
-        resp = await authed_client.get(
-            f"/api/v1/configurations/{original_config_id}/codes"
-        )
-        assert resp.status_code == status.HTTP_200_OK
-        assert all(code["status"] == "Excluded" for code in resp.json()["codes"])
-
-        # activate the config
-        resp = await authed_client.patch(
-            f"/api/v1/configurations/{original_config_id}/activate"
-        )
-        assert resp.status_code == status.HTTP_200_OK
-
-        # create a new draft
-        resp = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert resp.status_code == status.HTTP_200_OK
-
-        new_config_id = resp.json()["id"]
-
-        # get new draft's codes
-        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
-        assert resp.status_code == status.HTTP_200_OK
-
-        # check that clones were created
-        new_codes = resp.json()["codes"]
-        assert len(new_codes) == len(codes)
-        assert all(code["status"] == "Excluded" for code in new_codes)
-
-    async def test_clone_code_exclusions_no_exclusions_on_source(
-        self,
-        setup,
-        authed_client,
-        get_condition_id,
-    ):
-        """
-        If the source config has no exclusions, the clone starts fully included (no entries in table).
-        """
-        condition_id = await get_condition_id("Anotia")
-        payload = {"condition_id": str(condition_id)}
-
-        # create and activate a draft with no exclusions
-        resp = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert resp.status_code == status.HTTP_200_OK
-        original_config_id = resp.json()["id"]
-
-        resp = await authed_client.patch(
-            f"/api/v1/configurations/{original_config_id}/activate"
-        )
-        assert resp.status_code == status.HTTP_200_OK
-
-        # create new draft
-        resp = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert resp.status_code == status.HTTP_200_OK
-        new_config_id = resp.json()["id"]
-
-        # expect all codes to be included
-        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
-        assert resp.status_code == status.HTTP_200_OK
-        new_codes = resp.json()["codes"]
-        assert all(code["status"] == "Included" for code in new_codes)
-
-    async def test_clone_code_exclusions_partial_exclusions(
-        self,
-        setup,
-        authed_client,
-        get_condition_id,
-    ):
-        """
-        Only the excluded subset of codes is carried over to the cloned config.
-        """
-        condition_id = await get_condition_id("Anotia")
-        payload = {"condition_id": str(condition_id)}
-
-        # create a draft
-        resp = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert resp.status_code == status.HTTP_200_OK
-        original_config_id = resp.json()["id"]
-
-        # get codes and exclude only the first half
-        resp = await authed_client.get(
-            f"/api/v1/configurations/{original_config_id}/codes"
-        )
-        assert resp.status_code == status.HTTP_200_OK
-        codes = resp.json()["codes"]
-
-        half = len(codes) // 2
-        excluded_ids = {code["id"] for code in codes[:half]}
-        included_ids = {code["id"] for code in codes[half:]}
-
-        resp = await authed_client.post(
-            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
-            json=list(excluded_ids),
-        )
-        assert resp.status_code == status.HTTP_200_OK
-
-        # activate
-        resp = await authed_client.patch(
-            f"/api/v1/configurations/{original_config_id}/activate"
-        )
-        assert resp.status_code == status.HTTP_200_OK
-
-        # create the new cloned draft
-        resp = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert resp.status_code == status.HTTP_200_OK
-        new_config_id = resp.json()["id"]
-
-        # check that only the excluded subset was cloned
-        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
-        assert resp.status_code == status.HTTP_200_OK
-        new_codes = {code["id"]: code for code in resp.json()["codes"]}
-
-        assert all(new_codes[id]["status"] == "Excluded" for id in excluded_ids)
-        assert all(new_codes[id]["status"] == "Included" for id in included_ids)
-
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
         setup,
@@ -1122,3 +974,168 @@ class TestConfigurations:
 
         # This is the previously activated version from the test above
         assert current_file_resp.json()["version"] is None
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+class TestConfigurationsExclusions:
+    async def test_clone_code_exclusions_copies_valid_exclusions(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Tests that a cloned configuration will copy the original config's
+        excluded codes. RSG codes are excluded from the exclusion operation
+        and should always remain 'Included'.
+        """
+        # Create a draft
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+
+        original_config_id = resp.json()["id"]
+
+        # get codes
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        assert all(code["status"] == "Included" for code in codes)
+
+        excludable_codes = [c for c in codes if not c["is_primary_condition_rsg"]]
+        rsg_codes = [c for c in codes if c["is_primary_condition_rsg"]]
+
+        # set all excludable codes as 'excluded'
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
+            json=[code["id"] for code in excludable_codes],
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # refetch to confirm exclusions were applied
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        refetched = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(refetched[c["id"]]["status"] == "Excluded" for c in excludable_codes)
+        assert all(refetched[c["id"]]["status"] == "Included" for c in rsg_codes)
+
+        # activate the config
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create a new draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+
+        new_config_id = resp.json()["id"]
+
+        # get new draft's codes
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+
+        # check that clones were created
+        new_codes = {code["id"]: code for code in resp.json()["codes"]}
+        assert len(new_codes) == len(codes)
+        assert all(new_codes[c["id"]]["status"] == "Excluded" for c in excludable_codes)
+        assert all(new_codes[c["id"]]["status"] == "Included" for c in rsg_codes)
+
+    async def test_clone_code_exclusions_no_exclusions_on_source(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        If the source config has no exclusions, the clone starts fully included (no entries in table).
+        """
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+
+        # create and activate a draft with no exclusions
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        original_config_id = resp.json()["id"]
+
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create new draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        new_config_id = resp.json()["id"]
+
+        # expect all codes to be included (RSG and non-RSG alike)
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        new_codes = resp.json()["codes"]
+        assert all(code["status"] == "Included" for code in new_codes)
+
+    async def test_clone_code_exclusions_partial_exclusions(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Only the excluded subset of codes is carried over to the cloned config.
+        RSG codes are never excluded and should always remain 'Included'.
+        """
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+
+        # create a draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        original_config_id = resp.json()["id"]
+
+        # get codes and exclude only the first half of excludable codes
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        excludable_codes = [c for c in codes if not c["is_primary_condition_rsg"]]
+        rsg_codes = [c for c in codes if c["is_primary_condition_rsg"]]
+
+        half = len(excludable_codes) // 2
+        excluded_ids = {code["id"] for code in excludable_codes[:half]}
+        included_ids = {code["id"] for code in excludable_codes[half:]}
+
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
+            json=list(excluded_ids),
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # activate
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create the new cloned draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        new_config_id = resp.json()["id"]
+
+        # check that only the excluded subset was cloned and RSG codes are always included
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        new_codes = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(new_codes[id]["status"] == "Excluded" for id in excluded_ids)
+        assert all(new_codes[id]["status"] == "Included" for id in included_ids)
+        assert all(new_codes[c["id"]]["status"] == "Included" for c in rsg_codes)
