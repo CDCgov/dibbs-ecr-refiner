@@ -39,6 +39,7 @@ import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 export function ManageCodesDev() {
   const { id } = useParams<{ id: string }>();
   const [isUploadingCustomCodes, setIsUploadingCustomCodes] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // acquire lock on mount, schedule release on unmount
   useConfigLock(id);
@@ -56,7 +57,7 @@ export function ManageCodesDev() {
     configuration.data.status !== 'draft' || configuration.data.is_locked;
 
   return (
-    <div>
+    <>
       <Header configuration={configuration.data} />
       <SectionContainer>
         <div className="flex flex-col gap-6">
@@ -66,10 +67,9 @@ export function ManageCodesDev() {
               subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
             />
             <AddCodeSetsButton
-              id={configuration.data.id}
               included_conditions={configuration.data.included_conditions}
-              display_name={configuration.data.display_name}
               disabled={isDisabled}
+              setIsDrawerOpen={setIsDrawerOpen}
             />
             <AddCustomCodeButton
               configurationId={id}
@@ -88,7 +88,15 @@ export function ManageCodesDev() {
           )}
         </div>
       </SectionContainer>
-    </div>
+      <AddConditionCodeSetsDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        conditions={configuration.data.included_conditions}
+        configurationId={configuration.data.id}
+        reportable_condition_display_name={configuration.data.display_name}
+        disabled={isDisabled}
+      />
+    </>
   );
 }
 
@@ -406,24 +414,24 @@ function SourceCell({ configurationId, code }: SourceCellProps) {
 
 type AddCodeSetsButtonProps = Pick<
   GetConfigurationResponse,
-  'id' | 'included_conditions' | 'display_name'
+  'included_conditions'
 > & {
   disabled: boolean;
+  setIsDrawerOpen: (open: boolean) => void;
 };
 
 function AddCodeSetsButton({
-  id,
   included_conditions,
-  display_name,
   disabled,
+  setIsDrawerOpen,
 }: AddCodeSetsButtonProps) {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   return (
     <>
       <Button
         variant="unstyled"
         className="border-blue-cool-50! hover:bg-blue-cool-5! h-8 rounded-md border-2! bg-white px-3 text-sm! whitespace-nowrap hover:cursor-pointer"
         onClick={() => setIsDrawerOpen(true)}
+        disabled={disabled}
       >
         <div className="flex flex-row items-center gap-2">
           <span className="bg-blue-cool-50 inline-flex h-5 min-w-5 items-center justify-center rounded-2xl font-bold text-white">
@@ -435,14 +443,6 @@ function AddCodeSetsButton({
           <CodeSetButtonSymbol />
         </div>
       </Button>
-      <AddConditionCodeSetsDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        conditions={included_conditions}
-        configurationId={id}
-        reportable_condition_display_name={display_name}
-        disabled={disabled}
-      />
     </>
   );
 }
