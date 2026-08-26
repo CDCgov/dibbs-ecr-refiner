@@ -1,14 +1,18 @@
 import re
+from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
+from uuid import UUID
 
-from app.api.v1.code_systems import index_code_list_by_system_key
 from app.db.code_systems.db import (
     get_id_to_code_system_dict_db,
 )
+from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.db import get_pruned_configuration_codes_db
+from app.db.codes.model import DbCode
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
@@ -27,9 +31,11 @@ from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
 )
-from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP, OTHER_OID
 from app.services.terminology import (
+    CodeSystemKey,
     CodeSystemSets,
+    Coding,
 )
 
 
@@ -149,6 +155,33 @@ def clone_section_processing_instructions(
     return standard_updates + custom_sections
 
 
+def index_code_list_by_system_key(
+    codes: list[DbCode | DbCustomCode],
+    code_systems: dict[UUID, DbCodeSystem],
+    logger: Logger,
+) -> dict[CodeSystemKey, list[dict]]:
+    """
+    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
+    """
+    result: dict[CodeSystemKey, list[dict]] = defaultdict(list)
+    for c in codes:
+        if c.system_id not in code_systems:
+            logger.warning(
+                f"Code system id of {c.system_id} not found in map, defaulting to other to {OTHER_OID}"
+            )
+            system_oid = OTHER_OID
+            system_key = OID_TO_SYSTEM_KEY_MAP[OTHER_OID]
+        else:
+            system_oid = code_systems[c.system_id].oid
+            system_key = code_systems[c.system_id].key
+
+        result[system_key].append(
+            asdict(Coding(code=c.code, display=c.display, system_oid=system_oid))
+        )
+
+    return result
+
+
 async def get_config_payload_metadata(
     configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection
 ) -> ConfigurationStorageMetadata | None:
@@ -188,7 +221,7 @@ async def get_config_payload_metadata(
 
 
 async def convert_config_to_storage_payload(
-    configuration: DbConfiguration, db: AsyncDatabaseConnection
+    configuration: DbConfiguration, db: AsyncDatabaseConnection, logger: Logger
 ) -> ConfigurationStoragePayload | None:
     """
     Takes a DbConfiguration and distills it down to the bare minimum data required for refining.
@@ -201,6 +234,7 @@ async def convert_config_to_storage_payload(
     Args:
         configuration (DbConfiguration): The configuration from the database
         db (AsyncDatabaseConnection): The async database connection
+        logger (Logger): The logger
 
     Returns:
         ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
@@ -221,7 +255,7 @@ async def convert_config_to_storage_payload(
 
     # map each db code list to its target dict + OID
     coding_by_code_system: dict[str, list[dict]] = index_code_list_by_system_key(
-        codes=codes_to_index, code_systems=code_systems
+        codes=codes_to_index, code_systems=code_systems, logger=logger
     )
 
     sections = [

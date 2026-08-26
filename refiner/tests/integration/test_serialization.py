@@ -4,6 +4,7 @@ from fastapi import status
 from app.db.configurations.db import get_configuration_by_id_db
 from app.services.configurations import convert_config_to_storage_payload
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
+from app.services.logger import get_logger
 
 
 @pytest.mark.integration
@@ -29,7 +30,7 @@ class TestSerialization:
         assert ophtalmia_config
 
         payload = await convert_config_to_storage_payload(
-            configuration=ophtalmia_config, db=db_pool
+            configuration=ophtalmia_config, db=db_pool, logger=get_logger()
         )
 
         assert payload
@@ -63,7 +64,7 @@ class TestSerialization:
         assert ophtalmia_config
 
         payload = await convert_config_to_storage_payload(
-            configuration=ophtalmia_config, db=db_pool
+            configuration=ophtalmia_config, db=db_pool, logger=get_logger()
         )
 
         assert payload
@@ -84,17 +85,14 @@ class TestSerialization:
             condition_id=condition_id, code_values=codes_to_exclude
         )
 
-        payload = {
-            "code_ids": [str(c["id"]) for c in code_ids_to_exclude],
-            "status": "excluded",
-        }
         response = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status", json=payload
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
+            json=[str(c["id"]) for c in code_ids_to_exclude],
         )
         assert response.status_code == status.HTTP_200_OK
 
         payload_with_exclusion = await convert_config_to_storage_payload(
-            configuration=ophtalmia_config, db=db_pool
+            configuration=ophtalmia_config, db=db_pool, logger=get_logger()
         )
         assert payload_with_exclusion
         payload_with_exclusion_length = 0

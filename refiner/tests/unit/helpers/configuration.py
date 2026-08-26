@@ -31,6 +31,7 @@ async def create_processed_config(
         storage_payload = await convert_config_to_storage_payload(
             configuration=config,
             db=unittest.mock.AsyncMock(),
+            logger=unittest.mock.AsyncMock(),
         )
 
     if storage_payload is None:

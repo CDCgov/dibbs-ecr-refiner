@@ -20,6 +20,7 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { useState } from 'react';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 interface ControlPanelProps {
   configurationId: string;
@@ -34,6 +35,7 @@ export function ControlPanel({
   clearSelections,
 }: ControlPanelProps) {
   const toast = useToast();
+  const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
   const { mutate } = useSetCodesStatus();
   const [isOpen, setIsOpen] = useState(false);
@@ -50,11 +52,12 @@ export function ControlPanel({
     mutate(
       {
         configurationId,
-        data: {
+        params: {
           status: status === 'Included' ? 'included' : 'excluded',
-          code_ids: codeSetCodeIds,
         },
+        data: codeSetCodeIds,
       },
+
       {
         onSuccess: async () => {
           await queryClient.invalidateQueries({
@@ -72,10 +75,10 @@ export function ControlPanel({
           });
           clearSelections();
         },
-        onError: () => {
+        onError: (e) => {
           toast({
             heading: 'Codes could not be updated',
-            body: 'Code status updates were unsuccessful. Please try again.',
+            body: formatError(e),
             variant: 'error',
           });
         },
