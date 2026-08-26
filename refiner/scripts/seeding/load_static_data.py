@@ -440,11 +440,6 @@ def _upsert_conditions(
                 canonical_url,
                 tes_id,
                 display_name,
-                loinc_codes,
-                snomed_codes,
-                icd10_codes,
-                rxnorm_codes,
-                cvx_codes,
                 coverage_level,
                 coverage_level_reason,
                 coverage_level_date
@@ -453,11 +448,6 @@ def _upsert_conditions(
                 %(canonical_url)s,
                 %(tes_id)s,
                 %(display_name)s,
-                %(loinc_codes)s,
-                %(snomed_codes)s,
-                %(icd10_codes)s,
-                %(rxnorm_codes)s,
-                %(cvx_codes)s,
                 %(coverage_level)s,
                 %(coverage_level_reason)s,
                 %(coverage_level_date)s
@@ -465,21 +455,11 @@ def _upsert_conditions(
             ON CONFLICT (canonical_url, tes_id)
             DO UPDATE SET
                 display_name = EXCLUDED.display_name,
-                loinc_codes = EXCLUDED.loinc_codes,
-                snomed_codes = EXCLUDED.snomed_codes,
-                icd10_codes = EXCLUDED.icd10_codes,
-                rxnorm_codes = EXCLUDED.rxnorm_codes,
-                cvx_codes = EXCLUDED.cvx_codes,
                 coverage_level = EXCLUDED.coverage_level,
                 coverage_level_reason = EXCLUDED.coverage_level_reason,
                 coverage_level_date = EXCLUDED.coverage_level_date
             WHERE
                 conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
-                OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
-                OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
-                OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
-                OR conditions.rxnorm_codes IS DISTINCT FROM EXCLUDED.rxnorm_codes
-                OR conditions.cvx_codes IS DISTINCT FROM EXCLUDED.cvx_codes
                 OR conditions.coverage_level IS DISTINCT FROM EXCLUDED.coverage_level
                 OR conditions.coverage_level_reason IS DISTINCT FROM EXCLUDED.coverage_level_reason
                 OR conditions.coverage_level_date IS DISTINCT FROM EXCLUDED.coverage_level_date
@@ -719,7 +699,9 @@ def _upsert_valuesets(
         OR valuesets.parent_url IS DISTINCT FROM EXCLUDED.parent_url;
     """)
 
-    logger.info(f"✨ {cursor.rowcount:,} total valuesets seeded.")
+    logger.info(
+        f"✨ {cursor.rowcount:,} new valuesets rows inserted into the valuesets table."
+    )
     return
 
 
