@@ -254,9 +254,9 @@ function CodesTable({
                       setSelectedIds(
                         checked
                           ? new Set(
-                              codes
-                                .filter((c) => !c.is_primary_condition_rsg)
-                                .map((c) => c.id)
+                              codesWithoutPrimaryConditionRsgCodes.map(
+                                (c) => c.id
+                              )
                             )
                           : new Set()
                       )
