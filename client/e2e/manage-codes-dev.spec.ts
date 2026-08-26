@@ -632,6 +632,87 @@ test.describe('Codes management - code interactions', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
+
+  test('Primary condition RSG codes are not modifiable', async ({
+    configurationsPage,
+    page,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    const table = page.getByRole('table');
+
+    await expect(table).toBeVisible();
+    await expect(page.getByTestId('lock-icon')).toBeVisible();
+
+    const selectAllCheckbox = table.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
+    const rowCheckboxes = table.locator('tbody tr').getByRole('checkbox');
+    await expect(rowCheckboxes).toBeChecked();
+
+    await rowCheckboxes.first().click();
+    await expect(selectAllCheckbox).not.toBeChecked();
+  });
+
+  test('Non-primary condition RSG codes are modifiable', async ({
+    configurationsPage,
+    page,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    const table = page.getByRole('table');
+
+    await expect(table).toBeVisible();
+    await expect(page.getByTestId('lock-icon')).toBeVisible();
+
+    await test.step('Add Alpha-gal Syndrome code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('alph');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Alpha-gal Syndrome' })
+        .hover();
+      await page.getByLabel('Add Alpha-gal Syndrome').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
+    });
+
+    await expect(table).toBeVisible();
+
+    const selectAllCheckbox = table.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+
+    await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+
+    // Only Anotia's single RSG code will remain as "Included"
+    const statusCells = table.locator('tbody tr td:last-child');
+    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(1);
+  });
 });
 
 test.describe('Codes management - search', () => {
@@ -1417,6 +1498,24 @@ test.describe('Codes management - data loading', () => {
     await expect(page.getByText('0 custom')).toBeVisible();
     await expect(page.getByText('1 condition code sets')).toBeVisible();
     await expect(page.getByText("You've reached the end")).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+
+  test('Primary condition RSG codes display a non-interactive lock icon instead of a checkbox', async ({
+    configurationsPage,
+    page,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await goToManageCodesDevPage(page, configurationPage);
+    await expect(
+      page.getByRole('heading', { name: 'Manage codes', level: 2 })
+    ).toBeVisible();
+
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByTestId('lock-icon')).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 

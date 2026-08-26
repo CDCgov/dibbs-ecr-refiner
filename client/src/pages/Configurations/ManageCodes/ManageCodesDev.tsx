@@ -367,7 +367,7 @@ function CodesTable({
 function LockIcon() {
   return (
     <svg
-      data-dc-tpl="742"
+      data-testid="lock-icon"
       width="18"
       height="18"
       viewBox="0 0 24 24"
