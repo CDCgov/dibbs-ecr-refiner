@@ -177,11 +177,6 @@ CREATE TABLE public.conditions (
     coverage_level_reason text,
     coverage_level_date date,
     tes_id uuid NOT NULL,
-    snomed_codes jsonb,
-    loinc_codes jsonb,
-    icd10_codes jsonb,
-    rxnorm_codes jsonb,
-    cvx_codes jsonb,
     CONSTRAINT coverage_level_check CHECK ((((coverage_level IS NULL) AND (coverage_level_reason IS NULL) AND (coverage_level_date IS NULL)) OR ((coverage_level = 'complete'::text) AND (coverage_level_reason IS NULL)) OR ((coverage_level = 'partial'::text) AND (coverage_level_reason IS NOT NULL) AND (coverage_level_date IS NULL))))
 );
 
@@ -865,7 +860,7 @@ ALTER TABLE ONLY public.configurations_conditions_code_exclusions
 --
 
 ALTER TABLE ONLY public.configurations_conditions_code_exclusions
-    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -1074,4 +1069,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260813142528'),
     ('20260813142548'),
     ('20260825151652'),
-    ('20260825194320');
+    ('20260826143830');

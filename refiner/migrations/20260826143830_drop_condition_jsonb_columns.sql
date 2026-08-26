@@ -28,11 +28,11 @@ REFERENCES configurations (id);
 
 -- Re-add codes columns
 ALTER TABLE conditions
-    ADD COLUMN snomed_codes jsonb,
-    ADD COLUMN loinc_codes jsonb,
-    ADD COLUMN icd10_codes jsonb,
-    ADD COLUMN rxnorm_codes jsonb,
-    ADD COLUMN cvx_codes jsonb;
+    ADD COLUMN snomed_codes jsonb DEFAULT '[]'::jsonb,
+    ADD COLUMN loinc_codes jsonb DEFAULT '[]'::jsonb,
+    ADD COLUMN icd10_codes jsonb DEFAULT '[]'::jsonb,
+    ADD COLUMN rxnorm_codes jsonb DEFAULT '[]'::jsonb,
+    ADD COLUMN cvx_codes jsonb DEFAULT '[]'::jsonb;
 
 WITH codes_to_add AS (
     SELECT
