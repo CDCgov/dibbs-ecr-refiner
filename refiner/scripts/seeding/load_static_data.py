@@ -50,11 +50,6 @@ class ConditionRow(TypedDict):
     canonical_url: str
     version: str
     display_name: str
-    loinc_codes: list[Code] | None
-    snomed_codes: list[Code] | None
-    icd10_codes: list[Code] | None
-    rxnorm_codes: list[Code] | None
-    cvx_codes: list[Code] | None
     coverage_level: str | None
     coverage_level_reason: str | None
     coverage_level_date: datetime | None

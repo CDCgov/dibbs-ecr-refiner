@@ -308,7 +308,7 @@ async def get_config_by_id(authed_client):
     async def _get(config_id: UUID):
         response = await authed_client.get(f"/api/v1/configurations/{config_id}")
         assert response.status_code == status.HTTP_200_OK, (
-            f"Configuration with ID '{id}' not found."
+            f"Configuration with ID '{config_id}' not found."
         )
         return response.json()
 

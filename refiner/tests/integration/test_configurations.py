@@ -210,18 +210,18 @@ class TestConfigurations:
             await get_condition_id(PRIMARY_CONDITION, default_tes_version)
         )
         assert str(new_code_set_1_id) in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
         assert str(new_code_set_2_id) in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
 
         # Check that old IDs are gone
         assert str(old_code_set_1_id) not in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
         assert str(old_code_set_2_id) not in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
 
     async def test_code_set_association_fails_when_tes_version_mismatch(
