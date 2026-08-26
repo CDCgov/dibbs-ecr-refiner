@@ -8,6 +8,7 @@ type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 
 interface TooltipProps {
   label: string;
+  children?: React.ReactNode;
   position?: TooltipPosition;
 }
 
@@ -65,7 +66,11 @@ function getTooltipStyle(
   };
 }
 
-export function Tooltip({ label, position = 'top' }: TooltipProps) {
+export function Tooltip({
+  label,
+  children = <InfoIcon />,
+  position = 'top',
+}: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const tooltipId = useId();
@@ -96,7 +101,7 @@ export function Tooltip({ label, position = 'top' }: TooltipProps) {
         onBlur={hide}
         className="inline-flex cursor-default rounded-sm focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
       >
-        <InfoIcon />
+        {children}
         <span className="sr-only">More information</span>
       </button>
 
