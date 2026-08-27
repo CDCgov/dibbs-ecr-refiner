@@ -6,25 +6,10 @@
 
 import { test, expect } from './fixtures';
 import { clearDb } from './db';
-import { Page } from '@playwright/test';
-import { ConfigurationPage } from './pages/ConfigurationPage';
 
 // This value represents the maximum number of table rows that load per page.
 // Refer to: `refiner/app/api/v1/configurations/codes/codes.py` (`get_codes()` route)
 const MAX_PAGE_SIZE = 100;
-
-/**
- * Temporary helper to navigate to the /view route
- */
-async function goToManageCodesDevPage(
-  page: Page,
-  configurationPage: ConfigurationPage
-) {
-  await configurationPage.goToManageCodesTab();
-  const currentUrl = page.url();
-  const newUrl = currentUrl + '/view';
-  await page.goto(newUrl);
-}
 
 test.describe('Codes management - custom code interactions', () => {
   test.beforeEach(async ({ configurationsPage }) => {
@@ -42,7 +27,7 @@ test.describe('Codes management - custom code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const table = page.getByRole('table');
     await expect(table).toBeVisible();
@@ -93,10 +78,7 @@ test.describe('Codes management - custom code interactions', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
-      await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
-      ).toBeVisible();
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Set all codes to be Included', async () => {
@@ -154,7 +136,7 @@ test.describe('Codes management - custom code interactions', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Bulk delete custom codes', async () => {
@@ -216,7 +198,7 @@ test.describe('Codes management - custom code interactions', () => {
     await expect(
       page.getByRole('heading', { name: 'Customize eICR sections' })
     ).toBeVisible();
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const row = page.getByRole('table').getByRole('row').nth(1);
     const statusCell = row.getByRole('cell').last();
@@ -256,7 +238,7 @@ test.describe('Codes management - custom code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     await expect(page.getByRole('table')).toBeVisible();
     const addCustomCodesButton = page.getByRole('button', {
@@ -420,7 +402,7 @@ test.describe('Codes management - custom code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const code = '123-4';
     const system = 'CVX';
@@ -519,7 +501,7 @@ test.describe('Codes management - code set interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add Acanthamoeba code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -586,7 +568,7 @@ test.describe('Codes management - code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const row = page
       .getByRole('table')
@@ -643,10 +625,7 @@ test.describe('Codes management - code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     const table = page.getByRole('table');
 
@@ -673,10 +652,7 @@ test.describe('Codes management - code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     const table = page.getByRole('table');
 
@@ -754,7 +730,7 @@ test.describe('Codes management - search', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     const table = page.getByRole('table');
@@ -816,7 +792,7 @@ test.describe('Codes management - search', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Filter by ICD-10', async () => {
@@ -902,10 +878,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -961,10 +934,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add Alpha-gal Syndrome code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -1063,10 +1033,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add Acanthamoeba code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -1130,10 +1097,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     const sourceFilterButton = page.getByTestId('status-button');
     const sourceOptions = page.getByTestId('status-options');
@@ -1219,7 +1183,7 @@ test.describe('Codes management - filters', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     const associatedCondition = 'Bladder Exstrophy';
@@ -1372,7 +1336,7 @@ test.describe('Codes management - filters', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Select custom code in source filter', async () => {
@@ -1414,10 +1378,7 @@ test.describe('Codes management - filters', () => {
     await test.step('Check page on load', async () => {
       const condition = 'Anotia';
       await configurationsPage.createConfiguration(condition);
-      await goToManageCodesDevPage(page, configurationPage);
-      await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
-      ).toBeVisible();
+      await configurationPage.goToManageCodesTab();
 
       await expect(table).toBeVisible();
       await expect(clearButton).not.toBeVisible();
@@ -1489,10 +1450,7 @@ test.describe('Codes management - data loading', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await expect(page.getByTestId('codes-included-display')).toHaveText(
       '2 of 2 codes included'
@@ -1512,10 +1470,7 @@ test.describe('Codes management - data loading', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await expect(page.getByRole('table')).toBeVisible();
 
@@ -1562,7 +1517,7 @@ test.describe('Codes management - data loading', () => {
     await expect(
       page.getByRole('heading', { name: 'Customize eICR sections' })
     ).toBeVisible();
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     // check top two rows
     await expect(page.locator('table tr').nth(1)).toContainText('123-4');
@@ -1586,7 +1541,7 @@ test.describe('Codes management - data loading', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
