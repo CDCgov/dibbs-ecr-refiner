@@ -71,7 +71,7 @@ class LockedByUser(UserInfoBase):
 @dataclass(frozen=True)
 class GetConfigurationResponse:
     """
-    Model for a configration response.
+    Model for a configuration response.
     """
 
     id: UUID
