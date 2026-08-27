@@ -1,3 +1,4 @@
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,7 +10,7 @@ const path = require('path');
  */
 function getTsFiles(dir, fileList = []) {
   const files = fs.readdirSync(dir);
-  files.forEach(file => {
+  files.forEach((file) => {
     const filePath = path.join(dir, file);
     if (fs.statSync(filePath).isDirectory()) {
       getTsFiles(filePath, fileList);
@@ -46,22 +47,41 @@ function cleanTrailingNewlines(filePath) {
   }
 }
 
-function main() {
-  const apiDir = path.join(process.cwd(), 'client', 'src', 'api');
+/**
+ * Formats API files using Prettier and then cleans trailing newlines.
+ */
+async function runAfterAllFilesWrite() {
+  const targetDir = './src/api';
+  const absoluteTargetDir = path.resolve(process.cwd(), targetDir);
 
-  if (!fs.existsSync(apiDir)) {
-    console.error(`Directory not found: ${apiDir}`);
+  if (!fs.existsSync(absoluteTargetDir)) {
+    console.error(`Directory not found: ${absoluteTargetDir}`);
     process.exit(1);
   }
 
   try {
-    const tsFiles = getTsFiles(apiDir);
+    console.log('Formatting API files with Prettier...');
+    execSync('npx prettier --write ./src/api', { stdio: 'inherit' });
+
+    console.log('Cleaning trailing newlines from API files...');
+    const tsFiles = getTsFiles(absoluteTargetDir);
     tsFiles.forEach(cleanTrailingNewlines);
     console.log(`Processed ${tsFiles.length} files.`);
-  } catch (err) {
-    console.error(`Error processing files: ${err.message}`);
+
+    console.log('API files formatted and cleaned successfully.');
+  } catch (error) {
+    console.error('Error occurred during post-write processing:');
+    console.error(error.message);
     process.exit(1);
   }
 }
 
-main();
+if (require.main === module) {
+  runAfterAllFilesWrite();
+}
+
+module.exports = {
+  getTsFiles,
+  cleanTrailingNewlines,
+  runAfterAllFilesWrite,
+};

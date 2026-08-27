@@ -30,8 +30,7 @@ export default defineConfig({
       },
     },
     hooks: {
-      afterAllFilesWrite:
-        'prettier --write && node ../.justscripts/js/clean-trailing-newlines.js',
+      afterAllFilesWrite: 'node ./scripts/run-afterAllFilesWrite.cjs',
     },
   },
 });
