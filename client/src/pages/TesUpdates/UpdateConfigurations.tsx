@@ -231,18 +231,13 @@ export function UpdateConfigurations() {
   return (
     <LayoutContainer breakout>
       <Title className="pb-4">Update configurations</Title>
-
-      <h2 className="mb-1 text-[1.25rem] font-bold">
-        Update to latest release
-      </h2>
-
-      <p className="max-w-">
-        Choose existing drafts to update and/or active configurations to copy
-        into new drafts using the latest TES release. Drafts will need to be
-        activated before the updated code sets are used to refine eCRs.
+      <h2 className="mb-1 text-[1.25rem]">Update to latest release</h2>
+      <p className="max-w-[75%]">
+        Update existing drafts and/or create a for existing configurations to
+        apply the latest TES release. Drafts will need to be activated in order
+        to receive the most up to date eCRs.
       </p>
-
-      <div className="mt-4 bg-white px-10 py-6 lg:max-w-[75%]">
+      <div className="mt-4 bg-white px-10 py-6">
         <Table className="mt-0 mb-4 border-none">
           <caption className="text-lg! font-bold">
             Update existing drafts
