@@ -157,7 +157,7 @@ class TestSerialization:
         )
         assert payload
 
-        alpha_gal_codes = (await get_condition_by_id(id=alpha_gal_id)).codes
+        alpha_gal_codes = (await get_condition_by_id(id=alpha_gal_id))["codes"]
 
         # make sure the code sets don't include the excluded codes
         for k, coding in payload.code_system_sets.items():
