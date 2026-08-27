@@ -30,7 +30,7 @@ export default defineConfig({
       },
     },
     hooks: {
-      afterAllFilesWrite: 'prettier --write',
+      afterAllFilesWrite: 'node ./scripts/run-afterAllFilesWrite.cjs',
     },
   },
 });
