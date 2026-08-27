@@ -2,7 +2,7 @@ import { useParams } from 'react-router';
 import { Button } from '@components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Header, SectionContainer } from '../layout';
-import { useRef, useState, forwardRef, useEffect } from 'react';
+import { useRef, useState, forwardRef } from 'react';
 
 import classNames from 'classnames';
 import {
@@ -116,13 +116,6 @@ function Builder({
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {}
   );
-
-  useEffect(() => {
-    // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
-    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
-    }
-  }, [code_sets, tableView]);
 
   function onCodesetClick(name: string, id: string) {
     setSelectedCodesetName(name);
