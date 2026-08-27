@@ -54,7 +54,7 @@ export function ManageCodes() {
     configuration.data.status !== 'draft' || configuration.data.is_locked;
 
   return (
-    <>
+    <div className="flex flex-1 flex-col">
       <Header configuration={configuration.data} />
       <SectionContainer>
         <div className="flex flex-col gap-6">
@@ -92,7 +92,7 @@ export function ManageCodes() {
         reportable_condition_display_name={configuration.data.display_name}
         disabled={isDisabled}
       />
-    </>
+    </div>
   );
 }
 
@@ -215,17 +215,7 @@ function CodesTable({
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      {/*
-        Using `scrollableTarget` does not seem to be removing `overflow: auto` for some reason,
-        which is why it's being removed from the scroll component manually.
-
-        Others appear to be having similar issues with `scrollableTarget`:
-        https://github.com/ankeetmaini/react-infinite-scroll-component/issues/62
-       */}
-      <div
-        id="codes-table-scroll-container"
-        className="h-[calc(100vh-20rem)] overflow-auto [&_.infinite-scroll-component]:overflow-visible!"
-      >
+      <div>
         {hasCodesSelected ? (
           <ControlPanel
             configurationId={id}
@@ -244,7 +234,7 @@ function CodesTable({
               <p className="text-center italic">You've reached the end.</p>
             ) : null
           }
-          scrollableTarget="codes-table-scroll-container"
+          style={{ overflow: 'unset' }} // this allows the sticky header to work
         >
           <table className="w-full table-fixed">
             <thead className="bg-gray-cool-5 z-sticky sticky top-0">
