@@ -239,7 +239,7 @@ function CodesTable({
           <table className="w-full table-auto">
             <thead className="bg-gray-cool-5 z-sticky sticky top-0">
               <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
-                <th scope="col" className="w-10 text-center">
+                <th scope="col" className="text-center">
                   <Checkbox
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
@@ -273,9 +273,7 @@ function CodesTable({
                     </Button>
                   </div>
                 </th>
-                <th scope="col" className="w-[10%]">
-                  Status
-                </th>
+                <th scope="col">Status</th>
               </tr>
             </thead>
             <tbody className="divide-gray-cool-20 divide-y">
