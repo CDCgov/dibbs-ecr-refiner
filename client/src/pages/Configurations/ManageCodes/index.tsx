@@ -215,7 +215,7 @@ function CodesTable({
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <div>
+      <div className="w-full">
         {hasCodesSelected ? (
           <ControlPanel
             configurationId={id}
@@ -236,7 +236,7 @@ function CodesTable({
           }
           style={{ overflow: 'unset' }} // this allows the sticky header to work
         >
-          <table className="table-auto">
+          <table className="w-full table-auto">
             <thead className="bg-gray-cool-5 z-sticky sticky top-0">
               <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
                 <th scope="col" className="w-10 text-center">
