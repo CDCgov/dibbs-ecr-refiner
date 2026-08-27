@@ -39,10 +39,10 @@ export function TesUpdates() {
   const fetchedTesUpdates = tesUpdates.data.tes_updates;
 
   return (
-    <div className="my-8 flex flex-col gap-6 px-2 md:px-20">
+    <div className="my-8 flex flex-col px-2 md:px-20">
       {tesStage === 'summary' && (
         <>
-          <div className="flex justify-between">
+          <div className="mb-4 flex justify-between">
             <Title>TES Updates</Title>
             <Button onClick={() => setTesStage('action')}>
               Update configurations
