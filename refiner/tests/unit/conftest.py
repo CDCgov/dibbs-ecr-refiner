@@ -1,6 +1,8 @@
 import os
 from unittest.mock import AsyncMock, MagicMock
 
+from app.db.codes.model import DbCode
+
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "unit-test"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
@@ -35,7 +37,7 @@ from app.core.models.types import XMLFiles
 from app.db.code_systems.db import (
     DbCodeSystem,
 )
-from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.conditions.model import DbCondition
 from app.db.configurations.model import DbConfiguration
 from app.db.pool import get_db
 from app.db.users.model import DbUser
@@ -113,6 +115,61 @@ def mock_user():
     )
 
 
+CODE_SYSTEM_DATA = {
+    "b0f45de0-5756-48ae-81da-0c7cabe5d59d": {
+        "oid": "2.16.840.1.113883.6.96",
+        "display_name": "SNOMED",
+        "key": "snomed",
+    },
+    "4a2d151c-881b-4bf5-89dd-1947b62dc857": {
+        "oid": "2.16.840.1.113883.6.1",
+        "display_name": "LOINC",
+        "key": "loinc",
+    },
+    "b7bd2993-0af3-423a-ab19-90febe736a7e": {
+        "oid": "2.16.840.1.113883.6.90",
+        "display_name": "ICD-10",
+        "key": "icd10",
+    },
+    "8a60b7ab-a780-432c-af4f-0bd607912b01": {
+        "oid": "2.16.840.1.113883.6.88",
+        "display_name": "RxNorm",
+        "key": "rxnorm",
+    },
+    "02cb5af7-5d26-4c7d-9d62-7b084e3950bd": {
+        "oid": "2.16.840.1.113883.12.292",
+        "display_name": "CVX",
+        "key": "cvx",
+    },
+    "f6359e14-0196-4ba7-a3e0-220785434e6f": {
+        "oid": "Other",
+        "display_name": "Other",
+        "key": "other",
+    },
+}
+
+
+def get_mock_system_id_by_name(system_display_name: str):
+    id_string = [
+        k
+        for k, v in CODE_SYSTEM_DATA.items()
+        if v["display_name"] == system_display_name
+    ][0]
+    return UUID(id_string)
+
+
+def create_mock_systems() -> list[DbCodeSystem]:
+    return [
+        DbCodeSystem(
+            id=UUID(id_str),
+            key=system["key"],
+            display_name=system["display_name"],
+            oid=system["oid"],
+        )
+        for id_str, system in CODE_SYSTEM_DATA.items()
+    ]
+
+
 @pytest.fixture
 def mock_condition():
     return DbCondition(
@@ -121,11 +178,38 @@ def mock_condition():
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
-        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
-        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
-        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
-        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
-        cvx_codes=[DbConditionCoding("124124", "Hypertension CVX")],
+        codes=[
+            DbCode(
+                code="11111",
+                display="Hypertension SNOMED",
+                system_id=get_mock_system_id_by_name("SNOMED"),
+                system_name="SNOMED",
+            ),
+            DbCode(
+                code="22222",
+                display="Hypertension LOINC",
+                system_id=get_mock_system_id_by_name("LOINC"),
+                system_name="LOINC",
+            ),
+            DbCode(
+                code="I10",
+                display="Essential hypertension",
+                system_id=get_mock_system_id_by_name("ICD-10"),
+                system_name="ICD-10",
+            ),
+            DbCode(
+                code="33333",
+                display="Hypertension RXNORM",
+                system_id=get_mock_system_id_by_name("RxNorm"),
+                system_name="RxNorm",
+            ),
+            DbCode(
+                code="124124",
+                display="Hypertension CVX",
+                system_id=get_mock_system_id_by_name("CVX"),
+                system_name="CVX",
+            ),
+        ],
     )
 
 
@@ -169,52 +253,6 @@ def mock_logged_in_user(mock_user, test_app):
     test_app.dependency_overrides[get_logged_in_user] = lambda: mock_user
     yield
     test_app.dependency_overrides.pop(get_logged_in_user, None)
-
-
-CODE_SYSTEM_DATA = {
-    "b0f45de0-5756-48ae-81da-0c7cabe5d59d": {
-        "oid": "2.16.840.1.113883.6.96",
-        "display_name": "SNOMED",
-        "key": "snomed",
-    },
-    "4a2d151c-881b-4bf5-89dd-1947b62dc857": {
-        "oid": "2.16.840.1.113883.6.1",
-        "display_name": "LOINC",
-        "key": "loinc",
-    },
-    "b7bd2993-0af3-423a-ab19-90febe736a7e": {
-        "oid": "2.16.840.1.113883.6.90",
-        "display_name": "ICD-10",
-        "key": "icd10",
-    },
-    "8a60b7ab-a780-432c-af4f-0bd607912b01": {
-        "oid": "2.16.840.1.113883.6.88",
-        "display_name": "RxNorm",
-        "key": "rxnorm",
-    },
-    "02cb5af7-5d26-4c7d-9d62-7b084e3950bd": {
-        "oid": "2.16.840.1.113883.12.292",
-        "display_name": "CVX",
-        "key": "cvx",
-    },
-    "f6359e14-0196-4ba7-a3e0-220785434e6f": {
-        "oid": "Other",
-        "display_name": "Other",
-        "key": "other",
-    },
-}
-
-
-def create_mock_systems() -> list[DbCodeSystem]:
-    return [
-        DbCodeSystem(
-            id=UUID(id_str),
-            key=system["key"],
-            display_name=system["display_name"],
-            oid=system["oid"],
-        )
-        for id_str, system in CODE_SYSTEM_DATA.items()
-    ]
 
 
 @pytest.fixture
