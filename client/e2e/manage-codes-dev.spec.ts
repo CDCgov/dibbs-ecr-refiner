@@ -1504,7 +1504,7 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Primary condition RSG codes display a non-interactive lock icon instead of a checkbox', async ({
+  test('Primary condition RSG codes display a lock icon tooltip instead of a checkbox', async ({
     configurationsPage,
     page,
     configurationPage,
@@ -1518,7 +1518,18 @@ test.describe('Codes management - data loading', () => {
     ).toBeVisible();
 
     await expect(page.getByRole('table')).toBeVisible();
-    await expect(page.getByTestId('lock-icon')).toBeVisible();
+
+    const lockIconTooltip = page.getByTestId('lock-icon');
+    await expect(lockIconTooltip).toBeVisible();
+
+    // check tooltip
+    await lockIconTooltip.hover();
+    await expect(
+      page.getByText(
+        'Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR.'
+      )
+    ).toBeVisible();
+
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
