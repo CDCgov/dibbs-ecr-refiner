@@ -120,6 +120,7 @@ class TestSerialization:
         authed_client,
         associate_codeset,
         disassociate_codeset,
+        get_condition_codes_by_condition_id_db,
     ):
         condition_name = "COVID-19"
         condition_id = await get_condition_id(condition_name)
@@ -148,6 +149,7 @@ class TestSerialization:
         )
         assert exclusion_response.status_code == status.HTTP_200_OK
 
+        # disassociate alpha gal
         await disassociate_codeset(config_id, alpha_gal_id)
 
         payload = await convert_config_to_storage_payload(
@@ -155,12 +157,14 @@ class TestSerialization:
         )
         assert payload
 
+        alpha_gal_codes = await get_condition_codes_by_condition_id_db(
+            condition_id=alpha_gal_id, db=db_pool
+        )
+        # make sure the code sets don't include the excluded codes
         for k, coding in payload.code_system_sets.items():
             assert k in OID_TO_SYSTEM_KEY_MAP.values()
 
             for c in coding:
                 assert (
-                    c["code"]
-                    and c["code"] != ""
-                    and c["code"] not in alpha_gal_code_to_exclude
+                    c["code"] and c["code"] != "" and c["code"] not in alpha_gal_codes
                 )
