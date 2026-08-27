@@ -171,13 +171,8 @@ CREATE TABLE public.conditions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     canonical_url text NOT NULL,
     display_name text,
-    loinc_codes jsonb,
-    snomed_codes jsonb,
-    icd10_codes jsonb,
-    rxnorm_codes jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
     coverage_level text,
     coverage_level_reason text,
     coverage_level_date date,
@@ -865,7 +860,7 @@ ALTER TABLE ONLY public.configurations_conditions_code_exclusions
 --
 
 ALTER TABLE ONLY public.configurations_conditions_code_exclusions
-    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -1073,4 +1068,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260813133341'),
     ('20260813142528'),
     ('20260813142548'),
-    ('20260825151652');
+    ('20260825151652'),
+    ('20260826143830');

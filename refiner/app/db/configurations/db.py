@@ -673,64 +673,30 @@ async def get_total_condition_code_counts_by_configuration_db(
     """
 
     query = """
-        WITH conds AS (
+        WITH conditions_to_tally AS (
             SELECT condition_id AS cond_id
             FROM configurations_conditions
-            WHERE configuration_id = %s
-        ),
-        codes AS (
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
-
-            UNION
-
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
-
-            UNION
-
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
-
-            UNION
-
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
-        )
+            WHERE configuration_id = %(configuration_id)s
+            )
         SELECT
             c.id AS condition_id,
             c.display_name,
-            COUNT(DISTINCT code) AS total_codes
+            COUNT(DISTINCT cd.id) AS total_codes
         FROM conditions c
-        JOIN codes cd ON c.id = cd.condition_id
+        JOIN conditions_to_tally ON c.id = conditions_to_tally.cond_id
+        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        JOIN codes cd ON cd.id = crc.code_id
+        LEFT JOIN configurations_conditions_code_exclusions ce
+            ON ce.configuration_id = %(configuration_id)s
+            AND ce.code_id = cd.id
+        WHERE ce.code_id IS NULL
         GROUP BY c.id, c.display_name
         ORDER BY c.display_name;
     """
 
-    params = (config_id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"configuration_id": config_id})
             row = await cur.fetchall()
 
     return row

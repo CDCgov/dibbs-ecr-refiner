@@ -3,9 +3,9 @@ from uuid import uuid4
 import pytest
 from fastapi import status
 
-from app.db.codes.model import CodedConcept
-from app.db.conditions.db import GetConditionCode
-from app.db.conditions.model import ConditionSummary, DbCondition, DbConditionCoding
+from app.db.codes.model import CodedConcept, DbCode
+from app.db.conditions.model import ConditionSummary
+from tests.unit.conftest import get_mock_system_id_by_name
 
 
 @pytest.mark.asyncio
@@ -35,29 +35,24 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
 
 
 @pytest.mark.asyncio
-async def test_get_condition_found(monkeypatch, authed_client):
-    condition_id = uuid4()
-
-    fake_condition = DbCondition(
-        id=condition_id,
-        display_name="Asthma",
-        canonical_url="http://asthma.com",
-        version="4.0.0",
-        child_rsg_snomed_codes=["67890"],
-        snomed_codes=[DbConditionCoding("67890", "Asthma SNOMED")],
-        loinc_codes=[DbConditionCoding("1234-5", "Asthma LOINC")],
-        icd10_codes=[DbConditionCoding("J45", "Asthma ICD10")],
-        rxnorm_codes=[DbConditionCoding("55555", "Asthma RXNORM")],
-        cvx_codes=[DbConditionCoding("15125", "Asthma CVX")],
-    )
-
+async def test_get_condition_found(monkeypatch, authed_client, mock_condition):
     fake_codes = [
-        GetConditionCode(system="LOINC", code="1234-5", description="test-code-1"),
-        GetConditionCode(system="SNOMED", code="67890", description="test-code-2"),
+        DbCode(
+            system_name="LOINC",
+            code="1234-5",
+            display="test-code-1",
+            system_id=get_mock_system_id_by_name("LOINC"),
+        ),
+        DbCode(
+            system_name="SNOMED",
+            code="67890",
+            display="test-code-2",
+            system_id=get_mock_system_id_by_name("SNOMED"),
+        ),
     ]
 
     async def fake_get_condition_by_id_db(id, db):
-        return fake_condition if id == condition_id else None
+        return mock_condition if id == mock_condition.id else None
 
     async def fake_get_condition_codes_by_condition_id_db(condition_id, db):
         return fake_codes
@@ -71,14 +66,14 @@ async def test_get_condition_found(monkeypatch, authed_client):
         fake_get_condition_codes_by_condition_id_db,
     )
 
-    response = await authed_client.get(f"/api/v1/conditions/{condition_id}")
+    response = await authed_client.get(f"/api/v1/conditions/{mock_condition.id}")
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["id"] == str(condition_id)
-    assert data["display_name"] == "Asthma"
-    assert any(code["system"] == "LOINC" for code in data["codes"])
-    assert any(code["system"] == "SNOMED" for code in data["codes"])
+    assert data["id"] == str(mock_condition.id)
+    assert data["display_name"] == "Hypertension"
+    assert any(code["system_name"] == "LOINC" for code in data["codes"])
+    assert any(code["system_name"] == "SNOMED" for code in data["codes"])
 
 
 @pytest.mark.asyncio
