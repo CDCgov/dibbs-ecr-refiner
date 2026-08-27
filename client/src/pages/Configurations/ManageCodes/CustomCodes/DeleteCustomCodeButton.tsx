@@ -54,6 +54,7 @@ export function DeleteCustomCodeButton({
       className="text-state-error-dark text-sm! font-semibold hover:cursor-pointer hover:underline"
       variant="unstyled"
       onClick={handleDelete}
+      aria-label="Delete custom code"
     >
       Delete
     </Button>

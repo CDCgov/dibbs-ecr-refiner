@@ -44,40 +44,49 @@ export class ConfigurationPage {
     ).toBeVisible();
   }
 
-  async addCodeSet(searchTerm: string, conditionName: string) {
+  async openCodeSetsDrawer() {
     await this.page
-      .getByRole('button', { name: 'Add new code set to configuration' })
+      .getByRole('button', { name: 'Condition code sets', exact: false })
       .click();
+  }
+
+  async searchForCodeSet(searchTerm: string, conditionName: string) {
     await this.page
       .getByRole('searchbox', { name: 'Search by condition name' })
       .fill(searchTerm);
     await this.page
+      .getByRole('dialog')
       .getByRole('listitem')
       .filter({ hasText: conditionName })
       .hover();
+  }
+
+  async addCodeSet(searchTerm: string, conditionName: string) {
+    await this.openCodeSetsDrawer();
+    await this.searchForCodeSet(searchTerm, conditionName);
     await this.page.getByLabel(`Add ${conditionName}`).click();
     await this.page.getByRole('button', { name: 'Close drawer' }).click();
   }
 
-  async deleteCodeSet(conditionName: string) {
-    await this.clearToasts();
+  async deleteCodeSet(searchTerm: string, conditionName: string) {
+    await this.openCodeSetsDrawer();
+    await this.searchForCodeSet(searchTerm, conditionName);
     await this.page
-      .getByRole('button', {
-        name: `View TES code set information for ${conditionName}`,
-      })
-      .hover();
-    await this.page
-      .getByRole('button', { name: `Delete code set ${conditionName}` })
+      .getByRole('button', { name: `Remove ${conditionName}` })
       .click();
+    await this.page.getByRole('button', { name: 'Close drawer' }).click();
   }
 
   async addCustomCode(code: string, codeSystem: string, codeName: string) {
-    await this.page
-      .getByRole('button', { name: 'Add new custom code' })
-      .click();
+    await this.page.getByRole('button', { name: 'Add custom code' }).click();
+    const addSingleCodeButton = this.page.getByRole('button', {
+      name: 'Add a single code',
+    });
+    await expect(addSingleCodeButton).toBeVisible();
+    await addSingleCodeButton.click();
     await this.page.getByLabel('Code', { exact: true }).fill(code);
     await this.page
-      .getByLabel('Code system')
+      .getByRole('combobox', { name: 'Code system' })
       .selectOption({ label: codeSystem });
     await this.page.getByLabel('Display name').fill(codeName);
     await this.page.getByRole('button', { name: 'Add custom code' }).click();
@@ -103,9 +112,11 @@ export class ConfigurationPage {
   }
 
   async deleteCustomCode(codeName: string) {
-    await this.page
-      .getByRole('button', { name: `Delete custom code ${codeName}` })
-      .click();
+    const table = this.page.getByRole('table');
+    await expect(table).toBeVisible();
+    const row = table.getByRole('row').filter({ hasText: codeName });
+    await row.getByRole('button', { name: 'Delete custom code' }).click();
+    await expect(this.page.getByText(codeName)).not.toBeVisible();
   }
 
   async downloadCustomCodeCsvTemplate(): Promise<string> {
