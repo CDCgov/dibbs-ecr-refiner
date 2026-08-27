@@ -475,7 +475,10 @@ test.describe('Codes management - custom code interactions', () => {
         page.getByRole('heading', { name: 'Manage codes', level: 2 })
       ).toBeVisible();
 
-      await expect(page.getByText('123-4')).toBeVisible();
+      await expect(page.getByText('123-4')).not.toBeVisible();
+      await expect(
+        page.getByRole('cell', { name: 'new code', exact: true })
+      ).toBeVisible();
     });
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });

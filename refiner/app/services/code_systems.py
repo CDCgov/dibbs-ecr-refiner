@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.db.code_systems.db import DbCodeSystem, get_code_systems_db
+from app.db.code_systems.db import get_code_systems_db
+from app.db.code_systems.model import DbCodeSystem
 from app.db.pool import AsyncDatabaseConnection
 
 

@@ -16,10 +16,10 @@ from app.api.v1.configurations.custom_codes.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
-    DbCodeSystem,
     get_code_system_by_id_db,
     get_code_systems_db,
 )
+from app.db.code_systems.model import DbCodeSystem
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.custom_codes.db import (
     delete_custom_codes_db,

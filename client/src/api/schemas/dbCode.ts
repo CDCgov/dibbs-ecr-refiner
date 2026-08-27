@@ -1,10 +1,10 @@
 
 /**
- * DB model for code stored in the codes table.
+ * Model for all coded information stored in the codes table.
  */
 export interface DbCode {
   code: string;
   display: string;
-  version: string;
   system_id: string;
+  system_name: string;
 }
