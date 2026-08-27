@@ -11,7 +11,6 @@ import { useToast } from '../../../../../hooks/useToast';
 import { highlightMatches } from '../../../../../utils';
 import { ConfirmModal, UndoModal, PreviewEditModal } from './Modals';
 import { Button } from '@components/Button';
-import { CsvImportStep } from '../..';
 import { Search } from '@components/Search';
 import {
   DbCodeSystem,
@@ -45,18 +44,17 @@ export interface UploadError {
 }
 
 type OpenModalState = 'confirm' | 'undo' | 'none';
+type CsvImportStep = 'intro' | 'preview' | 'error';
 
 interface ImportCustomCodesProps {
   configurationId: string;
   disabled?: boolean;
   onSuccess?: () => void;
-  onStepChange?: (step: CsvImportStep) => void;
 }
 export function ImportCustomCodes({
   configurationId,
   disabled = false,
   onSuccess,
-  onStepChange,
 }: ImportCustomCodesProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -90,12 +88,10 @@ export function ImportCustomCodes({
     threshold: 0.3,
   });
   useEffect(() => {
-    onStepChange?.(step);
-
     if (step === 'preview') {
       setSearchText('');
     }
-  }, [step, onStepChange, setSearchText]);
+  }, [step, setSearchText]);
 
   const exitPreviewStep = (resetStep: boolean) => {
     setPreviewItems([]);
