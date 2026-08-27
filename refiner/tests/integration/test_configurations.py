@@ -979,6 +979,52 @@ class TestConfigurations:
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestConfigurationsExclusions:
+    async def test_code_exclusions_cannot_update_non_draft_configuration(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Configurations with a non-`draft` status cannot have their codes updated.
+        """
+        condition_id = await get_condition_id("Anotia")
+        payload = {"condition_id": str(condition_id)}
+
+        # create and activate a configuration
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        config_id = resp.json()["id"]
+
+        resp = await authed_client.patch(f"/api/v1/configurations/{config_id}/activate")
+        assert resp.status_code == status.HTTP_200_OK
+
+        # get codes
+        resp = await authed_client.get(f"/api/v1/configurations/{config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+        excludable_codes = [c for c in codes if not c["is_primary_condition_rsg"]]
+        assert excludable_codes, "Expected at least one excludable code"
+
+        # attempting to exclude codes on an active config should fail
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
+            json=[c["id"] for c in excludable_codes],
+        )
+        assert resp.status_code == status.HTTP_409_CONFLICT
+
+        # deactivate and ensure this works for `inactive` too
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/deactivate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
+            json=[c["id"] for c in excludable_codes],
+        )
+        assert resp.status_code == status.HTTP_409_CONFLICT
+
     async def test_clone_code_exclusions_copies_valid_exclusions(
         self,
         setup,
