@@ -120,7 +120,7 @@ class TestSerialization:
         authed_client,
         associate_codeset,
         disassociate_codeset,
-        get_condition_codes_by_condition_id_db,
+        get_condition_by_id,
     ):
         condition_name = "COVID-19"
         condition_id = await get_condition_id(condition_name)
@@ -157,9 +157,8 @@ class TestSerialization:
         )
         assert payload
 
-        alpha_gal_codes = await get_condition_codes_by_condition_id_db(
-            condition_id=alpha_gal_id, db=db_pool
-        )
+        alpha_gal_codes = (await get_condition_by_id(id=alpha_gal_id)).codes
+
         # make sure the code sets don't include the excluded codes
         for k, coding in payload.code_system_sets.items():
             assert k in OID_TO_SYSTEM_KEY_MAP.values()
