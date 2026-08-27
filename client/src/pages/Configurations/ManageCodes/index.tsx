@@ -310,7 +310,7 @@ function CodesTable({
               ) : (
                 codes.map((code) => (
                   <tr
-                    key={code.id}
+                    key={`${code.condition_id ?? 'custom-code'}-${code.id}`}
                     className={classNames(
                       'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
                       {
