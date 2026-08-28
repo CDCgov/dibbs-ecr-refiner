@@ -19,7 +19,6 @@ interface TesUpdateNavigationState {
     totalCount: number;
   };
 }
-import { ApplyUpdatesModal } from '@components/ApplyUpdatesModal';
 import { LayoutContainer } from '@components/Layout';
 
 export function UpdateConfigurations() {
@@ -44,7 +43,6 @@ export function UpdateConfigurations() {
   const [selectedConfigurations, setSelectedConfigurations] = useState<
     string[]
   >([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
 
@@ -400,13 +398,6 @@ export function UpdateConfigurations() {
         errorMessage={submissionError}
         onCancel={closeConfirmationModal}
         onConfirm={handleConfirmUpdates}
-      />
-      <ApplyUpdatesModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={() => {
-          console.log('Confirm apply updates', selectedConfigurations);
-        }}
       />
     </LayoutContainer>
   );
