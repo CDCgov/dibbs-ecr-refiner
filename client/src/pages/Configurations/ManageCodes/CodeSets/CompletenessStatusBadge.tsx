@@ -36,11 +36,13 @@ export function CompletenessStatusBadge({
         </Button>
         <Badge status={status} />
       </div>
-      <StatusModal
-        conditionId={conditionId}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-      />
+      {isOpen && (
+        <StatusModal
+          conditionId={conditionId}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
     </div>
   );
 }
