@@ -8,21 +8,22 @@ from uuid import UUID, uuid4
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
-from lib import (
+from lib.index import (
     CODE_SYSTEM_DATA,
-    SNOMED_OID,
-    CodeRow,
-    ConditionData,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
     categorize_codes_by_system_oid,
-    extract_codes_from_compose,
-    get_child_rsg_valuesets,
     get_db_connection,
+    load_valuesets_from_all_files,
+)
+from lib.models import SNOMED_OID, CodeRow
+from lib.tes_parsing import (
+    ConditionData,
+    code_extractor,
+    get_child_rsg_valuesets,
     get_sibling_context_valuesets,
     is_condition_grouper,
-    load_valuesets_from_all_files,
     map_coverage_level_to_acg_completeness,
     parse_child_rsg_details_from_use_context,
     parse_snomed_from_url,
@@ -235,7 +236,7 @@ class BuildCodeContext:
             parent_url=condition_url,
             display_name=name,
             category=parse_valueset_category(name),
-            code_count=len(extract_codes_from_compose(valueset)),
+            code_count=len(code_extractor.extract_codes_from_vs(valueset)),
             completeness=map_coverage_level_to_acg_completeness(valueset),
         )
         return True
@@ -302,7 +303,7 @@ def _build_sibling_codes(
         )
 
         system_sorted_codes = categorize_codes_by_system_oid(
-            extract_codes_from_compose(vs)
+            code_extractor.extract_codes_from_vs(vs)
         )
 
         for system_oid, code_list in system_sorted_codes.items():
