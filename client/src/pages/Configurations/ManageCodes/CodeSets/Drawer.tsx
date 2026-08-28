@@ -60,7 +60,7 @@ export function Drawer({
       focusTrapOptions={{
         onDeactivate: handleClose,
         escapeDeactivates: true,
-        clickOutsideDeactivates: true,
+        clickOutsideDeactivates: false,
       }}
     >
       <div className="z-drawer">
@@ -77,7 +77,7 @@ export function Drawer({
           role="dialog"
           inert={!isOpen}
         >
-          <div className="w-full overflow-y-scroll p-8">
+          <div className="w-full overflow-y-scroll p-2">
             <div className="max-w-[95%]">
               <Button
                 variant="unstyled"

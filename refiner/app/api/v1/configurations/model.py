@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v1.conditions import CodeSetStatus
 from app.api.v1.configurations.custom_codes.model import CustomCodeResponse
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
@@ -57,6 +58,7 @@ class IncludedCondition:
     canonical_url: str
     version: str
     associated: bool
+    code_set_status: CodeSetStatus
 
 
 @dataclass(frozen=True)

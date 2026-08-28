@@ -13,6 +13,7 @@ import {
 import { IncludedCondition } from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
+import { CompletenessStatusBadge } from './CompletenessStatusBadge';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
@@ -38,7 +39,7 @@ export function ConditionCodeSetListItem({
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
 
-  const [showButton, setShowButton] = useState(false);
+  const [showHiddenElements, setShowHiddenElements] = useState(false);
 
   function handleAssociate() {
     associateMutation(
@@ -134,32 +135,48 @@ export function ConditionCodeSetListItem({
       className={classNames(
         'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white'
       )}
-      onMouseEnter={() => setShowButton(true)}
-      onMouseLeave={() => setShowButton(false)}
-      onFocus={() => setShowButton(true)}
+      onMouseEnter={() => setShowHiddenElements(true)}
+      onMouseLeave={() => setShowHiddenElements(false)}
+      onFocus={() => setShowHiddenElements(true)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) {
-          setShowButton(false);
+          setShowHiddenElements(false);
         }
       }}
     >
-      <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
-      {isDefault ? (
-        <span className="text-bold mr-3 text-black">Default</span>
-      ) : (
-        <Button
-          variant={condition.associated ? 'secondary' : 'primary'}
-          aria-pressed={condition.associated}
-          aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
-          className={classNames('mr-0! w-20!', {
-            'sr-only!': !showButton && !condition.associated,
-          })}
-          onClick={() => onClick(condition.associated)}
-          disabled={disabled}
-        >
-          {condition.associated ? 'Remove' : 'Add'}
-        </Button>
-      )}
+      <div className="flex w-full flex-row items-center justify-between">
+        <div className="flex flex-col gap-2">
+          <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
+          <div className="flex flex-row items-center justify-start gap-1 text-sm!">
+            <span
+              className={classNames({
+                'sr-only!': !showHiddenElements,
+              })}
+            >
+              <CompletenessStatusBadge
+                conditionId={condition.id}
+                status={condition.code_set_status}
+              />
+            </span>
+          </div>
+        </div>
+        {isDefault ? (
+          <span className="text-bold mr-3 text-black">Default</span>
+        ) : (
+          <Button
+            variant={condition.associated ? 'secondary' : 'primary'}
+            aria-pressed={condition.associated}
+            aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
+            className={classNames('mr-0! w-20!', {
+              'sr-only!': !showHiddenElements && !condition.associated,
+            })}
+            onClick={() => onClick(condition.associated)}
+            disabled={disabled}
+          >
+            {condition.associated ? 'Remove' : 'Add'}
+          </Button>
+        )}
+      </div>
     </li>
   );
 }
