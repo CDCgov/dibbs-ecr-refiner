@@ -19,6 +19,8 @@ interface TesUpdateNavigationState {
     totalCount: number;
   };
 }
+import { ApplyUpdatesModal } from '@components/ApplyUpdatesModal';
+import { LayoutContainer } from '@components/Layout';
 
 export function UpdateConfigurations() {
   const navigate = useNavigate();
@@ -42,10 +44,28 @@ export function UpdateConfigurations() {
   const [selectedConfigurations, setSelectedConfigurations] = useState<
     string[]
   >([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
 
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const existingDrafts = response.data.existing_drafts;
+  const draftsToCreate = response.data.drafts_to_create;
+
+  const configIds = existingDrafts.map((d) => d.configuration_id);
+  const hasDuplicates = configIds.length !== new Set(configIds).size;
+  console.log('DEBUG: existing_drafts', {
+    length: existingDrafts.length,
+    ids: configIds,
+    hasDuplicates,
+    configurations: existingDrafts.map((d) => ({
+      id: d.configuration_id,
+      name: d.configuration_name,
+      version: d.configuration_tes_version,
+      codesets: d.codesets_to_update,
+    })),
+  });
 
   if (isPending) {
     return <Spinner variant="centered" />;
@@ -54,9 +74,6 @@ export function UpdateConfigurations() {
   if (isError) {
     return 'Error!';
   }
-
-  const existingDrafts = response.data.existing_drafts;
-  const draftsToCreate = response.data.drafts_to_create;
 
   const existingDraftIds = existingDrafts.map(
     (draft) => draft.configuration_id
@@ -78,8 +95,7 @@ export function UpdateConfigurations() {
   //   applyExistingDraftUpdates.isPending ||
   //   createDraftsFromActiveConfigurations.isPending;
 
-  const isSubmitting =
-      applyExistingDraftUpdates.isPending
+  const isSubmitting = applyExistingDraftUpdates.isPending;
 
   function handleIndividualSelection(configurationId: string) {
     setSelectedConfigurations((currentSelection) => {
@@ -213,14 +229,14 @@ export function UpdateConfigurations() {
   }
 
   return (
-    <div>
+    <LayoutContainer breakout>
       <Title className="pb-4">Update configurations</Title>
 
       <h2 className="mb-1 text-[1.25rem] font-bold">
         Update to latest release
       </h2>
 
-      <p className="max-w-[45rem]">
+      <p className="max-w-">
         Choose existing drafts to update and/or active configurations to copy
         into new drafts using the latest TES release. Drafts will need to be
         activated before the updated code sets are used to refine eCRs.
@@ -390,7 +406,14 @@ export function UpdateConfigurations() {
         onCancel={closeConfirmationModal}
         onConfirm={handleConfirmUpdates}
       />
-    </div>
+      <ApplyUpdatesModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={() => {
+          console.log('Confirm apply updates', selectedConfigurations);
+        }}
+      />
+    </LayoutContainer>
   );
 }
 

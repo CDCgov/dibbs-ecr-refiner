@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Spinner } from '@components/Spinner';
+import { LayoutContainer } from '@components/Layout/LayoutContainer';
 import { useGetTesUpdates } from '../../api/tes/tes';
 import { TesVersionDetails } from './TesVersionDetails';
 import { TesUpdate } from '../../api/schemas';
@@ -39,9 +40,9 @@ export function TesUpdates() {
   const fetchedTesUpdates = tesUpdates.data.tes_updates;
 
   return (
-    <div className="my-8 flex flex-col gap-6 px-2 md:px-20">
+    <>
       {tesStage === 'summary' && (
-        <>
+        <LayoutContainer className="my-8 flex flex-col gap-6">
           <div className="flex justify-between">
             <Title>TES Updates</Title>
             <Button onClick={() => setTesStage('action')}>
@@ -56,24 +57,33 @@ export function TesUpdates() {
               fetchedTesUpdates={fetchedTesUpdates}
             />
           </div>
-        </>
+        </LayoutContainer>
       )}
       {tesStage === 'action' && (
         <>
-          <div className="bg-blue-cool-70 -mx-20 -mt-8 mb-8 px-20 py-3 text-white">
-            <Button
-              className="cursor-pointer"
-              variant="unstyled"
-              onClick={() => setTesStage('summary')}
-            >
-              TES Updates
-            </Button>
-            {' > Updates'}
-          </div>
-          <UpdateConfigurations />
+          <LayoutContainer
+            background="bg-blue-cool-70"
+            breakout
+            className="py-3 text-left text-white"
+          >
+            <div className="flex items-center gap-5">
+              <Button
+                className="cursor-pointer font-bold"
+                variant="unstyled"
+                onClick={() => setTesStage('summary')}
+              >
+                TES updates
+              </Button>
+              <span> {'>'} </span>
+              <span>Updates configurations</span>
+            </div>
+          </LayoutContainer>
+          <LayoutContainer className="my-8">
+            <UpdateConfigurations />
+          </LayoutContainer>
         </>
       )}
-    </div>
+    </>
   );
 }
 interface UpdateInformationProps {
