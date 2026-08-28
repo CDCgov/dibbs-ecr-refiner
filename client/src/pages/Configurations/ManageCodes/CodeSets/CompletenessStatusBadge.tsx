@@ -25,7 +25,7 @@ export function CompletenessStatusBadge({
 
   return (
     <div>
-      <div className="flex flex-row items-center gap-2">
+      <div className="flex flex-col items-center gap-2 lg:flex-row">
         <Button
           variant="tertiary"
           onClick={() => setIsOpen(true)}

@@ -12,6 +12,7 @@ import classNames from 'classnames';
 import { Search } from '@components/Search';
 import { Button } from '@components/Button';
 import { CloseIcon } from '@components/Icons/CloseIcon';
+import { useModalContext } from '@components/Modal/ModalContext';
 
 interface DrawerProps {
   title: string | React.ReactNode;
@@ -39,6 +40,7 @@ export function Drawer({
   drawerWidth,
 }: DrawerProps): React.ReactElement<DrawerProps> {
   const [searchFilter, setSearchFilter] = useState('');
+  const { isModalOpen } = useModalContext();
 
   useEffect(() => {
     if (onSearch) {
@@ -57,10 +59,11 @@ export function Drawer({
   return (
     <FocusTrap
       active={isOpen}
+      paused={isModalOpen}
       focusTrapOptions={{
         onDeactivate: handleClose,
         escapeDeactivates: true,
-        clickOutsideDeactivates: false,
+        clickOutsideDeactivates: true,
       }}
     >
       <div className="z-drawer">

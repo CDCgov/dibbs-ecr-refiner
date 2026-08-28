@@ -133,7 +133,7 @@ export function ConditionCodeSetListItem({
   return (
     <li
       className={classNames(
-        'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white'
+        'flex items-center justify-between rounded-md p-4 hover:bg-white'
       )}
       onMouseEnter={() => setShowHiddenElements(true)}
       onMouseLeave={() => setShowHiddenElements(false)}

@@ -4,23 +4,11 @@ import {
   DialogPanel,
   DialogTitle,
 } from '@headlessui/react';
-import { createContext, useContext } from 'react';
+import { useEffect } from 'react';
 import classNames from 'classnames';
 import { CloseIcon } from '@components/Icons/CloseIcon';
-
-interface ModalContextValue {
-  onClose: () => void;
-}
-
-const ModalContext = createContext<ModalContextValue | null>(null);
-
-function useModalContext() {
-  const ctx = useContext(ModalContext);
-  if (!ctx) {
-    throw new Error('Modal components must be used within <Modal>');
-  }
-  return ctx;
-}
+import { useModalContext } from './ModalContext';
+import { ModalProvider } from './ModalProvider';
 
 type WidthSettings = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -61,9 +49,21 @@ function Modal({
   maxWidth = 'lg',
   className,
 }: ModalProps) {
+  const { setIsModalOpen } = useModalContext();
+
+  useEffect(() => {
+    setIsModalOpen(open);
+    return () => setIsModalOpen(false);
+  }, [open, setIsModalOpen]);
+
   return (
-    <ModalContext.Provider value={{ onClose }}>
-      <Dialog open={open} onClose={onClose} unmount>
+    <ModalProvider>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        unmount
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <DialogBackdrop className="z-modal-backdrop fixed inset-0 bg-black/60" />
 
         <div
@@ -81,18 +81,16 @@ function Modal({
               className
             )}
           >
-            <ModalCloseButton />
+            <ModalCloseButton onClose={onClose} />
             {children}
           </DialogPanel>
         </div>
       </Dialog>
-    </ModalContext.Provider>
+    </ModalProvider>
   );
 }
 
-function ModalCloseButton() {
-  const { onClose } = useModalContext();
-
+function ModalCloseButton({ onClose }: { onClose: () => void }) {
   return (
     <button
       aria-label="Close this window"
