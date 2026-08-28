@@ -1533,6 +1533,76 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
+  test('Custom codes are paginated, and then load into condition code set codes', async ({
+    api,
+    page,
+    configurationPage,
+  }) => {
+    const customCodeCount = MAX_PAGE_SIZE * 2 + 51;
+
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+
+      const customCodes = Array.from({ length: customCodeCount }, (_, i) => ({
+        code: `test-code-${i + 1}`,
+        display: `Test code ${i + 1}`,
+        system_id: systems[Math.floor(Math.random() * systems.length)].id,
+      }));
+
+      await api.uploadCustomCodeCsv(config.id, customCodes);
+    });
+
+    await test.step('Navigate to page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Anotia' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await configurationPage.goToManageCodesTab();
+    });
+
+    await test.step('Check that custom codes load in separate pages', async () => {
+      const tableRows = page.getByRole('table').getByRole('row');
+
+      // initial size
+      await expect(tableRows).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+
+      // scroll to load in more rows
+      await tableRows.last().scrollIntoViewIfNeeded();
+
+      // Scrolling down should add `MAX_PAGE_SIZE` to the table
+      const expectedRowCountAfterLoad = 2 * MAX_PAGE_SIZE + 1;
+      await expect(tableRows).toHaveCount(expectedRowCountAfterLoad);
+
+      // check current code count of custom codes now that we're in page 2
+      const customCodeSourceCells = tableRows
+        .getByRole('cell')
+        .filter({ hasText: 'Custom code' });
+      await expect(customCodeSourceCells).toHaveCount(
+        expectedRowCountAfterLoad - 1 // subtract header
+      );
+
+      // scroll to load final page
+      await tableRows.last().scrollIntoViewIfNeeded();
+      await expect(page.getByText("You've reached the end")).toBeVisible();
+
+      // all custom codes should be visible
+      await expect(customCodeSourceCells).toHaveCount(customCodeCount);
+
+      // check that some non custom codes load after
+      const allSourceCells = page.getByRole('table').getByRole('cell');
+      const nonCustomCodeSourceCells = allSourceCells.filter({
+        hasNotText: 'Custom code',
+      });
+      await expect(nonCustomCodeSourceCells).not.toHaveCount(0);
+    });
+  });
+
   test('More codes load into view as user scrolls down', async ({
     page,
     configurationsPage,
