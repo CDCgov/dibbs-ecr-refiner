@@ -40,7 +40,13 @@ class DbCodeCursor:
 
 def _encode_cursor(cursor: DbCodeCursor) -> str:
     return base64.b64encode(
-        json.dumps({"condition_id": cursor.condition_id, "code": cursor.code}).encode()
+        json.dumps(
+            {
+                "condition_id": cursor.condition_id,
+                "code": cursor.code,
+                "in_custom": cursor.in_custom,
+            }
+        ).encode()
     ).decode()
 
 
