@@ -15,12 +15,12 @@ interface ApplyUpdatesModalProps {
   isLoading?: boolean;
 }
 
-export const ApplyUpdatesModal = ({
+export function ApplyUpdatesModal({
   isOpen,
   onClose,
   onConfirm,
   isLoading = false,
-}: ApplyUpdatesModalProps) => {
+}: ApplyUpdatesModalProps) {
   return (
     <Modal open={isOpen} onClose={onClose} position="top" maxWidth="xl">
       <ModalHeader>
@@ -46,4 +46,4 @@ export const ApplyUpdatesModal = ({
       </ModalFooter>
     </Modal>
   );
-};
+}
