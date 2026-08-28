@@ -77,7 +77,14 @@ function Modal({
         >
           <DialogPanel
             className={classNames(
-              `border-base-lighter z-modal-content relative w-full max-w-${maxWidth} rounded-sm border bg-white p-6 shadow-lg`,
+              'border-base-lighter z-modal-content relative w-full rounded-sm border bg-white p-6 shadow-lg',
+              {
+                'max-w-sm': maxWidth === 'sm',
+                'max-w-md': maxWidth === 'md',
+                'max-w-lg': maxWidth === 'lg',
+                'max-w-xl': maxWidth === 'xl',
+                'max-w-2xl': maxWidth === '2xl',
+              },
               className
             )}
           >
@@ -108,15 +115,26 @@ interface ModalSectionProps {
   children: React.ReactNode;
   className?: string;
   maxWidth?: WidthSettings;
+  font?: 'public-sans' | 'merriweather';
 }
 
 function ModalHeader({ children }: ModalSectionProps) {
   return <div className="mx-auto mt-6 w-full pr-10 pb-6 pl-6">{children}</div>;
 }
 
-function ModalTitle({ children }: ModalSectionProps) {
+function ModalTitle({
+  children,
+  className,
+  font = 'public-sans',
+}: ModalSectionProps) {
   return (
-    <DialogTitle className="font-public-sans text-gray-90 text-3xl font-bold">
+    <DialogTitle
+      className={classNames(
+        'text-gray-90 text-3xl font-bold',
+        font === 'public-sans' ? 'font-public-sans' : 'font-merriweather',
+        className
+      )}
+    >
       {children}
     </DialogTitle>
   );
