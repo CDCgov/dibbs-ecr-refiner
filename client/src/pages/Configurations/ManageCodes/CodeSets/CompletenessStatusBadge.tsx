@@ -10,7 +10,6 @@ import { Button } from '@components/Button';
 import { CodeCategoryStatus, CodeSetStatus } from '../../../../api/schemas';
 import classNames from 'classnames';
 import { useGetCondition } from '../../../../api/conditions/conditions';
-import { Spinner } from '@components/Spinner';
 
 export interface CompletenessStatusBadgeProps {
   conditionId: string;
@@ -34,7 +33,7 @@ export function CompletenessStatusBadge({
         >
           code set details
         </Button>
-        <Badge status={status} />
+        <StatusText status={status} />
       </div>
       {isOpen && (
         <StatusModal
@@ -55,7 +54,7 @@ interface StatusModalProps {
 
 function StatusModal({ conditionId, isOpen, onClose }: StatusModalProps) {
   const { data, isPending, isError } = useGetCondition(conditionId);
-  if (isPending) return <Spinner />;
+  if (isPending) return;
   if (isError) return 'Error!';
 
   const condition = data.data;
@@ -115,13 +114,13 @@ function StatusModal({ conditionId, isOpen, onClose }: StatusModalProps) {
   );
 }
 
-interface BadgeProps {
+interface StatusTextProps {
   status: CodeSetStatus;
 }
-function Badge({ status }: BadgeProps) {
+
+function StatusText({ status }: StatusTextProps) {
   return (
     <span
-      aria-label={`Code set completion status: ${status}`}
       className={classNames({
         'text-[#4d8055]': status === 'fully complete',
         'text-red-300': status === 'not expanded',
@@ -129,6 +128,23 @@ function Badge({ status }: BadgeProps) {
       })}
     >
       ({status})
+    </span>
+  );
+}
+
+interface BadgeProps {
+  status: CodeSetStatus;
+}
+function Badge({ status }: BadgeProps) {
+  return (
+    <span
+      className={classNames('rounded-2xl px-2 py-1', {
+        'bg-green-cool-10v': status === 'fully complete',
+        'bg-red-warm-10v': status === 'not expanded',
+        'bg-state-warning-lighter': status === 'partially complete',
+      })}
+    >
+      {status}
     </span>
   );
 }
