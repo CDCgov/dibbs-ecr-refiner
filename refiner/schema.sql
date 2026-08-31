@@ -1,7 +1,7 @@
 \restrict dbmate
 
 -- Dumped from database version 18.6
--- Dumped by pg_dump version 18.4
+-- Dumped by pg_dump version 18.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -157,6 +157,7 @@ CREATE TABLE public.codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     display text CONSTRAINT codes_name_not_null NOT NULL,
     code text CONSTRAINT codes_value_not_null NOT NULL,
+    version text NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -429,14 +430,6 @@ ALTER TABLE ONLY public.codes
 
 
 --
--- Name: codes codes_system_id_code_value_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.codes
-    ADD CONSTRAINT codes_system_id_code_value_key UNIQUE (system_id, code);
-
-
---
 -- Name: conditions conditions_canonical_url_tes_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -687,6 +680,13 @@ CREATE INDEX active_payload_schema_reactivations_status_idx ON public.active_pay
 --
 
 CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON public.active_payload_schema_reactivations USING btree (target_schema_version);
+
+
+--
+-- Name: codes_upsert_constraint_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX codes_upsert_constraint_idx ON public.codes USING btree (system_id, version, code);
 
 
 --

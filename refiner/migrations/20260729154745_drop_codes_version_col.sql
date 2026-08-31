@@ -14,25 +14,26 @@ ALTER TABLE codes
 -- delete rows made duplicate with the dropped version so we can apply the
 -- followup unique index. Tiebreak self join by version so the replacement
 -- ids line up.
-WITH duplicates_to_delete AS (
-    DELETE FROM codes c1
-    USING codes c2
-    WHERE c1.version > c2.version
-      AND c1.system_id = c2.system_id
-      AND c1.code = c2.code
-    RETURNING c1.id AS new_id, c2.id AS old_id
+WITH code_mappings AS (
+    SELECT 
+        id,
+        FIRST_VALUE(id) OVER (
+            PARTITION BY system_id, code 
+            ORDER BY version ASC, id ASC
+        ) AS canonical_id
+    FROM codes
+),
+duplicates_to_delete AS (
+    DELETE FROM codes c
+    USING code_mappings m
+    WHERE c.id = m.id
+      AND c.id <> m.canonical_id
+    RETURNING c.id AS deleted_id, m.canonical_id AS surviving_id
 )
-UPDATE conditions_codes
-SET code_id = d.old_id
+UPDATE conditions_codes cc
+SET code_id = d.surviving_id
 FROM duplicates_to_delete d
-WHERE code_id = d.new_id;
-
-ALTER TABLE codes
-    DROP COLUMN version;
-
-ALTER TABLE codes
-    ADD CONSTRAINT codes_system_id_code_value_key
-        UNIQUE (system_id, code);
+WHERE cc.code_id = d.deleted_id;
 
 -- migrate:down
 
