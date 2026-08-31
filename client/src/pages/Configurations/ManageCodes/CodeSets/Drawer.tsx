@@ -78,7 +78,7 @@ export function Drawer({
             }
           )}
           role="dialog"
-          inert={!isOpen}
+          inert={!isOpen || isModalOpen}
         >
           <div className="w-full overflow-y-scroll p-2">
             <div className="max-w-[95%]">
