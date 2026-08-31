@@ -48,6 +48,17 @@ export function UpdateConfigurations() {
 
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
+  if (isPending) {
+    return <Spinner variant="centered" />;
+  }
+
+  if (isError) {
+    return 'Error!';
+  }
+
+  if (!response) {
+    return <Spinner variant="centered" />;
+  }
   const existingDrafts = response.data.existing_drafts;
   const draftsToCreate = response.data.drafts_to_create;
 
@@ -58,22 +69,14 @@ export function UpdateConfigurations() {
     ids: configIds,
     hasDuplicates,
     configurations: existingDrafts.map((d) => ({
-      id: d.configuration_id,
-      name: d.configuration_name,
-      version: d.configuration_tes_version,
-      codesets: d.codesets_to_update,
-    })),
-  });
+       id: d.configuration_id,
+       name: d.configuration_name,
+       version: d.configuration_tes_version,
+       codesets: d.codesets_to_update,
+     })),
+   });
 
-  if (isPending) {
-    return <Spinner variant="centered" />;
-  }
-
-  if (isError) {
-    return 'Error!';
-  }
-
-  const existingDraftIds = existingDrafts.map(
+   const existingDraftIds = existingDrafts.map(
     (draft) => draft.configuration_id
   );
 
