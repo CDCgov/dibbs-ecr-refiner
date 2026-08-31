@@ -11,15 +11,15 @@ import { CodeCategoryStatus, CodeSetStatus } from '../../../../api/schemas';
 import classNames from 'classnames';
 import { useGetCondition } from '../../../../api/conditions/conditions';
 
-export interface CompletenessStatusBadgeProps {
+export interface CodeSetCompletenessButtonProps {
   conditionId: string;
   status: CodeSetStatus;
 }
 
-export function CompletenessStatusBadge({
+export function CodeSetCompletenessButton({
   conditionId,
   status,
-}: CompletenessStatusBadgeProps) {
+}: CodeSetCompletenessButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -138,6 +138,7 @@ interface BadgeProps {
 function Badge({ status }: BadgeProps) {
   return (
     <span
+      aria-label={`Code set completion status: ${status}`}
       className={classNames('rounded-2xl px-2 py-1', {
         'bg-green-cool-10v': status === 'fully complete',
         'bg-red-warm-10v': status === 'not expanded',

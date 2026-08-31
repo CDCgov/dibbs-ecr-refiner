@@ -13,7 +13,7 @@ import {
 import { IncludedCondition } from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
-import { CompletenessStatusBadge } from './CompletenessStatusBadge';
+import { CodeSetCompletenessButton } from './CodeSetCompletenessButton';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
@@ -153,7 +153,7 @@ export function ConditionCodeSetListItem({
                 'sr-only!': !showHiddenElements,
               })}
             >
-              <CompletenessStatusBadge
+              <CodeSetCompletenessButton
                 conditionId={condition.id}
                 status={condition.code_set_status}
               />
