@@ -42,10 +42,12 @@ _CATEGORY_SLUG_MAP = {
 }
 
 
-def get_tes_version(version_string: str, regex: str) -> str | None:
+def get_tes_version(version_string: str | None, regex: str) -> str | None:
     """
     Utility function to find version from a passed in string and regex pattern.
     """
+    if not version_string:
+        return None
     regex_to_match = re.compile(regex)
     match = regex_to_match.search(version_string)
     return match.group(0) if match else None
@@ -88,11 +90,10 @@ def semver_is_less_or_equal(v1_str, v2_str):
     v1_tuple = tuple(map(int, v1_str.split(".")))
     v2_tuple = tuple(map(int, v2_str.split(".")))
 
-    if v1_tuple < v2_tuple:
+    if v1_tuple <= v2_tuple:
         return True
     elif v1_tuple > v2_tuple:
         return False
-    return True
 
 
 class TesParsingStrategy:
@@ -101,7 +102,9 @@ class TesParsingStrategy:
     """
 
     @abstractmethod
-    def parse_vs_for_codes(self, vs: dict) -> set[FhirCodeInfo]:
+    def parse_vs_for_codes(
+        self, vs: dict, return_as_vs: bool = False
+    ) -> set[FhirCodeInfo]:
         """
         Abstract parsing method for valuesets coming from the TES.
         """
@@ -113,11 +116,11 @@ class TesParsingStrategyVersion6(TesParsingStrategy):
     Strategy for parsing TES files prior to version 6.
     """
 
-    def parse_vs_for_codes(self, vs: dict):
+    def parse_vs_for_codes(self, vs: dict, return_as_vs: bool = False):
         """
         Parsing method for TES files in versions prior to version 6.
         """
-        codes: set[FhirCodeInfo] = set()
+        codes = set()
         compose = vs.get("compose")
 
         if not compose:
@@ -136,15 +139,18 @@ class TesParsingStrategyVersion6(TesParsingStrategy):
             for concept in inc.get("concept", []):
                 code = concept.get("code")
                 if code:
-                    codes.add(
-                        FhirCodeInfo(
-                            system_url=system,
-                            code=code,
-                            display=concept.get("display"),
-                            source_url=source_url,
-                            source_name=source_name,
+                    if return_as_vs:
+                        codes.add(inc)
+                    else:
+                        codes.add(
+                            FhirCodeInfo(
+                                system_url=system,
+                                code=code,
+                                display=concept.get("display"),
+                                source_url=source_url,
+                                source_name=source_name,
+                            )
                         )
-                    )
 
         return codes
 
@@ -154,11 +160,11 @@ class TesParsingStrategyVersion7(TesParsingStrategy):
     Strategy for parsing TES files prior to version 6.
     """
 
-    def parse_vs_for_codes(self, vs: dict):
+    def parse_vs_for_codes(self, vs: dict, return_as_vs: bool = False):
         """
         Parsing method for TES files in versions after to version 7.
         """
-        codes: set[FhirCodeInfo] = set()
+        codes = set()
         expansion = vs.get("expansion")
 
         if not expansion:
@@ -176,15 +182,18 @@ class TesParsingStrategyVersion7(TesParsingStrategy):
 
             code = inc.get("code")
             if code:
-                codes.add(
-                    FhirCodeInfo(
-                        system_url=system,
-                        code=code,
-                        display=inc.get("display"),
-                        source_url=source_url,
-                        source_name=source_name,
+                if return_as_vs:
+                    codes.add(inc)
+                else:
+                    codes.add(
+                        FhirCodeInfo(
+                            system_url=system,
+                            code=code,
+                            display=inc.get("display"),
+                            source_url=source_url,
+                            source_name=source_name,
+                        )
                     )
-                )
 
         return codes
 
@@ -211,35 +220,115 @@ class CodeExtractionContext:
 
     def determine_parsing_strategy(self, vs: dict) -> None:
         """Function that reads the version property of the valueset and determines the appropriate parsing strategy."""
-        version = vs.get("version")
+        version_string = vs.get("version")
 
-        if not version:
-            # fallback to default, pre-6 parsing strategy.
+        if not version_string:
+            # this shouldn't ever happen since the initial file-load in checks
+            # for version, but just in case it's undefined somehow, fallback to
+            # default, pre-6 parsing strategy.
             self._parsing_strategy = TesParsingStrategyVersion6()
             return
 
-        if ver := get_tes_version(version_string=version, regex=SEMVER_VERSION_REGEX):
-            if semver_is_less_or_equal("6.0.0", ver):
-                self._parsing_strategy = TesParsingStrategyVersion6()
+        semver_formatted_version = get_tes_version(
+            version_string=version_string, regex=SEMVER_VERSION_REGEX
+        )
 
+        if semver_formatted_version:
+            if semver_is_less_or_equal(semver_formatted_version, "6.0.0"):
+                self._parsing_strategy = TesParsingStrategyVersion6()
             else:
+                print(version_string)
                 self._parsing_strategy = TesParsingStrategyVersion7()
 
-        elif ver := get_tes_version(
-            version_string=version, regex=DATETIME_VERSION_REGEX
-        ):
-            if ver <= VERSION_SIX_CUTOFF_DATETIME:
+        datetime_formated_version = get_tes_version(
+            version_string=version_string, regex=DATETIME_VERSION_REGEX
+        )
+
+        if datetime_formated_version:
+            if datetime_formated_version <= VERSION_SIX_CUTOFF_DATETIME:
                 self._parsing_strategy = TesParsingStrategyVersion6()
 
-            if ver > VERSION_SIX_CUTOFF_DATETIME:
+            if datetime_formated_version > VERSION_SIX_CUTOFF_DATETIME:
                 self._parsing_strategy = TesParsingStrategyVersion7()
 
-    def extract_codes_from_vs(self, vs: dict) -> set[FhirCodeInfo]:
+    def extract_codes_from_vs(self, vs: dict, return_as_vs=False) -> set[FhirCodeInfo]:
         """
         Extracts all (system, code, display) tuples from a ValueSet's compose section.
         """
         self.determine_parsing_strategy(vs)
-        return self._parsing_strategy.parse_vs_for_codes(vs)
+        return self._parsing_strategy.parse_vs_for_codes(vs, return_as_vs)
+
+    def get_child_rsg_valuesets(
+        self,
+        parent: dict,
+        all_vs_map: dict[tuple[str, str], dict],
+    ) -> list[dict]:
+        """
+        Finds all 'ReportingSpecGrouper' children of a parent ValueSet.
+        """
+
+        children: list[dict] = []
+        if not self.parsing_strategy:
+            self.determine_parsing_strategy(parent)
+
+        valuesets = self.extract_codes_from_vs(
+            parent,
+        )
+        for inc in valuesets:
+            for ref in inc.get("valueSet", []):
+                url, sep, version = str(ref).partition("|")
+                if sep and (child_vs := all_vs_map.get((url, version))):
+                    if is_reporting_spec_grouper(child_vs):
+                        children.append(child_vs)
+
+        return children
+
+    def get_sibling_context_valuesets(
+        self,
+        parent: dict,
+        all_vs_map: dict[tuple[str, str], dict],
+    ) -> list[VsDict]:
+        """
+        Finds the Additional Context Grouper ValueSets referenced by a parent.
+
+        Resolves children via the parent's compose.include[].valueSet references,
+        using the same (url, version) lookup pattern as get_child_rsg_valuesets.
+
+        The parent CG's compose section explicitly declares its ACG children, so
+        we don't have to reverse-engineer the relationship from naming patterns.
+        Earlier versions of this function matched siblings by name substring,
+        which had two failure modes:
+
+        * A spelling drift between parent and child silently dropped the ACG.
+        E.g. v6.0.0 "Streptoccal_Disease" (parent typo) does not match
+        "Streptococcal_Disease_Additional_Context_*" (children spelled
+        correctly), so every strep ACG was missed and ~22,000 codes were
+        lost from the seeded condition.
+
+        * A parent name that is a strict substring of another condition's name
+        silently absorbed that other condition's ACGs. E.g. "Influenza" is
+        a substring of "Invasive_Haemophilus_Influenzae_Disease...", so the
+        Influenza condition was pulling in H. Influenzae's ACGs as siblings
+        and inflating its code count by ~9,000.
+
+        Both failure modes go away once siblings are resolved by the explicit
+        reference graph.
+        """
+
+        siblings: list[VsDict] = []
+
+        compose = parent.get("compose")
+        if not compose:
+            return siblings
+
+        for inc in compose.get("include", []):
+            for ref in inc.get("valueSet", []):
+                url, sep, version = str(ref).partition("|")
+                if sep and (child_vs := all_vs_map.get((url, version))):
+                    if is_additional_context_grouper(child_vs):
+                        siblings.append(child_vs)
+
+        return siblings
 
 
 # intialize extractor with default parsing strategy of version 6
@@ -382,77 +471,6 @@ def is_reporting_spec_grouper(vs: dict) -> bool:
 
     url = vs.get("url", "")
     return "rs-grouper" in url.lower()
-
-
-def get_child_rsg_valuesets(
-    parent: dict,
-    all_vs_map: dict[tuple[str, str], dict],
-) -> list[dict]:
-    """
-    Finds all 'ReportingSpecGrouper' children of a parent ValueSet.
-    """
-
-    children: list[dict] = []
-
-    compose = parent.get("compose")
-    if not compose:
-        return children
-
-    for inc in compose.get("include", []):
-        for ref in inc.get("valueSet", []):
-            url, sep, version = str(ref).partition("|")
-            if sep and (child_vs := all_vs_map.get((url, version))):
-                if is_reporting_spec_grouper(child_vs):
-                    children.append(child_vs)
-
-    return children
-
-
-def get_sibling_context_valuesets(
-    parent: dict,
-    all_vs_map: dict[tuple[str, str], dict],
-) -> list[VsDict]:
-    """
-    Finds the Additional Context Grouper ValueSets referenced by a parent.
-
-    Resolves children via the parent's compose.include[].valueSet references,
-    using the same (url, version) lookup pattern as get_child_rsg_valuesets.
-
-    The parent CG's compose section explicitly declares its ACG children, so
-    we don't have to reverse-engineer the relationship from naming patterns.
-    Earlier versions of this function matched siblings by name substring,
-    which had two failure modes:
-
-    * A spelling drift between parent and child silently dropped the ACG.
-      E.g. v6.0.0 "Streptoccal_Disease" (parent typo) does not match
-      "Streptococcal_Disease_Additional_Context_*" (children spelled
-      correctly), so every strep ACG was missed and ~22,000 codes were
-      lost from the seeded condition.
-
-    * A parent name that is a strict substring of another condition's name
-      silently absorbed that other condition's ACGs. E.g. "Influenza" is
-      a substring of "Invasive_Haemophilus_Influenzae_Disease...", so the
-      Influenza condition was pulling in H. Influenzae's ACGs as siblings
-      and inflating its code count by ~9,000.
-
-    Both failure modes go away once siblings are resolved by the explicit
-    reference graph.
-    """
-
-    siblings: list[VsDict] = []
-
-    compose = parent.get("compose")
-    if not compose:
-        return siblings
-
-    for inc in compose.get("include", []):
-        for ref in inc.get("valueSet", []):
-            url, sep, version = str(ref).partition("|")
-            if sep and (child_vs := all_vs_map.get((url, version))):
-                if is_additional_context_grouper(child_vs):
-                    siblings.append(child_vs)
-
-    return siblings
 
 
 def parse_snomed_from_url(url: str) -> str | None:

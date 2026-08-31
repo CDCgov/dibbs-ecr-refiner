@@ -348,6 +348,15 @@ def _build_codes(
 ) -> ProcessedCodePayload:
     code_context = BuildCodeContext(db_ids=oid_indexed_system_db_ids)
 
+    print(
+        valuesets_map[
+            (
+                "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/6dd8083b-8832-40b3-b7b2-96e77081669a",
+                "6.7.3",
+            )
+        ]
+    )
+
     for condition in condition_groupers:
         cond_canonical_url = condition.get("url", "")
         cond_version = condition.get("version", "")
