@@ -136,12 +136,7 @@ interface CodesTableProps {
 }
 
 type ParamValue =
-  | string
-  | number
-  | boolean
-  | (string | number | boolean)[]
-  | null
-  | undefined;
+  string | number | boolean | (string | number | boolean)[] | null | undefined;
 
 function CodesTable({
   id,
