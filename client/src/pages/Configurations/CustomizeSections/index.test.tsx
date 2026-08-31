@@ -1,6 +1,6 @@
 import { describe, it, expect, Mock } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import { TestQueryClientProvider } from '../../../test-utils';
+import { TestProviders } from '../../../test-utils';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import userEvent from '@testing-library/user-event';
 import { baseMockConfig, MOCK_CONFIG_DRAFT_ID } from '../test/fixtures';
@@ -137,14 +137,14 @@ function renderPage() {
         `/configurations/${MOCK_CONFIG_DRAFT_ID}/customize-sections`,
       ]}
     >
-      <TestQueryClientProvider>
+      <TestProviders>
         <Routes>
           <Route
             path="/configurations/:id/customize-sections"
             element={<CustomizeSections />}
           />
         </Routes>
-      </TestQueryClientProvider>
+      </TestProviders>
     </MemoryRouter>
   );
 }

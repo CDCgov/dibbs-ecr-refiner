@@ -1,6 +1,6 @@
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { ToastContainer } from 'react-toastify';
-import { TestQueryClientProvider } from '../../test-utils';
+import { TestProviders } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen, within } from '@testing-library/react';
 import { AuditEvent, EventFilterOption } from '../../api/schemas';
@@ -104,14 +104,14 @@ function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
 
 const renderPageView = () =>
   render(
-    <TestQueryClientProvider>
+    <TestProviders>
       <ToastContainer />
       <MemoryRouter initialEntries={['/activity']}>
         <Routes>
           <Route path="/activity" element={<ActivityLog />} />
         </Routes>
       </MemoryRouter>
-    </TestQueryClientProvider>
+    </TestProviders>
   );
 
 describe('Activity log page', () => {
