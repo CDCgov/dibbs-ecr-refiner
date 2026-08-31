@@ -259,10 +259,56 @@ async def get_codes_db(
     return rows, next_cursor
 
 
+async def set_bulk_codes_status_db(
+    configuration_id: UUID,
+    status: Literal["included", "excluded"],
+    db: AsyncDatabaseConnection,
+):
+    if status == "excluded":
+        query = """
+        WITH configuration_codes_to_exclude AS (
+            SELECT
+                c.id
+            FROM codes c
+            JOIN conditions_codes_temp crc ON crc.code_id = c.id
+            JOIN configurations_conditions cfc ON cfc.condition_id = crc.condition_id
+            JOIN configurations conf ON conf.id = cfc.configuration_id
+            WHERE conf.id = %(configuration_id)s
+            GROUP BY c.id
+            HAVING bool_or(crc.is_child_rsg) = false
+        )
+        INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
+        SELECT
+            %(configuration_id)s::uuid,
+            id::uuid
+        FROM configuration_codes_to_exclude
+        ON CONFLICT DO NOTHING
+        RETURNING code_id;
+        """
+    else:
+        query = """
+            DELETE FROM configurations_conditions_code_exclusions
+            WHERE configuration_id = %(configuration_id)s
+            RETURNING code_id
+        """
+
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(
+            query,
+            {
+                "configuration_id": configuration_id,
+            },
+        )
+        rows = await cur.fetchall()
+
+        return [row["code_id"] for row in rows]
+
+
 async def set_codes_status_db(
     configuration_id: UUID,
     configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
+    update_beyond_cursor: bool,
     status: Literal["included", "excluded"],
     db: AsyncDatabaseConnection,
 ) -> list[UUID]:
@@ -280,12 +326,20 @@ async def set_codes_status_db(
         configuration_id (UUID): ID of the configuration
         configuration_primary_condition_id (UUID): ID of the configuration's primary condition
         code_ids (list[UUID]): List of code IDs
+        update_beyond_cursor (bool): Whether to update the status beyond the cursor
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
 
     Returns:
         list[UUID]: List of impacted code IDs
     """
+    if update_beyond_cursor:
+        return await set_bulk_codes_status_db(
+            configuration_id=configuration_id,
+            status=status,
+            db=db,
+        )
+
     params = {
         "configuration_id": configuration_id,
         "code_ids": code_ids,

@@ -210,6 +210,7 @@ async def set_codes_status(
     configuration_id: UUID,
     code_ids: list[UUID],
     status: Literal["included", "excluded"],
+    update_beyond_cursor: bool,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[UUID]:
@@ -220,6 +221,8 @@ async def set_codes_status(
         configuration_id (UUID): ID of the configuration to update
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        update_beyond_cursor (bool): Whether to update the entire filter
+            selection to include / excluded beyond the selected cursor
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
@@ -254,6 +257,7 @@ async def set_codes_status(
             configuration_primary_condition_id=config.condition_id,
             code_ids=code_ids,
             status=status,
+            update_beyond_cursor=update_beyond_cursor,
             db=db,
         )
         return impacted_code_ids

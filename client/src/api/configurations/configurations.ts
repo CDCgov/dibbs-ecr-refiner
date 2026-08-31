@@ -2219,6 +2219,8 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
  *     configuration_id (UUID): ID of the configuration to update
  *     code_ids (list[UUID]): List of code IDs
  *     status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+ *     update_beyond_cursor (bool): Whether to update the entire filter
+ *         selection to include / excluded beyond the selected cursor
  *     user (DbUser): The logged-in user
  *     db (AsyncDatabaseConnection): Database connection
  *

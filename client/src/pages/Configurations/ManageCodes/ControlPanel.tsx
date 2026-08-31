@@ -9,6 +9,7 @@ import {
   getGetCodeFiltersQueryKey,
   getGetCodesInfiniteQueryKey,
   useDeleteCustomCodes,
+  useGetCodeCounts,
   useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,18 +28,26 @@ interface ControlPanelProps {
   selectedCodeIds: Set<string>;
   selectedCustomCodes: CodeResponse[];
   clearSelections: () => void;
+  allSelected: boolean;
 }
 export function ControlPanel({
   configurationId,
   selectedCodeIds,
   selectedCustomCodes,
   clearSelections,
+  allSelected,
 }: ControlPanelProps) {
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
   const { mutate } = useSetCodesStatus();
   const [isOpen, setIsOpen] = useState(false);
+
+  const {
+    data: codeCounts,
+    isPending,
+    isError,
+  } = useGetCodeCounts(configurationId);
 
   // These custom codes can be deleted
   const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
@@ -54,12 +63,13 @@ export function ControlPanel({
         configurationId,
         params: {
           status: status === 'Included' ? 'included' : 'excluded',
+          update_beyond_cursor: allSelected,
         },
         data: codeSetCodeIds,
       },
 
       {
-        onSuccess: async () => {
+        onSuccess: async (resp) => {
           await queryClient.invalidateQueries({
             queryKey: getGetCodesInfiniteQueryKey(configurationId),
           });
@@ -71,7 +81,7 @@ export function ControlPanel({
           });
           toast({
             heading: `Code ${status}`,
-            body: `${status === 'Included' ? selectedCodeIds.size : codeSetCodeIds.length} codes ${status.toLowerCase()} in this configuration.`,
+            body: `${resp.data.length} codes ${status.toLowerCase()} in this configuration.`,
           });
           clearSelections();
         },
@@ -103,7 +113,10 @@ export function ControlPanel({
       >
         <div className="flex flex-row items-center justify-center gap-4">
           <span className="font-bold whitespace-nowrap">
-            {selectedCodeIds.size} selected
+            {allSelected
+              ? codeCounts?.data.total_code_count
+              : selectedCodeIds.size}{' '}
+            selected
           </span>
           <div aria-hidden className="h-8 border border-gray-400!" />
           <div className="flex flex-row gap-6">

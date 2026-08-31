@@ -217,6 +217,7 @@ function CodesTable({
             selectedCodeIds={selectedIds}
             selectedCustomCodes={selectedCustomCodes}
             clearSelections={() => setSelectedIds(new Set())}
+            allSelected={allSelected}
           />
         ) : null}
         <InfiniteScroll
