@@ -54,7 +54,7 @@ services:
 
   seed:
     environment:
-      - SEED_ALL_TES_DATA=true
+      - SEED_ALL_TES_DATA=false
 
 volumes:
   pgdata:
