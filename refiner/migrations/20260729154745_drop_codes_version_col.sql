@@ -35,6 +35,13 @@ SET code_id = d.surviving_id
 FROM duplicates_to_delete d
 WHERE cc.code_id = d.deleted_id;
 
+ALTER TABLE codes
+    DROP COLUMN version;
+
+ALTER TABLE codes
+    ADD CONSTRAINT codes_system_id_code_value_key
+        UNIQUE (system_id, code);
+
 -- migrate:down
 
 DROP INDEX IF EXISTS idx_conditions_codes_code_id;
