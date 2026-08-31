@@ -215,7 +215,7 @@ function CodesTable({
         isOpen={isSourceModalOpen}
         onClose={() => setIsSourceModalOpen(false)}
       />
-      <div>
+      <div className="w-full">
         {hasCodesSelected ? (
           <ControlPanel
             configurationId={id}
@@ -236,10 +236,10 @@ function CodesTable({
           }
           style={{ overflow: 'unset' }} // this allows the sticky header to work
         >
-          <table className="w-full table-fixed">
+          <table className="w-full table-auto">
             <thead className="bg-gray-cool-5 z-sticky sticky top-0">
               <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
-                <th scope="col" className="w-10 text-center">
+                <th scope="col" className="text-center">
                   <Checkbox
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
@@ -257,16 +257,10 @@ function CodesTable({
                     }
                   />
                 </th>
-                <th scope="col" className="w-[15%]">
-                  Code no.
-                </th>
-                <th scope="col" className="w-[10%]">
-                  System
-                </th>
-                <th scope="col" className="w-[30%]">
-                  Description
-                </th>
-                <th scope="col" className="w-[35%]">
+                <th scope="col">Code no.</th>
+                <th scope="col">System</th>
+                <th scope="col">Description</th>
+                <th scope="col">
                   <div className="flex flex-row items-center gap-1">
                     <span>Source</span>
                     <Button
@@ -279,9 +273,7 @@ function CodesTable({
                     </Button>
                   </div>
                 </th>
-                <th scope="col" className="w-[10%]">
-                  Status
-                </th>
+                <th scope="col">Status</th>
               </tr>
             </thead>
             <tbody className="divide-gray-cool-20 divide-y">
