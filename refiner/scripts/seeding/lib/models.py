@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from typing import TypedDict
 from uuid import UUID
