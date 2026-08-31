@@ -15,10 +15,10 @@ ALTER TABLE codes
 -- followup unique index. Tiebreak self join by version so the replacement
 -- ids line up.
 WITH code_mappings AS (
-    SELECT 
+    SELECT
         id,
         FIRST_VALUE(id) OVER (
-            PARTITION BY system_id, code 
+            PARTITION BY system_id, code
             ORDER BY version ASC, id ASC
         ) AS canonical_id
     FROM codes
