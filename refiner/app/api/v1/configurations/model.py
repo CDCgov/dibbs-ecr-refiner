@@ -3,7 +3,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v1.conditions import CodeSetStatus
 from app.api.v1.configurations.custom_codes.model import CustomCodeResponse
 from app.db.codes.model import DbCode
 from app.db.configurations.model import (
@@ -16,6 +15,7 @@ from app.db.configurations.model import (
 )
 from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
+from app.services.conditions.grouper_statuses import CodeSetStatus
 
 
 @dataclass(frozen=True)
