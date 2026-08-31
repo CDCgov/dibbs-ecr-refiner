@@ -1070,4 +1070,3 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260813142548'),
     ('20260825151652'),
     ('20260826143830');
-    
