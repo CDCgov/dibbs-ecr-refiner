@@ -104,6 +104,7 @@ interface CodesPanelProps {
 function CodesPanel({ id, disabled }: CodesPanelProps) {
   const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
     useFilterState(id);
+
   return (
     <>
       <CodeInformationBar id={id} />

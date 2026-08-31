@@ -43,11 +43,7 @@ export function ControlPanel({
   const { mutate } = useSetCodesStatus();
   const [isOpen, setIsOpen] = useState(false);
 
-  const {
-    data: codeCounts,
-    isPending,
-    isError,
-  } = useGetCodeCounts(configurationId);
+  const { data: codeCounts } = useGetCodeCounts(configurationId);
 
   // These custom codes can be deleted
   const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
@@ -81,7 +77,7 @@ export function ControlPanel({
           });
           toast({
             heading: `Code ${status}`,
-            body: `${resp.data.length} codes ${status.toLowerCase()} in this configuration.`,
+            body: `${resp.data.length} codes ${status.toLowerCase()}`,
           });
           clearSelections();
         },
@@ -114,7 +110,7 @@ export function ControlPanel({
         <div className="flex flex-row items-center justify-center gap-4">
           <span className="font-bold whitespace-nowrap">
             {allSelected
-              ? codeCounts?.data.total_code_count
+              ? (codeCounts?.data.total_code_count ?? 'All')
               : selectedCodeIds.size}{' '}
             selected
           </span>
