@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@components/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import classNames from 'classnames';
@@ -18,6 +18,10 @@ import { CompletenessStatusBadge } from './CompletenessStatusBadge';
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
   configurationId: string;
+  showHiddenElements: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onFocus: () => void;
   highlight?: React.ReactNode;
   reportableConditionDisplayName: string;
   disabled: boolean;
@@ -26,6 +30,10 @@ interface ConditionCodeSetListItemProps {
 export function ConditionCodeSetListItem({
   condition,
   configurationId,
+  showHiddenElements,
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
   highlight,
   reportableConditionDisplayName,
   disabled,
@@ -38,8 +46,6 @@ export function ConditionCodeSetListItem({
   const showToast = useToast();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
-
-  const [showHiddenElements, setShowHiddenElements] = useState(false);
 
   function handleAssociate() {
     associateMutation(
@@ -134,14 +140,9 @@ export function ConditionCodeSetListItem({
       className={classNames(
         'flex items-center justify-between rounded-md p-4 hover:bg-white'
       )}
-      onMouseEnter={() => setShowHiddenElements(true)}
-      onMouseLeave={() => setShowHiddenElements(false)}
-      onFocus={() => setShowHiddenElements(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          setShowHiddenElements(false);
-        }
-      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
     >
       <div className="flex w-full flex-row items-center justify-between">
         <div className="flex flex-col gap-2">
