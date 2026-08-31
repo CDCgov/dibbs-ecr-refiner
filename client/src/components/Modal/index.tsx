@@ -58,12 +58,7 @@ function Modal({
 
   return (
     <ModalProvider>
-      <Dialog
-        open={open}
-        onClose={onClose}
-        unmount
-        onKeyDown={(e) => e.stopPropagation()}
-      >
+      <Dialog open={open} onClose={onClose} unmount>
         <DialogBackdrop className="z-modal-backdrop fixed inset-0 bg-black/60" />
 
         <div
