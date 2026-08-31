@@ -911,7 +911,7 @@ test.describe('Codes management - filters', () => {
     await expect(sourcesOptions).toHaveCount(2);
 
     await page.keyboard.press('Escape');
-    const statusFilterButton = page.getByRole('button', { name: 'Status' });
+    const statusFilterButton = page.getByTestId('status-button');
     await expect(statusFilterButton).toBeVisible();
     await statusFilterButton.click();
     await expect(page.getByRole('listbox')).toBeVisible();
