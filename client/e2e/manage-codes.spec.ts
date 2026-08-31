@@ -493,6 +493,70 @@ test.describe('Codes management - code set interactions', () => {
     await clearDb();
   });
 
+  test('Code set details should be accessible to users within the drawer', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+  }) => {
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      await configurationsPage.createConfiguration(condition);
+      await configurationPage.goToManageCodesTab();
+    });
+    await test.step('Open drawer', async () => {
+      const drawerButton = page.getByRole('button', {
+        name: 'Condition code sets',
+        exact: false,
+      });
+      await expect(drawerButton).toBeVisible();
+      await drawerButton.click();
+    });
+
+    const conditionElement = page
+      .getByRole('listitem')
+      .filter({ hasText: 'Anthrax' })
+      .first();
+    const codeSetDetailsButton = conditionElement.getByRole('button', {
+      name: 'Open code set completion status details modal',
+      exact: true,
+    });
+    await test.step('Focusing a condition reveals "code set details"', async () => {
+      await conditionElement.scrollIntoViewIfNeeded();
+      await expect(conditionElement).toBeVisible();
+
+      await conditionElement.hover();
+
+      await expect(conditionElement).toContainText(/\(.*\)/);
+    });
+
+    const modalHeader = page.getByRole('heading', {
+      name: 'Code set completion details',
+      level: 2,
+    });
+    await test.step('Clicking on "code set details" button opens a modal with details', async () => {
+      await expect(codeSetDetailsButton).toBeVisible();
+      await codeSetDetailsButton.click();
+
+      await expect(modalHeader).toBeVisible();
+    });
+
+    await test.step('Modal and drawer can be exited', async () => {
+      await expect(modalHeader).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(modalHeader).not.toBeVisible();
+      await expect(codeSetDetailsButton).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(
+        page.getByRole('heading', {
+          name: 'Manage codes',
+          exact: true,
+          level: 2,
+        })
+      ).toBeVisible();
+      await expect(page.getByRole('table')).toBeVisible();
+    });
+  });
+
   test('Condition code sets can be added and deleted', async ({
     page,
     configurationsPage,
