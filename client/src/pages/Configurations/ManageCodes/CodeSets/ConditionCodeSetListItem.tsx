@@ -19,7 +19,7 @@ interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
   configurationId: string;
   highlight?: React.ReactNode;
-  reportable_condition_display_name: string;
+  reportableConditionDisplayName: string;
   disabled: boolean;
 }
 
@@ -27,7 +27,7 @@ export function ConditionCodeSetListItem({
   condition,
   configurationId,
   highlight,
-  reportable_condition_display_name,
+  reportableConditionDisplayName,
   disabled,
 }: ConditionCodeSetListItemProps) {
   const { mutate: associateMutation } =
@@ -128,8 +128,7 @@ export function ConditionCodeSetListItem({
     }
   }
 
-  const isDefault =
-    condition.display_name === reportable_condition_display_name;
+  const isDefault = condition.display_name === reportableConditionDisplayName;
   return (
     <li
       className={classNames(

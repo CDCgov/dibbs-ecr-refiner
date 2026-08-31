@@ -83,7 +83,7 @@ export function AddConditionCodeSetsDrawer({
                 condition={condition}
                 configurationId={configurationId}
                 highlight={highlight}
-                reportable_condition_display_name={
+                reportableConditionDisplayName={
                   reportable_condition_display_name
                 }
                 disabled={disabled}
