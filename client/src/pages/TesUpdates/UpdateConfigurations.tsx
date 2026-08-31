@@ -69,14 +69,14 @@ export function UpdateConfigurations() {
     ids: configIds,
     hasDuplicates,
     configurations: existingDrafts.map((d) => ({
-       id: d.configuration_id,
-       name: d.configuration_name,
-       version: d.configuration_tes_version,
-       codesets: d.codesets_to_update,
-     })),
-   });
+      id: d.configuration_id,
+      name: d.configuration_name,
+      version: d.configuration_tes_version,
+      codesets: d.codesets_to_update,
+    })),
+  });
 
-   const existingDraftIds = existingDrafts.map(
+  const existingDraftIds = existingDrafts.map(
     (draft) => draft.configuration_id
   );
 
@@ -213,7 +213,7 @@ export function UpdateConfigurations() {
         },
       };
 
-      navigate('/configurations', {
+      await navigate('/configurations', {
         state: navigationState,
       });
     } catch {

@@ -4,6 +4,7 @@ import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Spinner } from '@components/Spinner';
 import { LayoutContainer } from '@components/Layout/LayoutContainer';
+import { BreakoutContainer } from '@components/Layout';
 import { useGetTesUpdates } from '../../api/tes/tes';
 import { TesVersionDetails } from './TesVersionDetails';
 import { TesUpdate } from '../../api/schemas';
@@ -61,10 +62,10 @@ export function TesUpdates() {
       )}
       {tesStage === 'action' && (
         <>
-          <LayoutContainer
+          <BreakoutContainer
             background="bg-blue-cool-70"
-            breakout
             className="py-3 text-left text-white"
+            maxWidth="max-w-7xl"
           >
             <div className="flex items-center gap-5">
               <Button
@@ -77,7 +78,7 @@ export function TesUpdates() {
               <span> {'>'} </span>
               <span>Updates configurations</span>
             </div>
-          </LayoutContainer>
+          </BreakoutContainer>
           <LayoutContainer className="my-8">
             <UpdateConfigurations />
           </LayoutContainer>
