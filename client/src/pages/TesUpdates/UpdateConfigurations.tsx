@@ -20,6 +20,7 @@ interface TesUpdateNavigationState {
   };
 }
 import { LayoutContainer } from '@components/Layout';
+import { useToast } from '../../hooks/useToast';
 
 export function UpdateConfigurations() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export function UpdateConfigurations() {
   } = useGetConfigurationsToUpdate();
 
   const applyExistingDraftUpdates = useApplyTesUpdatesToExistingDrafts();
+  const toast = useToast();
 
   /*
    * VERIFY WITH THE PARALLEL STORY:
@@ -61,20 +63,6 @@ export function UpdateConfigurations() {
   }
   const existingDrafts = response.data.existing_drafts;
   const draftsToCreate = response.data.drafts_to_create;
-
-  const configIds = existingDrafts.map((d) => d.configuration_id);
-  const hasDuplicates = configIds.length !== new Set(configIds).size;
-  console.log('DEBUG: existing_drafts', {
-    length: existingDrafts.length,
-    ids: configIds,
-    hasDuplicates,
-    configurations: existingDrafts.map((d) => ({
-      id: d.configuration_id,
-      name: d.configuration_name,
-      version: d.configuration_tes_version,
-      codesets: d.codesets_to_update,
-    })),
-  });
 
   const existingDraftIds = existingDrafts.map(
     (draft) => draft.configuration_id
@@ -195,7 +183,6 @@ export function UpdateConfigurations() {
     try {
       const updatedCount = await updateSelectedExistingDrafts();
 
-      // const createdCount = await createSelectedDrafts();
       const createdCount = 0;
 
       const totalCount = updatedCount + createdCount;
@@ -204,6 +191,12 @@ export function UpdateConfigurations() {
 
       setSelectedConfigurations([]);
       setConfirmationModalOpen(false);
+
+      toast({
+        heading: 'TES updates applied',
+        body: `Successfully applied updates to ${totalCount} configuration(s).`,
+        variant: 'success',
+      });
 
       const navigationState: TesUpdateNavigationState = {
         tesUpdateResult: {
@@ -223,9 +216,14 @@ export function UpdateConfigurations() {
        */
       await refetch();
 
-      setSubmissionError(
-        'We could not apply all of the selected TES updates. Please try again.'
-      );
+      const errorMessage =
+        'We could not apply all of the selected TES updates. Please try again.';
+      setSubmissionError(errorMessage);
+      toast({
+        heading: 'Error applying updates',
+        body: errorMessage,
+        variant: 'error',
+      });
     }
   }
 
