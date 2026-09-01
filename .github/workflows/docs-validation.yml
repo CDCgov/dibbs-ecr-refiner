@@ -12,13 +12,16 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  PYTHON_RUNNER_VERSION: "3.14"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate-docs:
-    name: Validate Docs (Warning Only)
+    name: Validate docs (soft assertion)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -27,19 +30,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{env.PYTHON_RUNNER_VERSION}}
 
       - name: Install Just
         run: |
           curl -L https://just.systems/install.sh | bash -s
 
-      - name: Run Docs Validation
+      - name: Run docs validation
         id: docs_val
         continue-on-error: true
         run: |
-          just docs::validate
+          /home/runner/bin/just docs::validate
 
-      - name: Generate Validation Summary
+      - name: Generate validation summary
         if: always()
         run: |
           echo "## 📚 Docs Validation Summary" >> $GITHUB_STEP_SUMMARY
