@@ -1,7 +1,12 @@
 import { Button } from '@components/Button';
 import { Menu, MenuButton, MenuItem } from '@headlessui/react';
 import { BaseMenuItems } from '@components/Dropdown';
-import { CodeResponse, CodeResponseStatus } from '../../../api/schemas';
+import {
+  CodeCountsResponse,
+  CodeResponse,
+  CodeResponseStatus,
+  CodesLimitResponseValue,
+} from '../../../api/schemas';
 import { DeleteIcon } from './DeleteIcon';
 import { useToast } from '../../../hooks/useToast';
 import {
@@ -10,8 +15,7 @@ import {
   getGetCodesInfiniteQueryKey,
   useDeleteCustomCodes,
   useGetCodeCounts,
-  useSetCodesStatusWithinCursor,
-  useSetCodeStatusBeyondCursor,
+  useSetCodesStatus,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -25,6 +29,8 @@ import { useState } from 'react';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { CodeFilters } from './Filters';
 import { filterParamSerializer } from './Filters/utils';
+import { Spinner } from '@components/Spinner';
+import { AxiosResponse } from 'axios';
 
 interface ControlPanelProps {
   configurationId: string;
@@ -47,8 +53,7 @@ export function ControlPanel({
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
-  const { mutate: updateStatusWithinCursor } = useSetCodesStatusWithinCursor();
-  const { mutate: updateStatusBeyondCursor } = useSetCodeStatusBeyondCursor({
+  const { mutate: updateStatusWithinCursor } = useSetCodesStatus({
     axios: {
       paramsSerializer: filterParamSerializer,
     },
@@ -63,87 +68,64 @@ export function ControlPanel({
     new Set([...selectedCodeIds].filter((id) => !customCodeIds.has(id)))
   );
 
+  // These codes are "unselected" ones within the set, which we need in cases
+  // where bulk selection is applied to "all but the selected" codes
   const deselectedCodes = renderedCodes
+    .filter((c) => !c.is_custom)
+    .map((c) => c.id)
+    .filter((id) => !selectedCodeIds.has(id));
+
+  // These codes are "unselected" ones within the set, which we need in cases
+  // where bulk selection is applied to "all but the selected" codes
+  const deselectedCustomCodes = renderedCodes
+    .filter((c) => c.is_custom)
     .map((c) => c.id)
     .filter((id) => !selectedCodeIds.has(id));
 
   const updateSelectedCodesStatus = (status: CodeResponseStatus) => {
-    if (allSelected) {
-      updateStatusBeyondCursor(
-        {
-          configurationId,
-          params: {
-            status: status === 'Included' ? 'included' : 'excluded',
-            code_systems: filters.codeSystems.map((cs) => cs.id),
-            sources: filters.sources.map((s) => s.id),
-            statuses: filters.statuses.map((s) => s.id),
-            search: filters.search,
-          },
-          data: deselectedCodes,
+    updateStatusWithinCursor(
+      {
+        configurationId,
+        params: {
+          status: status === 'Included' ? 'included' : 'excluded',
+          code_systems: filters.codeSystems.map((cs) => cs.id),
+          sources: filters.sources.map((s) => s.id),
+          statuses: filters.statuses.map((s) => s.id),
+          search: filters.search,
+          update_beyond_rendered_set: allSelected,
         },
-        {
-          onSuccess: async (resp) => {
-            await queryClient.invalidateQueries({
-              queryKey: getGetCodesInfiniteQueryKey(configurationId),
-            });
-            await queryClient.invalidateQueries({
-              queryKey: getGetCodeCountsQueryKey(configurationId),
-            });
-            await queryClient.invalidateQueries({
-              queryKey: getGetCodeFiltersQueryKey(configurationId),
-            });
-            toast({
-              heading: `Code ${status}`,
-              body: `${resp.data.length} codes ${status.toLowerCase()}`,
-            });
-            clearSelections();
-          },
-          onError: (e) => {
-            toast({
-              heading: 'Codes could not be updated',
-              body: formatError(e),
-              variant: 'error',
-            });
-          },
-        }
-      );
-    } else {
-      updateStatusWithinCursor(
-        {
-          configurationId,
-          params: {
-            status: status === 'Included' ? 'included' : 'excluded',
-          },
-          data: codeSetCodeIds,
+        data: {
+          code_ids: codeSetCodeIds,
+          code_ids_to_skip: deselectedCodes,
         },
+      },
 
-        {
-          onSuccess: async (resp) => {
-            await queryClient.invalidateQueries({
-              queryKey: getGetCodesInfiniteQueryKey(configurationId),
-            });
-            await queryClient.invalidateQueries({
-              queryKey: getGetCodeCountsQueryKey(configurationId),
-            });
-            await queryClient.invalidateQueries({
-              queryKey: getGetCodeFiltersQueryKey(configurationId),
-            });
-            toast({
-              heading: `Code ${status}`,
-              body: `${resp.data.length} codes ${status.toLowerCase()}`,
-            });
-            clearSelections();
-          },
-          onError: (e) => {
-            toast({
-              heading: 'Codes could not be updated',
-              body: formatError(e),
-              variant: 'error',
-            });
-          },
-        }
-      );
-    }
+      {
+        onSuccess: async (resp) => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodesInfiniteQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeCountsQueryKey(configurationId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
+          });
+          toast({
+            heading: `Code ${status}`,
+            body: `${resp.data.length} codes ${status.toLowerCase()}`,
+          });
+          clearSelections();
+        },
+        onError: (e) => {
+          toast({
+            heading: 'Codes could not be updated',
+            body: formatError(e),
+            variant: 'error',
+          });
+        },
+      }
+    );
   };
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
@@ -152,21 +134,24 @@ export function ControlPanel({
   const selectedCount = allSelected
     ? tallyActiveFilterCount(
         filters,
+        selectedCodeIds.size,
         deselectedCodes.length,
         codeCounts?.data.total_code_count
       )
     : selectedCodeIds.size;
-
   return (
     <>
-      <ExclusionWarningModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        customCodeCount={customCodeIds.size}
-        totalCodeCount={selectedCodeIds.size}
-        updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
-      />
-
+      {
+        <ExclusionWarningModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
+          allSelected={allSelected}
+          codeCounts={codeCounts}
+          deselectedCustomCodeCount={deselectedCustomCodes.length}
+          deselectedCodeCount={deselectedCodes.length}
+        />
+      }
       <div
         data-testid="control-panel"
         className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl bg-white px-6 py-4 shadow"
@@ -202,6 +187,8 @@ export function ControlPanel({
                 configurationId={configurationId}
                 customCodeIds={selectedCustomCodes.map((cc) => cc.id)}
                 clearSelections={clearSelections}
+                allSelected={allSelected}
+                customCodesToSkip={deselectedCustomCodes}
               />
             ) : null}
           </div>
@@ -214,6 +201,8 @@ export function ControlPanel({
 interface CustomCodeDeletionMenuProps {
   configurationId: string;
   customCodeIds: string[];
+  customCodesToSkip: string[];
+  allSelected: boolean;
   clearSelections: () => void;
 }
 
@@ -221,8 +210,19 @@ function CustomCodeDeletionMenu({
   configurationId,
   customCodeIds,
   clearSelections,
+  allSelected,
+  customCodesToSkip,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const { data: codeCounts } = useGetCodeCounts(configurationId);
+
+  let customCodeCounts = customCodeIds.length;
+  if (allSelected && codeCounts?.data.total_custom_codes_count) {
+    customCodeCounts =
+      codeCounts.data.total_custom_codes_count - customCodesToSkip.length;
+  }
+
   return (
     <>
       <CustomCodeDeletionModal
@@ -231,6 +231,9 @@ function CustomCodeDeletionMenu({
         customCodeIds={customCodeIds}
         clearSelections={clearSelections}
         configurationId={configurationId}
+        allSelected={allSelected}
+        customCodesToSkip={customCodesToSkip}
+        customCodeCount={customCodeCounts}
       />
       <Menu as="div" className="relative">
         <MenuButton
@@ -253,7 +256,7 @@ function CustomCodeDeletionMenu({
               onClick={() => setIsOpen(true)}
             >
               <DeleteIcon />
-              Delete {customCodeIds.length} custom codes
+              Delete {customCodeCounts} custom codes
             </Button>
           </MenuItem>
         </BaseMenuItems>
@@ -266,21 +269,26 @@ interface CustomCodeDeletionModalProps {
   isOpen: boolean;
   onClose: () => void;
   customCodeIds: string[];
+  customCodesToSkip: string[];
+  allSelected: boolean;
   configurationId: string;
   clearSelections: () => void;
+  customCodeCount: number;
 }
 
 function CustomCodeDeletionModal({
   isOpen,
   onClose,
   customCodeIds,
+  customCodesToSkip,
+  allSelected,
   configurationId,
   clearSelections,
+  customCodeCount,
 }: CustomCodeDeletionModalProps) {
   const queryClient = useQueryClient();
   const { mutate } = useDeleteCustomCodes();
   const toast = useToast();
-  const customCodeCount = customCodeIds.length;
 
   const deleteCustomCodes = () => {
     mutate(
@@ -288,6 +296,8 @@ function CustomCodeDeletionModal({
         configurationId,
         data: {
           ids: customCodeIds,
+          ids_to_skip: customCodesToSkip,
+          delete_all: allSelected,
         },
       },
       {
@@ -357,21 +367,31 @@ function CustomCodeDeletionModal({
 interface ExclusionWarningModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customCodeCount: number;
-  totalCodeCount: number;
+  codeCounts?: AxiosResponse<CodeCountsResponse>;
+  deselectedCustomCodeCount: number;
+  deselectedCodeCount: number;
   updateCodesToExcluded: () => void;
+  allSelected: boolean;
 }
 
 function ExclusionWarningModal({
   isOpen,
   onClose,
-  customCodeCount,
-  totalCodeCount,
+  codeCounts,
+  deselectedCustomCodeCount,
+  deselectedCodeCount,
   updateCodesToExcluded,
+  allSelected,
 }: ExclusionWarningModalProps) {
-  const excludeableCodeCount = totalCodeCount - customCodeCount;
+  const totalCustomCodeCount = codeCounts?.data.total_custom_codes_count ?? 0;
+  const totalCodeCount = codeCounts?.data.total_code_count ?? 0;
 
-  const isCustomCodesOnly = excludeableCodeCount === 0;
+  const excludeableCodeCount = codeCounts?.data
+    ? totalCodeCount - deselectedCodeCount - totalCustomCodeCount
+    : 0;
+
+  const isCustomCodesOnly = excludeableCodeCount <= 0;
+  const exclusionForbidden = isCustomCodesOnly && !allSelected;
 
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
@@ -381,21 +401,22 @@ function ExclusionWarningModal({
       <ModalBody>
         <div className="flex flex-col gap-4">
           <p>
-            {isCustomCodesOnly
+            {exclusionForbidden
               ? 'None of the selected codes can be excluded.'
               : `
             ${excludeableCodeCount} of ${totalCodeCount} selected codes will be
             excluded from this configuration.`}
           </p>
           <p className="border-l-3! border-l-[#d54309] bg-[#fdf3f2] px-4 py-3">
-            {customCodeCount} custom codes can't be excluded. Custom codes can
-            only be deleted to remove them from this configuration.
+            {totalCustomCodeCount - deselectedCustomCodeCount} custom codes
+            can't be excluded. Custom codes can only be deleted to remove them
+            from this configuration.
           </p>
         </div>
       </ModalBody>
       <ModalFooter align="left">
         <div className="flex flex-row items-center gap-6">
-          {isCustomCodesOnly ? null : (
+          {exclusionForbidden ? null : (
             <Button
               onClick={() => {
                 updateCodesToExcluded();
@@ -419,20 +440,24 @@ function ExclusionWarningModal({
 }
 function tallyActiveFilterCount(
   filters: CodeFilters,
+  selectedCodes: number,
   deselectedCodes: number,
   totalCodeCount?: number
 ): string | number {
+  if (filters.search) {
+    return selectedCodes > CodesLimitResponseValue.codes_limit
+      ? `${CodesLimitResponseValue.codes_limit}+`
+      : selectedCodes;
+  }
+
   const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
 
   const isFilterActive =
     hasFilterEntry(filters.codeSystems) ||
     hasFilterEntry(filters.sources) ||
-    hasFilterEntry(filters.statuses) ||
-    Boolean(filters.search);
+    hasFilterEntry(filters.statuses);
 
-  // Default state: no active filters
   if (!isFilterActive) {
-    console.log(deselectedCodes);
     return totalCodeCount ? totalCodeCount - deselectedCodes : 'All ';
   }
 

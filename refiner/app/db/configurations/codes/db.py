@@ -275,7 +275,7 @@ async def get_codes_db(
     return rows, next_cursor
 
 
-async def set_codes_status_beyond_cursor_db(
+async def set_codes_status_beyond_rendered_db(
     configuration_id: UUID,
     status: Literal["included", "excluded"],
     code_ids_to_skip: list[UUID],
@@ -394,7 +394,7 @@ async def _check_update_operation_excludes_rsg_codes(
         raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
 
 
-async def set_codes_status_within_cursor_db(
+async def set_codes_status_within_rendered_set_db(
     configuration_id: UUID,
     status: Literal["included", "excluded"],
     configuration_primary_condition_id: UUID,

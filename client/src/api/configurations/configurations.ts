@@ -35,6 +35,7 @@ import type {
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  BodySetCodesStatus,
   BulkDeleteCustomCodesInput,
   CodeCountsResponse,
   CodeFilterOptions,
@@ -52,8 +53,7 @@ import type {
   HTTPValidationError,
   SectionUpdateInput,
   SerializedFiles,
-  SetCodeStatusBeyondCursorParams,
-  SetCodesStatusWithinCursorParams,
+  SetCodesStatusParams,
   UpdateCustomCodeInput,
   UpdateSectionProcessingResponse,
   UploadCustomCodesCsvInput,
@@ -1924,6 +1924,88 @@ export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationEr
       return useMutation(getReleaseConfigurationLockMutationOptions(options), queryClient);
     }
     /**
+ * Sets all provided code_ids to the specified `status` for the given configuration ID.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     update_beyond_rendered_set (bool): Whether the action should be only within the rendered codes or include all codes.
+ *     code_ids (list[UUID]): List of code IDs to specifically action. Used in the "within cursor" flow.
+ *     code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been manually actioned by the user.
+ *     filters (FilterInput): Filter input coming from the client to build the "complete" set of codes to bulk select
+ *     status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     list[UUID]: Code IDs that had their status changed
+ * @summary Set Codes Status
+ */
+export const setCodesStatus = (
+    configurationId: string,
+    bodySetCodesStatus: BodySetCodesStatus,
+    params: SetCodesStatusParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<string[]>> => {
+
+
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/set-status`,
+      bodySetCodesStatus,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+
+export const getSetCodesStatusMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}, TContext> => {
+
+const mutationKey = ['setCodesStatus'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodesStatus>>, {configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}> = (props) => {
+          const {configurationId,data,params} = props ?? {};
+
+          return  setCodesStatus(configurationId,data,params,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetCodesStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setCodesStatus>>>
+    export type SetCodesStatusMutationBody = BodySetCodesStatus
+    export type SetCodesStatusMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Set Codes Status
+ */
+export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setCodesStatus>>,
+        TError,
+        {configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams},
+        TContext
+      > => {
+      return useMutation(getSetCodesStatusMutationOptions(options), queryClient);
+    }
+    /**
  * Fetches all codes associated with a configuration.
  *
  * Args:
@@ -2214,168 +2296,6 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
 
 
 /**
- * Sets all provided code_ids to the specified `status` for the given configuration ID.
- *
- * Args:
- *     configuration_id (UUID): ID of the configuration to update
- *     code_ids (list[UUID]): List of code IDs
- *     code_ids_to_skip (list[UUID]): List of code IDs to skip within the bulk selection / deselection
- *     status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
- *     update_beyond_cursor (bool): Whether to update the entire filter
- *         selection to include / excluded beyond the selected cursor
- *     user (DbUser): The logged-in user
- *     db (AsyncDatabaseConnection): Database connection
- *
- * Raises:
- *     HTTPException: 404 if configuration can't be found
- *
- * Returns:
- *     list[UUID]: Code IDs that had their status changed
- * @summary Set Codes Status
- */
-export const setCodesStatusWithinCursor = (
-    configurationId: string,
-    setCodesStatusWithinCursorBody: string[],
-    params: SetCodesStatusWithinCursorParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<string[]>> => {
-
-
-    return axios.default.post(
-      `/api/v1/configurations/${configurationId}/set-status`,
-      setCodesStatusWithinCursorBody,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-
-
-
-
-export const getSetCodesStatusWithinCursorMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatusWithinCursor>>, TError,{configurationId: string;data: string[];params: SetCodesStatusWithinCursorParams}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof setCodesStatusWithinCursor>>, TError,{configurationId: string;data: string[];params: SetCodesStatusWithinCursorParams}, TContext> => {
-
-const mutationKey = ['setCodesStatusWithinCursor'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodesStatusWithinCursor>>, {configurationId: string;data: string[];params: SetCodesStatusWithinCursorParams}> = (props) => {
-          const {configurationId,data,params} = props ?? {};
-
-          return  setCodesStatusWithinCursor(configurationId,data,params,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SetCodesStatusWithinCursorMutationResult = NonNullable<Awaited<ReturnType<typeof setCodesStatusWithinCursor>>>
-    export type SetCodesStatusWithinCursorMutationBody = string[]
-    export type SetCodesStatusWithinCursorMutationError = AxiosError<HTTPValidationError>
-
-    /**
- * @summary Set Codes Status
- */
-export const useSetCodesStatusWithinCursor = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatusWithinCursor>>, TError,{configurationId: string;data: string[];params: SetCodesStatusWithinCursorParams}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof setCodesStatusWithinCursor>>,
-        TError,
-        {configurationId: string;data: string[];params: SetCodesStatusWithinCursorParams},
-        TContext
-      > => {
-      return useMutation(getSetCodesStatusWithinCursorMutationOptions(options), queryClient);
-    }
-    /**
- * Sets all provided code_ids to the specified `status` for the given configuration ID.
- *
- * Args:
- *     configuration_id (UUID): ID of the configuration to update
- *     code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been manually actioned by the user.
- *     filters (FilterInput): Filter input coming from the client to build the "complete" set of codes to bulk select
- *     status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
- *     user (DbUser): The logged-in user
- *     db (AsyncDatabaseConnection): Database connection
- *
- * Raises:
- *     HTTPException: 404 if configuration can't be found
- *
- * Returns:
- *     list[UUID]: Code IDs that had their status changed
- * @summary Set Codes Status Bulk
- */
-export const setCodeStatusBeyondCursor = (
-    configurationId: string,
-    setCodeStatusBeyondCursorBody: string[],
-    params: SetCodeStatusBeyondCursorParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<string[]>> => {
-
-
-    return axios.default.post(
-      `/api/v1/configurations/${configurationId}/set-status-bulk`,
-      setCodeStatusBeyondCursorBody,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-
-
-
-
-export const getSetCodeStatusBeyondCursorMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodeStatusBeyondCursor>>, TError,{configurationId: string;data: string[];params: SetCodeStatusBeyondCursorParams}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof setCodeStatusBeyondCursor>>, TError,{configurationId: string;data: string[];params: SetCodeStatusBeyondCursorParams}, TContext> => {
-
-const mutationKey = ['setCodeStatusBeyondCursor'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodeStatusBeyondCursor>>, {configurationId: string;data: string[];params: SetCodeStatusBeyondCursorParams}> = (props) => {
-          const {configurationId,data,params} = props ?? {};
-
-          return  setCodeStatusBeyondCursor(configurationId,data,params,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SetCodeStatusBeyondCursorMutationResult = NonNullable<Awaited<ReturnType<typeof setCodeStatusBeyondCursor>>>
-    export type SetCodeStatusBeyondCursorMutationBody = string[]
-    export type SetCodeStatusBeyondCursorMutationError = AxiosError<HTTPValidationError>
-
-    /**
- * @summary Set Codes Status Bulk
- */
-export const useSetCodeStatusBeyondCursor = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodeStatusBeyondCursor>>, TError,{configurationId: string;data: string[];params: SetCodeStatusBeyondCursorParams}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof setCodeStatusBeyondCursor>>,
-        TError,
-        {configurationId: string;data: string[];params: SetCodeStatusBeyondCursorParams},
-        TContext
-      > => {
-      return useMutation(getSetCodeStatusBeyondCursorMutationOptions(options), queryClient);
-    }
-    /**
  * Fetches code filter information for the client to display.
  *
  * Args:
