@@ -57,12 +57,12 @@ export function UpdateConfigurations() {
     <div>
       <Title className="pb-4">Update configurations</Title>
       <h2 className="mb-1 text-[1.25rem]">Update to latest release</h2>
-      <p className="max-w-[35%]">
+      <p className="max-w-[75%]">
         Update existing drafts and/or create a for existing configurations to
         apply the latest TES release. Drafts will need to be activated in order
         to receive the most up to date eCRs.
       </p>
-      <div className="mt-4 bg-white px-10 py-6 lg:max-w-[75%]">
+      <div className="mt-4 bg-white px-10 py-6">
         <Table className="mt-0 mb-4 border-none">
           <caption className="text-lg! font-bold">
             Update existing drafts

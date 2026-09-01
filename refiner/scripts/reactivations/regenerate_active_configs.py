@@ -477,8 +477,7 @@ async def regenerate_active_configuration(
             payload_started_at = time.perf_counter()
 
             config_payload = await convert_config_to_storage_payload(
-                configuration=configuration,
-                db=db,
+                configuration=configuration, db=db, logger=logger
             )
 
             payload_finished_at = time.perf_counter()

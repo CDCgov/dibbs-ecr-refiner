@@ -13,11 +13,7 @@ def _make_db_condition(name: str, url: str, version: str, rsg_code: str):
         version=version,
         id=(uuid4()),
         child_rsg_snomed_codes=[rsg_code],
-        snomed_codes=[],
-        loinc_codes=[],
-        icd10_codes=[],
-        rxnorm_codes=[],
-        cvx_codes=[],
+        codes=[],
     )
 
 
