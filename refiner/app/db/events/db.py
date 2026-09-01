@@ -325,7 +325,7 @@ async def insert_custom_code_event_db(
     """
     Helper function to insert custom code events.
 
-    If the `custom_codes` is empty, no events will be created.
+    If the `custom_codes` list is empty, no events will be created.
 
     If more than one custom code objects are in the `custom_codes` list, it will
     insert all of the required subevents. This occurs for bulk additions or deletions.
