@@ -4,7 +4,6 @@ from psycopg.rows import class_row, dict_row
 
 from app.db.codes.model import DbCode
 from app.db.tes.db import get_loaded_tes_versions_db
-from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
 from .model import (
@@ -81,6 +80,8 @@ async def get_latest_tes_condition_db(
     Returns:
         DbCondition: The latest version of the condition
     """
+    from app.services.tes import get_latest_tes_version
+
     tes_versions = await get_loaded_tes_versions_db(db=db)
     latest_tes = get_latest_tes_version(available_versions=tes_versions)
     condition = await _get_condition_by_canonical_url_and_version_db(
@@ -102,6 +103,7 @@ async def get_latest_tes_condition_ids_db(
     Returns:
         list[id]: IDs of conditions for the latest TES version
     """
+    from app.services.tes import get_latest_tes_version
 
     # get the latest TES version
     tes_versions = await get_loaded_tes_versions_db(db=db)
@@ -507,6 +509,8 @@ async def get_conditions_with_rsg_codes_db(
 
     Only grabs the conditions corresponding to the latest TES version.
     """
+    from app.services.tes import get_latest_tes_version
+
     query = """
         SELECT
             c.id,
