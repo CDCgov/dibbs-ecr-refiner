@@ -219,17 +219,43 @@ function CodesTable({
     [codesWithoutPrimaryConditionRsgCodes, resolvedSelectedIds]
   );
 
-  const handleToggle = useCallback((id: string, checked: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) {
-        next.add(id);
-      } else {
-        next.delete(id);
+  const handleToggle = useCallback(
+    (id: string, checked: boolean) => {
+      if (!checked && selectAll) {
+        setSelectAll(false);
+        setSelectedIds(
+          new Set(
+            codesWithoutPrimaryConditionRsgCodes
+              .map((c) => c.id)
+              .filter((codeId) => codeId !== id)
+          )
+        );
+        return;
       }
-      return next;
-    });
-  }, []);
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (checked) {
+          next.add(id);
+        } else {
+          next.delete(id);
+        }
+
+        if (next.size === codesWithoutPrimaryConditionRsgCodes.length) {
+          setSelectAll(true);
+          return new Set();
+        }
+
+        return next;
+      });
+    },
+    [selectAll, codesWithoutPrimaryConditionRsgCodes]
+  );
+
+  const allSelected =
+    selectAll ||
+    (codesWithoutPrimaryConditionRsgCodes.length > 0 &&
+      selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
@@ -273,7 +299,7 @@ function CodesTable({
                   <Checkbox
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
-                    checked={selectAll}
+                    checked={allSelected}
                     onChange={(checked) => {
                       setSelectAll(checked);
                       setSelectedIds(new Set());
