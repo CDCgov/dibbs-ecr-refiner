@@ -1,4 +1,5 @@
 import base64
+from collections import defaultdict
 import json
 from dataclasses import dataclass
 from typing import Literal
@@ -55,6 +56,41 @@ def _decode_cursor(cursor: str) -> DbCodeCursor:
     return DbCodeCursor(**data)
 
 
+def _build_filter_condition_clauses(filters: FilterInput, configuration_id: UUID):
+    cond_clauses = []
+    search = filters.search
+    sources = filters.sources
+    code_systems = filters.code_systems
+    statuses = filters.statuses
+
+    cond_params: dict = {"configuration_id": configuration_id}
+
+    if code_systems:
+        cond_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
+        cond_params["code_systems"] = code_systems
+
+    condition_sources = [s for s in sources if s != "Custom Code"]
+    if condition_sources:
+        cond_clauses.append(" AND v.id = ANY(%(sources)s::uuid[])")
+        cond_params["sources"] = condition_sources
+
+    if statuses:
+        # Map client values to DB values using alias 'e'
+        db_statuses = [s.lower() for s in statuses]
+        if "included" in db_statuses and "excluded" not in db_statuses:
+            cond_clauses.append(" AND e.code_id IS NULL")
+        elif "excluded" in db_statuses and "included" not in db_statuses:
+            cond_clauses.append(" AND e.code_id IS NOT NULL")
+
+    if search:
+        cond_clauses.append(
+            " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+        )
+        cond_params["search"] = f"%{search}%"
+
+    return cond_clauses, cond_params
+
+
 async def get_codes_db(
     configuration_id: UUID,
     configuration_primary_condition_id: UUID,
@@ -85,7 +121,9 @@ async def get_codes_db(
     sources = filters.sources
     code_systems = filters.code_systems
     statuses = filters.statuses
-
+    cond_clauses, cond_params = _build_filter_condition_clauses(
+        filters=filters, configuration_id=configuration_id
+    )
     # Handle custom codes first
     if in_custom:
         # "Custom Code" is the hard-coded source for custom codes.
@@ -158,12 +196,10 @@ async def get_codes_db(
 
     # Handle condition-linked codes
     remaining = limit - len(rows) + 1  # +1 to detect next page
-    cond_params: dict = {
-        "configuration_id": configuration_id,
-        "primary_condition_id": configuration_primary_condition_id,
-        "limit": remaining,
-    }
-    cond_clauses = []
+
+    cond_params["primary_condition_id"] = configuration_primary_condition_id
+    cond_params["limit"] = remaining
+
     cursor_clause = ""
 
     if not in_custom and decoded:
@@ -171,35 +207,12 @@ async def get_codes_db(
         cond_params["cursor_condition_id"] = decoded.condition_id
         cond_params["cursor_code"] = decoded.code
 
-    if code_systems:
-        cond_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
-        cond_params["code_systems"] = code_systems
-
     # Since "Custom Code" is not a valid UUID we need to strip it before filtering condition grouper codes on their UUID
     condition_sources = [s for s in sources if s != "Custom Code"]
 
     # If sources were specified but none are condition grouper UUIDs, skip condition grouper codes entirely
     if sources and not condition_sources:
         return rows, next_cursor
-
-    if condition_sources:
-        cond_clauses.append(" AND v.id = ANY(%(sources)s::uuid[])")
-        cond_params["sources"] = condition_sources
-
-    if statuses:
-        # Map client values to DB values
-        db_statuses = [s.lower() for s in statuses]
-        if "included" in db_statuses and "excluded" not in db_statuses:
-            cond_clauses.append(" AND e.code_id IS NULL")
-        elif "excluded" in db_statuses and "included" not in db_statuses:
-            cond_clauses.append(" AND e.code_id IS NOT NULL")
-        # No clause is needed if both are present
-
-    if search:
-        cond_clauses.append(
-            " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
-        )
-        cond_params["search"] = f"%{search}%"
 
     cond_query = f"""
         SELECT
@@ -290,39 +303,12 @@ async def set_codes_status_beyond_cursor_db(
     Returns:
         list[UUID]: List of impacted code IDs
     """
-    cond_clauses = []
-    search = filters.search
-    sources = filters.sources
-    code_systems = filters.code_systems
-    statuses = filters.statuses
 
-    cond_params: dict = {
-        "configuration_id": configuration_id,
-        "code_ids_to_skip": code_ids_to_skip,
-    }
+    cond_clauses, cond_params = _build_filter_condition_clauses(
+        filters=filters, configuration_id=configuration_id
+    )
 
-    if code_systems:
-        cond_clauses.append(" AND s.id = ANY(%(code_systems)s::uuid[])")
-        cond_params["code_systems"] = code_systems
-
-    condition_sources = [s for s in sources if s != "Custom Code"]
-    if condition_sources:
-        cond_clauses.append(" AND v.id = ANY(%(sources)s::uuid[])")
-        cond_params["sources"] = condition_sources
-
-    if statuses:
-        # Map client values to DB values using alias 'e'
-        db_statuses = [s.lower() for s in statuses]
-        if "included" in db_statuses and "excluded" not in db_statuses:
-            cond_clauses.append(" AND e.code_id IS NULL")
-        elif "excluded" in db_statuses and "included" not in db_statuses:
-            cond_clauses.append(" AND e.code_id IS NOT NULL")
-
-    if search:
-        cond_clauses.append(
-            " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
-        )
-        cond_params["search"] = f"%{search}%"
+    cond_params["code_ids_to_skip"] = code_ids_to_skip
 
     if status == "excluded":
         query = f"""
