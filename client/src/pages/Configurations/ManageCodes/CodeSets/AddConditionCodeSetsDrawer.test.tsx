@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AddConditionCodeSetsDrawer } from './AddConditionCodeSetsDrawer';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
+import { IncludedCondition } from '../../../../api/schemas';
+import { TestProviders } from '../../../../test-utils';
 
 vi.mock('./ConditionCodeSet', () => ({
   ConditionCodeSet: ({
@@ -35,12 +38,6 @@ vi.mock('../../../../hooks/useToast', () => ({
   useToast: () => vi.fn(),
 }));
 
-vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => ({
-    invalidateQueries: vi.fn(),
-  }),
-}));
-
 vi.mock('../../../../api/configurations/configurations', () => ({
   useAssociateConditionWithConfiguration: () => ({ mutate: vi.fn() }),
   useDisassociateConditionWithConfiguration: () => ({ mutate: vi.fn() }),
@@ -51,7 +48,9 @@ vi.mock('../../../../api/conditions/conditions', () => ({
   getGetConditionsByConfigurationQueryKey: vi.fn(),
 }));
 
-const mockConditions = [
+type DrawerProps = React.ComponentProps<typeof AddConditionCodeSetsDrawer>;
+
+const mockConditions: IncludedCondition[] = [
   { id: '1', display_name: 'Asthma', associated: false },
   { id: '2', display_name: 'Diabetes', associated: true },
   { id: '3', display_name: 'Flu', associated: false },
@@ -60,10 +59,19 @@ const mockConditions = [
   canonical_url: '',
   version: '',
   reportable_condition_display_name: '',
+  code_set_status: 'fully complete',
 }));
 
+function renderDrawer(props: DrawerProps) {
+  return render(
+    <TestProviders>
+      <AddConditionCodeSetsDrawer {...props} />
+    </TestProviders>
+  );
+}
+
 describe('AddConditionCodeSetsDrawer', () => {
-  const defaultProps = {
+  const defaultProps: DrawerProps = {
     isOpen: true,
     onClose: vi.fn(),
     configurationId: 'my-config',
@@ -77,7 +85,7 @@ describe('AddConditionCodeSetsDrawer', () => {
   });
 
   it('renders drawer and condition names', () => {
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    renderDrawer(defaultProps);
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
       /Add condition code sets/
     );
@@ -88,14 +96,14 @@ describe('AddConditionCodeSetsDrawer', () => {
 
   it('triggers onClose when close button is clicked', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    renderDrawer(defaultProps);
     await user.click(screen.getByRole('button', { name: /close drawer/i }));
     expect(defaultProps.onClose).toHaveBeenCalledOnce();
   });
 
   it('filters conditions when searching', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    renderDrawer(defaultProps);
     await user.type(screen.getByRole('searchbox'), 'Flu');
     expect(screen.getByText('Flu')).toBeInTheDocument();
     expect(screen.queryByText('Asthma')).not.toBeInTheDocument();
@@ -104,7 +112,7 @@ describe('AddConditionCodeSetsDrawer', () => {
 
   it('returns only the expected condition matches when using the search box', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    renderDrawer(defaultProps);
     await user.type(screen.getByRole('searchbox'), 'Asthma');
     expect(screen.getByText('Asthma')).toBeInTheDocument();
     expect(screen.queryByText('Diabetes')).not.toBeInTheDocument();
