@@ -150,7 +150,6 @@ async def insert_custom_codes_db(
                 rows = await cur.fetchall()
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                # Insert a single audit event if codes were added
                 await insert_custom_code_upload_events_db(
                     configuration=config,
                     event_type="bulk_add",
@@ -191,7 +190,6 @@ async def delete_custom_codes_db(
                     return []
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                # Insert a single audit event if codes were added
                 await insert_custom_code_upload_events_db(
                     configuration=config,
                     event_type="bulk_delete",
