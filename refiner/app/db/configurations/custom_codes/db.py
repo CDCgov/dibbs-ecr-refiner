@@ -153,6 +153,7 @@ async def insert_custom_codes_db(
                 # Insert a single audit event if codes were added
                 await insert_custom_code_upload_events_db(
                     configuration=config,
+                    event_type="bulk_add",
                     user_id=user_id,
                     custom_codes=rows,
                     code_systems=code_systems,
@@ -166,6 +167,7 @@ async def delete_custom_codes_db(
     config: DbConfiguration,
     ids: list[UUID],
     user_id: UUID,
+    code_systems: list[DbCodeSystem],
     db: AsyncDatabaseConnection,
 ) -> list[DbCustomCode]:
     """
@@ -189,17 +191,15 @@ async def delete_custom_codes_db(
                     return []
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                for row in rows:
-                    await insert_event_db(
-                        event=EventInput(
-                            jurisdiction_id=config.jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config.id,
-                            event_type="delete_code",
-                            action_text=f"Removed custom code '{row.code}'",
-                        ),
-                        cursor=event_cur,
-                    )
+                # Insert a single audit event if codes were added
+                await insert_custom_code_upload_events_db(
+                    configuration=config,
+                    event_type="bulk_delete",
+                    user_id=user_id,
+                    custom_codes=rows,
+                    code_systems=code_systems,
+                    cursor=event_cur,
+                )
 
         return rows
 

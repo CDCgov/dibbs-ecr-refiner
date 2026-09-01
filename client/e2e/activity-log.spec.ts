@@ -152,7 +152,7 @@ test.describe('Activity log', () => {
     await expect(
       page.getByRole('heading', { name: 'Custom codes', level: 2 })
     ).toBeVisible();
-    await expect(page.getByText('Imported by refiner on')).toBeVisible();
+    await expect(page.getByText('Modified by refiner on')).toBeVisible();
     await expect(page.getByRole('table').getByRole('row')).toHaveCount(
       customCodes.length + 1 // including header row
     );

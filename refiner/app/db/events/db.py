@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from psycopg import AsyncCursor
@@ -317,6 +317,7 @@ async def get_custom_code_upload_events_by_event_id(
 async def insert_custom_code_upload_events_db(
     configuration: DbConfiguration,
     user_id: UUID,
+    event_type: Literal["bulk_add", "bulk_delete"],
     custom_codes: list[DbCustomCode],
     code_systems: list[DbCodeSystem],
     cursor: AsyncCursor[Any],
@@ -340,8 +341,10 @@ async def insert_custom_code_upload_events_db(
         jurisdiction_id=configuration.jurisdiction_id,
         user_id=user_id,
         configuration_id=configuration.id,
-        event_type="bulk_add_custom_code",
-        action_text=f"Added {len(custom_codes)} custom codes from CSV",
+        event_type="bulk_add_custom_code"
+        if event_type == "bulk_add"
+        else "bulk_delete_custom_code",
+        action_text=f"{'Added' if event_type == 'bulk_add' else 'Deleted'} {len(custom_codes)} custom codes from CSV",
     )
 
     event_id = await insert_event_db(event=event, cursor=cursor)
