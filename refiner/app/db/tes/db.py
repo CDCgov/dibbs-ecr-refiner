@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from packaging.version import parse
 from psycopg.rows import class_row
 
 from app.db.pool import AsyncDatabaseConnection
@@ -60,19 +61,17 @@ async def _get_latest_tes_record_db(
             created_at,
             updated_at
         FROM tes
-        ORDER BY created_at DESC
-        LIMIT 1
     """
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTes)) as cur:
             await cur.execute(query)
-            record = await cur.fetchone()
+            records = await cur.fetchall()
 
-            if record is None:
+            if not records:
                 raise ValueError("No TES releases have been loaded.")
 
-            return record
+            return max(records, key=lambda r: parse(r.version))
 
 
 async def _get_tes_by_version_number_db(
@@ -493,13 +492,12 @@ async def apply_latest_tes_to_existing_drafts_db(
 
     latest_tes_record = await _get_latest_tes_record_db(db=db)
 
-    async with db.get_connection() as conn:
-        async with conn.transaction():
-            async with conn.cursor() as cur:
-                # Lock the configurations and make sure they are editable
-                # drafts belonging to the current jurisdiction.
-                await cur.execute(
-                    """
+    async with db.get_connection() as conn, conn.transaction():
+        async with conn.cursor() as cur:
+            # Lock the configurations and make sure they are editable
+            # drafts belonging to the current jurisdiction.
+            await cur.execute(
+                """
                     SELECT id
                     FROM configurations
                     WHERE id = ANY(%(configuration_ids)s)
@@ -507,25 +505,25 @@ async def apply_latest_tes_to_existing_drafts_db(
                         AND jurisdiction_id = %(jurisdiction_id)s
                     FOR UPDATE
                     """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "jurisdiction_id": jurisdiction_id,
-                    },
+                {
+                    "configuration_ids": requested_ids,
+                    "jurisdiction_id": jurisdiction_id,
+                },
+            )
+
+            eligible_ids = {row[0] for row in await cur.fetchall()}
+
+            if eligible_ids != set(requested_ids):
+                raise ValueError(
+                    "One or more selected configurations could not be "
+                    "updated because they do not exist, are not drafts, "
+                    "or do not belong to the current jurisdiction."
                 )
 
-                eligible_ids = {row[0] for row in await cur.fetchall()}
-
-                if eligible_ids != set(requested_ids):
-                    raise ValueError(
-                        "One or more selected configurations could not be "
-                        "updated because they do not exist, are not drafts, "
-                        "or do not belong to the current jurisdiction."
-                    )
-
-                # Every old condition must have a condition with the same
-                # canonical URL in the latest TES release.
-                await cur.execute(
-                    """
+            # Every old condition must have a condition with the same
+            # canonical URL in the latest TES release.
+            await cur.execute(
+                """
                     SELECT DISTINCT
                         old_condition.canonical_url
                     FROM configurations_conditions cc
@@ -541,25 +539,25 @@ async def apply_latest_tes_to_existing_drafts_db(
                         AND latest_condition.id IS NULL
                     ORDER BY old_condition.canonical_url
                     """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "latest_tes_id": latest_tes_record.id,
-                    },
+                {
+                    "configuration_ids": requested_ids,
+                    "latest_tes_id": latest_tes_record.id,
+                },
+            )
+
+            missing_condition_urls = [row[0] for row in await cur.fetchall()]
+
+            if missing_condition_urls:
+                raise ValueError(
+                    "The following conditions could not be found in the "
+                    "latest TES release: " + ", ".join(missing_condition_urls)
                 )
 
-                missing_condition_urls = [row[0] for row in await cur.fetchall()]
-
-                if missing_condition_urls:
-                    raise ValueError(
-                        "The following conditions could not be found in the "
-                        "latest TES release: " + ", ".join(missing_condition_urls)
-                    )
-
-                # Prevent a primary-key conflict if bad or mixed-version data
-                # already connects the same configuration to both the old and
-                # latest condition.
-                await cur.execute(
-                    """
+            # Prevent a primary-key conflict if bad or mixed-version data
+            # already connects the same configuration to both the old and
+            # latest condition.
+            await cur.execute(
+                """
                     SELECT DISTINCT
                         old_link.configuration_id,
                         old_condition.canonical_url
@@ -579,27 +577,27 @@ async def apply_latest_tes_to_existing_drafts_db(
                         ANY(%(configuration_ids)s)
                         AND old_link.condition_id <> latest_condition.id
                     """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "latest_tes_id": latest_tes_record.id,
-                    },
+                {
+                    "configuration_ids": requested_ids,
+                    "latest_tes_id": latest_tes_record.id,
+                },
+            )
+
+            conflicting_links = await cur.fetchall()
+
+            if conflicting_links:
+                raise ValueError(
+                    "One or more configurations already contain both old "
+                    "and current versions of the same TES condition."
                 )
 
-                conflicting_links = await cur.fetchall()
-
-                if conflicting_links:
-                    raise ValueError(
-                        "One or more configurations already contain both old "
-                        "and current versions of the same TES condition."
-                    )
-
-                # Replace each old condition link with the corresponding
-                # condition from the latest TES release.
-                #
-                # is_primary remains unchanged because only condition_id is
-                # updated.
-                await cur.execute(
-                    """
+            # Replace each old condition link with the corresponding
+            # condition from the latest TES release.
+            #
+            # is_primary remains unchanged because only condition_id is
+            # updated.
+            await cur.execute(
+                """
                     WITH condition_replacements AS (
                         SELECT
                             cc.configuration_id,
@@ -628,28 +626,28 @@ async def apply_latest_tes_to_existing_drafts_db(
                             replacements.old_condition_id
                     RETURNING cc.configuration_id
                     """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "latest_tes_id": latest_tes_record.id,
-                    },
-                )
+                {
+                    "configuration_ids": requested_ids,
+                    "latest_tes_id": latest_tes_record.id,
+                },
+            )
 
-                updated_id_set = {row[0] for row in await cur.fetchall()}
+            updated_id_set = {row[0] for row in await cur.fetchall()}
 
-                # Updating configurations_conditions does not fire the
-                # configurations updated_at trigger, so explicitly touch the
-                # configurations that changed.
-                if updated_id_set:
-                    await cur.execute(
-                        """
+            # Updating configurations_conditions does not fire the
+            # configurations updated_at trigger, so explicitly touch the
+            # configurations that changed.
+            if updated_id_set:
+                await cur.execute(
+                    """
                         UPDATE configurations
                         SET updated_at = NOW()
                         WHERE id = ANY(%(configuration_ids)s)
                         """,
-                        {
-                            "configuration_ids": list(updated_id_set),
-                        },
-                    )
+                    {
+                        "configuration_ids": list(updated_id_set),
+                    },
+                )
 
     # Keep the response in the same order as the request.
     return [
