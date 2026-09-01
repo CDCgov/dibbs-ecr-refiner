@@ -11,7 +11,7 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Checkbox } from '@components/Checkbox';
-import { useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import {
   Modal,
@@ -136,7 +136,12 @@ interface CodesTableProps {
 }
 
 type ParamValue =
-  string | number | boolean | (string | number | boolean)[] | null | undefined;
+  | string
+  | number
+  | boolean
+  | (string | number | boolean)[]
+  | null
+  | undefined;
 
 function CodesTable({
   id,
@@ -186,21 +191,45 @@ function CodesTable({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
+  const codes = useMemo(
+    () => data?.pages.flatMap((page) => page.data.codes) ?? [],
+    [data]
+  );
+
+  const codesWithoutPrimaryConditionRsgCodes = useMemo(
+    () => codes.filter((c) => !c.is_primary_condition_rsg),
+    [codes]
+  );
+
+  const allSelected = useMemo(
+    () =>
+      codesWithoutPrimaryConditionRsgCodes.length > 0 &&
+      selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length,
+    [codesWithoutPrimaryConditionRsgCodes, selectedIds]
+  );
+
+  const selectedCustomCodes = useMemo(
+    () =>
+      codesWithoutPrimaryConditionRsgCodes.filter(
+        (c) => selectedIds.has(c.id) && c.is_custom
+      ),
+    [codesWithoutPrimaryConditionRsgCodes, selectedIds]
+  );
+
+  const handleToggle = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  }, []);
+
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
-
-  const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
-
-  const codesWithoutPrimaryConditionRsgCodes = codes.filter(
-    (c) => !c.is_primary_condition_rsg
-  );
-
-  const allSelected =
-    codesWithoutPrimaryConditionRsgCodes.length > 0 &&
-    selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length;
-  const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
-    (c) => selectedIds.has(c.id) && c.is_custom
-  );
 
   const hasCodesSelected = selectedIds.size > 0;
 
@@ -296,50 +325,14 @@ function CodesTable({
                 </tr>
               ) : (
                 codes.map((code) => (
-                  <tr
+                  <CodeRow
                     key={`${code.condition_id ?? 'custom-code'}-${code.id}`}
-                    className={classNames(
-                      'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
-                      {
-                        italic: code.status === 'Excluded',
-                      }
-                    )}
-                  >
-                    <td className="text-center">
-                      {code.is_primary_condition_rsg ? (
-                        <Tooltip
-                          position="right"
-                          label="Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR."
-                        >
-                          <LockIcon />
-                        </Tooltip>
-                      ) : (
-                        <Checkbox
-                          aria-label={`Include ${code.code} in bulk operation`}
-                          disabled={disabled}
-                          checked={selectedIds.has(code.id)}
-                          onChange={(checked) =>
-                            setSelectedIds((prev) => {
-                              const next = new Set(prev);
-                              if (checked) {
-                                next.add(code.id);
-                              } else {
-                                next.delete(code.id);
-                              }
-                              return next;
-                            })
-                          }
-                        />
-                      )}
-                    </td>
-                    <td>{code.code}</td>
-                    <td>{code.system_name}</td>
-                    <td>{code.description}</td>
-                    <td>
-                      <SourceCell configurationId={id} code={code} />
-                    </td>
-                    <td>{code.status}</td>
-                  </tr>
+                    code={code}
+                    configurationId={id}
+                    disabled={disabled}
+                    isSelected={selectedIds.has(code.id)}
+                    onToggle={handleToggle}
+                  />
                 ))
               )}
             </tbody>
@@ -349,6 +342,49 @@ function CodesTable({
     </div>
   );
 }
+
+interface CodeRowProps {
+  code: CodeResponse;
+  configurationId: string;
+  disabled: boolean;
+  isSelected: boolean;
+  onToggle: (id: string, checked: boolean) => void;
+}
+
+const CodeRow = memo(
+  ({ code, configurationId, disabled, isSelected, onToggle }: CodeRowProps) => (
+    <tr
+      className={classNames('text-gray-cool-60 [&>td]:px-4 [&>td]:py-2', {
+        italic: code.status === 'Excluded',
+      })}
+    >
+      <td className="text-center">
+        {code.is_primary_condition_rsg ? (
+          <Tooltip
+            position="right"
+            label="Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR."
+          >
+            <LockIcon />
+          </Tooltip>
+        ) : (
+          <Checkbox
+            aria-label={`Include ${code.code} in bulk operation`}
+            disabled={disabled}
+            checked={isSelected}
+            onChange={(checked) => onToggle(code.id, checked)}
+          />
+        )}
+      </td>
+      <td>{code.code}</td>
+      <td>{code.system_name}</td>
+      <td>{code.description}</td>
+      <td>
+        <SourceCell configurationId={configurationId} code={code} />
+      </td>
+      <td>{code.status}</td>
+    </tr>
+  )
+);
 
 function LockIcon() {
   return (
