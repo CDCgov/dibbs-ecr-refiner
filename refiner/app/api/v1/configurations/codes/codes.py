@@ -13,7 +13,9 @@ from app.db.configurations.codes.db import (
     get_all_filter_options_db,
     get_code_count_metadata_db,
     get_codes_db,
+    set_codes_status_beyond_cursor_db,
     set_codes_status_db,
+    set_codes_status_within_cursor_db,
 )
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -204,14 +206,12 @@ async def get_code_counts(
     "/set-status",
     response_model=list[UUID],
     tags=["configurations"],
-    operation_id="setCodesStatus",
+    operation_id="setCodesStatusWithinCursor",
 )
 async def set_codes_status(
     configuration_id: UUID,
     code_ids: list[UUID],
-    code_ids_to_skip: list[UUID],
     status: Literal["included", "excluded"],
-    update_beyond_cursor: bool,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[UUID]:
@@ -254,13 +254,86 @@ async def set_codes_status(
         )
 
     try:
-        impacted_code_ids = await set_codes_status_db(
+        impacted_code_ids = await set_codes_status_within_cursor_db(
             configuration_id=config.id,
             configuration_primary_condition_id=config.condition_id,
             code_ids=code_ids,
+            status=status,
+            db=db,
+        )
+        return impacted_code_ids
+    except ValueError:
+        primary_condition = await get_primary_condition_db(
+            configuration_id=config.id, db=db
+        )
+
+        if not primary_condition:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Could not find configuration's primary condition.",
+            )
+
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Configuration's primary condition ({primary_condition.display_name}) RSG codes cannot be modified.",
+        )
+
+
+@router.post(
+    "/set-status-bulk",
+    response_model=list[UUID],
+    tags=["configurations"],
+    operation_id="setCodeStatusBeyondCursor",
+)
+async def set_codes_status_bulk(
+    configuration_id: UUID,
+    code_ids_to_skip: list[UUID],
+    status: Literal["included", "excluded"],
+    filters: FilterInput = Depends(_get_filter_input),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[UUID]:
+    """
+    Sets all provided code_ids to the specified `status` for the given configuration ID.
+
+    Args:
+        configuration_id (UUID): ID of the configuration to update
+        code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been manually actioned by the user.
+        filters (FilterInput): Filter input coming from the client to build the "complete" set of codes to bulk select
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): Database connection
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+
+    Returns:
+        list[UUID]: Code IDs that had their status changed
+    """
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Configuration cannot be found.",
+        )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    try:
+        impacted_code_ids = await set_codes_status_beyond_cursor_db(
+            configuration_id=config.id,
             code_ids_to_skip=code_ids_to_skip,
             status=status,
-            update_beyond_cursor=update_beyond_cursor,
             db=db,
         )
         return impacted_code_ids

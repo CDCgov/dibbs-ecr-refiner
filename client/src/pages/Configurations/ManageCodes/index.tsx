@@ -170,15 +170,7 @@ function CodesTable({
         // For example:
         // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
         paramsSerializer: (params: Record<string, ParamValue>) => {
-          const searchParams = new URLSearchParams();
-          for (const [key, value] of Object.entries(params)) {
-            if (Array.isArray(value)) {
-              value.forEach((v) => searchParams.append(key, String(v)));
-            } else if (value !== null && value !== undefined) {
-              searchParams.append(key, String(value));
-            }
-          }
-          return searchParams.toString();
+          return serializer(params);
         },
       },
     }
@@ -559,4 +551,16 @@ function SourceModal({ isOpen, onClose }: SourceModalProps) {
       </ModalFooter>
     </Modal>
   );
+}
+
+function serializer(params: Record<string, ParamValue>) {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (Array.isArray(value)) {
+      value.forEach((v) => searchParams.append(key, String(v)));
+    } else if (value !== null && value !== undefined) {
+      searchParams.append(key, String(value));
+    }
+  }
+  return searchParams.toString();
 }

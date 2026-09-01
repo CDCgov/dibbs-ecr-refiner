@@ -10,7 +10,8 @@ import {
   getGetCodesInfiniteQueryKey,
   useDeleteCustomCodes,
   useGetCodeCounts,
-  useSetCodesStatus,
+  useSetCodesStatusWithinCursor,
+  useSetCodeStatusBeyondCursor,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -37,12 +38,12 @@ export function ControlPanel({
   selectedCustomCodes,
   clearSelections,
   allSelected,
-  renderedCodes,
 }: ControlPanelProps) {
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
-  const { mutate } = useSetCodesStatus();
+  const { mutate: updateStatusWithinCursor } = useSetCodesStatusWithinCursor();
+  const { mutate: updateStatusBeyondCursor } = useSetCodeStatusBeyondCursor();
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: codeCounts } = useGetCodeCounts(configurationId);
@@ -56,51 +57,51 @@ export function ControlPanel({
   );
 
   const updateSelectedCodesStatus = (status: CodeResponseStatus) => {
-    mutate(
-      {
+    if (allSelected) {
+      console.log('use bulk endpoint');
+      updateStatusBeyondCursor({
         configurationId,
         params: {
           status: status === 'Included' ? 'included' : 'excluded',
-          update_beyond_cursor: allSelected,
         },
-        data: {
-          code_ids: codeSetCodeIds,
+      });
+    } else {
+      updateStatusWithinCursor(
+        {
+          configurationId,
+          params: {
+            status: status === 'Included' ? 'included' : 'excluded',
+          },
+          data: codeSetCodeIds,
+        },
 
-          // don't touch any of the codes that are 1) rendered within
-          // the cursor window and 2) that haven't been selected, since
-          // those shouldn't be actioned in the bulk selection / deselection
-          code_ids_to_skip: renderedCodes
-            .map((c) => c.id)
-            .filter((id) => !selectedCodeIds.has(id)),
-        },
-      },
-
-      {
-        onSuccess: async (resp) => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodesInfiniteQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeCountsQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetCodeFiltersQueryKey(configurationId),
-          });
-          toast({
-            heading: `Code ${status}`,
-            body: `${resp.data.length} codes ${status.toLowerCase()}`,
-          });
-          clearSelections();
-        },
-        onError: (e) => {
-          toast({
-            heading: 'Codes could not be updated',
-            body: formatError(e),
-            variant: 'error',
-          });
-        },
-      }
-    );
+        {
+          onSuccess: async (resp) => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodesInfiniteQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeCountsQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeFiltersQueryKey(configurationId),
+            });
+            toast({
+              heading: `Code ${status}`,
+              body: `${resp.data.length} codes ${status.toLowerCase()}`,
+            });
+            clearSelections();
+          },
+          onError: (e) => {
+            toast({
+              heading: 'Codes could not be updated',
+              body: formatError(e),
+              variant: 'error',
+            });
+          },
+        }
+      );
+    }
   };
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
@@ -121,8 +122,9 @@ export function ControlPanel({
         <div className="flex flex-row items-center justify-center gap-4">
           <span className="font-bold whitespace-nowrap">
             {allSelected
-              ? (codeCounts?.data.total_code_count ?? 'All')
-              : selectedCodeIds.size}{' '}
+              ? // TODO: make this right
+                (codeCounts?.data.total_code_count ?? 'All')
+              : selectedCodeIds.size}
             selected
           </span>
           <div aria-hidden className="h-8 border border-gray-400!" />

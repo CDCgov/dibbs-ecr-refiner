@@ -259,12 +259,35 @@ async def get_codes_db(
     return rows, next_cursor
 
 
-async def _set_codes_status_beyond_cursor_db(
+async def set_codes_status_beyond_cursor_db(
     configuration_id: UUID,
     status: Literal["included", "excluded"],
     code_ids_to_skip: list[UUID],
+    filter: FilterInput,
     db: AsyncDatabaseConnection,
-):
+) -> list[UUID]:
+    """
+    Given a combination of filters, deselected code IDs, and a status, updates the `configurations_conditions_code_exclusions` table.
+
+    If `status="included"` is provided, entries will be deleted from the table.
+    If `status="excluded"` is provided, entries will be added to the table. Since multiple
+    conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
+
+    Any codes within the selected code IDs will be skipped. Any filters will be applied on the general set of codes set for bulk actioning.
+
+    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
+    as these cannot be excluded.
+
+    Args:
+        configuration_id (UUID): ID of the configuration
+        code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been excluded from the bulk operation
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        filter (FilterInput): Filters to apply in order to build the bulk selection "complete" set
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list[UUID]: List of impacted code IDs
+    """
     if status == "excluded":
         query = """
         INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
@@ -332,13 +355,33 @@ async def _check_update_operation_excludes_rsg_codes(
         raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
 
 
-async def _set_codes_status_within_cursor_db(
+async def set_codes_status_within_cursor_db(
     configuration_id: UUID,
     status: Literal["included", "excluded"],
     configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
-):
+) -> list[UUID]:
+    """
+    Given a combination of configuration information, selected code IDs, and a status, updates the `configurations_conditions_code_exclusions` table.
+
+    If `status="included"` is provided, entries will be deleted from the table.
+    If `status="excluded"` is provided, entries will be added to the table. Since multiple
+    conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
+
+    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
+    as these cannot be excluded.
+
+    Args:
+        configuration_id (UUID): ID of the configuration
+        configuration_primary_condition_id (UUID): ID of the configuration's primary condition
+        code_ids (list[UUID]): List of code IDs
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list[UUID]: List of impacted code IDs
+    """
     params = {
         "configuration_id": configuration_id,
         "code_ids": code_ids,
@@ -416,7 +459,7 @@ async def set_codes_status_db(
             db=db,
         )
 
-    return await _set_codes_status_within_cursor_db(
+    return await set_codes_status_within_cursor_db(
         configuration_id=configuration_id,
         configuration_primary_condition_id=configuration_primary_condition_id,
         code_ids=code_ids,
