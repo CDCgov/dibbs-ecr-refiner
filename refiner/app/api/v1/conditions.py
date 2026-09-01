@@ -10,6 +10,7 @@ from app.db.codes.model import CodedConcept, DbCode
 from app.db.conditions.model import (
     DbConditionsContextGrouper,
 )
+from app.services.conditions.grouper_statuses import CodeSetStatus
 
 from ...db.conditions.db import (
     get_condition_by_id_db,
@@ -59,8 +60,6 @@ async def get_conditions(
         for s in summaries
     ]
 
-
-type CodeSetStatus = Literal["not expanded", "partially complete", "fully complete"]
 
 type CodeCategoryStatus = Literal[
     "not included", "partially complete", "fully complete"

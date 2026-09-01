@@ -133,7 +133,8 @@ async def get_conditions_by_version_db(
             c.id,
             c.display_name,
             c.canonical_url,
-            t.version
+            t.version,
+            c.coverage_level
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE t.version = %s
