@@ -109,8 +109,7 @@ async def activate_configuration(
 
     # Convert the config to a form that can be put into object storage
     config_payload = await convert_config_to_storage_payload(
-        configuration=config_to_activate,
-        db=db,
+        configuration=config_to_activate, db=db, logger=logger
     )
 
     if not config_payload:

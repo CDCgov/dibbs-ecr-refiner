@@ -67,6 +67,7 @@ class LogOperation:
         Data Type
     """
 
+    METRICS = "metrics"
     INPUT_ANALYSIS = "input_analysis"
     DISCOVERED_REPORTABILITY = "discovered_reportability"
     ACTIVATION_FILE_READ = "activation_file_read"
@@ -841,6 +842,7 @@ def process_jurisdiction(
             jurisdiction_code=jurisdiction_code,
             jurisdiction_group=jurisdiction_group,
             state=state,
+            refiner_input=refiner_input,
         )
         return
 
@@ -881,6 +883,9 @@ def process_condition(
             condition_code=rsg_code,
             reason="rsg_not_in_mapping",
             state=state,
+            input_eicr_size_mib=get_file_size_in_mib(
+                file_content=refiner_input.xml_files.eicr
+            ),
             rsg_cg_payload=rsg_cg_payload.to_dict(),
         )
         return
@@ -899,6 +904,9 @@ def process_condition(
             condition_code=rsg_code,
             reason="no_active_configuration",
             state=state,
+            input_eicr_size_mib=get_file_size_in_mib(
+                file_content=refiner_input.xml_files.eicr
+            ),
         )
         return
 
@@ -924,11 +932,21 @@ def process_condition(
 
     state.metadata[jurisdiction_code][rsg_code] = True
 
+    log_metrics(
+        jurisdiction_code=jurisdiction_code,
+        condition_code=rsg_code,
+        input_eicr_size_mib=get_file_size_in_mib(
+            file_content=refiner_input.xml_files.eicr
+        ),
+        output_eicr_size_mib=get_file_size_in_mib(file_content=result.documents.eicr),
+        percent_size_reduction=result.metrics.eicr.size_reduction_percentage,
+        skipped=False,
+    )
+
     logger.info(
         "Refinement complete for condition.",
         jurisdiction_code=jurisdiction_code,
         condition_code=rsg_code,
-        metrics=asdict(result.metrics),
         report=asdict(result.report),
         operation="log_summary",
     )
@@ -971,6 +989,7 @@ def skip_all_conditions_for_missing_mapping(
     jurisdiction_code: str,
     jurisdiction_group: JurisdictionReportableConditions,
     state: RefinementState,
+    refiner_input: RefinementInput,
 ) -> None:
     """
     Mark every condition in a jurisdiction as skipped when the mapping file is missing.
@@ -986,6 +1005,9 @@ def skip_all_conditions_for_missing_mapping(
             condition_code=condition.code,
             reason="no_mapping_file",
             state=state,
+            input_eicr_size_mib=get_file_size_in_mib(
+                file_content=refiner_input.xml_files.eicr
+            ),
         )
 
 
@@ -994,6 +1016,7 @@ def mark_condition_skipped(
     condition_code: str,
     reason: str,
     state: RefinementState,
+    input_eicr_size_mib: float,
     **kwargs,
 ) -> None:
     """
@@ -1013,8 +1036,47 @@ def mark_condition_skipped(
         **kwargs,
     )
 
+    log_metrics(
+        jurisdiction_code=jurisdiction_code,
+        condition_code=condition_code,
+        input_eicr_size_mib=input_eicr_size_mib,
+        skipped=True,
+        skip_reason=reason,
+    )
+
     state.metadata[jurisdiction_code][condition_code] = False
     state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(condition_code)
+
+
+def log_metrics(
+    *,
+    jurisdiction_code: str,
+    condition_code: str,
+    input_eicr_size_mib: float,
+    skipped: bool,
+    skip_reason: str | None = None,
+    output_eicr_size_mib: float | None = None,
+    percent_size_reduction: float | None = None,
+) -> None:
+    """Log only the fields required for metrics reporting."""
+    size_difference_mib = (
+        input_eicr_size_mib - output_eicr_size_mib
+        if output_eicr_size_mib is not None
+        else None
+    )
+
+    logger.info(
+        "Refiner metrics.",
+        operation=LogOperation.METRICS,
+        skipped=skipped,
+        skip_reason=skip_reason,
+        jurisdiction_id=jurisdiction_code,
+        rsg_code=condition_code,
+        input_eicr_size_mib=input_eicr_size_mib,
+        output_eicr_size_mib=output_eicr_size_mib,
+        size_difference_mib=size_difference_mib,
+        percent_size_reduction=percent_size_reduction,
+    )
 
 
 @dataclass

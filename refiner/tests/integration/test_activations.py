@@ -15,6 +15,7 @@ from psycopg.rows import dict_row
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.configurations import convert_config_to_storage_payload
+from app.services.logger import get_logger
 from scripts.reactivations import regenerate_active_configs as reactivation
 from scripts.reactivations.regenerate_active_configs import (
     regenerate_active_configuration,
@@ -205,8 +206,7 @@ class TestActivations:
         assert configuration is not None
 
         payload = await convert_config_to_storage_payload(
-            configuration=configuration,
-            db=db_pool,
+            configuration=configuration, db=db_pool, logger=get_logger()
         )
 
         assert payload is not None

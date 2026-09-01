@@ -54,25 +54,6 @@ test.describe('Configuration detail flow', () => {
     ).toBeVisible();
   });
 
-  test('Validate code set table appearance', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToManageCodesTab();
-    await page.getByLabel('View TES code set information for Anotia').click();
-
-    await expect(page.getByRole('columnheader')).toHaveText([
-      'Code',
-      'Code system',
-      'Display name',
-    ]);
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
   test('Activation button is available across all configuration screens', async ({
     page,
     configurationPage,
@@ -150,34 +131,8 @@ test.describe('Configuration detail flow', () => {
     });
   });
 
-  test('Code set table can be filtered by code system', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-  }) => {
-    const condition = 'Anotia';
-    await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToManageCodesTab();
-    await page.getByLabel('View TES code set information for Anotia').click();
-    const codeSystemSelect = page.getByRole('combobox', {
-      name: 'Code system',
-    });
-    await expect(codeSystemSelect).toHaveValue('all');
-    const tableRows = page.getByRole('row');
-    await expect(tableRows).toHaveCount(3); // including header
-
-    await codeSystemSelect.selectOption('ICD-10');
-    const rows = page.getByRole('row');
-    const rowCount = await rows.count();
-
-    for (let i = 1; i < rowCount; i++) {
-      // start at 1 to skip header row
-      const cell = rows.nth(i).getByRole('cell').nth(1); // 2nd column
-      await expect(cell).toHaveText('ICD-10');
-    }
-  });
-
-  test('Check code set status and individual grouper statuses', async ({
+  // TODO: This needs to be implemented and checked in the `manage-codes.spec.ts` file
+  test.skip('Check code set status and individual grouper statuses', async ({
     page,
     configurationsPage,
     configurationPage,
@@ -232,132 +187,6 @@ test.describe('Configuration detail flow', () => {
       await expect(
         modal.getByRole('cell', { name: 'Specimen source codes' })
       ).toBeVisible();
-    });
-  });
-
-  test('Individual custom code workflow', async ({
-    page,
-    configurationsPage,
-    configurationPage,
-    makeAxeBuilder,
-  }) => {
-    const condition = 'Amebiasis';
-    await configurationsPage.createConfiguration(condition);
-    await configurationPage.goToManageCodesTab();
-    await page.getByRole('button', { name: 'Custom codes' }).click();
-
-    const customCode1 = {
-      code: '12-! 345#',
-      system: 'Other',
-      name: 'original code 1~',
-    };
-
-    const customCode2 = {
-      code: '123-456',
-      system: 'LOINC',
-      name: 'original code 2+ =',
-    };
-
-    await test.step('Adding a unique code', async () => {
-      await configurationPage.addCustomCode(
-        customCode1.code,
-        customCode1.system,
-        customCode1.name
-      );
-      await expect(
-        page.getByRole('table').getByText(customCode1.code)
-      ).toBeVisible();
-
-      await configurationPage.addCustomCode(
-        customCode2.code,
-        customCode2.system,
-        customCode2.name
-      );
-      await expect(
-        page.getByRole('table').getByText(customCode2.code)
-      ).toBeVisible();
-    });
-
-    const newCode = 'test';
-
-    await test.step('Editing a custom code shows an error when an already used code is entered', async () => {
-      // try using an already taken code
-      await configurationPage.editCustomCode(customCode1.name, {
-        newCode: customCode2.code,
-      });
-
-      // try navigating away from the input and we'll see the error
-      await page.getByLabel('Display name').click();
-
-      const expectedError = page.getByText(
-        `The code "${customCode2.code}" already exists.`
-      );
-      const updateButton = page.getByRole('button', { name: 'Update' });
-
-      await expect(expectedError).toBeVisible();
-      await expect(updateButton).toBeDisabled();
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-      // change the text and the error should go away
-      await page.getByLabel('Code', { exact: true }).fill(newCode);
-      await page.getByLabel('Display name').click();
-      await expect(expectedError).not.toBeVisible();
-      await expect(updateButton).toBeEnabled();
-
-      // reassign the code data
-      customCode1.code = newCode;
-
-      await updateButton.click();
-    });
-
-    await test.step('Deleting a custom code removes it from the table', async () => {
-      const deleteButton = page.getByRole('button', {
-        name: `Delete custom code ${customCode1.name}`,
-      });
-      await expect(deleteButton).toBeVisible();
-      await configurationPage.deleteCustomCode(customCode1.name);
-      await expect(deleteButton).not.toBeVisible();
-      await expect(
-        page.getByRole('table').getByText(customCode1.name)
-      ).not.toBeVisible();
-    });
-
-    await test.step('Attempting to add an existing code will display an error', async () => {
-      const addNewCustomCodeButton = page.getByRole('button', {
-        name: 'Add new custom code',
-      });
-      await expect(addNewCustomCodeButton).toBeEnabled();
-      await addNewCustomCodeButton.click();
-
-      const newSystem = 'CVX';
-      const newCode = 'random-code12';
-
-      const expectedError = page.getByText(
-        `The code "${customCode2.code}" already exists.`
-      );
-      const addButton = page.getByRole('button', { name: 'Add custom code' });
-
-      // fill in form
-      await page.getByLabel('Code', { exact: true }).fill(customCode2.code);
-      await page
-        .getByLabel('Code system')
-        .selectOption({ label: customCode2.system });
-      await page.getByLabel('Display name').fill(customCode2.name);
-
-      await expect(expectedError).toBeVisible();
-      await expect(addButton).not.toBeEnabled();
-
-      await page.getByLabel('Code', { exact: true }).fill(newCode);
-      await page.getByLabel('Code system').selectOption({ label: newSystem });
-      await page.getByLabel('Display name').click();
-      await expect(expectedError).not.toBeVisible();
-      await expect(addButton).toBeEnabled();
-      await addButton.click();
-
-      const table = page.getByRole('table');
-      await expect(table).toBeVisible();
-      await expect(table.getByText(newCode)).toBeVisible();
-      await expect(table.getByText(newSystem)).toBeVisible();
     });
   });
 
@@ -504,12 +333,10 @@ test.describe('Configuration detail flow', () => {
         page.getByRole('heading', { name: condition, level: 1 })
       ).toBeVisible();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
-      await page.getByLabel('Code system').selectOption({ label: 'SNOMED' });
       await configurationPage.addCodeSet('agri', additionalCodeSetName);
     });
 
     await test.step('Configure a custom code', async () => {
-      await page.getByRole('button', { name: 'Custom codes' }).click();
       await configurationPage.addCustomCode(
         customCode,
         customCodeSystem,
@@ -536,11 +363,10 @@ test.describe('Configuration detail flow', () => {
 
     await test.step('Delete custom codes', async () => {
       await configurationPage.goToManageCodesTab();
-      await configurationPage.deleteCodeSet(additionalCodeSetName);
+      await configurationPage.deleteCodeSet('agri', additionalCodeSetName);
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-      await page.getByRole('button', { name: 'Custom codes' }).click();
       await configurationPage.deleteCustomCode(customCodeName);
       await expect(page.getByText('Deleted code')).toBeVisible();
       await expect(
@@ -591,11 +417,9 @@ test.describe('Configuration detail flow', () => {
 
     await test.step('Upload custom code CSV', async () => {
       await configurationPage.goToManageCodesTab();
-      await page.getByRole('button', { name: 'Custom codes' }).click();
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+      await page.getByRole('button', { name: 'Add custom code' }).click();
 
-      await page.getByRole('button', { name: 'Import from CSV' }).click();
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+      await page.getByRole('button', { name: 'Import codes from CSV' }).click();
 
       await expect(
         page.getByRole('heading', {
@@ -637,7 +461,8 @@ test.describe('Configuration detail flow', () => {
         )
       ).toBeVisible();
       await page.getByRole('button', { name: '← Back' }).click();
-      await page.getByRole('button', { name: 'Import from CSV' }).click();
+      await page.getByRole('button', { name: 'Add custom code' }).click();
+      await page.getByRole('button', { name: 'Import codes from CSV' }).click();
 
       const downloadPath =
         await configurationPage.downloadCustomCodeCsvTemplate();

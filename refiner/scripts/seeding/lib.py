@@ -7,7 +7,6 @@ from uuid import UUID
 
 import psycopg
 from config import TES_DATA_DIR, logger
-from psycopg.types.json import Jsonb
 
 SYSTEM_MAP = {
     "http://loinc.org": "loinc_codes",
@@ -232,18 +231,10 @@ class ConditionData:
         Generates the dictionary payload for database insertion.
         """
 
-        all_codes = self.all_codes
-        categorized = categorize_codes_by_system(all_codes)
-
         result = {
             "canonical_url": self.parent_vs.get("url"),
             "version": self.parent_vs.get("version"),
             "display_name": self.parent_vs.get("title"),
-            "loinc_codes": Jsonb(self._sort_codes(categorized["loinc_codes"])),
-            "snomed_codes": Jsonb(self._sort_codes(categorized["snomed_codes"])),
-            "icd10_codes": Jsonb(self._sort_codes(categorized["icd10_codes"])),
-            "rxnorm_codes": Jsonb(self._sort_codes(categorized["rxnorm_codes"])),
-            "cvx_codes": Jsonb(self._sort_codes(categorized["cvx_codes"])),
             "coverage_level": None,
             "coverage_level_reason": None,
             "coverage_level_date": None,
