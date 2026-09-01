@@ -201,19 +201,22 @@ function CodesTable({
     [codes]
   );
 
-  const allSelected = useMemo(
+  const [selectAll, setSelectAll] = useState(false);
+
+  const resolvedSelectedIds = useMemo(
     () =>
-      codesWithoutPrimaryConditionRsgCodes.length > 0 &&
-      selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length,
-    [codesWithoutPrimaryConditionRsgCodes, selectedIds]
+      selectAll
+        ? new Set(codesWithoutPrimaryConditionRsgCodes.map((c) => c.id))
+        : selectedIds,
+    [selectAll, selectedIds, codesWithoutPrimaryConditionRsgCodes]
   );
 
   const selectedCustomCodes = useMemo(
     () =>
       codesWithoutPrimaryConditionRsgCodes.filter(
-        (c) => selectedIds.has(c.id) && c.is_custom
+        (c) => resolvedSelectedIds.has(c.id) && c.is_custom
       ),
-    [codesWithoutPrimaryConditionRsgCodes, selectedIds]
+    [codesWithoutPrimaryConditionRsgCodes, resolvedSelectedIds]
   );
 
   const handleToggle = useCallback((id: string, checked: boolean) => {
@@ -231,7 +234,7 @@ function CodesTable({
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
-  const hasCodesSelected = selectedIds.size > 0;
+  const hasCodesSelected = selectAll || selectedIds.size > 0;
 
   return (
     <div className="flex flex-col items-end gap-4">
@@ -243,9 +246,12 @@ function CodesTable({
         {hasCodesSelected ? (
           <ControlPanel
             configurationId={id}
-            selectedCodeIds={selectedIds}
+            selectedCodeIds={resolvedSelectedIds}
             selectedCustomCodes={selectedCustomCodes}
-            clearSelections={() => setSelectedIds(new Set())}
+            clearSelections={() => {
+              setSelectAll(false);
+              setSelectedIds(new Set());
+            }}
           />
         ) : null}
         <InfiniteScroll
@@ -267,18 +273,11 @@ function CodesTable({
                   <Checkbox
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
-                    checked={allSelected}
-                    onChange={(checked) =>
-                      setSelectedIds(
-                        checked
-                          ? new Set(
-                              codesWithoutPrimaryConditionRsgCodes.map(
-                                (c) => c.id
-                              )
-                            )
-                          : new Set()
-                      )
-                    }
+                    checked={selectAll}
+                    onChange={(checked) => {
+                      setSelectAll(checked);
+                      setSelectedIds(new Set());
+                    }}
                   />
                 </th>
                 <th scope="col">Code no.</th>
@@ -330,7 +329,7 @@ function CodesTable({
                     code={code}
                     configurationId={id}
                     disabled={disabled}
-                    isSelected={selectedIds.has(code.id)}
+                    isSelected={selectAll || selectedIds.has(code.id)}
                     onToggle={handleToggle}
                   />
                 ))
