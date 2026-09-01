@@ -326,6 +326,8 @@ async def insert_custom_code_upload_events_db(
     Helper function to insert a bulk custom code upload event and its subevents.
     """
 
+    is_adding = True if event_type == "add" else False
+
     def _get_system_name(id: UUID) -> str:
         system = next((s for s in code_systems if s.id == id), None)
         if system is None:
@@ -343,8 +345,8 @@ async def insert_custom_code_upload_events_db(
                 jurisdiction_id=configuration.jurisdiction_id,
                 user_id=user_id,
                 configuration_id=configuration.id,
-                event_type="add_code" if event_type == "add" else "delete_code",
-                action_text=f"{'Added' if event_type == 'add' else 'Removed'} custom code '{custom_codes[0].code}'",
+                event_type="add_code" if is_adding else "delete_code",
+                action_text=f"{'Added' if is_adding else 'Removed'} custom code '{custom_codes[0].code}'",
             ),
             cursor=cursor,
         )
@@ -358,7 +360,7 @@ async def insert_custom_code_upload_events_db(
         event_type="bulk_add_custom_code"
         if event_type == "add"
         else "bulk_delete_custom_code",
-        action_text=f"{'Added' if event_type == 'add' else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if event_type == 'add' else ''}",
+        action_text=f"{'Added' if is_adding else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if is_adding else ''}",
     )
 
     event_id = await insert_event_db(event=event, cursor=cursor)
