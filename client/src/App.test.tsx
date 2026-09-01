@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
 import { MemoryRouter } from 'react-router';
-import { TestQueryClientProvider } from './test-utils';
+import { TestProviders } from './test-utils';
 
 vi.mock('./api/user/user', () => ({
   useGetUser: vi.fn(() => ({
@@ -44,9 +44,9 @@ vi.mock('./api/configurations/configurations', async () => {
 const renderApp = () => {
   return render(
     <MemoryRouter initialEntries={['/']}>
-      <TestQueryClientProvider>
+      <TestProviders>
         <App />
-      </TestQueryClientProvider>
+      </TestProviders>
     </MemoryRouter>
   );
 };
