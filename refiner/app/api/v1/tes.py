@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
 from app.api.auth.middleware import get_logged_in_user
+from app.api.v1.schemas.tes import ApplyUpdatesRequest, ApplyUpdatesResponse
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
     apply_latest_tes_to_existing_drafts_db,
@@ -15,7 +16,11 @@ from app.db.tes.db import (
 )
 from app.db.tes.model import TesConfigToUpdate, TesUpdate
 from app.db.users.model import DbUser
-from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
+from app.services.tes import (
+    apply_updates_to_configurations,
+    build_tes_export_csv,
+    sort_tes_updates_by_version,
+)
 
 router = APIRouter(prefix="/tes")
 
@@ -181,8 +186,7 @@ async def get_configurations_to_update(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> TesConfigsToUpdateResponse:
     """
-    Return outdated drafts and active configurations for the current
-    jurisdiction.
+    Return outdated drafts and active configurations for the current jurisdiction.
     """
     configs_to_update = await get_configurations_set_to_tes_version(
         db=db,
@@ -245,4 +249,42 @@ async def apply_tes_updates_to_existing_drafts(
     return ApplyTesUpdatesToDraftsResponse(
         updated_count=len(updated_ids),
         updated_configuration_ids=updated_ids,
+    )
+
+
+@router.post(
+    "/apply-updates",
+    response_model=ApplyUpdatesResponse,
+    tags=["tes"],
+    operation_id="applyTesUpdates",
+)
+async def apply_updates(
+    request: ApplyUpdatesRequest,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> ApplyUpdatesResponse:
+    """
+    Apply TES updates to configurations.
+
+    For draft configurations: Updates them with latest TES code sets.
+    For active configurations: Creates new drafts with latest TES code sets.
+    """
+    (
+        drafts_updated,
+        drafts_created,
+        updated_ids,
+        created_ids,
+    ) = await apply_updates_to_configurations(
+        configuration_ids=request.configuration_ids,
+        db=db,
+        user_id=user.id,
+        jurisdiction_id=user.jurisdiction_id,
+    )
+
+    return ApplyUpdatesResponse(
+        total_processed=len(request.configuration_ids),
+        drafts_updated=drafts_updated,
+        drafts_created=drafts_created,
+        updated_configuration_ids=updated_ids,
+        created_configuration_ids=created_ids,
     )
