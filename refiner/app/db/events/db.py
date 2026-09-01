@@ -362,9 +362,7 @@ async def insert_custom_code_event_db(
         jurisdiction_id=configuration.jurisdiction_id,
         user_id=user_id,
         configuration_id=configuration.id,
-        event_type="bulk_add_custom_code"
-        if event_type == "add"
-        else "bulk_delete_custom_code",
+        event_type="bulk_add_custom_code" if is_adding else "bulk_delete_custom_code",
         action_text=f"{'Added' if is_adding else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if is_adding else ''}",
     )
 
