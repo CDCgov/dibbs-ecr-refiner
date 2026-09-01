@@ -18,6 +18,11 @@ install:
     {{ npm }} --prefix docs run build:css
     just server::install-dev
 
+[doc('Install Python deps for docs extraction/validation')]
+[group('dependencies')]
+install-python: _venv
+    refiner/.venv/bin/pip install griffe docstring_parser
+
 [doc('Extract Python API docs using griffe')]
 [group('extraction')]
 sync: install _venv
@@ -27,7 +32,7 @@ sync: install _venv
 
 [doc('Validate docs sync without writing files (CI-friendly)')]
 [group('validation')]
-validate: install _venv
+validate: install-python _venv
     refiner/.venv/bin/python3 .justscripts/py/docs/extract_python.py --dry-run || echo "Python extraction validation failed"
     refiner/.venv/bin/python3 .justscripts/py/docs/extract_lambda.py --dry-run || echo "Lambda extraction validation failed"
     refiner/.venv/bin/python3 .justscripts/py/docs/validate_lambda_docs.py --dry-run || echo "Lambda docs validation failed"
