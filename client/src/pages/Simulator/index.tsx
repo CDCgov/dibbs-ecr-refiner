@@ -13,7 +13,11 @@ import { Title } from '@components/Title';
 import { LayoutContainer } from '@components/Layout';
 
 type Status =
-  'run-simulator' | 'reportable-conditions' | 'success' | 'error' | 'pending';
+  | 'run-simulator'
+  | 'reportable-conditions'
+  | 'success'
+  | 'error'
+  | 'pending';
 
 export function Simulator() {
   const [status, setStatus] = useState<Status>('run-simulator');
