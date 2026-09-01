@@ -10,10 +10,9 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 env:
-  PYTHON_RUNNER_VERSION: "3.11"
+  PYTHON_RUNNER_VERSION: "3.14"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,12 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{env.PYTHON_RUNNER_VERSION}}
+          cache: pip
 
       - name: Install Just
         run: |
