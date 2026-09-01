@@ -21,6 +21,7 @@ import {
 } from '@components/Modal';
 import { useState } from 'react';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { Spinner } from '@components/Spinner';
 
 interface ControlPanelProps {
   configurationId: string;
@@ -38,7 +39,10 @@ export function ControlPanel({
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
   const { mutate } = useSetCodesStatus();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [isLoadingModalOpen, setIsLoadingModalOpen] = useState(false);
+
+  const toggleLoadingModal = () => setIsLoadingModalOpen(!isLoadingModalOpen);
 
   // These custom codes can be deleted
   const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
@@ -49,6 +53,7 @@ export function ControlPanel({
   );
 
   const updateSelectedCodesStatus = (status: CodeResponseStatus) => {
+    setIsLoadingModalOpen(true);
     mutate(
       {
         configurationId,
@@ -69,6 +74,7 @@ export function ControlPanel({
           await queryClient.invalidateQueries({
             queryKey: getGetCodeFiltersQueryKey(configurationId),
           });
+          setIsLoadingModalOpen(false);
           toast({
             heading: `Code ${status}`,
             body: `${status === 'Included' ? selectedCodeIds.size : codeSetCodeIds.length} codes ${status.toLowerCase()} in this configuration.`,
@@ -76,6 +82,7 @@ export function ControlPanel({
           clearSelections();
         },
         onError: (e) => {
+          setIsLoadingModalOpen(false);
           toast({
             heading: 'Codes could not be updated',
             body: formatError(e),
@@ -89,9 +96,13 @@ export function ControlPanel({
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
   return (
     <>
+      <LoadingModal
+        isOpen={isLoadingModalOpen}
+        onClose={() => setIsLoadingModalOpen(false)}
+      />
       <ExclusionWarningModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        isOpen={isWarningModalOpen}
+        onClose={() => setIsWarningModalOpen(false)}
         customCodeCount={customCodeIds.size}
         totalCodeCount={selectedCodeIds.size}
         updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
@@ -121,7 +132,7 @@ export function ControlPanel({
                 if (customCodeIds.size === 0) {
                   updateSelectedCodesStatus('Excluded');
                 } else {
-                  setIsOpen(true);
+                  setIsWarningModalOpen(true);
                 }
               }}
             >
@@ -132,6 +143,7 @@ export function ControlPanel({
                 configurationId={configurationId}
                 customCodeIds={selectedCustomCodes.map((cc) => cc.id)}
                 clearSelections={clearSelections}
+                toggleLoadingModal={toggleLoadingModal}
               />
             ) : null}
           </div>
@@ -141,16 +153,38 @@ export function ControlPanel({
   );
 }
 
+interface LoadingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+function LoadingModal({ isOpen, onClose }: LoadingModalProps) {
+  return (
+    <Modal open={isOpen} onClose={onClose} position="center">
+      <ModalHeader>
+        <ModalTitle>Updating codes</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <div className="flex flex-col items-center justify-center gap-2">
+          <p>Please wait...</p>
+          <Spinner />
+        </div>
+      </ModalBody>
+    </Modal>
+  );
+}
+
 interface CustomCodeDeletionMenuProps {
   configurationId: string;
   customCodeIds: string[];
   clearSelections: () => void;
+  toggleLoadingModal: () => void;
 }
 
 function CustomCodeDeletionMenu({
   configurationId,
   customCodeIds,
   clearSelections,
+  toggleLoadingModal,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -161,6 +195,7 @@ function CustomCodeDeletionMenu({
         customCodeIds={customCodeIds}
         clearSelections={clearSelections}
         configurationId={configurationId}
+        toggleLoadingModal={toggleLoadingModal}
       />
       <Menu as="div" className="relative">
         <MenuButton
@@ -198,6 +233,7 @@ interface CustomCodeDeletionModalProps {
   customCodeIds: string[];
   configurationId: string;
   clearSelections: () => void;
+  toggleLoadingModal: () => void;
 }
 
 function CustomCodeDeletionModal({
@@ -206,6 +242,7 @@ function CustomCodeDeletionModal({
   customCodeIds,
   configurationId,
   clearSelections,
+  toggleLoadingModal,
 }: CustomCodeDeletionModalProps) {
   const queryClient = useQueryClient();
   const { mutate } = useDeleteCustomCodes();
@@ -213,6 +250,7 @@ function CustomCodeDeletionModal({
   const customCodeCount = customCodeIds.length;
 
   const deleteCustomCodes = () => {
+    toggleLoadingModal();
     mutate(
       {
         configurationId,
@@ -231,6 +269,7 @@ function CustomCodeDeletionModal({
           await queryClient.invalidateQueries({
             queryKey: getGetCodeFiltersQueryKey(configurationId),
           });
+          toggleLoadingModal();
           toast({
             heading: 'Codes updated',
             body: `${customCodeCount} custom codes deleted.`,
@@ -238,6 +277,7 @@ function CustomCodeDeletionModal({
           clearSelections();
         },
         onError: () => {
+          toggleLoadingModal();
           toast({
             heading: 'Codes could not be updated',
             body: 'Deleting custom codes was unsuccessful. Please try again.',
