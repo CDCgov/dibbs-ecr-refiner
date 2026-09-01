@@ -27,6 +27,8 @@ import type {
 import type {
   ApplyTesUpdatesToDraftsRequest,
   ApplyTesUpdatesToDraftsResponse,
+  ApplyUpdatesRequest,
+  ApplyUpdatesResponse,
   ExportConditionDiffParams,
   GetTesDiffDetailsParams,
   HTTPValidationError,
@@ -514,4 +516,69 @@ export const useApplyTesUpdatesToExistingDrafts = <TError = AxiosError<HTTPValid
         TContext
       > => {
       return useMutation(getApplyTesUpdatesToExistingDraftsMutationOptions(options), queryClient);
+    }
+    /**
+ * Apply TES updates to configurations.
+ *
+ * For draft configurations: Updates them with latest TES code sets.
+ * For active configurations: Creates new drafts with latest TES code sets.
+ * @summary Apply Updates
+ */
+export const applyTesUpdates = (
+    applyUpdatesRequest: ApplyUpdatesRequest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ApplyUpdatesResponse>> => {
+
+
+    return axios.default.post(
+      `/api/v1/tes/apply-updates`,
+      applyUpdatesRequest,options
+    );
+  }
+
+
+
+
+export const getApplyTesUpdatesMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyTesUpdates>>, TError,{data: ApplyUpdatesRequest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof applyTesUpdates>>, TError,{data: ApplyUpdatesRequest}, TContext> => {
+
+const mutationKey = ['applyTesUpdates'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyTesUpdates>>, {data: ApplyUpdatesRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyTesUpdates(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyTesUpdatesMutationResult = NonNullable<Awaited<ReturnType<typeof applyTesUpdates>>>
+    export type ApplyTesUpdatesMutationBody = ApplyUpdatesRequest
+    export type ApplyTesUpdatesMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Apply Updates
+ */
+export const useApplyTesUpdates = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyTesUpdates>>, TError,{data: ApplyUpdatesRequest}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof applyTesUpdates>>,
+        TError,
+        {data: ApplyUpdatesRequest},
+        TContext
+      > => {
+      return useMutation(getApplyTesUpdatesMutationOptions(options), queryClient);
     }

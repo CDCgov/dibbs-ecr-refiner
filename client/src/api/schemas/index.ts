@@ -3,6 +3,8 @@ export * from './addCustomCodeInput';
 export * from './addSectionInput';
 export * from './applyTesUpdatesToDraftsRequest';
 export * from './applyTesUpdatesToDraftsResponse';
+export * from './applyUpdatesRequest';
+export * from './applyUpdatesResponse';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
