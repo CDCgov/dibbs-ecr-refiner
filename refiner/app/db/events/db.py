@@ -314,7 +314,7 @@ async def get_custom_code_upload_events_by_event_id(
             return rows
 
 
-async def insert_custom_code_upload_events_db(
+async def insert_custom_code_event_db(
     configuration: DbConfiguration,
     user_id: UUID,
     event_type: Literal["add", "delete"],
@@ -323,7 +323,12 @@ async def insert_custom_code_upload_events_db(
     cursor: AsyncCursor[Any],
 ) -> None:
     """
-    Helper function to insert a bulk custom code upload event and its subevents.
+    Helper function to insert custom code events.
+
+    If the `custom_codes` is empty, no events will be created.
+
+    If more than one custom code objects are in the `custom_codes` list, it will
+    insert all of the required subevents. This occurs for bulk additions or deletions.
     """
 
     is_adding = True if event_type == "add" else False
