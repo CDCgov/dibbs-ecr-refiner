@@ -212,7 +212,7 @@ async def get_events_by_jd_db(
             e.code_count,
             e.created_at,
             EXISTS (
-                SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
+                SELECT 1 FROM events_custom_codes ecu WHERE ecu.event_id = e.id
             ) AS has_custom_code_upload_events
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
@@ -273,7 +273,7 @@ async def get_all_events_by_jd_db(
         LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
         LEFT JOIN conditions cond ON cond.id = cc.condition_id
                                 AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
-        LEFT JOIN events_custom_code_uploads ecu ON ecu.event_id = e.id
+        LEFT JOIN events_custom_codes ecu ON ecu.event_id = e.id
         WHERE e.jurisdiction_id = %s
         AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
         GROUP BY e.id, u.username, c.name, c.version, cond.id, e.action_text, e.created_at
@@ -302,7 +302,7 @@ async def get_custom_code_upload_events_by_event_id(
         system,
         code,
         name
-    FROM events_custom_code_uploads
+    FROM events_custom_codes
     WHERE event_id = %s
     """
     params = (event_id,)
@@ -348,7 +348,7 @@ async def insert_custom_code_upload_events_db(
 
     await cursor.executemany(
         """
-        INSERT INTO events_custom_code_uploads (event_id, system, code, name)
+        INSERT INTO events_custom_codes (event_id, system, code, name)
         VALUES (%s, %s, %s, %s)
         """,
         [
