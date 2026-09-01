@@ -344,7 +344,7 @@ async def insert_custom_code_upload_events_db(
         event_type="bulk_add_custom_code"
         if event_type == "bulk_add"
         else "bulk_delete_custom_code",
-        action_text=f"{'Added' if event_type == 'bulk_add' else 'Deleted'} {len(custom_codes)} custom codes{' from CSV' if event_type == 'bulk_add' else ''}",
+        action_text=f"{'Added' if event_type == 'bulk_add' else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if event_type == 'bulk_add' else ''}",
     )
 
     event_id = await insert_event_db(event=event, cursor=cursor)
