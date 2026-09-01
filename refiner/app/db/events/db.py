@@ -317,7 +317,7 @@ async def get_custom_code_upload_events_by_event_id(
 async def insert_custom_code_upload_events_db(
     configuration: DbConfiguration,
     user_id: UUID,
-    event_type: Literal["bulk_add", "bulk_delete"],
+    event_type: Literal["add", "delete"],
     custom_codes: list[DbCustomCode],
     code_systems: list[DbCodeSystem],
     cursor: AsyncCursor[Any],
@@ -336,15 +336,29 @@ async def insert_custom_code_upload_events_db(
     if len(custom_codes) < 1:
         return
 
+    # Single code added/deleted
+    if len(custom_codes) == 1:
+        await insert_event_db(
+            event=EventInput(
+                jurisdiction_id=configuration.jurisdiction_id,
+                user_id=user_id,
+                configuration_id=configuration.id,
+                event_type="add_code" if event_type == "add" else "delete_code",
+                action_text=f"Removed custom code '{custom_codes[0].code}'",
+            ),
+            cursor=cursor,
+        )
+        return
+
     # Bulk upload event info
     event = EventInput(
         jurisdiction_id=configuration.jurisdiction_id,
         user_id=user_id,
         configuration_id=configuration.id,
         event_type="bulk_add_custom_code"
-        if event_type == "bulk_add"
+        if event_type == "add"
         else "bulk_delete_custom_code",
-        action_text=f"{'Added' if event_type == 'bulk_add' else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if event_type == 'bulk_add' else ''}",
+        action_text=f"{'Added' if event_type == 'add' else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if event_type == 'add' else ''}",
     )
 
     event_id = await insert_event_db(event=event, cursor=cursor)

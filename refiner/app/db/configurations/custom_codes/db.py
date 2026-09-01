@@ -152,7 +152,7 @@ async def insert_custom_codes_db(
             async with conn.cursor(row_factory=dict_row) as event_cur:
                 await insert_custom_code_upload_events_db(
                     configuration=config,
-                    event_type="bulk_add",
+                    event_type="add",
                     user_id=user_id,
                     custom_codes=rows,
                     code_systems=code_systems,
@@ -190,27 +190,14 @@ async def delete_custom_codes_db(
                     return []
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                # Handle a single code deletion
-                if len(rows) == 1:
-                    await insert_event_db(
-                        event=EventInput(
-                            jurisdiction_id=config.jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config.id,
-                            event_type="delete_code",
-                            action_text=f"Removed custom code '{rows[0].code}'",
-                        ),
-                        cursor=event_cur,
-                    )
-                else:
-                    await insert_custom_code_upload_events_db(
-                        configuration=config,
-                        event_type="bulk_delete",
-                        user_id=user_id,
-                        custom_codes=rows,
-                        code_systems=code_systems,
-                        cursor=event_cur,
-                    )
+                await insert_custom_code_upload_events_db(
+                    configuration=config,
+                    event_type="delete",
+                    user_id=user_id,
+                    custom_codes=rows,
+                    code_systems=code_systems,
+                    cursor=event_cur,
+                )
 
         return rows
 
