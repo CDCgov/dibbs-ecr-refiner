@@ -175,6 +175,69 @@ test.describe('Activity log', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
+  test('Check bulk custom code deletion events', async ({
+    page,
+    api,
+    activityLogPage,
+    configurationsPage,
+    configurationPage,
+    manageCodesPage,
+  }) => {
+    const condition = 'Lead in Blood';
+    const systems = await api.getSystems();
+    const customCodes = Array.from({ length: 10 }, (_, i) => ({
+      code: `mc-${i + 1}`,
+      display: `mock code ${i + 1}`,
+      system_id: systems[i % systems.length].id,
+    }));
+
+    await test.step('Create configuration', async () => {
+      const config = await api.createConfiguration(condition);
+
+      await api.uploadCustomCodeCsv(config.id, customCodes);
+    });
+
+    await test.step('Delete the codes', async () => {
+      await configurationsPage.goto();
+      const conditionElement = page
+        .getByRole('table')
+        .getByText(condition, { exact: true });
+      await expect(conditionElement).toBeVisible();
+      await conditionElement.click();
+      await configurationPage.goToManageCodesTab();
+      await manageCodesPage.deleteAllVisibleCustomCodes();
+    });
+
+    const expectedAction = `Removed ${customCodes.length} custom codes`;
+    await test.step('Check for deletion row in table', async () => {
+      await activityLogPage.goto();
+      const rowData = await activityLogPage.getTableRows();
+      const expectedRow = rowData.find((r) =>
+        r.action.includes(expectedAction)
+      );
+      expect(expectedRow?.action).toContain(expectedAction);
+    });
+
+    await test.step('Check modal sub-events', async () => {
+      const row = page.getByRole('row').filter({ hasText: expectedAction });
+      const modalButton = row.getByRole('button', { name: 'View all' });
+      await expect(modalButton).toBeVisible();
+      await expect(modalButton).toBeEnabled();
+      await modalButton.click();
+
+      await expect(
+        page.getByRole('heading', { name: 'Custom codes', level: 2 })
+      ).toBeVisible();
+      await expect(page.getByText('Modified by refiner on')).toBeVisible();
+      await expect(page.getByRole('table').getByRole('row')).toHaveCount(
+        customCodes.length + 1 // including header row
+      );
+      await expect(
+        page.getByText(customCodes[1].display, { exact: true })
+      ).toBeInViewport();
+    });
+  });
+
   test('Export button downloads a CSV file', async ({
     page,
     activityLogPage,
