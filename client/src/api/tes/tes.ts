@@ -361,8 +361,7 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
 
 
 /**
- * Return outdated drafts and active configurations for the current
- * jurisdiction.
+ * Return outdated drafts and active configurations for the current jurisdiction.
  * @summary Get Configurations To Update
  */
 export const getConfigurationsToUpdate = (
