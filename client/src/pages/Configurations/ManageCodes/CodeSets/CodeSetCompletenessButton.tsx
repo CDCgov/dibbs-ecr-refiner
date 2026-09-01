@@ -31,7 +31,7 @@ export function CodeSetCompletenessButton({
           aria-label="Open code set completion status details modal"
           className="p-0!"
         >
-          code set details
+          Code set details
         </Button>
         <StatusText status={status} />
       </div>
