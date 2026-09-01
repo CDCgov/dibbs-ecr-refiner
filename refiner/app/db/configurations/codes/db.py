@@ -259,36 +259,35 @@ async def get_codes_db(
     return rows, next_cursor
 
 
-async def set_bulk_codes_status_db(
+async def _set_codes_status_beyond_cursor_db(
     configuration_id: UUID,
     status: Literal["included", "excluded"],
+    code_ids_to_skip: list[UUID],
     db: AsyncDatabaseConnection,
 ):
     if status == "excluded":
         query = """
-        WITH configuration_codes_to_exclude AS (
-            SELECT
-                c.id
-            FROM codes c
-            JOIN conditions_codes_temp crc ON crc.code_id = c.id
-            JOIN configurations_conditions cfc ON cfc.condition_id = crc.condition_id
-            JOIN configurations conf ON conf.id = cfc.configuration_id
-            WHERE conf.id = %(configuration_id)s
-            GROUP BY c.id
-            HAVING bool_or(crc.is_child_rsg) = false
-        )
         INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
         SELECT
             %(configuration_id)s::uuid,
-            id::uuid
-        FROM configuration_codes_to_exclude
+            crc.code_id
+        FROM conditions_codes_temp crc
+        JOIN configurations_conditions cfc
+            ON cfc.condition_id = crc.condition_id
+        WHERE
+            cfc.configuration_id = %(configuration_id)s::uuid
+            AND crc.code_id != ALL(%(code_ids_to_skip)s::uuid[])
+        GROUP BY crc.code_id
+        HAVING bool_or(crc.is_child_rsg) = false
         ON CONFLICT DO NOTHING
         RETURNING code_id;
         """
     else:
         query = """
             DELETE FROM configurations_conditions_code_exclusions
-            WHERE configuration_id = %(configuration_id)s
+            WHERE
+                configuration_id = %(configuration_id)s
+                AND code_id != ALL(%(code_ids_to_skip)s::uuid[])
             RETURNING code_id
         """
 
@@ -297,6 +296,7 @@ async def set_bulk_codes_status_db(
             query,
             {
                 "configuration_id": configuration_id,
+                "code_ids_to_skip": code_ids_to_skip,
             },
         )
         rows = await cur.fetchall()
@@ -304,42 +304,41 @@ async def set_bulk_codes_status_db(
         return [row["code_id"] for row in rows]
 
 
-async def set_codes_status_db(
-    configuration_id: UUID,
+async def _check_update_operation_excludes_rsg_codes(
     configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
-    update_beyond_cursor: bool,
-    status: Literal["included", "excluded"],
+    configuration_id: UUID,
     db: AsyncDatabaseConnection,
-) -> list[UUID]:
-    """
-    Given a list of code IDs and a status, updates the `configurations_conditions_code_exclusions` table.
+):
+    params = {
+        "configuration_id": configuration_id,
+        "code_ids": code_ids,
+        "primary_condition_id": configuration_primary_condition_id,
+    }
+    rsg_check_query = """
+            SELECT cc.code_id
+            FROM conditions_codes_temp cc
+            WHERE cc.condition_id = %(primary_condition_id)s
+            AND cc.is_child_rsg = true
+            AND cc.code_id = ANY(%(code_ids)s::uuid[])
+        """
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(rsg_check_query, params)
+            rsg_rows = await cur.fetchall()
 
-    If `status="included"` is provided, entries will be deleted from the table.
-    If `status="excluded"` is provided, entries will be added to the table. Since multiple
-    conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
+    if rsg_rows:
+        rsg_ids = [row["code_id"] for row in rsg_rows]
+        raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
 
-    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
-    as these cannot be excluded.
 
-    Args:
-        configuration_id (UUID): ID of the configuration
-        configuration_primary_condition_id (UUID): ID of the configuration's primary condition
-        code_ids (list[UUID]): List of code IDs
-        update_beyond_cursor (bool): Whether to update the status beyond the cursor
-        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
-        db (AsyncDatabaseConnection): The database connection
-
-    Returns:
-        list[UUID]: List of impacted code IDs
-    """
-    if update_beyond_cursor:
-        return await set_bulk_codes_status_db(
-            configuration_id=configuration_id,
-            status=status,
-            db=db,
-        )
-
+async def _set_codes_status_within_cursor_db(
+    configuration_id: UUID,
+    status: Literal["included", "excluded"],
+    configuration_primary_condition_id: UUID,
+    code_ids: list[UUID],
+    db: AsyncDatabaseConnection,
+):
     params = {
         "configuration_id": configuration_id,
         "code_ids": code_ids,
@@ -347,22 +346,12 @@ async def set_codes_status_db(
     }
 
     if status == "excluded":
-        rsg_check_query = """
-            SELECT cc.code_id
-            FROM conditions_codes_temp cc
-            WHERE cc.condition_id = %(primary_condition_id)s
-            AND cc.is_child_rsg = true
-            AND cc.code_id = ANY(%(code_ids)s::uuid[])
-        """
-        async with db.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(rsg_check_query, params)
-                rsg_rows = await cur.fetchall()
-
-        if rsg_rows:
-            rsg_ids = [row["code_id"] for row in rsg_rows]
-            raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
-
+        await _check_update_operation_excludes_rsg_codes(
+            configuration_primary_condition_id=configuration_primary_condition_id,
+            configuration_id=configuration_id,
+            code_ids=code_ids,
+            db=db,
+        )
         query = """
             INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
             SELECT %(configuration_id)s::uuid, UNNEST(%(code_ids)s::uuid[])
@@ -383,6 +372,57 @@ async def set_codes_status_db(
             rows = await cur.fetchall()
 
     return [row["code_id"] for row in rows]
+
+
+async def set_codes_status_db(
+    configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
+    code_ids: list[UUID],
+    code_ids_to_skip: list[UUID],
+    update_beyond_cursor: bool,
+    status: Literal["included", "excluded"],
+    db: AsyncDatabaseConnection,
+) -> list[UUID]:
+    """
+    Given a combination of selected code IDs, deselected code IDs, bulk selection, and a status, updates the `configurations_conditions_code_exclusions` table.
+
+    If `status="included"` is provided, entries will be deleted from the table.
+    If `status="excluded"` is provided, entries will be added to the table. Since multiple
+    conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
+
+    If `update_beyond_cursor` is provided, entries outside `code_ids_to_skip` will be actioned.
+    If `update_beyond_cursor"` isn't provided, entries in `code_ids` will be actioned.
+
+    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
+    as these cannot be excluded.
+
+    Args:
+        configuration_id (UUID): ID of the configuration
+        configuration_primary_condition_id (UUID): ID of the configuration's primary condition
+        code_ids (list[UUID]): List of code IDs
+        code_ids_to_skip (list[UUID]): List of code IDs to potentially skip in bulk selection / deselection
+        update_beyond_cursor (bool): Whether to update the status beyond the cursor
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list[UUID]: List of impacted code IDs
+    """
+    if update_beyond_cursor:
+        return await _set_codes_status_beyond_cursor_db(
+            configuration_id=configuration_id,
+            status=status,
+            code_ids_to_skip=code_ids_to_skip,
+            db=db,
+        )
+
+    return await _set_codes_status_within_cursor_db(
+        configuration_id=configuration_id,
+        configuration_primary_condition_id=configuration_primary_condition_id,
+        code_ids=code_ids,
+        status=status,
+        db=db,
+    )
 
 
 @dataclass

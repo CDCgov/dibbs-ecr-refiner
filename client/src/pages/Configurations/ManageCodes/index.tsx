@@ -185,6 +185,7 @@ function CodesTable({
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [allSelected, setAllSelected] = useState<boolean>(false);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
@@ -196,9 +197,6 @@ function CodesTable({
     (c) => !c.is_primary_condition_rsg
   );
 
-  const allSelected =
-    codesWithoutPrimaryConditionRsgCodes.length > 0 &&
-    selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length;
   const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
   );
@@ -217,13 +215,32 @@ function CodesTable({
             configurationId={id}
             selectedCodeIds={selectedIds}
             selectedCustomCodes={selectedCustomCodes}
-            clearSelections={() => setSelectedIds(new Set())}
+            clearSelections={() => {
+              setSelectedIds(new Set());
+              setAllSelected(false);
+            }}
             allSelected={allSelected}
+            renderedCodes={codes}
           />
         ) : null}
         <InfiniteScroll
           dataLength={codes.length}
-          next={fetchNextPage}
+          next={async () => {
+            const nextPageValues = await fetchNextPage();
+            if (allSelected) {
+              const pages = nextPageValues?.data?.pages;
+              const newCodes =
+                (pages && pages[pages.length - 1].data.codes) ?? [];
+
+              setSelectedIds(
+                new Set(
+                  [...codesWithoutPrimaryConditionRsgCodes, ...newCodes].map(
+                    (c) => c.id
+                  )
+                )
+              );
+            }
+          }}
           hasMore={!!hasNextPage}
           loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
           endMessage={
@@ -241,7 +258,8 @@ function CodesTable({
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
                     checked={allSelected}
-                    onChange={(checked) =>
+                    onChange={(checked) => {
+                      setAllSelected(checked);
                       setSelectedIds(
                         checked
                           ? new Set(
@@ -250,8 +268,8 @@ function CodesTable({
                               )
                             )
                           : new Set()
-                      )
-                    }
+                      );
+                    }}
                   />
                 </th>
                 <th scope="col">Code no.</th>

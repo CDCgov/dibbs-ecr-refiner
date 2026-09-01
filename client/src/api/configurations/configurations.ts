@@ -35,6 +35,7 @@ import type {
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  BodySetCodesStatus,
   BulkDeleteCustomCodesInput,
   CodeCountsResponse,
   CodeFilterOptions,
@@ -2218,6 +2219,7 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
  * Args:
  *     configuration_id (UUID): ID of the configuration to update
  *     code_ids (list[UUID]): List of code IDs
+ *     code_ids_to_skip (list[UUID]): List of code IDs to skip within the bulk selection / deselection
  *     status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
  *     update_beyond_cursor (bool): Whether to update the entire filter
  *         selection to include / excluded beyond the selected cursor
@@ -2233,14 +2235,14 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
  */
 export const setCodesStatus = (
     configurationId: string,
-    setCodesStatusBody: string[],
+    bodySetCodesStatus: BodySetCodesStatus,
     params: SetCodesStatusParams, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<string[]>> => {
 
 
     return axios.default.post(
       `/api/v1/configurations/${configurationId}/set-status`,
-      setCodesStatusBody,{
+      bodySetCodesStatus,{
     ...options,
         params: {...params, ...options?.params},}
     );
@@ -2250,8 +2252,8 @@ export const setCodesStatus = (
 
 
 export const getSetCodesStatusMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: string[];params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: string[];params: SetCodesStatusParams}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}, TContext> => {
 
 const mutationKey = ['setCodesStatus'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -2263,7 +2265,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodesStatus>>, {configurationId: string;data: string[];params: SetCodesStatusParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCodesStatus>>, {configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}> = (props) => {
           const {configurationId,data,params} = props ?? {};
 
           return  setCodesStatus(configurationId,data,params,axiosOptions)
@@ -2277,18 +2279,18 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SetCodesStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setCodesStatus>>>
-    export type SetCodesStatusMutationBody = string[]
+    export type SetCodesStatusMutationBody = BodySetCodesStatus
     export type SetCodesStatusMutationError = AxiosError<HTTPValidationError>
 
     /**
  * @summary Set Codes Status
  */
 export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: string[];params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCodesStatus>>, TError,{configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setCodesStatus>>,
         TError,
-        {configurationId: string;data: string[];params: SetCodesStatusParams},
+        {configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams},
         TContext
       > => {
       return useMutation(getSetCodesStatusMutationOptions(options), queryClient);

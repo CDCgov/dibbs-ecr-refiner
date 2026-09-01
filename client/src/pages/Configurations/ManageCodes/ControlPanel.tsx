@@ -29,6 +29,7 @@ interface ControlPanelProps {
   selectedCustomCodes: CodeResponse[];
   clearSelections: () => void;
   allSelected: boolean;
+  renderedCodes: CodeResponse[];
 }
 export function ControlPanel({
   configurationId,
@@ -36,6 +37,7 @@ export function ControlPanel({
   selectedCustomCodes,
   clearSelections,
   allSelected,
+  renderedCodes,
 }: ControlPanelProps) {
   const toast = useToast();
   const formatError = useApiErrorFormatter();
@@ -61,7 +63,16 @@ export function ControlPanel({
           status: status === 'Included' ? 'included' : 'excluded',
           update_beyond_cursor: allSelected,
         },
-        data: codeSetCodeIds,
+        data: {
+          code_ids: codeSetCodeIds,
+
+          // don't touch any of the codes that are 1) rendered within
+          // the cursor window and 2) that haven't been selected, since
+          // those shouldn't be actioned in the bulk selection / deselection
+          code_ids_to_skip: renderedCodes
+            .map((c) => c.id)
+            .filter((id) => !selectedCodeIds.has(id)),
+        },
       },
 
       {

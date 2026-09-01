@@ -6,6 +6,7 @@ export * from './associateCodesetResponse';
 export * from './auditEvent';
 export * from './bodyDiscoverConfigurations';
 export * from './bodyRunInlineConfigurationTest';
+export * from './bodySetCodesStatus';
 export * from './bodyUploadEcr';
 export * from './bulkDeleteCustomCodesInput';
 export * from './codeCategoryCompletenessStatus';

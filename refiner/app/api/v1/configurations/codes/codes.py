@@ -209,6 +209,7 @@ async def get_code_counts(
 async def set_codes_status(
     configuration_id: UUID,
     code_ids: list[UUID],
+    code_ids_to_skip: list[UUID],
     status: Literal["included", "excluded"],
     update_beyond_cursor: bool,
     user: DbUser = Depends(get_logged_in_user),
@@ -220,6 +221,7 @@ async def set_codes_status(
     Args:
         configuration_id (UUID): ID of the configuration to update
         code_ids (list[UUID]): List of code IDs
+        code_ids_to_skip (list[UUID]): List of code IDs to skip within the bulk selection / deselection
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         update_beyond_cursor (bool): Whether to update the entire filter
             selection to include / excluded beyond the selected cursor
@@ -256,6 +258,7 @@ async def set_codes_status(
             configuration_id=config.id,
             configuration_primary_condition_id=config.condition_id,
             code_ids=code_ids,
+            code_ids_to_skip=code_ids_to_skip,
             status=status,
             update_beyond_cursor=update_beyond_cursor,
             db=db,
