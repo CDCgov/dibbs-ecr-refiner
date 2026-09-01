@@ -32,6 +32,7 @@ import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Tooltip } from '@components/Tooltip';
+import { filterParamSerializer, ParamValue } from './Filters/utils';
 
 export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
@@ -136,9 +137,6 @@ interface CodesTableProps {
   onClearFilters: () => void;
 }
 
-type ParamValue =
-  string | number | boolean | (string | number | boolean)[] | null | undefined;
-
 function CodesTable({
   id,
   disabled,
@@ -170,7 +168,7 @@ function CodesTable({
         // For example:
         // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
         paramsSerializer: (params: Record<string, ParamValue>) => {
-          return serializer(params);
+          return filterParamSerializer(params);
         },
       },
     }
@@ -213,6 +211,7 @@ function CodesTable({
             }}
             allSelected={allSelected}
             renderedCodes={codes}
+            filters={filters}
           />
         ) : null}
         <InfiniteScroll
@@ -551,16 +550,4 @@ function SourceModal({ isOpen, onClose }: SourceModalProps) {
       </ModalFooter>
     </Modal>
   );
-}
-
-function serializer(params: Record<string, ParamValue>) {
-  const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (Array.isArray(value)) {
-      value.forEach((v) => searchParams.append(key, String(v)));
-    } else if (value !== null && value !== undefined) {
-      searchParams.append(key, String(value));
-    }
-  }
-  return searchParams.toString();
 }

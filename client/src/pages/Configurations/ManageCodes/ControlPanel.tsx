@@ -23,6 +23,8 @@ import {
 } from '@components/Modal';
 import { useState } from 'react';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { CodeFilters } from './Filters';
+import { filterParamSerializer } from './Filters/utils';
 
 interface ControlPanelProps {
   configurationId: string;
@@ -31,6 +33,7 @@ interface ControlPanelProps {
   clearSelections: () => void;
   allSelected: boolean;
   renderedCodes: CodeResponse[];
+  filters: CodeFilters;
 }
 export function ControlPanel({
   configurationId,
@@ -38,15 +41,19 @@ export function ControlPanel({
   selectedCustomCodes,
   clearSelections,
   allSelected,
+  renderedCodes,
+  filters,
 }: ControlPanelProps) {
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
   const { mutate: updateStatusWithinCursor } = useSetCodesStatusWithinCursor();
-  const { mutate: updateStatusBeyondCursor } = useSetCodeStatusBeyondCursor();
+  const { mutate: updateStatusBeyondCursor } = useSetCodeStatusBeyondCursor({
+    axios: {
+      paramsSerializer: filterParamSerializer,
+    },
+  });
   const [isOpen, setIsOpen] = useState(false);
-
-  const { data: codeCounts } = useGetCodeCounts(configurationId);
 
   // These custom codes can be deleted
   const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
@@ -56,15 +63,50 @@ export function ControlPanel({
     new Set([...selectedCodeIds].filter((id) => !customCodeIds.has(id)))
   );
 
+  const deselectedCodes = renderedCodes
+    .map((c) => c.id)
+    .filter((id) => !selectedCodeIds.has(id));
+
   const updateSelectedCodesStatus = (status: CodeResponseStatus) => {
     if (allSelected) {
-      console.log('use bulk endpoint');
-      updateStatusBeyondCursor({
-        configurationId,
-        params: {
-          status: status === 'Included' ? 'included' : 'excluded',
+      updateStatusBeyondCursor(
+        {
+          configurationId,
+          params: {
+            status: status === 'Included' ? 'included' : 'excluded',
+            code_systems: filters.codeSystems.map((cs) => cs.id),
+            sources: filters.sources.map((s) => s.id),
+            statuses: filters.statuses.map((s) => s.id),
+            search: filters.search,
+          },
+          data: deselectedCodes,
         },
-      });
+        {
+          onSuccess: async (resp) => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodesInfiniteQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeCountsQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeFiltersQueryKey(configurationId),
+            });
+            toast({
+              heading: `Code ${status}`,
+              body: `${resp.data.length} codes ${status.toLowerCase()}`,
+            });
+            clearSelections();
+          },
+          onError: (e) => {
+            toast({
+              heading: 'Codes could not be updated',
+              body: formatError(e),
+              variant: 'error',
+            });
+          },
+        }
+      );
     } else {
       updateStatusWithinCursor(
         {
@@ -105,6 +147,16 @@ export function ControlPanel({
   };
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
+
+  const { data: codeCounts } = useGetCodeCounts(configurationId);
+  const selectedCount = allSelected
+    ? tallyActiveFilterCount(
+        filters,
+        deselectedCodes.length,
+        codeCounts?.data.total_code_count
+      )
+    : selectedCodeIds.size;
+
   return (
     <>
       <ExclusionWarningModal
@@ -121,11 +173,7 @@ export function ControlPanel({
       >
         <div className="flex flex-row items-center justify-center gap-4">
           <span className="font-bold whitespace-nowrap">
-            {allSelected
-              ? // TODO: make this right
-                (codeCounts?.data.total_code_count ?? 'All')
-              : selectedCodeIds.size}
-            selected
+            {selectedCount} selected
           </span>
           <div aria-hidden className="h-8 border border-gray-400!" />
           <div className="flex flex-row gap-6">
@@ -368,4 +416,42 @@ function ExclusionWarningModal({
       </ModalFooter>
     </Modal>
   );
+}
+function tallyActiveFilterCount(
+  filters: CodeFilters,
+  deselectedCodes: number,
+  totalCodeCount?: number
+): string | number {
+  const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
+
+  const isFilterActive =
+    hasFilterEntry(filters.codeSystems) ||
+    hasFilterEntry(filters.sources) ||
+    hasFilterEntry(filters.statuses) ||
+    Boolean(filters.search);
+
+  // Default state: no active filters
+  if (!isFilterActive) {
+    console.log(deselectedCodes);
+    return totalCodeCount ? totalCodeCount - deselectedCodes : 'All ';
+  }
+
+  // Calculate total count across active array filters
+  const sumCounts = (items?: { count?: number }[]) =>
+    items?.reduce((acc, item) => acc + (item.count ?? 0), 0) ?? 0;
+
+  const totalCount =
+    sumCounts(filters.codeSystems) +
+    sumCounts(filters.sources) +
+    sumCounts(filters.statuses);
+
+  const netCount = totalCount - deselectedCodes;
+
+  if (filters.search) {
+    return totalCount > 0
+      ? `${netCount} codes + all search results`
+      : 'All search results';
+  }
+
+  return totalCount > 0 ? netCount.toString() : '';
 }
