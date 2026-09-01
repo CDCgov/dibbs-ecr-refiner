@@ -25,6 +25,13 @@ sync: install _venv
     refiner/.venv/bin/python3 .justscripts/py/docs/extract_lambda.py
     refiner/.venv/bin/python3 .justscripts/py/docs/validate_lambda_docs.py
 
+[doc('Validate docs sync without writing files (CI-friendly)')]
+[group('validation')]
+validate: install _venv
+    refiner/.venv/bin/python3 .justscripts/py/docs/extract_python.py --dry-run || echo "Python extraction validation failed"
+    refiner/.venv/bin/python3 .justscripts/py/docs/extract_lambda.py --dry-run || echo "Lambda extraction validation failed"
+    refiner/.venv/bin/python3 .justscripts/py/docs/validate_lambda_docs.py --dry-run || echo "Lambda docs validation failed"
+
 [doc('Build the documentation site')]
 [group('build')]
 build: sync

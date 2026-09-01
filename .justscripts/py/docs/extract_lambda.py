@@ -231,18 +231,26 @@ def extract_lambda_docs(search_path: str) -> dict:
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true", help="Validate without writing files")
+    args = parser.parse_args()
+
     print("Extracting Lambda documentation with griffe...")
     search_path = "refiner"
     output_dir = Path("docs/_data")
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         data = extract_lambda_docs(search_path)
         module_count = len(data["modules"])
-        with open(output_dir / "lambda-api.json", "w") as f:
-            json.dump(data, f, indent=2)
-            f.write("\n")
-        print(f"Wrote {module_count} Lambda functions to {output_dir / 'lambda-api.json'}")
+        if args.dry_run:
+            print(f"Dry-run: Found {module_count} Lambda functions. No files written.")
+        else:
+            output_dir.mkdir(parents=True, exist_ok=True)
+            with open(output_dir / "lambda-api.json", "w") as f:
+                json.dump(data, f, indent=2)
+                f.write("\n")
+            print(f"Wrote {module_count} Lambda functions to {output_dir / 'lambda-api.json'}")
     except Exception as e:
         print(f"Error extracting Lambda docs: {e}", file=sys.stderr)
         sys.exit(1)

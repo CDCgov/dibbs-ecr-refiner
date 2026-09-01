@@ -1,0 +1,53 @@
+name: Docs Validation
+
+on:
+  pull_request:
+    branches:
+      - "**"
+  merge_group:
+    types:
+      - checks_requested
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-docs:
+    name: Validate Docs (Warning Only)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Just
+        run: |
+          curl -L https://just.systems/install.sh | bash -s
+
+      - name: Run Docs Validation
+        id: docs_val
+        continue-on-error: true
+        run: |
+          just docs::validate
+
+      - name: Generate Validation Summary
+        if: always()
+        run: |
+          echo "## 📚 Docs Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.docs_val.outcome }}" == "success" ]; then
+            echo "✅ Documentation sync validation passed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Documentation sync validation found issues." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This is a **non-blocking warning**. Please review the logs to ensure documentation is up-to-date." >> $GITHUB_STEP_SUMMARY
+          fi
