@@ -344,7 +344,7 @@ async def insert_custom_code_upload_events_db(
                 user_id=user_id,
                 configuration_id=configuration.id,
                 event_type="add_code" if event_type == "add" else "delete_code",
-                action_text=f"Removed custom code '{custom_codes[0].code}'",
+                action_text=f"{'Added' if event_type == 'add' else 'Removed'} custom code '{custom_codes[0].code}'",
             ),
             cursor=cursor,
         )
