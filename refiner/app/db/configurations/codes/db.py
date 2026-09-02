@@ -7,7 +7,6 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.codes.model import FilterInput
-from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection
 
 
