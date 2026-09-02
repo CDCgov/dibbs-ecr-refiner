@@ -92,7 +92,6 @@ def _build_filter_condition_clauses(filters: FilterInput, configuration_id: UUID
 
 async def get_codes_db(
     configuration_id: UUID,
-    configuration_primary_condition_id: UUID,
     db: AsyncDatabaseConnection,
     limit: int,
     filters: FilterInput,
@@ -196,7 +195,6 @@ async def get_codes_db(
     # Handle condition-linked codes
     remaining = limit - len(rows) + 1  # +1 to detect next page
 
-    cond_params["primary_condition_id"] = configuration_primary_condition_id
     cond_params["limit"] = remaining
 
     cursor_clause = ""
@@ -214,42 +212,42 @@ async def get_codes_db(
         return rows, next_cursor
 
     cond_query = f"""
-        SELECT
-            c.id,
-            cfgc.condition_id,
-            COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
-            c.code,
-            c.display AS description,
-            c.system_id,
-            s.display_name AS system_name,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
-            BOOL_OR(cc.is_child_rsg AND cfgc.condition_id = %(primary_condition_id)s) AS is_child_rsg
-        FROM configurations_conditions cfgc
-        JOIN conditions con ON con.id = cfgc.condition_id
-        JOIN conditions_codes_temp cc ON cc.condition_id = con.id
-        JOIN codes c ON c.id = cc.code_id
-        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
-        JOIN systems s ON s.id = c.system_id
-        LEFT JOIN configurations_conditions_code_exclusions e
-            ON e.configuration_id = cfgc.configuration_id
-            AND e.code_id = cc.code_id
-        WHERE cfgc.configuration_id = %(configuration_id)s
-        {cursor_clause}
-        {"".join(cond_clauses)}
-       GROUP BY
-            c.id,
-            cfgc.condition_id,
-            con.display_name,
-            c.code,
-            c.display,
-            c.system_id,
-            s.display_name,
-            e.code_id
-        ORDER BY
-            is_child_rsg DESC,
-            cfgc.condition_id,
-            c.code
-        LIMIT %(limit)s;
+    SELECT
+        c.id,
+        cfgc.condition_id,
+        COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
+        c.code,
+        c.display AS description,
+        c.system_id,
+        s.display_name AS system_name,
+        CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
+        BOOL_OR(cc.is_child_rsg) AS is_child_rsg
+    FROM configurations_conditions cfgc
+    JOIN conditions con ON con.id = cfgc.condition_id
+    JOIN conditions_codes_temp cc ON cc.condition_id = con.id
+    JOIN codes c ON c.id = cc.code_id
+    INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
+    JOIN systems s ON s.id = c.system_id
+    LEFT JOIN configurations_conditions_code_exclusions e
+        ON e.configuration_id = cfgc.configuration_id
+        AND e.code_id = cc.code_id
+    WHERE cfgc.configuration_id = %(configuration_id)s
+    {cursor_clause}
+    {"".join(cond_clauses)}
+    GROUP BY
+        c.id,
+        cfgc.condition_id,
+        con.display_name,
+        c.code,
+        c.display,
+        c.system_id,
+        s.display_name,
+        e.code_id
+    ORDER BY
+        is_child_rsg DESC,
+        cfgc.condition_id,
+        c.code
+    LIMIT %(limit)s;
     """
 
     async with db.get_connection() as conn:
@@ -370,22 +368,19 @@ async def set_codes_status_beyond_rendered_db(
 
 
 async def _check_update_operation_excludes_rsg_codes(
-    configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
-    configuration_id: UUID,
     db: AsyncDatabaseConnection,
 ):
     params = {
-        "configuration_id": configuration_id,
         "code_ids": code_ids,
-        "primary_condition_id": configuration_primary_condition_id,
     }
     rsg_check_query = """
-            SELECT cc.code_id
-            FROM conditions_codes_temp cc
-            WHERE cc.condition_id = %(primary_condition_id)s
-            AND cc.is_child_rsg = true
-            AND cc.code_id = ANY(%(code_ids)s::uuid[])
+        SELECT DISTINCT
+            cc.condition_id,
+            cc.code_id
+        FROM conditions_codes_temp cc
+        WHERE cc.is_child_rsg = true
+        AND NOT (cc.code_id = ANY(%(code_ids)s::uuid[]));
         """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -400,7 +395,6 @@ async def _check_update_operation_excludes_rsg_codes(
 async def set_codes_status_within_rendered_set_db(
     configuration_id: UUID,
     status: Literal["included", "excluded"],
-    configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
 ) -> list[UUID]:
@@ -415,8 +409,7 @@ async def set_codes_status_within_rendered_set_db(
     as these cannot be excluded.
 
     Args:
-        configuration_id (UUID): ID of the configuration
-        configuration_primary_condition_id (UUID): ID of the configuration's primary condition
+        configuration (DbConfiguration): The db configuration object
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
@@ -425,15 +418,12 @@ async def set_codes_status_within_rendered_set_db(
         list[UUID]: List of impacted code IDs
     """
     params = {
-        "configuration_id": configuration_id,
+        "configuration_id": configuration.id,
         "code_ids": code_ids,
-        "primary_condition_id": configuration_primary_condition_id,
     }
 
     if status == "excluded":
         await _check_update_operation_excludes_rsg_codes(
-            configuration_primary_condition_id=configuration_primary_condition_id,
-            configuration_id=configuration_id,
             code_ids=code_ids,
             db=db,
         )
