@@ -493,13 +493,17 @@ function ExclusionWarningModal({
             excluded from this configuration.`}
           </p>
           <p className="border-l-3! border-l-[#d54309] bg-[#fdf3f2] px-4 py-3">
-            {totalCustomCodeCount} custom codes can't be excluded. Custom codes
-            can only be deleted to remove them from this configuration.
-            <br />
-            {lockedCodesCount
-              ? `${lockedCodesCount} RCTC codes can't be excluded. RCTC codes need to be included to
+            <div>
+              {totalCustomCodeCount} custom codes can't be excluded. Custom
+              codes can only be deleted to remove them from this configuration.
+            </div>
+
+            <div className="mt-2">
+              {lockedCodesCount
+                ? `${lockedCodesCount} RCTC code(s) can't be excluded. RCTC codes need to be included to
             properly process the eCR.`
-              : ' '}
+                : ' '}
+            </div>
           </p>
         </div>
       </ModalBody>
