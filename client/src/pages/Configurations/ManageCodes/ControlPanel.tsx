@@ -129,8 +129,8 @@ export function ControlPanel({
   };
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
-
   const { data: codeCounts } = useGetCodeCounts(configurationId);
+
   const selectedCount = allSelected
     ? tallyActiveFilterCount(
         filters,
@@ -144,10 +144,10 @@ export function ControlPanel({
       {
         <ExclusionWarningModal
           isOpen={isOpen}
+          configurationId={configurationId}
           onClose={() => setIsOpen(false)}
           updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
           allSelected={allSelected}
-          codeCounts={codeCounts}
           deselectedCustomCodeCount={deselectedCustomCodes.length}
           deselectedCodeCount={deselectedCodes.length}
         />
@@ -365,9 +365,9 @@ function CustomCodeDeletionModal({
 }
 
 interface ExclusionWarningModalProps {
+  configurationId: string;
   isOpen: boolean;
   onClose: () => void;
-  codeCounts?: AxiosResponse<CodeCountsResponse>;
   deselectedCustomCodeCount: number;
   deselectedCodeCount: number;
   updateCodesToExcluded: () => void;
@@ -375,20 +375,27 @@ interface ExclusionWarningModalProps {
 }
 
 function ExclusionWarningModal({
+  configurationId,
   isOpen,
   onClose,
-  codeCounts,
   deselectedCustomCodeCount,
   deselectedCodeCount,
   updateCodesToExcluded,
   allSelected,
 }: ExclusionWarningModalProps) {
-  const totalCustomCodeCount = codeCounts?.data.total_custom_codes_count ?? 0;
-  const totalCodeCount = codeCounts?.data.total_code_count ?? 0;
+  const {
+    data: codeCounts,
+    isPending,
+    isError,
+  } = useGetCodeCounts(configurationId);
+  if (isPending) return <Spinner variant="centered" />;
+  if (isError) return 'Error!';
 
-  const excludeableCodeCount = codeCounts?.data
-    ? totalCodeCount - deselectedCodeCount - totalCustomCodeCount
-    : 0;
+  const totalCustomCodeCount = codeCounts.data.total_custom_codes_count;
+  const totalCodeCount = codeCounts.data.total_code_count;
+
+  const excludeableCodeCount =
+    totalCodeCount - deselectedCodeCount - totalCustomCodeCount;
 
   const isCustomCodesOnly = excludeableCodeCount <= 0;
   const exclusionForbidden = isCustomCodesOnly && !allSelected;
