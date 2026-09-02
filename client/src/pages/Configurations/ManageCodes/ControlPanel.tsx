@@ -389,10 +389,7 @@ function calculateCounts(
   total_code_count: number,
   total_custom_codes_count: number
 ): CountResult {
-  if (
-    allSelected &&
-    renderedCodes.length > CodesLimitResponseValue.codes_limit
-  ) {
+  if (allSelected && total_code_count > CodesLimitResponseValue.codes_limit) {
     // If in the all selected case, start with the totals as fetched from the
     // code counts hook and tally any custom codes we've selected. Forbid exclusion
     // only if we've down-selected to a subset with only custom codes
