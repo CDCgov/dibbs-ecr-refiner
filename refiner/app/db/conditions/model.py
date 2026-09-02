@@ -33,6 +33,7 @@ class DbConditionBase:
     display_name: str
     canonical_url: str
     version: str
+    coverage_level: str | None = None
 
 
 @dataclass
@@ -46,14 +47,13 @@ class DbCondition(DbConditionBase):
 
     # the child RSG codes that match 1:1 with RC SNOMED codes
     # that will come **from** the RR's coded information organizer
-    child_rsg_snomed_codes: list[str]
+    child_rsg_snomed_codes: list[str] = field(default_factory=list)
     # jsonb columns storing code/display pairs
     # this data is extracted from flat files from the TES
     # and seeded from CG's RSG and ACG children
     # coverage level from the crmi-curationCoverageLevel extension
     # on the condition grouper ValueSet; null when the extension is not present
-    codes: list[DbCode]
-    coverage_level: str | None = None
+    codes: list[DbCode] = field(default_factory=list)
     coverage_level_reason: str | None = None
     coverage_level_date: datetime | None = None
 
