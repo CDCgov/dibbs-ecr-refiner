@@ -381,7 +381,8 @@ async def _check_update_operation_excludes_rsg_codes(
             cc.condition_id,
             cc.code_id
         FROM conditions_codes_temp cc
-        WHERE cc.is_child_rsg = true
+        WHERE cc.condition_id = %(primary_condition_id)s
+        AND cc.is_child_rsg = true
         AND NOT (cc.code_id = ANY(%(code_ids)s::uuid[]));
         """
     async with db.get_connection() as conn:
