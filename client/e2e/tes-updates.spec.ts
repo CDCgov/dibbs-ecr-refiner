@@ -1,4 +1,5 @@
-import { clearDb, makeOldTesVersionConfiguration } from './db';
+// import { clearDb, makeOldTesVersionConfiguration } from './db';
+import { clearDb } from './db';
 import { expect, test } from './fixtures';
 
 test.describe('TES updates page', () => {
