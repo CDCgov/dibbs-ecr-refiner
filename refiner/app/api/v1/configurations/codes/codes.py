@@ -224,7 +224,7 @@ async def get_codes(
         )
 
     codes, next_cursor = await get_codes_db(
-        configuration_id=config.id,
+        config=config,
         limit=CODES_LIMIT,
         cursor=cursor,
         filters=filters,

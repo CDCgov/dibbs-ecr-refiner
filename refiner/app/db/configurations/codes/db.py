@@ -7,6 +7,7 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.codes.model import FilterInput
+from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection
 
 
@@ -91,7 +92,7 @@ def _build_filter_condition_clauses(filters: FilterInput, configuration_id: UUID
 
 
 async def get_codes_db(
-    configuration_id: UUID,
+    config: DbConfiguration,
     db: AsyncDatabaseConnection,
     limit: int,
     filters: FilterInput,
@@ -120,8 +121,9 @@ async def get_codes_db(
     code_systems = filters.code_systems
     statuses = filters.statuses
     cond_clauses, cond_params = _build_filter_condition_clauses(
-        filters=filters, configuration_id=configuration_id
+        filters=filters, configuration_id=config.id
     )
+    cond_params["primary_condition_id"] = config.condition_id
     # Handle custom codes first
     if in_custom:
         # "Custom Code" is the hard-coded source for custom codes.
@@ -131,7 +133,7 @@ async def get_codes_db(
         if not skip_custom:
             remaining = limit + 1  # +1 to detect next page
             custom_params: dict = {
-                "configuration_id": configuration_id,
+                "configuration_id": config.id,
                 "limit": remaining,
             }
             custom_clauses = []
@@ -221,7 +223,7 @@ async def get_codes_db(
         c.system_id,
         s.display_name AS system_name,
         CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
-        BOOL_OR(cc.is_child_rsg) AS is_child_rsg
+        BOOL_OR(cc.is_child_rsg AND cc.condition_id = %(primary_condition_id)s) AS is_child_rsg
     FROM configurations_conditions cfgc
     JOIN conditions con ON con.id = cfgc.condition_id
     JOIN conditions_codes_temp cc ON cc.condition_id = con.id
@@ -409,7 +411,7 @@ async def set_codes_status_within_rendered_set_db(
     as these cannot be excluded.
 
     Args:
-        configuration (DbConfiguration): The db configuration object
+        configuration_id (UUID): The configuration ID
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
@@ -418,7 +420,7 @@ async def set_codes_status_within_rendered_set_db(
         list[UUID]: List of impacted code IDs
     """
     params = {
-        "configuration_id": configuration.id,
+        "configuration_id": configuration_id,
         "code_ids": code_ids,
     }
 
@@ -507,6 +509,7 @@ async def get_all_filter_options_db(
             c.id AS code_id,
             s.id AS system_id,
             v.id AS source_id,
+            con.id as cond_id,
             v.display_name AS source_name,
             CASE WHEN e.code_id IS NOT NULL THEN 'excluded' ELSE 'included' END AS status
         FROM configurations_conditions cfgc
@@ -526,6 +529,7 @@ async def get_all_filter_options_db(
         SELECT
             c.id AS code_id,
             s.id AS system_id,
+            gen_random_uuid() as cond_id,
             NULL::uuid AS source_id,
             'Custom Code' AS source_name,
             'included' AS status
@@ -539,10 +543,11 @@ async def get_all_filter_options_db(
             'code_system' AS filter_type,
             s.id::text AS value,
             s.display_name AS label,
+            bc.cond_id as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM systems s
         LEFT JOIN base_codes bc ON bc.system_id = s.id
-        GROUP BY s.id, s.display_name
+        GROUP BY cond_id, s.id, s.display_name
 
         UNION ALL
 
@@ -551,9 +556,10 @@ async def get_all_filter_options_db(
             'source' AS filter_type,
             bc.source_id::text AS value,
             bc.source_name AS label,
+            bc.cond_id as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM base_codes bc
-        GROUP BY bc.source_id, bc.source_name
+        GROUP BY cond_id, bc.source_id, bc.source_name
 
         UNION ALL
 
@@ -562,13 +568,14 @@ async def get_all_filter_options_db(
             'status' AS filter_type,
             st.status AS value,
             st.status_label AS label,
+            bc.cond_id as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS st(status, status_label)
         LEFT JOIN base_codes bc ON bc.status = st.status
-        GROUP BY st.status, st.status_label
+        GROUP BY cond_id, st.status, st.status_label
 
     ) AS filter_results
-    ORDER BY filter_type, code_count DESC;
+    ORDER BY cond_id, filter_type, code_count DESC;
     """
 
     async with db.get_connection() as conn:
@@ -577,7 +584,7 @@ async def get_all_filter_options_db(
             rows = await cur.fetchall()
 
     code_systems, sources, statuses = [], [], []
-    for filter_type, value, label, code_count in rows:
+    for filter_type, value, label, _, code_count in rows:
         if filter_type == "code_system":
             code_systems.append(
                 CodeSystemFilterOption(
