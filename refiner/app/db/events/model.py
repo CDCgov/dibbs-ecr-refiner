@@ -21,6 +21,7 @@ class _EventBase:
         "lock_release",
         "lock_renew",
         "bulk_add_custom_code",
+        "bulk_delete_custom_code",
         "create_custom_section",
         "edit_custom_section",
         "delete_custom_section",
