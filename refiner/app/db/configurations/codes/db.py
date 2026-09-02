@@ -276,6 +276,7 @@ async def get_codes_db(
 
 async def set_codes_status_beyond_rendered_db(
     configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
     status: Literal["included", "excluded"],
     code_ids_to_skip: list[UUID],
     filters: FilterInput,
@@ -294,6 +295,7 @@ async def set_codes_status_beyond_rendered_db(
 
     Args:
         configuration_id (UUID): ID of the configuration
+        configuration_primary_condition_id (UUID): ID of the primary condition
         status (Literal['included', 'excluded']): Set codes as 'included' or 'excluded'
         code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been excluded from the bulk operation
         filters (FilterInput): Filters to apply in order to build the bulk selection "complete" set
@@ -310,6 +312,8 @@ async def set_codes_status_beyond_rendered_db(
     cond_params["code_ids_to_skip"] = code_ids_to_skip
 
     if status == "excluded":
+        cond_params["primary_condition_id"] = configuration_primary_condition_id
+
         query = f"""
         INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
         SELECT
@@ -331,7 +335,7 @@ async def set_codes_status_beyond_rendered_db(
             AND crc.code_id != ALL(%(code_ids_to_skip)s::uuid[])
             {"".join(cond_clauses)}
         GROUP BY crc.code_id
-        HAVING bool_or(crc.is_child_rsg) = false
+    HAVING NOT bool_or(crc.is_child_rsg AND crc.condition_id = %(primary_condition_id)s)
         ON CONFLICT DO NOTHING
         RETURNING code_id;
         """
