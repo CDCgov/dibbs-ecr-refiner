@@ -38,6 +38,8 @@ interface ControlPanelProps {
   allSelected: boolean;
   renderedCodes: CodeResponse[];
   filters: CodeFilters;
+  lockedCodesCount: number;
+  hasNextPage: boolean;
 }
 export function ControlPanel({
   configurationId,
@@ -47,6 +49,8 @@ export function ControlPanel({
   allSelected,
   renderedCodes,
   filters,
+  lockedCodesCount,
+  hasNextPage,
 }: ControlPanelProps) {
   const toast = useToast();
   const formatError = useApiErrorFormatter();
@@ -151,6 +155,7 @@ export function ControlPanel({
           renderedCodes={renderedCodes}
           selectedCodeIds={selectedCodeIds}
           selectedCustomCodeIds={customCodeIds}
+          lockedCodesCount={lockedCodesCount}
         />
       }
       <div
@@ -188,6 +193,7 @@ export function ControlPanel({
                 configurationId={configurationId}
                 clearSelections={clearSelections}
                 allSelected={allSelected}
+                hasNextPage={hasNextPage}
                 selectedCustomCodeIds={selectedCustomCodes.map((c) => c.id)}
                 deselectedCustomCodeIds={deselectedCustomCodesIds}
               />
@@ -205,6 +211,7 @@ interface CustomCodeDeletionMenuProps {
   clearSelections: () => void;
   selectedCustomCodeIds: string[];
   deselectedCustomCodeIds: string[];
+  hasNextPage: boolean;
 }
 
 function CustomCodeDeletionMenu({
@@ -213,6 +220,7 @@ function CustomCodeDeletionMenu({
   allSelected,
   selectedCustomCodeIds,
   deselectedCustomCodeIds,
+  hasNextPage,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: codeCounts } = useGetCodeCounts(configurationId);
@@ -222,8 +230,7 @@ function CustomCodeDeletionMenu({
     totalCustomCodes = codeCounts.data.total_custom_codes_count;
   }
 
-  const deletePastCursor =
-    allSelected && totalCustomCodes > CodesLimitResponseValue.codes_limit;
+  const deletePastCursor = allSelected && hasNextPage;
 
   const customCodesToDeleteCount = deletePastCursor
     ? totalCustomCodes - deselectedCustomCodeIds.length
@@ -434,6 +441,7 @@ interface ExclusionWarningModalProps {
   renderedCodes: CodeResponse[];
   selectedCodeIds: Set<string>;
   selectedCustomCodeIds: Set<string>;
+  lockedCodesCount: number;
 }
 
 function ExclusionWarningModal({
@@ -445,6 +453,7 @@ function ExclusionWarningModal({
   renderedCodes,
   selectedCodeIds,
   selectedCustomCodeIds,
+  lockedCodesCount,
 }: ExclusionWarningModalProps) {
   const {
     data: codeCounts,
@@ -486,6 +495,11 @@ function ExclusionWarningModal({
           <p className="border-l-3! border-l-[#d54309] bg-[#fdf3f2] px-4 py-3">
             {totalCustomCodeCount} custom codes can't be excluded. Custom codes
             can only be deleted to remove them from this configuration.
+            <br />
+            {lockedCodesCount
+              ? `${lockedCodesCount} RCTC codes can't be excluded. RCTC codes need to be included to
+            properly process the eCR.`
+              : ' '}
           </p>
         </div>
       </ModalBody>

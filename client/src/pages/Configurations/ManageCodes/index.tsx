@@ -186,6 +186,7 @@ function CodesTable({
   const codesWithoutPrimaryConditionRsgCodes = codes.filter(
     (c) => !c.is_primary_condition_rsg
   );
+  const lockedCodes = codes.filter((c) => c.is_primary_condition_rsg);
 
   const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
@@ -209,8 +210,10 @@ function CodesTable({
               setSelectedIds(new Set());
               setAllSelected(false);
             }}
+            lockedCodesCount={lockedCodes.length}
             allSelected={allSelected}
             renderedCodes={codes}
+            hasNextPage={hasNextPage}
             filters={filters}
           />
         ) : null}
