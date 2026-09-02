@@ -1,9 +1,16 @@
+import pytest
 from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.model import HL7_NS
+from app.services.ecr.narrative.constants import (
+    MINIMAL_SECTION_MESSAGE,
+    REFINER_OUTPUT_TITLE,
+    REMOVE_SECTION_MESSAGE,
+)
 from app.services.ecr.narrative.identifiers import compact_reconstruction_references
 from app.services.ecr.narrative.reconstruction import (
+    PANEL_FIELDS,
     RESULT_FIELDS,
     Block,
     DetailRow,
@@ -20,9 +27,11 @@ from app.services.ecr.narrative.reconstruction import (
     render_coded_concept,
     render_interpretation,
     render_performer,
+    render_performer_org,
     render_section_text,
     render_typed_value,
 )
+from app.services.ecr.narrative.writers import create_minimal_section
 
 # a fixed run stamp so minted row IDs are deterministic in assertions
 _RUN_TS = "20240101000000+0000"
@@ -104,8 +113,10 @@ def test_render_ivl_ts_equal_bounds_collapse_to_single_value():
 
 
 def test_render_ivl_ts_low_only():
+    # an interval open at the high end says the end was not recorded, which a
+    # bare "2024-01-15" would hide behind something that reads as a point
     el = _el(f'<effectiveTime {_NSDECL}><low value="20240115"/></effectiveTime>')
-    assert render_typed_value(el) == "2024-01-15"
+    assert render_typed_value(el) == "2024-01-15 onward"
 
 
 def test_render_ivl_pq_reference_range_keeps_units():
@@ -119,11 +130,14 @@ def test_render_ivl_pq_reference_range_keeps_units():
 
 
 def test_render_ivl_pq_high_only_bound():
+    # a one-sided reference range is a comparison, not a value: "45 [iU]/mL"
+    # read as though the whole range were 45. this bound is explicitly
+    # exclusive, so it earns "<" rather than the default inclusive symbol
     el = _el(
         f'<value {_NSDECL} xsi:type="IVL_PQ">'
         '<high inclusive="false" unit="[iU]/mL" value="45"/></value>'
     )
-    assert render_typed_value(el) == "45 [iU]/mL"
+    assert render_typed_value(el) == "< 45 [iU]/mL"
 
 
 def test_render_pivl_ts_frequency():
@@ -443,6 +457,7 @@ _RESULTS_SECTION = f"""
   <entry>
     <organizer classCode="BATTERY" moodCode="EVN">
       <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
+      <statusCode code="completed"/>
       <performer>
         <assignedEntity>
           <representedOrganization>
@@ -503,7 +518,7 @@ def test_reconstruct_results_one_block_per_organizer():
     assert len(blocks) == 2
     assert blocks[0].columns == [
         "Test",
-        "Outcome",
+        "Result value",
         "Interpretation",
         "Reference Range",
         "Date(s)",
@@ -517,10 +532,11 @@ def test_reconstruct_results_context_is_per_block_not_repeated_on_rows():
     # Panel surfaces system + code; Performer is the performing org name reached
     # off the panel; Specimen has no @code so it stays display-only
     assert blocks[0].context == {
-        "Panel": "CBC panel (LOINC 58410-2)",
+        "Panel name": "CBC panel (LOINC 58410-2)",
         "Date(s)": "",  # no organizer effectiveTime in the fixture
         "Performer": "Acme Reference Lab",
-        "Result Status": "",  # no Laboratory Result Status component
+        # no Laboratory Result Status component; falls back to organizer statusCode
+        "Result Status": "completed",
         "Specimen": "Blood specimen",
         "Target Site": "",
     }
@@ -528,19 +544,19 @@ def test_reconstruct_results_context_is_per_block_not_repeated_on_rows():
     assert len(blocks[0].rows) == 2
     assert blocks[0].rows[0].values == {
         "Test": "Hemoglobin",  # no @code in the fixture → display-only
-        "Outcome": "9.2 g/dL",
+        "Result value": "9.2 g/dL",
         "Interpretation": "Low",
         "Reference Range": "13.5 g/dL to 17.5 g/dL",  # IVL_PQ bounds keep units
         "Date(s)": "2024-01-15",
     }
     # the CD result value surfaces its system + code
-    assert blocks[0].rows[1].values["Outcome"] == "E. coli (SNOMED CT 112283007)"
+    assert blocks[0].rows[1].values["Result value"] == "E. coli (SNOMED CT 112283007)"
     assert blocks[0].rows[1].values["Interpretation"] == ""
 
     # the second organizer is its own block; no bleed from the first
-    assert blocks[1].context["Panel"] == "Glucose panel"
+    assert blocks[1].context["Panel name"] == "Glucose panel"
     assert blocks[1].context["Specimen"] == ""  # no procedure in this organizer
-    assert blocks[1].rows[0].values["Outcome"] == "105 mg/dL"
+    assert blocks[1].rows[0].values["Result value"] == "105 mg/dL"
 
 
 # NOTE:
@@ -594,8 +610,13 @@ def test_reconstruct_problems_one_block_per_concern():
 def test_reconstruct_problems_concern_context_and_problem_rows():
     blocks = reconstruct_problems(_el(_PROBLEMS_SECTION))
 
-    # concern context: status + noted date, rendered once
-    assert blocks[0].context == {"Concern Status": "active", "Date(s)": "2025-11-07"}
+    # concern context: status + noted date, rendered once. the concern is
+    # ACTIVE with an onset and no resolution, so its interval is open at the
+    # high end — "2025-11-07" alone read as a single-day concern
+    assert blocks[0].context == {
+        "Concern Status": "active",
+        "Date(s)": "2025-11-07 onward",
+    }
 
     # the two problem observations are the detail rows
     assert len(blocks[0].rows) == 2
@@ -603,7 +624,8 @@ def test_reconstruct_problems_concern_context_and_problem_rows():
     assert blocks[0].rows[0].values == {
         "Problem Type": "Symptom",
         "Problem": "Dark stools (finding) (SNOMED CT 35064005)",
-        "Date(s)": "2025-11-01",
+        # onset recorded, never resolved
+        "Date(s)": "2025-11-01 onward",
     }
     # second problem: display via originalText, resolved range (low to high)
     assert blocks[0].rows[1].values == {
@@ -802,18 +824,23 @@ def test_reconstruct_medications_is_flat_with_convention_columns():
     assert blocks[0].columns == [
         "Medication",
         "Dose",
-        "Duration",
+        "Quantity",
+        "Date administered",
         "Frequency",
         "Route",
+        "Status",
     ]
-    # the two effectiveTimes land in distinct columns: the IVL_TS window as
-    # Duration, the PIVL_TS as Frequency (unreachable before the split)
+    # the two effectiveTimes land in distinct columns: the IVL_TS window
+    # contributes its low bound as Date administered, the PIVL_TS as Frequency
+    # (unreachable before the split)
     assert blocks[0].rows[0].values == {
         "Medication": "oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)",
         "Dose": "1 g",
-        "Duration": "2012-03-18",
+        "Quantity": "",
+        "Date administered": "2012-03-18",
         "Frequency": "every 8 h",
         "Route": "ORAL (NCI Thesaurus C38288)",
+        "Status": "completed",
     }
 
 
@@ -866,7 +893,7 @@ def test_no_known_medications_row_is_flagged_negated():
 
 def test_no_known_medications_renders_as_a_negative_not_a_product():
     section = _el(_NO_KNOWN_MEDICATIONS_SECTION)
-    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS).text
     assert text is not None
 
     cells = [
@@ -884,7 +911,9 @@ def test_no_known_medications_renders_as_a_negative_not_a_product():
 
 
 def test_reconstruct_narrative_results_returns_block_tables():
-    text = reconstruct_narrative(_el(_RESULTS_SECTION), augmentation_timestamp=_RUN_TS)
+    text = reconstruct_narrative(
+        _el(_RESULTS_SECTION), augmentation_timestamp=_RUN_TS
+    ).text
     assert text is not None
     assert text.tag == "{urn:hl7-org:v3}text"
     # one detail row per surviving observation across both organizer blocks
@@ -1024,7 +1053,7 @@ def test_result_fields_use_the_intended_kinds():
     by_label = {f.label: f for f in RESULT_FIELDS}
     assert by_label["Test"].kind == "concept"  # clinical: display (System code)
     assert by_label["Interpretation"].kind == "interp"  # HL7 flag: display-only
-    assert by_label["Outcome"].kind == "typed"  # polymorphic (PQ/CD/ST)
+    assert by_label["Result value"].kind == "typed"  # polymorphic (PQ/CD/ST)
     assert by_label["Reference Range"].kind == "typed"  # IVL_PQ interval
 
 
@@ -1460,7 +1489,7 @@ def test_plan_of_treatment_dispatches_and_renders_captioned_tables():
     """
 
     section = _el(_PLAN_OF_TREATMENT)
-    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS).text
 
     assert text is not None
     tables = text.findall("hl7:table", HL7_NS)
@@ -1501,9 +1530,586 @@ def test_negated_planned_entry_reads_as_not_planned():
     vaccine = section.findall("hl7:entry/hl7:substanceAdministration", HL7_NS)[-1]
     vaccine.set("negationInd", "true")
 
-    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+    text = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS).text
 
     assert text is not None
     rendered = etree.tostring(text, encoding="unicode")
     assert "Not planned: COVID-19 mRNA vaccine (CVX 207)" in rendered
     assert "Not administered:" not in rendered
+
+
+# NOTE:
+# PHA REVIEW FEEDBACK — the shapes real Epic/Meditech data ships
+# =============================================================================
+# each of these pins a case a public health reviewer reported reading wrong in
+# refined output, with the source XML they pointed at
+
+
+def test_reference_range_reads_a_nullflavored_bound_via_its_translation():
+    # Epic parks the number in a <translation> when the unit is not UCUM-codable;
+    # reading only the bound's own @value rendered the whole range blank
+    value = _el(
+        f"""
+        <value {_NSDECL} xsi:type="IVL_PQ">
+          <low nullFlavor="OTH">
+            <translation nullFlavor="OTH" value="49">
+              <originalText>IU/L</originalText>
+            </translation>
+          </low>
+          <high nullFlavor="OTH">
+            <translation nullFlavor="OTH" value="135">
+              <originalText>IU/L</originalText>
+            </translation>
+          </high>
+        </value>
+        """
+    )
+    assert render_typed_value(value) == "49 IU/L to 135 IU/L"
+
+
+def test_reference_range_falls_back_to_the_senders_own_text():
+    # nothing structured to render: the sender's spelled-out range beats a blank
+    observation = _el(
+        f"""
+        <observation {_NSDECL}>
+          <referenceRange><observationRange>
+            <text>0 - 35 IU/L</text>
+            <value xsi:type="IVL_PQ"><low nullFlavor="OTH"/><high nullFlavor="OTH"/></value>
+          </observationRange></referenceRange>
+        </observation>
+        """
+    )
+    fields = extract_fields(observation, RESULT_FIELDS)
+    assert fields["Reference Range"] == "0 - 35 IU/L"
+
+
+def test_result_status_falls_back_to_the_organizer_status_code():
+    # the Laboratory Result Status template is a MAY almost nobody sends; the
+    # answer the reviewer wanted was on the organizer's own statusCode
+    organizer = _el(
+        f"""
+        <organizer {_NSDECL}>
+          <code code="58410-2" codeSystem="2.16.840.1.113883.6.1"/>
+          <statusCode code="completed"/>
+        </organizer>
+        """
+    )
+    assert extract_fields(organizer, PANEL_FIELDS)["Result Status"] == "completed"
+
+
+def test_result_status_prefers_the_ig_template_over_the_organizer_status():
+    organizer = _el(
+        f"""
+        <organizer {_NSDECL}>
+          <code code="58410-2" codeSystem="2.16.840.1.113883.6.1"/>
+          <statusCode code="completed"/>
+          <component>
+            <observation>
+              <templateId root="2.16.840.1.113883.10.20.22.4.418"/>
+              <value displayName="Final"/>
+            </observation>
+          </component>
+        </organizer>
+        """
+    )
+    assert extract_fields(organizer, PANEL_FIELDS)["Result Status"] == "Final"
+
+
+def test_panel_performer_is_the_organization_not_the_person():
+    # "which laboratory ran this?" — the verifying technologist is noise on a
+    # results table, and naming them discloses a clinician the PHA did not need
+    organizer = _el(
+        f"""
+        <organizer {_NSDECL}>
+          <performer><assignedEntity>
+            <assignedPerson><name><given>Jane</given><family>Doe</family></name></assignedPerson>
+            <representedOrganization><name>Acme Reference Lab</name></representedOrganization>
+          </assignedEntity></performer>
+        </organizer>
+        """
+    )
+    assert extract_fields(organizer, PANEL_FIELDS)["Performer"] == "Acme Reference Lab"
+
+
+def test_performer_org_falls_back_to_the_person_when_no_organization():
+    performer = _el(
+        f"""
+        <performer {_NSDECL}><assignedEntity>
+          <assignedPerson><name><given>Jane</given><family>Doe</family></name></assignedPerson>
+        </assignedEntity></performer>
+        """
+    )
+    assert render_performer_org(performer) == "Jane Doe"
+    # the person-preferring renderer is unchanged
+    assert render_performer(performer) == "Jane Doe"
+
+
+def test_code_display_prefers_original_text_over_display_name():
+    # a lab codes AST with the full LOINC name on @displayName and "AST" in
+    # originalText; the short form is the one a PHA recognizes at a glance
+    code = _el(
+        f"""
+        <code {_NSDECL} code="1920-8" codeSystem="2.16.840.1.113883.6.1"
+              displayName="Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma">
+          <originalText>AST</originalText>
+        </code>
+        """
+    )
+    assert render_code_display(code) == "AST"
+    # the verifiable half is still rendered alongside
+    assert render_coded_concept(code) == "AST (LOINC 1920-8)"
+
+
+def test_unknown_code_system_falls_back_to_the_senders_system_name():
+    # Epic proprietary result-type enum: "16" alone told the reviewer nothing
+    value = _el(
+        f"""
+        <value {_NSDECL} xsi:type="CD" code="16"
+               codeSystem="1.2.840.114350.1.72.1.5007" codeSystemName="Epic.Result.Type"/>
+        """
+    )
+    assert render_coded_concept(value) == "Epic.Result.Type 16"
+
+
+def test_ucum_pure_annotation_unit_renders_without_braces():
+    quantity = _el(f'<quantity {_NSDECL} unit="{{tbl}}" value="60.0"/>')
+    assert render_typed_value(quantity) == "60.0 tbl"
+    # a real unit carrying a trailing annotation is left alone
+    annotated = _el(f'<quantity {_NSDECL} unit="mg{{total}}" value="5"/>')
+    assert render_typed_value(annotated) == "5 mg{total}"
+
+
+def test_medication_row_carries_supply_quantity_and_single_administration_date():
+    section = _el(
+        f"""
+        <section {_NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <statusCode code="completed"/>
+            <effectiveTime xsi:type="IVL_TS">
+              <low value="20260803190000+0000"/><high value="20260803192700+0000"/>
+            </effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+            <entryRelationship typeCode="REFR">
+              <supply classCode="SPLY" moodCode="INT">
+                <quantity unit="{{tbl}}" value="60.0"/>
+              </supply>
+            </entryRelationship>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    # the high bound (the moment the infusion ended) is dropped: an
+    # administration happened at a time, not over a clinically meaningful window
+    assert row["Date administered"] == "2026-08-03 19:00:00 +00:00"
+    assert row["Quantity"] == "60.0 tbl"
+    assert row["Status"] == "completed"
+
+
+def test_medication_date_falls_back_to_a_flat_effective_time():
+    section = _el(
+        f"""
+        <section {_NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime value="20260803"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Date administered"] == "2026-08-03"
+
+
+def test_periodic_interval_without_a_period_is_a_date_not_a_frequency():
+    # senders ship `xsi:type="PIVL_TS"` on what is really a plain timestamp;
+    # splitting on the type alone filed that date under "Frequency"
+    section = _el(
+        f"""
+        <section {_NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime xsi:type="PIVL_TS" operator="A" value="202011071159-0700"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="oseltamivir"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Date administered"] == "2020-11-07 11:59 -07:00"
+    assert row["Frequency"] == ""
+
+
+def test_a_real_periodic_interval_still_renders_as_frequency():
+    section = _el(
+        f"""
+        <section {_NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime xsi:type="IVL_TS"><low value="20201107"/></effectiveTime>
+            <effectiveTime xsi:type="PIVL_TS" operator="A">
+              <period value="8" unit="h"/>
+            </effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="oseltamivir"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Date administered"] == "2020-11-07"
+    assert row["Frequency"] == "every 8 h"
+
+
+def test_results_detail_table_is_captioned_and_marked_subordinate():
+    # StrucDoc.Td forbids a nested <table>, so containment is carried by the
+    # caption naming the parent panel plus an indent styleCode
+    blocks = reconstruct_results(_el(_RESULTS_SECTION))
+    assert blocks[0].caption == "Tests in panel: CBC panel"
+
+    text = render_section_text(
+        blocks, loinc="30954-2", augmentation_timestamp="20260101000000"
+    )
+    tables = text.findall("hl7:table", HL7_NS)
+    # per block: a context table (plain) then a detail table (subordinate)
+    assert tables[0].get("styleCode") is None
+    assert tables[1].get("styleCode") == "xallIndent"
+    assert tables[1].find("hl7:caption", HL7_NS).text == "Tests in panel: CBC panel"
+
+
+def test_flat_section_tables_are_not_marked_subordinate():
+    # a flat block has no context table above it, so there is nothing to indent
+    # under — Immunizations rows are not members of anything
+    blocks = reconstruct_immunizations(_el(_IMMUNIZATIONS_SECTION))
+    text = render_section_text(
+        blocks, loinc="11369-6", augmentation_timestamp="20260101000000"
+    )
+    assert text.find("hl7:table", HL7_NS).get("styleCode") is None
+
+
+# NOTE:
+# ONE-SIDED INTERVALS — the shape that cannot be rendered honestly by accident
+# =============================================================================
+# a bare bound reads as a point in time. "started then, no end recorded" and
+# "ended then" are different clinical facts, and on Problems the first is the
+# difference between an active condition and a one-off note
+
+
+def _interval(body: str, xsi_type: str = "") -> str:
+    attr = f' xsi:type="{xsi_type}"' if xsi_type else ""
+    return f"<value {_NSDECL}{attr}>{body}</value>"
+
+
+def test_open_ended_time_interval_names_the_open_side():
+    lo = _el(_interval('<low value="20260803"/>', "IVL_TS"))
+    assert render_typed_value(lo) == "2026-08-03 onward"
+
+    hi = _el(_interval('<high value="20260810"/>', "IVL_TS"))
+    assert render_typed_value(hi) == "until 2026-08-10"
+
+
+def test_a_nullflavored_high_bound_reads_as_open_not_as_a_point():
+    # the sender said "there is an end and we do not know it" — rendering just
+    # the low made that indistinguishable from a single-date event
+    el = _el(_interval('<low value="20260803"/><high nullFlavor="UNK"/>', "IVL_TS"))
+    assert render_typed_value(el) == "2026-08-03 onward"
+
+
+def test_open_interval_never_claims_the_interval_is_ongoing():
+    # "onward" says the end was not recorded; "to present" would assert a fact
+    # the source never stated
+    el = _el(_interval('<low value="20260803"/>', "IVL_TS"))
+    assert "present" not in render_typed_value(el)
+    assert "ongoing" not in render_typed_value(el)
+
+
+def test_one_sided_quantity_range_uses_comparison_not_temporal_wording():
+    # the IVL branch serves reference ranges too, where "onward" is meaningless
+    hi = _el(_interval('<high unit="mg/dL" value="1.2"/>', "IVL_PQ"))
+    assert render_typed_value(hi) == "≤ 1.2 mg/dL"
+
+    lo = _el(_interval('<low unit="mg/dL" value="60"/>', "IVL_PQ"))
+    assert render_typed_value(lo) == "≥ 60 mg/dL"
+
+
+def test_exclusive_bound_earns_the_strict_comparison():
+    # an HL7 V3 IVL bound is inclusive unless it says otherwise
+    el = _el(_interval('<high unit="mg/dL" value="1.2" inclusive="false"/>', "IVL_PQ"))
+    assert render_typed_value(el) == "< 1.2 mg/dL"
+
+
+def test_quantity_is_detected_from_the_bound_when_xsi_type_is_absent():
+    el = _el(_interval('<high unit="mg/dL" value="1.2"/>'))
+    assert render_typed_value(el) == "≤ 1.2 mg/dL"
+
+
+def test_closed_intervals_are_unchanged():
+    both = _el(_interval('<low value="20260803"/><high value="20260810"/>', "IVL_TS"))
+    assert render_typed_value(both) == "2026-08-03 to 2026-08-10"
+
+    # a zero-width interval is still a point, and still collapses
+    same = _el(_interval('<low value="20260803"/><high value="20260803"/>', "IVL_TS"))
+    assert render_typed_value(same) == "2026-08-03"
+
+    # a flat timestamp is a point in time and gains no interval wording
+    assert render_typed_value(_el(f'<effectiveTime {_NSDECL} value="20260803"/>')) == (
+        "2026-08-03"
+    )
+
+
+def test_medication_date_administered_is_unaffected_by_interval_wording():
+    # the column reads effectiveTime/low directly, so it renders a bound, not
+    # an interval — an administration date must never read "onward"
+    section = _el(
+        f"""
+        <section {_NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime xsi:type="IVL_TS"><low value="20260803"/></effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="drug"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    assert (
+        reconstruct_medications(section)[0].rows[0].values["Date administered"]
+        == "2026-08-03"
+    )
+
+
+# NOTE:
+# MINIMAL SECTION STUB — what a PHA sees for a section they switched off
+# =============================================================================
+# create_minimal_section is live on the "removed by configuration" path
+# (refine._process_sections BRANCH 1) and had no test at all. it is the only
+# content a reviewer gets for that section, and it has to leave the section
+# schema-valid: entries gone, nullFlavor="NI" set, and the stub table built
+# with real <thead>/<th> header semantics rather than the HTML-invalid
+# <thead><tr><td> shape an earlier implementation emitted
+
+
+def _stub_section(body: str = "") -> _Element:
+    return etree.fromstring(
+        f"""
+        <section xmlns="urn:hl7-org:v3">
+          <code code="10164-2" codeSystem="2.16.840.1.113883.6.1"/>
+          <title>HISTORY OF PRESENT ILLNESS</title>
+          <text><paragraph>Original clinician narrative.</paragraph></text>
+          {body}
+        </section>
+        """.encode()
+    )
+
+
+_STUB_ENTRY = """
+  <entry><observation classCode="OBS" moodCode="EVN">
+    <code code="1234-5" codeSystem="2.16.840.1.113883.6.1"/>
+  </observation></entry>
+"""
+
+
+@pytest.mark.parametrize(
+    ("reason", "expected_message"),
+    [
+        ("configured", REMOVE_SECTION_MESSAGE),
+        ("no_match", MINIMAL_SECTION_MESSAGE),
+    ],
+)
+def test_minimal_section_states_why_the_section_is_empty(
+    reason, expected_message
+) -> None:
+    section = _stub_section(_STUB_ENTRY)
+
+    create_minimal_section(section=section, removal_reason=reason)
+
+    cells = section.xpath(".//hl7:text//hl7:td/text()", namespaces=HL7_NS)
+    assert cells == [expected_message]
+    caption = section.xpath(".//hl7:text//hl7:caption/text()", namespaces=HL7_NS)
+    assert caption == [REFINER_OUTPUT_TITLE]
+
+
+def test_minimal_section_drops_entries_and_marks_the_section_null() -> None:
+    section = _stub_section(_STUB_ENTRY + _STUB_ENTRY)
+
+    create_minimal_section(section=section, removal_reason="configured")
+
+    assert section.findall("hl7:entry", HL7_NS) == []
+    # schematron requires refinable sections to declare the absence rather
+    # than simply ship empty
+    assert section.get("nullFlavor") == "NI"
+
+
+def test_minimal_section_replaces_the_original_narrative() -> None:
+    section = _stub_section(_STUB_ENTRY)
+
+    create_minimal_section(section=section, removal_reason="configured")
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert "Original clinician narrative" not in rendered
+    # exactly one <text>, still in its xs:sequence position after <title>
+    assert len(section.findall("hl7:text", HL7_NS)) == 1
+    order = [etree.QName(c).localname for c in section if isinstance(c.tag, str)]
+    assert order == ["code", "title", "text"]
+
+
+def test_minimal_section_uses_real_table_header_semantics() -> None:
+    # <thead><tr><th>, not the HTML-invalid <thead><tr><td> an earlier
+    # implementation emitted
+    section = _stub_section()
+
+    create_minimal_section(section=section, removal_reason="configured")
+
+    assert section.xpath(".//hl7:thead/hl7:tr/hl7:th/text()", namespaces=HL7_NS) == [
+        "Status"
+    ]
+    assert section.xpath(".//hl7:thead//hl7:td", namespaces=HL7_NS) == []
+    assert section.xpath(".//hl7:tbody/hl7:tr/hl7:td", namespaces=HL7_NS)
+
+
+def test_minimal_section_builds_a_narrative_when_the_section_had_none() -> None:
+    # a section whose <text> was already stripped still gets a stub, inserted
+    # after <title> per the CDA R2 section sequence
+    section = etree.fromstring(
+        b"""
+        <section xmlns="urn:hl7-org:v3">
+          <code code="10164-2" codeSystem="2.16.840.1.113883.6.1"/>
+          <title>HISTORY OF PRESENT ILLNESS</title>
+        </section>
+        """
+    )
+
+    create_minimal_section(section=section, removal_reason="configured")
+
+    order = [etree.QName(c).localname for c in section if isinstance(c.tag, str)]
+    assert order == ["code", "title", "text"]
+
+
+# NOTE:
+# THE GENERIC FALLBACK — no surviving entry goes unrepresented
+# =============================================================================
+# a per-section reconstructor anchors on the arrangement the IG describes, so
+# an entry arranged differently matches, survives pruning, and renders nothing.
+# the PARTIAL case is the dangerous one: the section reports a clean
+# "reconstructed", every entry is stamped typeCode="DRIV", and one of them is
+# simply missing from the narrative that claims to derive from it
+
+
+_PARTIAL_RESULTS_SECTION = f"""
+<section {_NSDECL}>
+  <code code="30954-2"/>
+  <text>Original clinician narrative.</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <statusCode code="completed"/>
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" displayName="COVID"/>
+        <value xsi:type="PQ" value="1" unit="1"/>
+      </observation></component>
+    </organizer>
+  </entry>
+  <!-- no organizer: reconstruct_results anchors on entry/organizer and
+       cannot see this one -->
+  <entry>
+    <observation classCode="OBS" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+      <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" displayName="Bare result"/>
+      <statusCode code="completed"/>
+      <effectiveTime value="20260803"/>
+      <value xsi:type="PQ" value="2" unit="1"/>
+    </observation>
+  </entry>
+</section>
+"""
+
+
+def test_an_entry_the_reconstructor_cannot_cover_still_gets_a_row():
+    section = _el(_PARTIAL_RESULTS_SECTION)
+
+    rebuilt = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    assert rebuilt.reduced_entry_count == 1
+    rendered = etree.tostring(rebuilt.text, encoding="unicode")
+    # the covered entry keeps its full per-section rendering
+    assert "COVID (LOINC 94533-7)" in rendered
+    # the uncovered one is present rather than silently dropped
+    assert "Bare result (LOINC 94533-7)" in rendered
+
+
+def test_the_reduced_block_is_captioned_so_a_thin_table_explains_itself():
+    section = _el(_PARTIAL_RESULTS_SECTION)
+
+    rebuilt = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    captions = [
+        c.text for c in rebuilt.text.findall(".//hl7:caption", HL7_NS) if c.text
+    ]
+    assert any("reduced form" in c for c in captions)
+
+
+def test_every_surviving_entry_is_relinked_to_a_row():
+    # typeCode="DRIV" asserts the narrative is derived from these entries; an
+    # entry with no row makes that assertion false
+    section = _el(_PARTIAL_RESULTS_SECTION)
+
+    reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    for entry in section.findall("hl7:entry", HL7_NS):
+        assert entry.get("typeCode") == "DRIV"
+        refs = entry.xpath(".//hl7:text/hl7:reference/@value", namespaces=HL7_NS)
+        assert refs, "a surviving entry was left with no narrative row"
+
+
+def test_a_fully_covered_section_reports_no_reduced_entries():
+    # the fallback must not fire when the section's own reconstructor
+    # covered everything — otherwise the outcome label cries wolf
+    rebuilt = reconstruct_narrative(
+        _el(_RESULTS_SECTION), augmentation_timestamp=_RUN_TS
+    )
+
+    assert rebuilt.reduced_entry_count == 0
+    captions = [
+        c.text for c in rebuilt.text.findall(".//hl7:caption", HL7_NS) if c.text
+    ]
+    assert not any("reduced form" in c for c in captions)
+
+
+def test_reduced_rows_render_a_substance_administration_product():
+    # a substanceAdministration carries no <code> of its own; the concept
+    # lives on the consumable, which is why render_entry_concept searches
+    section = _el(
+        f"""
+        <section {_NSDECL}>
+          <code code="11450-4"/>
+          <text>Original.</text>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <statusCode code="completed"/>
+            <effectiveTime value="20260803"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code code="1115699" codeSystem="2.16.840.1.113883.6.88"
+                    displayName="oseltamivir"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+
+    rebuilt = reconstruct_narrative(section, augmentation_timestamp=_RUN_TS)
+
+    assert rebuilt.reduced_entry_count == 1
+    rendered = etree.tostring(rebuilt.text, encoding="unicode")
+    assert "oseltamivir (RxNorm 1115699)" in rendered
+    assert "2026-08-03" in rendered
+    assert "completed" in rendered

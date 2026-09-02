@@ -1,14 +1,25 @@
 from collections import defaultdict
+from dataclasses import dataclass
 
 import pytest
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.ecr.model import HL7_NS, EntryMatchRule, SectionSpecification
+from app.services.ecr.model import (
+    HL7_NS,
+    HL7_XSI_NS,
+    EntryMatchRule,
+    SectionSpecification,
+)
 from app.services.ecr.section import get_section_by_code
-from app.services.ecr.section.entry_matching import process
+from app.services.ecr.section.entry_matching import (
+    _group_rules_by_precedence,
+    _try_match_entry,
+    process,
+)
 from app.services.ecr.specification import load_spec
 from app.services.terminology import CodeSystemKey, CodeSystemSets, Oid
+from tests.fixtures.loader import load_fixture_str
 from tests.unit.conftest import create_mock_systems
 
 # NOTE:
@@ -354,7 +365,7 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
     assert len(detail_rows) == 1
 
 
-def test_narrative_reconstruct_results_without_matching_falls_back_to_retention_text(
+def test_narrative_reconstruct_without_matches_removes_the_original_narrative(
     spec_v1_1,
 ) -> None:
     """
@@ -394,11 +405,13 @@ def test_narrative_reconstruct_results_without_matching_falls_back_to_retention_
         narrative_action="reconstruct",
     )
     assert result.matches_found is False
-    assert result.narrative_disposition == "reconstruct_no_entries"
+    assert result.narrative_disposition == "removed"
 
+    # the original narrative described the entries that were just pruned, so
+    # retaining it would ship exactly the content the configuration excluded
     text = _find_one(section, "hl7:text")
     assert text is not None
-    assert "Original narrative" in etree.tostring(text, encoding="unicode")
+    assert "Original narrative" not in etree.tostring(text, encoding="unicode")
 
 
 def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(
@@ -477,19 +490,13 @@ def test_problems_rule_matches_snomed_on_value(spec_v1_1) -> None:
     assert result.matches_found is True
 
 
-def test_problems_icd10_primary_is_blocked_by_t1_structural_precedence(
+def test_problems_icd10_primary_matches_via_t3_same_location_rule(
     spec_v1_1,
 ) -> None:
     """
-    Structural precedence means the T1 rule (SNOMED) claims the entry as
-    soon as it finds the Problem Observation value element — regardless
-    of the actual code system on that element. The T3 heuristic (ICD-10)
-    rule is never evaluated.
-
-    An entry with ICD-10 as primary does NOT match unless the ICD-10 code
-    has also been placed in the SNOMED dict (cross-system match via the
-    configured code set). This is the correct behavior — it prevents T3
-    from silently overriding T1's structural claim.
+    T1 (SNOMED) and T3 (ICD-10) read the SAME Problem Observation value, so
+    they form one precedence group and both are evaluated before the entry
+    is claimed. An ICD-10-primary entry matches via T3.
     """
 
     section = _build_section(
@@ -513,6 +520,80 @@ def test_problems_icd10_primary_is_blocked_by_t1_structural_precedence(
     result = process(
         section=section,
         code_system_sets=_make_code_system_sets({"icd10": ["U07.1"]}),
+        section_specification=spec_v1_1.sections["11450-4"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+
+
+def test_problems_icd10_primary_with_snomed_translation_matches(spec_v1_1) -> None:
+    """
+    The reversed sender pattern: billing code (ICD-10) as the primary value,
+    clinical concept (SNOMED) in translation, with only the SNOMED code
+    configured. T1 finds a candidate but no SNOMED match and its translation
+    branch is scoped to ICD-10; T3 is the rule that reaches the SNOMED
+    translation. Both must run for this entry to survive.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="11450-4"/>
+            <entry>
+                <act classCode="ACT" moodCode="EVN">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+                    <entryRelationship typeCode="SUBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                            <value code="O09.32" codeSystem="2.16.840.1.113883.6.90">
+                                <translation code="426403007" codeSystem="2.16.840.1.113883.6.96"/>
+                                <translation code="V23.7" codeSystem="2.16.840.1.113883.6.103"/>
+                            </value>
+                        </observation>
+                    </entryRelationship>
+                </act>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"snomed": ["426403007"]}),
+        section_specification=spec_v1_1.sections["11450-4"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+
+
+def test_problems_unconfigured_code_still_does_not_match(spec_v1_1) -> None:
+    """
+    Grouping widens WHICH rules run, not what counts as a match: an entry
+    whose codes are in no configured set is still pruned.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="11450-4"/>
+            <entry>
+                <act classCode="ACT" moodCode="EVN">
+                    <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+                    <entryRelationship typeCode="SUBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                            <value code="O09.32" codeSystem="2.16.840.1.113883.6.90">
+                                <translation code="426403007" codeSystem="2.16.840.1.113883.6.96"/>
+                            </value>
+                        </observation>
+                    </entryRelationship>
+                </act>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"snomed": ["840539006"]}),
         section_specification=spec_v1_1.sections["11450-4"],
         namespaces=HL7_NS,
     )
@@ -1598,3 +1679,611 @@ def test_matched_entry_with_containers_pruned_to_nothing_is_removed(
     # entry still being present with its one retained result
     assert section.xpath(".//hl7:entry/hl7:organizer", namespaces=HL7_NS)
     assert _result_codes(section) == ["94533-7"]
+
+
+def test_results_proprietary_component_is_pruned_not_treated_as_context(
+    spec_v1_1,
+) -> None:
+    """
+    A vendor-proprietary component is an ordinary prunable candidate.
+
+    The shared-context exemption names the two IG context templates. It used
+    to exempt anything that merely lacked a Result Observation templateId,
+    which swept in Epic's proprietary result components (a nullFlavored code
+    plus a bare enum value) — they rode through the prune and rendered as
+    narrative rows reading "16".
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+            <code code="30954-2"/>
+            <entry>
+                <organizer classCode="BATTERY" moodCode="EVN">
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                            <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+                        </observation>
+                    </component>
+                    <component>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="1.2.840.114350.1.72.3.4"/>
+                            <code nullFlavor="UNK"/>
+                            <value xsi:type="CD" code="16"
+                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                   codeSystem="1.2.840.114350.1.72.1.5007"
+                                   codeSystemName="Epic.Result.Type"/>
+                        </observation>
+                    </component>
+                </organizer>
+            </entry>
+        </section>
+        """
+    )
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+
+    assert result.matches_found is True
+    proprietary = section.xpath(
+        ".//hl7:observation[hl7:templateId[@root='1.2.840.114350.1.72.3.4']]",
+        namespaces=HL7_NS,
+    )
+    assert proprietary == [], "proprietary component survived as shared context"
+    # the matched result is untouched
+    assert _result_codes(section) == ["94533-7"]
+
+
+def test_rule_grouping_is_by_adjacency_not_by_xpath_globally() -> None:
+    """
+    Only CONSECUTIVE same-location rules group.
+
+    A rule separated from its twin by a rule at another location is making a
+    deliberate ordering statement; collecting every matching xpath
+    document-wide would silently rewrite it.
+    """
+
+    def _rule(xpath: str, tier: int) -> EntryMatchRule:
+        return EntryMatchRule(code_xpath=xpath, code_system_oid=None, tier=tier)
+
+    a1, b, a2 = _rule("a", 1), _rule("b", 2), _rule("a", 3)
+    assert _group_rules_by_precedence([a1, a2, b]) == [[a1, a2], [b]]
+    assert _group_rules_by_precedence([a1, b, a2]) == [[a1], [b], [a2]]
+    assert _group_rules_by_precedence([]) == []
+
+
+def test_an_explicit_precedence_group_unites_rules_at_different_locations() -> None:
+    """
+    Rules reading one statement at different locations declare it.
+
+    Without the group they key on their own code_xpath and end up in
+    separate units, which is what left the Results organism/substance rule
+    unreachable behind the test-name rule.
+    """
+
+    def _grouped(xpath: str, group: str | None) -> EntryMatchRule:
+        return EntryMatchRule(
+            code_xpath=xpath, code_system_oid=None, precedence_group=group
+        )
+
+    ungrouped = [_grouped("obs/code", None), _grouped("obs/value", None)]
+    assert len(_group_rules_by_precedence(ungrouped)) == 2
+
+    grouped = [_grouped("obs/code", "stmt"), _grouped("obs/value", "stmt")]
+    assert _group_rules_by_precedence(grouped) == [grouped]
+
+
+# NOTE:
+# THE ICD-10-PRIMARY PROBLEM LIST — a synthetic stand-in for reported data
+# =============================================================================
+# a reviewer reported problem entries being pruned from real Connecticut eICRs
+# even though their SNOMED code was configured. the fixture reproduces the
+# sender shape (billing code primary, clinical code in translation) without any
+# patient data; see its header comment for the four entries it carries
+
+
+@pytest.fixture
+def problems_icd10_primary() -> _Element:
+    return _build_section(load_fixture_str("sections/problems_icd10_primary.xml"))
+
+
+# the three SNOMED concepts a jurisdiction would have configured for this
+# condition. two are reachable only through a <translation>
+_CONFIGURED_SNOMED = ["426403007", "1621000119101", "76272004"]
+
+
+def _process_problems(section: _Element, spec, **kwargs) -> object:
+    return process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"snomed": _CONFIGURED_SNOMED}),
+        section_specification=spec.sections["11450-4"],
+        namespaces=HL7_NS,
+        **kwargs,
+    )
+
+
+def test_icd10_primary_problems_survive_when_their_snomed_is_configured(
+    problems_icd10_primary, spec_v1_1
+) -> None:
+    """
+    The reported regression, end to end through the section processor.
+
+    Entries 1 and 2 carry the configured SNOMED only in a <translation>
+    under an ICD-10 primary value. Before the precedence fix the tier-1 rule
+    claimed each entry on sight of its value element and the tier-3 rule that
+    reads the same location under the reversed code system never ran, so both
+    were pruned as non-matching.
+    """
+
+    result = _process_problems(problems_icd10_primary, spec_v1_1)
+
+    assert result.matches_found is True
+    surviving = problems_icd10_primary.xpath(
+        ".//hl7:entryRelationship/hl7:observation/hl7:value/@code", namespaces=HL7_NS
+    )
+    assert surviving == ["O09.32", "O98.812", "76272004"]
+
+
+def test_unconfigured_problems_are_still_pruned(
+    problems_icd10_primary, spec_v1_1
+) -> None:
+    """
+    Widening WHICH rules run must not widen what counts as a match.
+
+    Entry 3 (Z34.90 / 72892002) is configured under neither code system and
+    goes entirely; the sibling problem inside entry 4's concern act
+    (J30.2 / 367498001) goes too, proving container-level pruning still
+    discriminates inside an entry that DID match.
+    """
+
+    _process_problems(problems_icd10_primary, spec_v1_1)
+
+    remaining = problems_icd10_primary.xpath(
+        ".//hl7:entryRelationship/hl7:observation/hl7:value/hl7:translation/@code",
+        namespaces=HL7_NS,
+    )
+    assert "72892002" not in remaining, "unconfigured problem survived"
+    assert "367498001" not in remaining, "unconfigured sibling problem survived"
+    # entry 3 had a single problem, so the whole concern act goes with it
+    assert problems_icd10_primary.xpath("count(hl7:entry)", namespaces=HL7_NS) == 3
+
+
+def test_reconstructed_rows_carry_the_labels_from_the_source_narrative(
+    problems_icd10_primary, spec_v1_1
+) -> None:
+    """
+    Every value in this fixture gives `originalText` BY REFERENCE, the shape
+    real senders use — the label lives in the narrative, not on @displayName.
+    The reference has to be inlined before the field extractor runs or the
+    rows fall back to the formal terminology name.
+    """
+
+    result = _process_problems(
+        problems_icd10_primary,
+        spec_v1_1,
+        augmentation_timestamp="20260101000000",
+        narrative_action="reconstruct",
+    )
+    assert result.narrative_disposition == "reconstructed"
+
+    rendered = etree.tostring(
+        problems_icd10_primary.find("hl7:text", HL7_NS), encoding="unicode"
+    )
+    assert "Late prenatal care affecting pregnancy in second trimester" in rendered
+    assert "Chlamydia infection affecting pregnancy in second trimester" in rendered
+    # the sender's own word, resolved from the narrative — not the configured
+    # terminology display that enrichment stamped onto @displayName
+    assert "Syphilis (SNOMED CT 76272004)" in rendered
+    # the pruned problems are absent from the rebuilt narrative
+    assert "Supervision of normal pregnancy" not in rendered
+    assert "Seasonal allergic rhinitis" not in rendered
+
+
+def test_original_text_is_converted_to_by_value_not_blanked(
+    problems_icd10_primary, spec_v1_1
+) -> None:
+    """
+    The shipped structured data keeps the sender's coding provenance.
+
+    Replacing the narrative deletes the `xs:ID`s these references point at,
+    so leaving them would strand a dangling `#id` and removing them outright
+    would destroy the label. They are converted by-reference -> by-value.
+    """
+
+    _process_problems(
+        problems_icd10_primary,
+        spec_v1_1,
+        augmentation_timestamp="20260101000000",
+        narrative_action="reconstruct",
+    )
+
+    original_texts = problems_icd10_primary.xpath(
+        ".//hl7:entry//hl7:originalText", namespaces=HL7_NS
+    )
+    assert original_texts, "the fixture's originalText elements were removed"
+    for element in original_texts:
+        assert element.find("hl7:reference", HL7_NS) is None, "dangling #id left behind"
+        assert (element.text or "").strip(), "originalText was blanked"
+
+
+# NOTE:
+# RULE REACHABILITY — every rule must be able to fire, and fire ITSELF
+# =============================================================================
+# structural precedence has silently killed rules twice: the diagnosis
+# sections' reversed-code pairs, and the Results organism/substance rule. Both
+# were invisible because every OTHER rule in the section still worked -- no
+# test failed and no output looked wrong, the affected entries just quietly
+# stopped surviving refinement.
+#
+# this pins the property directly. each case is a minimal entry built so that
+# ONE named rule should claim it, and the assertion checks WHICH rule produced
+# the match, not merely that the section matched something. that distinction is
+# the whole point: a rule shadowed by an earlier one that happens to match the
+# same entry is still dead, and a section-level "did anything match?" assertion
+# would sail straight past it.
+#
+# the entries are hand-written rather than synthesized from each rule's xpath.
+# generating XML from an XPath would re-implement the matcher's own reading of
+# the rule, and a test that shares its subject's assumptions cannot falsify
+# them.
+#
+# NOT yet covered: Plan of Treatment (8 rules, each a distinct statement type),
+# Procedures (3), Social History (2). The completeness test below only demands
+# full coverage of sections the table already claims, so those can be added
+# without ceremony.
+
+
+@dataclass(frozen=True)
+class ReachabilityCase:
+    """One rule, an entry only it should claim, and the code it should match."""
+
+    version: str
+    section: str
+    rule_index: int
+    what: str
+    configured: dict[str, list[str]]
+    entry: str
+
+
+def _results_entry(observation_body: str) -> str:
+    return f"""
+    <entry><organizer classCode="BATTERY" moodCode="EVN">
+      <statusCode code="completed"/>
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        {observation_body}
+      </observation></component>
+    </organizer></entry>
+    """
+
+
+def _diagnosis_entry(value: str) -> str:
+    return f"""
+    <entry><act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          {value}
+        </observation>
+      </entryRelationship>
+    </act></entry>
+    """
+
+
+# Results: ONE Result Observation read at three locations. rules 2 and 3 were
+# unreachable until they were declared a single precedence group -- <code> is
+# SHALL on this template, so rule 1 always claimed the entry first
+_RESULTS_CASES: list[ReachabilityCase] = [
+    ReachabilityCase(
+        version="1.1",
+        section="30954-2",
+        rule_index=0,
+        what="LOINC test name on observation/code",
+        configured={"loinc": ["94533-7"]},
+        entry=_results_entry(
+            '<code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>'
+            '<value xsi:type="PQ" value="1" unit="1"/>'
+        ),
+    ),
+    ReachabilityCase(
+        version="1.1",
+        section="30954-2",
+        rule_index=1,
+        what="local code primary, LOINC trigger in code/translation",
+        configured={"loinc": ["94533-7"]},
+        entry=_results_entry(
+            '<code code="LAB1234" codeSystem="1.2.840.114350.1.13.999">'
+            '<translation code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>'
+            "</code>"
+            '<value xsi:type="PQ" value="1" unit="1"/>'
+        ),
+    ),
+    ReachabilityCase(
+        version="1.1",
+        section="30954-2",
+        rule_index=2,
+        what="organism/substance SNOMED on observation/value",
+        configured={"snomed": ["5247005"]},
+        entry=_results_entry(
+            # a generic test name the jurisdiction has NOT configured: the
+            # reportable concept is the organism in the value
+            '<code code="00000-0" codeSystem="2.16.840.1.113883.6.1"/>'
+            '<value xsi:type="CD" code="5247005"'
+            ' codeSystem="2.16.840.1.113883.6.96"'
+            ' sdtc:valueSet="2.16.840.1.114222.4.11.7508"/>'
+        ),
+    ),
+]
+
+# the diagnosis-shaped sections all carry the same rule pair: SNOMED on the
+# Problem Observation value (tier 1) and the reversed ICD-10-primary pattern
+# (tier 3). generated rather than repeated five times -- only the section
+# code and spec version differ
+_DIAGNOSIS_SECTIONS: list[tuple[str, str]] = [
+    ("1.1", "11450-4"),  # Problem
+    ("3.1.1", "46241-6"),  # Admission Diagnosis
+    ("3.1.1", "11535-2"),  # Discharge Diagnosis
+    ("1.1", "46240-8"),  # Encounters
+    ("3.1.1", "11348-0"),  # Past Medical History
+]
+
+_DIAGNOSIS_CASES: list[ReachabilityCase] = [
+    case
+    for version, section in _DIAGNOSIS_SECTIONS
+    for case in (
+        ReachabilityCase(
+            version=version,
+            section=section,
+            rule_index=0,
+            what="SNOMED on the observation value (conformant)",
+            configured={"snomed": ["840539006"]},
+            entry=_diagnosis_entry(
+                '<value xsi:type="CD" code="840539006"'
+                ' codeSystem="2.16.840.1.113883.6.96"/>'
+            ),
+        ),
+        ReachabilityCase(
+            version=version,
+            section=section,
+            rule_index=1,
+            what="ICD-10 primary with SNOMED in translation (reversed)",
+            configured={"snomed": ["840539006"]},
+            entry=_diagnosis_entry(
+                '<value xsi:type="CD" code="U07.1"'
+                ' codeSystem="2.16.840.1.113883.6.90">'
+                '<translation code="840539006"'
+                ' codeSystem="2.16.840.1.113883.6.96"/></value>'
+            ),
+        ),
+    )
+]
+
+_REACHABILITY_CASES: list[ReachabilityCase] = _RESULTS_CASES + _DIAGNOSIS_CASES
+
+
+@pytest.mark.parametrize(
+    "case",
+    _REACHABILITY_CASES,
+    ids=lambda c: f"{c.section}-rule{c.rule_index}",
+)
+def test_every_match_rule_can_claim_an_entry(case: ReachabilityCase) -> None:
+    """
+    The rule this case was written for produces the match itself.
+
+    A failure means structural precedence is swallowing the rule -- an
+    earlier one claims the entry before this one is evaluated -- so the
+    sender pattern it exists to catch is being pruned in production.
+    """
+
+    rules = load_spec(case.version).sections[case.section].entry_match_rules
+    entry = _build_section(
+        f"""
+        <entry xmlns="urn:hl7-org:v3"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:sdtc="urn:hl7-org:sdtc">{case.entry}</entry>
+        """
+    )[0]
+
+    matches = _try_match_entry(
+        entry,
+        _make_code_system_sets(case.configured),
+        rules,
+        HL7_XSI_NS,
+    )
+
+    assert matches, (
+        f"{case.section} rule[{case.rule_index}] ({case.what}) matched nothing"
+    )
+    matched_indices = {rules.index(m.rule) for m in matches}
+    assert case.rule_index in matched_indices, (
+        f"{case.section} rule[{case.rule_index}] ({case.what}) is shadowed: "
+        f"the entry was claimed by rule(s) {sorted(matched_indices)} instead"
+    )
+
+
+def test_reachability_table_covers_every_rule_of_the_sections_it_claims() -> None:
+    """
+    Adding a rule to a covered section must not leave it unguarded.
+
+    That silent gap is the failure mode the table exists to prevent, so the
+    table policing its own completeness is the part that keeps it honest.
+    """
+
+    covered: dict[tuple[str, str], set[int]] = {}
+    for case in _REACHABILITY_CASES:
+        covered.setdefault((case.version, case.section), set()).add(case.rule_index)
+
+    for (version, section), indices in covered.items():
+        rule_count = len(load_spec(version).sections[section].entry_match_rules)
+        assert indices == set(range(rule_count)), (
+            f"{section} (spec {version}) has {rule_count} rules but the "
+            f"reachability table covers {sorted(indices)}"
+        )
+
+
+# NOTE:
+# nullFlavored PRODUCT CODE WITH THE REAL CODE IN <translation>
+# =============================================================================
+# a sender may put a nullFlavor on the primary CVX/RxNorm code and carry the
+# real one in a <translation> (NDC, RxNorm, CVX). render_code_display's
+# translation fallbacks cite this as their reason for existing and the
+# immunization match rule carries a translation_xpath for it, but nothing
+# exercised either end. both halves matter independently: the entry has to
+# SURVIVE matching, and then it has to RENDER as something other than a blank
+# cell -- a surviving entry with an empty narrative row would make the
+# section's typeCode="DRIV" a lie
+
+
+def test_immunization_matches_on_a_cvx_code_carried_in_translation(
+    spec_v1_1,
+) -> None:
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+          <code code="11369-6"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code nullFlavor="UNK">
+                <translation code="141" codeSystem="2.16.840.1.113883.12.292"
+                             displayName="Influenza, seasonal, injectable"/>
+              </code>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"cvx": ["141"]}),
+        section_specification=spec_v1_1.sections["11369-6"],
+        namespaces=HL7_NS,
+    )
+
+    assert result.matches_found is True
+    assert section.findall("hl7:entry", HL7_NS), "the matched entry was pruned"
+
+
+def test_immunization_row_renders_the_translation_rather_than_a_blank_cell(
+    spec_v1_1,
+) -> None:
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3">
+          <code code="11369-6"/>
+          <text>...original clinician narrative...</text>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+            <statusCode code="completed"/>
+            <effectiveTime value="20260803"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code nullFlavor="UNK">
+                <translation code="141" codeSystem="2.16.840.1.113883.12.292"
+                             displayName="Influenza, seasonal, injectable"/>
+              </code>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"cvx": ["141"]}),
+        section_specification=spec_v1_1.sections["11369-6"],
+        namespaces=HL7_NS,
+        augmentation_timestamp="20260101000000",
+        narrative_action="reconstruct",
+    )
+
+    assert result.narrative_disposition == "reconstructed"
+    rendered = etree.tostring(section.find("hl7:text", HL7_NS), encoding="unicode")
+    assert "Influenza, seasonal, injectable" in rendered
+    # the nullFlavored primary code must not surface as the product identity
+    assert "UNK" not in rendered
+
+
+def test_partial_reconstruction_is_reported_in_the_section_outcome(
+    spec_v1_1,
+) -> None:
+    """
+    A reduced-form entry changes the outcome the provenance footnote shows.
+
+    Without a distinct disposition the section reports a clean rebuild while
+    an entry stamped typeCode="DRIV" is only present in reduced form, and a
+    reviewer looking at a thin table has nothing telling them why.
+    """
+
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <code code="30954-2"/>
+          <text>Original clinician narrative.</text>
+          <entry><organizer classCode="BATTERY" moodCode="EVN">
+            <statusCode code="completed"/>
+            <component><observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+              <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+              <value xsi:type="PQ" value="1" unit="1"/>
+            </observation></component>
+          </organizer></entry>
+          <entry><observation classCode="OBS" moodCode="EVN">
+            <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+            <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+            <value xsi:type="PQ" value="2" unit="1"/>
+          </observation></entry>
+        </section>
+        """
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+        augmentation_timestamp="20260101000000",
+        narrative_action="reconstruct",
+    )
+
+    assert result.matches_found is True
+    assert result.narrative_disposition == "reconstructed_reduced"
+
+
+def test_a_fully_reconstructed_section_reports_the_plain_outcome(
+    spec_v1_1,
+) -> None:
+    section = _build_section(
+        """
+        <section xmlns="urn:hl7-org:v3"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <code code="30954-2"/>
+          <text>Original clinician narrative.</text>
+          <entry><organizer classCode="BATTERY" moodCode="EVN">
+            <statusCode code="completed"/>
+            <component><observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+              <code code="94533-7" codeSystem="2.16.840.1.113883.6.1"/>
+              <value xsi:type="PQ" value="1" unit="1"/>
+            </observation></component>
+          </organizer></entry>
+        </section>
+        """
+    )
+
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94533-7"]}),
+        section_specification=spec_v1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+        augmentation_timestamp="20260101000000",
+        narrative_action="reconstruct",
+    )
+
+    assert result.narrative_disposition == "reconstructed"

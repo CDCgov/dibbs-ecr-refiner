@@ -486,14 +486,15 @@ class TestRefiningService:
             in rendered
         )
 
-    async def test_refine_reconstruct_no_matches_falls_back_to_retain_v1_1(
+    async def test_refine_reconstruct_no_matches_removes_narrative_v1_1(
         self, eicr_root_v1_1: etree._Element
     ):
         """
-        narrative='reconstruct' + no matches: the engine can't rebuild
-        from anything, so it falls back to retaining the original
-        narrative rather than swapping in a removal notice. Outcome
-        is REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.
+        narrative='reconstruct' + no matches: there is nothing to rebuild
+        from, and every entry was just pruned, so the fallback is
+        keep-on-match — the original narrative goes rather than shipping
+        the excluded content back in prose. Outcome is
+        REFINED_NO_MATCHES_NARRATIVE_REMOVED.
         """
 
         empty_config = await _make_empty_processed_config()
@@ -532,12 +533,11 @@ class TestRefiningService:
         assert results_section.get("nullFlavor") == "NI"
         # entries pruned
         assert results_section.findall("hl7:entry", namespaces=HL7_NS) == []
-        # narrative NOT replaced with removal notice
-        assert REMOVE_NARRATIVE_MESSAGE not in rendered
-        # footnote shows reconstruct-fallback outcome
+        # narrative replaced with the removal notice
+        assert REMOVE_NARRATIVE_MESSAGE in rendered
         assert (
             PROVENANCE_OUTCOME_NOTES[
-                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
+                SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
             ]
             in rendered
         )
