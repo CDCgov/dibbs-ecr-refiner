@@ -156,6 +156,7 @@ export function ControlPanel({
           selectedCodeIds={selectedCodeIds}
           selectedCustomCodeIds={customCodeIds}
           lockedCodesCount={lockedCodesCount}
+          hasNextPage={hasNextPage}
         />
       }
       <div
@@ -394,9 +395,10 @@ function calculateCounts(
   selectedCustomCodeIds: Set<string>,
   renderedCodes: CodeResponse[],
   total_code_count: number,
-  total_custom_codes_count: number
+  total_custom_codes_count: number,
+  hasNextPage: boolean
 ): CountResult {
-  if (allSelected && total_code_count > CodesLimitResponseValue.codes_limit) {
+  if (allSelected && hasNextPage) {
     // If in the all selected case, start with the totals as fetched from the
     // code counts hook and tally any custom codes we've selected. Forbid exclusion
     // only if we've down-selected to a subset with only custom codes
@@ -442,6 +444,7 @@ interface ExclusionWarningModalProps {
   selectedCodeIds: Set<string>;
   selectedCustomCodeIds: Set<string>;
   lockedCodesCount: number;
+  hasNextPage: boolean;
 }
 
 function ExclusionWarningModal({
@@ -454,6 +457,7 @@ function ExclusionWarningModal({
   selectedCodeIds,
   selectedCustomCodeIds,
   lockedCodesCount,
+  hasNextPage,
 }: ExclusionWarningModalProps) {
   const {
     data: codeCounts,
@@ -475,7 +479,8 @@ function ExclusionWarningModal({
     selectedCustomCodeIds,
     renderedCodes,
     codeCounts?.data.total_code_count,
-    codeCounts?.data.total_custom_codes_count
+    codeCounts?.data.total_custom_codes_count,
+    hasNextPage
   );
 
   return (
