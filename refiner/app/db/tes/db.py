@@ -421,6 +421,21 @@ async def get_configurations_set_to_tes_version(
         WHERE cond.tes_id <> %(latest_tes_id)s
             AND conf.status = %(status)s
             AND conf.jurisdiction_id = %(jurisdiction_id)s
+            AND (
+                %(status)s <> 'active'
+                OR NOT EXISTS (
+                    SELECT 1
+                    FROM configurations draft_conf
+                    JOIN configurations_conditions draft_cc
+                        ON draft_cc.configuration_id = draft_conf.id
+                        AND draft_cc.is_primary = true
+                    JOIN conditions draft_cond
+                        ON draft_cond.id = draft_cc.condition_id
+                    WHERE draft_conf.status = 'draft'
+                        AND draft_conf.jurisdiction_id = conf.jurisdiction_id
+                        AND draft_cond.canonical_url = cond.canonical_url
+                )
+            )
         GROUP BY
             conf.id,
             conf.name
