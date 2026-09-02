@@ -1,4 +1,4 @@
-import { Title } from '@components/Title';
+// import { Title } from '@components/Title';
 import { useState } from 'react';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
@@ -42,12 +42,12 @@ export function TesUpdates() {
     <div className="my-8 flex flex-col px-2 md:px-20">
       {tesStage === 'summary' && (
         <>
-          <div className="mb-4 flex justify-between">
-            <Title>TES Updates</Title>
-            <Button onClick={() => setTesStage('action')}>
-              Update configurations
-            </Button>
-          </div>
+          {/*<div className="mb-4 flex justify-between">*/}
+          {/*  <Title>TES Updates</Title>*/}
+          {/*  <Button onClick={() => setTesStage('action')}>*/}
+          {/*    Update configurations*/}
+          {/*  </Button>*/}
+          {/*</div>*/}
 
           <div className="flex h-200">
             <UpdateInformation
