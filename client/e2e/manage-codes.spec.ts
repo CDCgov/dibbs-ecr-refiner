@@ -336,7 +336,7 @@ test.describe('Codes management - custom code interactions', () => {
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
     await expect(page.getByText('Exclude codes')).toBeVisible();
     await expect(
-      page.getByText("5 custom codes can't be excluded.")
+      page.getByText("5 custom code(s) can't be excluded.")
     ).toBeVisible();
 
     // exclusion still allows for actioning non-custom codes
