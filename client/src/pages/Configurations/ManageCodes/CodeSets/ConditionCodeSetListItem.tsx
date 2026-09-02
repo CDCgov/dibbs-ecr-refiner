@@ -14,6 +14,8 @@ import { IncludedCondition } from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
 import { CodeSetCompletenessButton } from './CodeSetCompletenessButton';
+import { LockIcon } from '../LockIcon';
+import { Tooltip } from '@components/Tooltip';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
@@ -161,7 +163,12 @@ export function ConditionCodeSetListItem({
           </div>
         </div>
         {isDefault ? (
-          <span className="text-bold mr-3 text-black">Default</span>
+          <Tooltip
+            position="left"
+            label="The primary condition code set can't be removed from this configuration."
+          >
+            <LockIcon />
+          </Tooltip>
         ) : (
           <Button
             variant={condition.associated ? 'secondary' : 'primary'}
