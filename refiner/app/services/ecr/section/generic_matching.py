@@ -173,8 +173,10 @@ def process(
                 # it would ship back exactly the content the configuration
                 # excluded. Mirrors the entry-matching engine; the two paths
                 # must not disagree about what "reconstruct" means
-                # nothing matched, so every entry was just pruned — the notice must
-                # not claim the coded data is still here
+                #
+                # "no_match" is what keeps the notice honest: every entry was
+                # just pruned, so it must not tell a reader the coded data is
+                # still here
                 replace_narrative_with_removal_notice(
                     section, namespaces, removal_reason="no_match"
                 )

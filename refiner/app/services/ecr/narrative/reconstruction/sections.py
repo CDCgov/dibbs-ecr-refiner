@@ -100,13 +100,15 @@ def reconstruct_results(section: _Element) -> list[Block]:
                     context=context,
                     columns=[spec.label for spec in RESULT_FIELDS],
                     rows=rows,
-                    # names the battery these rows belong to. a panel that
-                    # resolved to nothing gets the generic caption rather than
-                    # a dangling "Tests in panel: "
+                    # names the battery these rows belong to. a panel whose
+                    # code resolves to nothing still gets a caption -- it is
+                    # what marks the table as subordinate to the one above it
+                    # -- but a standalone one, not a dangling
+                    # "Tests in panel: " with the name missing
                     caption=(
                         f"Tests in panel: {panel_name}"
                         if panel_name
-                        else "Tests in panel"
+                        else "Tests in this panel"
                     ),
                 )
             )

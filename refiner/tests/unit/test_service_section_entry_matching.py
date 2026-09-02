@@ -1937,6 +1937,20 @@ def test_original_text_is_converted_to_by_value_not_blanked(
 # second rule added to a single-rule section fails until the table catches up.
 
 
+def _slug(what: str) -> str:
+    """
+    Compact a case description into a readable pytest id fragment.
+
+    Only the opening words are kept, so each case's `what` needs to be
+    DISTINCT in its first few words — that is what makes a failure line say
+    which shape broke instead of leaving pytest to disambiguate two cases on
+    one rule as `_0` and `_1`.
+    """
+
+    words = "".join(c if c.isalnum() or c.isspace() else " " for c in what).split()
+    return "-".join(words[:4]).lower()
+
+
 @dataclass(frozen=True)
 class ReachabilityCase:
     """One rule, an entry only it should claim, and the code it should match."""
@@ -2013,6 +2027,26 @@ _RESULTS_CASES: list[ReachabilityCase] = [
             # a generic test name the jurisdiction has NOT configured: the
             # reportable concept is the organism in the value
             '<code code="00000-0" codeSystem="2.16.840.1.113883.6.1"/>'
+            '<value xsi:type="CD" code="5247005"'
+            ' codeSystem="2.16.840.1.113883.6.96"'
+            ' sdtc:valueSet="2.16.840.1.114222.4.11.7508"/>'
+        ),
+    ),
+    # the same rule, reached down a DIFFERENT path, and the two guard different
+    # things. above, rule 1 finds a code element and rejects it as unconfigured
+    # -- that case only reaches rule 3 BECAUSE of the precedence grouping, and
+    # it fails without it. here the code is nullFlavored, so rule 1 finds no
+    # candidate at all and never claimed the entry even under the old
+    # behaviour; this case guards the organism rule against a regression in the
+    # no-candidate path rather than against precedence
+    ReachabilityCase(
+        version="1.1",
+        section="30954-2",
+        rule_index=2,
+        what="nullFlavored primary code with organism SNOMED on value",
+        configured={"snomed": ["5247005"]},
+        entry=_results_entry(
+            '<code nullFlavor="UNK"/>'
             '<value xsi:type="CD" code="5247005"'
             ' codeSystem="2.16.840.1.113883.6.96"'
             ' sdtc:valueSet="2.16.840.1.114222.4.11.7508"/>'
@@ -2232,7 +2266,9 @@ _REACHABILITY_CASES: list[ReachabilityCase] = (
 @pytest.mark.parametrize(
     "case",
     _REACHABILITY_CASES,
-    ids=lambda c: f"{c.section}-rule{c.rule_index}",
+    # the id names the shape, so a failure line says what broke rather than
+    # leaving pytest to disambiguate two cases on one rule as _0 and _1
+    ids=lambda c: f"{c.section}-rule{c.rule_index}-{_slug(c.what)}",
 )
 def test_every_match_rule_can_claim_an_entry(case: ReachabilityCase) -> None:
     """
