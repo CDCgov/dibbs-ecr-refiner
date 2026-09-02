@@ -27,6 +27,8 @@ import type {
 import type {
   ApplyTesUpdatesToDraftsRequest,
   ApplyTesUpdatesToDraftsResponse,
+  CreateDraftsFromActiveConfigsRequest,
+  CreateDraftsFromActiveConfigsResponse,
   ExportConditionDiffParams,
   GetTesDiffDetailsParams,
   HTTPValidationError,
@@ -359,8 +361,7 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
 
 
 /**
- * Return outdated drafts and active configurations for the current
- * jurisdiction.
+ * Return outdated drafts and active configurations for the current jurisdiction.
  * @summary Get Configurations To Update
  */
 export const getConfigurationsToUpdate = (
@@ -514,4 +515,70 @@ export const useApplyTesUpdatesToExistingDrafts = <TError = AxiosError<HTTPValid
         TContext
       > => {
       return useMutation(getApplyTesUpdatesToExistingDraftsMutationOptions(options), queryClient);
+    }
+    /**
+ * Create new draft configurations from selected active configurations.
+ *
+ * Each new draft uses the latest TES release and inherits all settings
+ * (custom codes, section processing, code exclusions) from the active config.
+ * Active configurations remain unchanged until new drafts are activated.
+ * @summary Create Drafts From Active Configurations
+ */
+export const createDraftsFromActiveConfigurations = (
+    createDraftsFromActiveConfigsRequest: CreateDraftsFromActiveConfigsRequest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CreateDraftsFromActiveConfigsResponse>> => {
+
+
+    return axios.default.post(
+      `/api/v1/tes/configurations/drafts-from-active`,
+      createDraftsFromActiveConfigsRequest,options
+    );
+  }
+
+
+
+
+export const getCreateDraftsFromActiveConfigurationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, TError,{data: CreateDraftsFromActiveConfigsRequest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, TError,{data: CreateDraftsFromActiveConfigsRequest}, TContext> => {
+
+const mutationKey = ['createDraftsFromActiveConfigurations'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, {data: CreateDraftsFromActiveConfigsRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDraftsFromActiveConfigurations(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDraftsFromActiveConfigurationsMutationResult = NonNullable<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>>
+    export type CreateDraftsFromActiveConfigurationsMutationBody = CreateDraftsFromActiveConfigsRequest
+    export type CreateDraftsFromActiveConfigurationsMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Create Drafts From Active Configurations
+ */
+export const useCreateDraftsFromActiveConfigurations = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, TError,{data: CreateDraftsFromActiveConfigsRequest}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>,
+        TError,
+        {data: CreateDraftsFromActiveConfigsRequest},
+        TContext
+      > => {
+      return useMutation(getCreateDraftsFromActiveConfigurationsMutationOptions(options), queryClient);
     }

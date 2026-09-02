@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router';
 import { useState } from 'react';
 import {
   useApplyTesUpdatesToExistingDrafts,
-  // useCreateDraftsFromActiveConfigurations,
+  useCreateDraftsFromActiveConfigurations,
   useGetConfigurationsToUpdate,
 } from '../../api/tes/tes';
 import { useToast } from '../../hooks/useToast';
@@ -26,12 +26,8 @@ export function UpdateConfigurations() {
 
   const applyExistingDraftUpdates = useApplyTesUpdatesToExistingDrafts();
 
-  /*
-   * VERIFY WITH THE PARALLEL STORY:
-   * Change this hook if their generated hook uses a different name.
-   */
-  // const createDraftsFromActiveConfigurations =
-  //   useCreateDraftsFromActiveConfigurations();
+  const createDraftsFromActiveConfigurations =
+    useCreateDraftsFromActiveConfigurations();
 
   const [selectedConfigurations, setSelectedConfigurations] = useState<
     string[]
@@ -68,11 +64,9 @@ export function UpdateConfigurations() {
     selectedConfigurations.includes(id)
   );
 
-  // const isSubmitting =
-  //   applyExistingDraftUpdates.isPending ||
-  //   createDraftsFromActiveConfigurations.isPending;
-
-  const isSubmitting = applyExistingDraftUpdates.isPending;
+  const isSubmitting =
+    applyExistingDraftUpdates.isPending ||
+    createDraftsFromActiveConfigurations.isPending;
 
   function handleIndividualSelection(configurationId: string) {
     setSelectedConfigurations((currentSelection) => {
@@ -144,26 +138,20 @@ export function UpdateConfigurations() {
     return mutationResponse.data.updated_count;
   }
 
-  // async function createSelectedDrafts() {
-  //   if (selectedActiveConfigurationIds.length === 0) {
-  //     return 0;
-  //   }
-  //
-  //   /*
-  //    * VERIFY WITH THE PARALLEL STORY:
-  //    *
-  //    * This assumes the request uses configuration_ids and the response
-  //    * uses created_count.
-  //    */
-  //   const mutationResponse =
-  //     await createDraftsFromActiveConfigurations.mutateAsync({
-  //       data: {
-  //         configuration_ids: selectedActiveConfigurationIds,
-  //       },
-  //     });
-  //
-  //   return mutationResponse.data.created_count;
-  // }
+  async function createSelectedDrafts() {
+    if (selectedActiveConfigurationIds.length === 0) {
+      return 0;
+    }
+
+    const mutationResponse =
+      await createDraftsFromActiveConfigurations.mutateAsync({
+        data: {
+          configuration_ids: selectedActiveConfigurationIds,
+        },
+      });
+
+    return mutationResponse.data.created_count;
+  }
 
   async function handleConfirmUpdates() {
     setSubmissionError(null);
@@ -171,8 +159,7 @@ export function UpdateConfigurations() {
     try {
       const updatedCount = await updateSelectedExistingDrafts();
 
-      // const createdCount = await createSelectedDrafts();
-      const createdCount = 0;
+      const createdCount = await createSelectedDrafts();
 
       const totalCount = updatedCount + createdCount;
 

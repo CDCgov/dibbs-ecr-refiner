@@ -672,3 +672,125 @@ async def apply_latest_tes_to_existing_drafts_db(
         for configuration_id in requested_ids
         if configuration_id in updated_id_set
     ]
+
+
+async def create_drafts_from_active_configurations_db(
+    db: AsyncDatabaseConnection,
+    configuration_ids: list[UUID],
+    jurisdiction_id: str,
+    user_id: UUID,
+) -> list[UUID]:
+    """
+    Create draft configurations from selected active configurations.
+
+    Args:
+        db: The database connection pool.
+        configuration_ids: Active configuration IDs to clone.
+        jurisdiction_id: The jurisdiction belonging to the current user.
+        user_id: The user creating the drafts.
+
+    Returns:
+        IDs of the created draft configurations.
+
+    Raises:
+        ValueError: If a selected configuration is not an active config,
+            does not belong to the jurisdiction, or a draft already exists
+            for the condition.
+    """
+    requested_ids = list(dict.fromkeys(configuration_ids))
+
+    if not requested_ids:
+        return []
+
+    async with db.get_connection() as conn:
+        async with conn.transaction():
+            async with conn.cursor() as cur:
+                # Validate that all configurations are active, exist, and belong to the jurisdiction.
+                await cur.execute(
+                    """
+                    SELECT id,
+                           (SELECT cond.canonical_url
+                            FROM configurations_conditions cc
+                            JOIN conditions cond ON cond.id = cc.condition_id
+                            WHERE cc.configuration_id = configurations.id
+                            AND cc.is_primary = true
+                            LIMIT 1) as canonical_url
+                    FROM configurations
+                    WHERE id = ANY(%(configuration_ids)s)
+                        AND status = 'active'
+                        AND jurisdiction_id = %(jurisdiction_id)s
+                    FOR UPDATE
+                    """,
+                    {
+                        "configuration_ids": requested_ids,
+                        "jurisdiction_id": jurisdiction_id,
+                    },
+                )
+
+                active_configs = await cur.fetchall()
+                if len(active_configs) != len(requested_ids):
+                    raise ValueError(
+                        "One or more selected configurations could not be "
+                        "cloned because they do not exist, are not active, "
+                        "or do not belong to the current jurisdiction."
+                    )
+
+                # Check that no drafts already exist for each condition.
+                for row in active_configs:
+                    config_id, canonical_url = row
+                    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+                    from app.db.configurations.db import is_config_valid_to_insert_db
+
+                    if not await is_config_valid_to_insert_db(
+                        condition_canonical_url=canonical_url,
+                        jurisdiction_id=jurisdiction_id,
+                        db=db,
+                    ):
+                        raise ValueError(
+                            f"A draft configuration already exists for the "
+                            f"condition associated with configuration {config_id}."
+                        )
+
+                # Create drafts.
+                created_ids = []
+                for row in active_configs:
+                    config_id, _ = row
+                    from app.db.configurations.db import get_configuration_by_id_db
+
+                    config_to_clone = await get_configuration_by_id_db(
+                        id=config_id, jurisdiction_id=jurisdiction_id, db=db
+                    )
+
+                    from app.db.conditions.db import get_primary_condition_db
+
+                    primary_condition = await get_primary_condition_db(
+                        configuration_id=config_id, db=db
+                    )
+
+                    if not primary_condition:
+                        raise ValueError(
+                            f"Primary condition not found for configuration {config_id}"
+                        )
+
+                    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+                    from app.db.configurations.db import insert_configuration_db
+
+                    new_config = await insert_configuration_db(
+                        condition=primary_condition,
+                        user_id=user_id,
+                        jurisdiction_id=jurisdiction_id,
+                        db=db,
+                        config_to_clone=config_to_clone,
+                    )
+
+                    if not new_config:
+                        raise ValueError(
+                            f"Failed to create draft for configuration {config_id}"
+                        )
+
+                    created_ids.append(new_config.id)
+
+                # NOTE: In the future, this could be enhanced to allow partial success
+                # by returning a list of successfully created drafts and a list of errors.
+
+    return created_ids
