@@ -163,7 +163,6 @@ async def set_codes_status(
         else:
             impacted_code_ids = await set_codes_status_within_rendered_set_db(
                 configuration_id=config.id,
-                configuration_primary_condition_id=config.condition_id,
                 status=status,
                 code_ids=code_ids,
                 db=db,
@@ -225,7 +224,6 @@ async def get_codes(
 
     codes, next_cursor = await get_codes_db(
         configuration_id=config.id,
-        configuration_primary_condition_id=config.condition_id,
         limit=CODES_LIMIT,
         cursor=cursor,
         filters=filters,
