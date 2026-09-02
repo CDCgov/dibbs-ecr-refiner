@@ -1070,6 +1070,7 @@ class TestConfigurationsExclusions:
                 "code_ids_to_skip": [],
             },
         )
+        print(resp.json())
         assert resp.status_code == status.HTTP_200_OK
 
         # refetch to confirm exclusions were applied

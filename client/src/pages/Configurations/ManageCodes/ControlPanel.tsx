@@ -148,8 +148,8 @@ export function ControlPanel({
           onClose={() => setIsOpen(false)}
           updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
           allSelected={allSelected}
-          deselectedCustomCodeCount={deselectedCustomCodes.length}
-          deselectedCodeCount={deselectedCodes.length}
+          renderedCodes={renderedCodes}
+          selectedCodeIds={selectedCodeIds}
         />
       }
       <div
@@ -368,20 +368,20 @@ interface ExclusionWarningModalProps {
   configurationId: string;
   isOpen: boolean;
   onClose: () => void;
-  deselectedCustomCodeCount: number;
-  deselectedCodeCount: number;
   updateCodesToExcluded: () => void;
   allSelected: boolean;
+  renderedCodes: CodeResponse[];
+  selectedCodeIds: Set<string>;
 }
 
 function ExclusionWarningModal({
   configurationId,
   isOpen,
   onClose,
-  deselectedCustomCodeCount,
-  deselectedCodeCount,
   updateCodesToExcluded,
   allSelected,
+  renderedCodes,
+  selectedCodeIds,
 }: ExclusionWarningModalProps) {
   const {
     data: codeCounts,
@@ -391,14 +391,32 @@ function ExclusionWarningModal({
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
-  const totalCustomCodeCount = codeCounts.data.total_custom_codes_count;
-  const totalCodeCount = codeCounts.data.total_code_count;
+  const renderedCodeIds = renderedCodes.map((c) => c.id);
+  const renderedCustomCodeIds = renderedCodes
+    .filter((c) => c.is_custom)
+    .map((c) => c.id);
 
-  const excludeableCodeCount =
-    totalCodeCount - deselectedCodeCount - totalCustomCodeCount;
+  let totalCodeCount = selectedCodeIds.size;
+  let totalCustomCodeCount = selectedCustomCodeIds.length;
+  let excludeableCodeCount = totalCodeCount - totalCustomCodeCount;
+  let exclusionForbidden = excludeableCodeCount === 0;
 
-  const isCustomCodesOnly = excludeableCodeCount <= 0;
-  const exclusionForbidden = isCustomCodesOnly && !allSelected;
+  if (allSelected) {
+    // recalculate the total code counts based on the bulk selection case
+    totalCodeCount = codeCounts.data.total_code_count;
+    totalCustomCodeCount = codeCounts.data.total_custom_codes_count;
+
+    const deselectedCodes = renderedCodes
+      .filter((c) => !c.is_custom)
+      .map((c) => c.id)
+      .filter((id) => !selectedCodeIds.has(id));
+
+    excludeableCodeCount =
+      totalCodeCount - deselectedCodeCount - totalCustomCodeCount;
+
+    isCustomCodesOnly = excludeableCodeCount <= 0;
+    exclusionForbidden = isCustomCodesOnly && !allSelected;
+  }
 
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
