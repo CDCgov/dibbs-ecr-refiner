@@ -181,8 +181,7 @@ async def get_configurations_to_update(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> TesConfigsToUpdateResponse:
     """
-    Return outdated drafts and active configurations for the current
-    jurisdiction.
+    Return outdated drafts and active configurations for the current jurisdiction.
     """
     configs_to_update = await get_configurations_set_to_tes_version(
         db=db,
@@ -230,6 +229,7 @@ async def apply_tes_updates_to_existing_drafts(
     Active configurations are not handled by this endpoint. The separate
     create-draft workflow handles those configurations.
     """
+
     try:
         updated_ids = await apply_latest_tes_to_existing_drafts_db(
             db=db,
