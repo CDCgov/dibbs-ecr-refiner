@@ -3,6 +3,7 @@ import math
 import os
 import time
 from collections import defaultdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,7 @@ from dotenv import load_dotenv
 SHARD_THRESHOLD_BYTES = 30 * 1024 * 1024
 
 
-def dynamic_classify_valueset(valueset: dict[str, Any]) -> str | None:
+def dynamic_classify_valueset(valueset: dict[str, Any], fetch_date: str) -> str | None:
     """
     Dynamically classifies a ValueSet based on its archetype.
 
@@ -24,6 +25,13 @@ def dynamic_classify_valueset(valueset: dict[str, Any]) -> str | None:
 
     Args:
         valueset: A dictionary representing a single FHIR ValueSet resource.
+        fetch_date: A YYYYMMDD string identifying this fetch run, used to
+            version eICR triggering ValueSets. Unlike the grouper archetypes
+            below, these resources carry no native 'version' field (VSAC
+            content updates individual ValueSets in place rather than
+            cutting dated/semver releases), so the fetch run's own date
+            stands in as the version -- the same role a grouper's 'version'
+            field plays in its category name.
 
     Returns:
         A dynamically generated category name string (e.g.,
@@ -36,9 +44,11 @@ def dynamic_classify_valueset(valueset: dict[str, Any]) -> str | None:
     archetype = "unclassified"
 
     # rule 1:
-    # ignore ecr triggering valuesets
+    # eICR triggering valuesets -- the eRSD trigger-code content. Kept (not
+    # ignored) so we can identify codes that would carry a trigger-code
+    # templateId in an eICR and protect them from accidental exclusion.
     if any("us-ph-triggering-valueset" in p for p in profiles):
-        return None
+        return f"eicr_triggering_{fetch_date}"
 
     # rule 2:
     # identify by profile first (most reliable)
@@ -218,6 +228,7 @@ def run_fetch_pipeline(
     load_dotenv()
     API_URL = os.getenv("TES_API_URL", "https://tes.tools.aimsplatform.org/api/fhir")
     BATCH_SIZE = 250
+    fetch_date = datetime.now(UTC).strftime("%Y%m%d")
 
     # buffer per-category in memory so we can sort and split at the end
     # * peak memory is bounded by the size of the full active tes dataset
@@ -253,7 +264,7 @@ def run_fetch_pipeline(
             if resource.get("resourceType") != "ValueSet":
                 continue
 
-            category = dynamic_classify_valueset(resource)
+            category = dynamic_classify_valueset(resource, fetch_date=fetch_date)
 
             if category is None:
                 ignored_count += 1
@@ -268,7 +279,7 @@ def run_fetch_pipeline(
 
     print("  🏁 Finalizing files...")
     if ignored_count > 0:
-        print(f"    🙈 Ignored {ignored_count} triggering-related ValueSets.")
+        print(f"    🙈 Ignored {ignored_count} unclassified ValueSets.")
 
     record_counts: dict[str, int] = {}
     for category in sorted(buffered.keys()):
