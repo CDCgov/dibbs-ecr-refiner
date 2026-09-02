@@ -165,10 +165,10 @@ async def insert_custom_codes_db(
 async def delete_custom_codes_db(
     config: DbConfiguration,
     ids: list[UUID],
-    ids_to_skip: list[UUID],
-    delete_all: bool,
     user_id: UUID,
     db: AsyncDatabaseConnection,
+    delete_all: bool = False,
+    ids_to_skip: list[UUID] = [],
 ) -> list[DbCustomCode]:
     """
     Given a config and custom code IDs, deletes the custom codes from the configuration.

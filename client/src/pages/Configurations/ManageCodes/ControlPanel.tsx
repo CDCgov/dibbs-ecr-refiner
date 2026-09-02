@@ -2,7 +2,6 @@ import { Button } from '@components/Button';
 import { Menu, MenuButton, MenuItem } from '@headlessui/react';
 import { BaseMenuItems } from '@components/Dropdown';
 import {
-  CodeCountsResponse,
   CodeResponse,
   CodeResponseStatus,
   CodesLimitResponseValue,

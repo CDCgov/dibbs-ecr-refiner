@@ -562,7 +562,10 @@ async def delete_custom_code(
         )
 
     deleted_codes = await delete_custom_codes_db(
-        config=config, ids=[custom_code.id], user_id=user.id, db=db
+        config=config,
+        ids=[custom_code.id],
+        user_id=user.id,
+        db=db,
     )
 
     if len(deleted_codes) < 1:
