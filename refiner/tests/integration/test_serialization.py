@@ -147,8 +147,11 @@ class TestSerialization:
         )
 
         exclusion_response = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[str(c["id"]) for c in code_ids_to_exclude],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [str(c["id"]) for c in code_ids_to_exclude],
+                "code_ids_to_skip": [],
+            },
         )
         assert exclusion_response.status_code == status.HTTP_200_OK
 
