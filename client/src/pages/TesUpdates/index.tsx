@@ -7,6 +7,7 @@ import { useGetTesUpdates } from '../../api/tes/tes';
 import { TesVersionDetails } from './TesVersionDetails';
 import { TesUpdate } from '../../api/schemas';
 import { UpdateConfigurations } from './UpdateConfigurations';
+import { BreakoutContainer } from '@components/Layout';
 
 type UPDATE_STEP = 'summary' | 'action';
 
@@ -39,7 +40,7 @@ export function TesUpdates() {
   const fetchedTesUpdates = tesUpdates.data.tes_updates;
 
   return (
-    <div className="my-8 flex flex-col px-2 md:px-20">
+    <div className="flex flex-col px-2 md:px-20">
       {tesStage === 'summary' && (
         <>
           <div className="mb-4 flex justify-between">
@@ -60,16 +61,22 @@ export function TesUpdates() {
       )}
       {tesStage === 'action' && (
         <>
-          <div className="bg-blue-cool-70 -mx-20 -mt-8 mb-8 px-20 py-3 text-white">
-            <Button
-              className="cursor-pointer"
-              variant="unstyled"
-              onClick={() => setTesStage('summary')}
-            >
-              TES Updates
-            </Button>
-            {' > Updates'}
-          </div>
+          <BreakoutContainer
+            background="bg-blue-cool-70"
+            className="py-3 text-left text-white"
+            maxWidth="max-w-7xl"
+          >
+            <div className="flex items-center gap-5">
+              <Button
+                className="cursor-pointer"
+                variant="unstyled"
+                onClick={() => setTesStage('summary')}
+              >
+                TES Updates
+              </Button>
+              {' > Updates'}
+            </div>
+          </BreakoutContainer>
           <UpdateConfigurations />
         </>
       )}

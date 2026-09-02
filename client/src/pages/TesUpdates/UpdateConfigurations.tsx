@@ -205,7 +205,7 @@ export function UpdateConfigurations() {
 
   return (
     <div>
-      <Title className="pb-4">Update configurations</Title>
+      <Title className="py-4">Update configurations</Title>
 
       <h2 className="mb-1 text-[1.25rem] font-bold">
         Update to latest release
