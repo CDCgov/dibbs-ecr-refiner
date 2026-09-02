@@ -7,7 +7,7 @@ from app.db.code_systems.db import get_code_system_by_id_db
 from app.db.code_systems.model import DbCodeSystem
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
-from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
+from app.db.events.db import insert_custom_code_event_db, insert_event_db
 from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection
 
@@ -150,9 +150,9 @@ async def insert_custom_codes_db(
                 rows = await cur.fetchall()
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                # Insert a single audit event if codes were added
-                await insert_custom_code_upload_events_db(
+                await insert_custom_code_event_db(
                     configuration=config,
+                    event_type="add",
                     user_id=user_id,
                     custom_codes=rows,
                     code_systems=code_systems,
@@ -166,6 +166,7 @@ async def delete_custom_codes_db(
     config: DbConfiguration,
     ids: list[UUID],
     user_id: UUID,
+    code_systems: list[DbCodeSystem],
     db: AsyncDatabaseConnection,
     delete_all: bool = False,
     ids_to_skip: list[UUID] = [],
@@ -202,17 +203,14 @@ async def delete_custom_codes_db(
                     return []
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                for row in rows:
-                    await insert_event_db(
-                        event=EventInput(
-                            jurisdiction_id=config.jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config.id,
-                            event_type="delete_code",
-                            action_text=f"Removed custom code '{row.code}'",
-                        ),
-                        cursor=event_cur,
-                    )
+                await insert_custom_code_event_db(
+                    configuration=config,
+                    event_type="delete",
+                    user_id=user_id,
+                    custom_codes=rows,
+                    code_systems=code_systems,
+                    cursor=event_cur,
+                )
 
         return rows
 

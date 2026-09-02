@@ -68,7 +68,8 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'bulk_add_custom_code',
     'create_custom_section',
     'edit_custom_section',
-    'delete_custom_section'
+    'delete_custom_section',
+    'bulk_delete_custom_code'
 );
 
 
@@ -309,15 +310,15 @@ CREATE TABLE public.events (
 
 
 --
--- Name: events_custom_code_uploads; Type: TABLE; Schema: public; Owner: -
+-- Name: events_custom_codes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.events_custom_code_uploads (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    event_id uuid NOT NULL,
-    system text NOT NULL,
-    code text NOT NULL,
-    name text NOT NULL
+CREATE TABLE public.events_custom_codes (
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT events_custom_code_uploads_id_not_null NOT NULL,
+    event_id uuid CONSTRAINT events_custom_code_uploads_event_id_not_null NOT NULL,
+    system text CONSTRAINT events_custom_code_uploads_system_not_null NOT NULL,
+    code text CONSTRAINT events_custom_code_uploads_code_not_null NOT NULL,
+    name text CONSTRAINT events_custom_code_uploads_name_not_null NOT NULL
 );
 
 
@@ -557,10 +558,10 @@ ALTER TABLE ONLY public.custom_codes
 
 
 --
--- Name: events_custom_code_uploads events_custom_code_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: events_custom_codes events_custom_code_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.events_custom_code_uploads
+ALTER TABLE ONLY public.events_custom_codes
     ADD CONSTRAINT events_custom_code_uploads_pkey PRIMARY KEY (id);
 
 
@@ -952,10 +953,10 @@ ALTER TABLE ONLY public.events
 
 
 --
--- Name: events_custom_code_uploads events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: events_custom_codes events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.events_custom_code_uploads
+ALTER TABLE ONLY public.events_custom_codes
     ADD CONSTRAINT events_custom_code_uploads_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
 
 
@@ -1069,4 +1070,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260813142528'),
     ('20260813142548'),
     ('20260825151652'),
-    ('20260826143830');
+    ('20260826143830'),
+    ('20260901143317');
