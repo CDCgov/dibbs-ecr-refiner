@@ -529,7 +529,7 @@ async def get_all_filter_options_db(
         SELECT
             c.id AS code_id,
             s.id AS system_id,
-            gen_random_uuid() as cond_id,
+            NULL::uuid as cond_id,
             NULL::uuid AS source_id,
             'Custom Code' AS source_name,
             'included' AS status
