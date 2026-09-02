@@ -162,7 +162,7 @@ async def set_codes_status(
             )
         else:
             impacted_code_ids = await set_codes_status_within_rendered_set_db(
-                configuration_id=config.id,
+                configuration=config,
                 status=status,
                 code_ids=code_ids,
                 db=db,

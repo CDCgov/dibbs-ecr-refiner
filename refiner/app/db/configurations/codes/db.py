@@ -8,6 +8,7 @@ from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.codes.model import FilterInput
 from app.db.pool import AsyncDatabaseConnection
+from app.db.configurations.model import DbConfiguration
 
 
 @dataclass
@@ -364,19 +365,26 @@ async def set_codes_status_beyond_rendered_db(
 
 
 async def _check_update_operation_excludes_rsg_codes(
+    configuration: DbConfiguration,
     code_ids: list[UUID],
-    configuration_id: UUID,
     db: AsyncDatabaseConnection,
 ):
     params = {
-        "configuration_id": configuration_id,
+        "configuration_id": configuration.id,
         "code_ids": code_ids,
+        "primary_condition_id": configuration.condition_id,
     }
     rsg_check_query = """
-            SELECT cc.code_id
-            FROM conditions_codes_temp cc
-            WHERE cc.is_child_rsg = true
-            AND cc.code_id = ANY(%(code_ids)s::uuid[])
+        SELECT DISTINCT
+            cc.code_id,
+            cc.condition_id,
+            (cc.condition_id = %(primary_condition_id)s) AS is_primary_condition
+        FROM conditions_codes_temp cc
+        WHERE cc.is_child_rsg = true
+        AND cc.code_id = ANY(%(code_ids)s::uuid[])
+        ORDER BY
+            is_primary_condition DESC,
+            cc.condition_id;
         """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -389,7 +397,7 @@ async def _check_update_operation_excludes_rsg_codes(
 
 
 async def set_codes_status_within_rendered_set_db(
-    configuration_id: UUID,
+    configuration: DbConfiguration,
     status: Literal["included", "excluded"],
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
@@ -405,7 +413,7 @@ async def set_codes_status_within_rendered_set_db(
     as these cannot be excluded.
 
     Args:
-        configuration_id (UUID): ID of the configuration
+        configuration (DbConfiguration): The db configuration object
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
@@ -414,13 +422,13 @@ async def set_codes_status_within_rendered_set_db(
         list[UUID]: List of impacted code IDs
     """
     params = {
-        "configuration_id": configuration_id,
+        "configuration_id": configuration.id,
         "code_ids": code_ids,
     }
 
     if status == "excluded":
         await _check_update_operation_excludes_rsg_codes(
-            configuration_id=configuration_id,
+            configuration=configuration,
             code_ids=code_ids,
             db=db,
         )
