@@ -4,6 +4,7 @@ from psycopg.rows import class_row, dict_row
 
 from app.db.codes.model import DbCode
 from app.db.tes.db import get_loaded_tes_versions_db
+from app.services.database.timing import log_query_perf
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
@@ -47,7 +48,7 @@ async def _get_conditions_by_canonical_urls_and_version_db(
 
     condition_ids = [row["id"] for row in rows]
 
-    return await get_conditions_by_ids(ids=condition_ids, db=db)
+    return await get_conditions_by_ids_db(ids=condition_ids, db=db)
 
 
 async def _get_condition_by_canonical_url_and_version_db(
@@ -108,7 +109,7 @@ async def get_latest_tes_condition_ids_db(
     latest_tes = get_latest_tes_version(available_versions=tes_versions)
 
     # get the condition objects for IDs passed in
-    given_conditions = await get_conditions_by_ids(ids=ids, db=db)
+    given_conditions = await get_conditions_by_ids_db(ids=ids, db=db)
 
     # get the associated canonical URLs for each ID
     canonical_urls = [gc.canonical_url for gc in given_conditions]
@@ -146,6 +147,36 @@ async def get_conditions_by_version_db(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
             await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return rows
+
+
+async def get_base_conditions_by_ids_db(
+    ids: list[UUID], db: AsyncDatabaseConnection
+) -> list[DbConditionBase]:
+    """
+    Returns a list of base condition information given a list of condition IDs.
+    """
+    if not ids:
+        return []
+
+    query = """
+        SELECT
+            c.id,
+            c.display_name,
+            c.canonical_url,
+            c.coverage_level,
+            MAX(t.version) as version
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        WHERE c.id = ANY(%(ids)s)
+        GROUP BY c.id;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
+            await cur.execute(query, {"ids": ids})
             rows = await cur.fetchall()
 
     return rows
@@ -302,7 +333,8 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
-async def get_conditions_by_ids(
+@log_query_perf()
+async def get_conditions_by_ids_db(
     ids: list[UUID], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     """

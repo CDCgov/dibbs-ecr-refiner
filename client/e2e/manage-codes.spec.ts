@@ -694,7 +694,7 @@ test.describe('Codes management - code interactions', () => {
     const table = page.getByRole('table');
 
     await expect(table).toBeVisible();
-    await expect(page.getByTestId('lock-icon')).toBeVisible();
+    await expect(table.getByTestId('lock-icon')).toBeVisible();
 
     const selectAllCheckbox = table.getByRole('checkbox', {
       name: 'Include all codes in bulk operation',
@@ -721,7 +721,7 @@ test.describe('Codes management - code interactions', () => {
     const table = page.getByRole('table');
 
     await expect(table).toBeVisible();
-    await expect(page.getByTestId('lock-icon')).toBeVisible();
+    await expect(table.getByTestId('lock-icon')).toBeVisible();
 
     await test.step('Add Alpha-gal Syndrome code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -1536,9 +1536,10 @@ test.describe('Codes management - data loading', () => {
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
-    await expect(page.getByRole('table')).toBeVisible();
+    const table = page.getByRole('table');
+    await expect(table).toBeVisible();
 
-    const lockIconTooltip = page.getByTestId('lock-icon');
+    const lockIconTooltip = table.getByTestId('lock-icon');
     await expect(lockIconTooltip).toBeVisible();
 
     // check tooltip
