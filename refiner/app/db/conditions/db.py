@@ -47,7 +47,7 @@ async def _get_conditions_by_canonical_urls_and_version_db(
 
     condition_ids = [row["id"] for row in rows]
 
-    return await get_conditions_by_ids(ids=condition_ids, db=db)
+    return await get_conditions_by_ids_db(ids=condition_ids, db=db)
 
 
 async def _get_condition_by_canonical_url_and_version_db(
@@ -108,7 +108,7 @@ async def get_latest_tes_condition_ids_db(
     latest_tes = get_latest_tes_version(available_versions=tes_versions)
 
     # get the condition objects for IDs passed in
-    given_conditions = await get_conditions_by_ids(ids=ids, db=db)
+    given_conditions = await get_conditions_by_ids_db(ids=ids, db=db)
 
     # get the associated canonical URLs for each ID
     canonical_urls = [gc.canonical_url for gc in given_conditions]
@@ -302,7 +302,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
-async def get_conditions_by_ids(
+async def get_conditions_by_ids_db(
     ids: list[UUID], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     """
