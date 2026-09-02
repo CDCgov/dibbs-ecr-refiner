@@ -475,3 +475,35 @@ def structured_body_v3_1_1(eicr_v3_1_1_zika: _Element) -> _Element:
         return deepcopy(body)
     else:
         pytest.fail("No <structuredBody> found in v3.1.1 eICR fixture.")
+
+
+# NOTE:
+# NARRATIVE XML HELPERS
+# =============================================================================
+# shared by the reconstruction test modules, which all build CDA fragments as
+# literal XML. They are module-level constants rather than fixtures because the
+# section literals interpolate NSDECL at import time, before any fixture runs
+
+NSDECL = 'xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+
+# the augmentation timestamp reconstruction stamps into minted row IDs
+RUN_TS = "20240101000000+0000"
+
+
+def parse_element(xml: str) -> etree._Element:
+    """Parse an XML literal into an element."""
+
+    return etree.fromstring(xml.encode("utf-8"))
+
+
+def load_section(name: str) -> str:
+    """
+    Read a committed CDA section fixture from `tests/fixtures/sections/`.
+
+    Returns the raw XML STRING, not a parsed element: reconstruction mutates
+    the sections it is handed, so each test parses its own copy rather than
+    sharing one tree. Each fixture opens with a comment describing the shape
+    it encodes and why that shape is worth pinning.
+    """
+
+    return load_fixture_str(f"sections/{name}.xml")

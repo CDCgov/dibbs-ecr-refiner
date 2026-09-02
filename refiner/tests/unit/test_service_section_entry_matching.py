@@ -19,8 +19,7 @@ from app.services.ecr.section.entry_matching import (
 )
 from app.services.ecr.specification import load_spec
 from app.services.terminology import CodeSystemKey, CodeSystemSets, Oid
-from tests.fixtures.loader import load_fixture_str
-from tests.unit.conftest import create_mock_systems
+from tests.unit.conftest import create_mock_systems, load_section
 
 # NOTE:
 # HELPERS
@@ -1788,7 +1787,7 @@ def test_an_explicit_precedence_group_unites_rules_at_different_locations() -> N
 
 @pytest.fixture
 def problems_icd10_primary() -> _Element:
-    return _build_section(load_fixture_str("sections/problems_icd10_primary.xml"))
+    return _build_section(load_section("problems_icd10_primary"))
 
 
 # the three SNOMED concepts a jurisdiction would have configured for this
@@ -1931,10 +1930,11 @@ def test_original_text_is_converted_to_by_value_not_blanked(
 # the rule, and a test that shares its subject's assumptions cannot falsify
 # them.
 #
-# NOT yet covered: Plan of Treatment (8 rules, each a distinct statement type),
-# Procedures (3), Social History (2). The completeness test below only demands
-# full coverage of sections the table already claims, so those can be added
-# without ceremony.
+# every MULTI-rule section is covered — those are the only ones precedence can
+# shadow. single-rule sections (Immunizations, Vital Signs, Pregnancy, ...) are
+# reachable by construction: there is no earlier rule to claim the entry first.
+# a guard below asserts that split rather than trusting this comment, so a
+# second rule added to a single-rule section fails until the table catches up.
 
 
 @dataclass(frozen=True)
@@ -2063,7 +2063,170 @@ _DIAGNOSIS_CASES: list[ReachabilityCase] = [
     )
 ]
 
-_REACHABILITY_CASES: list[ReachabilityCase] = _RESULTS_CASES + _DIAGNOSIS_CASES
+
+def _statement(tag: str, template: str, body: str) -> str:
+    return f"""
+    <entry><{tag} classCode="ACT" moodCode="INT">
+      <templateId root="{template}"/>
+      {body}
+    </{tag}></entry>
+    """
+
+
+def _product(code: str) -> str:
+    return (
+        "<consumable><manufacturedProduct><manufacturedMaterial>"
+        f'<code code="{code}" codeSystem="2.16.840.1.113883.6.88"/>'
+        "</manufacturedMaterial></manufacturedProduct></consumable>"
+    )
+
+
+_CODED = '<code code="840539006" codeSystem="2.16.840.1.113883.6.96"/>'
+_SNOMED = {"snomed": ["840539006"]}
+_RXNORM = {"rxnorm": ["1115699"]}
+
+# Plan of Treatment: eight rules, each a distinct planned statement type.
+# they discriminate by element name AND templateId, so an entry built for one
+# is invisible to the others
+_PLAN_OF_TREATMENT_CASES: list[ReachabilityCase] = [
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        0,
+        "planned observation code",
+        _SNOMED,
+        _statement("observation", "2.16.840.1.113883.10.20.22.4.44", _CODED),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        1,
+        "planned medication product",
+        _RXNORM,
+        _statement(
+            "substanceAdministration",
+            "2.16.840.1.113883.10.20.22.4.42",
+            _product("1115699"),
+        ),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        2,
+        "medication activity product",
+        _RXNORM,
+        _statement(
+            "substanceAdministration",
+            "2.16.840.1.113883.10.20.22.4.16",
+            _product("1115699"),
+        ),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        3,
+        "planned immunization product",
+        _RXNORM,
+        _statement(
+            "substanceAdministration",
+            "2.16.840.1.113883.10.20.22.4.120",
+            _product("1115699"),
+        ),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        4,
+        "immunization activity product",
+        _RXNORM,
+        _statement(
+            "substanceAdministration",
+            "2.16.840.1.113883.10.20.22.4.52",
+            _product("1115699"),
+        ),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        5,
+        "planned act code",
+        _SNOMED,
+        _statement("act", "2.16.840.1.113883.10.20.22.4.39", _CODED),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        6,
+        "planned procedure code",
+        _SNOMED,
+        _statement("procedure", "2.16.840.1.113883.10.20.22.4.41", _CODED),
+    ),
+    ReachabilityCase(
+        "1.1",
+        "18776-5",
+        7,
+        "planned observation VALUE",
+        _SNOMED,
+        _statement(
+            "observation",
+            "2.16.840.1.113883.10.20.22.4.19",
+            '<value xsi:type="CD" code="840539006"'
+            ' codeSystem="2.16.840.1.113883.6.96"/>',
+        ),
+    ),
+]
+
+# Procedures: three trigger-code templates, one per element name
+_PROCEDURES_CASES: list[ReachabilityCase] = [
+    ReachabilityCase(
+        "3.1.1",
+        "47519-4",
+        0,
+        "trigger procedure code",
+        _SNOMED,
+        _statement("procedure", "2.16.840.1.113883.10.20.15.2.3.44", _CODED),
+    ),
+    ReachabilityCase(
+        "3.1.1",
+        "47519-4",
+        1,
+        "trigger act code",
+        _SNOMED,
+        _statement("act", "2.16.840.1.113883.10.20.15.2.3.45", _CODED),
+    ),
+    ReachabilityCase(
+        "3.1.1",
+        "47519-4",
+        2,
+        "trigger observation code",
+        _SNOMED,
+        _statement("observation", "2.16.840.1.113883.10.20.15.2.3.46", _CODED),
+    ),
+]
+
+# Social History scans broadly: one rule covering observation/act code, with
+# its translation_xpath reaching value. that is why it is a single rule --
+# see the deletion note in entry_match_rules
+_SOCIAL_HISTORY_CASES: list[ReachabilityCase] = [
+    ReachabilityCase(
+        "1.1",
+        "29762-2",
+        0,
+        "any observation or act code",
+        _SNOMED,
+        '<entry><observation classCode="OBS" moodCode="EVN">'
+        f"{_CODED}</observation></entry>",
+    ),
+]
+
+
+_REACHABILITY_CASES: list[ReachabilityCase] = (
+    _RESULTS_CASES
+    + _DIAGNOSIS_CASES
+    + _PLAN_OF_TREATMENT_CASES
+    + _PROCEDURES_CASES
+    + _SOCIAL_HISTORY_CASES
+)
 
 
 @pytest.mark.parametrize(
@@ -2104,6 +2267,30 @@ def test_every_match_rule_can_claim_an_entry(case: ReachabilityCase) -> None:
         f"{case.section} rule[{case.rule_index}] ({case.what}) is shadowed: "
         f"the entry was claimed by rule(s) {sorted(matched_indices)} instead"
     )
+
+
+def test_every_multi_rule_section_appears_in_the_reachability_table() -> None:
+    """
+    Precedence can only shadow a rule that has an earlier rule to hide behind.
+
+    So the table must claim every section carrying more than one rule. A
+    single-rule section is reachable by construction and needs no case — but
+    the moment a second rule is added there, this fails until the table
+    covers it.
+    """
+
+    claimed = {case.section for case in _REACHABILITY_CASES}
+    for version in ("1.1", "3.1.1"):
+        spec = load_spec(version)
+        multi_rule = {
+            code
+            for code, section in spec.sections.items()
+            if len(section.entry_match_rules) > 1
+        }
+        assert multi_rule <= claimed, (
+            f"spec {version}: multi-rule sections missing from the "
+            f"reachability table: {sorted(multi_rule - claimed)}"
+        )
 
 
 def test_reachability_table_covers_every_rule_of_the_sections_it_claims() -> None:
