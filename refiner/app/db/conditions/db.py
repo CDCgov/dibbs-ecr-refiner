@@ -170,13 +170,13 @@ async def get_base_conditions_by_ids_db(
             MAX(t.version) as version
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
-        WHERE c.id = ANY(%s)
+        WHERE c.id = ANY(%(ids)s)
         GROUP BY c.id;
     """
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
-            await cur.execute(query, (ids,))
+            await cur.execute(query, {"ids": ids})
             rows = await cur.fetchall()
 
     return rows
