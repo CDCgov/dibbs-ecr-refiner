@@ -108,9 +108,8 @@ def process(
 
     The orchestrator maps the resulting `SectionRunResult` to
     `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
-    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`,
-    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED`, or
-    `REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED` — see
+    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or
+    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED` — see
     `refine._interpret_run_result`.
 
     Returns:
@@ -224,19 +223,13 @@ def process(
                                 else "reconstructed"
                             ),
                         )
-                    # these two branches DID match — the surviving entries
-                    # are real content, they just could not be rendered as
-                    # rows (or the section has no registered reconstructor).
-                    # keep-on-match keeps on a match, so the original
-                    # narrative stays; removing it would leave real entries
-                    # with no readable representation. the footnote says the
-                    # narrative may describe entries the refinement removed
-                    case "no_matching_entries":
-                        return SectionRunResult(
-                            matches_found=False,
-                            narrative_disposition="reconstruct_no_entries",
-                        )
-                    case "reconstruction_unavailable":
+                    # no narrative could be produced at all — in practice
+                    # only when the section has no registered reconstructor,
+                    # since the reduced-form sweep gives every surviving
+                    # entry a row. we DID match here, so keep-on-match keeps:
+                    # the original narrative stays, and the footnote says it
+                    # may describe entries the refinement removed
+                    case None:
                         return SectionRunResult(
                             matches_found=True,
                             narrative_disposition="reconstruct_unavailable",

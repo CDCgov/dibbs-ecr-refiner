@@ -353,7 +353,6 @@ def _interpret_run_result(
         no matches:
             "retained"                       → REFINED_NO_MATCHES_NARRATIVE_RETAINED
             "removed"                        → REFINED_NO_MATCHES_NARRATIVE_REMOVED
-            "reconstruct_no_entries"         → REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
             "reconstructed"                  → (engines never produce
                                                 this on no-match)
 
@@ -382,9 +381,6 @@ def _interpret_run_result(
     # there were no matches or the section requested doesn't have a rule configured.
     if run_result.narrative_disposition == "reconstruct_unavailable":
         return SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
-
-    if run_result.narrative_disposition == "reconstruct_no_entries":
-        return SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
 
     if not run_result.matches_found:
         if run_result.narrative_disposition == "retained":

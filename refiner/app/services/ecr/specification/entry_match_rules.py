@@ -966,12 +966,12 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # anywhere in the entry — panel header, clinical content, travel type,
 # exposure agent — the whole entry is retained. That is what T3 rules do.
 #
-# Rule 1 covers observation/code and act/code (structural/panel codes and
-# type codes like Travel 420008001). Rule 2 covers observation/value and
-# act/value (clinical content codes like Homeless 32911000, country codes
-# like GB, occupation codes like Census 3600). Rule 1 will claim most entries
-# since code elements are nearly universal; rule 2 fires on entries where
-# the only configured code is on a value element and nothing on code matched.
+# The single rule covers observation/code and act/code (structural/panel
+# codes and type codes like Travel 420008001) as its primary location, and
+# observation/value and act/value through its translation slot (clinical
+# content codes like Homeless 32911000, country codes like GB, occupation
+# codes like Census 3600). One rule reaching both is what the two-rule
+# version was trying and failing to express.
 #
 # A jurisdiction can configure either the structural panel code or the clinical
 # content code and get the same result. This is intentional — the refiner does
@@ -979,24 +979,25 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # entries with this specific clinical value." Both are valid reasons to retain
 # a Social History entry and both produce identical output.
 #
-# OID: None on both rules. Code system diversity in Social History is too
+# OID: None. Code system diversity in Social History is too
 # broad for OID constraints to be meaningful, and no EHR vendor is consistent
 # enough in Social History encoding for OID scoping to be reliable.
 _SOCIAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
-    # rule 1 — TIER 3: any observation or act code
+    # TIER 3: any observation or act code, with value reached via the
+    # translation slot
+    #
+    # ONE rule, not two. There used to be a second "any observation or act
+    # value" rule below this one, described as the fallback for entries whose
+    # configured code lives on value rather than code. It could never fire:
+    # this rule's translation_xpath already covers exactly those locations, and
+    # a code element is near-universal here, so this rule claimed every entry
+    # first. Deleting it changed no behaviour -- the reachability test in
+    # tests/unit/test_service_section_entry_matching.py is what makes that
+    # checkable rather than asserted
     EntryMatchRule(
         code_xpath=".//hl7:observation/hl7:code | .//hl7:act/hl7:code",
         code_system_oid=None,
         translation_xpath=".//hl7:observation/hl7:value | .//hl7:act/hl7:value",
-        tier=3,
-        preserve_whole_entry=True,
-    ),
-    # rule 2 — TIER 3: any observation or act value
-    # Fallback for entries where the configured code lives on value rather
-    # than code — clinical content codes, country codes, occupation codes, etc.
-    EntryMatchRule(
-        code_xpath=".//hl7:observation/hl7:value | .//hl7:act/hl7:value",
-        code_system_oid=None,
         tier=3,
         preserve_whole_entry=True,
     ),

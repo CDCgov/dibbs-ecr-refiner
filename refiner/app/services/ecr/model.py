@@ -455,18 +455,6 @@ class SectionOutcome(StrEnum):
             entries. Not yet reachable — depends on narrative
             reconstruction work landing.
 
-        REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED:
-            include=True, action="refine", narrative="reconstruct".
-            The jurisdiction asked for narrative reconstruction but
-            the engine couldn't produce one because no entries
-            survived to rebuild from (no-match) or the section has
-            no registered reconstructor. Rather than discard the most
-            informative state available, the engine keeps the original
-            narrative in place. Distinct from the plain RETAINED / REFINED_*
-            outcomes so the provenance footnote can tell a reviewer
-            "you asked for reconstruct; we couldn't, so we kept the
-            original."
-
         REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED:
             include=True, action="refine", narrative="reconstruct".
             The jurisdiction asked for narrative reconstruction but
@@ -508,9 +496,6 @@ class SectionOutcome(StrEnum):
     REFINED_NARRATIVE_REMOVED = "refined_narrative_removed"
     REFINED_NARRATIVE_RECONSTRUCTED = "refined_narrative_reconstructed"
     REFINED_NARRATIVE_RECONSTRUCTED_REDUCED = "refined_narrative_reconstructed_reduced"
-    REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED = (
-        "refined_reconstruct_no_matches_retained"
-    )
     REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED = (
         "refined_reconstruct_unavailable_retained"
     )
@@ -691,11 +676,6 @@ class SectionRunResult:
                 for reconstruction but the engine couldn't run it since there
                 was no registered reconstructor, so the original narrative was
                 kept instead — see SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED.
-              - "reconstruct_no_entries": the jurisdiction asked
-                for reconstruction but the engine couldn't run it because there
-                were no entries to build from),
-                so the original narrative was kept instead — see
-                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.
 
             The orchestrator uses this together with `matches_found`
             to choose the user-facing `SectionOutcome`.
@@ -708,5 +688,4 @@ class SectionRunResult:
         "reconstructed",
         "reconstructed_reduced",
         "reconstruct_unavailable",
-        "reconstruct_no_entries",
     ]

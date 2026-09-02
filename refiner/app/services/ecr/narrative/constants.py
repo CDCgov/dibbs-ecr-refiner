@@ -89,15 +89,6 @@ PROVENANCE_OUTCOME_NOTES: Final[dict[SectionOutcome, str]] = {
     # entries this refinement removed. a reviewer who reads "original narrative
     # retained" as "nothing was dropped here" is reading it backwards
     #
-    # the enum name says NO_MATCHES for historical reasons; the only branch
-    # that still reaches it is "matches were found, but none of the surviving
-    # entries were in a shape the reconstructor could render as rows" (a
-    # Problem Observation under a non-SUBJ entryRelationship, say). the
-    # no-matches case now falls back to keep-on-match and removes instead
-    SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED: (
-        "Refined; matches found but no narrative rows could be rebuilt from "
-        "them, original narrative retained and may describe removed entries"
-    ),
     SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED: (
         "Refined; reconstruction currently unavailable for this section, "
         "original narrative retained and may describe removed entries"

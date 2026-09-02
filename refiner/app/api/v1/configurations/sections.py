@@ -394,7 +394,7 @@ def _raise_if_reconstruct_unsupported(
 
     Narrative reconstruction rebuilds <text> from refined entries via
     a section-specific reconstructor registered in
-    `ecr/narrative/reconstruction.py`. Currently only Results
+    `ecr/narrative/reconstruction/`. Currently only Results
     (30954-2) has one; other LOINC codes would silently fall back at
     runtime to retaining the original narrative. Up-front rejection
     keeps configurations honest — a jurisdiction can't save a setting

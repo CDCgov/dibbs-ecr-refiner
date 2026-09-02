@@ -41,17 +41,18 @@ narrative elements directly.
   - `create_minimal_section` — reduce a section to a `nullFlavor="NI"` stub
     with a status message (no match found, or configured for removal).
   - `replace_narrative_with_reconstruction` — swap in a `<text>` rebuilt by
-    `reconstruction.py` from the surviving entries.
+    `reconstruction/` from the surviving entries.
 
 - **`identifiers.py`** — the `xs:ID` scheme shared by the footnote and the
   reconstructed rows (`ecr-refiner-{loinc}-{timestamp}`), plus the helper that
   compacts reconstruction references. Keeping it separate lets `footnote.py`
-  and `reconstruction.py` mint run-stamped IDs without depending on each other.
+  and `reconstruction/` mint run-stamped IDs without depending on each other.
 
-- **`reconstruction.py`** — the third narrative disposition: rebuild a
+- **`reconstruction/`** — the third narrative disposition: rebuild a
   section's `<text>` from the entries that **survived** refinement, so the
   narrative reflects what the document still contains rather than the stale
-  story the source EHR authored against the full entry set. See below.
+  story the source EHR authored against the full entry set. A package, split
+  along its layering — see below.
 
 ## Invariants
 
@@ -66,7 +67,22 @@ narrative elements directly.
 
 ## Narrative reconstruction
 
-When a section is configured `narrative="reconstruct"`, `reconstruction.py`
+The package is split along the layering, one module per layer, and the
+dependencies run one way (`renderers` <- `fields` <- `sections` -> `blocks`):
+
+| module | holds | depends on |
+|---|---|---|
+| `renderers.py` | stringify ONE element: CDA data types, code-display fallback chains, timestamps, units, intervals | nothing in the package |
+| `fields.py` | `FieldSpec`/`FieldSource`, the extractor, and every per-statement field map | `renderers` |
+| `blocks.py` | `Block`/`DetailRow`, the table assembler, minted row IDs, and the entry mutations (`DRIV`, relinking) | nothing in the package |
+| `sections.py` | the per-section joins and the generic fallback | `blocks`, `fields`, `renderers` |
+| `__init__.py` | `SECTION_RECONSTRUCTORS`, `reconstruct_narrative`, and the package's public surface (`__all__`) | all of the above |
+
+Adding a section stays "one field map + one join function + one dict entry" —
+no Layer 1 primitive is touched.
+
+
+When a section is configured `narrative="reconstruct"`, `reconstruction/`
 rebuilds its `<text>` from the surviving `<entry>` elements instead of
 retaining the source narrative. The guiding question is a content one: **can
 this table be reproduced from just the `<entry>`s?** If a column cannot be

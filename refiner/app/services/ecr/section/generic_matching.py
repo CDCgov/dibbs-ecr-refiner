@@ -240,14 +240,7 @@ def process(
                         # leave real entries with no readable representation.
                         # the footnote says the narrative may describe
                         # entries the refinement removed
-                        case "no_matching_entries":
-                            if original_text is not None:
-                                restore_narrative(section, original_text, namespaces)
-                            return SectionRunResult(
-                                matches_found=False,
-                                narrative_disposition="reconstruct_no_entries",
-                            )
-                        case "reconstruction_unavailable":
+                        case None:
                             if original_text is not None:
                                 restore_narrative(section, original_text, namespaces)
                             return SectionRunResult(
