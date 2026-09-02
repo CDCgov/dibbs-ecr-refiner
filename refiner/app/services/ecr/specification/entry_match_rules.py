@@ -6,6 +6,7 @@ from .template_oids import (
     ENCOUNTER_DIAGNOSIS_V3,
     IMMUNIZATION_ACTIVITY_V3,
     INDICATION_V2,
+    LABORATORY_RESULT_STATUS_ID,
     MEDICATION_ACTIVITY_V2,
     PLANNED_ACT_V2,
     PLANNED_IMMUNIZATION_ACTIVITY,
@@ -19,6 +20,7 @@ from .template_oids import (
     PROCEDURE_ACTIVITY_OBSERVATION_V2,
     PROCEDURE_ACTIVITY_PROCEDURE_V2,
     RESULT_OBSERVATION_V3,
+    SPECIMEN_COLLECTION_PROCEDURE_ID,
     TRIGGER_CODE_PLANNED_ACT,
     TRIGGER_CODE_PLANNED_PROCEDURE,
     TRIGGER_CODE_PROCEDURE_ACTIVITY_ACT,
@@ -47,11 +49,17 @@ from .template_oids import (
 #             pattern it was written for.
 #
 # structural precedence (enforced in entry_matching._try_match_entry):
-# * rules are evaluated in order; the first rule whose xpath finds any
-#   code-bearing elements in an entry claims that entry, regardless of
-#   whether those elements produced code set matches. This prevents
-#   lower-tier rules from running on entries already evaluated by a
-#   higher-tier rule
+# * rules are evaluated in order and grouped by code LOCATION: consecutive
+#   rules sharing a code_xpath form one precedence group. The first GROUP
+#   whose xpath finds any code-bearing elements in an entry claims that
+#   entry, regardless of whether those elements produced code set matches.
+#   This prevents rules describing a different structure from running on
+#   entries a higher-tier rule already spoke for
+# * grouping (rather than breaking on the first rule) is what keeps a
+#   tier-3 rule readable at the SAME location as its tier-1 twin. the
+#   diagnosis-shaped sections all pair "SNOMED on value / ICD-10 in
+#   translation" with its mirror image, and a per-rule break would make the
+#   second unreachable for any entry carrying a code at all
 #
 # OID convention:
 # OIDs are retained when they encode semantic meaning — i.e. when the
@@ -94,8 +102,11 @@ _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     # Not IG-conformant; observed in real EHR output where senders place
     # the billing code (ICD-10) as the primary value and the clinical
     # concept (SNOMED) in translation, reversing the spec's intent.
-    # Structural precedence ensures this only fires when TIER 1 found
-    # no SNOMED-coded value — i.e., the entry doesn't follow the spec.
+    # it shares TIER 1's code_xpath, so the two are ONE precedence group
+    # (see entry_matching._group_rules_by_precedence) and both are evaluated
+    # before the entry is claimed. Being a separate rule rather than a second
+    # OID on TIER 1 is what keeps the reversed pattern visible as tier 3 in
+    # the entry's match provenance comment
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
@@ -637,6 +648,22 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # * these correspond to STU 1.1 Tables 107/108 and STU 3.1.1 Tables 266/267
 # * both subsets are valid trigger patterns and both are handled here
 #
+# PRECEDENCE GROUP (all three rules):
+#   all three read the SAME Result Observation and differ only in where the
+#   trigger code sits: the test name on `code`, a LOINC trigger in
+#   `code/translation`, the organism/substance on `value`. They are one
+#   statement described three ways, so they share `precedence_group` and are
+#   evaluated together.
+#
+#   without it they keyed on their own code_xpath and fell into three
+#   separate precedence units. `code` is SHALL on this template, so rule 1
+#   always found a candidate and always claimed the entry — rules 2 and 3
+#   could fire only on an observation whose code was nullFlavored. the
+#   organism/substance subset is precisely the case where the test name is
+#   generic ("Bacteria identified in Blood by Culture") and the reportable
+#   concept is the VALUE, so that entry was dropped despite the jurisdiction
+#   having configured the organism
+#
 # > the LOINC-in-translation rule (rule 2) handles the additional pattern
 # > where a sender uses a local/proprietary code as the primary code and
 # > puts the LOINC trigger code in translation, per CONF:4411-462/463.
@@ -653,8 +680,6 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #     code/translation; this rule targets the observation, so 4411 is
 #     the right series
 #   prune level:  organizer/component
-#   note: structural precedence ensures this only fires on entries
-#     where rule 1 found no LOINC at the primary code location
 #
 # rule 3 — TIER 2: organism/substance SNOMED on observation/value
 #   IG: value SHOULD be SNOMED for organism/substance triggers
@@ -685,13 +710,27 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   triggers). because they contain no Result Observation, the plain
 #   component prune would drop them even when a sibling result is retained,
 #   silently losing the specimen context a PHA keys a case to. the guard
-#   below exempts any organizer/component that does not itself contain a
-#   Result Observation V3, so those siblings survive alongside a retained
-#   result. it is keyed to the Result Observation V3 templateId--**not** "any
-#   observation"--precisely so Laboratory Result Status (its own observation
-#   template) is treated as shared context rather than a prunable candidate.
-#   an organizer with zero result matches is still removed wholesale (its
-#   procedure goes with it)--the carve-out only fires within a matched entry
+#   below exempts them BY NAME, so those siblings survive alongside a
+#   retained result. an organizer with zero result matches is still removed
+#   wholesale (its procedure goes with it)--the carve-out only fires within a
+#   matched entry
+#
+#   naming the two templates is a correction, not the original design. the
+#   guard used to exempt any component that did **not** contain a Result
+#   Observation V3, on the reasoning that requiring the template would drop a
+#   whole battery from any sender who omits it. but "has no result templateId"
+#   is not the same claim as "is shared context", and Epic's proprietary
+#   result components (templateId 1.2.840.114350.*) satisfy the first while
+#   being neither. they rode the exemption through the prune and then
+#   rendered as narrative rows reading "16"--a bare proprietary enum value,
+#   in a table where every other row is a lab result. PHAs in two
+#   jurisdictions reported them as unreadable
+#
+#   the fear the old guard was written against is real but belongs one level
+#   up: it is the ORGANIZER whose templateId a sender may omit, and an
+#   organizer that matches nothing is dropped whole regardless of this guard.
+#   within a matched organizer, "which siblings are shared context" is a
+#   closed question the IG answers by name
 #
 #   version trap: the organizer cites ...4.418 as extension 2018-06-11
 #   (CONF:4527-444) while the template's own definition requires
@@ -709,11 +748,26 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   is the authority for cardinality; use the .sch only to confirm the
 #   machine-testable asserts
 
-# only prune organizer components that actually carry a Result Observation;
-# non-result siblings (Specimen Collection Procedure, Lab Result Status) are
-# retained as shared context
-_RESULT_COMPONENT_PRUNE_GUARD: Final[str] = (
-    f".//hl7:observation[hl7:templateId[@root='{RESULT_OBSERVATION_V3}']]"
+# a component is **prunable** unless it is one of the two IG-named organizer-scoped
+# context templates. evaluated relative to the component: a truthy result means
+# "this is an ordinary candidate, prune it if it holds no match"; empty means
+# "shared context, exempt". see the SHARED-CONTEXT CARVE-OUT note above
+# the three Results rules are one statement read three ways; see the
+# PRECEDENCE GROUP note above
+_RESULT_OBSERVATION_GROUP: Final[str] = "results:result-observation"
+
+_SHARED_CONTEXT_TEMPLATES: Final[tuple[str, ...]] = (
+    SPECIMEN_COLLECTION_PROCEDURE_ID,
+    LABORATORY_RESULT_STATUS_ID,
+)
+
+# scoped to the component's OWN child (hl7:*/hl7:templateId, not .//) so a
+# result observation that nests a specimen elsewhere in its entryRelationships
+# is not mistaken for shared context
+_RESULT_COMPONENT_PRUNE_GUARD: Final[str] = "self::*[not({})]".format(
+    " or ".join(
+        f"hl7:*/hl7:templateId[@root='{oid}']" for oid in _SHARED_CONTEXT_TEMPLATES
+    )
 )
 
 _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
@@ -727,6 +781,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         code_system_oid=LOINC_OID,
         prune_container_xpath="hl7:organizer/hl7:component",
         prune_container_guard_xpath=_RESULT_COMPONENT_PRUNE_GUARD,
+        precedence_group=_RESULT_OBSERVATION_GROUP,
         tier=1,
     ),
     # rule 2 — TIER 2: LOINC trigger code in translation
@@ -740,6 +795,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         code_system_oid=LOINC_OID,
         prune_container_xpath="hl7:organizer/hl7:component",
         prune_container_guard_xpath=_RESULT_COMPONENT_PRUNE_GUARD,
+        precedence_group=_RESULT_OBSERVATION_GROUP,
         tier=2,
     ),
     # rule 3 — TIER 2: organism/substance SNOMED on observation/value
@@ -754,6 +810,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         require_value_set_attr=True,
         prune_container_xpath="hl7:organizer/hl7:component",
         prune_container_guard_xpath=_RESULT_COMPONENT_PRUNE_GUARD,
+        precedence_group=_RESULT_OBSERVATION_GROUP,
         tier=2,
     ),
 ]

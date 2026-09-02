@@ -347,6 +347,7 @@ def _interpret_run_result(
             "retained"                       → REFINED_WITH_MATCHES
             "removed"                        → REFINED_NARRATIVE_REMOVED
             "reconstructed"                  → REFINED_NARRATIVE_RECONSTRUCTED
+            "reconstructed_reduced"          → REFINED_NARRATIVE_RECONSTRUCTED_REDUCED
             "reconstruct_unavailable"        → REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
 
         no matches:
@@ -395,6 +396,8 @@ def _interpret_run_result(
         return SectionOutcome.REFINED_NARRATIVE_REMOVED
     if run_result.narrative_disposition == "reconstructed":
         return SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED
+    if run_result.narrative_disposition == "reconstructed_reduced":
+        return SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_REDUCED
     return SectionOutcome.REFINED_WITH_MATCHES
 
 

@@ -80,11 +80,27 @@ PROVENANCE_OUTCOME_NOTES: Final[dict[SectionOutcome, str]] = {
     SectionOutcome.REFINED_WITH_MATCHES: "Refined; matches found",
     SectionOutcome.REFINED_NARRATIVE_REMOVED: "Refined; narrative removed",
     SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED: "Refined; narrative reconstructed",
+    SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_REDUCED: (
+        "Refined; narrative reconstructed, but some entries could not be fully "
+        "rebuilt and are shown in reduced form"
+    ),
+    # both reconstruction fallbacks say plainly that the retained narrative is
+    # the **source** narrative, written against the full entry set: it may describe
+    # entries this refinement removed. a reviewer who reads "original narrative
+    # retained" as "nothing was dropped here" is reading it backwards
+    #
+    # the enum name says NO_MATCHES for historical reasons; the only branch
+    # that still reaches it is "matches were found, but none of the surviving
+    # entries were in a shape the reconstructor could render as rows" (a
+    # Problem Observation under a non-SUBJ entryRelationship, say). the
+    # no-matches case now falls back to keep-on-match and removes instead
     SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED: (
-        "Refined; reconstruction attempted but no matching entries were found, original narrative retained"
+        "Refined; matches found but no narrative rows could be rebuilt from "
+        "them, original narrative retained and may describe removed entries"
     ),
     SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED: (
-        "Refined; reconstruction currently unavailable for this section, original narrative retained"
+        "Refined; reconstruction currently unavailable for this section, "
+        "original narrative retained and may describe removed entries"
     ),
     SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED: (
         "Refined; no matches found, narrative retained"

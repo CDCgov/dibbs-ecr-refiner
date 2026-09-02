@@ -16,6 +16,7 @@ from ..model import (
     SectionSpecification,
 )
 from ..narrative import (
+    ReconstructedNarrative,
     reconstruct_narrative,
     remove_all_comments,
     replace_narrative_with_reconstruction,
@@ -76,10 +77,11 @@ def process(
 
       - "retain"           → narrative restored intact
       - "remove"           → narrative replaced with the removal notice
-      - "reconstruct"      → falls back to RETAIN the original narrative
-                             (nothing to rebuild from)
       - "keep_on_match"    → narrative replaced with the removal notice
                              (no matches means the negative branch)
+      - "reconstruct"      → same as "keep_on_match". There is nothing to
+                             rebuild from, and the original narrative
+                             describes the entries that were just pruned.
 
     `nullFlavor="NI"` is applied at the section level so the document
     continues to satisfy CDA schematron rules that require `SHALL
@@ -163,27 +165,18 @@ def process(
                 remove_element(entry)
             section.attrib["nullFlavor"] = "NI"
 
-            if narrative_action == "remove" or narrative_action == "keep_on_match":
-                # "keep_on_match" is the negative branch on no-match
+            if narrative_action in ("remove", "keep_on_match", "reconstruct"):
+                # all three are negative branches when NOTHING matched.
+                # "reconstruct" falls back to keep-on-match: there is nothing
+                # to rebuild from, every entry was just pruned, and the
+                # original narrative still describes all of them — retaining
+                # it would ship back exactly the content the configuration
+                # excluded. Mirrors the entry-matching engine; the two paths
+                # must not disagree about what "reconstruct" means
                 replace_narrative_with_removal_notice(section, namespaces)
                 return SectionRunResult(
                     matches_found=False,
                     narrative_disposition="removed",
-                )
-
-            if narrative_action == "reconstruct":
-                # NOTE: reconstruct + no matches falls back to
-                # retaining the original narrative rather than
-                # swapping in a removal notice. assumption: when the
-                # jurisdiction asked for reconstruction and we can't
-                # produce one, the original narrative is the most
-                # informative state available — strictly more useful
-                # to a reviewer than the removal placeholder.
-                if original_text is not None:
-                    restore_narrative(section, original_text, namespaces)
-                return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="reconstruct_no_entries",
                 )
 
             # "retain": restore the original <text> we saved before
@@ -224,22 +217,29 @@ def process(
                     match reconstruct_narrative(
                         section, augmentation_timestamp=augmentation_timestamp
                     ):
-                        case _Element() as reconstructed:
+                        case ReconstructedNarrative() as rebuilt:
                             replace_narrative_with_reconstruction(
-                                section, reconstructed, namespaces
+                                section, rebuilt.text, namespaces
                             )
+                            # entries the section's reconstructor could not
+                            # cover are present in reduced form; say so
+                            # rather than reporting a clean rebuild
                             return SectionRunResult(
                                 matches_found=True,
-                                narrative_disposition="reconstructed",
+                                narrative_disposition=(
+                                    "reconstructed_reduced"
+                                    if rebuilt.reduced_entry_count
+                                    else "reconstructed"
+                                ),
                             )
-                        # NOTE: no registered reconstructor (or nothing
-                        # survived to rebuild) — fall back to RETAIN the
-                        # original narrative rather than swap in a removal
-                        # notice. assumption: when the jurisdiction asked
-                        # for reconstruction and we can't run it, the
-                        # original narrative is more informative to a
-                        # reviewer than the removal placeholder, even though
-                        # it may reference entries that were pruned.
+                        # these two branches **did** match — the surviving
+                        # entries are real content, they just could not be
+                        # rendered as rows (or the section has no registered
+                        # reconstructor). keep-on-match keeps on a match, so
+                        # the original narrative stays; removing it would
+                        # leave real entries with no readable representation.
+                        # the footnote says the narrative may describe
+                        # entries the refinement removed
                         case "no_matching_entries":
                             if original_text is not None:
                                 restore_narrative(section, original_text, namespaces)

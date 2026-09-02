@@ -55,11 +55,19 @@ class Block(NamedTuple):
     flat section emits a single block with empty context and one row per
     entry. Unlike patterns are never collapsed into a shared grid.
 
-    `caption` names the detail table. It stays empty for the sections whose
-    blocks are all the same kind of thing (the section title already says
-    what they are) and is set by a **heterogeneous** section, where consecutive
-    tables carry different columns and a reader would otherwise have no way
-    to tell a planned procedure from a planned act.
+    `caption` names the detail table. Two kinds of section set it:
+
+      - a **heterogeneous** section (Plan of Treatment), where consecutive
+        tables carry different columns and a reader would otherwise have no
+        way to tell a planned procedure from a planned act;
+      - a **join** section whose context names the thing the rows belong to,
+        where the caption restates that name over the detail table. The
+        markup cannot nest the two tables (StrucDoc.Td forbids it), so
+        naming the parent in the child's caption is what carries the
+        containment a reviewer could not otherwise see.
+
+    It stays empty for a flat section whose blocks are all the same kind of
+    thing -- the section title already says what they are.
     """
 
     context: dict[str, str]
@@ -194,10 +202,20 @@ def render_code_display(el: _Element | None) -> str:
     """
     Resolve a coded element to its human display string.
 
-    Tries, in order: the @displayName attribute, the text of an
-    <originalText> child (ignoring any <reference> it wraps), the
-    @displayName of the first <translation>, the bare @code, and finally
-    the @code of the first <translation>. Returns "" when none resolve.
+    Tries, in order: the text of an <originalText> child (ignoring any
+    <reference> it wraps), the @displayName attribute, the @displayName of
+    the first <translation>, the bare @code, and finally the @code of the
+    first <translation>. Returns "" when none resolve.
+
+    `originalText` is preferred over `@displayName` because it is what the
+    sender showed its own clinicians: a lab that codes AST as LOINC 1920-8
+    writes `displayName="Aspartate aminotransferase [Enzymatic activity/
+    volume] in Serum or Plasma"` and `<originalText>AST</originalText>`. Both
+    are correct; only one is what a PHA scanning a results table recognizes,
+    and the formal name is the one they can least afford to read twenty
+    times. The code and system are rendered alongside by
+    `render_coded_concept`, so nothing verifiable is lost by leading with the
+    plainer label.
 
     The translation fallbacks matter for immunizations and medications: a
     sender may put a nullFlavor on the primary CVX/RxNorm code and carry the
@@ -215,15 +233,15 @@ def render_code_display(el: _Element | None) -> str:
     if el is None:
         return ""
 
-    if display := _normalize(el.get("displayName")):
-        return display
-
     original_text = el.find("hl7:originalText", HL7_NS)
     if original_text is not None:
         # normalize-space gathers descendant text (skipping the <reference>
         # child, which has none) and collapses whitespace in one step
         if text := str(original_text.xpath("normalize-space(.)")):
             return text
+
+    if display := _normalize(el.get("displayName")):
+        return display
 
     if display := _first_xpath_str(el, "hl7:translation/@displayName"):
         return display
@@ -328,13 +346,47 @@ def render_performer(el: _Element | None) -> str:
         The performer's display name, or "".
     """
 
+    return _render_performer_preferring(
+        el,
+        "hl7:assignedEntity/hl7:assignedPerson/hl7:name",
+        "hl7:assignedEntity/hl7:representedOrganization/hl7:name",
+    )
+
+
+def render_performer_org(el: _Element | None) -> str:
+    """
+    Render a `<performer>` to the represented ORGANIZATION's display name.
+
+    The mirror of `render_performer`: same element, opposite preference.
+    For a resulted lab the question a PHA asks is "which laboratory ran
+    this?", and the answer is the organization -- the individual who
+    verified the battery is noise on a results table, and naming them
+    discloses a clinician the receiver did not need. The person is still
+    the fallback so a performer that carries only a name renders something.
+
+    Args:
+        el: A `<performer>` element, or None.
+
+    Returns:
+        The performing organization's display name, or "".
+    """
+
+    return _render_performer_preferring(
+        el,
+        "hl7:assignedEntity/hl7:representedOrganization/hl7:name",
+        "hl7:assignedEntity/hl7:assignedPerson/hl7:name",
+    )
+
+
+def _render_performer_preferring(el: _Element | None, *xpaths: str) -> str:
+    """
+    Render the first `<performer>` name found at `xpaths`, in order.
+    """
+
     if el is None:
         return ""
 
-    for xpath in (
-        "hl7:assignedEntity/hl7:assignedPerson/hl7:name",
-        "hl7:assignedEntity/hl7:representedOrganization/hl7:name",
-    ):
+    for xpath in xpaths:
         name = el.find(xpath, HL7_NS)
         if name is not None and (rendered := _render_name(name)):
             return rendered
@@ -350,8 +402,10 @@ def render_performer(el: _Element | None) -> str:
 # editable displayName, so a reader of the stylesheet-rendered HTML who never
 # opens the structured entries still gets a verifiable concept identifier;
 # the system name is resolved from the codeSystem OID, **not** the unreliable
-# codeSystemName attribute. HL7 admin/status vocabularies (statusCode,
-# interpretationCode) stay display-only via render_code_display
+# codeSystemName attribute -- except as a LAST resort, when the OID is a
+# proprietary one we cannot name and the alternative is showing a bare
+# integer. HL7 admin/status vocabularies (statusCode, interpretationCode)
+# stay display-only via render_code_display
 
 
 def render_coded_concept(el: _Element | None) -> str:
@@ -360,12 +414,21 @@ def render_coded_concept(el: _Element | None) -> str:
 
     The display half flows through the full `render_code_display` fallback
     chain. The code half is the element's own `@code`, qualified by the
-    human-readable system name resolved from `@codeSystem` (the OID).
+    human-readable system name resolved from `@codeSystem` (the OID), or --
+    when that OID is not one we can name -- by the sender's own
+    `@codeSystemName`.
 
         - code + known system -> "E. coli (SNOMED CT 112283007)"
+        - code + unknown OID, named by sender -> "16 (Epic.Result.Type 16)"
         - code + unknown system -> "E. coli (112283007)"
         - no human display, only a code -> "SNOMED CT 112283007"
         - nullFlavor / missing code -> display-only (no empty parens)
+
+    Preferring the OID keeps the naming consistent across senders who spell
+    the same system differently ("SNOMED-CT" vs "SNOMED CT"); reaching for
+    `@codeSystemName` only after that lookup fails costs nothing on codes we
+    recognize and is the difference between "16" and "Epic.Result.Type 16"
+    on the proprietary results rows PHAs have reported as unreadable.
 
     Args:
         el: A clinical coded element (<code>, <value xsi:type="CD">, ...), or None.
@@ -382,7 +445,9 @@ def render_coded_concept(el: _Element | None) -> str:
     if not code:
         return display
 
-    system = CODE_SYSTEM_DISPLAY_NAMES.get(el.get("codeSystem") or "")
+    system = CODE_SYSTEM_DISPLAY_NAMES.get(el.get("codeSystem") or "") or _normalize(
+        el.get("codeSystemName")
+    )
     qualified = f"{system} {code}" if system else code
     if display and display != code:
         return f"{display} ({qualified})"
@@ -405,6 +470,37 @@ def render_coded_concept(el: _Element | None) -> str:
 # display-only (no "(code)" suffix)--matching what pre-refined narratives show
 
 
+def _render_unit(unit: str | None) -> str:
+    """
+    Render a UCUM unit for display, unwrapping a pure annotation.
+
+    UCUM writes a unit that is really just a name for what is being counted
+    as a curly-brace annotation on the dimensionless unit: 60 tablets is
+    `value="60" unit="{tbl}"`. The braces are UCUM syntax, not part of the
+    label, and showing them to a reviewer reading a medication table is
+    noise. A unit that only wraps an annotation is unwrapped; anything else
+    (including a real unit that merely carries a trailing annotation, like
+    `mg{total}`) is left exactly as the sender wrote it.
+
+    Args:
+        unit: The `@unit` attribute value, or None.
+
+    Returns:
+        The display unit, or "".
+    """
+
+    if not unit:
+        return ""
+    stripped = unit.strip()
+    if (
+        stripped.startswith("{")
+        and stripped.endswith("}")
+        and "}" not in stripped[1:-1]
+    ):
+        return stripped[1:-1]
+    return stripped
+
+
 def _render_bound(bound: _Element) -> str:
     """
     Render one IVL low/high bound to a string.
@@ -414,6 +510,20 @@ def _render_bound(bound: _Element) -> str:
     case and keeps the unit on the value; otherwise the value is humanized as
     a TS.
 
+    A nullFlavored bound may still carry its number one level down, in a
+    `<translation>` whose `<originalText>` holds the unit:
+
+        <low nullFlavor="OTH">
+          <translation nullFlavor="OTH" value="49">
+            <originalText>IU/L</originalText>
+          </translation>
+        </low>
+
+    That is how Epic ships lab reference ranges whose units are not UCUM-
+    codable, and reading only the bound's own `@value` renders the whole
+    range blank. The translation is consulted ONLY when the bound itself has
+    no `@value`, so a conformant bound is never second-guessed.
+
     Args:
         bound: The `<low>` or `<high>` element.
 
@@ -421,11 +531,88 @@ def _render_bound(bound: _Element) -> str:
         The rendered bound, or "".
     """
 
+    source = bound
     value = bound.get("value")
     if not value:
-        return ""
-    unit = bound.get("unit")
-    return f"{value} {unit}" if unit else format_ts(value)
+        translation = bound.find("hl7:translation[@value]", HL7_NS)
+        if translation is None:
+            return ""
+        source, value = translation, translation.get("value")
+
+    if unit := _render_unit(source.get("unit")):
+        return f"{value} {unit}"
+    # a translation carries its unit as originalText, not @unit
+    if unit := _first_xpath_str(source, "hl7:originalText/text()"):
+        return f"{value} {unit}"
+    return format_ts(value or "")
+
+
+def _is_quantity_bound(bound: _Element | None) -> bool:
+    """
+    Return True if a bound carries a measurement rather than a timestamp.
+    """
+
+    if bound is None:
+        return False
+    # a translation-carried bound is the Epic reference-range shape, whose unit
+    # rides in <originalText> rather than on @unit
+    return bool(bound.get("unit")) or (
+        bound.find("hl7:translation[@value]", HL7_NS) is not None
+    )
+
+
+def _render_open_interval(el: _Element, low: _Element | None, rendered: str) -> str:
+    """
+    Render a one-sided interval, naming the side that is open.
+
+    A one-sided interval collapsed to its bare bound is the one date shape the
+    refiner cannot render honestly by accident: "2026-08-03" reads as "this
+    happened on that date" whether the source said "started then, no end
+    recorded" (`<low>` alone) or "ended then" (`<high>` alone). Those are
+    different clinical facts, and on Problems the first is the difference
+    between an active condition and a one-off note.
+
+    The wording splits on what is being bounded, because "onward" is
+    meaningless on a lab reference range:
+
+        time,     low  -> "2026-08-03 onward"
+        time,     high -> "until 2026-08-10"
+        quantity, low  -> "≥ 0 mg/dL"
+        quantity, high -> "≤ 1.2 mg/dL"
+
+    An HL7 V3 IVL bound is inclusive unless it says otherwise, so the
+    inclusive symbols are the default and `@inclusive="false"` earns the
+    strict ones. Nothing here asserts more than the source did: an open high
+    bound says the end was not recorded, NOT that the interval is ongoing --
+    which is why the wording is "onward" and never "to present".
+
+    Args:
+        el: The interval element, consulted for @xsi:type.
+        low: The `<low>` element when it is the side that rendered, else None.
+        rendered: The already-rendered bound string.
+
+    Returns:
+        The rendered one-sided interval.
+    """
+
+    high = None if low is not None else el.find("hl7:high", HL7_NS)
+    bound = low if low is not None else high
+
+    xsi_type = el.get(f"{{{_XSI}}}type")
+    if xsi_type == "IVL_PQ":
+        quantity = True
+    elif xsi_type == "IVL_TS":
+        quantity = False
+    else:
+        quantity = _is_quantity_bound(bound)
+
+    if not quantity:
+        return f"{rendered} onward" if low is not None else f"until {rendered}"
+
+    inclusive = (bound.get("inclusive") if bound is not None else None) != "false"
+    if low is not None:
+        return f"{'≥' if inclusive else '>'} {rendered}"
+    return f"{'≤' if inclusive else '<'} {rendered}"
 
 
 def render_typed_value(el: _Element | None) -> str:
@@ -459,7 +646,7 @@ def render_typed_value(el: _Element | None) -> str:
     # (doseQuantity and friends are PQ by the model)
     if xsi_type == "PQ" or (xsi_type is None and el.get("unit") is not None):
         val, unit = el.get("value"), el.get("unit")
-        return f"{val} {unit}".strip() if val else ""
+        return f"{val} {_render_unit(unit)}".strip() if val else ""
 
     # simple text (ST)
     if xsi_type == "ST":
@@ -476,7 +663,14 @@ def render_typed_value(el: _Element | None) -> str:
         hi = _render_bound(high) if high is not None else ""
         if lo and hi:
             return lo if lo == hi else f"{lo} to {hi}"
-        return lo or hi or ""
+        # exactly one side resolved (the other absent, or nullFlavored with
+        # nothing to read): name the open side rather than emit a bare value
+        # that reads as a point in time
+        if lo:
+            return _render_open_interval(el, low, lo)
+        if hi:
+            return _render_open_interval(el, None, hi)
+        return ""
 
     # periodic interval (PIVL_TS)--frequency
     period = el.find("hl7:period", HL7_NS)
@@ -504,17 +698,89 @@ def render_typed_value(el: _Element | None) -> str:
 #   "typed"   -> a polymorphic value element; hand it to render_typed_value
 #                (decides PQ/CD/ST/IVL/PIVL; CD values render as concepts)
 #   "perf"    -> a <performer>; hand it to render_performer (person, else org)
+#   "perf_org" -> a <performer> rendered as the represented ORGANIZATION,
+#                falling back to the person; hand it to render_performer_org
 #   "text"    -> xpath ends at an element; take its text content
+
+type FieldKind = Literal[
+    "attr", "coded", "interp", "concept", "typed", "perf", "perf_org", "text"
+]
+
+
+class FieldSource(NamedTuple):
+    """
+    One place to look for a field's value: a relative xpath and how to read it.
+    """
+
+    xpath: str  # RELATIVE to the anchor element passed to extract_fields
+    kind: FieldKind
 
 
 class FieldSpec(NamedTuple):
     """
-    One field to read off an anchor element: header, relative xpath, kind.
+    One field to read off an anchor element: header, xpath, kind, fallback.
+
+    `fallback` names a **second** location to try when the primary one renders
+    nothing. It carries its own `kind` because the two locations are rarely
+    the same shape -- a battery's result status is a coded `<value>` on an
+    IG template that most senders omit, while the answer a reader actually
+    wants is sitting on the organizer's own `statusCode/@code`. Keeping the
+    alternative in the field map (rather than branching in a join function)
+    keeps "where does this column come from" answerable by reading data.
+
+    It is deliberately ONE alternative, not a chain: every case real data has
+    produced is "the conformant location, else the one senders actually
+    populate." A third would be a sign the field wants its own renderer.
     """
 
     label: str  # becomes the column header
     xpath: str  # RELATIVE to the anchor element passed to extract_fields
-    kind: Literal["attr", "coded", "interp", "concept", "typed", "perf", "text"]
+    kind: FieldKind
+    fallback: FieldSource | None = None
+
+
+# each kind's renderer, keyed by the kind name. every one of them takes an
+# element and returns a string, so the extractor never branches on kind--it
+# looks the renderer up. "attr" is absent because its xpath lands on an
+# attribute (a string), not an element, and is handled before the lookup
+_FIELD_RENDERERS: dict[FieldKind, Callable[[_Element], str]] = {
+    "coded": render_code_display,
+    "interp": render_interpretation,
+    "concept": render_coded_concept,
+    "typed": render_typed_value,
+    "perf": render_performer,
+    "perf_org": render_performer_org,
+    "text": lambda el: _normalize(el.text),
+}
+
+
+def _read_source(anchor: _Element, source: FieldSource) -> str:
+    """
+    Read ONE field source off an anchor and stringify it per its kind.
+
+    Args:
+        anchor: The element the source's xpath is evaluated against.
+        source: The xpath + kind to read.
+
+    Returns:
+        The rendered value, or "" when the xpath finds nothing.
+    """
+
+    # HL7_XSI_NS (not HL7_NS) so a field-map xpath may discriminate on
+    # @xsi:type--e.g. splitting a medication's two effectiveTimes into
+    # the IVL_TS duration and the PIVL_TS frequency
+    results = anchor.xpath(source.xpath, namespaces=HL7_XSI_NS)
+    if not isinstance(results, list) or not results:
+        return ""
+
+    first = results[0]
+    if source.kind == "attr":
+        return str(first)
+
+    render = _FIELD_RENDERERS.get(source.kind)
+    if render is None or not isinstance(first, _Element):
+        return ""
+    return render(first)
 
 
 def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, str]:
@@ -524,6 +790,10 @@ def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, st
     No joining happens here — every xpath is relative to `anchor`. This is
     reused at every structural level by the join functions (organizer,
     procedure, observation all flow through this same call).
+
+    A spec carrying a `fallback` tries it only when the primary source
+    rendered nothing, so a column backed by an optional IG template can
+    still fill from wherever conformant senders actually put the answer.
 
     Args:
         anchor: The element each field xpath is evaluated against.
@@ -535,43 +805,10 @@ def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, st
 
     row: dict[str, str] = {}
     for spec in field_map:
-        # HL7_XSI_NS (not HL7_NS) so a field-map xpath may discriminate on
-        # @xsi:type--e.g. splitting a medication's two effectiveTimes into
-        # the IVL_TS duration and the PIVL_TS frequency
-        results = anchor.xpath(spec.xpath, namespaces=HL7_XSI_NS)
-        if not isinstance(results, list) or not results:
-            row[spec.label] = ""
-            continue
-
-        first = results[0]
-        if spec.kind == "attr":
-            row[spec.label] = str(first)
-        elif spec.kind == "coded":
-            row[spec.label] = (
-                render_code_display(first) if isinstance(first, _Element) else ""
-            )
-        elif spec.kind == "interp":
-            row[spec.label] = (
-                render_interpretation(first) if isinstance(first, _Element) else ""
-            )
-        elif spec.kind == "concept":
-            row[spec.label] = (
-                render_coded_concept(first) if isinstance(first, _Element) else ""
-            )
-        elif spec.kind == "typed":
-            row[spec.label] = (
-                render_typed_value(first) if isinstance(first, _Element) else ""
-            )
-        elif spec.kind == "perf":
-            row[spec.label] = (
-                render_performer(first) if isinstance(first, _Element) else ""
-            )
-        elif spec.kind == "text":
-            row[spec.label] = (
-                _normalize(first.text) if isinstance(first, _Element) else ""
-            )
-        else:
-            row[spec.label] = ""
+        value = _read_source(anchor, FieldSource(spec.xpath, spec.kind))
+        if not value and spec.fallback is not None:
+            value = _read_source(anchor, spec.fallback)
+        row[spec.label] = value
     return row
 
 
@@ -615,32 +852,67 @@ def _negated_prefix(source: _Element) -> str:
     return "Not administered: " if mood == "EVN" else "Not planned: "
 
 
-def _strip_entry_references(section: _Element) -> None:
+def _inline_original_text_references(section: _Element) -> None:
     """
-    Clear the entry references that the swapped-in narrative will strand.
+    Convert every `originalText`-by-reference under an entry to by-value.
 
-    Replacing the section narrative deletes the `xs:ID`s these references
-    point at, so every `#id` under an entry is about to dangle. Two kinds
-    live there and they are handled differently:
+    CDA permits `originalText` by value **or** by reference, and senders who
+    choose the latter park the human label in the narrative:
 
-      - a row-level `<text><reference/>`: the observation/act's link to
-        its narrative row. Removed wholesale; the assembler re-adds one
-        canonical `<text><reference>` per surviving row (see
-        `_relink_source`).
-      - a coding-level `<originalText><reference/>`: the sender's own
-        `originalText`-by-reference (CDA permits `originalText` by value
-        **or** by reference). Blanking it would leave an empty `<originalText/>`
-        and destroy the sender's coding provenance in the **shipped**
-        structured data. Instead the referenced narrative label is
-        resolved and inlined as `originalText` text--a lossless,
-        conformant by-reference -> by-value conversion that also lets
-        `render_code_display` read the label on any later pass.
+        <originalText><reference value="#problem13name"/></originalText>
 
-    Runs while the **original** narrative is still in place (the caller swaps
-    in the reconstruction afterward), so the `#id`s still resolve.
+    Two things need it inlined. The narrative is about to be replaced, which
+    deletes the `xs:ID` the `#id` points at -- blanking the reference would
+    leave an empty `<originalText/>` and destroy the sender's coding
+    provenance in the **shipped** structured data. And `render_code_display`
+    prefers `originalText` over `@displayName` precisely because it is the
+    plain-English label a reviewer recognizes; read before inlining, it finds
+    an empty element and falls through to the formal terminology name.
+
+    So this runs BEFORE the field extractor, not after: the conversion is
+    lossless and conformant either way, and doing it first is what makes the
+    label reach the rendered table. Requires the **original** narrative to
+    still be in place, which it is -- the caller swaps in the reconstruction
+    afterward.
+
+    Args:
+        section: The section whose entries should be inlined.
     """
 
     narrative_index = _index_narrative_ids(section)
+
+    refs = section.xpath(
+        ".//hl7:entry//hl7:originalText/hl7:reference", namespaces=HL7_NS
+    )
+    if not isinstance(refs, list):
+        return
+
+    for ref in refs:
+        if not isinstance(ref, _Element):
+            continue
+        parent = ref.getparent()
+        if parent is not None:
+            _inline_original_text(parent, ref, narrative_index)
+
+
+def _strip_row_references(section: _Element) -> None:
+    """
+    Remove the row-level narrative references the swap is about to strand.
+
+    A row-level `<text><reference/>` is the observation/act's link to its
+    narrative row. Replacing the narrative deletes the `xs:ID` it points at,
+    so each is removed wholesale and the assembler re-adds one canonical
+    `<text><reference>` per surviving row (see `_relink_source`).
+
+    Coding-level `originalText` references are NOT touched here --
+    `_inline_original_text_references` has already converted them to
+    by-value. This half is destructive, so it runs only once the caller has
+    committed to swapping the narrative; the inlining half is lossless and
+    runs earlier.
+
+    Args:
+        section: The section whose entries should be unlinked.
+    """
 
     refs = section.xpath(".//hl7:entry//hl7:reference", namespaces=HL7_NS)
     if not isinstance(refs, list):
@@ -649,12 +921,10 @@ def _strip_entry_references(section: _Element) -> None:
     for ref in refs:
         if not isinstance(ref, _Element):
             continue
-
         parent = ref.getparent()
         if parent is not None and etree.QName(parent).localname == "originalText":
-            _inline_original_text(parent, ref, narrative_index)
-        else:
-            remove_element(ref)
+            continue
+        remove_element(ref)
 
 
 def _index_narrative_ids(section: _Element) -> dict[str, str]:
@@ -745,16 +1015,36 @@ def _relink_source(source: _Element, row_id: str) -> None:
     _sub_element(text_element, "reference", value=f"#{row_id}")
 
 
-def _append_table(parent: _Element, columns: list[str], caption: str = "") -> _Element:
+# StrucDoc.Td permits no nested <table>, so a detail table cannot literally sit
+# inside its context table -- the two are siblings in the markup no matter what,
+# and a reviewer reading a Results section saw a panel table and a test table as
+# two peers rather than a battery and its members. what IS available is
+# @styleCode, which StrucDoc types as NMTOKENS and CDA R2 leaves open to
+# "x"-prefixed local extensions. "xallIndent" is the token Epic itself emits for
+# exactly this (it appears in the source narratives these reconstructions
+# replace), so a PHA stylesheet that renders one vendor's indent renders ours
+_SUBORDINATE_TABLE_STYLE: str = "xallIndent"
+
+
+def _append_table(
+    parent: _Element,
+    columns: list[str],
+    caption: str = "",
+    *,
+    style_code: str = "",
+) -> _Element:
     """
     Append a bordered <table> with a header row; return its <tbody>.
 
     A non-empty `caption` is emitted as the table's <caption>, which
     StrucDoc.Table requires FIRST — before <thead> — so it is written
-    before anything else is appended.
+    before anything else is appended. A non-empty `style_code` marks the
+    table as subordinate to the one above it.
     """
 
     table = _sub_element(parent, "table", border="1")
+    if style_code:
+        table.set("styleCode", style_code)
     if caption:
         _sub_element(table, "caption").text = caption
     thead = _sub_element(table, "thead")
@@ -801,7 +1091,14 @@ def render_section_text(
             for label in block.context:
                 _sub_element(context_row, "td").text = block.context[label] or ""
 
-        detail_body = _append_table(text, block.columns, block.caption)
+        # a block WITH context is a grouping entry and its members, so its
+        # detail table is subordinate; a flat block's table stands alone
+        detail_body = _append_table(
+            text,
+            block.columns,
+            block.caption,
+            style_code=_SUBORDINATE_TABLE_STYLE if block.context else "",
+        )
         for row in block.rows:
             row_seq += 1
             row_id = f"{REFINER_ID_PREFIX}{loinc}-{digits}-row{row_seq}"
@@ -835,7 +1132,8 @@ def render_section_text(
 # this?"--CDA allows performer on the organizer OR on the child observations,
 # so we reach for the first one anywhere under the panel rather than assume a
 # level (scoped to performer so it never picks up an author's organization).
-# render_performer resolves the person-or-organization shape
+# kind "perf_org" resolves it to the represented ORGANIZATION: the question is
+# which laboratory, not which technologist verified the battery
 _PANEL_PERFORMER = ".//hl7:performer"
 
 # - Laboratory Result Status (...4.418, CONF:4527-443/444) is a MAY component of the
@@ -852,10 +1150,20 @@ _LAB_RESULT_STATUS_VALUE = (
 )
 
 PANEL_FIELDS: list[FieldSpec] = [
-    FieldSpec("Panel", "hl7:code", "concept"),
+    FieldSpec("Panel name", "hl7:code", "concept"),
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),
-    FieldSpec("Performer", _PANEL_PERFORMER, "perf"),
-    FieldSpec("Result Status", _LAB_RESULT_STATUS_VALUE, "coded"),
+    FieldSpec("Performer", _PANEL_PERFORMER, "perf_org"),
+    # the IG template is a MAY that senders almost never emit, so the column
+    # read empty on every real document reviewed -- while the answer a PHA
+    # wanted ("completed") sat on the organizer's own statusCode, a SHALL
+    # that is always present. prefer the specific template, fall back to the
+    # one that is actually populated
+    FieldSpec(
+        "Result Status",
+        _LAB_RESULT_STATUS_VALUE,
+        "coded",
+        fallback=FieldSource("hl7:statusCode/@code", "attr"),
+    ),
 ]
 
 # context anchor: <procedure> (the specimen, a sibling of the observations)
@@ -874,12 +1182,19 @@ SPECIMEN_FIELDS: list[FieldSpec] = [
 # distinct column so a reader sees the result against its normal range
 RESULT_FIELDS: list[FieldSpec] = [
     FieldSpec("Test", "hl7:code", "concept"),
-    FieldSpec("Outcome", "hl7:value", "typed"),  # PQ, CD, ST — renderer decides
+    FieldSpec("Result value", "hl7:value", "typed"),  # PQ, CD, ST — renderer decides
     FieldSpec("Interpretation", "hl7:interpretationCode", "interp"),  # HL7 flag
+    # the sender's own <text> ("49 - 135 IU/L") is the last resort: it is an
+    # unparsed string rather than rendered bounds, so it reads differently
+    # from every other cell -- but a range the sender spelled out is strictly
+    # better than a blank cell when the structured bounds render nothing
     FieldSpec(
         "Reference Range",
         "hl7:referenceRange/hl7:observationRange/hl7:value",
         "typed",  # IVL_PQ — bounds render with units
+        fallback=FieldSource(
+            "hl7:referenceRange/hl7:observationRange/hl7:text", "text"
+        ),
     ),
     FieldSpec("Date(s)", "hl7:effectiveTime", "typed"),  # flat @value or IVL
 ]
@@ -921,12 +1236,43 @@ IMMUNIZATION_FIELDS: list[FieldSpec] = [
 # "hl7:effectiveTime" spec would render the window and silently drop the
 # frequency — the render_typed_value PIVL_TS branch was unreachable for
 # medications. split them by @xsi:type so each lands in its own column
+# a PIVL_TS is only a FREQUENCY if it actually carries a <period>. senders
+# ship `<effectiveTime xsi:type="PIVL_TS" operator="A" value="..."/>` -- a
+# periodic interval with no period, just a timestamp wearing the wrong type --
+# and splitting on @xsi:type alone filed that date under "Frequency" while
+# leaving the administration date blank. discriminate on the period, so each
+# column can only ever hold the kind of thing its header promises
+_FREQUENCY = "hl7:effectiveTime[@xsi:type='PIVL_TS'][hl7:period]"
+_ADMINISTRATION_TIME = "hl7:effectiveTime[not(@xsi:type='PIVL_TS' and hl7:period)]"
+
+# the SUPPLIED quantity ("60 tablets"), which is a different question from the
+# dose ("500 mg") -- it hangs off the Medication Supply Order/Dispense that the
+# Medication Activity relates to, not off the administration itself
+_SUPPLY_QUANTITY = "hl7:entryRelationship/hl7:supply/hl7:quantity"
+
 MEDICATION_FIELDS: list[FieldSpec] = [
     FieldSpec("Medication", _MANUFACTURED_MATERIAL_CODE, "concept"),
     FieldSpec("Dose", "hl7:doseQuantity", "typed"),  # monomorphic PQ
-    FieldSpec("Duration", "hl7:effectiveTime[not(@xsi:type='PIVL_TS')]", "typed"),
-    FieldSpec("Frequency", "hl7:effectiveTime[@xsi:type='PIVL_TS']", "typed"),
+    FieldSpec("Quantity", _SUPPLY_QUANTITY, "typed"),  # monomorphic PQ
+    # the low bound alone, NOT the rendered interval. an administration is
+    # given at a time, not over a window: senders that stamp a high bound put
+    # it minutes after the low (the end of the infusion, the moment the nurse
+    # closed the record), and rendering "19:00:00 to 19:27:00" reads as a
+    # duration that carries no clinical meaning. the source narratives this
+    # replaces label the column "date". falls back to the whole element for
+    # senders who write a flat <effectiveTime value=""/> with no bounds
+    FieldSpec(
+        "Date administered",
+        f"{_ADMINISTRATION_TIME}/hl7:low",
+        "typed",
+        fallback=FieldSource(_ADMINISTRATION_TIME, "typed"),
+    ),
+    FieldSpec("Frequency", _FREQUENCY, "typed"),
     FieldSpec("Route", "hl7:routeCode", "concept"),
+    # "completed" vs "aborted" is the difference between a drug that was given
+    # and one that was stopped, refused or cancelled -- statusCode is SHALL on
+    # Medication Activity, so this column costs nothing and is always present
+    FieldSpec("Status", "hl7:statusCode/@code", "attr"),
 ]
 
 # plan of treatment is the first heterogeneous section: five unrelated clinical
@@ -1036,6 +1382,10 @@ def reconstruct_results(section: _Element) -> list[Block]:
 
     for organizer in section.findall("hl7:entry/hl7:organizer", HL7_NS):
         context = extract_fields(organizer, PANEL_FIELDS)
+        # the DISPLAY half only: the context table one row up already carries
+        # the qualified concept, and repeating "(LOINC 105066-5)" in the
+        # caption directly above it is noise
+        panel_name = render_code_display(organizer.find("hl7:code", HL7_NS))
 
         procedure = organizer.find("hl7:component/hl7:procedure", HL7_NS)
         context |= (
@@ -1077,6 +1427,14 @@ def reconstruct_results(section: _Element) -> list[Block]:
                     context=context,
                     columns=[spec.label for spec in RESULT_FIELDS],
                     rows=rows,
+                    # names the battery these rows belong to. a panel that
+                    # resolved to nothing gets the generic caption rather than
+                    # a dangling "Tests in panel: "
+                    caption=(
+                        f"Tests in panel: {panel_name}"
+                        if panel_name
+                        else "Tests in panel"
+                    ),
                 )
             )
 
@@ -1332,6 +1690,155 @@ def reconstruct_plan_of_treatment(section: _Element) -> list[Block]:
 
 
 # NOTE:
+# LAYER 3 — THE GENERIC FALLBACK
+# =============================================================================
+# a per-section reconstructor knows one shape. It anchors on the arrangement
+# the IG describes -- Results on `entry/organizer`, Problems on `entry/act` --
+# and an entry arranged differently produces no row, even though it matched
+# and survived pruning. That is not hypothetical: a Problem Observation under a
+# non-SUBJ entryRelationship, or a Result Observation sitting directly under
+# `<entry>` with no organizer, both match, both survive, and both render
+# nothing.
+#
+# Silently is the problem. The section still reports "reconstructed", every
+# surviving entry is still stamped typeCode="DRIV" -- the document asserting
+# its narrative is derived from and clinically equivalent to those entries --
+# and one of them is missing from the narrative entirely. The assertion
+# becomes false and nothing says so.
+#
+# So the fallback is not a separate path taken when reconstruction "fails". It
+# runs after every reconstruction, over whatever entries the section's own
+# reconstructor did not represent, and renders them in reduced form: the
+# concept, when it happened, its status. Enough for a reviewer to see that
+# something is there and what it is. The block is captioned, and the section's
+# provenance footnote reports that it happened, so a narrative that looks thin
+# says why rather than leaving the reader to wonder.
+
+_GENERIC_CAPTION: str = (
+    "Additional entries — shown in reduced form; "
+    "full reconstruction unavailable for this structure"
+)
+
+# where a clinical statement carries the concept that names it, in the order
+# worth trying. `code` covers observations, acts and procedures; `value` covers
+# an assertion-coded observation whose meaning is in the value; the
+# manufacturedMaterial path covers substanceAdministration, which carries no
+# code of its own. This is a renderer rather than a FieldSpec fallback chain
+# because FieldSpec deliberately allows exactly ONE alternative -- a field
+# wanting three is a field that wants its own function
+_GENERIC_CONCEPT_XPATHS: tuple[str, ...] = (
+    "hl7:code",
+    "hl7:value",
+    "hl7:consumable/hl7:manufacturedProduct/hl7:manufacturedMaterial/hl7:code",
+)
+
+
+def render_entry_concept(statement: _Element) -> str:
+    """
+    Render the concept that identifies an arbitrary clinical statement.
+
+    Tries the locations a CDA clinical statement puts its identifying concept,
+    in order, and returns the first that resolves to anything. Used only by the
+    generic fallback, which by definition does not know what kind of statement
+    it is looking at.
+
+    Args:
+        statement: The clinical statement element (the child of `<entry>`).
+
+    Returns:
+        The rendered concept, or "" when none of the locations resolve.
+    """
+
+    for xpath in _GENERIC_CONCEPT_XPATHS:
+        element = statement.find(xpath, HL7_NS)
+        if element is not None and (rendered := render_coded_concept(element)):
+            return rendered
+    return ""
+
+
+# the concept column is deliberately NOT a FieldSpec: it comes from
+# render_entry_concept's location search, not from a single xpath, and a spec
+# with an empty xpath would be a lie in the field-map data
+_GENERIC_ITEM_COLUMN: str = "Item"
+
+GENERIC_FIELDS: list[FieldSpec] = [
+    FieldSpec("Date", "hl7:effectiveTime", "typed"),
+    FieldSpec("Status", "hl7:statusCode/@code", "attr"),
+]
+
+_GENERIC_COLUMNS: list[str] = [
+    _GENERIC_ITEM_COLUMN,
+    *(spec.label for spec in GENERIC_FIELDS),
+]
+
+
+def _entry_statement(entry: _Element) -> _Element | None:
+    """
+    Return the clinical statement an `<entry>` wraps, or None if it wraps none.
+    """
+
+    return next((child for child in entry if isinstance(child.tag, str)), None)
+
+
+def _unrepresented_statements(section: _Element, blocks: list[Block]) -> list[_Element]:
+    """
+    Return the clinical statements no reconstructed row already covers.
+
+    Identity is compared by tree path rather than by object: lxml builds
+    element proxies on demand, so two lookups of the same node can hand back
+    different Python objects and `id()`/`is` are not dependable across them.
+    `getpath` is derived from the node's position, so it is stable.
+
+    An entry counts as represented when a row's source is the entry's own
+    statement OR anything beneath it -- the join sections anchor their rows on
+    child observations, not on the entry.
+
+    Args:
+        section: The post-prune section.
+        blocks: The blocks the section's own reconstructor produced.
+
+    Returns:
+        One statement element per unrepresented entry, in document order.
+    """
+
+    tree = section.getroottree()
+    represented = {tree.getpath(row.source) for block in blocks for row in block.rows}
+
+    unrepresented: list[_Element] = []
+    for entry in section.findall("hl7:entry", HL7_NS):
+        statement = _entry_statement(entry)
+        if statement is None:
+            continue
+        prefix = tree.getpath(entry) + "/"
+        if any(path.startswith(prefix) for path in represented):
+            continue
+        unrepresented.append(statement)
+    return unrepresented
+
+
+def _generic_block(statements: list[_Element]) -> Block:
+    """
+    Build the captioned reduced-form block for unrepresented statements.
+    """
+
+    rows = [
+        DetailRow(
+            source=statement,
+            values={_GENERIC_ITEM_COLUMN: render_entry_concept(statement)}
+            | extract_fields(statement, GENERIC_FIELDS),
+            negated=statement.get("negationInd") == "true",
+        )
+        for statement in statements
+    ]
+    return Block(
+        context={},
+        columns=_GENERIC_COLUMNS,
+        rows=rows,
+        caption=_GENERIC_CAPTION,
+    )
+
+
+# NOTE:
 # DISPATCH + PUBLIC ENTRY
 # =============================================================================
 # convention over container: a flat LOINC -> function dict relates the
@@ -1351,19 +1858,36 @@ type NarrativeReconstructionFallback = Literal[
 ]
 
 
+class ReconstructedNarrative(NamedTuple):
+    """
+    A rebuilt `<text>` plus how much of it the generic fallback had to cover.
+
+    `reduced_entry_count` is what the caller turns into the section's
+    provenance outcome: zero means every surviving entry was reconstructed by
+    the section's own reconstructor, and anything higher means that many
+    entries are present in reduced form and the reader should know it.
+    """
+
+    text: _Element
+    reduced_entry_count: int
+
+
 def reconstruct_narrative(
     section: _Element,
     *,
     augmentation_timestamp: str,
-) -> _Element | NarrativeReconstructionFallback:
+) -> ReconstructedNarrative | NarrativeReconstructionFallback:
     """
     Reconstruct a section's narrative <text> from its surviving entries.
 
-    Dispatches on the section's LOINC code. Returns a detached, namespace-
-    qualified <text> ready to replace the section's existing narrative, or
-    None when the section has no registered reconstructor or nothing
-    survived to reconstruct — in which case the caller falls back to the
-    removal notice rather than leaving a stale narrative.
+    Dispatches on the section's LOINC code, then sweeps up whatever the
+    dispatched reconstructor did not cover into a captioned reduced-form
+    block (see LAYER 3 above), so every surviving entry is represented.
+
+    Returns a `ReconstructedNarrative` carrying the detached, namespace-
+    qualified <text> and how many entries needed the reduced form, or a
+    fallback literal when the section has no registered reconstructor or
+    nothing survived to reconstruct at all.
 
     This function MUTATES `section`: it strips the now-dangling narrative
     references off the surviving entries, relinks each one to the row that
@@ -1377,7 +1901,7 @@ def reconstruct_narrative(
             section's provenance footnote.
 
     Returns:
-        A detached <text>, or None.
+        A `ReconstructedNarrative`, or a fallback literal.
     """
 
     loinc_codes = section.xpath("hl7:code/@code", namespaces=HL7_NS)
@@ -1389,12 +1913,28 @@ def reconstruct_narrative(
     if reconstruct is None or loinc is None:
         return "reconstruction_unavailable"
 
+    # inline BEFORE extracting: a sender's plain-English label may be sitting
+    # in the narrative behind an originalText reference, and the field
+    # extractor can only read it once it is by-value. lossless, so it is safe
+    # on the path where nothing turns out to be reconstructable
+    _inline_original_text_references(section)
+
     blocks = reconstruct(section)
+
+    # anything the section's own reconstructor did not cover goes into the
+    # captioned reduced-form block, so no surviving entry is left out of the
+    # narrative the document is about to call DRIV
+    if reduced := _unrepresented_statements(section, blocks):
+        blocks = [*blocks, _generic_block(reduced)]
+
     if not any(block.rows for block in blocks):
         return "no_matching_entries"
 
-    _strip_entry_references(section)
+    _strip_row_references(section)
     _mark_entries_derived(section)
-    return render_section_text(
-        blocks, loinc=loinc, augmentation_timestamp=augmentation_timestamp
+    return ReconstructedNarrative(
+        text=render_section_text(
+            blocks, loinc=loinc, augmentation_timestamp=augmentation_timestamp
+        ),
+        reduced_entry_count=len(reduced),
     )
