@@ -11,17 +11,11 @@ import {
   // useCreateDraftsFromActiveConfigurations,
   useGetConfigurationsToUpdate,
 } from '../../api/tes/tes';
-
-interface TesUpdateNavigationState {
-  tesUpdateResult: {
-    updatedCount: number;
-    createdCount: number;
-    totalCount: number;
-  };
-}
+import { useToast } from '../../hooks/useToast';
 
 export function UpdateConfigurations() {
   const navigate = useNavigate();
+  const showToast = useToast();
 
   const {
     data: response,
@@ -78,8 +72,7 @@ export function UpdateConfigurations() {
   //   applyExistingDraftUpdates.isPending ||
   //   createDraftsFromActiveConfigurations.isPending;
 
-  const isSubmitting =
-      applyExistingDraftUpdates.isPending
+  const isSubmitting = applyExistingDraftUpdates.isPending;
 
   function handleIndividualSelection(configurationId: string) {
     setSelectedConfigurations((currentSelection) => {
@@ -188,16 +181,14 @@ export function UpdateConfigurations() {
       setSelectedConfigurations([]);
       setConfirmationModalOpen(false);
 
-      const navigationState: TesUpdateNavigationState = {
-        tesUpdateResult: {
-          updatedCount,
-          createdCount,
-          totalCount,
-        },
-      };
+      await navigate('/configurations');
 
-      navigate('/configurations', {
-        state: navigationState,
+      showToast({
+        heading: 'Configurations have been updated',
+        body:
+          totalCount === 1
+            ? '1 configuration was updated.'
+            : `${totalCount} configurations were updated.`,
       });
     } catch {
       /*
@@ -221,9 +212,9 @@ export function UpdateConfigurations() {
       </h2>
 
       <p className="max-w-[45rem]">
-        Choose existing drafts to update and/or active configurations to copy
-        into new drafts using the latest TES release. Drafts will need to be
-        activated before the updated code sets are used to refine eCRs.
+        Update existing drafts and/or create a for existing configurations to
+        apply the latest TES release. Drafts will need to be activated in order
+        to receive the most up to date eCRs.
       </p>
 
       <div className="mt-4 bg-white px-10 py-6 lg:max-w-[75%]">
