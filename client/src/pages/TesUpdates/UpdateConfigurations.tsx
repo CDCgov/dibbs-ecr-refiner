@@ -211,7 +211,7 @@ export function UpdateConfigurations() {
         Update to latest release
       </h2>
 
-      <p className="max-w-[45rem]">
+      <p className="max-w-180">
         Update existing drafts and/or create a for existing configurations to
         apply the latest TES release. Drafts will need to be activated in order
         to receive the most up to date eCRs.
