@@ -275,8 +275,7 @@ async def get_codes_db(
 
 
 async def set_codes_status_beyond_rendered_db(
-    configuration_id: UUID,
-    configuration_primary_condition_id: UUID,
+    config: DbConfiguration,
     status: Literal["included", "excluded"],
     code_ids_to_skip: list[UUID],
     filters: FilterInput,
@@ -294,8 +293,7 @@ async def set_codes_status_beyond_rendered_db(
     as these cannot be excluded.
 
     Args:
-        configuration_id (UUID): ID of the configuration
-        configuration_primary_condition_id (UUID): ID of the primary condition
+        config (DbConfiguration): The DB configuration object
         status (Literal['included', 'excluded']): Set codes as 'included' or 'excluded'
         code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been excluded from the bulk operation
         filters (FilterInput): Filters to apply in order to build the bulk selection "complete" set
@@ -306,13 +304,13 @@ async def set_codes_status_beyond_rendered_db(
     """
 
     cond_clauses, cond_params = _build_filter_condition_clauses(
-        filters=filters, configuration_id=configuration_id
+        filters=filters, configuration_id=config.id
     )
 
     cond_params["code_ids_to_skip"] = code_ids_to_skip
 
     if status == "excluded":
-        cond_params["primary_condition_id"] = configuration_primary_condition_id
+        cond_params["primary_condition_id"] = config.condition_id
 
         query = f"""
         INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
@@ -370,12 +368,11 @@ async def set_codes_status_beyond_rendered_db(
 
 
 async def _check_update_operation_excludes_rsg_codes(
+    primary_condition_id: UUID,
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
 ):
-    params = {
-        "code_ids": code_ids,
-    }
+    params = {"code_ids": code_ids, "primary_condition_id": primary_condition_id}
     rsg_check_query = """
         SELECT DISTINCT
             cc.condition_id,
@@ -396,7 +393,7 @@ async def _check_update_operation_excludes_rsg_codes(
 
 
 async def set_codes_status_within_rendered_set_db(
-    configuration_id: UUID,
+    config: DbConfiguration,
     status: Literal["included", "excluded"],
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
@@ -412,7 +409,7 @@ async def set_codes_status_within_rendered_set_db(
     as these cannot be excluded.
 
     Args:
-        configuration_id (UUID): The configuration ID
+        config (DbConfiguration): The DB configuration ID
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
@@ -421,12 +418,13 @@ async def set_codes_status_within_rendered_set_db(
         list[UUID]: List of impacted code IDs
     """
     params = {
-        "configuration_id": configuration_id,
+        "configuration_id": config.id,
         "code_ids": code_ids,
     }
 
     if status == "excluded":
         await _check_update_operation_excludes_rsg_codes(
+            primary_condition_id=config.condition_id,
             code_ids=code_ids,
             db=db,
         )

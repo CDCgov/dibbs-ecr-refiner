@@ -1008,8 +1008,11 @@ class TestConfigurationsExclusions:
 
         # attempting to exclude codes on an active config should fail
         resp = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[c["id"] for c in excludable_codes],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
         )
         assert resp.status_code == status.HTTP_409_CONFLICT
 
@@ -1020,8 +1023,11 @@ class TestConfigurationsExclusions:
         assert resp.status_code == status.HTTP_200_OK
 
         resp = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[c["id"] for c in excludable_codes],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
         )
         assert resp.status_code == status.HTTP_409_CONFLICT
 
@@ -1058,8 +1064,11 @@ class TestConfigurationsExclusions:
 
         # set all excludable codes as 'excluded'
         resp = await authed_client.post(
-            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
-            json=[code["id"] for code in excludable_codes],
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
         )
         assert resp.status_code == status.HTTP_200_OK
 
@@ -1128,15 +1137,21 @@ class TestConfigurationsExclusions:
 
         # attempting to exclude primary RSG codes should fail
         resp = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[c["id"] for c in primary_rsg_codes],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in primary_rsg_codes],
+                "code_ids_to_skip": [],
+            },
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
         # non-primary RSG codes can be excluded
         resp = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[c["id"] for c in excludable_codes],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
         )
         assert resp.status_code == status.HTTP_200_OK
 
@@ -1215,8 +1230,11 @@ class TestConfigurationsExclusions:
         included_ids = {code["id"] for code in excludable_codes[half:]}
 
         resp = await authed_client.post(
-            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded",
-            json=list(excluded_ids),
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": list(excluded_ids),
+                "code_ids_to_skip": [],
+            },
         )
         assert resp.status_code == status.HTTP_200_OK
 

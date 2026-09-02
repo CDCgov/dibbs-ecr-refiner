@@ -154,8 +154,7 @@ async def set_codes_status(
     try:
         if update_beyond_rendered_set:
             impacted_code_ids = await set_codes_status_beyond_rendered_db(
-                configuration_id=config.id,
-                configuration_primary_condition_id=config.condition_id,
+                config=config,
                 code_ids_to_skip=code_ids_to_skip,
                 status=status,
                 filters=filters,
@@ -163,7 +162,7 @@ async def set_codes_status(
             )
         else:
             impacted_code_ids = await set_codes_status_within_rendered_set_db(
-                configuration_id=config.id,
+                config=config,
                 status=status,
                 code_ids=code_ids,
                 db=db,
