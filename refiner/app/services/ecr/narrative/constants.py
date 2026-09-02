@@ -17,10 +17,22 @@ REMOVE_SECTION_MESSAGE: Final[str] = (
     "Section details have been removed as requested by jurisdiction for this condition."
 )
 
-REMOVE_NARRATIVE_MESSAGE: Final[str] = (
+# the removal notice is two claims, and only the first always holds. a
+# narrative-only section (Chief Complaint, Reason for Visit, ...) has no coded
+# entries to preserve by definition, so the second sentence is appended only
+# when the section actually still carries entries -- see
+# writers.replace_narrative_with_removal_notice
+NARRATIVE_REMOVED_MESSAGE: Final[str] = (
     "Section narrative has been removed from this refined document as "
-    "configured by jurisdiction. Clinical entries are preserved for "
-    "machine processing."
+    "configured by jurisdiction."
+)
+
+ENTRIES_PRESERVED_SENTENCE: Final[str] = (
+    " Clinical entries are preserved for machine processing."
+)
+
+REMOVE_NARRATIVE_MESSAGE: Final[str] = (
+    NARRATIVE_REMOVED_MESSAGE + ENTRIES_PRESERVED_SENTENCE
 )
 
 MINIMAL_SECTION_MESSAGE: Final[str] = (

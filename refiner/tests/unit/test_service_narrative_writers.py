@@ -5,10 +5,15 @@ from lxml.etree import _Element
 from app.services.ecr.model import HL7_NS
 from app.services.ecr.narrative.constants import (
     MINIMAL_SECTION_MESSAGE,
+    NARRATIVE_REMOVED_MESSAGE,
     REFINER_OUTPUT_TITLE,
+    REMOVE_NARRATIVE_MESSAGE,
     REMOVE_SECTION_MESSAGE,
 )
-from app.services.ecr.narrative.writers import create_minimal_section
+from app.services.ecr.narrative.writers import (
+    create_minimal_section,
+    replace_narrative_with_removal_notice,
+)
 
 # NOTE:
 # MINIMAL SECTION STUB — what a PHA sees for a section they switched off
@@ -115,3 +120,52 @@ def test_minimal_section_builds_a_narrative_when_the_section_had_none() -> None:
 
     order = [etree.QName(c).localname for c in section if isinstance(c.tag, str)]
     assert order == ["code", "title", "text"]
+
+
+# NOTE:
+# THE REMOVAL NOTICE MAKES A CLAIM ABOUT ENTRIES
+# =============================================================================
+# "Clinical entries are preserved for machine processing" is only true when the
+# entries actually survived. A review of real refined output caught sections
+# carrying nullFlavor="NI" and zero entries while telling PHAs exactly that, so
+# the two situations now carry different text
+
+
+def test_configured_removal_says_the_entries_are_still_there() -> None:
+    section = _stub_section(_STUB_ENTRY)
+
+    replace_narrative_with_removal_notice(section, removal_reason="configured")
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert REMOVE_NARRATIVE_MESSAGE in rendered
+    # and they are: this path does not prune
+    assert section.findall("hl7:entry", HL7_NS)
+
+
+def test_configured_removal_on_a_section_with_no_entries_makes_no_claim() -> None:
+    # a narrative-only section (Chief Complaint, Reason for Visit, ...) has no
+    # coded entries by definition. "removed as configured" is the whole story;
+    # there is nothing preserved to mention
+    section = _stub_section()
+
+    replace_narrative_with_removal_notice(section, removal_reason="configured")
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert NARRATIVE_REMOVED_MESSAGE in rendered
+    assert "preserved for machine processing" not in rendered
+
+
+def test_no_match_removal_does_not_claim_preserved_entries() -> None:
+    # the caller has already pruned every entry by the time it reaches here
+    section = _stub_section()
+
+    replace_narrative_with_removal_notice(section, removal_reason="no_match")
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert MINIMAL_SECTION_MESSAGE in rendered
+    assert "preserved for machine processing" not in rendered
+
+
+def test_the_two_notices_are_not_the_same_text() -> None:
+    # they were one string, which is how the false claim reached production
+    assert MINIMAL_SECTION_MESSAGE != REMOVE_NARRATIVE_MESSAGE

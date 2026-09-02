@@ -16,6 +16,7 @@ from app.services.ecr.model import (
     SectionSource,
 )
 from app.services.ecr.narrative.constants import (
+    MINIMAL_SECTION_MESSAGE,
     PROVENANCE_OUTCOME_NOTES,
     REMOVE_NARRATIVE_MESSAGE,
 )
@@ -299,10 +300,12 @@ class TestRefiningService:
         assert problems_section.get("nullFlavor") == "NI"
 
         # entries should be pruned and the narrative replaced with the
-        # removal notice
+        # no-match notice — nothing survived, so the stub must not claim
+        # the coded data is still here
         assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
         rendered = etree.tostring(problems_section, encoding="unicode")
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
 
     async def test_refine_no_matches_narrative_retain_v1_1(
         self,
@@ -476,8 +479,9 @@ class TestRefiningService:
         assert problems_section.get("nullFlavor") == "NI"
         # entries pruned
         assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
-        # narrative replaced with removal notice
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        # narrative replaced with the no-match notice
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
         # footnote shows the negative branch outcome
         assert (
             PROVENANCE_OUTCOME_NOTES[
@@ -533,8 +537,9 @@ class TestRefiningService:
         assert results_section.get("nullFlavor") == "NI"
         # entries pruned
         assert results_section.findall("hl7:entry", namespaces=HL7_NS) == []
-        # narrative replaced with the removal notice
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        # narrative replaced with the no-match notice
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
         assert (
             PROVENANCE_OUTCOME_NOTES[
                 SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
@@ -1054,9 +1059,10 @@ class TestRefiningService:
         entries = imm_section.xpath(".//hl7:entry", namespaces=HL7_NS)
         assert len(entries) == 0
 
-        # narrative replaced with the removal notice
+        # narrative replaced with the no-match notice
         rendered = etree.tostring(imm_section, encoding="unicode")
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
 
     # NOTE:
     # RR REFINEMENT TESTS

@@ -168,7 +168,11 @@ def process(
                 # licence to rewrite the section; keep-on-match is far closer
                 # to the spirit of that grant than handing back the
                 # unrefined original.
-                replace_narrative_with_removal_notice(section, namespaces)
+                # nothing matched, so every entry was just pruned — the notice must
+                # not claim the coded data is still here
+                replace_narrative_with_removal_notice(
+                    section, namespaces, removal_reason="no_match"
+                )
                 return SectionRunResult(
                     matches_found=False,
                     narrative_disposition="removed",
