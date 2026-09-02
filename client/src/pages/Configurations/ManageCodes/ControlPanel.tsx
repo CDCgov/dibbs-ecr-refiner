@@ -72,12 +72,12 @@ export function ControlPanel({
   // between the selected rows and the rendered ones, which we need in cases
   // where bulk selection is applied to "all but the selected" codes
 
-  const deselectedCodes = renderedCodes
+  const deselectedCodesIds = renderedCodes
     .filter((c) => !c.is_custom)
     .map((c) => c.id)
     .filter((id) => !selectedCodeIds.has(id));
 
-  const deselectedCustomCodes = renderedCodes
+  const deselectedCustomCodesIds = renderedCodes
     .filter((c) => c.is_custom)
     .map((c) => c.id)
     .filter((id) => !selectedCodeIds.has(id));
@@ -96,7 +96,7 @@ export function ControlPanel({
         },
         data: {
           code_ids: codeSetCodeIds,
-          code_ids_to_skip: deselectedCodes,
+          code_ids_to_skip: deselectedCodesIds,
         },
       },
 
@@ -134,8 +134,9 @@ export function ControlPanel({
     ? formatSelectedCodeCount(
         filters,
         selectedCodeIds.size,
-        deselectedCodes.length,
-        deselectedCustomCodes.length,
+        deselectedCodesIds.length,
+        deselectedCustomCodesIds.length,
+        renderedCodes.length,
         codeCounts?.data.total_code_count
       )
     : selectedCodeIds.size;
@@ -186,10 +187,11 @@ export function ControlPanel({
             {hasCustomCodesSelected ? (
               <CustomCodeDeletionMenu
                 configurationId={configurationId}
-                customCodeIds={selectedCustomCodes.map((cc) => cc.id)}
                 clearSelections={clearSelections}
                 allSelected={allSelected}
-                deselectedCustomCodes={deselectedCustomCodes}
+                selectedCustomCodeIds={selectedCustomCodes.map((c) => c.id)}
+                deselectedCustomCodeIds={deselectedCustomCodesIds}
+                renderedCodesCount={renderedCodes.length}
               />
             ) : null}
           </div>
@@ -201,40 +203,48 @@ export function ControlPanel({
 
 interface CustomCodeDeletionMenuProps {
   configurationId: string;
-  customCodeIds: string[];
-  deselectedCustomCodes: string[];
   allSelected: boolean;
   clearSelections: () => void;
+  selectedCustomCodeIds: string[];
+  deselectedCustomCodeIds: string[];
+  renderedCodesCount: number;
 }
 
 function CustomCodeDeletionMenu({
   configurationId,
-  customCodeIds,
   clearSelections,
   allSelected,
-  deselectedCustomCodes,
+  selectedCustomCodeIds,
+  deselectedCustomCodeIds,
+  renderedCodesCount,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-
   const { data: codeCounts } = useGetCodeCounts(configurationId);
 
-  let customCodeCounts = customCodeIds.length;
+  let totalCustomCodes = selectedCustomCodeIds.length;
   if (allSelected && codeCounts?.data.total_custom_codes_count) {
-    customCodeCounts =
-      codeCounts.data.total_custom_codes_count - deselectedCustomCodes.length;
+    totalCustomCodes = codeCounts.data.total_custom_codes_count;
   }
+
+  const deletePastCursor =
+    allSelected && renderedCodesCount > CodesLimitResponseValue.codes_limit;
+
+  const customCodesToDeleteCount = deletePastCursor
+    ? totalCustomCodes - deselectedCustomCodeIds.length
+    : selectedCustomCodeIds.length;
 
   return (
     <>
       <CustomCodeDeletionModal
+        configurationId={configurationId}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        customCodeIds={customCodeIds}
         clearSelections={clearSelections}
-        configurationId={configurationId}
-        allSelected={allSelected}
-        deselectedCustomCodes={deselectedCustomCodes}
-        customCodeCount={customCodeCounts}
+        totalCustomCodes={totalCustomCodes}
+        selectedCustomCodeIds={selectedCustomCodeIds}
+        deselectedCustomCodeIds={deselectedCustomCodeIds}
+        deletePastCursor={deletePastCursor}
+        customCodesToDeleteCount={customCodesToDeleteCount}
       />
       <Menu as="div" className="relative">
         <MenuButton
@@ -257,7 +267,7 @@ function CustomCodeDeletionMenu({
               onClick={() => setIsOpen(true)}
             >
               <DeleteIcon />
-              Delete {customCodeCounts} custom codes
+              Delete {customCodesToDeleteCount} custom codes
             </Button>
           </MenuItem>
         </BaseMenuItems>
@@ -269,23 +279,24 @@ function CustomCodeDeletionMenu({
 interface CustomCodeDeletionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customCodeIds: string[];
-  deselectedCustomCodes: string[];
-  allSelected: boolean;
   configurationId: string;
   clearSelections: () => void;
-  customCodeCount: number;
+  totalCustomCodes: number;
+  selectedCustomCodeIds: string[];
+  deselectedCustomCodeIds: string[];
+  deletePastCursor: boolean;
+  customCodesToDeleteCount: number;
 }
 
 function CustomCodeDeletionModal({
   isOpen,
   onClose,
-  customCodeIds,
-  deselectedCustomCodes,
-  allSelected,
   configurationId,
   clearSelections,
-  customCodeCount,
+  deletePastCursor,
+  selectedCustomCodeIds,
+  deselectedCustomCodeIds,
+  customCodesToDeleteCount,
 }: CustomCodeDeletionModalProps) {
   const queryClient = useQueryClient();
   const { mutate } = useDeleteCustomCodes();
@@ -296,13 +307,13 @@ function CustomCodeDeletionModal({
       {
         configurationId,
         data: {
-          ids: customCodeIds,
-          ids_to_skip: deselectedCustomCodes,
-          delete_all: allSelected,
+          ids: selectedCustomCodeIds,
+          ids_to_skip: deselectedCustomCodeIds,
+          delete_all: deletePastCursor,
         },
       },
       {
-        onSuccess: async () => {
+        onSuccess: async (resp) => {
           await queryClient.invalidateQueries({
             queryKey: getGetCodesInfiniteQueryKey(configurationId),
           });
@@ -314,7 +325,7 @@ function CustomCodeDeletionModal({
           });
           toast({
             heading: 'Codes updated',
-            body: `${customCodeCount} custom codes deleted.`,
+            body: `${resp.data.length} custom codes deleted.`,
           });
           clearSelections();
         },
@@ -332,7 +343,9 @@ function CustomCodeDeletionModal({
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
       <ModalHeader>
-        <ModalTitle>{customCodeCount} custom codes will be deleted</ModalTitle>
+        <ModalTitle>
+          {customCodesToDeleteCount} custom codes will be deleted
+        </ModalTitle>
       </ModalHeader>
       <ModalBody>
         <p>
@@ -350,7 +363,7 @@ function CustomCodeDeletionModal({
               onClose();
             }}
           >
-            Delete {customCodeCount} codes
+            Delete {customCodesToDeleteCount} codes
           </Button>
           <Button
             variant="unstyled"
@@ -380,7 +393,10 @@ function calculateCounts(
   total_code_count: number,
   total_custom_codes_count: number
 ): CountResult {
-  if (allSelected) {
+  if (
+    allSelected &&
+    renderedCodes.length > CodesLimitResponseValue.codes_limit
+  ) {
     // If in the all selected case, start with the totals as fetched from the
     // code counts hook and tally any custom codes we've selected. Forbid exclusion
     // only if we've down-selected to a subset with only custom codes
@@ -509,22 +525,32 @@ function formatSelectedCodeCount(
   selectedCodeCount: number,
   deselectedCodesCount: number,
   deselectedCustomCodesCount: number,
+  renderedCodeCount: number,
   totalCodeCount?: number
 ): string {
+  // If the rendered code count is under the pagination limit, just return
+  // the selected values
+  if (renderedCodeCount < CodesLimitResponseValue.codes_limit) {
+    return selectedCodeCount.toString();
+  }
+
+  // Otherwise, check the search filtering and apply specific formatting
+  // in the > pagination case
   if (filters.search) {
     return selectedCodeCount > CodesLimitResponseValue.codes_limit
       ? `${CodesLimitResponseValue.codes_limit}+`
       : selectedCodeCount.toString();
   }
 
+  // Otherwise, check the active filters and tabulate the values
   const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
 
-  const isFilterActive =
+  const atLeastOneFilterActive =
     hasFilterEntry(filters.codeSystems) ||
     hasFilterEntry(filters.sources) ||
     hasFilterEntry(filters.statuses);
 
-  if (!isFilterActive) {
+  if (!atLeastOneFilterActive) {
     return totalCodeCount
       ? (
           totalCodeCount -
@@ -543,6 +569,5 @@ function formatSelectedCodeCount(
     sumCounts(filters.sources) +
     sumCounts(filters.statuses);
 
-  const netCount = totalCount - deselectedCodesCount;
-  return netCount.toString();
+  return (totalCount - deselectedCodesCount).toString();
 }

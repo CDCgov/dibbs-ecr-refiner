@@ -541,11 +541,11 @@ async def get_all_filter_options_db(
             'code_system' AS filter_type,
             s.id::text AS value,
             s.display_name AS label,
-            bc.cond_id as cond_id,
+            NULL::uuid as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM systems s
         LEFT JOIN base_codes bc ON bc.system_id = s.id
-        GROUP BY cond_id, s.id, s.display_name
+        GROUP BY  s.id, s.display_name
 
         UNION ALL
 
@@ -566,11 +566,11 @@ async def get_all_filter_options_db(
             'status' AS filter_type,
             st.status AS value,
             st.status_label AS label,
-            bc.cond_id as cond_id,
+            NULL::uuid as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS st(status, status_label)
         LEFT JOIN base_codes bc ON bc.status = st.status
-        GROUP BY cond_id, st.status, st.status_label
+        GROUP BY  st.status, st.status_label
 
     ) AS filter_results
     ORDER BY cond_id, filter_type, code_count DESC;
