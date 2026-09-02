@@ -159,7 +159,7 @@ async def get_base_conditions_by_ids_db(
     Returns a list of base condition information given a list of condition IDs.
     """
     if not ids:
-        return {}
+        return []
 
     query = """
         SELECT
