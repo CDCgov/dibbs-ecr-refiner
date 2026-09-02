@@ -150,6 +150,7 @@ export function ControlPanel({
           allSelected={allSelected}
           renderedCodes={renderedCodes}
           selectedCodeIds={selectedCodeIds}
+          selectedCustomCodeIds={customCodeIds}
         />
       }
       <div
@@ -364,6 +365,57 @@ function CustomCodeDeletionModal({
   );
 }
 
+interface CountResult {
+  totalCodeCount: number;
+  totalCustomCodeCount: number;
+  excludeableCodeCount: number;
+  exclusionForbidden: boolean;
+}
+
+function calculateCounts(
+  allSelected: boolean,
+  selectedCodeIds: Set<string>,
+  selectedCustomCodeIds: Set<string>,
+  renderedCodes: CodeResponse[],
+  total_code_count: number,
+  total_custom_codes_count: number
+): CountResult {
+  if (allSelected) {
+    // If in the all selected case, start with the totals as fetched from the
+    // code counts hook and tally any custom codes we've selected. Forbid exclusion
+    // only if we've down-selected to a subset with only custom codes
+    const deselectedCodeCount = renderedCodes.filter(
+      (c) => !selectedCodeIds.has(c.id)
+    ).length;
+
+    const totalCodeCount = total_code_count;
+    const totalCustomCodeCount = total_custom_codes_count;
+
+    const excludeableCodeCount =
+      totalCodeCount - deselectedCodeCount - totalCustomCodeCount;
+
+    return {
+      totalCodeCount,
+      totalCustomCodeCount,
+      excludeableCodeCount,
+      exclusionForbidden: excludeableCodeCount <= 0,
+    };
+  }
+
+  // If in the progressive section case, start with the number of selected codes
+  // and forbid exclusion if they're all custom codes.
+  const totalCodeCount = selectedCodeIds.size;
+  const totalCustomCodeCount = selectedCustomCodeIds.size;
+  const excludeableCodeCount = totalCodeCount - totalCustomCodeCount;
+
+  return {
+    totalCodeCount,
+    totalCustomCodeCount,
+    excludeableCodeCount,
+    exclusionForbidden: excludeableCodeCount === 0,
+  };
+}
+
 interface ExclusionWarningModalProps {
   configurationId: string;
   isOpen: boolean;
@@ -372,6 +424,7 @@ interface ExclusionWarningModalProps {
   allSelected: boolean;
   renderedCodes: CodeResponse[];
   selectedCodeIds: Set<string>;
+  selectedCustomCodeIds: Set<string>;
 }
 
 function ExclusionWarningModal({
@@ -382,41 +435,30 @@ function ExclusionWarningModal({
   allSelected,
   renderedCodes,
   selectedCodeIds,
+  selectedCustomCodeIds,
 }: ExclusionWarningModalProps) {
   const {
     data: codeCounts,
     isPending,
     isError,
   } = useGetCodeCounts(configurationId);
+
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
-  const renderedCodeIds = renderedCodes.map((c) => c.id);
-  const renderedCustomCodeIds = renderedCodes
-    .filter((c) => c.is_custom)
-    .map((c) => c.id);
-
-  let totalCodeCount = selectedCodeIds.size;
-  let totalCustomCodeCount = selectedCustomCodeIds.length;
-  let excludeableCodeCount = totalCodeCount - totalCustomCodeCount;
-  let exclusionForbidden = excludeableCodeCount === 0;
-
-  if (allSelected) {
-    // recalculate the total code counts based on the bulk selection case
-    totalCodeCount = codeCounts.data.total_code_count;
-    totalCustomCodeCount = codeCounts.data.total_custom_codes_count;
-
-    const deselectedCodes = renderedCodes
-      .filter((c) => !c.is_custom)
-      .map((c) => c.id)
-      .filter((id) => !selectedCodeIds.has(id));
-
-    excludeableCodeCount =
-      totalCodeCount - deselectedCodeCount - totalCustomCodeCount;
-
-    isCustomCodesOnly = excludeableCodeCount <= 0;
-    exclusionForbidden = isCustomCodesOnly && !allSelected;
-  }
+  const {
+    totalCodeCount,
+    totalCustomCodeCount,
+    excludeableCodeCount,
+    exclusionForbidden,
+  } = calculateCounts(
+    allSelected,
+    selectedCodeIds,
+    selectedCustomCodeIds,
+    renderedCodes,
+    codeCounts?.data.total_code_count,
+    codeCounts?.data.total_custom_codes_count
+  );
 
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
@@ -433,9 +475,8 @@ function ExclusionWarningModal({
             excluded from this configuration.`}
           </p>
           <p className="border-l-3! border-l-[#d54309] bg-[#fdf3f2] px-4 py-3">
-            {totalCustomCodeCount - deselectedCustomCodeCount} custom codes
-            can't be excluded. Custom codes can only be deleted to remove them
-            from this configuration.
+            {totalCustomCodeCount} custom codes can't be excluded. Custom codes
+            can only be deleted to remove them from this configuration.
           </p>
         </div>
       </ModalBody>

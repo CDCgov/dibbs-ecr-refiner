@@ -375,18 +375,16 @@ async def _check_update_operation_excludes_rsg_codes(
     params = {"code_ids": code_ids, "primary_condition_id": primary_condition_id}
     rsg_check_query = """
         SELECT DISTINCT
-            cc.condition_id,
             cc.code_id
         FROM conditions_codes_temp cc
         WHERE cc.condition_id = %(primary_condition_id)s
         AND cc.is_child_rsg = true
-        AND NOT (cc.code_id = ANY(%(code_ids)s::uuid[]));
+        AND (cc.code_id = ANY(%(code_ids)s::uuid[]));
         """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(rsg_check_query, params)
             rsg_rows = await cur.fetchall()
-
     if rsg_rows:
         rsg_ids = [row["code_id"] for row in rsg_rows]
         raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
@@ -428,6 +426,7 @@ async def set_codes_status_within_rendered_set_db(
             code_ids=code_ids,
             db=db,
         )
+
         query = """
             INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
             SELECT %(configuration_id)s::uuid, UNNEST(%(code_ids)s::uuid[])
