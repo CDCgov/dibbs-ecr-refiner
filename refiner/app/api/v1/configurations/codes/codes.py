@@ -108,7 +108,13 @@ async def set_codes_status(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[UUID]:
     """
-    Sets all provided code_ids to the specified `status` for the given configuration ID.
+    Sets selected codes to the specified `status` for the given configuration ID.
+
+    If `update_beyond_rendered_set` is false, we update status for only the specified
+    `code_ids` within the rendered page.
+
+    If `update_beyond_rendered_set` is true, we skip any codes within `code_ids_to_skip`
+    and update status for all other codes that don't get clipped away by the passed-in filters
 
     Args:
         configuration_id (UUID): ID of the configuration to update

@@ -30,7 +30,6 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { CodeFilters } from './Filters';
 import { filterParamSerializer } from './Filters/utils';
 import { Spinner } from '@components/Spinner';
-import { AxiosResponse } from 'axios';
 
 interface ControlPanelProps {
   configurationId: string;
@@ -53,6 +52,8 @@ export function ControlPanel({
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
+  const { data: codeCounts } = useGetCodeCounts(configurationId);
+
   const { mutate: updateStatusWithinCursor } = useSetCodesStatus({
     axios: {
       paramsSerializer: filterParamSerializer,
@@ -68,15 +69,15 @@ export function ControlPanel({
     new Set([...selectedCodeIds].filter((id) => !customCodeIds.has(id)))
   );
 
-  // These codes are "unselected" ones within the set, which we need in cases
+  // These codes are unselected ones within the rendered cursor, or the anti-join
+  // between the selected rows and the rendered ones, which we need in cases
   // where bulk selection is applied to "all but the selected" codes
+
   const deselectedCodes = renderedCodes
     .filter((c) => !c.is_custom)
     .map((c) => c.id)
     .filter((id) => !selectedCodeIds.has(id));
 
-  // These codes are "unselected" ones within the set, which we need in cases
-  // where bulk selection is applied to "all but the selected" codes
   const deselectedCustomCodes = renderedCodes
     .filter((c) => c.is_custom)
     .map((c) => c.id)
@@ -129,13 +130,13 @@ export function ControlPanel({
   };
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
-  const { data: codeCounts } = useGetCodeCounts(configurationId);
 
   const selectedCount = allSelected
-    ? tallyActiveFilterCount(
+    ? formatSelectedCodeCount(
         filters,
         selectedCodeIds.size,
         deselectedCodes.length,
+        deselectedCustomCodes.length,
         codeCounts?.data.total_code_count
       )
     : selectedCodeIds.size;
@@ -188,7 +189,7 @@ export function ControlPanel({
                 customCodeIds={selectedCustomCodes.map((cc) => cc.id)}
                 clearSelections={clearSelections}
                 allSelected={allSelected}
-                customCodesToSkip={deselectedCustomCodes}
+                deselectedCustomCodes={deselectedCustomCodes}
               />
             ) : null}
           </div>
@@ -201,7 +202,7 @@ export function ControlPanel({
 interface CustomCodeDeletionMenuProps {
   configurationId: string;
   customCodeIds: string[];
-  customCodesToSkip: string[];
+  deselectedCustomCodes: string[];
   allSelected: boolean;
   clearSelections: () => void;
 }
@@ -211,7 +212,7 @@ function CustomCodeDeletionMenu({
   customCodeIds,
   clearSelections,
   allSelected,
-  customCodesToSkip,
+  deselectedCustomCodes,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -220,7 +221,7 @@ function CustomCodeDeletionMenu({
   let customCodeCounts = customCodeIds.length;
   if (allSelected && codeCounts?.data.total_custom_codes_count) {
     customCodeCounts =
-      codeCounts.data.total_custom_codes_count - customCodesToSkip.length;
+      codeCounts.data.total_custom_codes_count - deselectedCustomCodes.length;
   }
 
   return (
@@ -232,7 +233,7 @@ function CustomCodeDeletionMenu({
         clearSelections={clearSelections}
         configurationId={configurationId}
         allSelected={allSelected}
-        customCodesToSkip={customCodesToSkip}
+        deselectedCustomCodes={deselectedCustomCodes}
         customCodeCount={customCodeCounts}
       />
       <Menu as="div" className="relative">
@@ -269,7 +270,7 @@ interface CustomCodeDeletionModalProps {
   isOpen: boolean;
   onClose: () => void;
   customCodeIds: string[];
-  customCodesToSkip: string[];
+  deselectedCustomCodes: string[];
   allSelected: boolean;
   configurationId: string;
   clearSelections: () => void;
@@ -280,7 +281,7 @@ function CustomCodeDeletionModal({
   isOpen,
   onClose,
   customCodeIds,
-  customCodesToSkip,
+  deselectedCustomCodes,
   allSelected,
   configurationId,
   clearSelections,
@@ -296,7 +297,7 @@ function CustomCodeDeletionModal({
         configurationId,
         data: {
           ids: customCodeIds,
-          ids_to_skip: customCodesToSkip,
+          ids_to_skip: deselectedCustomCodes,
           delete_all: allSelected,
         },
       },
@@ -445,16 +446,17 @@ function ExclusionWarningModal({
     </Modal>
   );
 }
-function tallyActiveFilterCount(
+function formatSelectedCodeCount(
   filters: CodeFilters,
-  selectedCodes: number,
-  deselectedCodes: number,
+  selectedCodeCount: number,
+  deselectedCodesCount: number,
+  deselectedCustomCodesCount: number,
   totalCodeCount?: number
-): string | number {
+): string {
   if (filters.search) {
-    return selectedCodes > CodesLimitResponseValue.codes_limit
+    return selectedCodeCount > CodesLimitResponseValue.codes_limit
       ? `${CodesLimitResponseValue.codes_limit}+`
-      : selectedCodes;
+      : selectedCodeCount.toString();
   }
 
   const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
@@ -465,7 +467,13 @@ function tallyActiveFilterCount(
     hasFilterEntry(filters.statuses);
 
   if (!isFilterActive) {
-    return totalCodeCount ? totalCodeCount - deselectedCodes : 'All ';
+    return totalCodeCount
+      ? (
+          totalCodeCount -
+          deselectedCodesCount -
+          deselectedCustomCodesCount
+        ).toString()
+      : 'All ';
   }
 
   // Calculate total count across active array filters
@@ -477,13 +485,6 @@ function tallyActiveFilterCount(
     sumCounts(filters.sources) +
     sumCounts(filters.statuses);
 
-  const netCount = totalCount - deselectedCodes;
-
-  if (filters.search) {
-    return totalCount > 0
-      ? `${netCount} codes + all search results`
-      : 'All search results';
-  }
-
-  return totalCount > 0 ? netCount.toString() : '';
+  const netCount = totalCount - deselectedCodesCount;
+  return netCount.toString();
 }
