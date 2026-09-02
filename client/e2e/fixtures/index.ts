@@ -12,6 +12,7 @@ import { Api } from './api';
 import { ActivityLogPage } from '../pages/ActivityLogPage';
 import { TesUpdatesPage } from '../pages/TesUpdatesPage';
 import { AppUpdatesPage } from '../pages/AppUpdatesPage';
+import { ManageCodesPage } from '../pages/ManageCodesPage';
 
 interface Fixtures {
   configurationPage: ConfigurationPage;
@@ -20,6 +21,7 @@ interface Fixtures {
   activityLogPage: ActivityLogPage;
   tesUpdatesPage: TesUpdatesPage;
   appUpdatesPage: AppUpdatesPage;
+  manageCodesPage: ManageCodesPage;
   makeAxeBuilder: () => AxeBuilder;
   api: Api;
 }
@@ -52,6 +54,9 @@ const extendedTest = baseTest.extend<Fixtures>({
   },
   appUpdatesPage: async ({ page }, use) => {
     await use(new AppUpdatesPage(page));
+  },
+  manageCodesPage: async ({ page }, use) => {
+    await use(new ManageCodesPage(page));
   },
 });
 
