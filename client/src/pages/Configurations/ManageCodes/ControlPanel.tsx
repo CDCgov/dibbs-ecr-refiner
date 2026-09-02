@@ -130,16 +130,15 @@ export function ControlPanel({
 
   const hasCustomCodesSelected = selectedCustomCodes.length > 0;
 
-  const selectedCount = allSelected
-    ? formatSelectedCodeCount(
-        filters,
-        selectedCodeIds.size,
-        deselectedCodesIds.length,
-        deselectedCustomCodesIds.length,
-        renderedCodes.length,
-        codeCounts?.data.total_code_count
-      )
-    : selectedCodeIds.size;
+  const selectedCount = formatSelectedCodeCount(
+    allSelected,
+    filters,
+    selectedCodeIds.size,
+    deselectedCodesIds.length,
+    deselectedCustomCodesIds.length,
+    renderedCodes.length,
+    codeCounts?.data.total_code_count
+  );
   return (
     <>
       {
@@ -191,7 +190,6 @@ export function ControlPanel({
                 allSelected={allSelected}
                 selectedCustomCodeIds={selectedCustomCodes.map((c) => c.id)}
                 deselectedCustomCodeIds={deselectedCustomCodesIds}
-                renderedCodesCount={renderedCodes.length}
               />
             ) : null}
           </div>
@@ -207,7 +205,6 @@ interface CustomCodeDeletionMenuProps {
   clearSelections: () => void;
   selectedCustomCodeIds: string[];
   deselectedCustomCodeIds: string[];
-  renderedCodesCount: number;
 }
 
 function CustomCodeDeletionMenu({
@@ -216,7 +213,6 @@ function CustomCodeDeletionMenu({
   allSelected,
   selectedCustomCodeIds,
   deselectedCustomCodeIds,
-  renderedCodesCount,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: codeCounts } = useGetCodeCounts(configurationId);
@@ -227,7 +223,7 @@ function CustomCodeDeletionMenu({
   }
 
   const deletePastCursor =
-    allSelected && renderedCodesCount > CodesLimitResponseValue.codes_limit;
+    allSelected && totalCustomCodes > CodesLimitResponseValue.codes_limit;
 
   const customCodesToDeleteCount = deletePastCursor
     ? totalCustomCodes - deselectedCustomCodeIds.length
@@ -521,6 +517,7 @@ function ExclusionWarningModal({
   );
 }
 function formatSelectedCodeCount(
+  allSelected: boolean,
   filters: CodeFilters,
   selectedCodeCount: number,
   deselectedCodesCount: number,
@@ -528,9 +525,9 @@ function formatSelectedCodeCount(
   renderedCodeCount: number,
   totalCodeCount?: number
 ): string {
-  // If the rendered code count is under the pagination limit, just return
-  // the selected values
-  if (renderedCodeCount < CodesLimitResponseValue.codes_limit) {
+  // If the rendered code count is under the pagination limit, or we're not in the bulk selection case
+  // just return the selected values
+  if (renderedCodeCount < CodesLimitResponseValue.codes_limit || !allSelected) {
     return selectedCodeCount.toString();
   }
 
