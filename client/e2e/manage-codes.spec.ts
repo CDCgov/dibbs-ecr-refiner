@@ -6,25 +6,10 @@
 
 import { test, expect } from './fixtures';
 import { clearDb } from './db';
-import { Page } from '@playwright/test';
-import { ConfigurationPage } from './pages/ConfigurationPage';
 
 // This value represents the maximum number of table rows that load per page.
 // Refer to: `refiner/app/api/v1/configurations/codes/codes.py` (`get_codes()` route)
 const MAX_PAGE_SIZE = 100;
-
-/**
- * Temporary helper to navigate to the /view route
- */
-async function goToManageCodesDevPage(
-  page: Page,
-  configurationPage: ConfigurationPage
-) {
-  await configurationPage.goToManageCodesTab();
-  const currentUrl = page.url();
-  const newUrl = currentUrl + '/view';
-  await page.goto(newUrl);
-}
 
 test.describe('Codes management - custom code interactions', () => {
   test.beforeEach(async ({ configurationsPage }) => {
@@ -42,7 +27,7 @@ test.describe('Codes management - custom code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const table = page.getByRole('table');
     await expect(table).toBeVisible();
@@ -93,10 +78,7 @@ test.describe('Codes management - custom code interactions', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
-      await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
-      ).toBeVisible();
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Set all codes to be Included', async () => {
@@ -111,7 +93,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('3 selected');
+      await expect(controlPanel).toContainText('2 selected');
       await controlPanel.getByRole('button', { name: 'Include' }).click();
       await expect(controlPanel).not.toBeVisible();
 
@@ -154,7 +136,7 @@ test.describe('Codes management - custom code interactions', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Bulk delete custom codes', async () => {
@@ -169,7 +151,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('4 selected');
+      await expect(controlPanel).toContainText('3 selected');
       await controlPanel.getByRole('button', { name: 'More options' }).click();
 
       const customCodeDeletionButton = page.getByText('Delete 2 custom codes');
@@ -216,7 +198,7 @@ test.describe('Codes management - custom code interactions', () => {
     await expect(
       page.getByRole('heading', { name: 'Customize eICR sections' })
     ).toBeVisible();
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const row = page.getByRole('table').getByRole('row').nth(1);
     const statusCell = row.getByRole('cell').last();
@@ -256,7 +238,7 @@ test.describe('Codes management - custom code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     await expect(page.getByRole('table')).toBeVisible();
     const addCustomCodesButton = page.getByRole('button', {
@@ -420,7 +402,7 @@ test.describe('Codes management - custom code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     const code = '123-4';
     const system = 'CVX';
@@ -493,7 +475,10 @@ test.describe('Codes management - custom code interactions', () => {
         page.getByRole('heading', { name: 'Manage codes', level: 2 })
       ).toBeVisible();
 
-      await expect(page.getByText('123-4')).toBeVisible();
+      await expect(page.getByText('123-4')).not.toBeVisible();
+      await expect(
+        page.getByRole('cell', { name: 'new code', exact: true })
+      ).toBeVisible();
     });
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
@@ -508,6 +493,70 @@ test.describe('Codes management - code set interactions', () => {
     await clearDb();
   });
 
+  test('Code set details should be accessible to users within the drawer', async ({
+    page,
+    configurationPage,
+    configurationsPage,
+  }) => {
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      await configurationsPage.createConfiguration(condition);
+      await configurationPage.goToManageCodesTab();
+    });
+    await test.step('Open drawer', async () => {
+      const drawerButton = page.getByRole('button', {
+        name: 'Condition code sets',
+        exact: false,
+      });
+      await expect(drawerButton).toBeVisible();
+      await drawerButton.click();
+    });
+
+    const conditionElement = page
+      .getByRole('listitem')
+      .filter({ hasText: 'Anthrax' })
+      .first();
+    const codeSetDetailsButton = conditionElement.getByRole('button', {
+      name: 'Open code set completion status details modal',
+      exact: true,
+    });
+    await test.step('Focusing a condition reveals "code set details"', async () => {
+      await conditionElement.scrollIntoViewIfNeeded();
+      await expect(conditionElement).toBeVisible();
+
+      await conditionElement.hover();
+
+      await expect(conditionElement).toContainText(/\(.*\)/);
+    });
+
+    const modalHeader = page.getByRole('heading', {
+      name: 'Code set completion details',
+      level: 2,
+    });
+    await test.step('Clicking on "code set details" button opens a modal with details', async () => {
+      await expect(codeSetDetailsButton).toBeVisible();
+      await codeSetDetailsButton.click();
+
+      await expect(modalHeader).toBeVisible();
+    });
+
+    await test.step('Modal and drawer can be exited', async () => {
+      await expect(modalHeader).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(modalHeader).not.toBeVisible();
+      await expect(codeSetDetailsButton).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(
+        page.getByRole('heading', {
+          name: 'Manage codes',
+          exact: true,
+          level: 2,
+        })
+      ).toBeVisible();
+      await expect(page.getByRole('table')).toBeVisible();
+    });
+  });
+
   test('Condition code sets can be added and deleted', async ({
     page,
     configurationsPage,
@@ -516,7 +565,7 @@ test.describe('Codes management - code set interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add Acanthamoeba code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -583,9 +632,14 @@ test.describe('Codes management - code interactions', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
-    const row = page.getByRole('table').getByRole('row').nth(1);
+    const row = page
+      .getByRole('table')
+      .locator('tbody tr')
+      .filter({ has: page.getByRole('checkbox') })
+      .first();
+
     const checkbox = row.getByRole('cell').first().getByRole('checkbox');
     const statusCell = row.getByRole('cell').last();
 
@@ -627,6 +681,81 @@ test.describe('Codes management - code interactions', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
+
+  test('Primary condition RSG codes are not modifiable', async ({
+    configurationsPage,
+    page,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToManageCodesTab();
+
+    const table = page.getByRole('table');
+
+    await expect(table).toBeVisible();
+    await expect(page.getByTestId('lock-icon')).toBeVisible();
+
+    const selectAllCheckbox = table.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
+    const rowCheckboxes = table.locator('tbody tr').getByRole('checkbox');
+    await expect(rowCheckboxes).toBeChecked();
+
+    await rowCheckboxes.first().click();
+    await expect(selectAllCheckbox).not.toBeChecked();
+  });
+
+  test('Non-primary condition RSG codes are modifiable', async ({
+    configurationsPage,
+    page,
+    configurationPage,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToManageCodesTab();
+
+    const table = page.getByRole('table');
+
+    await expect(table).toBeVisible();
+    await expect(page.getByTestId('lock-icon')).toBeVisible();
+
+    await test.step('Add Alpha-gal Syndrome code set', async () => {
+      await page.getByRole('button', { name: '1 Condition code sets' }).click();
+      await page
+        .getByRole('searchbox', { name: 'Search by condition name' })
+        .fill('alph');
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Alpha-gal Syndrome' })
+        .hover();
+      await page.getByLabel('Add Alpha-gal Syndrome').click();
+      await page.getByRole('button', { name: 'Close drawer' }).click();
+      await expect(
+        page.getByRole('button', { name: '2 Condition code sets' })
+      ).toBeVisible();
+    });
+
+    await expect(table).toBeVisible();
+
+    const selectAllCheckbox = table.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+
+    await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+
+    // Only Anotia's single RSG code will remain as "Included"
+    const statusCells = table.locator('tbody tr td:last-child');
+    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(1);
+  });
 });
 
 test.describe('Codes management - search', () => {
@@ -665,7 +794,7 @@ test.describe('Codes management - search', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     const table = page.getByRole('table');
@@ -727,7 +856,7 @@ test.describe('Codes management - search', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Filter by ICD-10', async () => {
@@ -813,10 +942,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -849,7 +975,7 @@ test.describe('Codes management - filters', () => {
     await expect(sourcesOptions).toHaveCount(2);
 
     await page.keyboard.press('Escape');
-    const statusFilterButton = page.getByRole('button', { name: 'Status' });
+    const statusFilterButton = page.getByTestId('status-button');
     await expect(statusFilterButton).toBeVisible();
     await statusFilterButton.click();
     await expect(page.getByRole('listbox')).toBeVisible();
@@ -872,10 +998,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add Alpha-gal Syndrome code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -974,10 +1097,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add Acanthamoeba code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
@@ -1041,10 +1161,7 @@ test.describe('Codes management - filters', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     const sourceFilterButton = page.getByTestId('status-button');
     const sourceOptions = page.getByTestId('status-options');
@@ -1057,7 +1174,14 @@ test.describe('Codes management - filters', () => {
     });
 
     await test.step('Exclude a code', async () => {
-      const checkbox = tableRows.nth(1).getByRole('checkbox');
+      const row = page
+        .getByRole('table')
+        .locator('tbody tr')
+        .filter({ has: page.getByRole('checkbox') })
+        .first();
+
+      const checkbox = row.getByRole('cell').first().getByRole('checkbox');
+
       await checkbox.click();
 
       const controlPanel = page.getByTestId('control-panel');
@@ -1065,7 +1189,7 @@ test.describe('Codes management - filters', () => {
 
       await controlPanel.getByRole('button', { name: 'Exclude' }).click();
 
-      const statusCell = tableRows.nth(1).getByRole('cell').last();
+      const statusCell = row.getByRole('cell').last();
       await expect(statusCell).toContainText('Excluded');
     });
 
@@ -1123,7 +1247,7 @@ test.describe('Codes management - filters', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     const associatedCondition = 'Bladder Exstrophy';
@@ -1276,7 +1400,7 @@ test.describe('Codes management - filters', () => {
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
-      await goToManageCodesDevPage(page, configurationPage);
+      await configurationPage.goToManageCodesTab();
     });
 
     await test.step('Select custom code in source filter', async () => {
@@ -1318,10 +1442,7 @@ test.describe('Codes management - filters', () => {
     await test.step('Check page on load', async () => {
       const condition = 'Anotia';
       await configurationsPage.createConfiguration(condition);
-      await goToManageCodesDevPage(page, configurationPage);
-      await expect(
-        page.getByRole('heading', { name: 'Manage codes', level: 2 })
-      ).toBeVisible();
+      await configurationPage.goToManageCodesTab();
 
       await expect(table).toBeVisible();
       await expect(clearButton).not.toBeVisible();
@@ -1393,10 +1514,7 @@ test.describe('Codes management - data loading', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
-    await expect(
-      page.getByRole('heading', { name: 'Manage codes', level: 2 })
-    ).toBeVisible();
+    await configurationPage.goToManageCodesTab();
 
     await expect(page.getByTestId('codes-included-display')).toHaveText(
       '2 of 2 codes included'
@@ -1405,6 +1523,32 @@ test.describe('Codes management - data loading', () => {
     await expect(page.getByText('0 custom')).toBeVisible();
     await expect(page.getByText('1 condition code sets')).toBeVisible();
     await expect(page.getByText("You've reached the end")).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
+
+  test('Primary condition RSG codes display a lock icon tooltip instead of a checkbox', async ({
+    configurationsPage,
+    page,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Anotia';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToManageCodesTab();
+
+    await expect(page.getByRole('table')).toBeVisible();
+
+    const lockIconTooltip = page.getByTestId('lock-icon');
+    await expect(lockIconTooltip).toBeVisible();
+
+    // check tooltip
+    await lockIconTooltip.hover();
+    await expect(
+      page.getByText(
+        'Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR.'
+      )
+    ).toBeVisible();
+
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
@@ -1437,7 +1581,7 @@ test.describe('Codes management - data loading', () => {
     await expect(
       page.getByRole('heading', { name: 'Customize eICR sections' })
     ).toBeVisible();
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     // check top two rows
     await expect(page.locator('table tr').nth(1)).toContainText('123-4');
@@ -1453,6 +1597,76 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
+  test('Custom codes are paginated, and then load into condition code set codes', async ({
+    api,
+    page,
+    configurationPage,
+  }) => {
+    const customCodeCount = MAX_PAGE_SIZE * 2 + 51;
+
+    await test.step('Set up configuration', async () => {
+      const condition = 'Anotia';
+      const config = await api.createConfiguration(condition);
+      const systems = await api.getSystems();
+
+      const customCodes = Array.from({ length: customCodeCount }, (_, i) => ({
+        code: `test-code-${i + 1}`,
+        display: `Test code ${i + 1}`,
+        system_id: systems[Math.floor(Math.random() * systems.length)].id,
+      }));
+
+      await api.uploadCustomCodeCsv(config.id, customCodes);
+    });
+
+    await test.step('Navigate to page', async () => {
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Configurations', level: 1 })
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Anotia' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Customize eICR sections' })
+      ).toBeVisible();
+      await configurationPage.goToManageCodesTab();
+    });
+
+    await test.step('Check that custom codes load in separate pages', async () => {
+      const tableRows = page.getByRole('table').getByRole('row');
+
+      // initial size
+      await expect(tableRows).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
+
+      // scroll to load in more rows
+      await tableRows.last().scrollIntoViewIfNeeded();
+
+      // Scrolling down should add `MAX_PAGE_SIZE` to the table
+      const expectedRowCountAfterLoad = 2 * MAX_PAGE_SIZE + 1;
+      await expect(tableRows).toHaveCount(expectedRowCountAfterLoad);
+
+      // check current code count of custom codes now that we're in page 2
+      const customCodeSourceCells = tableRows
+        .getByRole('cell')
+        .filter({ hasText: 'Custom code' });
+      await expect(customCodeSourceCells).toHaveCount(
+        expectedRowCountAfterLoad - 1 // subtract header
+      );
+
+      // scroll to load final page
+      await tableRows.last().scrollIntoViewIfNeeded();
+      await expect(page.getByText("You've reached the end")).toBeVisible();
+
+      // all custom codes should be visible
+      await expect(customCodeSourceCells).toHaveCount(customCodeCount);
+
+      // check that some non custom codes load after
+      const allSourceCells = page.getByRole('table').getByRole('cell');
+      const nonCustomCodeSourceCells = allSourceCells.filter({
+        hasNotText: 'Custom code',
+      });
+      await expect(nonCustomCodeSourceCells).not.toHaveCount(0);
+    });
+  });
+
   test('More codes load into view as user scrolls down', async ({
     page,
     configurationsPage,
@@ -1461,7 +1675,7 @@ test.describe('Codes management - data loading', () => {
   }) => {
     const condition = 'Anotia';
     await configurationsPage.createConfiguration(condition);
-    await goToManageCodesDevPage(page, configurationPage);
+    await configurationPage.goToManageCodesTab();
 
     await test.step('Add code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();

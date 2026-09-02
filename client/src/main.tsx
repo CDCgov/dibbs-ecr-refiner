@@ -14,6 +14,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import { ModalProvider } from '@components/Modal/ModalProvider.tsx';
 
 function handleSessionExpiry(error: Error) {
   if (isAxiosError(error) && error.response?.status === 401) {
@@ -43,7 +44,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <ModalProvider>
+          <App />
+        </ModalProvider>
       </QueryClientProvider>
     </BrowserRouter>
   </StrictMode>

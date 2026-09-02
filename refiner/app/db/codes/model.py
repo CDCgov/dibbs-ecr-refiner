@@ -13,19 +13,10 @@ class CodedConcept:
 
 
 @dataclass(frozen=True)
-class CodeDisplay(CodedConcept):
-    """
-    Display representation of a codeable concept.
-    """
-
-    system_name: str
-
-
-@dataclass(frozen=True)
 class DbCode(CodedConcept):
     """
-    DB model for code stored in the codes table.
+    Model for all coded information stored in the codes table.
     """
 
-    version: str
     system_id: UUID
+    system_name: str

@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
+from app.db.codes.model import DbCode
 from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.tes import get_latest_tes_version
 
@@ -47,7 +47,7 @@ async def _get_conditions_by_canonical_urls_and_version_db(
 
     condition_ids = [row["id"] for row in rows]
 
-    return await get_conditions_by_ids(ids=condition_ids, db=db)
+    return await get_conditions_by_ids_db(ids=condition_ids, db=db)
 
 
 async def _get_condition_by_canonical_url_and_version_db(
@@ -108,7 +108,7 @@ async def get_latest_tes_condition_ids_db(
     latest_tes = get_latest_tes_version(available_versions=tes_versions)
 
     # get the condition objects for IDs passed in
-    given_conditions = await get_conditions_by_ids(ids=ids, db=db)
+    given_conditions = await get_conditions_by_ids_db(ids=ids, db=db)
 
     # get the associated canonical URLs for each ID
     canonical_urls = [gc.canonical_url for gc in given_conditions]
@@ -133,7 +133,8 @@ async def get_conditions_by_version_db(
             c.id,
             c.display_name,
             c.canonical_url,
-            t.version
+            t.version,
+            c.coverage_level
         FROM conditions c
         JOIN tes t ON t.id = c.tes_id
         WHERE t.version = %s
@@ -162,24 +163,30 @@ async def get_condition_by_id_db(
                 c.id,
                 c.canonical_url,
                 c.display_name,
-                t.version,
+                MAX(t.version) as version,
                 ARRAY(
                     SELECT DISTINCT codes.code
                     FROM conditions_codes_temp crc
                     JOIN codes ON crc.code_id = codes.id
                     WHERE crc.condition_id = c.id AND crc.is_child_rsg
                 ) as child_rsg_snomed_codes,
-                c.snomed_codes,
-                c.loinc_codes,
-                c.icd10_codes,
-                c.rxnorm_codes,
-                c.cvx_codes,
                 c.coverage_level,
                 c.coverage_level_reason,
-                c.coverage_level_date
+                c.coverage_level_date,
+                JSONB_AGG(
+                   JSON_BUILD_OBJECT(
+                    'code', codes.code,
+                    'display', codes.display,
+                    'system_id', codes.system_id,
+                    'system_name', s.display_name
+                )) as codes
             FROM conditions c
             JOIN tes t ON t.id = c.tes_id
+            JOIN conditions_codes_temp cc ON cc.condition_id = c.id
+            JOIN codes ON codes.id = cc.code_id
+            JOIN systems s ON codes.system_id = s.id
             WHERE c.id = %(id)s
+            GROUP BY c.id
             """
 
     async with db.get_connection() as conn:
@@ -193,107 +200,34 @@ async def get_condition_by_id_db(
     return DbCondition.from_db_row(row)
 
 
-# TODO:
-# this is a candidate for a uniform Coding model
-# that represents the combination of either:
-# 1. a code and a display
-# 2. a code, display, and system
-@dataclass(frozen=True)
-class GetConditionCode:
-    """
-    Model for a condition code.
-    """
-
-    code: str
-    system: str
-    description: str
-
-
 async def get_condition_codes_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
-) -> list[GetConditionCode]:
+) -> list[DbCode]:
     """
-    For a condition ID, flatten all codes into a GetConditionCode shape.
+    For a condition ID, flatten all codes into a DbCode shape.
 
-    For a given condition ID, unnests and combines all terminology codes
-    (LOINC, SNOMED, ICD-10, RxNorm, CVX) from their respective JSONB columns
-    into a single, flat list of GetConditionCode objects.
+    For a given condition ID, organizes joins into the relevant tables to return
+    the list of codes corresponding to the condition.
 
     Codes are deduplicated by code system and code so the exported code count
     matches the historical code count stored on the event.
     """
 
     query = """
-            WITH c AS (
-                SELECT *
-                FROM conditions
-                WHERE id = %(condition_id)s
-            )
             SELECT
-                code,
-                system,
-                MIN(description) AS description
-            FROM (
-                SELECT
-                    code_elem->>'code' AS code,
-                    'LOINC' AS system,
-                    code_elem->>'display' AS description
-                FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(
-                    COALESCE(c.loinc_codes, '[]'::jsonb)
-                ) AS code_elem
-
-                UNION ALL
-
-                SELECT
-                    code_elem->>'code' AS code,
-                    'SNOMED' AS system,
-                    code_elem->>'display' AS description
-                FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(
-                    COALESCE(c.snomed_codes, '[]'::jsonb)
-                ) AS code_elem
-
-                UNION ALL
-
-                SELECT
-                    code_elem->>'code' AS code,
-                    'ICD-10' AS system,
-                    code_elem->>'display' AS description
-                FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(
-                    COALESCE(c.icd10_codes, '[]'::jsonb)
-                ) AS code_elem
-
-                UNION ALL
-
-                SELECT
-                    code_elem->>'code' AS code,
-                    'RxNorm' AS system,
-                    code_elem->>'display' AS description
-                FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(
-                    COALESCE(c.rxnorm_codes, '[]'::jsonb)
-                ) AS code_elem
-
-                UNION ALL
-
-                SELECT
-                    code_elem->>'code' AS code,
-                    'CVX' AS system,
-                    code_elem->>'display' AS description
-                FROM c
-                CROSS JOIN LATERAL jsonb_array_elements(
-                    COALESCE(c.cvx_codes, '[]'::jsonb)
-                ) AS code_elem
-            ) t
-            WHERE code IS NOT NULL
-            GROUP BY system, code
-            ORDER BY system, code;
+              codes.display,
+              codes.code,
+              codes.system_id,
+              systems.display_name as system_name
+            FROM conditions c
+            JOIN conditions_codes_temp cc ON cc.condition_id = c.id
+            JOIN codes ON codes.id = cc.code_id
+            JOIN systems ON systems.id = codes.system_id
+            WHERE c.id = %(condition_id)s
             """
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
+        async with conn.cursor(row_factory=class_row(DbCode)) as cur:
             await cur.execute(query, {"condition_id": condition_id})
             rows = await cur.fetchall()
 
@@ -327,31 +261,35 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             c.id,
             c.display_name,
             c.canonical_url,
-            t.version,
+            MAX(t.version) as version,
             ARRAY(
                 SELECT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-            c.snomed_codes,
-            c.loinc_codes,
-            c.icd10_codes,
-            c.rxnorm_codes,
-            c.cvx_codes,
+            JSONB_AGG(
+                    JSON_BUILD_OBJECT(
+                     'code', codes.code,
+                     'display', codes.display,
+                     'system_id', codes.system_id,
+                    'system_name', s.display_name
+                 )) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
         FROM conditions c
+        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        JOIN codes ON codes.id = crc.code_id
         JOIN tes t ON t.id = c.tes_id
+        JOIN systems s ON codes.system_id = s.id
         WHERE EXISTS (
             SELECT 1
-            FROM conditions_codes_temp crc
-            JOIN codes ON crc.code_id = codes.id
             WHERE crc.condition_id = c.id
             AND crc.is_child_rsg
             AND codes.code = ANY(%s)
-        );
+        )
+        GROUP BY c.id;
     """
 
     params = (codes,)
@@ -364,7 +302,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
-async def get_conditions_by_ids(
+async def get_conditions_by_ids_db(
     ids: list[UUID], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     """
@@ -379,24 +317,30 @@ async def get_conditions_by_ids(
             c.id,
             c.canonical_url,
             c.display_name,
-            t.version,
+            MAX(t.version) as version,
             ARRAY(
                 SELECT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-            c.snomed_codes,
-            c.loinc_codes,
-            c.icd10_codes,
-            c.rxnorm_codes,
-            c.cvx_codes,
+            JSONB_AGG(
+                JSON_BUILD_OBJECT(
+                'code', codes.code,
+                'display', codes.display,
+                'system_id', codes.system_id,
+                'system_name', s.display_name
+            )) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
         FROM conditions c
+        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        JOIN codes ON codes.id = crc.code_id
+        JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
-        WHERE c.id = ANY(%s);
+        WHERE c.id = ANY(%s)
+        GROUP BY c.id;
     """
 
     params = (ids,)
@@ -422,26 +366,32 @@ async def get_primary_conditions_for_configurations_db(
             c.id,
             c.canonical_url,
             c.display_name,
-            t.version,
+            MAX(t.version) as version,
             ARRAY(
                 SELECT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-            c.snomed_codes,
-            c.loinc_codes,
-            c.icd10_codes,
-            c.rxnorm_codes,
-            c.cvx_codes,
+            JSONB_AGG(
+                JSON_BUILD_OBJECT(
+                'code', codes.code,
+                'display', codes.display,
+                'system_id', codes.system_id,
+                'system_name', s.display_name
+            )) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
         FROM conditions c
         JOIN configurations_conditions cc ON cc.condition_id = c.id
+        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        JOIN codes ON codes.id = crc.code_id
+        JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
+        GROUP BY cc.configuration_id, c.id
     """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -483,24 +433,30 @@ async def get_included_conditions_db(
             c.id,
             c.canonical_url,
             c.display_name,
-            t.version,
+            MAX(t.version) as version,
             ARRAY(
                 SELECT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-            c.snomed_codes,
-            c.loinc_codes,
-            c.icd10_codes,
-            c.rxnorm_codes,
-            c.cvx_codes,
+             JSONB_AGG(
+                JSON_BUILD_OBJECT(
+                    'code', codes.code,
+                    'display', codes.display,
+                    'system_id', codes.system_id,
+                    'system_name', s.display_name
+            )) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
         FROM conditions c
+        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        JOIN codes ON codes.id = crc.code_id
+        JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
+        GROUP BY c.id
         ORDER BY c.id;
     """
 

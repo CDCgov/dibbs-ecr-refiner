@@ -5,7 +5,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.api.v1.configurations.model import GetConfigurationsResponse
-from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSummary,
@@ -18,27 +17,14 @@ _locks_storage = {}
 
 
 @pytest.fixture(autouse=True)
-def mock_db_functions(monkeypatch, mock_user, mock_configuration):
+def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition):
     """
     Mock return values of the `_db` functions called by the routes.
     """
 
-    # prepare a fake condition with codes
-    condition_mock = DbCondition(
-        id=UUID("22222222-2222-2222-2222-222222222222"),
-        display_name="Condition A",
-        canonical_url="url-1",
-        version="3.0.0",
-        child_rsg_snomed_codes=["12345"],
-        snomed_codes=[DbConditionCoding("12345", "SNOMED Description")],
-        loinc_codes=[DbConditionCoding("54321", "LOINC Description")],
-        icd10_codes=[DbConditionCoding("A00", "ICD10 Description")],
-        rxnorm_codes=[DbConditionCoding("99999", "RXNORM Description")],
-        cvx_codes=[DbConditionCoding("99999", "CVX Description")],
-    )
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_condition_by_id_db",
-        AsyncMock(return_value=condition_mock),
+        AsyncMock(return_value=mock_condition),
     )
 
     fake_config_summary = DbConfigurationSummary(
@@ -47,22 +33,9 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         status=mock_configuration.status,
     )
 
-    fake_condition = DbCondition(
-        id=uuid4(),
-        display_name="Hypertension",
-        canonical_url="http://url.com",
-        version="3.0.0",
-        child_rsg_snomed_codes=["11111"],
-        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
-        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
-        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
-        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
-        cvx_codes=[DbConditionCoding("15251", "Hypertension CVX")],
-    )
-
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_conditions_by_version_db",
-        AsyncMock(return_value=[fake_condition]),
+        AsyncMock(return_value=[mock_condition]),
     )
 
     monkeypatch.setattr(

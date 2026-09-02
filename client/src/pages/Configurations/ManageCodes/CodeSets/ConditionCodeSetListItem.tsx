@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@components/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import classNames from 'classnames';
@@ -13,20 +13,29 @@ import {
 import { IncludedCondition } from '../../../../api/schemas';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
+import { CodeSetCompletenessButton } from './CodeSetCompletenessButton';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
   configurationId: string;
+  showHiddenElements: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onFocus: () => void;
   highlight?: React.ReactNode;
-  reportable_condition_display_name: string;
+  reportableConditionDisplayName: string;
   disabled: boolean;
 }
 
 export function ConditionCodeSetListItem({
   condition,
   configurationId,
+  showHiddenElements,
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
   highlight,
-  reportable_condition_display_name,
+  reportableConditionDisplayName,
   disabled,
 }: ConditionCodeSetListItemProps) {
   const { mutate: associateMutation } =
@@ -37,8 +46,6 @@ export function ConditionCodeSetListItem({
   const showToast = useToast();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
-
-  const [showButton, setShowButton] = useState(false);
 
   function handleAssociate() {
     associateMutation(
@@ -127,39 +134,49 @@ export function ConditionCodeSetListItem({
     }
   }
 
-  const isDefault =
-    condition.display_name === reportable_condition_display_name;
+  const isDefault = condition.display_name === reportableConditionDisplayName;
   return (
     <li
       className={classNames(
-        'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white'
+        'flex items-center justify-between rounded-md p-4 hover:bg-white'
       )}
-      onMouseEnter={() => setShowButton(true)}
-      onMouseLeave={() => setShowButton(false)}
-      onFocus={() => setShowButton(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          setShowButton(false);
-        }
-      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
     >
-      <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
-      {isDefault ? (
-        <span className="text-bold mr-3 text-black">Default</span>
-      ) : (
-        <Button
-          variant={condition.associated ? 'secondary' : 'primary'}
-          aria-pressed={condition.associated}
-          aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
-          className={classNames('mr-0! w-20!', {
-            'sr-only!': !showButton && !condition.associated,
-          })}
-          onClick={() => onClick(condition.associated)}
-          disabled={disabled}
-        >
-          {condition.associated ? 'Remove' : 'Add'}
-        </Button>
-      )}
+      <div className="flex w-full flex-row items-center justify-between">
+        <div className="flex flex-col gap-2">
+          <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
+          <div className="flex flex-row items-center justify-start gap-1 text-sm!">
+            <span
+              className={classNames({
+                'sr-only!': !showHiddenElements,
+              })}
+            >
+              <CodeSetCompletenessButton
+                conditionId={condition.id}
+                status={condition.code_set_status}
+              />
+            </span>
+          </div>
+        </div>
+        {isDefault ? (
+          <span className="text-bold mr-3 text-black">Default</span>
+        ) : (
+          <Button
+            variant={condition.associated ? 'secondary' : 'primary'}
+            aria-pressed={condition.associated}
+            aria-label={`${condition.associated ? 'Remove' : 'Add'} ${condition.display_name}`}
+            className={classNames('mr-0! w-20!', {
+              'sr-only!': !showHiddenElements && !condition.associated,
+            })}
+            onClick={() => onClick(condition.associated)}
+            disabled={disabled}
+          >
+            {condition.associated ? 'Remove' : 'Add'}
+          </Button>
+        )}
+      </div>
     </li>
   );
 }

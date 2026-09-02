@@ -12,6 +12,7 @@ import classNames from 'classnames';
 import { Search } from '@components/Search';
 import { Button } from '@components/Button';
 import { CloseIcon } from '@components/Icons/CloseIcon';
+import { useModalContext } from '@components/Modal/ModalContext';
 
 interface DrawerProps {
   title: string | React.ReactNode;
@@ -39,6 +40,7 @@ export function Drawer({
   drawerWidth,
 }: DrawerProps): React.ReactElement<DrawerProps> {
   const [searchFilter, setSearchFilter] = useState('');
+  const { isModalOpen } = useModalContext();
 
   useEffect(() => {
     if (onSearch) {
@@ -57,16 +59,17 @@ export function Drawer({
   return (
     <FocusTrap
       active={isOpen}
+      paused={isModalOpen}
       focusTrapOptions={{
         onDeactivate: handleClose,
         escapeDeactivates: true,
         clickOutsideDeactivates: true,
       }}
     >
-      <div>
+      <div className="z-drawer">
         <div
           className={classNames(
-            'bg-gray-2 z-drawer fixed top-0 flex h-full w-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 shadow-2xl transition-all duration-300 ease-linear',
+            'bg-gray-2 fixed top-0 flex h-full w-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 shadow-2xl transition-all duration-300 ease-linear',
             {
               'pointer-events-auto right-0 opacity-100': isOpen,
               'pointer-events-none right-[-60%] opacity-0': !isOpen,
@@ -75,9 +78,9 @@ export function Drawer({
             }
           )}
           role="dialog"
-          inert={!isOpen}
+          inert={!isOpen || isModalOpen}
         >
-          <div className="w-full overflow-y-scroll p-8">
+          <div className="w-full overflow-y-scroll p-2">
             <div className="max-w-[95%]">
               <Button
                 variant="unstyled"

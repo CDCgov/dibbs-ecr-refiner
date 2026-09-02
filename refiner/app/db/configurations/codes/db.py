@@ -24,6 +24,7 @@ class DbCodeResult:
     system_id: UUID
     system_name: str
     status: Literal["included", "excluded"]
+    is_child_rsg: bool
 
 
 @dataclass
@@ -39,7 +40,13 @@ class DbCodeCursor:
 
 def _encode_cursor(cursor: DbCodeCursor) -> str:
     return base64.b64encode(
-        json.dumps({"condition_id": cursor.condition_id, "code": cursor.code}).encode()
+        json.dumps(
+            {
+                "condition_id": cursor.condition_id,
+                "code": cursor.code,
+                "in_custom": cursor.in_custom,
+            }
+        ).encode()
     ).decode()
 
 
@@ -50,6 +57,7 @@ def _decode_cursor(cursor: str) -> DbCodeCursor:
 
 async def get_codes_db(
     configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
     db: AsyncDatabaseConnection,
     limit: int,
     filters: FilterInput,
@@ -122,7 +130,8 @@ async def get_codes_db(
                         c.display AS description,
                         c.system_id,
                         s.display_name AS system_name,
-                        'included' AS status
+                        'included' AS status,
+                        FALSE AS is_child_rsg
                     FROM custom_codes c
                     JOIN systems s ON s.id = c.system_id
                     WHERE c.configuration_id = %(configuration_id)s
@@ -151,6 +160,7 @@ async def get_codes_db(
     remaining = limit - len(rows) + 1  # +1 to detect next page
     cond_params: dict = {
         "configuration_id": configuration_id,
+        "primary_condition_id": configuration_primary_condition_id,
         "limit": remaining,
     }
     cond_clauses = []
@@ -200,7 +210,8 @@ async def get_codes_db(
             c.display AS description,
             c.system_id,
             s.display_name AS system_name,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status
+            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
+            BOOL_OR(cc.is_child_rsg AND cfgc.condition_id = %(primary_condition_id)s) AS is_child_rsg
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = con.id
@@ -250,6 +261,7 @@ async def get_codes_db(
 
 async def set_codes_status_db(
     configuration_id: UUID,
+    configuration_primary_condition_id: UUID,
     code_ids: list[UUID],
     status: Literal["included", "excluded"],
     db: AsyncDatabaseConnection,
@@ -261,8 +273,12 @@ async def set_codes_status_db(
     If `status="excluded"` is provided, entries will be added to the table. Since multiple
     conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
 
+    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
+    as these cannot be excluded.
+
     Args:
         configuration_id (UUID): ID of the configuration
+        configuration_primary_condition_id (UUID): ID of the configuration's primary condition
         code_ids (list[UUID]): List of code IDs
         status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
         db (AsyncDatabaseConnection): The database connection
@@ -270,25 +286,42 @@ async def set_codes_status_db(
     Returns:
         list[UUID]: List of impacted code IDs
     """
-    if status == "included":
+    params = {
+        "configuration_id": configuration_id,
+        "code_ids": code_ids,
+        "primary_condition_id": configuration_primary_condition_id,
+    }
+
+    if status == "excluded":
+        rsg_check_query = """
+            SELECT cc.code_id
+            FROM conditions_codes_temp cc
+            WHERE cc.condition_id = %(primary_condition_id)s
+            AND cc.is_child_rsg = true
+            AND cc.code_id = ANY(%(code_ids)s::uuid[])
+        """
+        async with db.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(rsg_check_query, params)
+                rsg_rows = await cur.fetchall()
+
+        if rsg_rows:
+            rsg_ids = [row["code_id"] for row in rsg_rows]
+            raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
+
         query = """
-            DELETE FROM configurations_conditions_code_exclusions
-            WHERE configuration_id = %(configuration_id)s
-              AND code_id = ANY(%(code_ids)s)
+            INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
+            SELECT %(configuration_id)s::uuid, UNNEST(%(code_ids)s::uuid[])
+            ON CONFLICT DO NOTHING
             RETURNING code_id
         """
     else:
         query = """
-            INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)
-            SELECT %(configuration_id)s, UNNEST(%(code_ids)s::uuid[])
-            ON CONFLICT DO NOTHING
+            DELETE FROM configurations_conditions_code_exclusions
+            WHERE configuration_id = %(configuration_id)s
+            AND code_id = ANY(%(code_ids)s)
             RETURNING code_id
         """
-
-    params = {
-        "configuration_id": configuration_id,
-        "code_ids": code_ids,
-    }
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

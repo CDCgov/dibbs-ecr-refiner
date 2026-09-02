@@ -157,6 +157,7 @@ async def _get_baseline_tes_update_condition_diff_db(
                     jsonb_build_object(
                         'code', c.code,
                         'system_name', s.display_name,
+                        'system_id', s.id,
                         'display', c.display
                     )
                 ) FILTER (WHERE c.id IS NOT NULL),
@@ -225,6 +226,7 @@ async def get_tes_update_condition_diff_db(
                 cond.display_name as condition_name,
                 c.code,
                 s.display_name as system_name,
+                s.id as system_id,
                 c.display as code_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
@@ -240,6 +242,7 @@ async def get_tes_update_condition_diff_db(
                 cond.display_name as condition_name,
                 c.code,
                 s.display_name as system_name,
+                s.id as system_id,
                 c.display as code_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
@@ -252,17 +255,19 @@ async def get_tes_update_condition_diff_db(
         SELECT
             COALESCE (prev.canonical_url, cur.canonical_url) AS canonical_url,
             MAX(COALESCE(cur.condition_name, prev.condition_name)) AS condition_name,
-            COALESCE(jsonb_agg(
-                jsonb_build_object(
-                'code', cur.code,
-                'system_name', cur.system_name,
-                'display', cur.code_name
+            COALESCE(JSONB_AGG(
+                JSONB_BUILD_OBJECT(
+                    'code', cur.code,
+                    'system_name', cur.system_name,
+                    'system_id', cur.system_id,
+                    'display', cur.code_name
                 ))
             FILTER (WHERE prev.code_id IS NULL), '[]'::jsonb) as added_codes,
-            COALESCE(jsonb_agg(
-                jsonb_build_object(
+            COALESCE(JSONB_AGG(
+                JSONB_BUILD_OBJECT(
                     'code', prev.code,
                     'system_name', prev.system_name,
+                    'system_id', prev.system_id,
                     'display', prev.code_name
                 ))
             FILTER (WHERE cur.code_id IS NULL), '[]'::jsonb) as removed_codes

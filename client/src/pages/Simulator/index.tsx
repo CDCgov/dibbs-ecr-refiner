@@ -97,8 +97,8 @@ export function Simulator() {
       <LayoutContainer
         breakout={true}
         maxWidth="max-w-full"
-        padding="none"
-        className="px-0 py-10"
+        padding="lg"
+        className="py-10"
       >
         {configurationsResponse?.data && refinementResponse?.data && (
           <Success

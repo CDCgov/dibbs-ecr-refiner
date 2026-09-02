@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, TypedDict
 from uuid import UUID
 
-from app.db.codes.model import CodedConcept
+from app.db.codes.model import CodedConcept, DbCode
 
 
 @dataclass
@@ -24,18 +24,6 @@ class DbConditionsContextGrouper:
 
 
 @dataclass
-class DbConditionCoding:
-    """
-    Model for code/display pairs from conditions table JSONB columns.
-
-    Note: System is implicit in the column name (e.g., snomed_codes, loinc_codes).
-    """
-
-    code: str
-    display: str
-
-
-@dataclass
 class DbConditionBase:
     """
     Simple information about a condition from the database. Excludes info about code sets.
@@ -45,6 +33,7 @@ class DbConditionBase:
     display_name: str
     canonical_url: str
     version: str
+    coverage_level: str | None = None
 
 
 @dataclass
@@ -58,18 +47,13 @@ class DbCondition(DbConditionBase):
 
     # the child RSG codes that match 1:1 with RC SNOMED codes
     # that will come **from** the RR's coded information organizer
-    child_rsg_snomed_codes: list[str]
+    child_rsg_snomed_codes: list[str] = field(default_factory=list)
     # jsonb columns storing code/display pairs
     # this data is extracted from flat files from the TES
     # and seeded from CG's RSG and ACG children
-    snomed_codes: list[DbConditionCoding]
-    loinc_codes: list[DbConditionCoding]
-    icd10_codes: list[DbConditionCoding]
-    rxnorm_codes: list[DbConditionCoding]
-    cvx_codes: list[DbConditionCoding]
     # coverage level from the crmi-curationCoverageLevel extension
     # on the condition grouper ValueSet; null when the extension is not present
-    coverage_level: str | None = None
+    codes: list[DbCode] = field(default_factory=list)
     coverage_level_reason: str | None = None
     coverage_level_date: datetime | None = None
 
@@ -89,18 +73,14 @@ class DbCondition(DbConditionBase):
             display_name=row["display_name"],
             canonical_url=row["canonical_url"],
             version=row["version"],
+            codes=[DbCode(**c) for c in row["codes"]],
             child_rsg_snomed_codes=row.get("child_rsg_snomed_codes") or [],
-            snomed_codes=[DbConditionCoding(**c) for c in row["snomed_codes"]],
-            loinc_codes=[DbConditionCoding(**c) for c in row["loinc_codes"]],
-            icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],
-            rxnorm_codes=[DbConditionCoding(**c) for c in row["rxnorm_codes"]],
-            cvx_codes=[DbConditionCoding(**c) for c in row["cvx_codes"]],
             coverage_level=row.get("coverage_level"),
             coverage_level_reason=row.get("coverage_level_reason"),
             coverage_level_date=row.get("coverage_level_date"),
         )
 
-    def get_codes_from_all_systems(self) -> list[DbConditionCoding]:
+    def get_codes_from_all_systems(self) -> list[DbCode]:
         """
         Returns all codes from all systems.
 
@@ -110,13 +90,7 @@ class DbCondition(DbConditionBase):
         Returns:
             DbCondition: The condition object
         """
-        return (
-            self.snomed_codes
-            + self.loinc_codes
-            + self.icd10_codes
-            + self.rxnorm_codes
-            + self.cvx_codes
-        )
+        return self.codes
 
     def get_total_code_count(self) -> int:
         """
@@ -125,16 +99,7 @@ class DbCondition(DbConditionBase):
         Codes are deduplicated within each code system.
         The same code value in different code systems is counted separately.
         """
-        return sum(
-            len({coding.code for coding in codes})
-            for codes in (
-                self.snomed_codes,
-                self.loinc_codes,
-                self.icd10_codes,
-                self.rxnorm_codes,
-                self.cvx_codes,
-            )
-        )
+        return len(self.codes)
 
 
 class ConditionMapValueDict(TypedDict):
