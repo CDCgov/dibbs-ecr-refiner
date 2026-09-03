@@ -3,7 +3,6 @@ import math
 import os
 import time
 from collections import defaultdict
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +15,7 @@ from dotenv import load_dotenv
 SHARD_THRESHOLD_BYTES = 30 * 1024 * 1024
 
 
-def dynamic_classify_valueset(valueset: dict[str, Any], fetch_date: str) -> str | None:
+def dynamic_classify_valueset(valueset: dict[str, Any]) -> str | None:
     """
     Dynamically classifies a ValueSet based on its archetype.
 
@@ -25,13 +24,6 @@ def dynamic_classify_valueset(valueset: dict[str, Any], fetch_date: str) -> str 
 
     Args:
         valueset: A dictionary representing a single FHIR ValueSet resource.
-        fetch_date: A YYYYMMDD string identifying this fetch run, used to
-            version eICR triggering ValueSets. Unlike the grouper archetypes
-            below, these resources carry no native 'version' field (VSAC
-            content updates individual ValueSets in place rather than
-            cutting dated/semver releases), so the fetch run's own date
-            stands in as the version -- the same role a grouper's 'version'
-            field plays in its category name.
 
     Returns:
         A dynamically generated category name string (e.g.,
@@ -47,8 +39,13 @@ def dynamic_classify_valueset(valueset: dict[str, Any], fetch_date: str) -> str 
     # eICR triggering valuesets -- the eRSD trigger-code content. Kept (not
     # ignored) so we can identify codes that would carry a trigger-code
     # templateId in an eICR and protect them from accidental exclusion.
+    # * unversioned on purpose: unlike the grouper archetypes below, these
+    #   carry no 'version' field (VSAC updates individual ValueSets in place
+    #   rather than cutting dated/semver releases), and a synthetic
+    #   fetch-date suffix would make every refetch look like a new file to
+    #   detect_changes even when the content is byte-identical
     if any("us-ph-triggering-valueset" in p for p in profiles):
-        return f"eicr_triggering_{fetch_date}"
+        return "eicr_triggering"
 
     # rule 2:
     # identify by profile first (most reliable)
@@ -228,7 +225,6 @@ def run_fetch_pipeline(
     load_dotenv()
     API_URL = os.getenv("TES_API_URL", "https://tes.tools.aimsplatform.org/api/fhir")
     BATCH_SIZE = 250
-    fetch_date = datetime.now(UTC).strftime("%Y%m%d")
 
     # buffer per-category in memory so we can sort and split at the end
     # * peak memory is bounded by the size of the full active tes dataset
@@ -264,7 +260,7 @@ def run_fetch_pipeline(
             if resource.get("resourceType") != "ValueSet":
                 continue
 
-            category = dynamic_classify_valueset(resource, fetch_date=fetch_date)
+            category = dynamic_classify_valueset(resource)
 
             if category is None:
                 ignored_count += 1

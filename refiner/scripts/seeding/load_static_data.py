@@ -568,15 +568,17 @@ def _upsert_relationships(
     staged_counts = {child_rsg_key: 0, non_child_rsg_key: 0}
 
     trigger_count = 0
+    unmatched_trigger_count = 0
 
     def relationship_generator():
-        nonlocal trigger_count
+        nonlocal trigger_count, unmatched_trigger_count
         for cond in condition_to_code_relationships.values():
             cond_id = cond["condition_id"]
             if not cond_id:
                 continue
 
             trigger_keys = cond["trigger_code_keys"]
+            matched_trigger_keys: set[tuple[UUID, str]] = set()
 
             for code in cond["child_rsg_codes"]:
                 # Pass the tuple (cond_id, canonical_url) to get the exact valueset
@@ -587,7 +589,9 @@ def _upsert_relationships(
                     continue
 
                 is_trigger = (code.system_db_id, code.code) in trigger_keys
-                trigger_count += is_trigger
+                if is_trigger:
+                    matched_trigger_keys.add((code.system_db_id, code.code))
+                    trigger_count += 1
                 staged_counts[child_rsg_key] += 1
                 yield (cond_id, code_id, True, is_trigger, valueset_id)
 
@@ -599,9 +603,17 @@ def _upsert_relationships(
                     continue
 
                 is_trigger = (code.system_db_id, code.code) in trigger_keys
-                trigger_count += is_trigger
+                if is_trigger:
+                    matched_trigger_keys.add((code.system_db_id, code.code))
+                    trigger_count += 1
                 staged_counts[non_child_rsg_key] += 1
                 yield (cond_id, code_id, False, is_trigger, valueset_id)
+
+            # trigger codes the eRSD lists for this condition that the
+            # condition's own RSG/ACG groupers never mention: there is no
+            # code row to flag, so they can't be protected -- a rising
+            # number here means eRSD and TES content have drifted apart
+            unmatched_trigger_count += len(trigger_keys - matched_trigger_keys)
 
     logger.info("🚀 Streaming relationships into conditions_codes table...")
     with cursor.copy(
@@ -617,6 +629,11 @@ def _upsert_relationships(
         f"{staged_counts[non_child_rsg_key]:,} non_child_rsg, "
         f"{trigger_count:,} trigger_code)."
     )
+    if unmatched_trigger_count:
+        logger.warning(
+            f"⚠️ {unmatched_trigger_count:,} eRSD trigger codes had no matching "
+            "code in their condition's grouper set and were not flagged."
+        )
 
     cursor.execute("ANALYZE conditions_codes_temp;")
     return

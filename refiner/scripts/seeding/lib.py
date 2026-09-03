@@ -20,6 +20,10 @@ SYSTEM_MAP = {
 
 SNOMED_OID = "2.16.840.1.113883.6.96"
 
+# filename prefix for the eICR triggering shards written by the fetch
+# pipeline; sharding appends '.partNN', hence prefix rather than exact name
+TRIGGER_FILE_PREFIX = "eicr_triggering"
+
 CODE_SYSTEM_DATA = {
     "snomed": {
         "oid": SNOMED_OID,
@@ -636,18 +640,17 @@ def collect_files_to_parse(seed_all_tes_data: bool, versions_to_keep=2) -> list[
     """
     Function to collect the relevant files to seed, filtering out only the previous two TES releases to speed up local dev.
 
-    Excludes eicr_triggering_* files: they aren't part of the condition
-    grouper's compose reference graph (no CG ever points to one), they're
-    resolved separately by load_trigger_valuesets_by_snomed. Their filenames
-    also carry a fetch-date suffix that would otherwise collide with this
-    function's datetime-based "top N recent" selection for RSG's dated
-    releases.
+    Excludes eicr_triggering* files: they aren't part of the condition
+    grouper's compose reference graph (no CG ever points to one), so they're
+    resolved separately by load_trigger_codes_by_snomed. They're also
+    unversioned, which this function's "top N recent releases" selection has
+    no way to reason about.
     """
 
     json_files = [
         f
         for f in TES_DATA_DIR.glob("*.json")
-        if f.name != "manifest.json" and not f.name.startswith("eicr_triggering_")
+        if f.name != "manifest.json" and not f.name.startswith(TRIGGER_FILE_PREFIX)
     ]
     if seed_all_tes_data:
         return json_files
@@ -780,7 +783,10 @@ def get_expansion_codes(vs: dict) -> set[FhirCodeInfo]:
                 FhirCodeInfo(
                     system_url=system,
                     code=code,
-                    display=concept.get("display"),
+                    # triggering valuesets ship without displays; the empty
+                    # string keeps FhirCodeInfo's contract intact for any
+                    # caller that does more than read code/system
+                    display=concept.get("display") or "",
                     source_url=source_url,
                     source_name=source_name,
                 )
@@ -788,22 +794,16 @@ def get_expansion_codes(vs: dict) -> set[FhirCodeInfo]:
     return codes
 
 
-def latest_trigger_valueset_files() -> list[Path]:
+def trigger_valueset_files() -> list[Path]:
     """
-    Finds the newest eicr_triggering_<fetch-date> shard set in TES_DATA_DIR.
+    Finds the eICR triggering shard set in TES_DATA_DIR.
 
-    Mirrors the RSG "newest dated shard" pattern, but scoped to
-    eicr_triggering_* filenames only -- see collect_files_to_parse for why
-    these are excluded from the general date-based file selection.
+    There is only ever one set: the triggering valuesets are unversioned, so
+    a refetch overwrites them in place rather than landing beside the
+    previous release the way the dated/semver groupers do.
     """
 
-    candidates = list(TES_DATA_DIR.glob("eicr_triggering_*.json"))
-    dates = {m.group(1) for f in candidates if (m := re.search(r"(\d{8})", f.name))}
-    if not dates:
-        return []
-
-    latest_date = max(dates)
-    return sorted(f for f in candidates if latest_date in f.name)
+    return sorted(TES_DATA_DIR.glob(f"{TRIGGER_FILE_PREFIX}*.json"))
 
 
 def load_trigger_codes_by_snomed() -> dict[str, set[FhirCodeInfo]]:
@@ -816,7 +816,7 @@ def load_trigger_codes_by_snomed() -> dict[str, set[FhirCodeInfo]]:
     """
 
     codes_by_snomed: defaultdict[str, set[FhirCodeInfo]] = defaultdict(set)
-    for path in latest_trigger_valueset_files():
+    for path in trigger_valueset_files():
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
 

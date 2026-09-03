@@ -202,7 +202,7 @@ CREATE TABLE public.conditions_codes_temp (
     code_id uuid NOT NULL,
     valueset_id uuid NOT NULL,
     is_child_rsg boolean DEFAULT false,
-    is_trigger_code boolean DEFAULT false
+    is_trigger_code boolean DEFAULT false NOT NULL
 );
 
 
