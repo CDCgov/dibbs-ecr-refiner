@@ -64,15 +64,17 @@ export function ManageCodes() {
               title="Manage codes"
               subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
             />
-            <AddCodeSetsButton
-              included_conditions={configuration.data.included_conditions}
-              setIsDrawerOpen={setIsDrawerOpen}
-            />
-            <AddCustomCodeButton
-              configurationId={id}
-              disabled={isDisabled}
-              setIsUploadingCustomCodes={setIsUploadingCustomCodes}
-            />
+            <div className="flex gap-2">
+              <AddCodeSetsButton
+                included_conditions={configuration.data.included_conditions}
+                setIsDrawerOpen={setIsDrawerOpen}
+              />
+              <AddCustomCodeButton
+                configurationId={id}
+                disabled={isDisabled}
+                setIsUploadingCustomCodes={setIsUploadingCustomCodes}
+              />
+            </div>
           </div>
           {isUploadingCustomCodes ? (
             <ImportCustomCodes
