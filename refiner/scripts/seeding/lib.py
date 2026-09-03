@@ -7,7 +7,7 @@ from typing import Any, TypedDict
 from uuid import UUID
 
 import psycopg
-from config import TES_DATA_DIR, logger
+from config import TES_DATA_DIR, TRIGGER_FILE_PREFIX, logger
 
 SYSTEM_MAP = {
     "http://loinc.org": "loinc_codes",
@@ -19,10 +19,6 @@ SYSTEM_MAP = {
 
 
 SNOMED_OID = "2.16.840.1.113883.6.96"
-
-# filename prefix for the eICR triggering shards written by the fetch
-# pipeline; sharding appends '.partNN', hence prefix rather than exact name
-TRIGGER_FILE_PREFIX = "eicr_triggering"
 
 CODE_SYSTEM_DATA = {
     "snomed": {
