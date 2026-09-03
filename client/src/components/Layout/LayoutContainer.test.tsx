@@ -33,6 +33,7 @@ describe('LayoutContainer', () => {
     expect(container?.className).toContain('max-w-7xl');
     expect(container?.className).toContain('px-4');
     expect(container?.className).not.toContain('px-8');
+    expect(container?.className).toContain('lg:px-20');
   });
 
   it('applies background class', () => {
