@@ -505,7 +505,7 @@ function ExclusionWarningModal({
 
             <span className="mt-2">
               {lockedCodesCount
-                ? `This configuration's primary condition has ${lockedCodesCount} RCTC code(s) that can't be excluded. These codes must be included to properly process the eCR.`
+                ? `This configuration's primary condition has ${lockedCodesCount} code(s) that can't be excluded. These codes must be included to properly process the eCR.`
                 : null}
             </span>
           </p>
