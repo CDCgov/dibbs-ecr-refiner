@@ -80,7 +80,9 @@ class TestSerialization:
                 assert c["system"] in OID_TO_SYSTEM_KEY_MAP.keys()
 
         # exclude codes and ensure the payloads on reserialization pick up the change
-        codes_to_exclude = ["12236161000119108", "276680000"]
+        # both must be non-trigger codes for the condition: the primary
+        # condition's eICR trigger codes are rejected by set-status
+        codes_to_exclude = ["12236161000119108", "12236121000119103"]
         code_ids_to_exclude = await get_code_ids_by_value(
             condition_id=condition_id, code_values=codes_to_exclude
         )

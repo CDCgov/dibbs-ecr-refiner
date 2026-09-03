@@ -192,14 +192,11 @@ function CodesTable({
 
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
-  const codesWithoutPrimaryConditionRsgCodes = codes.filter(
-    (c) => !c.is_primary_condition_rsg
-  );
+  const excludableCodes = codes.filter((c) => !c.is_trigger_code);
 
   const allSelected =
-    codesWithoutPrimaryConditionRsgCodes.length > 0 &&
-    selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length;
-  const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
+    excludableCodes.length > 0 && selectedIds.size === excludableCodes.length;
+  const selectedCustomCodes = excludableCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
   );
 
@@ -243,11 +240,7 @@ function CodesTable({
                     onChange={(checked) =>
                       setSelectedIds(
                         checked
-                          ? new Set(
-                              codesWithoutPrimaryConditionRsgCodes.map(
-                                (c) => c.id
-                              )
-                            )
+                          ? new Set(excludableCodes.map((c) => c.id))
                           : new Set()
                       )
                     }
@@ -307,7 +300,7 @@ function CodesTable({
                     )}
                   >
                     <td className="text-center">
-                      {code.is_primary_condition_rsg ? (
+                      {code.is_trigger_code ? (
                         <Tooltip
                           position="right"
                           label="Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR."

@@ -23,6 +23,15 @@ The data is organized into the following subdirectories, with a distinction betw
 - The `source-` prefix indicates that this is foundational data that other processes rely on.
 - The `manifest.json` has a checksum that helps us track changes in these files over time.
 
+`eicr_triggering.json` comes from the same API but plays a different role: these are the
+eICR triggering (eRSD) ValueSets, enumerating the codes that would carry a trigger-code
+templateId in an eICR. Seeding uses them only to set `is_trigger_code` on codes the
+groupers already supplied — they never introduce code rows of their own, so a trigger code
+no grouper mentions can't be flagged (the seeder logs a count of those). Unlike the
+groupers these carry no `version` field, since VSAC updates them in place rather than
+cutting releases, so the filename is deliberately unversioned: a refetch overwrites it and
+`manifest.json` records when it last changed.
+
 ### `jurisdiction-packages/`
 
 **Purpose:** Contains generated, jurisdiction-specific sample eCR files, packaged as `.zip` archives.
