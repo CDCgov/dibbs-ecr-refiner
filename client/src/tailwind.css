@@ -46,6 +46,10 @@
   ul {
     list-style: disc;
   }
+
+  mark {
+    @apply bg-yellow-vivid-5v! text-black!;
+  }
 }
 @layer utilities {
   .border-thin {
