@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 
-export const LAYOUT_MAX_WIDTH = 'max-w-[1200px]';
+export const LAYOUT_MAX_WIDTH = 'max-w-[1440px]';
 
 type LayoutPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 

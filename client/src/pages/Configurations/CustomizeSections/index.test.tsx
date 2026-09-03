@@ -480,7 +480,7 @@ describe('Configuration sections', () => {
     const errorMessage = await within(row).findByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
-      /To reconstruct narrative, refine must be selected/
+      /To reconstruct narrative, "Refine" must be selected/
     );
   });
 
@@ -573,7 +573,7 @@ describe('Configuration sections', () => {
     const errorMessage = await within(row).findByRole('alert');
     expect(errorMessage).toBeInTheDocument();
     expect(errorMessage).toHaveTextContent(
-      /To keep narrative on match, refine must be selected/
+      /To keep narrative on match, "Refine" must be selected/
     );
   });
 
