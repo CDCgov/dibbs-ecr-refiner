@@ -128,14 +128,19 @@ class TestSerialization:
                 assert c["system"] in OID_TO_SYSTEM_KEY_MAP.keys()
 
         # exclude codes and ensure the payloads on reserialization pick up the change
-        codes_to_exclude = ["12236161000119108", "276680000"]
+        # both must be non-trigger codes for the condition: the primary
+        # condition's eICR trigger codes are rejected by set-status
+        codes_to_exclude = ["12236161000119108", "12236121000119103"]
         code_ids_to_exclude = await get_code_ids_by_value(
             condition_id=condition_id, code_values=codes_to_exclude
         )
 
         response = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[str(c["id"]) for c in code_ids_to_exclude],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [str(c["id"]) for c in code_ids_to_exclude],
+                "code_ids_to_skip": [],
+            },
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -192,8 +197,11 @@ class TestSerialization:
         )
 
         exclusion_response = await authed_client.post(
-            f"/api/v1/configurations/{config_id}/set-status?status=excluded",
-            json=[str(c["id"]) for c in code_ids_to_exclude],
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [str(c["id"]) for c in code_ids_to_exclude],
+                "code_ids_to_skip": [],
+            },
         )
         assert exclusion_response.status_code == status.HTTP_200_OK
 

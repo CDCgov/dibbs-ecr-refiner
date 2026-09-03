@@ -13,6 +13,7 @@ from lib import (
     SNOMED_OID,
     CodeRow,
     ConditionData,
+    FhirCodeInfo,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
@@ -22,6 +23,7 @@ from lib import (
     get_db_connection,
     get_sibling_context_valuesets,
     is_condition_grouper,
+    load_trigger_codes_by_snomed,
     load_valuesets_from_all_files,
     map_coverage_level_to_acg_completeness,
     parse_child_rsg_details_from_use_context,
@@ -112,6 +114,10 @@ class ConditionToCodeToValuesetTrace(TypedDict):
     condition_display_name: str
     child_rsg_codes: set[ConditionsCodesTrace]
     non_child_rsg_codes: set[ConditionsCodesTrace]
+    # (system_db_id, code) pairs that carry an eICR trigger-code templateId
+    # for this condition. Looked up against the codes already being
+    # inserted above -- it doesn't introduce new code rows on its own.
+    trigger_code_keys: set[tuple[UUID, str]]
 
 
 type SystemDbId = UUID
@@ -339,11 +345,39 @@ def _build_sibling_codes(
     return condition_non_child_rsg_snomed_codes
 
 
+def _build_trigger_code_keys(
+    rsg_snomed_codes: set[str],
+    trigger_codes_by_snomed: dict[str, set[FhirCodeInfo]],
+    oid_indexed_system_db_ids: SystemOidToDbIdMap,
+) -> set[tuple[UUID, str]]:
+    """
+    Resolves a condition's eICR trigger codes to (system_db_id, code) keys.
+
+    A condition can have more than one RSG child (e.g. COVID-19's CG groups
+    three), so trigger codes are unioned across each of their SNOMED codes.
+    This only produces lookup keys -- matched against codes already being
+    inserted via RSG/ACG elsewhere in _build_codes -- it doesn't introduce
+    new code rows on its own.
+    """
+
+    keys: set[tuple[UUID, str]] = set()
+    for snomed_code in rsg_snomed_codes:
+        trigger_fhir_codes = trigger_codes_by_snomed.get(snomed_code, set())
+        by_system_oid = categorize_codes_by_system_oid(trigger_fhir_codes)
+        for system_oid, codes in by_system_oid.items():
+            system_db_id = oid_indexed_system_db_ids.get(system_oid)
+            if not system_db_id:
+                continue
+            keys.update((system_db_id, c.code) for c in codes)
+    return keys
+
+
 def _build_codes(
     valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
     condition_groupers: list[VsDict],
     oid_indexed_system_db_ids: SystemOidToDbIdMap,
     condition_to_code_relationships: RelationshipsToInsert,
+    trigger_codes_by_snomed: dict[str, set[FhirCodeInfo]],
 ) -> ProcessedCodePayload:
     code_context = BuildCodeContext(db_ids=oid_indexed_system_db_ids)
 
@@ -383,6 +417,15 @@ def _build_codes(
 
         condition_to_code_relationships[cond_key]["non_child_rsg_codes"].update(
             condition_non_child_rsg_snomed_codes
+        )
+
+        rsg_snomed_codes = {trace.code for trace in condition_child_rsg_snomed_codes}
+        condition_to_code_relationships[cond_key]["trigger_code_keys"].update(
+            _build_trigger_code_keys(
+                rsg_snomed_codes=rsg_snomed_codes,
+                trigger_codes_by_snomed=trigger_codes_by_snomed,
+                oid_indexed_system_db_ids=oid_indexed_system_db_ids,
+            )
         )
 
     return ProcessedCodePayload(
@@ -496,6 +539,7 @@ def _upsert_conditions(
             valueset_urls=[],
             child_rsg_codes=set(),
             non_child_rsg_codes=set(),
+            trigger_code_keys=set(),
             condition_url=condition_canonical_url,
         )
 
@@ -523,11 +567,18 @@ def _upsert_relationships(
     non_child_rsg_key = "non_child_rsg"
     staged_counts = {child_rsg_key: 0, non_child_rsg_key: 0}
 
+    trigger_count = 0
+    unmatched_trigger_count = 0
+
     def relationship_generator():
+        nonlocal trigger_count, unmatched_trigger_count
         for cond in condition_to_code_relationships.values():
             cond_id = cond["condition_id"]
             if not cond_id:
                 continue
+
+            trigger_keys = cond["trigger_code_keys"]
+            matched_trigger_keys: set[tuple[UUID, str]] = set()
 
             for code in cond["child_rsg_codes"]:
                 # Pass the tuple (cond_id, canonical_url) to get the exact valueset
@@ -537,8 +588,12 @@ def _upsert_relationships(
                 if not code_id or not valueset_id:
                     continue
 
+                is_trigger = (code.system_db_id, code.code) in trigger_keys
+                if is_trigger:
+                    matched_trigger_keys.add((code.system_db_id, code.code))
+                    trigger_count += 1
                 staged_counts[child_rsg_key] += 1
-                yield (cond_id, code_id, True, valueset_id)
+                yield (cond_id, code_id, True, is_trigger, valueset_id)
 
             for code in cond["non_child_rsg_codes"]:
                 code_id = code_map.get((code.system_db_id, code.code))
@@ -547,12 +602,22 @@ def _upsert_relationships(
                 if not code_id or not valueset_id:
                     continue
 
+                is_trigger = (code.system_db_id, code.code) in trigger_keys
+                if is_trigger:
+                    matched_trigger_keys.add((code.system_db_id, code.code))
+                    trigger_count += 1
                 staged_counts[non_child_rsg_key] += 1
-                yield (cond_id, code_id, False, valueset_id)
+                yield (cond_id, code_id, False, is_trigger, valueset_id)
+
+            # trigger codes the eRSD lists for this condition that the
+            # condition's own RSG/ACG groupers never mention: there is no
+            # code row to flag, so they can't be protected -- a rising
+            # number here means eRSD and TES content have drifted apart
+            unmatched_trigger_count += len(trigger_keys - matched_trigger_keys)
 
     logger.info("🚀 Streaming relationships into conditions_codes table...")
     with cursor.copy(
-        "COPY conditions_codes_temp (condition_id, code_id, is_child_rsg, valueset_id) FROM STDIN"
+        "COPY conditions_codes_temp (condition_id, code_id, is_child_rsg, is_trigger_code, valueset_id) FROM STDIN"
     ) as copy:
         for row in relationship_generator():
             copy.write_row(row)
@@ -560,8 +625,15 @@ def _upsert_relationships(
     inserted_count = sum(staged_counts.values())
     logger.info(
         f"📥 Inserted {inserted_count:,} total relationships "
-        f"(unique counts: {staged_counts[child_rsg_key]:,} child_rsg, {staged_counts[non_child_rsg_key]:,} non_child_rsg)."
+        f"(unique counts: {staged_counts[child_rsg_key]:,} child_rsg, "
+        f"{staged_counts[non_child_rsg_key]:,} non_child_rsg, "
+        f"{trigger_count:,} trigger_code)."
     )
+    if unmatched_trigger_count:
+        logger.warning(
+            f"⚠️ {unmatched_trigger_count:,} eRSD trigger codes had no matching "
+            "code in their condition's grouper set and were not flagged."
+        )
 
     cursor.execute("ANALYZE conditions_codes_temp;")
     return
@@ -798,6 +870,7 @@ def load_tes_data(
     all_valuesets_map = load_valuesets_from_all_files(
         seed_all_tes_data=seed_all_tes_data
     )
+    trigger_codes_by_snomed = load_trigger_codes_by_snomed()
 
     condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
@@ -827,6 +900,7 @@ def load_tes_data(
         oid_indexed_system_db_ids=system_data,
         condition_to_code_relationships=condition_to_code_relationships,
         condition_groupers=condition_groupers,
+        trigger_codes_by_snomed=trigger_codes_by_snomed,
     )
 
     _upsert_valuesets(

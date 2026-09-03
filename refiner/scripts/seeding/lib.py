@@ -1,12 +1,13 @@
 import json
 import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypedDict
 from uuid import UUID
 
 import psycopg
-from config import TES_DATA_DIR, logger
+from config import TES_DATA_DIR, TRIGGER_FILE_PREFIX, logger
 
 SYSTEM_MAP = {
     "http://loinc.org": "loinc_codes",
@@ -634,8 +635,19 @@ def is_condition_grouper(vs: dict) -> bool:
 def collect_files_to_parse(seed_all_tes_data: bool, versions_to_keep=2) -> list[Path]:
     """
     Function to collect the relevant files to seed, filtering out only the previous two TES releases to speed up local dev.
+
+    Excludes eicr_triggering* files: they aren't part of the condition
+    grouper's compose reference graph (no CG ever points to one), so they're
+    resolved separately by load_trigger_codes_by_snomed. They're also
+    unversioned, which this function's "top N recent releases" selection has
+    no way to reason about.
     """
-    json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
+
+    json_files = [
+        f
+        for f in TES_DATA_DIR.glob("*.json")
+        if f.name != "manifest.json" and not f.name.startswith(TRIGGER_FILE_PREFIX)
+    ]
     if seed_all_tes_data:
         return json_files
 
@@ -707,3 +719,108 @@ def parse_child_rsg_details_from_use_context(use_context: list[dict[str, dict]])
                 return vs_description
 
     raise ValueError("No description found in parsing child RSG display name")
+
+
+def is_reporting_trigger_valueset(vs: dict) -> bool:
+    """
+    Checks if a ValueSet is an eICR triggering ValueSet by its meta.profile.
+
+    These carry the 'us-ph-triggering-valueset' profile from the US Public
+    Health eCR IG -- they enumerate the codes that would carry a
+    trigger-code templateId in an eICR, i.e. the actual reason a case
+    report was sent, as opposed to RSG/ACG's broader "codes associated with
+    this condition" scope.
+    """
+
+    profiles = vs.get("meta", {}).get("profile", []) or []
+    return any("us-ph-triggering-valueset" in str(p) for p in profiles)
+
+
+def parse_snomed_focus_codes(vs: dict) -> list[str]:
+    """
+    Extracts every SNOMED 'focus' useContext code from a ValueSet.
+
+    A triggering ValueSet's useContext[focus] names the condition(s) it's
+    associated with, the same role RSG's useContext[focus] plays -- but
+    unlike RSG (one condition per ValueSet), a triggering ValueSet can list
+    more than one.
+    """
+
+    codes: list[str] = []
+    for context in vs.get("useContext", []):
+        if context.get("code", {}).get("code") != "focus":
+            continue
+        for coding in context.get("valueCodeableConcept", {}).get("coding", []):
+            if coding.get("system") == "http://snomed.info/sct" and coding.get("code"):
+                codes.append(coding["code"])
+    return codes
+
+
+def get_expansion_codes(vs: dict) -> set[FhirCodeInfo]:
+    """
+    Extracts codes from a ValueSet's expansion.contains.
+
+    Triggering ValueSets ship pre-expanded (expansion.contains) rather than
+    as compose.include[].concept[] like RSG/ACG/CG, since they're sourced
+    from VSAC rather than authored directly in TES's grouper compose.
+    """
+
+    codes: set[FhirCodeInfo] = set()
+    source_url = vs.get("url")
+    if not source_url:
+        return codes
+
+    source_name = parse_valueset_source_name(vs)
+    for concept in vs.get("expansion", {}).get("contains", []):
+        system = concept.get("system")
+        code = concept.get("code")
+        if system and code:
+            codes.add(
+                FhirCodeInfo(
+                    system_url=system,
+                    code=code,
+                    # triggering valuesets ship without displays; the empty
+                    # string keeps FhirCodeInfo's contract intact for any
+                    # caller that does more than read code/system
+                    display=concept.get("display") or "",
+                    source_url=source_url,
+                    source_name=source_name,
+                )
+            )
+    return codes
+
+
+def trigger_valueset_files() -> list[Path]:
+    """
+    Finds the eICR triggering shard set in TES_DATA_DIR.
+
+    There is only ever one set: the triggering valuesets are unversioned, so
+    a refetch overwrites them in place rather than landing beside the
+    previous release the way the dated/semver groupers do.
+    """
+
+    return sorted(TES_DATA_DIR.glob(f"{TRIGGER_FILE_PREFIX}*.json"))
+
+
+def load_trigger_codes_by_snomed() -> dict[str, set[FhirCodeInfo]]:
+    """
+    Loads the newest eICR triggering ValueSets, grouped by SNOMED focus code.
+
+    Several triggering ValueSets typically share the same focus condition
+    (e.g. separate disorder/lab/organism ValueSets for one condition), so
+    codes are unioned per SNOMED code across all of them.
+    """
+
+    codes_by_snomed: defaultdict[str, set[FhirCodeInfo]] = defaultdict(set)
+    for path in trigger_valueset_files():
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        for vs in data.get("valuesets", []):
+            if not is_reporting_trigger_valueset(vs):
+                continue
+            codes = get_expansion_codes(vs)
+            for snomed_code in parse_snomed_focus_codes(vs):
+                codes_by_snomed[snomed_code].update(codes)
+
+    return dict(codes_by_snomed)

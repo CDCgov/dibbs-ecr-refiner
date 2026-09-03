@@ -201,7 +201,8 @@ CREATE TABLE public.conditions_codes_temp (
     condition_id uuid NOT NULL,
     code_id uuid NOT NULL,
     valueset_id uuid NOT NULL,
-    is_child_rsg boolean DEFAULT false
+    is_child_rsg boolean DEFAULT false,
+    is_trigger_code boolean DEFAULT false NOT NULL
 );
 
 
@@ -1072,4 +1073,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260825151652'),
     ('20260826143830'),
     ('20260901143317'),
+    ('20260902230457'),
     ('20260903182620');
