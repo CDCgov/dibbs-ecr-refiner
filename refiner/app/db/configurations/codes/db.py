@@ -37,6 +37,7 @@ class DbCodeCursor:
     code: str
     condition_id: str | None  # this will be `None` when `in_custom=True`
     in_custom: bool = False
+    is_trigger_code: bool = False
 
 
 def _encode_cursor(cursor: DbCodeCursor) -> str:
@@ -46,6 +47,7 @@ def _encode_cursor(cursor: DbCodeCursor) -> str:
                 "condition_id": cursor.condition_id,
                 "code": cursor.code,
                 "in_custom": cursor.in_custom,
+                "is_trigger_code": cursor.is_trigger_code,
             }
         ).encode()
     ).decode()
@@ -188,7 +190,12 @@ async def get_codes_db(
                     rows = custom_rows[:limit]
                     last = rows[-1]
                     next_cursor = _encode_cursor(
-                        DbCodeCursor(condition_id=None, code=last.code, in_custom=True)
+                        DbCodeCursor(
+                            condition_id=None,
+                            code=last.code,
+                            in_custom=True,
+                            is_trigger_code=False,
+                        )
                     )
                     return rows, next_cursor
 
@@ -202,50 +209,62 @@ async def get_codes_db(
     cursor_clause = ""
 
     if not in_custom and decoded:
-        cursor_clause = " AND (cfgc.condition_id, c.code) > (%(cursor_condition_id)s, %(cursor_code)s)"
+        # decoded should include decoded.is_trigger_code, decoded.condition_id, decoded.code
+        cond_params["cursor_trigger"] = decoded.is_trigger_code
         cond_params["cursor_condition_id"] = decoded.condition_id
         cond_params["cursor_code"] = decoded.code
 
-    # Since "Custom Code" is not a valid UUID we need to strip it before filtering condition grouper codes on their UUID
-    condition_sources = [s for s in sources if s != "Custom Code"]
+        if decoded.is_trigger_code:
+            cursor_clause = """
+                WHERE (
+                    (is_trigger_code = TRUE AND (condition_id, code) > (%(cursor_condition_id)s, %(cursor_code)s))
+                    OR (is_trigger_code = FALSE)
+                )
+            """
+        else:
+            cursor_clause = """
+                WHERE (is_trigger_code = FALSE AND (condition_id, code) > (%(cursor_condition_id)s, %(cursor_code)s))
+            """
 
-    # If sources were specified but none are condition grouper UUIDs, skip condition grouper codes entirely
-    if sources and not condition_sources:
-        return rows, next_cursor
+    # ... [sources filtering logic remains the same] ...
 
     cond_query = f"""
-        SELECT
-            c.id,
-            cfgc.condition_id,
-            COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
-            c.code,
-            c.display AS description,
-            c.system_id,
-            s.display_name AS system_name,
-            CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
-            BOOL_OR(cc.is_trigger_code AND cfgc.condition_id = %(primary_condition_id)s) AS is_trigger_code
-        FROM configurations_conditions cfgc
-        JOIN conditions con ON con.id = cfgc.condition_id
-        JOIN conditions_codes_temp cc ON cc.condition_id = con.id
-        JOIN codes c ON c.id = cc.code_id
-        INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
-        JOIN systems s ON s.id = c.system_id
-        LEFT JOIN configurations_conditions_code_exclusions e
-            ON e.configuration_id = cfgc.configuration_id
-            AND e.code_id = cc.code_id
-        WHERE cfgc.configuration_id = %(configuration_id)s
+        WITH aggregated_results AS (
+            SELECT
+                c.id,
+                cfgc.condition_id,
+                COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
+                c.code,
+                c.display AS description,
+                c.system_id,
+                s.display_name AS system_name,
+                CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
+                BOOL_OR(cc.is_trigger_code AND cfgc.condition_id = %(primary_condition_id)s) AS is_trigger_code
+            FROM configurations_conditions cfgc
+            JOIN conditions con ON con.id = cfgc.condition_id
+            JOIN conditions_codes_temp cc ON cc.condition_id = con.id
+            JOIN codes c ON c.id = cc.code_id
+            INNER JOIN valuesets v ON v.id = cc.valueset_id AND v.condition_id = con.id
+            JOIN systems s ON s.id = c.system_id
+            LEFT JOIN configurations_conditions_code_exclusions e
+                ON e.configuration_id = cfgc.configuration_id
+                AND e.code_id = cc.code_id
+            WHERE cfgc.configuration_id = %(configuration_id)s
+            {"".join(cond_clauses)}
+            GROUP BY
+                c.id,
+                cfgc.condition_id,
+                con.display_name,
+                c.code,
+                c.display,
+                c.system_id,
+                s.display_name,
+                e.code_id
+        )
+        SELECT *
+        FROM aggregated_results
         {cursor_clause}
-        {"".join(cond_clauses)}
-        GROUP BY
-            c.id,
-            cfgc.condition_id,
-            con.display_name,
-            c.code,
-            c.display,
-            c.system_id,
-            s.display_name,
-            e.code_id
-        ORDER BY is_trigger_code DESC, cfgc.condition_id, c.code
+        ORDER BY is_trigger_code DESC, condition_id ASC, code ASC
         LIMIT %(limit)s;
     """
 
@@ -262,12 +281,14 @@ async def get_codes_db(
                 condition_id=str(last.condition_id),
                 code=last.code,
                 in_custom=False,
+                is_trigger_code=last.is_trigger_code,
             )
         )
     else:
         next_cursor = None
 
     rows += cond_rows
+    print(rows[0:1])
     return rows, next_cursor
 
 
