@@ -93,7 +93,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('2 selected');
+      await expect(controlPanel).toContainText('3 selected');
       await controlPanel.getByRole('button', { name: 'Include' }).click();
       await expect(controlPanel).not.toBeVisible();
 
@@ -151,7 +151,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('3 selected');
+      await expect(controlPanel).toContainText('4 selected');
       await controlPanel.getByRole('button', { name: 'More options' }).click();
 
       const customCodeDeletionButton = page.getByText('Delete 2 custom codes');
@@ -682,12 +682,12 @@ test.describe('Codes management - code interactions', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Primary condition RSG codes are not modifiable', async ({
+  test('Primary condition trigger codes are not modifiable', async ({
     configurationsPage,
     page,
     configurationPage,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Alpha-gal Syndrome';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -702,19 +702,24 @@ test.describe('Codes management - code interactions', () => {
     await selectAllCheckbox.click();
     await expect(selectAllCheckbox).toBeChecked();
 
+    // Alpha-gal's three non-trigger codes are the only selectable rows;
+    // its ten trigger codes render a lock icon instead of a checkbox
     const rowCheckboxes = table.locator('tbody tr').getByRole('checkbox');
-    await expect(rowCheckboxes).toBeChecked();
+    await expect(rowCheckboxes).toHaveCount(3);
+    for (const checkbox of await rowCheckboxes.all()) {
+      await expect(checkbox).toBeChecked();
+    }
 
     await rowCheckboxes.first().click();
     await expect(selectAllCheckbox).not.toBeChecked();
   });
 
-  test('Non-primary condition RSG codes are modifiable', async ({
+  test('Non-primary condition trigger codes are modifiable', async ({
     configurationsPage,
     page,
     configurationPage,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Alpha-gal Syndrome';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -723,16 +728,16 @@ test.describe('Codes management - code interactions', () => {
     await expect(table).toBeVisible();
     await expect(table.getByTestId('lock-icon')).toBeVisible();
 
-    await test.step('Add Alpha-gal Syndrome code set', async () => {
+    await test.step('Add Interrupted Aortic Arch code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
       await page
         .getByRole('searchbox', { name: 'Search by condition name' })
-        .fill('alph');
+        .fill('interrupt');
       await page
         .getByRole('listitem')
-        .filter({ hasText: 'Alpha-gal Syndrome' })
+        .filter({ hasText: 'Interrupted Aortic Arch' })
         .hover();
-      await page.getByLabel('Add Alpha-gal Syndrome').click();
+      await page.getByLabel('Add Interrupted Aortic Arch').click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
       await expect(
         page.getByRole('button', { name: '2 Condition code sets' })
@@ -752,9 +757,11 @@ test.describe('Codes management - code interactions', () => {
 
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
 
-    // Only Anotia's single RSG code will remain as "Included"
+    // Only the primary condition's trigger codes remain "Included";
+    // Interrupted Aortic Arch's trigger codes are excludable because it
+    // is not the primary condition
     const statusCells = table.locator('tbody tr td:last-child');
-    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(1);
+    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(10);
   });
 });
 
@@ -1526,13 +1533,13 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Primary condition RSG codes display a lock icon tooltip instead of a checkbox', async ({
+  test('Primary condition trigger codes display a lock icon tooltip instead of a checkbox', async ({
     configurationsPage,
     page,
     configurationPage,
     makeAxeBuilder,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Alpha-gal Syndrome';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
