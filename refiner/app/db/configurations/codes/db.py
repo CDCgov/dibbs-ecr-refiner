@@ -301,10 +301,8 @@ async def set_codes_status_beyond_rendered_db(
     If `status="excluded"` is provided, entries will be added to the table. Since multiple
     conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
 
-    Any codes within the selected code IDs will be skipped. Any filters will be applied on the general set of codes set for bulk actioning.
-
-    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
-    as these cannot be excluded.
+    Raises ValueError if any of the provided code IDs are primary condition
+    eICR trigger codes, as these cannot be excluded.
 
     Args:
         config (DbConfiguration): The DB configuration object
