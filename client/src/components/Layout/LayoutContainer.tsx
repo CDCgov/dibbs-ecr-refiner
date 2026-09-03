@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 
-export const LAYOUT_MAX_WIDTH = 'max-w-[1200px]';
+export const LAYOUT_MAX_WIDTH = 'max-w-[1600px]';
 
 type LayoutPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -9,7 +9,7 @@ const PADDING_MAP: Record<LayoutPadding, string> = {
   none: '',
   sm: 'px-4',
   md: 'px-8',
-  lg: 'px-8 lg:px-20',
+  lg: 'px-8 lg:px-12',
   xl: 'px-12 lg:px-24',
 };
 
