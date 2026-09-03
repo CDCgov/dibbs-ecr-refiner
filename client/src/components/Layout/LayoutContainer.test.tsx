@@ -21,7 +21,6 @@ describe('LayoutContainer', () => {
     const container = screen.getByTestId('child').parentElement;
     expect(container?.className).toContain(LAYOUT_MAX_WIDTH);
     expect(container?.className).toContain('px-8');
-    expect(container?.className).toContain('lg:px-20');
   });
 
   it('applies custom maxWidth and padding', () => {

@@ -9,7 +9,7 @@ const PADDING_MAP: Record<LayoutPadding, string> = {
   none: '',
   sm: 'px-4',
   md: 'px-8',
-  lg: 'px-8 lg:px-20',
+  lg: 'px-8 lg:px-12',
   xl: 'px-12 lg:px-24',
 };
 
