@@ -560,7 +560,8 @@ function formatSelectedCodeCount(
   const atLeastOneFilterActive =
     hasFilterEntry(filters.codeSystems) ||
     hasFilterEntry(filters.sources) ||
-    hasFilterEntry(filters.statuses);
+    hasFilterEntry(filters.statuses) ||
+    filters.search;
 
   if (!atLeastOneFilterActive) {
     return totalCodeCount
