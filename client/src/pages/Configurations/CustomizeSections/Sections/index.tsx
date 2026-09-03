@@ -411,7 +411,7 @@ function RefineSwitch({
 
   return (
     <div
-      className="grid grid-cols-1 grid-rows-1 place-items-end"
+      className="grid grid-cols-1 grid-rows-1 place-items-center"
       data-error-trigger
     >
       <div className="z-5 col-start-1 row-start-1">
@@ -441,12 +441,12 @@ function RefineSwitch({
       </div>
       {showError && (
         <p
-          className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"
+          className="text-state-error-dark col-start-1 row-start-1 mt-4 translate-y-5 text-xs whitespace-nowrap"
           role="alert"
         >
           {currentSection.narrative === 'reconstruct'
-            ? 'To reconstruct narrative, refine must be selected'
-            : 'To keep narrative on match, refine must be selected'}
+            ? 'To reconstruct narrative, "Refine" must be selected'
+            : 'To keep narrative on match, "Refine" must be selected'}
         </p>
       )}
     </div>
