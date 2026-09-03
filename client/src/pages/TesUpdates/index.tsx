@@ -39,7 +39,7 @@ export function TesUpdates() {
   const fetchedTesUpdates = tesUpdates.data.tes_updates;
 
   return (
-    <div className="my-8 flex flex-col px-2 md:px-20">
+    <div className="my-8 flex flex-col">
       {tesStage === 'summary' && (
         <>
           <div className="mb-4 flex justify-between">
