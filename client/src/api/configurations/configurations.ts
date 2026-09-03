@@ -1564,8 +1564,10 @@ export const useDeleteCustomSection = <TError = AxiosError<HTTPValidationError>,
  *         (`DisabledSection`) and therefore not configurable, the
  *         narrative/action combination is unsupported (e.g.
  *         narrative="reconstruct" or "keep_on_match" with
- *         action="retain"), or narrative "reconstruct" targets a
- *         section without a registered reconstructor
+ *         action="retain"), narrative "reconstruct" targets a
+ *         section without a registered reconstructor, or the
+ *         section can carry a trigger code and was sent with
+ *         include=False
  *     HTTPException: 404 if configuration isn't found
  *     HTTPException: 409 if configuration is not a draft and therefore not editable
  *     HTTPException: 500 if section processing can't be updated

@@ -81,6 +81,7 @@ export * from './tesConfigToUpdate';
 export * from './tesDiffConditionDetails';
 export * from './tesResponse';
 export * from './tesUpdate';
+export * from './triggerCodeSection';
 export * from './updateCustomCodeInput';
 export * from './updateSectionProcessingResponse';
 export * from './updateUserNotificationsRequest';
