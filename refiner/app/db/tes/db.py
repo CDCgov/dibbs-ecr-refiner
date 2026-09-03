@@ -60,7 +60,7 @@ async def _get_latest_tes_record_db(
             created_at,
             updated_at
         FROM tes
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, version DESC
         LIMIT 1
     """
 
