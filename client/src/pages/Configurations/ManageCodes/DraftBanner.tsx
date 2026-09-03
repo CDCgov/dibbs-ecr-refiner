@@ -12,7 +12,10 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { InfoIcon } from '@components/Icons/InfoIcon';
-import { LayoutContainer } from '@components/Layout/LayoutContainer';
+import {
+  LAYOUT_MAX_WIDTH,
+  LayoutContainer,
+} from '@components/Layout/LayoutContainer';
 import { useGetStep } from './useGetStep';
 
 interface DraftBannerProps {
@@ -37,9 +40,8 @@ export function DraftBanner({
     <LayoutContainer
       breakout
       background="bg-yellow-vivid-5v border-b-3 border-yellow-vivid-30v"
-      padding="none"
-      className="z-banner-interactive py-2"
-      maxWidth="max-w-7xl"
+      maxWidth={LAYOUT_MAX_WIDTH}
+      className="py-2"
     >
       <div className="w-full">
         <div className="flex items-center justify-between gap-4">
