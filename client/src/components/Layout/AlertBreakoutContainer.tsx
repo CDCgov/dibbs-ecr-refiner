@@ -30,7 +30,7 @@ export function AlertBreakoutContainer({
     <div className={classNames('banner-breakout', background)}>
       <div
         className={classNames(
-          'relative z-1 mx-auto w-full px-8',
+          'relative z-1 mx-auto w-full px-8 lg:px-20',
           maxWidth,
           className
         )}
