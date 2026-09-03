@@ -194,7 +194,7 @@ async def get_condition_by_id_db(
                 c.id,
                 c.canonical_url,
                 c.display_name,
-                MAX(t.version) as version,
+                t.version,
                 ARRAY(
                     SELECT DISTINCT codes.code
                     FROM conditions_codes_temp crc
@@ -217,7 +217,7 @@ async def get_condition_by_id_db(
             JOIN codes ON codes.id = cc.code_id
             JOIN systems s ON codes.system_id = s.id
             WHERE c.id = %(id)s
-            GROUP BY c.id
+            GROUP BY c.id, t.version
             """
 
     async with db.get_connection() as conn:
@@ -349,7 +349,7 @@ async def get_conditions_by_ids_db(
             c.id,
             c.canonical_url,
             c.display_name,
-            MAX(t.version) as version,
+            t.version,
             ARRAY(
                 SELECT codes.code
                 FROM conditions_codes_temp crc
@@ -372,7 +372,7 @@ async def get_conditions_by_ids_db(
         JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
-        GROUP BY c.id;
+        GROUP BY c.id, t.version;
     """
 
     params = (ids,)
