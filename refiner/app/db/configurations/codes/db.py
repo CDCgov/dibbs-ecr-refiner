@@ -209,7 +209,6 @@ async def get_codes_db(
     cursor_clause = ""
 
     if not in_custom and decoded:
-        # decoded should include decoded.is_trigger_code, decoded.condition_id, decoded.code
         cond_params["cursor_trigger"] = decoded.is_trigger_code
         cond_params["cursor_condition_id"] = decoded.condition_id
         cond_params["cursor_code"] = decoded.code
@@ -225,8 +224,6 @@ async def get_codes_db(
             cursor_clause = """
                 WHERE (is_trigger_code = FALSE AND (condition_id, code) > (%(cursor_condition_id)s, %(cursor_code)s))
             """
-
-    # ... [sources filtering logic remains the same] ...
 
     cond_query = f"""
         WITH aggregated_results AS (
@@ -288,7 +285,6 @@ async def get_codes_db(
         next_cursor = None
 
     rows += cond_rows
-    print(rows[0:1])
     return rows, next_cursor
 
 
