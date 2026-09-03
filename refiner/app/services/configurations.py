@@ -25,7 +25,7 @@ from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.policy import (
     NARRATIVE_ONLY_SECTIONS,
     SECTION_PROCESSING_SKIP,
-    normalize_section_narrative,
+    normalize_section_processing,
 )
 from app.services.ecr.specification import (
     get_section_version_map,
@@ -87,11 +87,14 @@ def clone_section_processing_instructions(
 
     Handles narrative-only sections specially: ensures they always have action="retain"
     regardless of what was cloned, since they cannot be refined (no entry match rules).
+    Trigger code sections are likewise forced back to include=True, so a draft cloned
+    from a configuration authored before that policy landed can't carry a removal
+    forward.
 
     Stale (action, narrative) combinations on the source — e.g. from
     configurations persisted before the API validators landed — are
     coerced to a safe baseline via
-    `ecr.policy.normalize_section_narrative`, with each coercion
+    `ecr.policy.normalize_section_processing`, with each coercion
     logged. Clone is a system-initiated operation (runs during
     activation/clone of a draft), so we prefer coerce-and-log over
     raising to avoid blocking unrelated work.
@@ -130,14 +133,18 @@ def clone_section_processing_instructions(
             new_action = action_map.get(section.code, section.action)
 
         new_narrative = narrative_map.get(section.code, section.narrative)
+        new_include = include_map.get(section.code, section.include)
 
         # normalize before persisting — stale combos from older
         # configurations get coerced to a safe baseline instead of
         # propagating into a fresh draft
-        coerced_action, coerced_narrative, notes = normalize_section_narrative(
-            code=section.code,
-            section_action=new_action,
-            narrative_action=new_narrative,
+        coerced_include, coerced_action, coerced_narrative, notes = (
+            normalize_section_processing(
+                code=section.code,
+                include=new_include,
+                section_action=new_action,
+                narrative_action=new_narrative,
+            )
         )
         if notes and logger is not None:
             for note in notes:
@@ -147,7 +154,7 @@ def clone_section_processing_instructions(
             replace(
                 section,
                 action=coerced_action,
-                include=include_map.get(section.code, section.include),
+                include=coerced_include,
                 narrative=coerced_narrative,
             )
         )
@@ -231,6 +238,11 @@ async def convert_config_to_storage_payload(
     not serialized into active.json because code_system_sets contains the required
     code information without duplication.
 
+    Section processing instructions are normalized via
+    `ecr.policy.normalize_section_processing` before serialization, so an
+    invalid combination can never reach the refiner even if one is sitting
+    in the database. Each coercion is logged.
+
     Args:
         configuration (DbConfiguration): The configuration from the database
         db (AsyncDatabaseConnection): The async database connection
@@ -239,7 +251,7 @@ async def convert_config_to_storage_payload(
     Returns:
         ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
     """
-    sections: list[dict[str, Any]] = []
+
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
@@ -258,9 +270,34 @@ async def convert_config_to_storage_payload(
         codes=codes_to_index, code_systems=code_systems, logger=logger
     )
 
-    sections = [
-        asdict(section_process) for section_process in configuration.section_processing
-    ]
+    # activation is the last system-initiated path before a configuration
+    # reaches the refiner, and it serializes straight from the database rows.
+    # the API validators guard user edits and the clone path guards new
+    # versions, but an inactive configuration can be re-activated directly
+    # from stale rows without passing through either — so normalize here too.
+    sections: list[dict[str, Any]] = []
+    for section_process in configuration.section_processing:
+        coerced_include, coerced_action, coerced_narrative, notes = (
+            normalize_section_processing(
+                code=section_process.code,
+                include=section_process.include,
+                section_action=section_process.action,
+                narrative_action=section_process.narrative,
+            )
+        )
+        for note in notes:
+            logger.warning("convert_config_to_storage_payload: %s", note)
+
+        sections.append(
+            asdict(
+                replace(
+                    section_process,
+                    include=coerced_include,
+                    action=coerced_action,
+                    narrative=coerced_narrative,
+                )
+            )
+        )
 
     for c in conditions:
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
