@@ -139,6 +139,8 @@ export function ControlPanel({
     deselectedCodesIds.length,
     deselectedCustomCodesIds.length,
     renderedCodes.length,
+    hasNextPage,
+    codeCounts?.data.primary_condition_rctc_count,
     codeCounts?.data.total_code_count
   );
   return (
@@ -393,6 +395,7 @@ function calculateCounts(
   renderedCodes: CodeResponse[],
   total_code_count: number,
   total_custom_codes_count: number,
+  lockedCodesCount: number,
   hasNextPage: boolean
 ): CountResult {
   if (allSelected && hasNextPage) {
@@ -407,7 +410,10 @@ function calculateCounts(
     const totalCustomCodeCount = total_custom_codes_count;
 
     const excludeableCodeCount =
-      totalCodeCount - deselectedCodeCount - totalCustomCodeCount;
+      totalCodeCount -
+      deselectedCodeCount -
+      totalCustomCodeCount -
+      lockedCodesCount;
 
     return {
       totalCodeCount,
@@ -475,6 +481,7 @@ function ExclusionWarningModal({
     renderedCodes,
     codeCounts?.data.total_code_count,
     codeCounts?.data.total_custom_codes_count,
+    codeCounts.data.primary_condition_rctc_count,
     hasNextPage
   );
   const lockedCodesCount = codeCounts.data.primary_condition_rctc_count;
@@ -537,20 +544,14 @@ function formatSelectedCodeCount(
   deselectedCodesCount: number,
   deselectedCustomCodesCount: number,
   renderedCodeCount: number,
+  hasNextPage: boolean,
+  lockedCodesCount?: number,
   totalCodeCount?: number
 ): string {
   // If the rendered code count is under the pagination limit, or we're not in the bulk selection case
   // just return the selected values
   if (renderedCodeCount < CodesLimitResponseValue.codes_limit || !allSelected) {
     return selectedCodeCount.toString();
-  }
-
-  // Otherwise, check the search filtering and apply specific formatting
-  // in the > pagination case
-  if (filters.search) {
-    return selectedCodeCount > CodesLimitResponseValue.codes_limit
-      ? `${CodesLimitResponseValue.codes_limit}+`
-      : selectedCodeCount.toString();
   }
 
   // Otherwise, check the active filters and tabulate the values
@@ -566,19 +567,13 @@ function formatSelectedCodeCount(
       ? (
           totalCodeCount -
           deselectedCodesCount -
-          deselectedCustomCodesCount
+          deselectedCustomCodesCount -
+          (lockedCodesCount ?? 0)
         ).toString()
       : 'All ';
   }
 
-  // Calculate total count across active array filters
-  const sumCounts = (items?: { count?: number }[]) =>
-    items?.reduce((acc, item) => acc + (item.count ?? 0), 0) ?? 0;
-
-  const totalCount =
-    sumCounts(filters.codeSystems) +
-    sumCounts(filters.sources) +
-    sumCounts(filters.statuses);
-
-  return (totalCount - deselectedCodesCount).toString();
+  return selectedCodeCount > CodesLimitResponseValue.codes_limit || hasNextPage
+    ? `${CodesLimitResponseValue.codes_limit}+ codes`
+    : selectedCodeCount.toString();
 }
