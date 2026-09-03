@@ -341,11 +341,11 @@ test.describe('Codes management - custom code interactions', () => {
 
     // exclusion still allows for actioning non-custom codes
     const exclusionButton = page.getByRole('button', {
-      name: 'Exclude 1 codes',
+      name: 'Exclude 2 codes',
     });
     await exclusionButton.click();
 
-    await expect(page.getByText('1 excluded')).toBeVisible();
+    await expect(page.getByText('2 excluded')).toBeVisible();
   });
 
   test('Individual custom codes can be added, edited, and deleted', async ({
@@ -657,9 +657,9 @@ test.describe('Codes management - code interactions', () => {
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '2 of 7,838 codes included'
+        '193 of 7,838 codes included'
       );
-      await expect(page.getByText('7,836 excluded')).toBeVisible();
+      await expect(page.getByText('7,645 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
     });
 
@@ -672,6 +672,9 @@ test.describe('Codes management - code interactions', () => {
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
         '7,838  of 7,838 codes included'
+      );
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '193 RCTC Codes'
       );
       await expect(page.getByText('0 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
