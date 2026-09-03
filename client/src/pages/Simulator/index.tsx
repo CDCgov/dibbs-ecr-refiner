@@ -90,12 +90,7 @@ export function Simulator() {
 
   if (status === 'success') {
     return (
-      <LayoutContainer
-        breakout={true}
-        maxWidth="max-w-full"
-        padding="lg"
-        className="py-10"
-      >
+      <LayoutContainer breakout={true} padding="lg" className="py-12">
         {configurationsResponse?.data && refinementResponse?.data && (
           <Success
             refined_conditions={refinementResponse.data.refined_conditions}
