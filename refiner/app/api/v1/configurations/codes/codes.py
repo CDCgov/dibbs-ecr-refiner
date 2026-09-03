@@ -51,6 +51,7 @@ class CodeCountsResponse:
     total_code_sets_count: int
     total_excluded_codes_count: int
     total_custom_codes_count: int
+    primary_condition_rctc_count: int
 
 
 CodesLimit = Literal[100]
@@ -290,7 +291,9 @@ async def get_code_counts(
             detail="Configuration cannot be found.",
         )
 
-    code_counts = await get_code_count_metadata_db(configuration_id=config.id, db=db)
+    code_counts = await get_code_count_metadata_db(
+        configuration_id=config.id, db=db, primary_condition_id=config.condition_id
+    )
 
     if not code_counts:
         raise HTTPException(
@@ -303,6 +306,7 @@ async def get_code_counts(
         total_code_sets_count=code_counts.code_set_count,
         total_excluded_codes_count=code_counts.excluded_code_count,
         total_custom_codes_count=code_counts.custom_code_count,
+        primary_condition_rctc_count=code_counts.primary_condition_rctc_count,
     )
 
 

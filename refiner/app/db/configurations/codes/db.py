@@ -330,7 +330,7 @@ async def set_codes_status_beyond_rendered_db(
             AND crc.code_id != ALL(%(code_ids_to_skip)s::uuid[])
             {"".join(cond_clauses)}
         GROUP BY crc.code_id
-    HAVING NOT bool_or(crc.is_child_rsg AND crc.condition_id = %(primary_condition_id)s)
+    HAVING NOT bool_or(crc.is_trigger_code AND crc.condition_id = %(primary_condition_id)s)
         ON CONFLICT DO NOTHING
         RETURNING code_id;
         """
@@ -615,10 +615,11 @@ class DbCodeResultCountMetadata:
     excluded_code_count: int
     code_set_count: int
     custom_code_count: int
+    primary_condition_rctc_count: int
 
 
 async def get_code_count_metadata_db(
-    configuration_id: UUID, db: AsyncDatabaseConnection
+    configuration_id: UUID, db: AsyncDatabaseConnection, primary_condition_id: UUID
 ) -> DbCodeResultCountMetadata | None:
     """
     Given a configuration ID, returns code count related metadata.
@@ -633,7 +634,13 @@ async def get_code_count_metadata_db(
             SELECT COUNT(*)
             FROM custom_codes cc2
             WHERE cc2.configuration_id = %(configuration_id)s
-        ) AS custom_code_count
+        ) AS custom_code_count,
+        COUNT(
+        DISTINCT CASE
+            WHEN cc.condition_id = %(primary_condition_id)s AND cc.is_trigger_code = TRUE
+            THEN cc.code_id
+        END
+    ) AS primary_condition_rctc_count
     FROM configurations_conditions cfgc
     JOIN conditions_codes_temp cc ON cc.condition_id = cfgc.condition_id
     JOIN codes c ON c.id = cc.code_id
@@ -643,7 +650,10 @@ async def get_code_count_metadata_db(
     WHERE cfgc.configuration_id = %(configuration_id)s;
     """
 
-    params = {"configuration_id": configuration_id}
+    params = {
+        "configuration_id": configuration_id,
+        "primary_condition_id": primary_condition_id,
+    }
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCodeResultCountMetadata)) as cur:
             await cur.execute(query, params)

@@ -38,7 +38,6 @@ interface ControlPanelProps {
   allSelected: boolean;
   renderedCodes: CodeResponse[];
   filters: CodeFilters;
-  lockedCodesCount: number;
   hasNextPage: boolean;
 }
 export function ControlPanel({
@@ -49,7 +48,6 @@ export function ControlPanel({
   allSelected,
   renderedCodes,
   filters,
-  lockedCodesCount,
   hasNextPage,
 }: ControlPanelProps) {
   const toast = useToast();
@@ -155,7 +153,6 @@ export function ControlPanel({
           renderedCodes={renderedCodes}
           selectedCodeIds={selectedCodeIds}
           selectedCustomCodeIds={customCodeIds}
-          lockedCodesCount={lockedCodesCount}
           hasNextPage={hasNextPage}
         />
       }
@@ -443,7 +440,6 @@ interface ExclusionWarningModalProps {
   renderedCodes: CodeResponse[];
   selectedCodeIds: Set<string>;
   selectedCustomCodeIds: Set<string>;
-  lockedCodesCount: number;
   hasNextPage: boolean;
 }
 
@@ -456,7 +452,6 @@ function ExclusionWarningModal({
   renderedCodes,
   selectedCodeIds,
   selectedCustomCodeIds,
-  lockedCodesCount,
   hasNextPage,
 }: ExclusionWarningModalProps) {
   const {
@@ -482,7 +477,7 @@ function ExclusionWarningModal({
     codeCounts?.data.total_custom_codes_count,
     hasNextPage
   );
-
+  const lockedCodesCount = codeCounts.data.primary_condition_rctc_count;
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
       <ModalHeader>
@@ -505,7 +500,7 @@ function ExclusionWarningModal({
 
             <span className="mt-2">
               {lockedCodesCount
-                ? `This configuration's primary condition has ${lockedCodesCount} code(s) that can't be excluded. These codes must be included to properly process the eCR.`
+                ? `This configuration's primary condition has ${lockedCodesCount} RCTC code(s) that can't be excluded. These codes must be included to properly process the eCR.`
                 : null}
             </span>
           </p>

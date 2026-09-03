@@ -185,13 +185,12 @@ function CodesTable({
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
   const excludableCodes = codes.filter((c) => !c.is_trigger_code);
-  const lockedCodes = codes.filter((c) => c.is_trigger_code);
 
   const selectedCustomCodes = excludableCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
   );
 
-  const hasCodesSelected = selectedIds.size > 0;
+  const hasCodesSelected = selectedIds.size > 0 || allSelected;
 
   return (
     <div className="flex flex-col items-end gap-4">
@@ -209,7 +208,6 @@ function CodesTable({
               setSelectedIds(new Set());
               setAllSelected(false);
             }}
-            lockedCodesCount={lockedCodes.length}
             allSelected={allSelected}
             renderedCodes={codes}
             hasNextPage={hasNextPage}
@@ -464,6 +462,10 @@ function CodeInformationBar({ id }: { id: string }) {
           <span>
             {codeCounts.data.total_code_sets_count.toLocaleString()} condition
             code sets
+          </span>
+          <span>
+            {codeCounts.data.primary_condition_rctc_count.toLocaleString()} RCTC
+            codes
           </span>
         </div>
       </div>
