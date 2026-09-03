@@ -24,7 +24,7 @@ class DbCodeResult:
     system_id: UUID
     system_name: str
     status: Literal["included", "excluded"]
-    is_child_rsg: bool
+    is_trigger_code: bool
 
 
 @dataclass
@@ -131,7 +131,7 @@ async def get_codes_db(
                         c.system_id,
                         s.display_name AS system_name,
                         'included' AS status,
-                        FALSE AS is_child_rsg
+                        FALSE AS is_trigger_code
                     FROM custom_codes c
                     JOIN systems s ON s.id = c.system_id
                     WHERE c.configuration_id = %(configuration_id)s
@@ -211,7 +211,7 @@ async def get_codes_db(
             c.system_id,
             s.display_name AS system_name,
             CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
-            BOOL_OR(cc.is_child_rsg AND cfgc.condition_id = %(primary_condition_id)s) AS is_child_rsg
+            BOOL_OR(cc.is_trigger_code AND cfgc.condition_id = %(primary_condition_id)s) AS is_trigger_code
         FROM configurations_conditions cfgc
         JOIN conditions con ON con.id = cfgc.condition_id
         JOIN conditions_codes_temp cc ON cc.condition_id = con.id
@@ -273,8 +273,8 @@ async def set_codes_status_db(
     If `status="excluded"` is provided, entries will be added to the table. Since multiple
     conditions can share the same code ID, one row is inserted per (condition_id, code_id) pair.
 
-    Raises ValueError if any of the provided code IDs are primary condition RSG codes,
-    as these cannot be excluded.
+    Raises ValueError if any of the provided code IDs are primary condition
+    eICR trigger codes, as these cannot be excluded.
 
     Args:
         configuration_id (UUID): ID of the configuration
@@ -293,21 +293,21 @@ async def set_codes_status_db(
     }
 
     if status == "excluded":
-        rsg_check_query = """
+        trigger_check_query = """
             SELECT cc.code_id
             FROM conditions_codes_temp cc
             WHERE cc.condition_id = %(primary_condition_id)s
-            AND cc.is_child_rsg = true
+            AND cc.is_trigger_code = true
             AND cc.code_id = ANY(%(code_ids)s::uuid[])
         """
         async with db.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(rsg_check_query, params)
-                rsg_rows = await cur.fetchall()
+                await cur.execute(trigger_check_query, params)
+                trigger_rows = await cur.fetchall()
 
-        if rsg_rows:
-            rsg_ids = [row["code_id"] for row in rsg_rows]
-            raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
+        if trigger_rows:
+            trigger_code_ids = [row["code_id"] for row in trigger_rows]
+            raise ValueError(f"Cannot exclude trigger codes: {trigger_code_ids}")
 
         query = """
             INSERT INTO configurations_conditions_code_exclusions (configuration_id, code_id)

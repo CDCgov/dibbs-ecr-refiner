@@ -37,7 +37,7 @@ class CodeResponse:
     system_name: str
     status: Literal["Included", "Excluded"]
     is_custom: bool
-    is_primary_condition_rsg: bool
+    is_trigger_code: bool
 
 
 @dataclass
@@ -130,7 +130,7 @@ async def get_codes(
         codes=[
             CodeResponse(
                 is_custom=c.condition_id is None,
-                is_primary_condition_rsg=c.is_child_rsg,
+                is_trigger_code=c.is_trigger_code,
                 status="Included" if c.status == "included" else "Excluded",
                 id=c.id,
                 condition_id=c.condition_id,
@@ -270,7 +270,10 @@ async def set_codes_status(
 
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=f"Configuration's primary condition ({primary_condition.display_name}) RSG codes cannot be modified.",
+            detail=(
+                f"Configuration's primary condition ({primary_condition.display_name}) "
+                "trigger codes cannot be excluded."
+            ),
         )
 
 
