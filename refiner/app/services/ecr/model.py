@@ -103,11 +103,13 @@ class EntryMatchRule:
     """
     Each <section> has its own rules for their <entry>s; this object memorializes those rules.
 
-    Rules are evaluated in list order with structural precedence: if a
-    rule's code_xpath finds code-bearing elements in an entry (candidates),
-    that rule claims the entry regardless of whether any codes matched —
-    subsequent rules are not evaluated. This prevents fallback rules from
-    running on entries that were already examined by a more specific rule.
+    Rules are evaluated in list order with structural precedence, applied per
+    PRECEDENCE GROUP (see `precedence_group`): if any rule in a group finds
+    code-bearing elements in an entry (candidates), that group claims the
+    entry regardless of whether any codes matched — later groups are not
+    evaluated. This prevents fallback rules from running on entries that were
+    already examined by a more specific rule, while still letting alternative
+    codings of the SAME clinical statement all be tried.
 
     Attributes:
         code_xpath:
@@ -212,6 +214,36 @@ class EntryMatchRule:
             Default False. Only set to True on rules targeting
             observation/value where this distinction matters.
 
+        precedence_group:
+            Opt-in label naming the clinical statement this rule reads.
+            Consecutive rules sharing a group are evaluated together as ONE
+            precedence unit — all of them run before the entry is claimed.
+
+            Structural precedence exists to stop a rule describing a
+            **different** structure from re-claiming an entry a higher-tier rule
+            already spoke for. It is not meant to stop the alternative
+            codings of one statement from being tried, and without a group
+            it does exactly that whenever those alternatives sit at
+            different locations.
+
+            The canonical case is Results. All three rules read the same
+            Result Observation, differing only in where the trigger code
+            sits — `code` (LOINC test name), `code/translation` (local code
+            primary), `value` (organism/substance). Because `code` is SHALL
+            on that template, rule 1 always found a candidate and always
+            claimed the entry, so rules 2 and 3 could only ever fire on an
+            observation whose code was nullFlavored. A culture whose test
+            name is generic but whose VALUE is the reportable organism was
+            silently dropped.
+
+            When None, the rule groups by its `code_xpath` instead, so rules
+            reading the identical location are still one unit — that is what
+            keeps the diagnosis sections' tier-1/tier-3 reversed-code pairs
+            both reachable. Set it explicitly when rules share a statement
+            but not a location.
+
+            Default None.
+
         tier:
             IG conformance tier for this rule. Used in match provenance
             comments to indicate how the rule relates to the spec:
@@ -277,6 +309,7 @@ class EntryMatchRule:
     prune_container_xpath: str | None = None
     prune_container_guard_xpath: str | None = None
     require_value_set_attr: bool = False
+    precedence_group: str | None = None
     tier: int = 1
     preserve_whole_entry: bool = False
 
@@ -404,23 +437,23 @@ class SectionOutcome(StrEnum):
             include=True, action="refine", narrative="remove". Entries
             filtered, narrative replaced with the removal notice.
 
+        REFINED_NARRATIVE_RECONSTRUCTED_REDUCED:
+            Same as REFINED_NARRATIVE_RECONSTRUCTED, except that one or
+            more surviving entries were arranged in a structure the
+            section's reconstructor does not cover (a Problem Observation
+            under a non-SUBJ entryRelationship, a Result Observation with
+            no organizer) and are rendered in reduced form instead —
+            concept, date, status. The distinct outcome exists because
+            the alternative is silence: the section would otherwise
+            report a clean reconstruction while an entry stamped
+            typeCode="DRIV" is missing from the narrative that claims to
+            derive from it. A reader seeing a thin table gets told why.
+
         REFINED_NARRATIVE_RECONSTRUCTED:
             include=True, action="refine", narrative="refine" (future).
             Entries filtered, narrative reconstructed from surviving
             entries. Not yet reachable — depends on narrative
             reconstruction work landing.
-
-        REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED:
-            include=True, action="refine", narrative="reconstruct".
-            The jurisdiction asked for narrative reconstruction but
-            the engine couldn't produce one because no entries
-            survived to rebuild from (no-match) or the section has
-            no registered reconstructor. Rather than discard the most
-            informative state available, the engine keeps the original
-            narrative in place. Distinct from the plain RETAINED / REFINED_*
-            outcomes so the provenance footnote can tell a reviewer
-            "you asked for reconstruct; we couldn't, so we kept the
-            original."
 
         REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED:
             include=True, action="refine", narrative="reconstruct".
@@ -462,9 +495,7 @@ class SectionOutcome(StrEnum):
     REFINED_WITH_MATCHES = "refined_with_matches"
     REFINED_NARRATIVE_REMOVED = "refined_narrative_removed"
     REFINED_NARRATIVE_RECONSTRUCTED = "refined_narrative_reconstructed"
-    REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED = (
-        "refined_reconstruct_no_matches_retained"
-    )
+    REFINED_NARRATIVE_RECONSTRUCTED_REDUCED = "refined_narrative_reconstructed_reduced"
     REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED = (
         "refined_reconstruct_unavailable_retained"
     )
@@ -637,15 +668,14 @@ class SectionRunResult:
               - "retained":      original narrative left in place
               - "removed":       narrative replaced with the removal notice
               - "reconstructed": narrative rebuilt from surviving entries
+              - "reconstructed_reduced": narrative rebuilt, but one or more
+                surviving entries were in a structure the section's
+                reconstructor does not cover and are present in reduced
+                form — see SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_REDUCED.
               - "reconstruct_unavailable": the jurisdiction asked
                 for reconstruction but the engine couldn't run it since there
                 was no registered reconstructor, so the original narrative was
                 kept instead — see SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED.
-              - "reconstruct_no_entries": the jurisdiction asked
-                for reconstruction but the engine couldn't run it because there
-                were no entries to build from),
-                so the original narrative was kept instead — see
-                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.
 
             The orchestrator uses this together with `matches_found`
             to choose the user-facing `SectionOutcome`.
@@ -656,6 +686,6 @@ class SectionRunResult:
         "retained",
         "removed",
         "reconstructed",
+        "reconstructed_reduced",
         "reconstruct_unavailable",
-        "reconstruct_no_entries",
     ]
