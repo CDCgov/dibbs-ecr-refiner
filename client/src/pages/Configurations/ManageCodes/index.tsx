@@ -32,6 +32,7 @@ import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Tooltip } from '@components/Tooltip';
+import { filterParamSerializer, ParamValue } from './Filters/utils';
 import { LockIcon } from './LockIcon';
 
 export function ManageCodes() {
@@ -105,6 +106,7 @@ interface CodesPanelProps {
 function CodesPanel({ id, disabled }: CodesPanelProps) {
   const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
     useFilterState(id);
+
   return (
     <>
       <CodeInformationBar id={id} />
@@ -135,9 +137,6 @@ interface CodesTableProps {
   isFilterActive: boolean;
   onClearFilters: () => void;
 }
-
-type ParamValue =
-  string | number | boolean | (string | number | boolean)[] | null | undefined;
 
 function CodesTable({
   id,
@@ -170,21 +169,14 @@ function CodesTable({
         // For example:
         // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
         paramsSerializer: (params: Record<string, ParamValue>) => {
-          const searchParams = new URLSearchParams();
-          for (const [key, value] of Object.entries(params)) {
-            if (Array.isArray(value)) {
-              value.forEach((v) => searchParams.append(key, String(v)));
-            } else if (value !== null && value !== undefined) {
-              searchParams.append(key, String(value));
-            }
-          }
-          return searchParams.toString();
+          return filterParamSerializer(params);
         },
       },
     }
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [allSelected, setAllSelected] = useState<boolean>(false);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
@@ -193,9 +185,8 @@ function CodesTable({
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
   const excludableCodes = codes.filter((c) => !c.is_trigger_code);
+  const lockedCodes = codes.filter((c) => c.is_trigger_code);
 
-  const allSelected =
-    excludableCodes.length > 0 && selectedIds.size === excludableCodes.length;
   const selectedCustomCodes = excludableCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
   );
@@ -214,12 +205,31 @@ function CodesTable({
             configurationId={id}
             selectedCodeIds={selectedIds}
             selectedCustomCodes={selectedCustomCodes}
-            clearSelections={() => setSelectedIds(new Set())}
+            clearSelections={() => {
+              setSelectedIds(new Set());
+              setAllSelected(false);
+            }}
+            lockedCodesCount={lockedCodes.length}
+            allSelected={allSelected}
+            renderedCodes={codes}
+            hasNextPage={hasNextPage}
+            filters={filters}
           />
         ) : null}
         <InfiniteScroll
           dataLength={codes.length}
-          next={fetchNextPage}
+          next={async () => {
+            const nextPageValues = await fetchNextPage();
+            if (allSelected) {
+              const pages = nextPageValues?.data?.pages;
+              const newCodes =
+                (pages && pages[pages.length - 1].data.codes) ?? [];
+
+              setSelectedIds(
+                new Set([...excludableCodes, ...newCodes].map((c) => c.id))
+              );
+            }
+          }}
           hasMore={!!hasNextPage}
           loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
           endMessage={
@@ -237,13 +247,14 @@ function CodesTable({
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
                     checked={allSelected}
-                    onChange={(checked) =>
+                    onChange={(checked) => {
+                      setAllSelected(checked);
                       setSelectedIds(
                         checked
                           ? new Set(excludableCodes.map((c) => c.id))
                           : new Set()
-                      )
-                    }
+                      );
+                    }}
                   />
                 </th>
                 <th scope="col">Code no.</th>

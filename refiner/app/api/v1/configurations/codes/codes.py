@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, get_args
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -13,7 +13,8 @@ from app.db.configurations.codes.db import (
     get_all_filter_options_db,
     get_code_count_metadata_db,
     get_codes_db,
-    set_codes_status_db,
+    set_codes_status_beyond_rendered_db,
+    set_codes_status_within_rendered_set_db,
 )
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -52,7 +53,20 @@ class CodeCountsResponse:
     total_custom_codes_count: int
 
 
+CodesLimit = Literal[100]
+CODES_LIMIT = get_args(CodesLimit)[0]
+
+
 @dataclass
+class CodesLimitResponse:
+    """
+    Utility class to help Orval ship these values to the frontend.
+    """
+
+    codes_limit: CodesLimit = CODES_LIMIT
+
+
+@dataclass(frozen=True)
 class CodesResponse:
     """
     Codes and metadata to return to the client.
@@ -60,6 +74,7 @@ class CodesResponse:
 
     next_cursor: str | None
     codes: list[CodeResponse]
+    codes_limit: CodesLimitResponse
 
 
 def _get_filter_input(
@@ -74,6 +89,100 @@ def _get_filter_input(
         sources=sources,
         statuses=statuses,
     )
+
+
+@router.post(
+    "/set-status",
+    response_model=list[UUID],
+    tags=["configurations"],
+    operation_id="setCodesStatus",
+)
+async def set_codes_status(
+    configuration_id: UUID,
+    update_beyond_rendered_set: bool,
+    code_ids_to_skip: list[UUID],
+    code_ids: list[UUID],
+    status: Literal["included", "excluded"],
+    filters: FilterInput = Depends(_get_filter_input),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[UUID]:
+    """
+    Sets selected codes to the specified `status` for the given configuration ID.
+
+    If `update_beyond_rendered_set` is false, we update status for only the specified
+    `code_ids` within the rendered page.
+
+    If `update_beyond_rendered_set` is true, we skip any codes within `code_ids_to_skip`
+    and update status for all other codes that don't get clipped away by the passed-in filters
+
+    Args:
+        configuration_id (UUID): ID of the configuration to update
+        update_beyond_rendered_set (bool): Whether the action should be only within the rendered codes or include all codes.
+        code_ids (list[UUID]): List of code IDs to specifically action. Used in the "within cursor" flow.
+        code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been manually actioned by the user.
+        filters (FilterInput): Filter input coming from the client to build the "complete" set of codes to bulk select
+        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): Database connection
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+
+    Returns:
+        list[UUID]: Code IDs that had their status changed
+    """
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Configuration cannot be found.",
+        )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    try:
+        if update_beyond_rendered_set:
+            impacted_code_ids = await set_codes_status_beyond_rendered_db(
+                config=config,
+                code_ids_to_skip=code_ids_to_skip,
+                status=status,
+                filters=filters,
+                db=db,
+            )
+        else:
+            impacted_code_ids = await set_codes_status_within_rendered_set_db(
+                config=config,
+                status=status,
+                code_ids=code_ids,
+                db=db,
+            )
+        return impacted_code_ids
+    except ValueError:
+        primary_condition = await get_primary_condition_db(
+            configuration_id=config.id, db=db
+        )
+
+        if not primary_condition:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Could not find configuration's primary condition.",
+            )
+
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Configuration's primary condition ({primary_condition.display_name}) RSG codes cannot be modified.",
+        )
 
 
 @router.get(
@@ -101,9 +210,6 @@ async def get_codes(
         db (AsyncDatabaseConnection): Database connection
     """
 
-    # Number of codes pulled per batch
-    CODES_LIMIT = 100
-
     config = await get_configuration_by_id_db(
         id=configuration_id,
         jurisdiction_id=user.jurisdiction_id,
@@ -117,8 +223,7 @@ async def get_codes(
         )
 
     codes, next_cursor = await get_codes_db(
-        configuration_id=config.id,
-        configuration_primary_condition_id=config.condition_id,
+        config=config,
         limit=CODES_LIMIT,
         cursor=cursor,
         filters=filters,
@@ -127,6 +232,7 @@ async def get_codes(
 
     return CodesResponse(
         next_cursor=next_cursor,
+        codes_limit=CodesLimitResponse(),
         codes=[
             CodeResponse(
                 is_custom=c.condition_id is None,
@@ -198,83 +304,6 @@ async def get_code_counts(
         total_excluded_codes_count=code_counts.excluded_code_count,
         total_custom_codes_count=code_counts.custom_code_count,
     )
-
-
-@router.post(
-    "/set-status",
-    response_model=list[UUID],
-    tags=["configurations"],
-    operation_id="setCodesStatus",
-)
-async def set_codes_status(
-    configuration_id: UUID,
-    code_ids: list[UUID],
-    status: Literal["included", "excluded"],
-    user: DbUser = Depends(get_logged_in_user),
-    db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[UUID]:
-    """
-    Sets all provided code_ids to the specified `status` for the given configuration ID.
-
-    Args:
-        configuration_id (UUID): ID of the configuration to update
-        code_ids (list[UUID]): List of code IDs
-        status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
-        user (DbUser): The logged-in user
-        db (AsyncDatabaseConnection): Database connection
-
-    Raises:
-        HTTPException: 404 if configuration can't be found
-
-    Returns:
-        list[UUID]: Code IDs that had their status changed
-    """
-
-    config = await get_configuration_by_id_db(
-        id=configuration_id,
-        jurisdiction_id=user.jurisdiction_id,
-        db=db,
-    )
-
-    if not config:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Configuration cannot be found.",
-        )
-
-    if config.status != "draft":
-        raise HTTPException(
-            status_code=http_status.HTTP_409_CONFLICT,
-            detail="Trying to update a non-draft configuration",
-        )
-
-    try:
-        impacted_code_ids = await set_codes_status_db(
-            configuration_id=config.id,
-            configuration_primary_condition_id=config.condition_id,
-            code_ids=code_ids,
-            status=status,
-            db=db,
-        )
-        return impacted_code_ids
-    except ValueError:
-        primary_condition = await get_primary_condition_db(
-            configuration_id=config.id, db=db
-        )
-
-        if not primary_condition:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Could not find configuration's primary condition.",
-            )
-
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"Configuration's primary condition ({primary_condition.display_name}) "
-                "trigger codes cannot be excluded."
-            ),
-        )
 
 
 @router.get(
