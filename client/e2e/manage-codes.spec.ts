@@ -673,9 +673,7 @@ test.describe('Codes management - code interactions', () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
         '7,838  of 7,838 codes included'
       );
-      await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '193 RCTC Codes'
-      );
+      await expect(page.getByText('193 RCTC Codes')).toBeVisible();
       await expect(page.getByText('0 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
     });
