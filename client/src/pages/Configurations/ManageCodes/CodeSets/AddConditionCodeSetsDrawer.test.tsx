@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { AddConditionCodeSetsDrawer } from './AddConditionCodeSetsDrawer';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -76,7 +76,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     onClose: vi.fn(),
     configurationId: 'my-config',
     conditions: mockConditions,
-    reportable_condition_display_name: 'COVID-19',
+    reportable_condition_display_name: 'Diabetes',
     disabled: false,
   };
 
@@ -92,6 +92,15 @@ describe('AddConditionCodeSetsDrawer', () => {
     mockConditions.forEach(({ display_name }) => {
       expect(screen.getByText(display_name)).toBeInTheDocument();
     });
+  });
+
+  it('displays a lock tooltip next to only the primary condition code set', () => {
+    renderDrawer(defaultProps);
+    const primaryItem = screen
+      .getAllByRole('listitem')
+      .find((item) => item.textContent.includes('Diabetes'))!;
+    expect(screen.getAllByTestId('lock-icon')).toHaveLength(1);
+    expect(within(primaryItem).getByTestId('lock-icon')).toBeInTheDocument();
   });
 
   it('triggers onClose when close button is clicked', async () => {

@@ -17,6 +17,7 @@ from ..model import (
     SectionSpecification,
 )
 from ..narrative import (
+    ReconstructedNarrative,
     reconstruct_narrative,
     remove_all_comments,
     replace_narrative_with_reconstruction,
@@ -99,19 +100,16 @@ def process(
 
     - "retain"           → narrative left intact
     - "remove"           → narrative replaced with the removal notice
-    - "reconstruct"      → falls back to RETAIN the original narrative
-                         (nothing to rebuild from). NOTE: this
-                         honors the user's preference for the most
-                         informative state available rather than
-                         swapping in a removal notice.
     - "keep_on_match"    → narrative replaced with the removal notice
                          (no matches means the negative branch)
+    - "reconstruct"      → same as "keep_on_match". There is nothing to
+                         rebuild from, and the original narrative
+                         describes the entries that were just pruned.
 
     The orchestrator maps the resulting `SectionRunResult` to
     `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
-    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`,
-    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED`, or
-    `REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED` — see
+    `REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or
+    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED` — see
     `refine._interpret_run_result`.
 
     Returns:
@@ -150,26 +148,36 @@ def process(
                 remove_element(entry)
             section.attrib["nullFlavor"] = "NI"
 
-            if narrative_action == "remove" or narrative_action == "keep_on_match":
-                # "keep_on_match" is also a negative branch: no matches
-                # → narrative removed
-                replace_narrative_with_removal_notice(section, namespaces)
+            if narrative_action in ("remove", "keep_on_match", "reconstruct"):
+                # all three are negative branches when NOTHING matched:
+                #
+                #   "remove"        — unconditional
+                #   "keep_on_match" — keep on match, and there was none
+                #   "reconstruct"   — reconstruct falls back to keep-on-match
+                #
+                # reconstruct used to retain the original narrative here, on
+                # the reasoning that a stale narrative is more informative
+                # than a removal notice. That reasoning ignored what the
+                # retained narrative actually contains. Nothing matched, so
+                # every entry in this section was just pruned — and the
+                # original narrative still describes all of them, in full
+                # clinical prose. Retaining it ships exactly the content the
+                # jurisdiction's configuration said should not be here, with
+                # the structured entries stripped so a receiver cannot even
+                # process it. Choosing "reconstruct" grants the refiner broad
+                # licence to rewrite the section; keep-on-match is far closer
+                # to the spirit of that grant than handing back the
+                # unrefined original.
+                #
+                # "no_match" is what keeps the notice honest: every entry was
+                # just pruned, so it must not tell a reader the coded data is
+                # still here
+                replace_narrative_with_removal_notice(
+                    section, namespaces, removal_reason="no_match"
+                )
                 return SectionRunResult(
                     matches_found=False,
                     narrative_disposition="removed",
-                )
-
-            if narrative_action == "reconstruct":
-                # NOTE: reconstruct + no matches falls back to
-                # retaining the original narrative rather than
-                # swapping in a removal notice. assumption: when the
-                # jurisdiction asked for reconstruction and we can't
-                # produce one, the original narrative is the most
-                # informative state available — strictly more useful
-                # to a reviewer than the removal notice.
-                return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="reconstruct_no_entries",
                 )
 
             # "retain": leave the original narrative in place
@@ -206,28 +214,28 @@ def process(
                 match reconstruct_narrative(
                     section, augmentation_timestamp=augmentation_timestamp
                 ):
-                    case _Element() as reconstructed:
+                    case ReconstructedNarrative() as rebuilt:
                         replace_narrative_with_reconstruction(
-                            section, reconstructed, namespaces
+                            section, rebuilt.text, namespaces
                         )
+                        # entries the section's reconstructor could not
+                        # cover are present in reduced form; say so
+                        # rather than reporting a clean rebuild
                         return SectionRunResult(
                             matches_found=True,
-                            narrative_disposition="reconstructed",
+                            narrative_disposition=(
+                                "reconstructed_reduced"
+                                if rebuilt.reduced_entry_count
+                                else "reconstructed"
+                            ),
                         )
-                    # NOTE: no registered reconstructor (or nothing
-                    # survived to rebuild) — fall back to RETAIN the
-                    # original narrative rather than swap in a removal
-                    # notice. assumption: when the jurisdiction asked
-                    # for reconstruction and we can't run it, the
-                    # original narrative is more informative to a
-                    # reviewer than the removal placeholder, even though
-                    # it may reference entries that were pruned.
-                    case "no_matching_entries":
-                        return SectionRunResult(
-                            matches_found=False,
-                            narrative_disposition="reconstruct_no_entries",
-                        )
-                    case "reconstruction_unavailable":
+                    # no narrative could be produced at all — in practice
+                    # only when the section has no registered reconstructor,
+                    # since the reduced-form sweep gives every surviving
+                    # entry a row. we DID match here, so keep-on-match keeps:
+                    # the original narrative stays, and the footnote says it
+                    # may describe entries the refinement removed
+                    case None:
                         return SectionRunResult(
                             matches_found=True,
                             narrative_disposition="reconstruct_unavailable",
@@ -286,6 +294,155 @@ def _find_matching_entries(
     return matches
 
 
+def _match_codes(
+    entry: _Element,
+    code_system_sets: CodeSystemSets,
+    rule: EntryMatchRule,
+    namespaces: NamespaceMap,
+    *,
+    xpath: str,
+    code_system_oid: str | None,
+) -> tuple[list[EntryMatch], bool]:
+    """
+    Evaluate ONE code location of a rule against the configured code sets.
+
+    Shared by the rule's primary `code_xpath` and its optional
+    `translation_xpath` — the two differ only in where they look and
+    which code system they are scoped to.
+
+    Args:
+        entry: The <entry> being evaluated.
+        code_system_sets: The jurisdiction's per-system code lookup.
+        rule: The rule these matches are attributed to.
+        namespaces: XML namespaces for xpath evaluation.
+        xpath: The code location to evaluate, relative to `entry`.
+        code_system_oid: OID scoping the lookup, or None for all systems.
+
+    Returns:
+        Tuple of `(matches, candidates_found)`. `candidates_found` reports
+        whether the location held any code-bearing element at all, which is
+        what drives structural precedence — independent of whether any of
+        those codes matched.
+    """
+
+    elements = cast(list[_Element], entry.xpath(xpath, namespaces=namespaces))
+    candidates_found = any((el.get("code") or "").strip() for el in elements)
+
+    matches: list[EntryMatch] = []
+    for element in elements:
+        code = (element.get("code") or "").strip()
+        if not code:
+            continue
+
+        if rule.require_value_set_attr and not element.get(
+            f"{{{SDTC_NAMESPACE}}}valueSet"
+        ):
+            continue
+
+        coding = code_system_sets.find_match(code, code_system_oid)
+        if coding is not None:
+            _enrich_display_name(element, coding)
+            matches.append(
+                EntryMatch(
+                    entry=entry,
+                    matched_code_element=element,
+                    matched_coding=coding,
+                    rule=rule,
+                )
+            )
+
+    return matches, candidates_found
+
+
+def _apply_rule(
+    entry: _Element,
+    code_system_sets: CodeSystemSets,
+    rule: EntryMatchRule,
+    namespaces: NamespaceMap,
+) -> tuple[list[EntryMatch], bool]:
+    """
+    Evaluate a single rule against an entry: primary codes, then translations.
+
+    The translation location is only consulted when the rule's own primary
+    location produced no match — a translation is the sender's alternate
+    coding of the same concept, so matching it after the primary already
+    matched would double-count one concept.
+
+    Returns:
+        Tuple of `(matches, candidates_found)` for this rule alone.
+    """
+
+    matches, candidates_found = _match_codes(
+        entry,
+        code_system_sets,
+        rule,
+        namespaces,
+        xpath=rule.code_xpath,
+        code_system_oid=rule.code_system_oid,
+    )
+
+    if not matches and rule.translation_xpath:
+        translation_matches, translation_candidates = _match_codes(
+            entry,
+            code_system_sets,
+            rule,
+            namespaces,
+            xpath=rule.translation_xpath,
+            code_system_oid=rule.translation_code_system_oid,
+        )
+        matches.extend(translation_matches)
+        candidates_found = candidates_found or translation_candidates
+
+    return matches, candidates_found
+
+
+def _precedence_key(rule: EntryMatchRule) -> str:
+    """
+    Return the key that decides which precedence unit a rule belongs to.
+
+    An explicit `precedence_group` wins; otherwise the rule's own
+    `code_xpath` is the key, so rules reading the identical location are
+    one unit without needing to be annotated.
+    """
+
+    return rule.precedence_group or rule.code_xpath
+
+
+def _group_rules_by_precedence(
+    match_rules: list[EntryMatchRule],
+) -> list[list[EntryMatchRule]]:
+    """
+    Group **consecutive** rules that describe the same statement into one unit.
+
+    Structural precedence exists to stop a rule describing a DIFFERENT
+    structure from re-claiming an entry a higher-tier rule already spoke for.
+    It is NOT meant to stop the alternative codings of one statement from
+    being tried. Two rules belong to the same unit when they read the same
+    location (identical `code_xpath` — the diagnosis sections' reversed-code
+    pairs) or when they say so (`precedence_group` — the Results rules, which
+    read one Result Observation at three different locations).
+
+    Grouping is by adjacency rather than by collecting every rule with a
+    matching key document-wide: the rule lists are ordered by tier, and a
+    rule separated from its twin by a rule at another location is making a
+    deliberate ordering statement that regrouping would silently rewrite.
+
+    Args:
+        match_rules: The section's rules, in tier order.
+
+    Returns:
+        The rules partitioned into consecutive same-statement groups.
+    """
+
+    groups: list[list[EntryMatchRule]] = []
+    for rule in match_rules:
+        if groups and _precedence_key(groups[-1][0]) == _precedence_key(rule):
+            groups[-1].append(rule)
+        else:
+            groups.append([rule])
+    return groups
+
+
 def _try_match_entry(
     entry: _Element,
     code_system_sets: CodeSystemSets,
@@ -299,10 +456,20 @@ def _try_match_entry(
     multiple matches if the entry has multiple code-bearing elements
     at the rule's xpath locations.
 
-    Structural precedence: a rule claims the entry as soon as it finds
-    any code-bearing elements (candidates_found=True), regardless of
-    whether those candidates produced actual code set matches. Once a
-    rule claims an entry, subsequent rules are not evaluated.
+    Structural precedence: rules are evaluated in tier order and grouped by
+    the **statement** they describe (see `_group_rules_by_precedence`). The first
+    group whose xpath finds any code-bearing element claims the entry,
+    regardless of whether those candidates produced actual code set matches;
+    later groups are not evaluated.
+
+    Precedence is decided per GROUP, not per rule, because a section's rules
+    are frequently alternative codings of ONE statement rather than
+    descriptions of different ones. The diagnosis sections pair a tier-1 rule
+    with a tier-3 rule at the SAME location under the reversed code system;
+    Results reads one Result Observation at three DIFFERENT locations (test
+    name, local-code translation, organism value). Breaking after the first
+    rule in either shape makes the rest unreachable for every entry carrying
+    a code at all, silently dropping content the jurisdiction configured.
 
     The require_value_set_attr guard: when set on a rule, a candidate
     element is only eligible for code matching if it also carries
@@ -313,70 +480,14 @@ def _try_match_entry(
 
     entry_matches: list[EntryMatch] = []
 
-    for rule in match_rules:
-        code_elements = cast(
-            list[_Element],
-            entry.xpath(rule.code_xpath, namespaces=namespaces),
-        )
-
-        candidates_found = any((el.get("code") or "").strip() for el in code_elements)
-
-        for code_el in code_elements:
-            code_val = (code_el.get("code") or "").strip()
-            if not code_val:
-                continue
-
-            if rule.require_value_set_attr:
-                sdtc_vs = code_el.get(f"{{{SDTC_NAMESPACE}}}valueSet")
-                if not sdtc_vs:
-                    continue
-
-            coding = code_system_sets.find_match(code_val, rule.code_system_oid)
-            if coding is not None:
-                _enrich_display_name(code_el, coding)
-                entry_matches.append(
-                    EntryMatch(
-                        entry=entry,
-                        matched_code_element=code_el,
-                        matched_coding=coding,
-                        rule=rule,
-                    )
-                )
-
-        if not entry_matches and rule.translation_xpath:
-            translation_elements = cast(
-                list[_Element],
-                entry.xpath(rule.translation_xpath, namespaces=namespaces),
+    for group in _group_rules_by_precedence(match_rules):
+        candidates_found = False
+        for rule in group:
+            rule_matches, rule_candidates = _apply_rule(
+                entry, code_system_sets, rule, namespaces
             )
-
-            if not candidates_found:
-                candidates_found = any(
-                    (el.get("code") or "").strip() for el in translation_elements
-                )
-
-            for trans_el in translation_elements:
-                trans_code = (trans_el.get("code") or "").strip()
-                if not trans_code:
-                    continue
-
-                if rule.require_value_set_attr:
-                    sdtc_vs = trans_el.get(f"{{{SDTC_NAMESPACE}}}valueSet")
-                    if not sdtc_vs:
-                        continue
-
-                coding = code_system_sets.find_match(
-                    trans_code, rule.translation_code_system_oid
-                )
-                if coding is not None:
-                    _enrich_display_name(trans_el, coding)
-                    entry_matches.append(
-                        EntryMatch(
-                            entry=entry,
-                            matched_code_element=trans_el,
-                            matched_coding=coding,
-                            rule=rule,
-                        )
-                    )
+            entry_matches.extend(rule_matches)
+            candidates_found = candidates_found or rule_candidates
 
         if candidates_found:
             break

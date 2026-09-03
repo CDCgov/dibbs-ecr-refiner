@@ -670,7 +670,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
 
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toHaveText(
-      /To keep narrative on match, refine must be selected/
+      /To keep narrative on match, "Refine" must be selected/
     );
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -775,7 +775,7 @@ test.describe('Sections Validation and Error Lifecycle', () => {
     const errorAlert = sectionRow.getByRole('alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toHaveText(
-      /To keep narrative on match, refine must be selected/
+      /To keep narrative on match, "Refine" must be selected/
     );
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 

@@ -36,8 +36,8 @@ export function Success({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="mx-auto flex w-full max-w-7xl place-items-center justify-between gap-4 pr-2">
-        <Title>eCR refinement results</Title>
+      <div className="flex w-full max-w-full items-end justify-between">
+        <Title>eCR Refinement Results</Title>
         <SelectContainer>
           <Field>
             <Label className="text-bold">CONDITION:</Label>

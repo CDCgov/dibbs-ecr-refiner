@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.conditions.db import get_conditions_by_ids, get_primary_condition_db
+from app.db.conditions.db import get_conditions_by_ids_db, get_primary_condition_db
 from app.db.conditions.model import DbCondition
 from app.db.configurations.activations.db import (
     activate_configuration_db,
@@ -54,7 +54,7 @@ async def _get_conditions_with_active_config_db(
 
     # Get the conditions from the active configs
     active_config_ids = [active.condition_id for active in active_configs_in_jd]
-    return await get_conditions_by_ids(ids=active_config_ids, db=db)
+    return await get_conditions_by_ids_db(ids=active_config_ids, db=db)
 
 
 @router.patch(

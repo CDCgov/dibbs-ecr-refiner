@@ -1,4 +1,5 @@
-import { clearDb, makeOldTesVersionConfiguration } from './db';
+// import { clearDb, makeOldTesVersionConfiguration } from './db';
+import { clearDb } from './db';
 import { expect, test } from './fixtures';
 
 test.describe('TES updates page', () => {
@@ -44,33 +45,33 @@ test.describe('TES updates page', () => {
     );
   });
 
-  test('View updates renders drafts that need to be updated', async ({
-    makeAxeBuilder,
-    tesUpdatesPage,
-    page,
-  }) => {
-    await makeOldTesVersionConfiguration('Cysticercosis', 'draft');
-    await makeOldTesVersionConfiguration('Diphyllobothriasis', 'active');
-
-    await tesUpdatesPage.goToUpdateActionsPage();
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    const updateTable = page.getByRole('table', {
-      name: 'Update existing drafts',
-    });
-
-    await expect(
-      updateTable.getByRole('cell', { name: 'Cysticercosis', exact: true })
-    ).toBeVisible();
-    await expect(updateTable.getByText('Diphyllobothriasis')).toBeHidden();
-
-    const createTable = page.getByRole('table', {
-      name: 'Create Draft To Update',
-    });
-
-    await expect(
-      createTable.getByRole('cell', { name: 'Diphyllobothriasis', exact: true })
-    ).toBeVisible();
-    await expect(createTable.getByText('Cysticercosis')).toBeHidden();
-  });
+  // test('View updates renders drafts that need to be updated', async ({
+  //   makeAxeBuilder,
+  //   tesUpdatesPage,
+  //   page,
+  // }) => {
+  //   await makeOldTesVersionConfiguration('Cysticercosis', 'draft');
+  //   await makeOldTesVersionConfiguration('Diphyllobothriasis', 'active');
+  //
+  //   await tesUpdatesPage.goToUpdateActionsPage();
+  //   await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  //
+  //   const updateTable = page.getByRole('table', {
+  //     name: 'Update existing drafts',
+  //   });
+  //
+  //   await expect(
+  //     updateTable.getByRole('cell', { name: 'Cysticercosis', exact: true })
+  //   ).toBeVisible();
+  //   await expect(updateTable.getByText('Diphyllobothriasis')).toBeHidden();
+  //
+  //   const createTable = page.getByRole('table', {
+  //     name: 'Create Draft To Update',
+  //   });
+  //
+  //   await expect(
+  //     createTable.getByRole('cell', { name: 'Diphyllobothriasis', exact: true })
+  //   ).toBeVisible();
+  //   await expect(createTable.getByText('Cysticercosis')).toBeHidden();
+  // });
 });

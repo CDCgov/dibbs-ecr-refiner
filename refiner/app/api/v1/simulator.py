@@ -19,7 +19,10 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
-from app.db.conditions.db import get_conditions_by_ids, get_latest_tes_condition_ids_db
+from app.db.conditions.db import (
+    get_conditions_by_ids_db,
+    get_latest_tes_condition_ids_db,
+)
 from app.db.configurations.db import get_configurations_by_ids_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.simulator.model import Condition, FileInfoResponse, SimulatorUploadResponse
@@ -273,7 +276,7 @@ async def simulator_upload(
         ),
         db=db,
     )
-    conditions_without_config = await get_conditions_by_ids(
+    conditions_without_config = await get_conditions_by_ids_db(
         ids=latest_condition_ids, db=db
     )
 
