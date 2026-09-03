@@ -38,7 +38,7 @@ export function DraftBanner({
       breakout
       background="bg-yellow-vivid-5v border-b-3 border-yellow-vivid-30v"
       padding="none"
-      className="z-banner-interactive px-8 py-4 lg:px-20"
+      className="z-banner-interactive py-2"
       maxWidth="max-w-7xl"
     >
       <div className="w-full">
