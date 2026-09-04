@@ -260,6 +260,49 @@ describe('Configuration sections', () => {
     expect(select).toBeDisabled();
   });
 
+  it('should lock the include toggle for trigger code sections', () => {
+    renderPage();
+
+    // Immunizations (11369-6) carries trigger code templates in the eICR IG
+    const row = screen.getByText('Immunizations section').closest('tr');
+    expect(row).not.toBeNull();
+
+    const includeSwitch = within(row!).getByLabelText(
+      /Include .* section rules in refined document/i
+    );
+    expect(includeSwitch).toBeDisabled();
+    expect(includeSwitch).toBeChecked();
+  });
+
+  it('should keep coded data and narrative configurable for trigger code sections', () => {
+    renderPage();
+
+    const row = screen.getByText('Immunizations section').closest('tr');
+    expect(row).not.toBeNull();
+
+    // only removal is locked — the remaining controls stay under user control
+    const codedDataSwitch = within(row!).getByRole('switch', {
+      name: /Refine .* section|Keep original for .* section/i,
+    });
+    expect(codedDataSwitch).toBeEnabled();
+
+    const narrativeSelect = within(row!).getByRole('combobox');
+    expect(narrativeSelect).toBeEnabled();
+  });
+
+  it('should leave the include toggle enabled for non-trigger sections', () => {
+    renderPage();
+
+    const row = screen.getByText('History section').closest('tr');
+    expect(row).not.toBeNull();
+
+    expect(
+      within(row!).getByLabelText(
+        /Include .* section rules in refined document/i
+      )
+    ).toBeEnabled();
+  });
+
   it('should allow custom section additions', async () => {
     const user = userEvent.setup();
 
