@@ -80,8 +80,8 @@ export function ActivityLogEntries({
                     {r.has_custom_code_upload_events ? (
                       <ViewAllCustomCodeEventsButton
                         eventId={r.id}
-                        importedByUsername={r.username}
-                        importDate={date}
+                        modifiedByUsername={r.username}
+                        modifiedDate={date}
                       />
                     ) : null}
                   </div>
@@ -102,14 +102,14 @@ export function ActivityLogEntries({
 
 interface ViewAllCustomCodeEventsButtonProps {
   eventId: string;
-  importedByUsername: string;
-  importDate: string;
+  modifiedByUsername: string;
+  modifiedDate: string;
 }
 
 function ViewAllCustomCodeEventsButton({
   eventId,
-  importedByUsername,
-  importDate,
+  modifiedByUsername,
+  modifiedDate,
 }: ViewAllCustomCodeEventsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const {
@@ -145,7 +145,7 @@ function ViewAllCustomCodeEventsButton({
           ) : (
             <div className="flex max-h-130 flex-col gap-6">
               <p>
-                Imported by {importedByUsername} on {importDate}
+                Modified by {modifiedByUsername} on {modifiedDate}
               </p>
               <div className="overflow-auto">
                 {events.data.length === 0 ? (
