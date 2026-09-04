@@ -561,8 +561,14 @@ async def delete_custom_code(
             detail=f"Failed to find custom code to delete with ID: {id}",
         )
 
+    systems = await get_code_systems_db(db=db)
+
     deleted_codes = await delete_custom_codes_db(
-        config=config, ids=[custom_code.id], user_id=user.id, db=db
+        config=config,
+        ids=[custom_code.id],
+        code_systems=systems,
+        user_id=user.id,
+        db=db,
     )
 
     if len(deleted_codes) < 1:
@@ -572,8 +578,6 @@ async def delete_custom_code(
         )
 
     deleted_code = deleted_codes[0]
-
-    systems = await get_code_systems_db(db=db)
 
     return CustomCodeResponse(
         id=deleted_code.id,
@@ -592,6 +596,8 @@ class BulkDeleteCustomCodesInput(BaseModel):
     """
 
     ids: list[UUID]
+    ids_to_skip: list[UUID]
+    delete_all: bool
 
 
 @router.post(
@@ -648,14 +654,20 @@ async def bulk_delete_custom_codes(
             detail="Trying to update a non-draft configuration",
         )
 
+    systems = await get_code_systems_db(db=db)
+
     deleted_codes = await delete_custom_codes_db(
-        config=config, ids=body.ids, user_id=user.id, db=db
+        config=config,
+        ids=body.ids,
+        user_id=user.id,
+        code_systems=systems,
+        db=db,
+        ids_to_skip=body.ids_to_skip,
+        delete_all=body.delete_all,
     )
 
     if len(deleted_codes) < 1:
         return []
-
-    systems = await get_code_systems_db(db=db)
 
     return [
         CustomCodeResponse(

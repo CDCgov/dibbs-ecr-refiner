@@ -93,82 +93,13 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('2 selected');
+      await expect(controlPanel).toContainText('3 selected');
       await controlPanel.getByRole('button', { name: 'Include' }).click();
       await expect(controlPanel).not.toBeVisible();
 
       const statusCells = table.locator('tbody tr td:last-child');
       for (const cell of await statusCells.all()) {
         await expect(cell).not.toContainText('Excluded');
-      }
-    });
-  });
-
-  test('Custom codes can be deleted in bulk', async ({
-    api,
-    page,
-    configurationPage,
-  }) => {
-    await test.step('Set up configuration', async () => {
-      const condition = 'Anotia';
-      const config = await api.createConfiguration(condition);
-      const systems = await api.getSystems();
-      await api.uploadCustomCodeCsv(config.id, [
-        {
-          code: 'test-code-1',
-          display: 'My test code',
-          system_id: systems[0].id,
-        },
-        {
-          code: 'test-code-2',
-          display: 'My secondary test code',
-          system_id: systems[1].id,
-        },
-      ]);
-    });
-
-    await test.step('Navigate to page', async () => {
-      await page.reload();
-      await expect(
-        page.getByRole('heading', { name: 'Configurations', level: 1 })
-      ).toBeVisible();
-      await page.getByRole('link', { name: 'Anotia' }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Customize eICR sections' })
-      ).toBeVisible();
-      await configurationPage.goToManageCodesTab();
-    });
-
-    await test.step('Bulk delete custom codes', async () => {
-      const table = page.getByRole('table');
-      await expect(table).toBeVisible();
-
-      const selectAllCheckbox = table.getByRole('checkbox', {
-        name: 'Include all codes in bulk operation',
-      });
-      await selectAllCheckbox.click();
-      await expect(selectAllCheckbox).toBeChecked();
-
-      const controlPanel = page.getByTestId('control-panel');
-      await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('3 selected');
-      await controlPanel.getByRole('button', { name: 'More options' }).click();
-
-      const customCodeDeletionButton = page.getByText('Delete 2 custom codes');
-      await expect(customCodeDeletionButton).toBeVisible();
-      await customCodeDeletionButton.click();
-
-      await expect(
-        page.getByText('2 custom codes will be deleted')
-      ).toBeVisible();
-      const deleteButton = page.getByRole('button', { name: 'Delete 2 codes' });
-      await expect(deleteButton).toBeVisible();
-      await deleteButton.click();
-      await expect(controlPanel).not.toBeVisible();
-
-      const sourceCells = table.locator('tbody tr td:nth-last-child(2)');
-      for (const cell of await sourceCells.all()) {
-        await expect(cell).not.toContainText('Custom code');
       }
     });
   });
@@ -392,6 +323,29 @@ test.describe('Codes management - custom code interactions', () => {
 
     // make sure we're returned to the starting screen
     await expect(page.getByTestId('codes-included-display')).toBeVisible();
+
+    // exclude doesn't process the codes
+    const selectAllCheckbox = page.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+    await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+    await expect(page.getByText('Exclude codes')).toBeVisible();
+    await expect(
+      page.getByText("5 custom code(s) can't be excluded.")
+    ).toBeVisible();
+
+    // exclusion still allows for actioning non-custom codes
+    const exclusionButton = page.getByRole('button', {
+      name: 'Exclude 2 codes',
+    });
+    await exclusionButton.click();
+
+    await expect(page.getByText('2 excluded')).toBeVisible();
   });
 
   test('Individual custom codes can be added, edited, and deleted', async ({
@@ -682,19 +636,62 @@ test.describe('Codes management - code interactions', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
+  test('Code set code inclusion and exclusion work past render cursor', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+    makeAxeBuilder,
+  }) => {
+    const condition = 'Hepatitis B';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToManageCodesTab();
+
+    const selectAllCheckbox = page.getByRole('checkbox', {
+      name: 'Include all codes in bulk',
+    });
+
+    await selectAllCheckbox.click();
+
+    const controlPanel = page.getByTestId('control-panel');
+    await expect(controlPanel).toBeVisible();
+    await controlPanel.getByRole('button', { name: 'Exclude' }).click();
+    await test.step('Check stats bar after excluding one code', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '193 of 7,838 codes included'
+      );
+      await expect(page.getByText('7,645 excluded')).toBeVisible();
+      await expect(controlPanel).not.toBeVisible();
+    });
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await selectAllCheckbox.click();
+
+    await expect(controlPanel).toBeVisible();
+    await controlPanel.getByRole('button', { name: 'Include' }).click();
+    await test.step('Check stats bar after excluding one code', async () => {
+      await expect(page.getByTestId('codes-included-display')).toHaveText(
+        '7,838  of 7,838 codes included'
+      );
+      await expect(page.getByText('193 RCTC Codes')).toBeVisible();
+      await expect(page.getByText('0 excluded')).toBeVisible();
+      await expect(controlPanel).not.toBeVisible();
+    });
+  });
+
   test('Primary condition RSG codes are not modifiable', async ({
     configurationsPage,
     page,
     configurationPage,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Alpha-gal Syndrome';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
     const table = page.getByRole('table');
 
     await expect(table).toBeVisible();
-    await expect(page.getByTestId('lock-icon')).toBeVisible();
+    await expect(table.getByTestId('lock-icon').first()).toBeVisible();
 
     const selectAllCheckbox = table.getByRole('checkbox', {
       name: 'Include all codes in bulk operation',
@@ -702,37 +699,41 @@ test.describe('Codes management - code interactions', () => {
     await selectAllCheckbox.click();
     await expect(selectAllCheckbox).toBeChecked();
 
+    // Alpha-gal's three non-trigger codes are the only selectable rows;
+    // its ten trigger codes render a lock icon instead of a checkbox
     const rowCheckboxes = table.locator('tbody tr').getByRole('checkbox');
-    await expect(rowCheckboxes).toBeChecked();
+    await expect(rowCheckboxes).toHaveCount(3);
+    for (const checkbox of await rowCheckboxes.all()) {
+      await expect(checkbox).toBeChecked();
+    }
 
     await rowCheckboxes.first().click();
-    await expect(selectAllCheckbox).not.toBeChecked();
   });
 
-  test('Non-primary condition RSG codes are modifiable', async ({
+  test('Non-primary condition trigger codes are modifiable', async ({
     configurationsPage,
     page,
     configurationPage,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Alpha-gal Syndrome';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
     const table = page.getByRole('table');
 
     await expect(table).toBeVisible();
-    await expect(page.getByTestId('lock-icon')).toBeVisible();
+    await expect(table.getByTestId('lock-icon').first()).toBeVisible();
 
-    await test.step('Add Alpha-gal Syndrome code set', async () => {
+    await test.step('Add Interrupted Aortic Arch code set', async () => {
       await page.getByRole('button', { name: '1 Condition code sets' }).click();
       await page
         .getByRole('searchbox', { name: 'Search by condition name' })
-        .fill('alph');
+        .fill('interrupt');
       await page
         .getByRole('listitem')
-        .filter({ hasText: 'Alpha-gal Syndrome' })
+        .filter({ hasText: 'Interrupted Aortic Arch' })
         .hover();
-      await page.getByLabel('Add Alpha-gal Syndrome').click();
+      await page.getByLabel('Add Interrupted Aortic Arch').click();
       await page.getByRole('button', { name: 'Close drawer' }).click();
       await expect(
         page.getByRole('button', { name: '2 Condition code sets' })
@@ -752,9 +753,11 @@ test.describe('Codes management - code interactions', () => {
 
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
 
-    // Only Anotia's single RSG code will remain as "Included"
+    // Only the primary condition's trigger codes remain "Included";
+    // Interrupted Aortic Arch's trigger codes are excludable because it
+    // is not the primary condition
     const statusCells = table.locator('tbody tr td:last-child');
-    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(1);
+    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(10);
   });
 });
 
@@ -1526,19 +1529,20 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Primary condition RSG codes display a lock icon tooltip instead of a checkbox', async ({
+  test('Primary condition trigger codes display a lock icon tooltip instead of a checkbox', async ({
     configurationsPage,
     page,
     configurationPage,
     makeAxeBuilder,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Alpha-gal Syndrome';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
-    await expect(page.getByRole('table')).toBeVisible();
+    const table = page.getByRole('table');
+    await expect(table).toBeVisible();
 
-    const lockIconTooltip = page.getByTestId('lock-icon');
+    const lockIconTooltip = table.getByTestId('lock-icon').first();
     await expect(lockIconTooltip).toBeVisible();
 
     // check tooltip
@@ -1597,7 +1601,7 @@ test.describe('Codes management - data loading', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
-  test('Custom codes are paginated, and then load into condition code set codes', async ({
+  test('Custom codes are paginated, and then load into condition code set codes and can be bulk deleted', async ({
     api,
     page,
     configurationPage,
@@ -1665,6 +1669,38 @@ test.describe('Codes management - data loading', () => {
       });
       await expect(nonCustomCodeSourceCells).not.toHaveCount(0);
     });
+
+    await test.step('Bulk delete custom codes', async () => {
+      const table = page.getByRole('table');
+      await expect(table).toBeVisible();
+
+      const selectAllCheckbox = table.getByRole('checkbox', {
+        name: 'Include all codes in bulk operation',
+      });
+      await selectAllCheckbox.click();
+      await expect(selectAllCheckbox).toBeChecked();
+
+      const controlPanel = page.getByTestId('control-panel');
+      await expect(controlPanel).toBeVisible();
+
+      const moreOptionsButton = page.getByRole('button', {
+        name: 'More options',
+      });
+      await moreOptionsButton.click();
+
+      const deleteMenuButton = page.getByRole('menuitem', {
+        name: 'Delete 251 custom codes',
+      });
+      await deleteMenuButton.click();
+
+      const deleteButton = page.getByRole('button', {
+        name: 'Delete 251 codes',
+      });
+      await deleteButton.click();
+
+      await expect(page.getByText('251 custom codes deleted')).toBeVisible();
+      await expect(page.getByText('2 of 2 codes included')).toBeVisible();
+    });
   });
 
   test('More codes load into view as user scrolls down', async ({
@@ -1690,6 +1726,12 @@ test.describe('Codes management - data loading', () => {
       await page.getByRole('button', { name: 'Close drawer' }).click();
     });
 
+    const selectAllCheckbox = page.getByRole('checkbox', {
+      name: 'Include all codes in bulk operation',
+    });
+    await selectAllCheckbox.click();
+    await expect(selectAllCheckbox).toBeChecked();
+
     const tableRows = page.getByRole('table').getByRole('row');
 
     await expect(tableRows).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
@@ -1702,6 +1744,9 @@ test.describe('Codes management - data loading', () => {
 
     // table headers should be sticky
     await expect(tableRows.first()).toBeVisible();
+
+    // check new boxes render as selected
+    await expect(tableRows.last().getByRole('checkbox')).toBeChecked();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });

@@ -32,6 +32,8 @@ import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Tooltip } from '@components/Tooltip';
+import { filterParamSerializer, ParamValue } from './Filters/utils';
+import { LockIcon } from './LockIcon';
 
 export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
@@ -63,15 +65,17 @@ export function ManageCodes() {
               title="Manage codes"
               subtitle="These codes will be used alongside the condition codesets by the Refiner to search for and retain."
             />
-            <AddCodeSetsButton
-              included_conditions={configuration.data.included_conditions}
-              setIsDrawerOpen={setIsDrawerOpen}
-            />
-            <AddCustomCodeButton
-              configurationId={id}
-              disabled={isDisabled}
-              setIsUploadingCustomCodes={setIsUploadingCustomCodes}
-            />
+            <div className="flex gap-2">
+              <AddCodeSetsButton
+                included_conditions={configuration.data.included_conditions}
+                setIsDrawerOpen={setIsDrawerOpen}
+              />
+              <AddCustomCodeButton
+                configurationId={id}
+                disabled={isDisabled}
+                setIsUploadingCustomCodes={setIsUploadingCustomCodes}
+              />
+            </div>
           </div>
           {isUploadingCustomCodes ? (
             <ImportCustomCodes
@@ -104,6 +108,7 @@ interface CodesPanelProps {
 function CodesPanel({ id, disabled }: CodesPanelProps) {
   const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
     useFilterState(id);
+
   return (
     <>
       <CodeInformationBar id={id} />
@@ -134,9 +139,6 @@ interface CodesTableProps {
   isFilterActive: boolean;
   onClearFilters: () => void;
 }
-
-type ParamValue =
-  string | number | boolean | (string | number | boolean)[] | null | undefined;
 
 function CodesTable({
   id,
@@ -169,21 +171,14 @@ function CodesTable({
         // For example:
         // `/api/v1/configurations/<UUID>/codes?code_systems=<UUID>&code_systems=<UUID>&sources=<UUID>&statuses=excluded&search=code+description`
         paramsSerializer: (params: Record<string, ParamValue>) => {
-          const searchParams = new URLSearchParams();
-          for (const [key, value] of Object.entries(params)) {
-            if (Array.isArray(value)) {
-              value.forEach((v) => searchParams.append(key, String(v)));
-            } else if (value !== null && value !== undefined) {
-              searchParams.append(key, String(value));
-            }
-          }
-          return searchParams.toString();
+          return filterParamSerializer(params);
         },
       },
     }
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [allSelected, setAllSelected] = useState<boolean>(false);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
@@ -191,18 +186,13 @@ function CodesTable({
 
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
-  const codesWithoutPrimaryConditionRsgCodes = codes.filter(
-    (c) => !c.is_primary_condition_rsg
-  );
+  const excludableCodes = codes.filter((c) => !c.is_trigger_code);
 
-  const allSelected =
-    codesWithoutPrimaryConditionRsgCodes.length > 0 &&
-    selectedIds.size === codesWithoutPrimaryConditionRsgCodes.length;
-  const selectedCustomCodes = codesWithoutPrimaryConditionRsgCodes.filter(
+  const selectedCustomCodes = excludableCodes.filter(
     (c) => selectedIds.has(c.id) && c.is_custom
   );
 
-  const hasCodesSelected = selectedIds.size > 0;
+  const hasCodesSelected = selectedIds.size > 0 || allSelected;
 
   return (
     <div className="flex flex-col items-end gap-4">
@@ -216,12 +206,30 @@ function CodesTable({
             configurationId={id}
             selectedCodeIds={selectedIds}
             selectedCustomCodes={selectedCustomCodes}
-            clearSelections={() => setSelectedIds(new Set())}
+            clearSelections={() => {
+              setSelectedIds(new Set());
+              setAllSelected(false);
+            }}
+            allSelected={allSelected}
+            renderedCodes={codes}
+            hasNextPage={hasNextPage}
+            filters={filters}
           />
         ) : null}
         <InfiniteScroll
           dataLength={codes.length}
-          next={fetchNextPage}
+          next={async () => {
+            const nextPageValues = await fetchNextPage();
+            if (allSelected) {
+              const pages = nextPageValues?.data?.pages;
+              const newCodes =
+                (pages && pages[pages.length - 1].data.codes) ?? [];
+
+              setSelectedIds(
+                new Set([...excludableCodes, ...newCodes].map((c) => c.id))
+              );
+            }
+          }}
           hasMore={!!hasNextPage}
           loader={isFetchingNextPage ? <Spinner variant="centered" /> : null}
           endMessage={
@@ -239,17 +247,14 @@ function CodesTable({
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
                     checked={allSelected}
-                    onChange={(checked) =>
+                    onChange={(checked) => {
+                      setAllSelected(checked);
                       setSelectedIds(
                         checked
-                          ? new Set(
-                              codesWithoutPrimaryConditionRsgCodes.map(
-                                (c) => c.id
-                              )
-                            )
+                          ? new Set(excludableCodes.map((c) => c.id))
                           : new Set()
-                      )
-                    }
+                      );
+                    }}
                   />
                 </th>
                 <th scope="col">Code no.</th>
@@ -306,7 +311,7 @@ function CodesTable({
                     )}
                   >
                     <td className="text-center">
-                      {code.is_primary_condition_rsg ? (
+                      {code.is_trigger_code ? (
                         <Tooltip
                           position="right"
                           label="Reportable Condition Trigger Codes (RCTC) must be included for proper processing of the eCR."
@@ -347,23 +352,6 @@ function CodesTable({
         </InfiniteScroll>
       </div>
     </div>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg
-      data-testid="lock-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="#71767a"
-    >
-      <path
-        data-dc-tpl="743"
-        d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm3 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"
-      />
-    </svg>
   );
 }
 
@@ -476,6 +464,10 @@ function CodeInformationBar({ id }: { id: string }) {
           <span>
             {codeCounts.data.total_code_sets_count.toLocaleString()} condition
             code sets
+          </span>
+          <span>
+            {codeCounts.data.primary_condition_rctc_count.toLocaleString()} RCTC
+            codes
           </span>
         </div>
       </div>

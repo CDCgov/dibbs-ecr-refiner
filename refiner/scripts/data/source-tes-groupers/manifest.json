@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "tes-groupers",
-  "version": "2026.05.22",
-  "last_updated_utc": "2026-05-22T03:18:21.836673+00:00",
+  "version": "2026.09.02",
+  "last_updated_utc": "2026-09-02T23:03:45.403180+00:00",
   "files": {
     "additional_context_grouper_2.0.0.json": {
       "hash": "69b10772132ef727f478a474f892ddbffbe86eb137b1d6254eda077b63068893",
@@ -127,6 +127,12 @@
     "condition_grouper_6.0.0.part04.json": {
       "hash": "38b5c8982dfcc2fa5716d4eb9c1ba7a547de54669c530905ee3026cbc65155d3",
       "record_count": 59,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "eicr_triggering.json": {
+      "hash": "654adc1f9a1709603e3ca69a5ab858e10e0b85d361ef1cf5572bcd7170685336",
+      "record_count": 1399,
       "error_count": 0,
       "validation_ran": true
     },

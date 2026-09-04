@@ -6,7 +6,7 @@ import {
   ComboboxInput,
 } from '@headlessui/react';
 import { BaseComboboxOptions } from '@components/Dropdown';
-import { useGetCodeFilters } from '../../../api/configurations/configurations';
+import { useGetCodeFilters } from '../../../../api/configurations/configurations';
 import classNames from 'classnames';
 
 const CLEAR_OPTION = { id: '__clear__', label: '' } as const;
