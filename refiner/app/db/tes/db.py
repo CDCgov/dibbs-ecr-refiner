@@ -2,6 +2,7 @@ from uuid import UUID
 
 from psycopg.rows import class_row
 
+from app.core.exceptions import InputValidationError, ValidationError
 from app.db.pool import AsyncDatabaseConnection
 from app.db.tes.model import (
     ConditionDiffExportData,
@@ -476,6 +477,155 @@ async def get_configurations_set_to_tes_version(
     )
 
 
+async def _raise_if_invalid_draft_configurations(
+    db: AsyncDatabaseConnection,
+    configuration_ids: list[UUID],
+    jurisdiction_id: str,
+) -> None:
+    """
+    Validate that all configurations are drafts, exist, and belong to the jurisdiction.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        configuration_ids (list[UUID]): Draft configuration IDs to validate.
+        jurisdiction_id (str): The jurisdiction belonging to the current user.
+
+    Raises:
+        InputValidationError: If one or more selected configurations could not be
+            updated because they do not exist, are not drafts, or do not belong to
+            the current jurisdiction.
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                    SELECT id
+                    FROM configurations
+                    WHERE id = ANY(%(configuration_ids)s)
+                        AND status = 'draft'
+                        AND jurisdiction_id = %(jurisdiction_id)s
+                    FOR UPDATE
+                    """,
+                {
+                    "configuration_ids": configuration_ids,
+                    "jurisdiction_id": jurisdiction_id,
+                },
+            )
+
+            eligible_ids = {row[0] for row in await cur.fetchall()}
+
+            if eligible_ids != set(configuration_ids):
+                raise InputValidationError(
+                    "One or more selected configurations could not be "
+                    "updated because they do not exist, are not drafts, "
+                    "or do not belong to the current jurisdiction."
+                )
+
+
+async def _raise_if_conditions_missing_in_latest_tes(
+    db: AsyncDatabaseConnection,
+    configuration_ids: list[UUID],
+    latest_tes_id: UUID,
+) -> None:
+    """
+    Ensure every old condition has a corresponding condition in the latest TES release.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        configuration_ids (list[UUID]): Configuration IDs to validate.
+        latest_tes_id (UUID): The ID of the latest TES release.
+
+    Raises:
+        ValidationError: If one or more conditions are missing from the latest TES release.
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                    SELECT DISTINCT
+                        old_condition.canonical_url
+                    FROM configurations_conditions cc
+                    JOIN conditions old_condition
+                        ON old_condition.id = cc.condition_id
+                    LEFT JOIN conditions latest_condition
+                        ON latest_condition.canonical_url =
+                            old_condition.canonical_url
+                        AND latest_condition.tes_id = %(latest_tes_id)s
+                    WHERE cc.configuration_id =
+                        ANY(%(configuration_ids)s)
+                        AND old_condition.tes_id <> %(latest_tes_id)s
+                        AND latest_condition.id IS NULL
+                    ORDER BY old_condition.canonical_url
+                    """,
+                {
+                    "configuration_ids": configuration_ids,
+                    "latest_tes_id": latest_tes_id,
+                },
+            )
+
+            missing_condition_urls = [row[0] for row in await cur.fetchall()]
+
+            if missing_condition_urls:
+                raise ValidationError(
+                    "The following conditions could not be found in the "
+                    "latest TES release: " + ", ".join(missing_condition_urls)
+                )
+
+
+async def _raise_if_conflicting_condition_links(
+    db: AsyncDatabaseConnection,
+    configuration_ids: list[UUID],
+    latest_tes_id: UUID,
+) -> None:
+    """
+    Prevent primary-key conflicts if a configuration is linked to both old and latest conditions.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        configuration_ids (list[UUID]): Configuration IDs to validate.
+        latest_tes_id (UUID): The ID of the latest TES release.
+
+    Raises:
+        ValidationError: If conflicting condition links are present.
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                    SELECT DISTINCT
+                        old_link.configuration_id,
+                        old_condition.canonical_url
+                    FROM configurations_conditions old_link
+                    JOIN conditions old_condition
+                        ON old_condition.id = old_link.condition_id
+                    JOIN conditions latest_condition
+                        ON latest_condition.canonical_url =
+                            old_condition.canonical_url
+                        AND latest_condition.tes_id = %(latest_tes_id)s
+                    JOIN configurations_conditions latest_link
+                        ON latest_link.configuration_id =
+                            old_link.configuration_id
+                        AND latest_link.condition_id =
+                            latest_condition.id
+                    WHERE old_link.configuration_id =
+                        ANY(%(configuration_ids)s)
+                        AND old_link.condition_id <> latest_condition.id
+                    """,
+                {
+                    "configuration_ids": configuration_ids,
+                    "latest_tes_id": latest_tes_id,
+                },
+            )
+
+            conflicting_links = await cur.fetchall()
+
+            if conflicting_links:
+                raise ValidationError(
+                    "One or more configurations already contain both old "
+                    "and current versions of the same TES condition."
+                )
+
+
 async def apply_latest_tes_to_existing_drafts_db(
     db: AsyncDatabaseConnection,
     configuration_ids: list[UUID],
@@ -508,113 +658,25 @@ async def apply_latest_tes_to_existing_drafts_db(
 
     latest_tes_record = await _get_latest_tes_record_db(db=db)
 
-    async with db.get_connection() as conn:
-        async with conn.transaction():
-            async with conn.cursor() as cur:
-                # Lock the configurations and make sure they are editable
-                # drafts belonging to the current jurisdiction.
-                await cur.execute(
-                    """
-                    SELECT id
-                    FROM configurations
-                    WHERE id = ANY(%(configuration_ids)s)
-                        AND status = 'draft'
-                        AND jurisdiction_id = %(jurisdiction_id)s
-                    FOR UPDATE
-                    """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "jurisdiction_id": jurisdiction_id,
-                    },
-                )
+    await _raise_if_invalid_draft_configurations(
+        db=db, configuration_ids=requested_ids, jurisdiction_id=jurisdiction_id
+    )
+    await _raise_if_conditions_missing_in_latest_tes(
+        db=db, configuration_ids=requested_ids, latest_tes_id=latest_tes_record.id
+    )
+    await _raise_if_conflicting_condition_links(
+        db=db, configuration_ids=requested_ids, latest_tes_id=latest_tes_record.id
+    )
 
-                eligible_ids = {row[0] for row in await cur.fetchall()}
-
-                if eligible_ids != set(requested_ids):
-                    raise ValueError(
-                        "One or more selected configurations could not be "
-                        "updated because they do not exist, are not drafts, "
-                        "or do not belong to the current jurisdiction."
-                    )
-
-                # Every old condition must have a condition with the same
-                # canonical URL in the latest TES release.
-                await cur.execute(
-                    """
-                    SELECT DISTINCT
-                        old_condition.canonical_url
-                    FROM configurations_conditions cc
-                    JOIN conditions old_condition
-                        ON old_condition.id = cc.condition_id
-                    LEFT JOIN conditions latest_condition
-                        ON latest_condition.canonical_url =
-                            old_condition.canonical_url
-                        AND latest_condition.tes_id = %(latest_tes_id)s
-                    WHERE cc.configuration_id =
-                        ANY(%(configuration_ids)s)
-                        AND old_condition.tes_id <> %(latest_tes_id)s
-                        AND latest_condition.id IS NULL
-                    ORDER BY old_condition.canonical_url
-                    """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "latest_tes_id": latest_tes_record.id,
-                    },
-                )
-
-                missing_condition_urls = [row[0] for row in await cur.fetchall()]
-
-                if missing_condition_urls:
-                    raise ValueError(
-                        "The following conditions could not be found in the "
-                        "latest TES release: " + ", ".join(missing_condition_urls)
-                    )
-
-                # Prevent a primary-key conflict if bad or mixed-version data
-                # already connects the same configuration to both the old and
-                # latest condition.
-                await cur.execute(
-                    """
-                    SELECT DISTINCT
-                        old_link.configuration_id,
-                        old_condition.canonical_url
-                    FROM configurations_conditions old_link
-                    JOIN conditions old_condition
-                        ON old_condition.id = old_link.condition_id
-                    JOIN conditions latest_condition
-                        ON latest_condition.canonical_url =
-                            old_condition.canonical_url
-                        AND latest_condition.tes_id = %(latest_tes_id)s
-                    JOIN configurations_conditions latest_link
-                        ON latest_link.configuration_id =
-                            old_link.configuration_id
-                        AND latest_link.condition_id =
-                            latest_condition.id
-                    WHERE old_link.configuration_id =
-                        ANY(%(configuration_ids)s)
-                        AND old_link.condition_id <> latest_condition.id
-                    """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "latest_tes_id": latest_tes_record.id,
-                    },
-                )
-
-                conflicting_links = await cur.fetchall()
-
-                if conflicting_links:
-                    raise ValueError(
-                        "One or more configurations already contain both old "
-                        "and current versions of the same TES condition."
-                    )
-
-                # Replace each old condition link with the corresponding
-                # condition from the latest TES release.
-                #
-                # is_primary remains unchanged because only condition_id is
-                # updated.
-                await cur.execute(
-                    """
+    async with db.get_connection() as conn, conn.transaction():
+        async with conn.cursor() as cur:
+            # Replace each old condition link with the corresponding
+            # condition from the latest TES release.
+            #
+            # is_primary remains unchanged because only condition_id is
+            # updated.
+            await cur.execute(
+                """
                     WITH condition_replacements AS (
                         SELECT
                             cc.configuration_id,
@@ -643,28 +705,28 @@ async def apply_latest_tes_to_existing_drafts_db(
                             replacements.old_condition_id
                     RETURNING cc.configuration_id
                     """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "latest_tes_id": latest_tes_record.id,
-                    },
-                )
+                {
+                    "configuration_ids": requested_ids,
+                    "latest_tes_id": latest_tes_record.id,
+                },
+            )
 
-                updated_id_set = {row[0] for row in await cur.fetchall()}
+            updated_id_set = {row[0] for row in await cur.fetchall()}
 
-                # Updating configurations_conditions does not fire the
-                # configurations updated_at trigger, so explicitly touch the
-                # configurations that changed.
-                if updated_id_set:
-                    await cur.execute(
-                        """
+            # Updating configurations_conditions does not fire the
+            # configurations updated_at trigger, so explicitly touch the
+            # configurations that changed.
+            if updated_id_set:
+                await cur.execute(
+                    """
                         UPDATE configurations
                         SET updated_at = NOW()
                         WHERE id = ANY(%(configuration_ids)s)
                         """,
-                        {
-                            "configuration_ids": list(updated_id_set),
-                        },
-                    )
+                    {
+                        "configuration_ids": list(updated_id_set),
+                    },
+                )
 
     # Keep the response in the same order as the request.
     return [
@@ -672,6 +734,93 @@ async def apply_latest_tes_to_existing_drafts_db(
         for configuration_id in requested_ids
         if configuration_id in updated_id_set
     ]
+
+
+async def _raise_if_invalid_active_configurations(
+    db: AsyncDatabaseConnection,
+    configuration_ids: list[UUID],
+    jurisdiction_id: str,
+) -> list[tuple[UUID, str]]:
+    """
+    Validate that all configurations are active, exist, and belong to the jurisdiction.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        configuration_ids (list[UUID]): Active configuration IDs to validate.
+        jurisdiction_id (str): The jurisdiction belonging to the current user.
+
+    Returns:
+        list[tuple[UUID, str]]: A list of (configuration_id, canonical_url) tuples.
+
+    Raises:
+        InputValidationError: If one or more selected configurations could not be
+            cloned because they do not exist, are not active, or do not belong to
+            the current jurisdiction.
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT id,
+                       (SELECT cond.canonical_url
+                        FROM configurations_conditions cc
+                        JOIN conditions cond ON cond.id = cc.condition_id
+                        WHERE cc.configuration_id = configurations.id
+                        AND cc.is_primary = true
+                        LIMIT 1) as canonical_url
+                FROM configurations
+                WHERE id = ANY(%(configuration_ids)s)
+                    AND status = 'active'
+                    AND jurisdiction_id = %(jurisdiction_id)s
+                FOR UPDATE
+                """,
+                {
+                    "configuration_ids": configuration_ids,
+                    "jurisdiction_id": jurisdiction_id,
+                },
+            )
+
+            active_configs = await cur.fetchall()
+            if len(active_configs) != len(configuration_ids):
+                raise InputValidationError(
+                    "One or more selected configurations could not be "
+                    "cloned because they do not exist, are not active, "
+                    "or do not belong to the current jurisdiction."
+                )
+            return active_configs
+
+
+async def _raise_if_drafts_already_exist(
+    db: AsyncDatabaseConnection,
+    active_configs: list[tuple[UUID, str]],
+    jurisdiction_id: str,
+) -> None:
+    """
+    Check that no drafts already exist for each condition.
+
+    Args:
+        db (AsyncDatabaseConnection): The DB connection pool.
+        active_configs (list[tuple[UUID, str]]): List of (configuration_id, canonical_url).
+        jurisdiction_id (str): The jurisdiction belonging to the current user.
+
+    Raises:
+        ValidationError: If a draft configuration already exists for the
+            condition associated with a configuration.
+    """
+    for row in active_configs:
+        config_id, canonical_url = row
+        # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+        from app.db.configurations.db import is_config_valid_to_insert_db
+
+        if not await is_config_valid_to_insert_db(
+            condition_canonical_url=canonical_url,
+            jurisdiction_id=jurisdiction_id,
+            db=db,
+        ):
+            raise ValidationError(
+                f"A draft configuration already exists for the "
+                f"condition associated with configuration {config_id}."
+            )
 
 
 async def create_drafts_from_active_configurations_db(
@@ -697,98 +846,59 @@ async def create_drafts_from_active_configurations_db(
             does not belong to the jurisdiction, or a draft already exists
             for the condition.
     """
+    from app.db.configurations.db import get_configuration_by_id_db
+
     requested_ids = list(dict.fromkeys(configuration_ids))
 
     if not requested_ids:
         return []
 
+    active_configs = await _raise_if_invalid_active_configurations(
+        db=db, configuration_ids=requested_ids, jurisdiction_id=jurisdiction_id
+    )
+    await _raise_if_drafts_already_exist(
+        db=db, active_configs=active_configs, jurisdiction_id=jurisdiction_id
+    )
+
     async with db.get_connection() as conn:
         async with conn.transaction():
-            async with conn.cursor() as cur:
-                # Validate that all configurations are active, exist, and belong to the jurisdiction.
-                await cur.execute(
-                    """
-                    SELECT id,
-                           (SELECT cond.canonical_url
-                            FROM configurations_conditions cc
-                            JOIN conditions cond ON cond.id = cc.condition_id
-                            WHERE cc.configuration_id = configurations.id
-                            AND cc.is_primary = true
-                            LIMIT 1) as canonical_url
-                    FROM configurations
-                    WHERE id = ANY(%(configuration_ids)s)
-                        AND status = 'active'
-                        AND jurisdiction_id = %(jurisdiction_id)s
-                    FOR UPDATE
-                    """,
-                    {
-                        "configuration_ids": requested_ids,
-                        "jurisdiction_id": jurisdiction_id,
-                    },
+            # Create drafts.
+            created_ids = []
+            for row in active_configs:
+                config_id, _ = row
+
+                config_to_clone = await get_configuration_by_id_db(
+                    id=config_id, jurisdiction_id=jurisdiction_id, db=db
                 )
 
-                active_configs = await cur.fetchall()
-                if len(active_configs) != len(requested_ids):
+                from app.db.conditions.db import get_primary_condition_db
+
+                primary_condition = await get_primary_condition_db(
+                    configuration_id=config_id, db=db
+                )
+
+                if not primary_condition:
                     raise ValueError(
-                        "One or more selected configurations could not be "
-                        "cloned because they do not exist, are not active, "
-                        "or do not belong to the current jurisdiction."
+                        f"Primary condition not found for configuration {config_id}"
                     )
 
-                # Check that no drafts already exist for each condition.
-                for row in active_configs:
-                    config_id, canonical_url = row
-                    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
-                    from app.db.configurations.db import is_config_valid_to_insert_db
+                # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+                from app.db.configurations.db import insert_configuration_db
 
-                    if not await is_config_valid_to_insert_db(
-                        condition_canonical_url=canonical_url,
-                        jurisdiction_id=jurisdiction_id,
-                        db=db,
-                    ):
-                        raise ValueError(
-                            f"A draft configuration already exists for the "
-                            f"condition associated with configuration {config_id}."
-                        )
+                new_config = await insert_configuration_db(
+                    condition=primary_condition,
+                    user_id=user_id,
+                    jurisdiction_id=jurisdiction_id,
+                    db=db,
+                    config_to_clone=config_to_clone,
+                )
 
-                # Create drafts.
-                created_ids = []
-                for row in active_configs:
-                    config_id, _ = row
-                    from app.db.configurations.db import get_configuration_by_id_db
-
-                    config_to_clone = await get_configuration_by_id_db(
-                        id=config_id, jurisdiction_id=jurisdiction_id, db=db
+                if not new_config:
+                    raise ValueError(
+                        f"Failed to create draft for configuration {config_id}"
                     )
 
-                    from app.db.conditions.db import get_primary_condition_db
-
-                    primary_condition = await get_primary_condition_db(
-                        configuration_id=config_id, db=db
-                    )
-
-                    if not primary_condition:
-                        raise ValueError(
-                            f"Primary condition not found for configuration {config_id}"
-                        )
-
-                    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
-                    from app.db.configurations.db import insert_configuration_db
-
-                    new_config = await insert_configuration_db(
-                        condition=primary_condition,
-                        user_id=user_id,
-                        jurisdiction_id=jurisdiction_id,
-                        db=db,
-                        config_to_clone=config_to_clone,
-                    )
-
-                    if not new_config:
-                        raise ValueError(
-                            f"Failed to create draft for configuration {config_id}"
-                        )
-
-                    created_ids.append(new_config.id)
+                created_ids.append(new_config.id)
 
                 # NOTE: In the future, this could be enhanced to allow partial success
                 # by returning a list of successfully created drafts and a list of errors.
