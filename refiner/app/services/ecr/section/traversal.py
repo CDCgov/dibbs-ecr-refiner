@@ -19,7 +19,7 @@ def get_section_by_code(
     """
     Get a top-level section from structuredBody by its LOINC code.
 
-    Searches only direct <component>/<section> children of structuredBody,
+    Searches only direct `<component>`/`<section>` children of structuredBody,
     not nested sub-sections within other sections. This matches the eICR
     IG's section cardinality semantics: the sections defined by the IG
     are top-level, and repeated occurrences of the same LOINC code at
@@ -38,7 +38,7 @@ def get_section_by_code(
         namespaces: The namespaces to use for element search. Defaults to hl7.
 
     Returns:
-        The section element, or None if no top-level section with that
+        The section element, or `None` if no top-level section with that
         LOINC code is present.
 
     Raises:
@@ -74,12 +74,12 @@ def get_section_loinc_codes(
 
     Used to discover which sections are actually present in a given eICR
     document before applying any refinement logic. Only considers direct
-    <component>/<section> children of structuredBody; nested sub-sections
+    `<component>`/`<section>` children of structuredBody; nested sub-sections
     are deliberately excluded to match the eICR IG's section cardinality
     model.
 
     Args:
-        structured_body: The <structuredBody> XML element from an eICR.
+        structured_body: The `<structuredBody>` XML element from an eICR.
         namespaces: The XML namespaces to use for the XPath query.
 
     Returns:
@@ -97,8 +97,8 @@ def get_section_loinc_codes(
 
     # this xpath is designed to be specific and efficient:
     # 1. it starts from the current element (structured_body)
-    # 2. it finds direct <component>/<section> children
-    # 3. it then finds the direct <code> child of that section
+    # 2. it finds direct `<component>`/`<section>` children
+    # 3. it then finds the direct `<code>` child of that section
     # 4. finally, it extracts the 'code' attribute string
     # this avoids finding codes in nested sections or other parts of the
     # document
