@@ -1,6 +1,8 @@
 
 export * from './addCustomCodeInput';
 export * from './addSectionInput';
+export * from './applyTesUpdatesToDraftsRequest';
+export * from './applyTesUpdatesToDraftsResponse';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
