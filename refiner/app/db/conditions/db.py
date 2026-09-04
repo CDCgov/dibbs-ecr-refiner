@@ -299,13 +299,16 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-            JSONB_AGG(
+            COALESCE(
+                JSONB_AGG(
                     JSON_BUILD_OBJECT(
-                     'code', codes.code,
-                     'display', codes.display,
-                     'system_id', codes.system_id,
+                    'code', codes.code,
+                    'display', codes.display,
+                    'system_id', codes.system_id,
                     'system_name', s.display_name
-                 )) as codes,
+                )) FILTER (WHERE codes.id IS NOT NULL),
+                '[]'::jsonb
+            ) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
@@ -405,21 +408,24 @@ async def get_primary_conditions_for_configurations_db(
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-            JSONB_AGG(
-                JSON_BUILD_OBJECT(
-                'code', codes.code,
-                'display', codes.display,
-                'system_id', codes.system_id,
-                'system_name', s.display_name
-            )) as codes,
+            COALESCE(
+                JSONB_AGG(
+                    JSON_BUILD_OBJECT(
+                    'code', codes.code,
+                    'display', codes.display,
+                    'system_id', codes.system_id,
+                    'system_name', s.display_name
+                )) FILTER (WHERE codes.id IS NOT NULL),
+                '[]'::jsonb
+            ) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
         FROM conditions c
         JOIN configurations_conditions cc ON cc.condition_id = c.id
-        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
-        JOIN codes ON codes.id = crc.code_id
-        JOIN systems s ON codes.system_id = s.id
+        LEFT JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        LEFT JOIN codes ON codes.id = crc.code_id
+        LEFT JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
@@ -472,13 +478,16 @@ async def get_included_conditions_db(
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
-             JSONB_AGG(
-                JSON_BUILD_OBJECT(
-                    'code', codes.code,
-                    'display', codes.display,
-                    'system_id', codes.system_id,
-                    'system_name', s.display_name
-            )) as codes,
+             COALESCE(
+                 JSONB_AGG(
+                     JSON_BUILD_OBJECT(
+                     'code', codes.code,
+                     'display', codes.display,
+                     'system_id', codes.system_id,
+                     'system_name', s.display_name
+                 )) FILTER (WHERE codes.id IS NOT NULL),
+                 '[]'::jsonb
+             ) as codes,
             c.coverage_level,
             c.coverage_level_reason,
             c.coverage_level_date
