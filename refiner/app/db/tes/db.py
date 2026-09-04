@@ -495,10 +495,9 @@ async def _raise_if_invalid_draft_configurations(
             updated because they do not exist, are not drafts, or do not belong to
             the current jurisdiction.
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
                     SELECT id
                     FROM configurations
                     WHERE id = ANY(%(configuration_ids)s)
@@ -506,20 +505,20 @@ async def _raise_if_invalid_draft_configurations(
                         AND jurisdiction_id = %(jurisdiction_id)s
                     FOR UPDATE
                     """,
-                {
-                    "configuration_ids": configuration_ids,
-                    "jurisdiction_id": jurisdiction_id,
-                },
+            {
+                "configuration_ids": configuration_ids,
+                "jurisdiction_id": jurisdiction_id,
+            },
+        )
+
+        eligible_ids = {row[0] for row in await cur.fetchall()}
+
+        if eligible_ids != set(configuration_ids):
+            raise InputValidationError(
+                "One or more selected configurations could not be "
+                "updated because they do not exist, are not drafts, "
+                "or do not belong to the current jurisdiction."
             )
-
-            eligible_ids = {row[0] for row in await cur.fetchall()}
-
-            if eligible_ids != set(configuration_ids):
-                raise InputValidationError(
-                    "One or more selected configurations could not be "
-                    "updated because they do not exist, are not drafts, "
-                    "or do not belong to the current jurisdiction."
-                )
 
 
 async def _raise_if_conditions_missing_in_latest_tes(
@@ -538,10 +537,9 @@ async def _raise_if_conditions_missing_in_latest_tes(
     Raises:
         ValidationError: If one or more conditions are missing from the latest TES release.
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
                     SELECT DISTINCT
                         old_condition.canonical_url
                     FROM configurations_conditions cc
@@ -557,19 +555,19 @@ async def _raise_if_conditions_missing_in_latest_tes(
                         AND latest_condition.id IS NULL
                     ORDER BY old_condition.canonical_url
                     """,
-                {
-                    "configuration_ids": configuration_ids,
-                    "latest_tes_id": latest_tes_id,
-                },
+            {
+                "configuration_ids": configuration_ids,
+                "latest_tes_id": latest_tes_id,
+            },
+        )
+
+        missing_condition_urls = [row[0] for row in await cur.fetchall()]
+
+        if missing_condition_urls:
+            raise ValidationError(
+                "The following conditions could not be found in the "
+                "latest TES release: " + ", ".join(missing_condition_urls)
             )
-
-            missing_condition_urls = [row[0] for row in await cur.fetchall()]
-
-            if missing_condition_urls:
-                raise ValidationError(
-                    "The following conditions could not be found in the "
-                    "latest TES release: " + ", ".join(missing_condition_urls)
-                )
 
 
 async def _raise_if_conflicting_condition_links(
@@ -588,10 +586,9 @@ async def _raise_if_conflicting_condition_links(
     Raises:
         ValidationError: If conflicting condition links are present.
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
                     SELECT DISTINCT
                         old_link.configuration_id,
                         old_condition.canonical_url
@@ -611,19 +608,19 @@ async def _raise_if_conflicting_condition_links(
                         ANY(%(configuration_ids)s)
                         AND old_link.condition_id <> latest_condition.id
                     """,
-                {
-                    "configuration_ids": configuration_ids,
-                    "latest_tes_id": latest_tes_id,
-                },
+            {
+                "configuration_ids": configuration_ids,
+                "latest_tes_id": latest_tes_id,
+            },
+        )
+
+        conflicting_links = await cur.fetchall()
+
+        if conflicting_links:
+            raise ValidationError(
+                "One or more configurations already contain both old "
+                "and current versions of the same TES condition."
             )
-
-            conflicting_links = await cur.fetchall()
-
-            if conflicting_links:
-                raise ValidationError(
-                    "One or more configurations already contain both old "
-                    "and current versions of the same TES condition."
-                )
 
 
 async def apply_latest_tes_to_existing_drafts_db(
@@ -651,21 +648,21 @@ async def apply_latest_tes_to_existing_drafts_db(
             latest condition cannot be found, or conflicting condition links
             are present.
     """
-    requested_ids = list(dict.fromkeys(configuration_ids))
+    deduplicated_ids = list(dict.fromkeys(configuration_ids))
 
-    if not requested_ids:
+    if not deduplicated_ids:
         return []
 
     latest_tes_record = await _get_latest_tes_record_db(db=db)
 
     await _raise_if_invalid_draft_configurations(
-        db=db, configuration_ids=requested_ids, jurisdiction_id=jurisdiction_id
+        db=db, configuration_ids=deduplicated_ids, jurisdiction_id=jurisdiction_id
     )
     await _raise_if_conditions_missing_in_latest_tes(
-        db=db, configuration_ids=requested_ids, latest_tes_id=latest_tes_record.id
+        db=db, configuration_ids=deduplicated_ids, latest_tes_id=latest_tes_record.id
     )
     await _raise_if_conflicting_condition_links(
-        db=db, configuration_ids=requested_ids, latest_tes_id=latest_tes_record.id
+        db=db, configuration_ids=deduplicated_ids, latest_tes_id=latest_tes_record.id
     )
 
     async with db.get_connection() as conn, conn.transaction():
@@ -706,7 +703,7 @@ async def apply_latest_tes_to_existing_drafts_db(
                     RETURNING cc.configuration_id
                     """,
                 {
-                    "configuration_ids": requested_ids,
+                    "configuration_ids": deduplicated_ids,
                     "latest_tes_id": latest_tes_record.id,
                 },
             )
@@ -731,7 +728,7 @@ async def apply_latest_tes_to_existing_drafts_db(
     # Keep the response in the same order as the request.
     return [
         configuration_id
-        for configuration_id in requested_ids
+        for configuration_id in deduplicated_ids
         if configuration_id in updated_id_set
     ]
 
@@ -757,10 +754,9 @@ async def _raise_if_invalid_active_configurations(
             cloned because they do not exist, are not active, or do not belong to
             the current jurisdiction.
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
                 SELECT id,
                        (SELECT cond.canonical_url
                         FROM configurations_conditions cc
@@ -774,20 +770,20 @@ async def _raise_if_invalid_active_configurations(
                     AND jurisdiction_id = %(jurisdiction_id)s
                 FOR UPDATE
                 """,
-                {
-                    "configuration_ids": configuration_ids,
-                    "jurisdiction_id": jurisdiction_id,
-                },
-            )
+            {
+                "configuration_ids": configuration_ids,
+                "jurisdiction_id": jurisdiction_id,
+            },
+        )
 
-            active_configs = await cur.fetchall()
-            if len(active_configs) != len(configuration_ids):
-                raise InputValidationError(
-                    "One or more selected configurations could not be "
-                    "cloned because they do not exist, are not active, "
-                    "or do not belong to the current jurisdiction."
-                )
-            return active_configs
+        active_configs = await cur.fetchall()
+        if len(active_configs) != len(configuration_ids):
+            raise InputValidationError(
+                "One or more selected configurations could not be "
+                "cloned because they do not exist, are not active, "
+                "or do not belong to the current jurisdiction."
+            )
+        return active_configs
 
 
 async def _raise_if_drafts_already_exist(
