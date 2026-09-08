@@ -517,6 +517,33 @@ class TestConfigurations:
         assert emergency_outbreak_code in response.json()["detail"]
         assert "system-skipped" in response.json()["detail"]
 
+        # sections that can carry a trigger code cannot be removed
+        results_code = "30954-2"
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": results_code,
+                "include": False,
+                "narrative": "retain",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert results_code in response.json()["detail"]
+        assert "trigger code" in response.json()["detail"]
+
+        # ...but every other setting on that section is still configurable
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": results_code,
+                "include": True,
+                "narrative": "reconstruct",
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+
         # FastAPI rejects unknown narrative values via the Literal type
         response = await authed_client.patch(
             url,

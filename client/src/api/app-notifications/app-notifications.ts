@@ -43,11 +43,13 @@ export const updateUserNotifications = (
 
 
 
-export const getUpdateUserNotificationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext> => {
+export const getUpdateUserNotificationsMutationKey = () => ['updateUserNotifications'] as const;
 
-const mutationKey = ['updateUserNotifications'];
+export const getUpdateUserNotificationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,UpdateUserNotificationsMutationVariables, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,UpdateUserNotificationsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateUserNotificationsMutationKey();
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -57,7 +59,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUserNotifications>>, {data: UpdateUserNotificationsRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUserNotifications>>, UpdateUserNotificationsMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  updateUserNotifications(data,axiosOptions)
@@ -73,16 +75,17 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type UpdateUserNotificationsMutationResult = NonNullable<Awaited<ReturnType<typeof updateUserNotifications>>>
     export type UpdateUserNotificationsMutationBody = UpdateUserNotificationsRequest
     export type UpdateUserNotificationsMutationError = AxiosError<HTTPValidationError>
+    export type UpdateUserNotificationsMutationVariables = {data: UpdateUserNotificationsRequest}
 
     /**
  * @summary Update User Notifications
  */
 export const useUpdateUserNotifications = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,UpdateUserNotificationsMutationVariables, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateUserNotifications>>,
         TError,
-        {data: UpdateUserNotificationsRequest},
+        UpdateUserNotificationsMutationVariables,
         TContext
       > => {
       return useMutation(getUpdateUserNotificationsMutationOptions(options), queryClient);
