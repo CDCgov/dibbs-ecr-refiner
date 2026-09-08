@@ -6,8 +6,8 @@ itsdangerous==2.2.0
 httpx==0.28.1
 lxml==6.1.2
 packaging==26.3
-psycopg[binary]==3.3.4
-psycopg[pool]==3.3.4
+psycopg[binary]==3.3.5
+psycopg[pool]==3.3.5
 pydantic==2.13.5
 python-json-logger==4.2.0
 uvicorn==0.52.4
