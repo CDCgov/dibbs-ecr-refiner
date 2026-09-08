@@ -31,6 +31,8 @@ export * from './configurationTestResponse';
 export * from './confirmUploadCustomCodesInput';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
+export * from './createDraftsFromActiveConfigsRequest';
+export * from './createDraftsFromActiveConfigsResponse';
 export * from './customCodeResponse';
 export * from './customCodeUploadEventResponse';
 export * from './dbCode';

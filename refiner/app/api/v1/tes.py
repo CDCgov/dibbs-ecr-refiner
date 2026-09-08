@@ -8,6 +8,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
     apply_latest_tes_to_existing_drafts_db,
+    create_drafts_from_active_configurations_db,
     get_configurations_set_to_tes_version,
     get_loaded_tes_versions_db,
     get_tes_update_condition_diff_db,
@@ -245,4 +246,55 @@ async def apply_tes_updates_to_existing_drafts(
     return ApplyTesUpdatesToDraftsResponse(
         updated_count=len(updated_ids),
         updated_configuration_ids=updated_ids,
+    )
+
+
+class CreateDraftsFromActiveConfigsRequest(BaseModel):
+    """Active configurations selected for creating TES-updated drafts."""
+
+    configuration_ids: list[UUID] = Field(min_length=1)
+
+
+@dataclass
+class CreateDraftsFromActiveConfigsResponse:
+    """Result of creating drafts from active configurations."""
+
+    created_count: int
+    created_configuration_ids: list[UUID]
+
+
+@router.post(
+    "/configurations/drafts-from-active",
+    response_model=CreateDraftsFromActiveConfigsResponse,
+    tags=["tes"],
+    operation_id="createDraftsFromActiveConfigurations",
+)
+async def create_drafts_from_active_configurations(
+    request: CreateDraftsFromActiveConfigsRequest,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> CreateDraftsFromActiveConfigsResponse:
+    """
+    Create new draft configurations from selected active configurations.
+
+    Each new draft uses the latest TES release and inherits all settings
+    (custom codes, section processing, code exclusions) from the active config.
+    Active configurations remain unchanged until new drafts are activated.
+    """
+    try:
+        created_ids = await create_drafts_from_active_configurations_db(
+            db=db,
+            configuration_ids=request.configuration_ids,
+            jurisdiction_id=user.jurisdiction_id,
+            user_id=user.id,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return CreateDraftsFromActiveConfigsResponse(
+        created_count=len(created_ids),
+        created_configuration_ids=created_ids,
     )
