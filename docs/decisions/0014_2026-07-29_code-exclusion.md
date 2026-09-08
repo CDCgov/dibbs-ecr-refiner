@@ -4,7 +4,7 @@ Date: 2026-07-29
 
 ## Status
 
-Proposed
+Superceded - need to refactor this to account for changes in data schema after code management work.
 
 > [!NOTE]
 > **This ADR was split.** It originally covered two features under the title
