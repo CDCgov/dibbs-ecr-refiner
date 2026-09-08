@@ -55,8 +55,11 @@ from scripts.validation.validate_document_xsd import build_schema, display_xsd_r
 
 get_app_config.cache_clear()
 get_auth_config.cache_clear()
-get_db_config.cache_clear()
 get_aws_config.cache_clear()
+get_db_config.cache_clear()
+
+config = get_db_config()
+
 
 # Session info
 TEST_SESSION_TOKEN = "test-token"
@@ -266,6 +269,34 @@ async def create_config(authed_client):
     return _get
 
 
+@pytest_asyncio.fixture(scope="session")
+async def get_code_ids_by_value(db_pool):
+    """
+    Returns a function that excludes codes in a configuration
+    """
+
+    async def _get(
+        condition_id: UUID,
+        code_values: list[str],
+    ):
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
+                    SELECT c.id
+                    FROM codes c
+                    JOIN conditions_codes_temp cc ON cc.code_id = c.id
+                    WHERE c.code = ANY(%(code_values)s) AND cc.condition_id=%(condition_id)s
+                """,
+                {"code_values": code_values, "condition_id": condition_id},
+            )
+            return await cur.fetchall()
+
+    return _get
+
+
 @pytest_asyncio.fixture
 async def get_config_by_id(authed_client):
     """
@@ -277,7 +308,7 @@ async def get_config_by_id(authed_client):
     async def _get(config_id: UUID):
         response = await authed_client.get(f"/api/v1/configurations/{config_id}")
         assert response.status_code == status.HTTP_200_OK, (
-            f"Configuration with ID '{id}' not found."
+            f"Configuration with ID '{config_id}' not found."
         )
         return response.json()
 
@@ -301,26 +332,29 @@ async def get_condition_by_id(db_pool):
                         c.id,
                         c.canonical_url,
                         c.display_name,
-                        t.version,
+                        MAX(t.version) as version,
                         ARRAY(
                             SELECT codes.code
-                            FROM conditions_codes crc
+                            FROM conditions_codes_temp crc
                             JOIN codes ON crc.code_id = codes.id
                             WHERE crc.condition_id = c.id AND crc.is_child_rsg
                         ) as child_rsg_snomed_codes,
-                        c.snomed_codes,
-                        c.loinc_codes,
-                        c.icd10_codes,
-                        c.rxnorm_codes,
-                        c.cvx_codes,
-                        c.coverage_level,
-                        c.coverage_level_reason,
-                        c.coverage_level_date
-                    FROM conditions c
-                    JOIN tes t ON t.id = c.tes_id
-                    WHERE c.id = %s
+                         JSONB_AGG(
+                            JSON_BUILD_OBJECT(
+                            'code', codes.code,
+                            'display', codes.display,
+                            'system_id', codes.system_id,
+                            'system_name', s.display_name
+                        )) as codes
+                        FROM conditions c
+                        JOIN tes t ON t.id = c.tes_id
+                        JOIN conditions_codes_temp cc ON cc.condition_id = c.id
+                        JOIN codes ON codes.id = cc.code_id
+                        JOIN systems s ON codes.system_id = s.id
+                        WHERE c.id = %(id)s
+                        GROUP BY c.id
                     """,
-                    (id,),
+                    {"id": id},
                 )
                 result = await cur.fetchone()
                 assert result, f"Condition with ID '{id}' not found."
@@ -392,6 +426,7 @@ async def reset_db(db_pool):
     # run after each test
     async with db_pool.get_connection() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("DELETE from configurations_conditions_code_exclusions")
             await cur.execute("DELETE FROM custom_codes")
             await cur.execute("DELETE FROM configurations")
 
@@ -400,8 +435,8 @@ async def reset_db(db_pool):
 async def db_pool(setup):
     # setup as a dependency guarantees that the pool isn't created until migrations have run
     db = create_db(
-        db_url=get_db_config().DB_URL,
-        db_password=get_db_config().DB_PASSWORD,
+        db_url=config.DB_URL,
+        db_password=config.DB_PASSWORD,
         prepare_threshold=None,
     )
     await db.connect()

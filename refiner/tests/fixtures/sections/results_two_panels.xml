@@ -1,0 +1,72 @@
+<!--
+  Results (30954-2): TWO organizers, so the per-organizer block boundary is
+  observable.
+
+  Organizer 1 (CBC panel) carries the shapes the join has to reach for:
+    - a <performer> with only a representedOrganization, to prove the panel
+      column resolves the ORGANISATION and not a person
+    - a sibling <component><procedure> holding the specimen, reached SIDEWAYS
+      rather than down
+    - two result observations, one PQ with an IVL_PQ reference range and an
+      interpretation flag, one CD whose value is an organism concept
+  Organizer 2 (Glucose panel) has no procedure and one result, so "no specimen"
+  renders empty rather than inheriting organizer 1's.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" displayName="Results"/>
+  <title>Results</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
+      <statusCode code="completed"/>
+      <performer>
+        <assignedEntity>
+          <representedOrganization>
+            <name>Acme Reference Lab</name>
+          </representedOrganization>
+        </assignedEntity>
+      </performer>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <participant typeCode="SBJ"><participantRole><playingEntity>
+            <code displayName="Blood specimen"/>
+          </playingEntity></participantRole></participant>
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <code displayName="Hemoglobin"/>
+          <effectiveTime value="20240115"/>
+          <value xsi:type="PQ" value="9.2" unit="g/dL"/>
+          <interpretationCode code="L" displayName="Low"/>
+          <referenceRange><observationRange>
+            <value xsi:type="IVL_PQ">
+              <low unit="g/dL" value="13.5"/><high unit="g/dL" value="17.5"/>
+            </value>
+          </observationRange></referenceRange>
+        </observation>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <code displayName="Bacteria identified"/>
+          <effectiveTime value="20240115"/>
+          <value xsi:type="CD" code="112283007"
+                 codeSystem="2.16.840.1.113883.6.96" displayName="E. coli"/>
+        </observation>
+      </component>
+    </organizer>
+  </entry>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <code displayName="Glucose panel"/>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <code displayName="Glucose"/>
+          <effectiveTime value="20240116"/>
+          <value xsi:type="PQ" value="105" unit="mg/dL"/>
+        </observation>
+      </component>
+    </organizer>
+  </entry>
+</section>

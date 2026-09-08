@@ -1,19 +1,19 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import DatabaseQueryError
-from app.db.code_systems.db import DbCodeSystem
+from app.db.code_systems.model import DbCodeSystem
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 
 from ..pool import AsyncDatabaseConnection
-from .model import EventInput
+from .model import CodeSetEvent, EventInput
 
 
 @dataclass(frozen=True)
@@ -40,8 +40,9 @@ class AuditEvent:
     username: str
     configuration_name: str
     configuration_version: int
-    condition_id: UUID
+    condition_id: UUID | None
     action_text: str
+    code_count: int | None
     created_at: datetime
     has_custom_code_upload_events: bool
 
@@ -119,6 +120,44 @@ async def is_event_valid(
             return row is not None
 
 
+async def get_code_set_event_by_id_db(
+    event_id: UUID,
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+) -> CodeSetEvent | None:
+    """
+    Returns the event information needed to export a historical code set.
+
+    Only returns an event belonging to the provided jurisdiction.
+    """
+
+    query = """
+        SELECT
+            e.id,
+            e.condition_id,
+            cond.display_name AS condition_name,
+            e.code_count,
+            e.event_type,
+            e.created_at
+        FROM events e
+        LEFT JOIN conditions cond
+            ON cond.id = e.condition_id
+        WHERE e.id = %(event_id)s
+        AND e.jurisdiction_id = %(jurisdiction_id)s
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(CodeSetEvent)) as cur:
+            await cur.execute(
+                query,
+                {
+                    "event_id": event_id,
+                    "jurisdiction_id": jurisdiction_id,
+                },
+            )
+            return await cur.fetchone()
+
+
 async def get_event_filter_options_db(
     jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> list[DbEventFilterOption]:
@@ -168,10 +207,12 @@ async def get_events_by_jd_db(
             c.name AS configuration_name,
             c.version AS configuration_version,
             cond.id AS condition_id,
+            e.condition_id,
             e.action_text,
+            e.code_count,
             e.created_at,
             EXISTS (
-                SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
+                SELECT 1 FROM events_custom_codes ecu WHERE ecu.event_id = e.id
             ) AS has_custom_code_upload_events
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
@@ -232,7 +273,7 @@ async def get_all_events_by_jd_db(
         LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
         LEFT JOIN conditions cond ON cond.id = cc.condition_id
                                 AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
-        LEFT JOIN events_custom_code_uploads ecu ON ecu.event_id = e.id
+        LEFT JOIN events_custom_codes ecu ON ecu.event_id = e.id
         WHERE e.jurisdiction_id = %s
         AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
         GROUP BY e.id, u.username, c.name, c.version, cond.id, e.action_text, e.created_at
@@ -261,7 +302,7 @@ async def get_custom_code_upload_events_by_event_id(
         system,
         code,
         name
-    FROM events_custom_code_uploads
+    FROM events_custom_codes
     WHERE event_id = %s
     """
     params = (event_id,)
@@ -273,16 +314,24 @@ async def get_custom_code_upload_events_by_event_id(
             return rows
 
 
-async def insert_custom_code_upload_events_db(
+async def insert_custom_code_event_db(
     configuration: DbConfiguration,
     user_id: UUID,
+    event_type: Literal["add", "delete"],
     custom_codes: list[DbCustomCode],
     code_systems: list[DbCodeSystem],
     cursor: AsyncCursor[Any],
 ) -> None:
     """
-    Helper function to insert a bulk custom code upload event and its subevents.
+    Helper function to insert custom code events.
+
+    If the `custom_codes` list is empty, no events will be created.
+
+    If more than one custom code objects are in the `custom_codes` list, it will
+    insert all of the required subevents. This occurs for bulk additions or deletions.
     """
+
+    is_adding = True if event_type == "add" else False
 
     def _get_system_name(id: UUID) -> str:
         system = next((s for s in code_systems if s.id == id), None)
@@ -294,20 +343,34 @@ async def insert_custom_code_upload_events_db(
     if len(custom_codes) < 1:
         return
 
+    # Single code added/deleted
+    if len(custom_codes) == 1:
+        await insert_event_db(
+            event=EventInput(
+                jurisdiction_id=configuration.jurisdiction_id,
+                user_id=user_id,
+                configuration_id=configuration.id,
+                event_type="add_code" if is_adding else "delete_code",
+                action_text=f"{'Added' if is_adding else 'Removed'} custom code '{custom_codes[0].code}'",
+            ),
+            cursor=cursor,
+        )
+        return
+
     # Bulk upload event info
     event = EventInput(
         jurisdiction_id=configuration.jurisdiction_id,
         user_id=user_id,
         configuration_id=configuration.id,
-        event_type="bulk_add_custom_code",
-        action_text=f"Added {len(custom_codes)} custom codes from CSV",
+        event_type="bulk_add_custom_code" if is_adding else "bulk_delete_custom_code",
+        action_text=f"{'Added' if is_adding else 'Removed'} {len(custom_codes)} custom codes{' from CSV' if is_adding else ''}",
     )
 
     event_id = await insert_event_db(event=event, cursor=cursor)
 
     await cursor.executemany(
         """
-        INSERT INTO events_custom_code_uploads (event_id, system, code, name)
+        INSERT INTO events_custom_codes (event_id, system, code, name)
         VALUES (%s, %s, %s, %s)
         """,
         [
@@ -320,7 +383,7 @@ async def insert_custom_code_upload_events_db(
 async def insert_event_db(
     event: EventInput,
     cursor: AsyncCursor[Any],
-) -> UUID:
+) -> UUID | None:
     """
     Inserts an event into the `events` table.
     """
@@ -330,27 +393,40 @@ async def insert_event_db(
             jurisdiction_id,
             configuration_id,
             event_type,
-            action_text
+            action_text,
+            condition_id,
+            code_count,
+            created_at
         )
         VALUES (
-            %s,
-            %s,
-            %s,
-            %s,
-            %s
+            %(user_id)s,
+            %(jurisdiction_id)s,
+            %(configuration_id)s,
+            %(event_type)s,
+            %(action_text)s,
+            %(condition_id)s,
+            %(code_count)s,
+            statement_timestamp()
         )
         RETURNING id;
     """
-    params = (
-        event.user_id,
-        event.jurisdiction_id,
-        event.configuration_id,
-        event.event_type,
-        event.action_text,
+
+    await cursor.execute(
+        query,
+        {
+            "user_id": event.user_id,
+            "jurisdiction_id": event.jurisdiction_id,
+            "configuration_id": event.configuration_id,
+            "event_type": event.event_type,
+            "action_text": event.action_text,
+            "condition_id": event.condition_id,
+            "code_count": event.code_count,
+        },
     )
 
-    await cursor.execute(query, params)
     row = await cursor.fetchone()
-    if row is None:
-        raise Exception(f"Unable to insert event with type: {event.event_type}")
-    return row["id"]
+
+    if row:
+        return row["id"]
+
+    return None

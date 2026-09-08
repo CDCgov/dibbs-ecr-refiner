@@ -3,12 +3,16 @@ from lxml.etree import _Element
 
 from app.services.ecr.model import HL7_NS
 from app.services.ecr.section import get_section_by_code, process_section
+from app.services.ecr.section.entry_matching import (
+    process as entry_process,
+)
 from app.services.ecr.section.generic_matching import (
     _find_path_to_entry,
 )
 from app.services.ecr.section.generic_matching import (
     process as generic_process,
 )
+from app.services.ecr.specification import load_spec
 from app.services.terminology import CodeSystemSets
 
 # NOTE:
@@ -604,3 +608,101 @@ def test_generic_path_recovers_display_from_narrative_reference():
         "the narrative index was captured after <text> was cleared, so the "
         "originalText/reference fallback had nothing to resolve against"
     )
+
+
+# NOTE:
+# RECONSTRUCT'S NO-MATCH FALLBACK — the two engines must agree
+# =============================================================================
+# "reconstruct" falls back to keep-on-match: nothing matched, every entry was
+# pruned, and the original narrative still describes all of them in full
+# clinical prose. Retaining it would ship back exactly the content the
+# jurisdiction's configuration excluded, with the structured entries stripped
+# so a receiver cannot process it either.
+#
+# entry_matching and generic_matching implement this branch separately, so a
+# change to one silently diverging from the other is the live risk. these pin
+# both engines against the same expectation
+
+
+_NO_MATCH_SECTION = """
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2"/>
+  <text>Patient has a documented penicillin allergy and a positive culture.</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        <code code="00000-0" codeSystem="2.16.840.1.113883.6.1"/>
+        <value xsi:type="PQ" value="9.2" unit="g/dL"/>
+      </observation></component>
+    </organizer>
+  </entry>
+</section>
+"""
+
+
+def test_generic_reconstruct_without_matches_removes_the_original_narrative() -> None:
+    section = _build_section(_NO_MATCH_SECTION)
+
+    result = generic_process(
+        section=section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+    )
+
+    assert result.matches_found is False
+    assert result.narrative_disposition == "removed"
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert "penicillin allergy" not in rendered, (
+        "the source narrative described the entries that were just pruned"
+    )
+    assert section.findall("hl7:entry", HL7_NS) == []
+    assert section.get("nullFlavor") == "NI"
+
+
+def test_generic_reconstruct_no_match_matches_the_entry_engine() -> None:
+    # the two engines implement this branch independently; they must not
+    # disagree about what "reconstruct" means when nothing matched
+    generic_section = _build_section(_NO_MATCH_SECTION)
+    generic_result = generic_process(
+        section=generic_section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+    )
+
+    entry_section = _build_section(_NO_MATCH_SECTION)
+    entry_result = entry_process(
+        section=entry_section,
+        code_system_sets=CodeSystemSets(),
+        section_specification=load_spec("1.1").sections["30954-2"],
+        namespaces=HL7_NS,
+        narrative_action="reconstruct",
+    )
+
+    assert generic_result.matches_found == entry_result.matches_found
+    assert generic_result.narrative_disposition == entry_result.narrative_disposition
+    assert generic_section.get("nullFlavor") == entry_section.get("nullFlavor")
+
+
+def test_generic_retain_still_keeps_the_original_narrative() -> None:
+    # the change is scoped to "reconstruct"; "retain" is untouched
+    section = _build_section(_NO_MATCH_SECTION)
+
+    result = generic_process(
+        section=section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="retain",
+    )
+
+    assert result.narrative_disposition == "retained"
+    assert "penicillin allergy" in etree.tostring(section, encoding="unicode")

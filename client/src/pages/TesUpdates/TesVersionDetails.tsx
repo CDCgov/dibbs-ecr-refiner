@@ -2,6 +2,7 @@ import { ExternalLink } from '@components/ExternalLink';
 import { useGetTesDiffDetails } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { TesDiffInformation } from '.';
+import { Button } from '@components/Button';
 
 interface TesVersionProps {
   selectedUpdate: TesDiffInformation;
@@ -44,6 +45,7 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
               Condition code set
             </th>
             <th className="px-2 py-3">Change</th>
+            <th className="px-2 py-3" />
           </tr>
         </thead>
         <tbody className="divide-gray-cool-20 divide-y">
@@ -61,6 +63,13 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
                 <td className="px-2 py-3">
                   {r.added_code_total} added, {r.removed_code_total} removed
                 </td>
+                <td>
+                  <ExportLink
+                    canonical_url={r.canonical_url}
+                    cur_version={newVersion}
+                    prev_version={oldVersion}
+                  />
+                </td>
               </tr>
             );
           })}
@@ -75,5 +84,32 @@ function NewConditionPill() {
     <span className="bg-state-success-lighter rounded-2xl px-2 py-1 font-mono text-sm">
       New condition
     </span>
+  );
+}
+
+interface ExportLinkProps {
+  canonical_url: string;
+  cur_version: string;
+  prev_version: string;
+}
+function ExportLink({
+  canonical_url,
+  cur_version,
+  prev_version,
+}: ExportLinkProps) {
+  const params = new URLSearchParams({
+    canonical_url: canonical_url,
+    cur_version: cur_version,
+    prev_version: prev_version,
+  });
+
+  return (
+    <Button
+      href={`/api/v1/tes/export?${params.toString()}`}
+      anchorProps={{ download: true }}
+      variant="tertiary"
+    >
+      Export as CSV
+    </Button>
   );
 }

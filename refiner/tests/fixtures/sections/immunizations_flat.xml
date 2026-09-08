@@ -1,0 +1,47 @@
+<!--
+  Immunizations (11369-6): a FLAT section — no organizer, no concern act, one
+  row per <substanceAdministration>.
+
+  The second vaccine nullFlavors its primary CVX code and carries the real one
+  in a <translation>, which is the sender pattern the code-display fallback
+  chain exists for.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="Immunizations"/>
+  <title>Immunizations</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+      <id root="00000000-0000-0000-0000-000000000001"/>
+      <statusCode code="completed"/>
+      <effectiveTime value="20201107"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code code="2563008" codeSystem="2.16.840.1.113883.6.88"
+                  displayName="Flucelvax Quadrivalent"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+      <id root="00000000-0000-0000-0000-000000000002"/>
+      <statusCode code="completed"/>
+      <effectiveTime value="20201201"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code nullFlavor="OTH">
+              <translation code="207" codeSystem="2.16.840.1.113883.12.292"
+                           displayName="COVID-19 mRNA vaccine"/>
+            </code>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

@@ -26,6 +26,12 @@ export class ActivityLogPage {
       .getByRole('combobox', { name: 'Condition' })
       .selectOption(conditionName);
     await this.page.waitForLoadState('networkidle');
+    // Wait for the table to contain at least one row if we are filtering for a specific condition
+    // This ensures the UI has updated before the test continues.
+    await this.page
+      .locator('table tbody tr')
+      .first()
+      .waitFor({ state: 'visible' });
   }
 
   async selectPage(page: number) {

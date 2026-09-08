@@ -4,14 +4,16 @@ from app.services.ecr.policy import (
     NARRATIVE_ONLY_SECTIONS,
     RECONSTRUCTABLE_SECTIONS,
     SECTION_PROCESSING_SKIP,
+    TRIGGER_CODE_SECTIONS,
     NarrativeOnlySection,
     is_disabled_section,
     is_narrative_only_section,
     is_reconstructable_section,
+    is_trigger_code_section,
     narrative_requires_refine,
-    normalize_section_narrative,
+    normalize_section_processing,
 )
-from app.services.ecr.specification import load_spec
+from app.services.ecr.specification import get_trigger_code_sections, load_spec
 
 
 class TestNarrativeOnlySectionSync:
@@ -100,18 +102,61 @@ class TestPolicyPredicates:
         )
 
 
-class TestNormalizeSectionNarrative:
+class TestTriggerCodeSectionSync:
+    def test_enum_matches_specification_union(self):
+        """
+        TriggerCodeSection must equal the union of sections carrying
+        trigger code templates across every supported eICR version.
+        """
+
+        assert set(TRIGGER_CODE_SECTIONS) == get_trigger_code_sections()
+
+    def test_every_enum_value_has_trigger_codes_in_some_version(self):
+        """
+        Every code in the enum must carry trigger codes in at least one
+        supported version of the spec.
+        """
+
+        versions = ("1.1", "3.1", "3.1.1")
+        for code in TRIGGER_CODE_SECTIONS:
+            assert any(
+                (section := load_spec(v).sections.get(code)) is not None
+                and section.has_trigger_codes
+                for v in versions
+            ), f"{code} is in TriggerCodeSection but carries no trigger codes"
+
+    def test_no_overlap_with_disabled_or_narrative_only(self):
+        """
+        Trigger code sections must not collide with the other policy
+        lists — a section cannot be both always-removed and never-removed.
+        """
+
+        trigger = set(TRIGGER_CODE_SECTIONS)
+        assert trigger & set(SECTION_PROCESSING_SKIP) == set()
+        assert trigger & set(NARRATIVE_ONLY_SECTIONS) == set()
+
+    def test_is_trigger_code_section(self):
+        assert is_trigger_code_section("30954-2") is True
+        assert is_trigger_code_section("29762-2") is False
+
+
+class TestNormalizeSectionProcessing:
     def test_valid_combo_is_passthrough(self):
-        action, narrative, notes = normalize_section_narrative(
-            code="11450-4", section_action="refine", narrative_action="remove"
+        include, action, narrative, notes = normalize_section_processing(
+            code="11450-4",
+            include=True,
+            section_action="refine",
+            narrative_action="remove",
         )
+        assert include is True
         assert action == "refine"
         assert narrative == "remove"
         assert notes == []
 
     def test_narrative_only_action_coerced_to_retain(self):
-        action, _narrative, notes = normalize_section_narrative(
+        _include, action, _narrative, notes = normalize_section_processing(
             code="29299-5",  # Reason for Visit (narrative-only)
+            include=True,
             section_action="refine",
             narrative_action="retain",
         )
@@ -119,25 +164,54 @@ class TestNormalizeSectionNarrative:
         assert any("narrative-only" in n for n in notes)
 
     def test_disabled_section_action_coerced_to_retain(self):
-        action, _narrative, notes = normalize_section_narrative(
+        _include, action, _narrative, notes = normalize_section_processing(
             code="83910-0",  # Emergency Outbreak (disabled)
+            include=True,
             section_action="refine",
             narrative_action="retain",
         )
         assert action == "retain"
         assert any("system-skipped" in n for n in notes)
 
+    def test_trigger_code_section_include_coerced_to_true(self):
+        include, action, narrative, notes = normalize_section_processing(
+            code="47519-4",  # Procedures — trigger codes in 3.x
+            include=False,
+            section_action="refine",
+            narrative_action="remove",
+        )
+        assert include is True
+        assert any("can carry a trigger code" in n for n in notes)
+
+        # removal is the only thing forced; everything else survives
+        assert action == "refine"
+        assert narrative == "remove"
+
+    def test_non_trigger_section_may_be_removed(self):
+        include, _action, _narrative, notes = normalize_section_processing(
+            code="29762-2",  # Social History — no trigger codes
+            include=False,
+            section_action="refine",
+            narrative_action="retain",
+        )
+        assert include is False
+        assert notes == []
+
     def test_narrative_requires_refine_coerces_to_retain(self):
-        action, narrative, notes = normalize_section_narrative(
-            code="11450-4", section_action="retain", narrative_action="keep_on_match"
+        _include, action, narrative, notes = normalize_section_processing(
+            code="11450-4",
+            include=True,
+            section_action="retain",
+            narrative_action="keep_on_match",
         )
         assert action == "retain"
         assert narrative == "retain"
         assert any("requires action='refine'" in n for n in notes)
 
     def test_reconstruct_on_non_reconstructable_coerces_to_retain(self):
-        action, narrative, notes = normalize_section_narrative(
+        _include, action, narrative, notes = normalize_section_processing(
             code="29762-2",  # Social History — not in ReconstructableSection
+            include=True,
             section_action="refine",
             narrative_action="reconstruct",
         )
@@ -146,8 +220,9 @@ class TestNormalizeSectionNarrative:
         assert any("does not support narrative reconstruction" in n for n in notes)
 
     def test_reconstruct_on_results_is_valid(self):
-        action, narrative, notes = normalize_section_narrative(
+        _include, action, narrative, notes = normalize_section_processing(
             code="30954-2",  # Results
+            include=True,
             section_action="refine",
             narrative_action="reconstruct",
         )
@@ -158,12 +233,37 @@ class TestNormalizeSectionNarrative:
     def test_idempotent(self):
         """Normalizing already-coerced output should be a no-op."""
 
-        action1, narrative1, _notes1 = normalize_section_narrative(
-            code="29299-5", section_action="refine", narrative_action="keep_on_match"
+        include1, action1, narrative1, _notes1 = normalize_section_processing(
+            code="29299-5",
+            include=True,
+            section_action="refine",
+            narrative_action="keep_on_match",
         )
-        action2, narrative2, notes2 = normalize_section_narrative(
-            code="29299-5", section_action=action1, narrative_action=narrative1
+        include2, action2, narrative2, notes2 = normalize_section_processing(
+            code="29299-5",
+            include=include1,
+            section_action=action1,
+            narrative_action=narrative1,
         )
+        assert include1 == include2
+        assert action1 == action2
+        assert narrative1 == narrative2
+        assert notes2 == []
+
+    def test_idempotent_for_trigger_section(self):
+        include1, action1, narrative1, _notes1 = normalize_section_processing(
+            code="46240-8",
+            include=False,
+            section_action="refine",
+            narrative_action="keep_on_match",
+        )
+        include2, action2, narrative2, notes2 = normalize_section_processing(
+            code="46240-8",
+            include=include1,
+            section_action=action1,
+            narrative_action=narrative1,
+        )
+        assert include1 == include2
         assert action1 == action2
         assert narrative1 == narrative2
         assert notes2 == []

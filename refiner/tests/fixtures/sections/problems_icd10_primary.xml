@@ -1,0 +1,243 @@
+<!--
+  SYNTHETIC Problems section (11450-4) in the ICD-10-primary sender shape.
+
+  Everything here is synthetic. No patient data: the identifiers are made
+  up and the codes are published terminology, chosen to match the concepts
+  named in the review so the fixture stays traceable to the report.
+
+  The four entries, in order:
+
+    1. ICD-10 primary O09.32  + SNOMED 426403007  in translation  -> MATCHES
+    2. ICD-10 primary O98.812 + SNOMED 1621000119101 in translation -> MATCHES
+    3. ICD-10 primary Z34.90  + SNOMED 72892002   in translation  -> no match,
+       whole entry pruned (proves the fix widens which RULES run, not what
+       counts as a match)
+    4. conformant SNOMED-primary 76272004, plus a second, unconfigured
+       problem under the same concern act -> act survives, and only the
+       matching entryRelationship is kept (container-level pruning still
+       discriminates inside a matched entry)
+
+  <originalText><reference value="#..."/></originalText> is present on every
+  value, as it is in the source documents: the labels live in the narrative,
+  not on @displayName. That exercises the by-reference -> by-value inlining
+  the reconstruction path performs before it swaps the narrative out.
+-->
+<section xmlns="urn:hl7-org:v3"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:sdtc="urn:hl7-org:sdtc">
+  <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01" />
+  <code code="11450-4" codeSystem="2.16.840.1.113883.6.1"
+    codeSystemName="LOINC" displayName="Problem list" />
+  <title>PROBLEM LIST</title>
+  <text>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>Noted Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <content ID="problem13name">Late prenatal care affecting pregnancy in second trimester</content>
+          </td>
+          <td>04/09/2025</td>
+          <td>Active</td>
+        </tr>
+        <tr>
+          <td>
+            <content ID="problem15name">Chlamydia infection affecting pregnancy in second trimester</content>
+          </td>
+          <td>05/23/2025</td>
+          <td>Active</td>
+        </tr>
+        <tr>
+          <td>
+            <content ID="problem17name">Supervision of normal pregnancy</content>
+          </td>
+          <td>04/09/2025</td>
+          <td>Active</td>
+        </tr>
+        <tr>
+          <td>
+            <content ID="problem19name">Syphilis</content>
+          </td>
+          <td>05/23/2025</td>
+          <td>Active</td>
+        </tr>
+        <tr>
+          <td>
+            <content ID="problem21name">Seasonal allergic rhinitis</content>
+          </td>
+          <td>03/02/2025</td>
+          <td>Active</td>
+        </tr>
+      </tbody>
+    </table>
+  </text>
+
+  <!-- 1. ICD-10 primary, configured SNOMED in translation -->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3" extension="2015-08-01" />
+      <id extension="problem-concern-13" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+      <code code="CONC" codeSystem="2.16.840.1.113883.5.6" />
+      <statusCode code="active" />
+      <effectiveTime>
+        <low value="20250409" />
+      </effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+          <id extension="problem-13" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+          <code code="75323-6" codeSystem="2.16.840.1.113883.6.1"
+            codeSystemName="LOINC" displayName="Condition" />
+          <statusCode code="completed" />
+          <effectiveTime>
+            <low value="20250409" />
+          </effectiveTime>
+          <value xsi:type="CD" code="O09.32"
+            codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM">
+            <originalText>
+              <reference value="#problem13name" />
+            </originalText>
+            <translation code="426403007" codeSystem="2.16.840.1.113883.6.96"
+              codeSystemName="SNOMED CT"
+              displayName="Late prenatal care affecting pregnancy in second trimester" />
+            <translation code="V23.7" codeSystem="2.16.840.1.113883.6.103"
+              codeSystemName="ICD-9CM (diagnosis codes)"
+              displayName="Late prenatal care affecting pregnancy in second trimester" />
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+
+  <!-- 2. ICD-10 primary, configured SNOMED in translation -->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3" extension="2015-08-01" />
+      <id extension="problem-concern-15" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+      <code code="CONC" codeSystem="2.16.840.1.113883.5.6" />
+      <statusCode code="active" />
+      <effectiveTime>
+        <low value="20250523" />
+      </effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+          <id extension="problem-15" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+          <code code="75323-6" codeSystem="2.16.840.1.113883.6.1"
+            codeSystemName="LOINC" displayName="Condition" />
+          <statusCode code="completed" />
+          <effectiveTime>
+            <low value="20250523" />
+          </effectiveTime>
+          <value xsi:type="CD" code="O98.812"
+            codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM">
+            <originalText>
+              <reference value="#problem15name" />
+            </originalText>
+            <translation code="1621000119101" codeSystem="2.16.840.1.113883.6.96"
+              codeSystemName="SNOMED CT"
+              displayName="Chlamydia infection affecting pregnancy in second trimester" />
+            <translation code="647.63" codeSystem="2.16.840.1.113883.6.103"
+              codeSystemName="ICD-9CM (diagnosis codes)"
+              displayName="Chlamydia infection affecting pregnancy in second trimester" />
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+
+  <!-- 3. ICD-10 primary, SNOMED in translation, NEITHER configured -->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3" extension="2015-08-01" />
+      <id extension="problem-concern-17" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+      <code code="CONC" codeSystem="2.16.840.1.113883.5.6" />
+      <statusCode code="active" />
+      <effectiveTime>
+        <low value="20250409" />
+      </effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+          <id extension="problem-17" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+          <code code="75323-6" codeSystem="2.16.840.1.113883.6.1"
+            codeSystemName="LOINC" displayName="Condition" />
+          <statusCode code="completed" />
+          <effectiveTime>
+            <low value="20250409" />
+          </effectiveTime>
+          <value xsi:type="CD" code="Z34.90"
+            codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM">
+            <originalText>
+              <reference value="#problem17name" />
+            </originalText>
+            <translation code="72892002" codeSystem="2.16.840.1.113883.6.96"
+              codeSystemName="SNOMED CT"
+              displayName="Normal pregnancy" />
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+
+  <!-- 4. conformant SNOMED-primary problem, sharing a concern act with an
+       unconfigured one: the act survives, the sibling problem is pruned -->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3" extension="2015-08-01" />
+      <id extension="problem-concern-19" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+      <code code="CONC" codeSystem="2.16.840.1.113883.5.6" />
+      <statusCode code="active" />
+      <effectiveTime>
+        <low value="20250523" />
+      </effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+          <id extension="problem-19" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+          <code code="75323-6" codeSystem="2.16.840.1.113883.6.1"
+            codeSystemName="LOINC" displayName="Condition" />
+          <statusCode code="completed" />
+          <effectiveTime>
+            <low value="20250523" />
+          </effectiveTime>
+          <value xsi:type="CD" code="76272004"
+            codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT">
+            <originalText>
+              <reference value="#problem19name" />
+            </originalText>
+            <translation code="A53.9" codeSystem="2.16.840.1.113883.6.90"
+              codeSystemName="ICD-10-CM" displayName="Syphilis, unspecified" />
+          </value>
+        </observation>
+      </entryRelationship>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+          <id extension="problem-21" root="1.2.840.114350.1.13.999.2.7.2.768076" />
+          <code code="75323-6" codeSystem="2.16.840.1.113883.6.1"
+            codeSystemName="LOINC" displayName="Condition" />
+          <statusCode code="completed" />
+          <effectiveTime>
+            <low value="20250302" />
+          </effectiveTime>
+          <value xsi:type="CD" code="J30.2"
+            codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM">
+            <originalText>
+              <reference value="#problem21name" />
+            </originalText>
+            <translation code="367498001" codeSystem="2.16.840.1.113883.6.96"
+              codeSystemName="SNOMED CT"
+              displayName="Seasonal allergic rhinitis" />
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+</section>

@@ -1,0 +1,41 @@
+<!--
+  Problems (11450-4): one Problem Concern Act wrapping two Problem
+  Observations under entryRelationship[@typeCode='SUBJ'].
+
+  The concern is ACTIVE with an onset and no resolution, so its effectiveTime
+  is open at the high end. The second problem carries its display only in
+  <originalText> and has a resolved (low..high) range, so the pair covers both
+  the label fallback and the closed-interval rendering.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+  <title>Problems</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+      <statusCode code="active"/>
+      <effectiveTime><low value="20251107"/></effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          <code code="75325-1" displayName="Symptom"/>
+          <effectiveTime><low value="20251101"/></effectiveTime>
+          <value xsi:type="CD" code="35064005"
+                 codeSystem="2.16.840.1.113883.6.96" displayName="Dark stools (finding)"/>
+        </observation>
+      </entryRelationship>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          <code code="75322-8" displayName="Complaint"/>
+          <effectiveTime><low value="20251104"/><high value="20251110"/></effectiveTime>
+          <value xsi:type="CD" code="409586006"
+                 codeSystem="2.16.840.1.113883.6.96">
+            <originalText>Paroxysmal cough (finding)</originalText>
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+</section>

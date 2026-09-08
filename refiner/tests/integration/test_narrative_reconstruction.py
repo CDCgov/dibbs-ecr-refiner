@@ -3,7 +3,10 @@ from pathlib import Path
 from lxml import etree
 
 from app.services.ecr.model import HL7_NS
-from app.services.ecr.narrative.reconstruction import reconstruct_narrative
+from app.services.ecr.narrative.reconstruction import (
+    ReconstructedNarrative,
+    reconstruct_narrative,
+)
 
 # NOTE:
 # CDA-VALIDITY OF RECONSTRUCTED NARRATIVE
@@ -30,14 +33,16 @@ def _eicr_with_reconstructed_results(fixtures_path: Path) -> tuple[str, str]:
     section = root.xpath(
         f"//hl7:section[hl7:code/@code='{_RESULTS_LOINC}']", namespaces=HL7_NS
     )[0]
-    new_text = reconstruct_narrative(
+    rebuilt = reconstruct_narrative(
         section, augmentation_timestamp="20260101000000+0000"
     )
-    assert new_text is not None, "expected a reconstructed <text> for Results"
+    assert isinstance(rebuilt, ReconstructedNarrative), (
+        "expected a reconstructed <text> for Results"
+    )
 
     existing_text = section.find("hl7:text", HL7_NS)
     assert existing_text is not None
-    section.replace(existing_text, new_text)
+    section.replace(existing_text, rebuilt.text)
 
     reconstructed_xml = etree.tostring(root, encoding="unicode")
     return original_xml, reconstructed_xml

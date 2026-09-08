@@ -101,6 +101,55 @@ class ReconstructableSection(StrEnum):
 RECONSTRUCTABLE_SECTIONS = [section.value for section in ReconstructableSection]
 
 
+class TriggerCodeSection(StrEnum):
+    """
+    These sections can carry an eICR trigger code template.
+
+    The eICR IG defines trigger code templates for these sections, so a
+    trigger code — the coded evidence of *why* the document was
+    generated — can appear in any of them. Removing a section strips
+    every `<entry>` it holds and marks it `nullFlavor="NI"` (see
+    `create_minimal_section`), so a jurisdiction that turned all of
+    these off would emit a document with no trigger codes anywhere and
+    fail Schematron validation.
+
+    In practice this is unlikely: nearly all RCTC codes from the eRSD
+    are carried in the reporting specification groupers, and the
+    additional context groupers widen that further, so a configuration
+    would normally match the trigger code and keep the section. This
+    policy exists to close the foot-gun, not because we expect
+    jurisdictions to walk into it.
+
+    The refiner therefore forces `include=True` for these sections.
+    Every other setting stays under jurisdiction control — coded data
+    may still be refined or retained, and the narrative may be
+    retained, removed, kept on match, or reconstructed.
+
+    Membership is IG-derived, not a judgement call: the codes here are
+    the union of `specification.get_trigger_code_sections()` across
+    every supported eICR version. The union matters because a
+    configuration is authored once and applied to whichever version
+    arrives. The Enum is spelled out rather than computed so Orval
+    ships concrete LOINC codes to the frontend, and so a change to the
+    IG manifest surfaces as a failing drift test rather than silently
+    relaxing every jurisdiction's configuration. A unit test guards
+    that this enum stays in sync with the specification.
+    """
+
+    MEDICATIONS = "10160-0"
+    IMMUNIZATIONS = "11369-6"
+    PROBLEM = "11450-4"
+    PLAN_OF_TREATMENT = "18776-5"
+    MEDICATIONS_ADMINISTERED = "29549-3"
+    RESULTS = "30954-2"
+    ADMISSION_MEDICATIONS = "42346-7"
+    ENCOUNTERS = "46240-8"
+    PROCEDURES = "47519-4"
+
+
+TRIGGER_CODE_SECTIONS = [section.value for section in TriggerCodeSection]
+
+
 # NOTE:
 # SECTION POLICY PREDICATES AND NORMALIZATION
 # =============================================================================
@@ -140,6 +189,12 @@ def is_reconstructable_section(code: str) -> bool:
     return code in RECONSTRUCTABLE_SECTIONS
 
 
+def is_trigger_code_section(code: str) -> bool:
+    """Return True if the LOINC code identifies a trigger code section."""
+
+    return code in TRIGGER_CODE_SECTIONS
+
+
 def narrative_requires_refine(narrative_action: DbNarrativeAction) -> bool:
     """
     Return True if the narrative setting only makes sense with action="refine".
@@ -148,13 +203,14 @@ def narrative_requires_refine(narrative_action: DbNarrativeAction) -> bool:
     return narrative_action in NARRATIVE_ACTION_REQUIRES_REFINE
 
 
-def normalize_section_narrative(
+def normalize_section_processing(
     code: str,
+    include: bool,
     section_action: DbSectionAction,
     narrative_action: DbNarrativeAction,
-) -> tuple[DbSectionAction, DbNarrativeAction, list[str]]:
+) -> tuple[bool, DbSectionAction, DbNarrativeAction, list[str]]:
     """
-    Coerce an `(action, narrative)` pair into a valid combination.
+    Coerce an `(include, action, narrative)` triple into a valid combination.
 
     Used by non-user-initiated paths (the clone path during config
     activation, and one-shot data backfill migrations) that cannot
@@ -164,30 +220,42 @@ def normalize_section_narrative(
 
     Rules applied in order:
 
-      1. Narrative-only sections must have action="retain".
-      2. Disabled sections must have action="retain" (they are always
+      1. Trigger code sections must have include=True. Removing them
+         risks emitting a document with no trigger codes at all.
+         Their action and narrative settings are left alone.
+      2. Narrative-only sections must have action="retain".
+      3. Disabled sections must have action="retain" (they are always
          system-skipped at refinement; storing anything else is
          misleading).
-      3. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires
+      4. `narrative in NARRATIVE_ACTION_REQUIRES_REFINE` requires
          action="refine". When action is not "refine" after the
          earlier coercions, narrative is downgraded to "retain".
-      4. `narrative == "reconstruct"` is only valid on
+      5. `narrative == "reconstruct"` is only valid on
          `ReconstructableSection` codes. Otherwise narrative is
          downgraded to "retain".
 
     Returns:
-        Tuple of `(coerced_action, coerced_narrative, notes)`. `notes`
-        is a list of human-readable strings describing each coercion
-        applied — empty when the input was already valid. Callers
-        should log non-empty notes so jurisdictions can audit what
-        the system fixed up.
+        Tuple of `(coerced_include, coerced_action, coerced_narrative,
+        notes)`. `notes` is a list of human-readable strings describing
+        each coercion applied — empty when the input was already valid.
+        Callers should log non-empty notes so jurisdictions can audit
+        what the system fixed up.
     """
 
     notes: list[str] = []
+    coerced_include: bool = include
     coerced_action: DbSectionAction = section_action
     coerced_narrative_action: DbNarrativeAction = narrative_action
 
-    # rule 1 + 2: action-forcing for narrative-only and disabled sections
+    # rule 1: trigger code sections are always included
+    if is_trigger_code_section(code) and not coerced_include:
+        notes.append(
+            f"section '{code}' can carry a trigger code; coerced include "
+            f"'False' to 'True'"
+        )
+        coerced_include = True
+
+    # rule 2 + 3: action-forcing for narrative-only and disabled sections
     if is_narrative_only_section(code) and coerced_action != "retain":
         notes.append(
             f"section '{code}' is narrative-only; coerced action "
@@ -202,7 +270,7 @@ def normalize_section_narrative(
         )
         coerced_action = "retain"
 
-    # rule 3: narrative values that require action="refine"
+    # rule 4: narrative values that require action="refine"
     if (
         narrative_requires_refine(coerced_narrative_action)
         and coerced_action != "refine"
@@ -213,7 +281,7 @@ def normalize_section_narrative(
         )
         coerced_narrative_action = "retain"
 
-    # rule 4: reconstruct only on reconstructable sections
+    # rule 5: reconstruct only on reconstructable sections
     if coerced_narrative_action == "reconstruct" and not is_reconstructable_section(
         code
     ):
@@ -223,4 +291,4 @@ def normalize_section_narrative(
         )
         coerced_narrative_action = "retain"
 
-    return coerced_action, coerced_narrative_action, notes
+    return coerced_include, coerced_action, coerced_narrative_action, notes

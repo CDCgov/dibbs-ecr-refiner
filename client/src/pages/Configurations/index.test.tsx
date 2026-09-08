@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { Configurations } from '.';
-import { TestQueryClientProvider } from '../../test-utils';
+import { TestProviders } from '../../test-utils';
 import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
@@ -96,7 +96,7 @@ vi.mock('../../api/conditions/conditions', async () => {
 const renderPageView = () =>
   render(
     <MemoryRouter initialEntries={['/configurations']}>
-      <TestQueryClientProvider>
+      <TestProviders>
         <ToastContainer />
         <Routes>
           <Route
@@ -108,7 +108,7 @@ const renderPageView = () =>
             element={<CustomizeSections />}
           />
         </Routes>
-      </TestQueryClientProvider>
+      </TestProviders>
     </MemoryRouter>
   );
 
@@ -117,7 +117,7 @@ describe('Configurations Page', () => {
     it('renders Configurations with MemoryRouter', () => {
       render(
         <MemoryRouter initialEntries={['/configurations']}>
-          <TestQueryClientProvider>
+          <TestProviders>
             <Routes>
               <Route
                 path="/configurations"
@@ -126,7 +126,7 @@ describe('Configurations Page', () => {
                 }
               />
             </Routes>
-          </TestQueryClientProvider>
+          </TestProviders>
         </MemoryRouter>
       );
       expect(screen.getByText('Configurations')).toBeInTheDocument();

@@ -6,9 +6,10 @@ from app.services.format import remove_element
 
 from ..model import HL7_NS, NamespaceMap
 from .constants import (
+    ENTRIES_PRESERVED_SENTENCE,
     MINIMAL_SECTION_MESSAGE,
+    NARRATIVE_REMOVED_MESSAGE,
     REFINER_OUTPUT_TITLE,
-    REMOVE_NARRATIVE_MESSAGE,
     REMOVE_SECTION_MESSAGE,
 )
 from .elements import (
@@ -22,9 +23,20 @@ from .elements import (
 # INTERNAL CONSTANTS
 # =============================================================================
 
-_MESSAGE_MAP: Final[dict[str, str]] = {
+# two writers, two vocabularies. Both answer "why is this section empty?" with
+# a "no_match" and a "configured" case, but the CONFIGURED case means different
+# things to each: create_minimal_section removes the whole section, while
+# replace_narrative_with_removal_notice removes only the narrative and leaves
+# the coded entries in place. One shared map would put "Section details have
+# been removed" on a section whose entries are still there
+_SECTION_STUB_MESSAGES: Final[dict[str, str]] = {
     "no_match": MINIMAL_SECTION_MESSAGE,
     "configured": REMOVE_SECTION_MESSAGE,
+}
+
+_NARRATIVE_REMOVAL_MESSAGES: Final[dict[str, str]] = {
+    "no_match": MINIMAL_SECTION_MESSAGE,
+    "configured": NARRATIVE_REMOVED_MESSAGE,
 }
 
 
@@ -69,14 +81,28 @@ def _place_section_text(
 def replace_narrative_with_removal_notice(
     section: _Element,
     namespaces: NamespaceMap = HL7_NS,
+    removal_reason: Literal["no_match", "configured"] = "configured",
 ) -> None:
     """
     Replace the section's <text> with a notice explaining the removal.
 
-    Produces a <text> containing a single <paragraph> carrying the
-    REMOVE_NARRATIVE_MESSAGE. This is used when a jurisdiction has
-    configured a section to have its narrative stripped while keeping
-    the clinical entries intact for machine processing.
+    Produces a <text> containing a single <paragraph>. WHICH message
+    depends on what actually happened to the section, because the two
+    situations differ in a way a reader can act on:
+
+      - "configured": the jurisdiction asked for the narrative to be
+        stripped and the coded entries survived. REMOVE_NARRATIVE_MESSAGE
+        says so, including that the entries are still there for machine
+        processing.
+      - "no_match": nothing in the section matched the configured code
+        sets, so every entry was pruned and the section carries
+        nullFlavor="NI". MINIMAL_SECTION_MESSAGE says that instead.
+
+    They were one message until a review of real refined output caught
+    the consequence: a section with zero entries was telling PHAs
+    "Clinical entries are preserved for machine processing." Sharing one
+    string made a claim about entries that was only true on one of the
+    two paths.
 
     The replacement is performed via `section.replace()` to preserve
     the element's position in the CDA R2 xs:sequence. If no <text>
@@ -85,11 +111,25 @@ def replace_narrative_with_removal_notice(
     The provenance footnote that will be appended afterward by
     refine_eicr is not this function's responsibility — this function
     only writes the removal-notice paragraph.
+
+    Args:
+        section: The section whose narrative is being replaced.
+        namespaces: XML namespaces for element search.
+        removal_reason: Which of the two situations produced the removal.
     """
+
+    message = _NARRATIVE_REMOVAL_MESSAGES[removal_reason]
+
+    # the "entries are preserved" claim is read off the SECTION, not asserted
+    # by the caller: a narrative-only section has no coded entries to preserve,
+    # and neither does one whose entries were just pruned. deriving it means the
+    # notice cannot contradict the document it sits in
+    if removal_reason == "configured" and section.findall("hl7:entry", namespaces):
+        message += ENTRIES_PRESERVED_SENTENCE
 
     new_text = _make_element("text")
     paragraph = _sub_element(new_text, "paragraph")
-    paragraph.text = REMOVE_NARRATIVE_MESSAGE
+    paragraph.text = message
 
     _place_section_text(section, new_text, namespaces)
 
@@ -177,7 +217,7 @@ def create_minimal_section(
         removal_reason: Which message to display in the stub.
     """
 
-    section_message = _MESSAGE_MAP[removal_reason]
+    section_message = _SECTION_STUB_MESSAGES[removal_reason]
 
     text_element = _ensure_text_element(section)
 

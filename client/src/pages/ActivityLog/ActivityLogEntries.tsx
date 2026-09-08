@@ -22,13 +22,21 @@ export function ActivityLogEntries({
   const formatDatetime = useDatetimeFormatter();
 
   return (
-    <Table striped fullWidth>
+    <Table className="table-auto" striped fullWidth>
       <thead>
         <tr>
-          <th scope="col">{nameHeader} </th>
-          <th scope="col">{conditionHeader} </th>
-          <th scope="col">{actionHeader}</th>
-          <th scope="col">{dateHeader}</th>
+          <th scope="col" className="w-[16%]">
+            {nameHeader}
+          </th>
+          <th scope="col" className="w-[22%]">
+            {conditionHeader}
+          </th>
+          <th scope="col" className="w-[46%]">
+            {actionHeader}
+          </th>
+          <th scope="col" className="w-[16%]">
+            {dateHeader}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -55,16 +63,28 @@ export function ActivityLogEntries({
                   </div>
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
-                  <p className="flex flex-col items-start gap-1">
-                    <span>{r.action_text}</span>
+                  <div className="flex flex-col items-start gap-1">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {r.action_text}
+                        {r.code_count != null
+                          ? ` (${r.code_count.toLocaleString()} codes)`
+                          : null}
+                      </span>
+
+                      {r.condition_id && r.code_count != null ? (
+                        <CodeSetExportLink eventId={r.id} />
+                      ) : null}
+                    </div>
+
                     {r.has_custom_code_upload_events ? (
                       <ViewAllCustomCodeEventsButton
                         eventId={r.id}
-                        importedByUsername={r.username}
-                        importDate={date}
+                        modifiedByUsername={r.username}
+                        modifiedDate={date}
                       />
                     ) : null}
-                  </p>
+                  </div>
                 </td>
                 <td data-label={dateHeader}>
                   <div className="flex flex-col">
@@ -82,14 +102,14 @@ export function ActivityLogEntries({
 
 interface ViewAllCustomCodeEventsButtonProps {
   eventId: string;
-  importedByUsername: string;
-  importDate: string;
+  modifiedByUsername: string;
+  modifiedDate: string;
 }
 
 function ViewAllCustomCodeEventsButton({
   eventId,
-  importedByUsername,
-  importDate,
+  modifiedByUsername,
+  modifiedDate,
 }: ViewAllCustomCodeEventsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const {
@@ -125,7 +145,7 @@ function ViewAllCustomCodeEventsButton({
           ) : (
             <div className="flex max-h-130 flex-col gap-6">
               <p>
-                Imported by {importedByUsername} on {importDate}
+                Modified by {modifiedByUsername} on {modifiedDate}
               </p>
               <div className="overflow-auto">
                 {events.data.length === 0 ? (
@@ -158,5 +178,22 @@ function ViewAllCustomCodeEventsButton({
         </ModalBody>
       </Modal>
     </>
+  );
+}
+
+interface CodeSetExportLinkProps {
+  eventId: string;
+}
+
+function CodeSetExportLink({ eventId }: CodeSetExportLinkProps) {
+  return (
+    <Button
+      className="p-0!"
+      variant="tertiary"
+      href={`/api/v1/events/${eventId}/codes/export`}
+      anchorProps={{ download: true }}
+    >
+      <span className="whitespace-nowrap">Export as CSV</span>
+    </Button>
   );
 }

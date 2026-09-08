@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
+    get_configurations_set_to_tes_version,
     get_loaded_tes_versions_db,
+    get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
-from app.db.tes.model import TesUpdate
-from app.services.tes import sort_tes_updates_by_version
+from app.db.tes.model import TesConfigToUpdate, TesUpdate
+from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
 
@@ -85,7 +87,7 @@ async def get_tes_diff_details(
     """
     try:
         conditions_changed = await get_tes_version_diff_db(
-            db=db, cur_tes_version=cur_version, prev_tes_version=prev_version
+            db=db, cur_version=cur_version, prev_version=prev_version
         )
 
         return [
@@ -103,3 +105,88 @@ async def get_tes_diff_details(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Specified TES version(s) {cur_version} or {prev_version} not found.",
         )
+
+
+@router.get(
+    "/export",
+    tags=["tes"],
+    operation_id="exportConditionDiff",
+)
+async def export_tes_condition_diff(
+    cur_version: str,
+    prev_version: str,
+    canonical_url: str,
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Generates and exports a CSV of condition diffs between specified TES versions.
+
+    Args:
+        cur_version(str) : The ceiling TES version to compare against
+        prev_version(str) : The floor TES version to compare against
+        canonical_url(str) : The condition diff being requested
+        db (AsyncDatabaseConnection) : The db connection.
+
+    Returns:
+            Response: an HTTP response that gives the browser a CSV file to download
+
+    """
+    try:
+        condition_diff = await get_tes_update_condition_diff_db(
+            cur_version=cur_version,
+            prev_version=prev_version,
+            cond_url=canonical_url,
+            db=db,
+        )
+
+        (file_name, file_contents) = build_tes_export_csv(
+            diff_data=condition_diff, cur_version=cur_version
+        )
+
+        return Response(
+            content=file_contents,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
+        )
+
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Condition with URL {canonical_url} not found for TES versions {cur_version} or {prev_version}.",
+        )
+
+
+@dataclass
+class TesConfigsToUpdateResponse:
+    """
+    The response needed for rendering of the TES update configuration page.
+    """
+
+    existing_drafts: list[TesConfigToUpdate]
+    drafts_to_create: list[TesConfigToUpdate]
+
+
+@router.get(
+    "/configurations-to-update",
+    tags=["tes"],
+    operation_id="getConfigurationsToUpdate",
+)
+async def get_configurations_to_update(
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> TesConfigsToUpdateResponse:
+    """
+    Collects information needed to render the TES configs that need updating for a given TES release.
+
+    Args:
+        db (AsyncDatabaseConnection) : The db connection.
+
+    Returns:
+        TesConfigsToUpdateResponse: information about TES configs to update,
+        with a list of existing drafts and drafts to create
+
+    """
+    configs_to_update = await get_configurations_set_to_tes_version(db=db)
+    return TesConfigsToUpdateResponse(
+        existing_drafts=configs_to_update.existing_drafts,
+        drafts_to_create=configs_to_update.drafts_to_create,
+    )

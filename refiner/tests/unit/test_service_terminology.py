@@ -4,16 +4,23 @@ from uuid import uuid4
 
 import pytest
 
-from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.codes.model import DbCode
+from app.db.conditions.model import DbCondition
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     DbConfiguration,
 )
+from tests.unit.conftest import get_mock_system_id_by_name
 from tests.unit.helpers.configuration import create_processed_config
 
 
-def make_db_condition_coding(code, display):
-    return DbConditionCoding(code=code, display=display)
+def make_code_response(code, display, system_name):
+    return DbCode(
+        code=code,
+        display=display,
+        system_id=get_mock_system_id_by_name(system_name),
+        system_name=system_name,
+    )
 
 
 def make_condition(**kwargs) -> DbCondition:
@@ -22,12 +29,8 @@ def make_condition(**kwargs) -> DbCondition:
         "display_name": "Condition",
         "canonical_url": "http://cond.com",
         "version": "1.0.0",
+        "codes": [],
         "child_rsg_snomed_codes": [],
-        "snomed_codes": [],
-        "loinc_codes": [],
-        "icd10_codes": [],
-        "rxnorm_codes": [],
-        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -68,15 +71,6 @@ def mock_db_functions(monkeypatch, mock_all_systems):
         AsyncMock(return_value={m.id: m for m in mock_all_systems}),
     )
 
-    monkeypatch.setattr(
-        "app.services.configurations.get_code_system_by_key_db",
-        AsyncMock(
-            side_effect=lambda key, db: next(
-                m for m in mock_all_systems if m.key == key
-            ),
-        ),
-    )
-
 
 @pytest.mark.asyncio
 class TestTerminologyService:
@@ -84,7 +78,7 @@ class TestTerminologyService:
         self, get_mock_system
     ):
         cond1: DbCondition = make_condition(
-            snomed_codes=[make_db_condition_coding("A", "SNOMED")]
+            codes=[make_code_response(code="A", display="SNOMED", system_name="SNOMED")]
         )
 
         loinc = get_mock_system("loinc")
@@ -94,7 +88,7 @@ class TestTerminologyService:
             id=mock_config_id,
             custom_codes=[
                 DbCustomCode(
-                    id="test-code",
+                    id=uuid4(),
                     code="B",
                     display="Custom LOINC",
                     system_id=loinc.id,
@@ -109,10 +103,12 @@ class TestTerminologyService:
 
     async def test_processed_configuration_duplicate_codes(self, get_mock_system):
         cond1: DbCondition = make_condition(
-            snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
+            codes=[
+                make_code_response(code="DUP", display="SNOMED", system_name="SNOMED")
+            ]
         )
         cond2: DbCondition = make_condition(
-            loinc_codes=[make_db_condition_coding("DUP", "LOINC")]
+            codes=[make_code_response(code="DUP", display="LOINC", system_name="LOINC")]
         )
         loinc = get_mock_system("loinc")
 
@@ -120,7 +116,7 @@ class TestTerminologyService:
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbCustomCode(
-                    id="test-code",
+                    id=uuid4(),
                     code="DUP",
                     display="Custom",
                     system_id=loinc.id,

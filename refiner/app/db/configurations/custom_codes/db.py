@@ -3,10 +3,11 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
-from app.db.code_systems.db import DbCodeSystem, get_code_system_by_id_db
+from app.db.code_systems.db import get_code_system_by_id_db
+from app.db.code_systems.model import DbCodeSystem
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
-from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
+from app.db.events.db import insert_custom_code_event_db, insert_event_db
 from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection
 
@@ -149,9 +150,9 @@ async def insert_custom_codes_db(
                 rows = await cur.fetchall()
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                # Insert a single audit event if codes were added
-                await insert_custom_code_upload_events_db(
+                await insert_custom_code_event_db(
                     configuration=config,
+                    event_type="add",
                     user_id=user_id,
                     custom_codes=rows,
                     code_systems=code_systems,
@@ -161,45 +162,57 @@ async def insert_custom_codes_db(
             return rows
 
 
-async def delete_custom_code_db(
+async def delete_custom_codes_db(
     config: DbConfiguration,
-    id: UUID,
+    ids: list[UUID],
     user_id: UUID,
+    code_systems: list[DbCodeSystem],
     db: AsyncDatabaseConnection,
-) -> DbCustomCode | None:
+    delete_all: bool = False,
+    ids_to_skip: list[UUID] = [],
+) -> list[DbCustomCode]:
     """
-    Given a config and custom code ID, deletes the custom code from the configuration.
+    Given a config and custom code IDs, deletes the custom codes from the configuration.
     """
 
-    query = """
+    if delete_all:
+        query = """
             DELETE FROM custom_codes
-            WHERE id = %(id)s
+            WHERE
+                custom_codes.id != ALL(%(code_ids_to_skip)s::uuid[])
+                AND custom_codes.configuration_id = %(configuration_id)s
             RETURNING *;
             """
-    params = {"id": id}
+        params = {"code_ids_to_skip": ids_to_skip, "configuration_id": config.id}
+
+    else:
+        query = """
+                DELETE FROM custom_codes
+                WHERE id = ANY(%(ids)s::uuid[])
+                RETURNING *;
+                """
+        params = {"ids": ids}
 
     async with db.get_connection() as conn:
         async with conn.transaction():
             async with conn.cursor(row_factory=class_row(DbCustomCode)) as cur:
                 await cur.execute(query, params)
-                row = await cur.fetchone()
+                rows = await cur.fetchall()
 
-                if not row:
-                    return None
+                if not rows:
+                    return []
 
             async with conn.cursor(row_factory=dict_row) as event_cur:
-                await insert_event_db(
-                    event=EventInput(
-                        jurisdiction_id=config.jurisdiction_id,
-                        user_id=user_id,
-                        configuration_id=config.id,
-                        event_type="delete_code",
-                        action_text=f"Removed custom code '{row.code}'",
-                    ),
+                await insert_custom_code_event_db(
+                    configuration=config,
+                    event_type="delete",
+                    user_id=user_id,
+                    custom_codes=rows,
+                    code_systems=code_systems,
                     cursor=event_cur,
                 )
 
-            return row
+        return rows
 
 
 async def edit_custom_code_db(

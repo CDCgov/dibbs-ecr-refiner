@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
@@ -21,11 +21,14 @@ class _EventBase:
         "lock_release",
         "lock_renew",
         "bulk_add_custom_code",
+        "bulk_delete_custom_code",
         "create_custom_section",
         "edit_custom_section",
         "delete_custom_section",
     ]
     action_text: str
+    condition_id: UUID | None = field(default=None, kw_only=True)
+    code_count: int | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -42,4 +45,18 @@ class DbEvent(_EventBase):
     """
 
     id: UUID
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class CodeSetEvent:
+    """
+    Minimal event data needed to export a code set.
+    """
+
+    id: UUID
+    condition_id: UUID | None
+    condition_name: str | None
+    code_count: int | None
+    event_type: str
     created_at: datetime

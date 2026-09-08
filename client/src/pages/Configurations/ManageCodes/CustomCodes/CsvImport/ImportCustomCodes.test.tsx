@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { TestQueryClientProvider } from '../../../../../test-utils';
+import { TestProviders } from '../../../../../test-utils';
 import { ImportCustomCodes } from './ImportCustomCodes';
 import userEvent from '@testing-library/user-event';
 import { useUploadCustomCodesCsv } from '../../../../../api/configurations/configurations';
@@ -63,9 +63,9 @@ async function renderAndUploadCsv(user: ReturnType<typeof userEvent.setup>) {
     <MemoryRouter
       initialEntries={[`/configurations/${MOCK_CONFIG_ID}/manage-codes`]}
     >
-      <TestQueryClientProvider>
+      <TestProviders>
         <ImportCustomCodes configurationId={MOCK_CONFIG_ID} />
-      </TestQueryClientProvider>
+      </TestProviders>
     </MemoryRouter>
   );
 

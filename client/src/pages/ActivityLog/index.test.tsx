@@ -1,6 +1,6 @@
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { ToastContainer } from 'react-toastify';
-import { TestQueryClientProvider } from '../../test-utils';
+import { TestProviders } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen, within } from '@testing-library/react';
 import { AuditEvent, EventFilterOption } from '../../api/schemas';
@@ -16,6 +16,7 @@ const auditEvents: AuditEvent[] = [
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:58:45.363325Z',
     has_custom_code_upload_events: false,
+    code_count: null,
   },
   {
     id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
@@ -26,6 +27,7 @@ const auditEvents: AuditEvent[] = [
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:57:55.627842Z',
     has_custom_code_upload_events: false,
+    code_count: null,
   },
   {
     id: '411215db-e623-41c6-90b1-131b9f74ed39',
@@ -36,6 +38,7 @@ const auditEvents: AuditEvent[] = [
     action_text: 'Added 3 custom codes from CSV',
     created_at: '2025-10-28T13:57:55.627842Z',
     has_custom_code_upload_events: true,
+    code_count: null,
   },
 ];
 const configurations: EventFilterOption[] = [
@@ -101,14 +104,14 @@ function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
 
 const renderPageView = () =>
   render(
-    <TestQueryClientProvider>
+    <TestProviders>
       <ToastContainer />
       <MemoryRouter initialEntries={['/activity']}>
         <Routes>
           <Route path="/activity" element={<ActivityLog />} />
         </Routes>
       </MemoryRouter>
-    </TestQueryClientProvider>
+    </TestProviders>
   );
 
 describe('Activity log page', () => {

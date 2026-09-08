@@ -5,7 +5,7 @@ from typing import Final
 # REFINER ID NAMESPACE
 # =============================================================================
 # every xs:ID the refiner mints — the per-section provenance footnote
-# (footnote.py) and the reconstructed detail rows (reconstruction.py) — shares
+# (footnote.py) and the reconstructed detail rows (reconstruction/) — shares
 # one namespace: `ecr-refiner-{loinc}-{run-digits}[...]`. owning the prefix and
 # the run-digit extraction here keeps the two ID schemes structurally
 # consistent, so a consumer can tie a footnote and the rows of the same run

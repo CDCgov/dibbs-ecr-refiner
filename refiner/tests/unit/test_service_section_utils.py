@@ -176,7 +176,9 @@ def test_recovered_label_flows_into_reconstructed_narrative():
     )
 
     enrich_surviving_entries(section, _empty_sets(), HL7_NS)
-    text = reconstruct_narrative(section, augmentation_timestamp="20240101000000+0000")
+    text = reconstruct_narrative(
+        section, augmentation_timestamp="20240101000000+0000"
+    ).text
 
     assert text is not None
     outcome = text.xpath(".//hl7:tbody/hl7:tr/hl7:td", namespaces=HL7_NS)

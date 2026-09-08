@@ -15,6 +15,7 @@ from app.db.configurations.model import (
 )
 from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
+from app.services.conditions.grouper_statuses import CodeSetStatus
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,7 @@ class IncludedCondition:
     canonical_url: str
     version: str
     associated: bool
+    code_set_status: CodeSetStatus
 
 
 @dataclass(frozen=True)
@@ -71,7 +73,7 @@ class LockedByUser(UserInfoBase):
 @dataclass(frozen=True)
 class GetConfigurationResponse:
     """
-    Model for a configration response.
+    Model for a configuration response.
     """
 
     id: UUID

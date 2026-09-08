@@ -1,0 +1,83 @@
+<!--
+  Plan of Treatment (18776-5): the HETEROGENEOUS section.
+
+  Five unlike planned statements share one <section> — observation, procedure,
+  act, medication, immunization — so this fixture is what proves they are kept
+  apart into captioned per-kind tables rather than collapsed into one grid.
+  The two substanceAdministrations differ only by templateId, which is the
+  only thing distinguishing a planned medication from a planned immunization.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="18776-5" codeSystem="2.16.840.1.113883.6.1"/>
+  <text><table><tbody><tr ID="stale1"><td>stale narrative</td></tr></tbody></table></text>
+  <entry>
+    <observation classCode="OBS" moodCode="RQO">
+      <templateId root="2.16.840.1.113883.10.20.22.4.44" extension="2014-06-09"/>
+      <code code="105066-5" codeSystem="2.16.840.1.113883.6.1"
+            displayName="SARS-CoV-2 Ag [Presence] in Specimen"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+      <performer>
+        <assignedEntity>
+          <representedOrganization><name>Community Health</name></representedOrganization>
+        </assignedEntity>
+      </performer>
+    </observation>
+  </entry>
+  <entry>
+    <procedure classCode="PROC" moodCode="RQO">
+      <templateId root="2.16.840.1.113883.10.20.22.4.41" extension="2014-06-09"/>
+      <code code="233573008" codeSystem="2.16.840.1.113883.6.96"
+            displayName="Extracorporeal membrane oxygenation"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+      <methodCode code="16310003" codeSystem="2.16.840.1.113883.6.96"
+                  displayName="Diagnostic ultrasonography"/>
+      <targetSiteCode code="416949008" codeSystem="2.16.840.1.113883.6.96"
+                      displayName="Abdomen and pelvis"/>
+    </procedure>
+  </entry>
+  <entry>
+    <act classCode="ACT" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.39" extension="2014-06-09"/>
+      <code code="409524006" codeSystem="2.16.840.1.113883.6.96"
+            displayName="Airborne precautions"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+    </act>
+  </entry>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.42" extension="2014-06-09"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201107"/>
+      <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="ORAL"/>
+      <doseQuantity value="1" unit="g"/>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <manufacturedMaterial>
+            <code code="248656" codeSystem="2.16.840.1.113883.6.88"
+                  displayName="Azithromycin 500 MG Oral Tablet"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.120"/>
+      <statusCode code="active"/>
+      <effectiveTime value="20201110"/>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <manufacturedMaterial>
+            <code code="207" codeSystem="2.16.840.1.113883.12.292"
+                  displayName="COVID-19 mRNA vaccine"/>
+            <lotNumberText>LOT-1234</lotNumberText>
+          </manufacturedMaterial>
+          <manufacturerOrganization><name>Moderna</name></manufacturerOrganization>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

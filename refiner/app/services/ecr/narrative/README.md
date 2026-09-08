@@ -41,17 +41,18 @@ narrative elements directly.
   - `create_minimal_section` — reduce a section to a `nullFlavor="NI"` stub
     with a status message (no match found, or configured for removal).
   - `replace_narrative_with_reconstruction` — swap in a `<text>` rebuilt by
-    `reconstruction.py` from the surviving entries.
+    `reconstruction/` from the surviving entries.
 
 - **`identifiers.py`** — the `xs:ID` scheme shared by the footnote and the
   reconstructed rows (`ecr-refiner-{loinc}-{timestamp}`), plus the helper that
   compacts reconstruction references. Keeping it separate lets `footnote.py`
-  and `reconstruction.py` mint run-stamped IDs without depending on each other.
+  and `reconstruction/` mint run-stamped IDs without depending on each other.
 
-- **`reconstruction.py`** — the third narrative disposition: rebuild a
+- **`reconstruction/`** — the third narrative disposition: rebuild a
   section's `<text>` from the entries that **survived** refinement, so the
   narrative reflects what the document still contains rather than the stale
-  story the source EHR authored against the full entry set. See below.
+  story the source EHR authored against the full entry set. A package, split
+  along its layering — see below.
 
 ## Invariants
 
@@ -66,7 +67,22 @@ narrative elements directly.
 
 ## Narrative reconstruction
 
-When a section is configured `narrative="reconstruct"`, `reconstruction.py`
+The package is split along the layering, one module per layer, and the
+dependencies run one way (`renderers` <- `fields` <- `sections` -> `blocks`):
+
+| module | holds | depends on |
+|---|---|---|
+| `renderers.py` | stringify ONE element: CDA data types, code-display fallback chains, timestamps, units, intervals | nothing in the package |
+| `fields.py` | `FieldSpec`/`FieldSource`, the extractor, and every per-statement field map | `renderers` |
+| `blocks.py` | `Block`/`DetailRow`, the table assembler, minted row IDs, and the entry mutations (`DRIV`, relinking) | nothing in the package |
+| `sections.py` | the per-section joins and the generic fallback | `blocks`, `fields`, `renderers` |
+| `__init__.py` | `SECTION_RECONSTRUCTORS`, `reconstruct_narrative`, and the package's public surface (`__all__`) | all of the above |
+
+Adding a section stays "one field map + one join function + one dict entry" —
+no Layer 1 primitive is touched.
+
+
+When a section is configured `narrative="reconstruct"`, `reconstruction/`
 rebuilds its `<text>` from the surviving `<entry>` elements instead of
 retaining the source narrative. The guiding question is a content one: **can
 this table be reproduced from just the `<entry>`s?** If a column cannot be
@@ -100,7 +116,10 @@ Reconstructable sections (`policy.ReconstructableSection`):
 
 - **Results** (30954-2) and **Problems** (11450-4) — JOIN sections: one
   self-contained block per organizer / concern act, with a context table
-  (panel / concern) above the detail rows.
+  (panel / concern) above the detail rows. `StrucDoc.Td` permits no nested
+  `<table>`, so the two are siblings in the markup; containment is carried by
+  the detail table's `<caption>` (which names the parent panel) and an
+  `xallIndent` `styleCode` marking it subordinate.
 - **Immunizations** (11369-6) and **Medications Administered** (29549-3) —
   FLAT sections: a single table, one row per `substanceAdministration`.
 - **Plan of Treatment** (18776-5) — the HETEROGENEOUS section: five unlike
@@ -115,6 +134,61 @@ strips the now-dangling source references, relinks each entry to its minted
 row, and stamps `typeCode="DRIV"`. It only runs on the refine path — a retained
 section never reconstructs, and when nothing survived (or a section has no
 registered reconstructor) it falls back to retaining the original narrative.
+
+### The fallback when there is nothing to rebuild from
+
+`reconstruct` falls back to **keep-on-match**, not to keeping the original.
+When nothing in the section matched, every entry is pruned and the narrative
+is replaced with the removal notice.
+
+The reasoning is what the retained narrative would actually have contained.
+Nothing matched, so all the entries are gone — and the source narrative still
+describes every one of them, in full clinical prose. Keeping it ships exactly
+the content the jurisdiction's configuration said should not be here, with the
+structured entries stripped so a receiver cannot even process it. Choosing
+`reconstruct` grants the refiner broad licence to rewrite the section;
+keep-on-match is much closer to the spirit of that grant than handing back the
+unrefined original.
+
+One case still retains: **no registered reconstructor**, meaning
+`narrative="reconstruct"` on a section outside `ReconstructableSection`. The
+policy layer normally coerces that to `retain`, so it is a defensive branch.
+It says so in the section footnote, including that the retained narrative may
+describe entries the refinement removed.
+
+### Entries the section reconstructor cannot cover
+
+A per-section reconstructor knows one shape. `reconstruct_results` anchors on
+`entry/organizer`, `reconstruct_problems` on `entry/act`. An entry arranged
+differently — a Problem Observation under a non-`SUBJ` entryRelationship, a
+Result Observation sitting directly under `<entry>` with no organizer — still
+matches, still survives pruning, and produces no row.
+
+Doing that silently is the problem, and the **partial** case is the dangerous
+one: the section reports a clean `reconstructed`, every surviving entry is
+stamped `typeCode="DRIV"` — the document asserting its narrative is derived
+from and clinically equivalent to those entries — and one of them is missing
+from the narrative entirely.
+
+So reconstruction always ends with a sweep. Whatever the section's own
+reconstructor did not represent goes into a captioned reduced-form block
+(`_generic_block`): the concept, when it happened, its status. `Item` comes
+from `render_entry_concept`, which searches the places a clinical statement
+puts its identifying concept (`code`, `value`, then the substanceAdministration
+`manufacturedMaterial/code`) — it is a renderer rather than a `FieldSpec`
+because a field wanting three alternatives wants its own function.
+
+`reconstruct_narrative` returns `ReconstructedNarrative(text,
+reduced_entry_count)`. A non-zero count becomes
+`SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_REDUCED`, so a reviewer
+looking at a thin table finds out why from the provenance footnote instead of
+guessing. This is measured, not theoretical: across the five committed fixture
+eICRs the sweep fires zero times, but both shapes above are constructible and
+are pinned by tests.
+
+Making the fallback *configurable* is still not built. It needs design work
+(the narrative dropdown encodes one axis; a fallback is a second) and user
+feedback we do not have. The default above is the one to argue from.
 
 On house style: the reconstruction stays vendor-neutral — it does not encode
 one EHR's stylesheet quirks ([see here](/docs/decisions/0011_2026-06-24_narrative-reconstruction-real-data-blocks-and-linkage.md)).

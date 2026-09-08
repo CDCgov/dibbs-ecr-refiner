@@ -102,22 +102,22 @@ export const baseMockConfig: GetConfigurationResponse = {
     {
       display: 'Coronavirus infection (disorder)',
       code: '186747009',
-      version: '6.0.0',
       system_id: MOCK_SNOMED_DB_ID,
+      system_name: 'SNOMED',
     },
     {
       display:
         'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
       code: '840539006',
-      version: '6.0.0',
       system_id: MOCK_SNOMED_DB_ID,
+      system_name: 'SNOMED',
     },
     {
       display:
         'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
       code: '1001411000124108',
-      version: '6.0.0',
       system_id: MOCK_SNOMED_DB_ID,
+      system_name: 'SNOMED',
     },
   ],
   custom_codes: mockCustomCodes,

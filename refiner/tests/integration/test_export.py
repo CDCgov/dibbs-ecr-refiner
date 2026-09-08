@@ -136,10 +136,10 @@ class TestConfigurationExportCodesCsv:
         await associate_codeset(config_id, byssinosis_id)
 
         amebiasis_codes = await get_condition_codes_by_condition_id_db(
-            id=amebiasis_id, db=db_pool
+            condition_id=amebiasis_id, db=db_pool
         )
         byssinosis_codes = await get_condition_codes_by_condition_id_db(
-            id=byssinosis_id, db=db_pool
+            condition_id=byssinosis_id, db=db_pool
         )
         expected_code_rows = len(amebiasis_codes) + len(byssinosis_codes)
 
@@ -336,9 +336,10 @@ class TestConfigurationExportSectionsCsv:
         condition_id = await get_condition_id("Colorado tick fever")
         config = await create_config(condition_id)
 
-        # Exclude a section
+        # Exclude a section — Admission Diagnosis carries no trigger codes,
+        # so unlike most refinable sections it can actually be excluded
         await update_section_processing(
-            config_id=config["id"], current_code="10160-0", include=False
+            config_id=config["id"], current_code="46241-6", include=False
         )
 
         response = await authed_client.get(
@@ -510,7 +511,8 @@ class TestConfigurationExportSectionsCsv:
         config = await create_config(condition_id)
         config_id = config["id"]
 
-        section_loinc = "10160-0"
+        # Admission Diagnosis carries no trigger codes, so it can be excluded
+        section_loinc = "46241-6"
 
         await update_section_processing(
             config_id=config_id, current_code=section_loinc, include=False

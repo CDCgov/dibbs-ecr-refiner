@@ -128,6 +128,38 @@ def load_spec(version: EicrVersion) -> EICRSpecification:
 
 
 # NOTE:
+# TRIGGER CODE SECTIONS
+# =============================================================================
+
+
+def get_trigger_code_sections() -> set[str]:
+    """
+    Build the set of section LOINCs that can carry a trigger code.
+
+    A section is included when *any* supported eICR version defines at
+    least one trigger code template for it. The union is deliberate:
+    a jurisdiction configuration is authored once and applied to
+    whichever version arrives, so scoping this to a single version
+    would let a section be removed that carries trigger codes in a
+    version the configuration never anticipated.
+
+    This reports what the IG defines. The refiner's decision about
+    what to *do* with these sections lives in `ecr.policy`.
+
+    Returns:
+        Set of section LOINC codes that carry trigger code templates
+        in at least one supported eICR version.
+    """
+
+    return {
+        loinc_code
+        for version in _VERSION_SECTIONS
+        for loinc_code, section in load_spec(version).sections.items()
+        if section.has_trigger_codes
+    }
+
+
+# NOTE:
 # SECTION-VERSION MAPPING
 # =============================================================================
 

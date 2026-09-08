@@ -6,7 +6,6 @@ import { Layout } from '@components/Layout';
 import { useLogin } from './hooks/useLogin';
 import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
-import { ManageCodes } from './pages/Configurations/ManageCodes';
 import { ConfigTest } from './pages/Configurations/ConfigTest';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner } from '@components/Spinner';
@@ -16,6 +15,8 @@ import { AppUpdates } from './pages/AppUpdates';
 import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
 import { TesUpdates } from './pages/TesUpdates';
 import { CustomizeSections } from './pages/Configurations/CustomizeSections';
+import { Overrides } from './pages/Configurations/Overrides';
+import { ManageCodes } from './pages/Configurations/ManageCodes';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -55,6 +56,7 @@ export function App() {
           element={<ManageCodes />}
         />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
+        <Route path="/configurations/:id/overrides" element={<Overrides />} />
         <Route
           path="/configurations/:id/serialized"
           element={<ConfigSerialized />}

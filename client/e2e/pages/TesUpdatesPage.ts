@@ -27,4 +27,12 @@ export class TesUpdatesPage {
       this.page.getByText(`What's changed in Version ${versionString}`)
     ).toBeDefined();
   }
+
+  async goToUpdateActionsPage() {
+    await this.page
+      .getByRole('button', { name: `Update configurations` })
+      .click();
+
+    expect(this.page.getByText(`Update to latest release`)).toBeDefined();
+  }
 }

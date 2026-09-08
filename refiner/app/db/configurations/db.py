@@ -254,6 +254,43 @@ async def _get_next_configuration_version_db(
     return max_version + 1
 
 
+async def _clone_code_exclusions(
+    clone_from_config: DbConfiguration,
+    new_configuration_id: UUID,
+    condition_ids: list[UUID],
+    cursor: AsyncCursor[CursorType],
+) -> None:
+    """
+    Clones code exclusion rows from one configuration to a new one.
+
+    Skips any `code_id` that is not associated with any of the
+    given `condition_id`s in `conditions_codes_temp`.
+    """
+
+    await cursor.execute(
+        """
+        INSERT INTO configurations_conditions_code_exclusions
+            (configuration_id, code_id)
+        SELECT
+            %(new_configuration_id)s,
+            excl.code_id
+        FROM configurations_conditions_code_exclusions excl
+        WHERE excl.configuration_id = %(source_configuration_id)s
+          AND EXISTS (
+              SELECT 1
+              FROM conditions_codes_temp cct
+              WHERE cct.code_id = excl.code_id
+                AND cct.condition_id = ANY(%(condition_ids)s)
+          )
+        """,
+        {
+            "new_configuration_id": new_configuration_id,
+            "source_configuration_id": clone_from_config.id,
+            "condition_ids": condition_ids,
+        },
+    )
+
+
 async def insert_configuration_db(
     condition: DbCondition,
     user_id: UUID,
@@ -392,6 +429,28 @@ async def insert_configuration_db(
                     for cond_id in condition_ids_to_insert
                 ],
             )
+
+            if config_to_clone:
+                await _clone_code_exclusions(
+                    clone_from_config=config_to_clone,
+                    new_configuration_id=config_id,
+                    condition_ids=condition_ids_to_insert,
+                    cursor=cur,
+                )
+
+            if next_version == 1:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config_id,
+                        event_type="add_code",
+                        action_text=f"Added '{latest_condition.display_name}' code set",
+                        condition_id=latest_condition.id,
+                        code_count=latest_condition.get_total_code_count(),
+                    ),
+                    cursor=cur,
+                )
 
     return await get_configuration_by_id_db(
         id=row["id"], jurisdiction_id=jurisdiction_id, db=db
@@ -539,6 +598,8 @@ async def associate_condition_codeset_with_configuration_db(
                     configuration_id=config.id,
                     event_type="add_code",
                     action_text=f"Added '{condition.display_name}' code set",
+                    condition_id=condition.id,
+                    code_count=condition.get_total_code_count(),
                 ),
                 cursor=cur,
             )
@@ -593,6 +654,8 @@ async def disassociate_condition_codeset_with_configuration_db(
                     configuration_id=config.id,
                     event_type="delete_code",
                     action_text=f"Removed '{condition.display_name}' code set",
+                    condition_id=condition.id,
+                    code_count=condition.get_total_code_count(),
                 ),
                 cursor=cur,
             )
@@ -610,64 +673,30 @@ async def get_total_condition_code_counts_by_configuration_db(
     """
 
     query = """
-        WITH conds AS (
+        WITH conditions_to_tally AS (
             SELECT condition_id AS cond_id
             FROM configurations_conditions
-            WHERE configuration_id = %s
-        ),
-        codes AS (
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
-
-            UNION
-
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
-
-            UNION
-
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
-
-            UNION
-
-            SELECT
-                c.id AS condition_id,
-                code_elem->>'code' AS code
-            FROM conds
-            JOIN conditions c
-                ON c.id = cond_id
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
-        )
+            WHERE configuration_id = %(configuration_id)s
+            )
         SELECT
             c.id AS condition_id,
             c.display_name,
-            COUNT(DISTINCT code) AS total_codes
+            COUNT(DISTINCT cd.id) AS total_codes
         FROM conditions c
-        JOIN codes cd ON c.id = cd.condition_id
+        JOIN conditions_to_tally ON c.id = conditions_to_tally.cond_id
+        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
+        JOIN codes cd ON cd.id = crc.code_id
+        LEFT JOIN configurations_conditions_code_exclusions ce
+            ON ce.configuration_id = %(configuration_id)s
+            AND ce.code_id = cd.id
+        WHERE ce.code_id IS NULL
         GROUP BY c.id, c.display_name
         ORDER BY c.display_name;
     """
 
-    params = (config_id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
-            await cur.execute(query, params)
+            await cur.execute(query, {"configuration_id": config_id})
             row = await cur.fetchall()
 
     return row

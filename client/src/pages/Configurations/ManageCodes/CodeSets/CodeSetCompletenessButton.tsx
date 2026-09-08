@@ -7,92 +7,128 @@ import {
   ModalFooter,
 } from '@components/Modal';
 import { Button } from '@components/Button';
-import {
-  CodeCategoryStatus,
-  CodeSetStatus,
-  CompletenessStatus,
-} from '../../../../api/schemas';
+import { CodeCategoryStatus, CodeSetStatus } from '../../../../api/schemas';
 import classNames from 'classnames';
+import { useGetCondition } from '../../../../api/conditions/conditions';
 
-export interface CompletenessStatusBadgeProps {
-  completenessStatus: CompletenessStatus;
+export interface CodeSetCompletenessButtonProps {
+  conditionId: string;
+  status: CodeSetStatus;
 }
 
-export function CompletenessStatusBadge({
-  completenessStatus,
-}: CompletenessStatusBadgeProps) {
+export function CodeSetCompletenessButton({
+  conditionId,
+  status,
+}: CodeSetCompletenessButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div>
-      <div className="flex flex-row items-center gap-2">
-        <Badge status={completenessStatus.code_set_status} />
+      <div className="flex flex-col items-center gap-2 lg:flex-row">
         <Button
           variant="tertiary"
           onClick={() => setIsOpen(true)}
           aria-label="Open code set completion status details modal"
           className="p-0!"
         >
-          Details
+          Code set details
         </Button>
+        <StatusText status={status} />
       </div>
-
       {isOpen && (
-        <Modal open={isOpen} onClose={() => setIsOpen(false)}>
-          <ModalHeader>
-            <div className="flex flex-col items-start gap-1">
-              <Badge status={completenessStatus.code_set_status} />
-              <ModalTitle className="sm:whitespace-nowrap">
-                Code set completion details
-              </ModalTitle>
-              <p className="sm:text-sm sm:whitespace-nowrap">
-                Understand which types of codes are expanded in this code set.
-              </p>
-            </div>
-          </ModalHeader>
-
-          <ModalBody>
-            <table className="w-full table-fixed">
-              <colgroup>
-                <col className="w-[55%]" />
-                <col className="w-[45%]" />
-              </colgroup>
-              <thead>
-                <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                  <th className="px-2 py-2 text-left" scope="col">
-                    Expanded codes
-                  </th>
-                  <th className="px-2 py-2 text-left" scope="col">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-gray-cool-20 divide-y">
-                {completenessStatus.code_category_statuses.map((ccs) => (
-                  <tr key={ccs.category}>
-                    <td className="px-2 py-3">{ccs.name}</td>
-                    <td className="px-2 py-3">
-                      <CategoryCompletenessStatus
-                        completeness={ccs.completeness}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </ModalBody>
-
-          <ModalFooter align="center">
-            <div className="mx-10 flex w-full justify-center">
-              <p className="w-full text-center italic">
-                Use custom codes to add codes you want to retain that are not
-                included in the code set.
-              </p>
-            </div>
-          </ModalFooter>
-        </Modal>
+        <StatusModal
+          conditionId={conditionId}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+        />
       )}
     </div>
+  );
+}
+
+interface StatusModalProps {
+  conditionId: string;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function StatusModal({ conditionId, isOpen, onClose }: StatusModalProps) {
+  const { data, isPending, isError } = useGetCondition(conditionId);
+  if (isPending) return;
+  if (isError) return 'Error!';
+
+  const condition = data.data;
+
+  return (
+    <Modal open={isOpen} onClose={onClose}>
+      <ModalHeader>
+        <div className="flex flex-col items-start gap-1">
+          <Badge status={condition.completeness_status.code_set_status} />
+          <ModalTitle className="sm:whitespace-nowrap">
+            Code set completion details
+          </ModalTitle>
+          <p className="sm:text-sm sm:whitespace-nowrap">
+            Understand which types of codes are expanded in this code set.
+          </p>
+        </div>
+      </ModalHeader>
+
+      <ModalBody>
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-[55%]" />
+            <col className="w-[45%]" />
+          </colgroup>
+          <thead>
+            <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
+              <th className="px-2 py-2 text-left" scope="col">
+                Expanded codes
+              </th>
+              <th className="px-2 py-2 text-left" scope="col">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-gray-cool-20 divide-y">
+            {condition.completeness_status.code_category_statuses.map((ccs) => (
+              <tr key={ccs.category}>
+                <td className="px-2 py-3">{ccs.name}</td>
+                <td className="px-2 py-3">
+                  <CategoryCompletenessStatus completeness={ccs.completeness} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </ModalBody>
+
+      <ModalFooter align="center">
+        <div className="mx-10 flex w-full justify-center">
+          <p className="w-full text-center italic">
+            Use custom codes to add codes you want to retain that are not
+            included in the code set.
+          </p>
+        </div>
+      </ModalFooter>
+    </Modal>
+  );
+}
+
+interface StatusTextProps {
+  status: CodeSetStatus;
+}
+
+function StatusText({ status }: StatusTextProps) {
+  return (
+    <span
+      className={classNames({
+        'text-[#4d8055]': status === 'fully complete',
+        'text-red-300': status === 'not expanded',
+        'text-[#7a6520]': status === 'partially complete',
+      })}
+    >
+      ({status})
+    </span>
   );
 }
 

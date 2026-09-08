@@ -8,7 +8,7 @@ import type { IncludedCondition } from './includedCondition';
 import type { LockedByUser } from './lockedByUser';
 
 /**
- * Model for a configration response.
+ * Model for a configuration response.
  */
 export interface GetConfigurationResponse {
   id: string;

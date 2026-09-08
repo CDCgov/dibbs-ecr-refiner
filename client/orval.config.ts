@@ -17,10 +17,20 @@ export default defineConfig({
       httpClient: 'axios',
       override: {
         header: false,
+        operations: {
+          // We need to generate an infinite hook for `useGetCodes`
+          // to support the "Manage codes" feature
+          getCodes: {
+            query: {
+              useInfinite: true,
+              useInfiniteQueryParam: 'cursor',
+            },
+          },
+        },
       },
     },
     hooks: {
-      afterAllFilesWrite: 'prettier --write',
+      afterAllFilesWrite: 'node ./scripts/run-afterAllFilesWrite.cjs',
     },
   },
 });

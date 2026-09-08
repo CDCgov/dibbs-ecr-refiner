@@ -80,10 +80,12 @@ class TestConfigurations:
         assert response.json()["name"] == "Drowning and Submersion"
 
         # Assert that associated config creation event was logged
+        # as well as condition added event for condition code
+        # detail count and export
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == status.HTTP_200_OK
         audit_events = response.json()["audit_events"]
-        assert len(audit_events) == 1
+        assert len(audit_events) == 2
 
         creation_event = audit_events[0]
         assert creation_event is not None
@@ -98,7 +100,7 @@ class TestConfigurations:
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == status.HTTP_200_OK
         failure_audit_events = response.json()["audit_events"]
-        assert len(failure_audit_events) == 1
+        assert len(failure_audit_events) == 2
 
     async def test_newly_created_configurations_always_use_latest_tes_version(
         self,
@@ -208,18 +210,18 @@ class TestConfigurations:
             await get_condition_id(PRIMARY_CONDITION, default_tes_version)
         )
         assert str(new_code_set_1_id) in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
         assert str(new_code_set_2_id) in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
 
         # Check that old IDs are gone
         assert str(old_code_set_1_id) not in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
         assert str(old_code_set_2_id) not in [
-            uc["condition_id"] for uc in updated_config["code_sets"]
+            str(uc["condition_id"]) for uc in updated_config["code_sets"]
         ]
 
     async def test_code_set_association_fails_when_tes_version_mismatch(
@@ -422,7 +424,7 @@ class TestConfigurations:
         draft_id = response.json()["id"]
 
         response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-        response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
         url = f"/api/v1/configurations/{draft_id}/sections"
 
@@ -514,6 +516,33 @@ class TestConfigurations:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert emergency_outbreak_code in response.json()["detail"]
         assert "system-skipped" in response.json()["detail"]
+
+        # sections that can carry a trigger code cannot be removed
+        results_code = "30954-2"
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": results_code,
+                "include": False,
+                "narrative": "retain",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert results_code in response.json()["detail"]
+        assert "trigger code" in response.json()["detail"]
+
+        # ...but every other setting on that section is still configurable
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "refine",
+                "current_code": results_code,
+                "include": True,
+                "narrative": "reconstruct",
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
 
         # FastAPI rejects unknown narrative values via the Literal type
         response = await authed_client.patch(
@@ -972,3 +1001,288 @@ class TestConfigurations:
 
         # This is the previously activated version from the test above
         assert current_file_resp.json()["version"] is None
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+class TestConfigurationsExclusions:
+    async def test_code_exclusions_cannot_update_non_draft_configuration(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Configurations with a non-`draft` status cannot have their codes updated.
+        """
+        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        payload = {"condition_id": str(condition_id)}
+
+        # create and activate a configuration
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        config_id = resp.json()["id"]
+
+        resp = await authed_client.patch(f"/api/v1/configurations/{config_id}/activate")
+        assert resp.status_code == status.HTTP_200_OK
+
+        # get codes
+        resp = await authed_client.get(f"/api/v1/configurations/{config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+        excludable_codes = [c for c in codes if not c["is_trigger_code"]]
+        assert excludable_codes, "Expected at least one excludable code"
+
+        # attempting to exclude codes on an active config should fail
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
+        )
+        assert resp.status_code == status.HTTP_409_CONFLICT
+
+        # deactivate and ensure this works for `inactive` too
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/deactivate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
+        )
+        assert resp.status_code == status.HTTP_409_CONFLICT
+
+    async def test_clone_code_exclusions_copies_valid_exclusions(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Tests that a cloned configuration will copy the original config's
+        excluded codes. Trigger codes are excluded from the exclusion
+        operation and should always remain 'Included'.
+        """
+        # Create a draft
+        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        payload = {"condition_id": str(condition_id)}
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+
+        original_config_id = resp.json()["id"]
+
+        # get codes
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        assert all(code["status"] == "Included" for code in codes)
+
+        excludable_codes = [c for c in codes if not c["is_trigger_code"]]
+        trigger_codes = [c for c in codes if c["is_trigger_code"]]
+
+        # set all excludable codes as 'excluded'
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
+        )
+        print(resp.json())
+        assert resp.status_code == status.HTTP_200_OK
+
+        # refetch to confirm exclusions were applied
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        refetched = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(refetched[c["id"]]["status"] == "Excluded" for c in excludable_codes)
+        assert all(refetched[c["id"]]["status"] == "Included" for c in trigger_codes)
+
+        # activate the config
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create a new draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+
+        new_config_id = resp.json()["id"]
+
+        # get new draft's codes
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+
+        # check that clones were created
+        new_codes = {code["id"]: code for code in resp.json()["codes"]}
+        assert len(new_codes) == len(codes)
+        assert all(new_codes[c["id"]]["status"] == "Excluded" for c in excludable_codes)
+        assert all(new_codes[c["id"]]["status"] == "Included" for c in trigger_codes)
+
+    async def test_primary_condition_trigger_codes_cannot_be_excluded(
+        self, setup, authed_client, get_condition_id, associate_codeset
+    ):
+        """
+        Primary condition trigger codes cannot be excluded. Non-trigger codes
+        (including associated condition trigger codes, which appear as
+        regular codes from the API's perspective) can still be excluded.
+        """
+        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        payload = {"condition_id": str(condition_id)}
+
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        config_id = resp.json()["id"]
+
+        # associate a code set
+        anotia_id = await get_condition_id("Anotia")
+        await associate_codeset(config_id, anotia_id)
+
+        resp = await authed_client.get(f"/api/v1/configurations/{config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        # This should only flag Alpha-gal trigger codes. Trigger codes from
+        # Anotia are valid to exclude (Anotia isn't the primary condition,
+        # and it has no eICR trigger codes of its own besides).
+        primary_trigger_codes = [c for c in codes if c["is_trigger_code"]]
+        excludable_codes = [c for c in codes if not c["is_trigger_code"]]
+
+        assert primary_trigger_codes, "Expected at least one primary trigger code"
+        assert excludable_codes, "Expected at least one excludable code"
+
+        # attempting to exclude primary trigger codes should fail
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in primary_trigger_codes],
+                "code_ids_to_skip": [],
+            },
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+        # non-primary-trigger codes can be excluded
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        resp = await authed_client.get(f"/api/v1/configurations/{config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        refetched = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(refetched[c["id"]]["status"] == "Excluded" for c in excludable_codes)
+        assert all(
+            refetched[c["id"]]["status"] == "Included" for c in primary_trigger_codes
+        )
+
+    async def test_clone_code_exclusions_no_exclusions_on_source(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        If the source config has no exclusions, the clone starts fully included (no entries in table).
+        """
+        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        payload = {"condition_id": str(condition_id)}
+
+        # create and activate a draft with no exclusions
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        original_config_id = resp.json()["id"]
+
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create new draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        new_config_id = resp.json()["id"]
+
+        # expect all codes to be included (trigger and non-trigger alike)
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        new_codes = resp.json()["codes"]
+        assert all(code["status"] == "Included" for code in new_codes)
+
+    async def test_clone_code_exclusions_partial_exclusions(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        """
+        Only the excluded subset of codes is carried over to the cloned config.
+        Trigger codes are never excluded and should always remain 'Included'.
+        """
+        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        payload = {"condition_id": str(condition_id)}
+
+        # create a draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        original_config_id = resp.json()["id"]
+
+        # get codes and exclude only the first half of excludable codes
+        resp = await authed_client.get(
+            f"/api/v1/configurations/{original_config_id}/codes"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+
+        excludable_codes = [c for c in codes if not c["is_trigger_code"]]
+        trigger_codes = [c for c in codes if c["is_trigger_code"]]
+
+        half = len(excludable_codes) // 2
+        excluded_ids = {code["id"] for code in excludable_codes[:half]}
+        included_ids = {code["id"] for code in excludable_codes[half:]}
+
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{original_config_id}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": list(excluded_ids),
+                "code_ids_to_skip": [],
+            },
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # activate
+        resp = await authed_client.patch(
+            f"/api/v1/configurations/{original_config_id}/activate"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        # create the new cloned draft
+        resp = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert resp.status_code == status.HTTP_200_OK
+        new_config_id = resp.json()["id"]
+
+        # check that only the excluded subset was cloned and trigger codes are always included
+        resp = await authed_client.get(f"/api/v1/configurations/{new_config_id}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        new_codes = {code["id"]: code for code in resp.json()["codes"]}
+
+        assert all(new_codes[id]["status"] == "Excluded" for id in excluded_ids)
+        assert all(new_codes[id]["status"] == "Included" for id in included_ids)
+        assert all(new_codes[c["id"]]["status"] == "Included" for c in trigger_codes)
