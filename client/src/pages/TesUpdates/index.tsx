@@ -45,9 +45,9 @@ export function TesUpdates() {
         <>
           <div className="mb-4 flex justify-between py-4">
             <Title>TES Updates</Title>
-            {/*<Button onClick={() => setTesStage('action')}>*/}
-            {/*  Update configurations*/}
-            {/*</Button>*/}
+            <Button onClick={() => setTesStage('action')}>
+              Update configurations
+            </Button>
           </div>
 
           <div className="flex h-200">
