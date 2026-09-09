@@ -2,7 +2,7 @@ import React from 'react';
 import classNames from 'classnames';
 import { LAYOUT_MAX_WIDTH } from './LayoutContainer';
 
-interface AlertBreakoutContainerProps {
+interface BreakoutContainerProps {
   /** The content to be rendered inside the container */
   children: React.ReactNode;
   /** Tailwind background class for the outer breakout wrapper */
@@ -17,15 +17,15 @@ interface AlertBreakoutContainerProps {
 }
 
 /**
- * AlertBreakoutContainer renders a full-width breakout band for alerts and notifications.
+ * BreakoutContainer renders a full-width breakout band for alerts and notifications.
  * It ensures the background extends full-width while the content remains centered and constrained.
  */
-export function AlertBreakoutContainer({
+export function BreakoutContainer({
   children,
   background,
   maxWidth = LAYOUT_MAX_WIDTH,
   className,
-}: AlertBreakoutContainerProps) {
+}: BreakoutContainerProps) {
   return (
     <div className={classNames('banner-breakout', background)}>
       <div
