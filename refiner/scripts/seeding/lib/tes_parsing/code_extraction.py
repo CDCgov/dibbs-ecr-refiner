@@ -222,7 +222,10 @@ class TesParsingStrategyVersion6(TesParsingStrategy):
 
 class TesParsingStrategyVersion7(TesParsingStrategy):
     """
-    Strategy for parsing TES files prior to version 6.
+    Strategy for parsing TES files after version 7.
+
+    Codes are parsed from the expansion.contains[] compared to the old schema that
+    had that data in a different place.
     """
 
     def parse_vs_for_codes(self, vs: dict, return_as_vs: bool = False):
