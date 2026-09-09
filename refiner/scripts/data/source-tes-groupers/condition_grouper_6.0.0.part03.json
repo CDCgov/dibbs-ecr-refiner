@@ -186744,11 +186744,6 @@
           },
           {
             "valueSet": [
-              "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/6dd8083b-8832-40b3-b7b2-96e77081669a|6.0.0"
-            ]
-          },
-          {
-            "valueSet": [
               "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/rs-grouper-27836007|20260327"
             ]
           },
