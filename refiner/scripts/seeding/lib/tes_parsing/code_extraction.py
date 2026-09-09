@@ -333,6 +333,9 @@ class CodeExtractionContext:
         parent: dict,
         all_vs_map: dict[tuple[str, str], dict],
     ) -> list[dict]:
+        """
+        Passthrough function that determines the extraction parsing strategy and runs the get for child RSGs.
+        """
         self.determine_parsing_strategy(parent)
         return self._parsing_strategy.get_child_rsg_valuesets(
             parent=parent, all_vs_map=all_vs_map
@@ -343,6 +346,9 @@ class CodeExtractionContext:
         parent: dict,
         all_vs_map: dict[tuple[str, str], dict],
     ) -> list[VsDict]:
+        """
+        Passthrough function that determines the extraction parsing strategy and runs the get for sibling context ACGs.
+        """
         self.determine_parsing_strategy(parent)
         return self._parsing_strategy.get_sibling_context_valuesets(
             parent=parent, all_vs_map=all_vs_map
