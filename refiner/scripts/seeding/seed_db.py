@@ -4,7 +4,7 @@ import time
 import psycopg
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
-from lib import (
+from lib.index import (
     get_db_connection,
 )
 from load_static_data import load_static_data
