@@ -282,11 +282,6 @@ class CodeExtractionContext:
         """Parsing strategy for code context."""
         return self._parsing_strategy
 
-    @property
-    def all_vs_map(self) -> dict:
-        """Parsing strategy for code context."""
-        return self.all_vs_map
-
     @parsing_strategy.setter
     def parsing_strategy(self, strategy: TesParsingStrategy) -> None:
         self._parsing_strategy = strategy
