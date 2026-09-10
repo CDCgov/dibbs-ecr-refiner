@@ -874,7 +874,7 @@ async def create_drafts_from_active_configurations_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             async with conn.transaction():
                 # Create drafts.
                 created_ids = []
