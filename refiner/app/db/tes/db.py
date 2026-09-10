@@ -1,8 +1,10 @@
 from uuid import UUID
 
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import InputValidationError, ValidationError
+from app.db.events.db import insert_event_db
+from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection
 from app.db.tes.model import (
     ConditionDiffExportData,
@@ -627,6 +629,7 @@ async def apply_latest_tes_to_existing_drafts_db(
     db: AsyncDatabaseConnection,
     configuration_ids: list[UUID],
     jurisdiction_id: str,
+    user_id: UUID,
 ) -> list[UUID]:
     """
     Update selected draft configurations to use the latest TES conditions.
@@ -639,6 +642,7 @@ async def apply_latest_tes_to_existing_drafts_db(
         db: The database connection pool.
         configuration_ids: Draft configuration IDs selected by the user.
         jurisdiction_id: The jurisdiction belonging to the current user.
+        user_id: The UUID of the current user.
 
     Returns:
         IDs of configurations that were updated.
@@ -666,7 +670,7 @@ async def apply_latest_tes_to_existing_drafts_db(
     )
 
     async with db.get_connection() as conn, conn.transaction():
-        async with conn.cursor() as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             # Replace each old condition link with the corresponding
             # condition from the latest TES release.
             #
@@ -724,6 +728,19 @@ async def apply_latest_tes_to_existing_drafts_db(
                         "configuration_ids": list(updated_id_set),
                     },
                 )
+
+                # Log TES update events for successfully updated configurations
+                for config_id in updated_id_set:
+                    await insert_event_db(
+                        event=EventInput(
+                            jurisdiction_id=jurisdiction_id,
+                            user_id=user_id,
+                            configuration_id=config_id,
+                            event_type="tes_update_existing_draft",
+                            action_text="Applied TES updates",
+                        ),
+                        cursor=cur,
+                    )
 
     # Keep the response in the same order as the request.
     return [
@@ -857,46 +874,56 @@ async def create_drafts_from_active_configurations_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.transaction():
-            # Create drafts.
-            created_ids = []
-            for row in active_configs:
-                config_id, _ = row
+        async with conn.cursor() as cur:
+            async with conn.transaction():
+                # Create drafts.
+                created_ids = []
+                for row in active_configs:
+                    config_id, _ = row
 
-                config_to_clone = await get_configuration_by_id_db(
-                    id=config_id, jurisdiction_id=jurisdiction_id, db=db
-                )
-
-                from app.db.conditions.db import get_primary_condition_db
-
-                primary_condition = await get_primary_condition_db(
-                    configuration_id=config_id, db=db
-                )
-
-                if not primary_condition:
-                    raise ValueError(
-                        f"Primary condition not found for configuration {config_id}"
+                    config_to_clone = await get_configuration_by_id_db(
+                        id=config_id, jurisdiction_id=jurisdiction_id, db=db
                     )
 
-                # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
-                from app.db.configurations.db import insert_configuration_db
+                    from app.db.conditions.db import get_primary_condition_db
 
-                new_config = await insert_configuration_db(
-                    condition=primary_condition,
-                    user_id=user_id,
-                    jurisdiction_id=jurisdiction_id,
-                    db=db,
-                    config_to_clone=config_to_clone,
-                )
-
-                if not new_config:
-                    raise ValueError(
-                        f"Failed to create draft for configuration {config_id}"
+                    primary_condition = await get_primary_condition_db(
+                        configuration_id=config_id, db=db
                     )
 
-                created_ids.append(new_config.id)
+                    if not primary_condition:
+                        raise ValueError(
+                            f"Primary condition not found for configuration {config_id}"
+                        )
 
-                # NOTE: In the future, this could be enhanced to allow partial success
-                # by returning a list of successfully created drafts and a list of errors.
+                    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+                    from app.db.configurations.db import insert_configuration_db
+
+                    new_config = await insert_configuration_db(
+                        condition=primary_condition,
+                        user_id=user_id,
+                        jurisdiction_id=jurisdiction_id,
+                        db=db,
+                        config_to_clone=config_to_clone,
+                    )
+
+                    if not new_config:
+                        raise ValueError(
+                            f"Failed to create draft for configuration {config_id}"
+                        )
+
+                    created_ids.append(new_config.id)
+
+                    # Log TES update event for the new draft configuration
+                    await insert_event_db(
+                        event=EventInput(
+                            jurisdiction_id=jurisdiction_id,
+                            user_id=user_id,
+                            configuration_id=new_config.id,
+                            event_type="tes_create_draft_from_active",
+                            action_text="Created draft from active configuration with TES updates",
+                        ),
+                        cursor=cur,
+                    )
 
     return created_ids

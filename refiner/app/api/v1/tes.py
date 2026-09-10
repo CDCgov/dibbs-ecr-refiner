@@ -236,6 +236,7 @@ async def apply_tes_updates_to_existing_drafts(
             db=db,
             configuration_ids=request.configuration_ids,
             jurisdiction_id=user.jurisdiction_id,
+            user_id=user.id,
         )
     except ValueError as error:
         raise HTTPException(
