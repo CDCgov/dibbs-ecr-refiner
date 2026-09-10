@@ -73,4 +73,36 @@ test.describe('TES updates page', () => {
     ).toBeVisible();
     await expect(createTable.getByText('Cysticercosis')).toBeHidden();
   });
+
+  test('Applying TES updates for an active configuration logs an activity log entry', async ({
+    tesUpdatesPage,
+    activityLogPage,
+    page,
+  }) => {
+    await makeOldTesVersionConfiguration('Cysticercosis', 'active');
+
+    await tesUpdatesPage.goToUpdateActionsPage();
+
+    await tesUpdatesPage.selectActiveConfigurationForUpdate('Cysticercosis');
+    await tesUpdatesPage.applyUpdates();
+    await tesUpdatesPage.confirmApplyUpdates();
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Configurations have been updated',
+        exact: true,
+      })
+    ).toBeVisible();
+
+    await activityLogPage.goto();
+
+    const rows = await activityLogPage.getTableRows();
+    expect(
+      rows.some((r) =>
+        r.action.includes(
+          'Created draft from active configuration with TES updates'
+        )
+      )
+    ).toBe(true);
+  });
 });
