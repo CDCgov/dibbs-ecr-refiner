@@ -9,17 +9,16 @@ from uuid import UUID, uuid4
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
 from lib.index import (
-    CODE_SYSTEM_DATA,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
-    categorize_codes_by_system_oid,
     get_db_connection,
     load_valuesets_from_all_files,
 )
-from lib.models import SNOMED_OID, CodeRow, FhirCodeInfo
+from lib.models import CODE_SYSTEM_DATA, SNOMED_OID, CodeRow, FhirCodeInfo
 from lib.tes_parsing.index import (
     ConditionData,
+    categorize_codes_by_system_oid,
     code_extractor,
     is_condition_grouper,
     load_trigger_codes_by_snomed,

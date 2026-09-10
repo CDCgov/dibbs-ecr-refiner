@@ -6,15 +6,12 @@ from pathlib import Path
 from typing import Any, TypedDict
 from uuid import UUID
 
-import psycopg
 from config import TES_DATA_DIR, TRIGGER_FILE_PREFIX, logger
 
 from ..models import (
     CODE_SYSTEM_DATA,
     COVERAGE_LEVEL_URL,
-    SYSTEM_MAP,
     AcgCompleteness,
-    ConditionCodePayload,
     ContextGrouperInfo,
     CoverageLevel,
     FhirCodeInfo,
@@ -325,79 +322,6 @@ class CodeRow(TypedDict):
     valueset_url: str
 
 
-def get_db_connection(db_url: str, db_password: str) -> psycopg.Connection:
-    """
-    Establishes and returns a connection to the PostgreSQL database.
-    """
-
-    try:
-        return psycopg.connect(db_url, password=db_password)
-    except psycopg.OperationalError as error:
-        logger.error(f"❌ Database connection failed: {error}")
-        raise
-
-
-def extract_codes_from_compose(vs: dict) -> set[FhirCodeInfo]:
-    """
-    Extracts all (system, code, display) tuples from a ValueSet's compose section.
-    """
-
-    codes: set[FhirCodeInfo] = set()
-    compose = vs.get("compose")
-
-    if not compose:
-        return codes
-
-    source_name = parse_valueset_source_name(vs)
-    source_url = vs.get("url")
-    if not source_url:
-        return codes
-
-    for inc in compose.get("include", []):
-        system = inc.get("system")
-        if not system:
-            continue
-
-        for concept in inc.get("concept", []):
-            code = concept.get("code")
-            if code:
-                codes.add(
-                    FhirCodeInfo(
-                        system_url=system,
-                        code=code,
-                        display=concept.get("display"),
-                        source_url=source_url,
-                        source_name=source_name,
-                    )
-                )
-
-    return codes
-
-
-def categorize_codes_by_system(
-    all_codes: set[FhirCodeInfo],
-) -> ConditionCodePayload:
-    """
-    Categorizes a set of codes into a dictionary based on their system.
-    """
-
-    # the key is a "system_name", and the value is an empty list that will hold CodePayloads
-    result: ConditionCodePayload = {
-        system_name: [] for system_name in SYSTEM_MAP.values()
-    }
-
-    for info in all_codes:
-        if system_key := SYSTEM_MAP.get(info.system_url):
-            result[system_key].append(
-                {
-                    "code": info.code,
-                    "display": info.display,
-                }
-            )
-
-    return result
-
-
 def categorize_codes_by_system_oid(
     all_codes: set[FhirCodeInfo],
 ) -> SystemSortedFhirInfo:
@@ -414,76 +338,6 @@ def categorize_codes_by_system_oid(
         if cur_code_system_oid := url_to_oid_map.get(info.system_url):
             result[cur_code_system_oid].append(info)
     return result
-
-
-def collect_files_to_parse(seed_all_tes_data: bool, versions_to_keep=2) -> list[Path]:
-    """
-    Function to collect the relevant files to seed, filtering out only the previous two TES releases to speed up local dev.
-
-    Excludes eicr_triggering* files: they aren't part of the condition
-    grouper's compose reference graph (no CG ever points to one), so they're
-    resolved separately by load_trigger_codes_by_snomed. They're also
-    unversioned, which this function's "top N recent releases" selection has
-    no way to reason about.
-    """
-
-    json_files = [
-        f
-        for f in TES_DATA_DIR.glob("*.json")
-        if f.name != "manifest.json" and not f.name.startswith(TRIGGER_FILE_PREFIX)
-    ]
-    if seed_all_tes_data:
-        return json_files
-
-    # match on either TES semver version or the datetime string
-    version_regex = r"\d+\.\d+\.\d+"
-    datetime_regex = r"\d{8}"
-    combined_regex = f"(?:{version_regex})|(?:{datetime_regex})"
-
-    def get_version(file: Path, regex: str) -> str | None:
-        regex_to_match = re.compile(regex)
-        match = regex_to_match.search(file.name)
-        return match.group(0) if match else None
-
-    unique_versions_semver = {
-        ver for f in json_files if (ver := get_version(f, version_regex))
-    }
-    unique_versions_datetime = {
-        ver for f in json_files if (ver := get_version(f, datetime_regex))
-    }
-    top_versions = set(
-        sorted(unique_versions_semver, reverse=True)[0:versions_to_keep]
-    ) | set(sorted(unique_versions_datetime, reverse=True)[0:versions_to_keep])
-
-    return [f for f in json_files if get_version(f, combined_regex) in top_versions]
-
-
-def load_valuesets_from_all_files(
-    seed_all_tes_data=False,
-) -> dict[tuple[VsCanonicalUrl, VsVersion], VsDict]:
-    """
-    Loads all ValueSet resources from JSON files in the TES data directory.
-    """
-
-    vs_map: dict[tuple[str, str], dict] = {}
-    json_files = collect_files_to_parse(seed_all_tes_data=seed_all_tes_data)
-
-    for idx, file_path in enumerate(json_files, start=1):
-        logger.info(f"📝 Loading TES file {idx} / {len(json_files)}: {file_path.name}")
-
-        with open(file_path, encoding="utf-8") as f:
-            data = json.load(f)
-
-        for vs_dict in data.get("valuesets", []):
-            url = vs_dict.get("url")
-            version = vs_dict.get("version")
-            if url and version:
-                vs_map[(url, version)] = vs_dict
-            else:
-                logger.warning(f"Failed to parse ValueSet {url}|{version}")
-
-    logger.info(f"📊 Loaded {len(vs_map)} unique ValueSets from all TES files.")
-    return vs_map
 
 
 def parse_child_rsg_details_from_use_context(use_context: list[dict[str, dict]]) -> str:

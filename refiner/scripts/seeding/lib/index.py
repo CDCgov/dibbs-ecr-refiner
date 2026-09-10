@@ -6,14 +6,9 @@ from config import TES_DATA_DIR, logger
 from lib.tes_parsing.code_extraction import get_tes_version
 
 from .models import (
-    CODE_SYSTEM_DATA,
     DATETIME_VERSION_REGEX,
     SEMVER_VERSION_REGEX,
-    SYSTEM_MAP,
     VERSION_REGEX,
-    ConditionCodePayload,
-    FhirCodeInfo,
-    SystemSortedFhirInfo,
     VsCanonicalUrl,
     VsDict,
     VsVersion,
@@ -30,48 +25,6 @@ def get_db_connection(db_url: str, db_password: str) -> psycopg.Connection:
     except psycopg.OperationalError as error:
         logger.error(f"❌ Database connection failed: {error}")
         raise
-
-
-def categorize_codes_by_system(
-    all_codes: set[FhirCodeInfo],
-) -> ConditionCodePayload:
-    """
-    Categorizes a set of codes into a dictionary based on their system.
-    """
-
-    # the key is a "system_name", and the value is an empty list that will hold CodePayloads
-    result: ConditionCodePayload = {
-        system_name: [] for system_name in SYSTEM_MAP.values()
-    }
-
-    for info in all_codes:
-        if system_key := SYSTEM_MAP.get(info.system_url):
-            result[system_key].append(
-                {
-                    "code": info.code,
-                    "display": info.display,
-                }
-            )
-
-    return result
-
-
-def categorize_codes_by_system_oid(
-    all_codes: set[FhirCodeInfo],
-) -> SystemSortedFhirInfo:
-    """
-    Categorizes a set of codes into a dictionary based on their system.
-    """
-    url_to_oid_map = {c["url"]: c["oid"] for c in CODE_SYSTEM_DATA.values()}
-    # the key is a "system_name", and the value is an empty list that will hold CodePayloads
-    result: SystemSortedFhirInfo = {
-        system_oid: [] for system_oid in url_to_oid_map.values()
-    }
-
-    for info in all_codes:
-        if cur_code_system_oid := url_to_oid_map.get(info.system_url):
-            result[cur_code_system_oid].append(info)
-    return result
 
 
 def collect_files_to_parse(seed_all_tes_data: bool, versions_to_keep=2) -> list[Path]:
