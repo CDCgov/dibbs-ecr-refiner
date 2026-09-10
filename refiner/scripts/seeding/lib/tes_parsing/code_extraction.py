@@ -13,8 +13,9 @@ VERSION_SIX_CUTOFF_DATETIME = "20260327"
 # pattern to extract a category slug from ACG names like:
 #   "Pertussis Additional Context Medication Codes"
 #   "Syphilis Additional Context Clinical Lab Result Codes"
+#   "Influenza Context Clinical Lab Result Codes"  (TES drops "Additional")
 _ACG_CATEGORY_PATTERN = re.compile(
-    r"Additional Context (.+?)(?:\s+Codes?)?\s*$", re.IGNORECASE
+    r"(?:Additional )?Context (.+?)(?:\s+Codes?)?\s*$", re.IGNORECASE
 )
 
 
@@ -61,12 +62,20 @@ def is_reporting_spec_grouper(vs: dict) -> bool:
 
 def is_additional_context_grouper(vs: dict) -> bool:
     """
-    Checks if a ValueSet is for 'Additional Context' by its name or title.
-    """
+    Checks if a ValueSet is an 'Additional Context Grouper' by its useContext.
 
-    name = (vs.get("name") or "").lower()
-    title = (vs.get("title") or "").lower()
-    return "additional" in name or "additional" in title
+    TES tags every grouper with a `grouper-type` useContext coding. That coding
+    is exact across all releases; the title is not -- 6.0.0 and 7.0.0 both ship
+    'Influenza Context Clinical Lab Result Codes', which drops the 'Additional'
+    a substring match depends on.
+    """
+    for context in vs.get("useContext", []):
+        if context.get("code", {}).get("code") != "grouper-type":
+            continue
+        for coding in context.get("valueCodeableConcept", {}).get("coding", []):
+            if coding.get("code") == "additional-context-grouper":
+                return True
+    return False
 
 
 def get_tes_version(version_string: str | None, regex: str) -> str | None:
@@ -281,11 +290,6 @@ class CodeExtractionContext:
     def parsing_strategy(self) -> TesParsingStrategy:
         """Parsing strategy for code context."""
         return self._parsing_strategy
-
-    @property
-    def all_vs_map(self) -> dict:
-        """Parsing strategy for code context."""
-        return self.all_vs_map
 
     @parsing_strategy.setter
     def parsing_strategy(self, strategy: TesParsingStrategy) -> None:

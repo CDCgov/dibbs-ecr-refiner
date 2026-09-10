@@ -41,6 +41,8 @@ _CATEGORY_SLUG_MAP = {
     "diagnosis": "diagnosis",
     "clinical lab result": "clinical_lab_result",
     "clinical lab results": "clinical_lab_result",
+    "lab result": "clinical_lab_result",
+    "lab results": "clinical_lab_result",
 }
 
 
