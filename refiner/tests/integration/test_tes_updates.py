@@ -13,8 +13,9 @@ class TestTesUpdates:
         activate_config,
         db_pool,
         test_user_id,
+        previous_tes_version,
     ):
-        condition_id = await get_condition_id("Acanthamoeba", "5.0.0")
+        condition_id = await get_condition_id("Acanthamoeba", previous_tes_version)
         config = await create_config(condition_id)
         await activate_config(config["id"])
 
