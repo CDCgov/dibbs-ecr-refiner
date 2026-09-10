@@ -11,5 +11,6 @@ export interface AuditEvent {
   action_text: string;
   code_count: number | null;
   created_at: string;
+  event_type: string;
   has_custom_code_upload_events: boolean;
 }

@@ -61,7 +61,7 @@ export async function makeOldTesVersionConfiguration(
         RETURNING id, name
     )
     INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
-    SELECT ic.id, cti.condition_id, false
+    SELECT ic.id, cti.condition_id, true
     FROM inserted_config ic
     JOIN condition_to_insert cti ON ic.name = cti.condition_name;
   `

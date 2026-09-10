@@ -16,6 +16,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -55,7 +69,9 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'create_custom_section',
     'edit_custom_section',
     'delete_custom_section',
-    'bulk_delete_custom_code'
+    'bulk_delete_custom_code',
+    'tes_update_existing_draft',
+    'tes_create_draft_from_active'
 );
 
 
@@ -1060,4 +1076,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260826143830'),
     ('20260901143317'),
     ('20260902230457'),
-    ('20260903182620');
+    ('20260903182620'),
+    ('20260909225054');

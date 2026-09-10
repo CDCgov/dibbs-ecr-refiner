@@ -35,4 +35,18 @@ export class TesUpdatesPage {
 
     expect(this.page.getByText(`Update to latest release`)).toBeDefined();
   }
+
+  async selectActiveConfigurationForUpdate(conditionName: string) {
+    await this.page
+      .getByRole('checkbox', { name: `Select ${conditionName}` })
+      .check();
+  }
+
+  async applyUpdates() {
+    await this.page.getByRole('button', { name: 'Apply updates' }).click();
+  }
+
+  async confirmApplyUpdates() {
+    await this.page.getByRole('button', { name: 'Yes, create draft' }).click();
+  }
 }
