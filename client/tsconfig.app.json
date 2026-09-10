@@ -13,6 +13,8 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
+    "emitDeclarationOnly": true,
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "jsx": "react-jsx",
