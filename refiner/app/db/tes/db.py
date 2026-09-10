@@ -712,7 +712,7 @@ async def apply_latest_tes_to_existing_drafts_db(
                 },
             )
 
-            updated_id_set = {row[0] for row in await cur.fetchall()}
+            updated_id_set = {row["configuration_id"] for row in await cur.fetchall()}
 
             # Updating configurations_conditions does not fire the
             # configurations updated_at trigger, so explicitly touch the

@@ -87,7 +87,8 @@ export function ActivityLogEntries({
                       />
                     ) : null}
 
-                    {(r.event_type === 'tes_update_existing_draft' || r.event_type === 'tes_create_draft_from_active') ? (
+                    {r.event_type === 'tes_update_existing_draft' ||
+                    r.event_type === 'tes_create_draft_from_active' ? (
                       <Button
                         className="p-0!"
                         variant="tertiary"
