@@ -62,7 +62,8 @@ async def get_pruned_configuration_codes_db(
             JOIN systems s ON cc_code.system_id = s.id
 
             WHERE cc.configuration_id = %(configuration_id)s
-        ) combined_codes;
+        ) combined_codes
+        ORDER BY code, system_id, display;
     """
 
     async with (
