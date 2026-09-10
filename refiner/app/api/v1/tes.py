@@ -1,15 +1,21 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import BaseModel, Field
 
+from app.api.auth.middleware import get_logged_in_user
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.tes.db import (
+    apply_latest_tes_to_existing_drafts_db,
+    create_drafts_from_active_configurations_db,
     get_configurations_set_to_tes_version,
     get_loaded_tes_versions_db,
     get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
 from app.db.tes.model import TesConfigToUpdate, TesUpdate
+from app.db.users.model import DbUser
 from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
 
 router = APIRouter(prefix="/tes")
@@ -172,21 +178,123 @@ class TesConfigsToUpdateResponse:
     operation_id="getConfigurationsToUpdate",
 )
 async def get_configurations_to_update(
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> TesConfigsToUpdateResponse:
     """
-    Collects information needed to render the TES configs that need updating for a given TES release.
-
-    Args:
-        db (AsyncDatabaseConnection) : The db connection.
-
-    Returns:
-        TesConfigsToUpdateResponse: information about TES configs to update,
-        with a list of existing drafts and drafts to create
-
+    Return outdated drafts and active configurations for the current jurisdiction.
     """
-    configs_to_update = await get_configurations_set_to_tes_version(db=db)
+    configs_to_update = await get_configurations_set_to_tes_version(
+        db=db,
+        jurisdiction_id=user.jurisdiction_id,
+    )
+
     return TesConfigsToUpdateResponse(
         existing_drafts=configs_to_update.existing_drafts,
         drafts_to_create=configs_to_update.drafts_to_create,
+    )
+
+
+class ApplyTesUpdatesToDraftsRequest(BaseModel):
+    """
+    Draft configurations selected for a TES update.
+    """
+
+    configuration_ids: list[UUID] = Field(min_length=1)
+
+
+@dataclass
+class ApplyTesUpdatesToDraftsResponse:
+    """
+    Result of applying the latest TES release to existing drafts.
+    """
+
+    updated_count: int
+    updated_configuration_ids: list[UUID]
+
+
+@router.patch(
+    "/configurations/drafts",
+    response_model=ApplyTesUpdatesToDraftsResponse,
+    tags=["tes"],
+    operation_id="applyTesUpdatesToExistingDrafts",
+)
+async def apply_tes_updates_to_existing_drafts(
+    request: ApplyTesUpdatesToDraftsRequest,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> ApplyTesUpdatesToDraftsResponse:
+    """
+    Apply the latest TES release to selected existing drafts.
+
+    Active configurations are not handled by this endpoint. The separate
+    create-draft workflow handles those configurations.
+    """
+
+    try:
+        updated_ids = await apply_latest_tes_to_existing_drafts_db(
+            db=db,
+            configuration_ids=request.configuration_ids,
+            jurisdiction_id=user.jurisdiction_id,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return ApplyTesUpdatesToDraftsResponse(
+        updated_count=len(updated_ids),
+        updated_configuration_ids=updated_ids,
+    )
+
+
+class CreateDraftsFromActiveConfigsRequest(BaseModel):
+    """Active configurations selected for creating TES-updated drafts."""
+
+    configuration_ids: list[UUID] = Field(min_length=1)
+
+
+@dataclass
+class CreateDraftsFromActiveConfigsResponse:
+    """Result of creating drafts from active configurations."""
+
+    created_count: int
+    created_configuration_ids: list[UUID]
+
+
+@router.post(
+    "/configurations/drafts-from-active",
+    response_model=CreateDraftsFromActiveConfigsResponse,
+    tags=["tes"],
+    operation_id="createDraftsFromActiveConfigurations",
+)
+async def create_drafts_from_active_configurations(
+    request: CreateDraftsFromActiveConfigsRequest,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> CreateDraftsFromActiveConfigsResponse:
+    """
+    Create new draft configurations from selected active configurations.
+
+    Each new draft uses the latest TES release and inherits all settings
+    (custom codes, section processing, code exclusions) from the active config.
+    Active configurations remain unchanged until new drafts are activated.
+    """
+    try:
+        created_ids = await create_drafts_from_active_configurations_db(
+            db=db,
+            configuration_ids=request.configuration_ids,
+            jurisdiction_id=user.jurisdiction_id,
+            user_id=user.id,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return CreateDraftsFromActiveConfigsResponse(
+        created_count=len(created_ids),
+        created_configuration_ids=created_ids,
     )

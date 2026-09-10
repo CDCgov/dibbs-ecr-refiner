@@ -1,7 +1,7 @@
 import { Button } from '@components/Button';
 import { CloseIcon } from '@components/Icons/CloseIcon';
 import { InfoIcon } from '@components/Icons/InfoIcon';
-import { AlertBreakoutContainer, LAYOUT_MAX_WIDTH } from '@components/Layout';
+import { BreakoutContainer, LAYOUT_MAX_WIDTH } from '@components/Layout';
 
 interface NotificationBannerProps {
   message: string;
@@ -14,7 +14,7 @@ export function NotificationBanner({
   children,
 }: NotificationBannerProps) {
   return (
-    <AlertBreakoutContainer
+    <BreakoutContainer
       background="bg-blue-100 drop-shadow-nav"
       maxWidth={LAYOUT_MAX_WIDTH}
       className="py-3"
@@ -39,6 +39,6 @@ export function NotificationBanner({
           <span className="sr-only">Dismiss notification for {message}</span>
         </Button>
       </div>
-    </AlertBreakoutContainer>
+    </BreakoutContainer>
   );
 }
