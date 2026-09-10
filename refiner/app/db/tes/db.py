@@ -820,10 +820,11 @@ async def _raise_if_drafts_already_exist(
         ValidationError: If a draft configuration already exists for the
             condition associated with a configuration.
     """
+    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+    from app.db.configurations.db import is_config_valid_to_insert_db
+
     for row in active_configs:
         config_id, canonical_url = row
-        # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
-        from app.db.configurations.db import is_config_valid_to_insert_db
 
         if not await is_config_valid_to_insert_db(
             condition_canonical_url=canonical_url,
@@ -859,7 +860,11 @@ async def create_drafts_from_active_configurations_db(
             does not belong to the jurisdiction, or a draft already exists
             for the condition.
     """
-    from app.db.configurations.db import get_configuration_by_id_db
+    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
+    from app.db.configurations.db import (
+        get_configuration_by_id_db,
+        insert_configuration_db,
+    )
 
     requested_ids = list(dict.fromkeys(configuration_ids))
 
@@ -895,9 +900,6 @@ async def create_drafts_from_active_configurations_db(
                         raise ValueError(
                             f"Primary condition not found for configuration {config_id}"
                         )
-
-                    # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
-                    from app.db.configurations.db import insert_configuration_db
 
                     new_config = await insert_configuration_db(
                         condition=primary_condition,
