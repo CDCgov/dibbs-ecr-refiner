@@ -3,8 +3,8 @@ import { Menu, MenuButton, MenuItem } from '@headlessui/react';
 import { BaseMenuItems } from '@components/Dropdown';
 import {
   CodeResponse,
-  CodeResponseStatus,
   CodesLimitResponseValue,
+  ConfigurationCodeStatusLabel,
 } from '../../../api/schemas';
 import { DeleteIcon } from './DeleteIcon';
 import { useToast } from '../../../hooks/useToast';
@@ -84,7 +84,7 @@ export function ControlPanel({
     .map((c) => c.id)
     .filter((id) => !selectedCodeIds.has(id));
 
-  const updateSelectedCodesStatus = (status: CodeResponseStatus) => {
+  const updateSelectedCodesStatus = (status: ConfigurationCodeStatusLabel) => {
     updateStatusWithinCursor(
       {
         configurationId,
