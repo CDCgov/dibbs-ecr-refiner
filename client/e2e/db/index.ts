@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { PREVIOUS_TES_VERSION } from '../constants';
 
 /**
  * db is not a fixture so that it's not spun up and torn down on a per-test basis.
@@ -47,7 +48,7 @@ export async function makeOldTesVersionConfiguration(
         SELECT c.display_name AS condition_name, c.id AS condition_id
         FROM conditions c
         LEFT JOIN tes t ON c.tes_id = t.id
-        WHERE c.display_name = '${conditionName}' AND t.version = '5.0.0'
+        WHERE c.display_name = '${conditionName}' AND t.version = '${PREVIOUS_TES_VERSION}'
     ),
     inserted_config AS (
         INSERT INTO configurations (version, jurisdiction_id, status, name, created_by)
