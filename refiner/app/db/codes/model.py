@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from app.db.configurations.model import ConfigurationCodeStatus
+
 
 @dataclass(frozen=True)
 class CodedConcept:
@@ -20,3 +22,12 @@ class DbCode(CodedConcept):
 
     system_id: UUID
     system_name: str
+
+
+@dataclass(frozen=True)
+class ConfigurationCode(DbCode):
+    """
+    Model for all coded information in a configuration, including status.
+    """
+
+    status: ConfigurationCodeStatus
