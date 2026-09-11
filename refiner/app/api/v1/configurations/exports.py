@@ -156,7 +156,7 @@ async def _build_config_csv(
 
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)
-        writer.writerow(["Code System", "Code", "Display Name", "Status", "Source(s)"])
+        writer.writerow(["Code System", "Code", "Status", "Display Name", "Source(s)"])
         cursor: str | None = None
 
         while True:
@@ -176,8 +176,8 @@ async def _build_config_csv(
                     [
                         code.system_name,
                         code.code,
-                        code.description,
                         code.status,
+                        code.description,
                         ", ".join(code.source),
                     ]
                 )

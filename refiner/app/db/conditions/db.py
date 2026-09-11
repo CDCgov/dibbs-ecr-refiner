@@ -249,8 +249,7 @@ async def get_condition_codes_by_condition_id_db(
               codes.display,
               codes.code,
               codes.system_id,
-              systems.display_name as system_name,
-              as status
+              systems.display_name as system_name
             FROM conditions c
             JOIN conditions_codes_temp cc ON cc.condition_id = c.id
             JOIN codes ON codes.id = cc.code_id
