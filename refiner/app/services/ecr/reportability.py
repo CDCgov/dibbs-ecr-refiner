@@ -30,17 +30,17 @@ def get_reportable_conditions_by_jurisdiction(
     Traverse the RR11 Coded Information Organizer in a Reportability Response (RR) CDA document to extract all SNOMED-coded reportable conditions, grouped by jurisdiction/routing agency.
 
     Steps performed:
-        1. Locate the single RR11 Coded Information Organizer within the Summary Section
-           (LOINC code 55112-7). This organizer contains the context for routing and conditions.
-        2. Prepare a mapping from jurisdiction code (RR7 Routing Entity extension) to a dictionary
-           of unique SNOMED-coded reportable conditions.
-        3. For each SNOMED-coded condition observation (templateId 2.16.840.1.113883.10.20.15.2.3.12):
-            A. Extract the SNOMED code and display name from its <value> element.
-            B. For each entryRelationship/component/organizer beneath the condition:
-                i. Identify RR7 Routing Entity participantRole and extract its jurisdiction code (extension attribute).
-                ii. Confirm this context contains a reportability determination (RR1 observation with value RRVS1).
-                iii. If reportable, associate the SNOMED code with the jurisdiction in the mapping, deduplicating by code.
-        4. Build and return a list of JurisdictionReportableConditions instances, each containing the jurisdiction code and its unique list of reportable conditions.
+    1. Locate the single RR11 Coded Information Organizer within the Summary Section
+       (LOINC code 55112-7). This organizer contains the context for routing and conditions.
+    2. Prepare a mapping from jurisdiction code (RR7 Routing Entity extension) to a dictionary
+       of unique SNOMED-coded reportable conditions.
+    3. For each SNOMED-coded condition observation (templateId 2.16.840.1.113883.10.20.15.2.3.12):
+        1. Extract the SNOMED code and display name from its <value> element.
+        2. For each entryRelationship/component/organizer beneath the condition:
+            1. Identify RR7 Routing Entity participantRole and extract its jurisdiction code (extension attribute).
+            2. Confirm this context contains a reportability determination (RR1 observation with value RRVS1).
+            3. If reportable, associate the SNOMED code with the jurisdiction in the mapping, deduplicating by code.
+    4. Build and return a list of JurisdictionReportableConditions instances, each containing the jurisdiction code and its unique list of reportable conditions.
 
     Args:
         root (_Element): Parsed lxml root of the RR CDA document.

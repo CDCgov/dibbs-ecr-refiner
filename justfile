@@ -40,6 +40,10 @@ mod cd './.justscripts/just/cloud.just'
 [group: 'alias']
 mod d './.justscripts/just/dev.just'
 
+# Run `docs` commands
+[group: 'sub-command']
+mod docs './.justscripts/just/docs.just'
+
 # Run docker build commands
 [group: 'sub-command']
 mod docker './.justscripts/just/docker.just'
