@@ -267,14 +267,12 @@ class TestConfigurationExportCodesCsv:
         excludable_code_values = [c["code"] for c in excludable_codes]
         assert response.status_code == status.HTTP_200_OK
         content = _get_csv_from_zip(response.content, r"Code_Export")
-        lines = [line for line in content.splitlines() if line.strip()]
-        for line in lines[1:]:
-            row_content = line.split(",")
-
-            if row_content[1] in excludable_code_values:
-                assert row_content[2] == "excluded"
+        reader = csv.DictReader(StringIO(content))
+        for row in reader:
+            if row["Code"] in excludable_code_values:
+                assert row["Status"] == "excluded"
             else:
-                assert row_content[2] == "included"
+                assert row["Status"] == "included"
 
 
 @pytest.mark.integration
