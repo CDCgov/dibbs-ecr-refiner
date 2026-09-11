@@ -335,6 +335,17 @@ class SectionSpecification:
         return {tc.oid for tc in self.trigger_codes}
 
     @property
+    def has_trigger_codes(self) -> bool:
+        """
+        Can this section carry an eICR trigger code template?
+
+        Returns `True` when the IG defines at least one trigger code
+        template for the section in this specification's version.
+        """
+
+        return len(self.trigger_codes) > 0
+
+    @property
     def has_match_rules(self) -> bool:
         """
         Does the section have entry matching rules or not?

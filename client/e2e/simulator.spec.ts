@@ -147,7 +147,7 @@ test.describe('Simulate testing', () => {
     await refineButton.click();
 
     await expect(
-      page.getByRole('heading', { name: 'eCR refinement results' })
+      page.getByRole('heading', { name: 'eCR Refinement Results' })
     ).toBeVisible();
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
       'COVID-19',
@@ -295,7 +295,7 @@ test.describe('Simulate testing', () => {
 
     await refineButton.click();
     await expect(
-      page.getByRole('heading', { name: 'eCR refinement results' })
+      page.getByRole('heading', { name: 'eCR Refinement Results' })
     ).toBeVisible();
 
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([

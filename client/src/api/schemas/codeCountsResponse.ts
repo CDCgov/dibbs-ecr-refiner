@@ -7,4 +7,5 @@ export interface CodeCountsResponse {
   total_code_sets_count: number;
   total_excluded_codes_count: number;
   total_custom_codes_count: number;
+  primary_condition_rctc_count: number;
 }

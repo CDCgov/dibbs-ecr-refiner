@@ -44,6 +44,7 @@ class AuditEvent:
     action_text: str
     code_count: int | None
     created_at: datetime
+    event_type: str
     has_custom_code_upload_events: bool
 
 
@@ -211,6 +212,7 @@ async def get_events_by_jd_db(
             e.action_text,
             e.code_count,
             e.created_at,
+            e.event_type,
             EXISTS (
                 SELECT 1 FROM events_custom_codes ecu WHERE ecu.event_id = e.id
             ) AS has_custom_code_upload_events
@@ -425,8 +427,6 @@ async def insert_event_db(
     )
 
     row = await cursor.fetchone()
-
     if row:
         return row["id"]
-
     return None

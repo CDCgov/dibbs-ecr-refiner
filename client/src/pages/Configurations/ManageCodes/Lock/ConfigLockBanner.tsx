@@ -25,7 +25,7 @@ export function ConfigLockBanner({
         className
       )}
       maxWidth={LAYOUT_MAX_WIDTH}
-      padding="md"
+      className="py-6"
     >
       <div
         role="status"

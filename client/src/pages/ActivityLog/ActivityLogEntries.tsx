@@ -6,6 +6,7 @@ import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { useState } from 'react';
 import { useGetCustomCodeUploadEvents } from '../../api/events/events';
 import { Spinner } from '@components/Spinner';
+import { useNavigate } from 'react-router';
 
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];
@@ -20,6 +21,7 @@ export function ActivityLogEntries({
   const dateHeader = 'Date';
 
   const formatDatetime = useDatetimeFormatter();
+  const navigate = useNavigate();
 
   return (
     <Table className="table-auto" striped fullWidth>
@@ -83,6 +85,17 @@ export function ActivityLogEntries({
                         modifiedByUsername={r.username}
                         modifiedDate={date}
                       />
+                    ) : null}
+
+                    {r.event_type === 'tes_update_existing_draft' ||
+                    r.event_type === 'tes_create_draft_from_active' ? (
+                      <Button
+                        className="p-0!"
+                        variant="tertiary"
+                        onClick={() => navigate('/tes-updates')}
+                      >
+                        View updates
+                      </Button>
                     ) : null}
                   </div>
                 </td>

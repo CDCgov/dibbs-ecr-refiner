@@ -596,6 +596,8 @@ class BulkDeleteCustomCodesInput(BaseModel):
     """
 
     ids: list[UUID]
+    ids_to_skip: list[UUID]
+    delete_all: bool
 
 
 @router.post(
@@ -655,7 +657,13 @@ async def bulk_delete_custom_codes(
     systems = await get_code_systems_db(db=db)
 
     deleted_codes = await delete_custom_codes_db(
-        config=config, ids=body.ids, code_systems=systems, user_id=user.id, db=db
+        config=config,
+        ids=body.ids,
+        user_id=user.id,
+        code_systems=systems,
+        db=db,
+        ids_to_skip=body.ids_to_skip,
+        delete_all=body.delete_all,
     )
 
     if len(deleted_codes) < 1:

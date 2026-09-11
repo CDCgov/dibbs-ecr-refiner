@@ -7,6 +7,7 @@ import {
   GetConfigurationResponse,
   NarrativeOnlySection,
   ReconstructableSection,
+  TriggerCodeSection,
 } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -54,6 +55,12 @@ export function Sections({
   //     configuration, so the user shouldn't be able to toggle them in the UI
   //   - narrative_only_sections: sections with no entry match rules in the eICR spec, so
   //     "refine" is meaningless for them — we surface "Not applicable" instead of a switch
+  //   - trigger_code_sections: sections the eICR IG defines trigger code templates for.
+  //     removing one strips its entries, so a configuration that removed them all would
+  //     emit a document with no trigger codes. only the include toggle locks here — coded
+  //     data and narrative stay configurable, unlike disabled_sections where all controls
+  //     are inert. the explanation lives in the "Include" column header tooltip rather
+  //     than per row
   const disabledSections = Object.values(DisabledSection);
   const isDisabledSection = (s: string): s is DisabledSection =>
     disabledSections.some((v) => (v as string) === s);
@@ -61,6 +68,10 @@ export function Sections({
   const narrativeOnlySections = Object.values(NarrativeOnlySection);
   const isNarrativeSection = (s: string): s is NarrativeOnlySection =>
     narrativeOnlySections.some((v) => (v as string) === s);
+
+  const triggerCodeSections = Object.values(TriggerCodeSection);
+  const isTriggerCodeSection = (s: string): s is TriggerCodeSection =>
+    triggerCodeSections.some((v) => (v as string) === s);
 
   const reconstructableSections = Object.values(ReconstructableSection);
   const isReconstructableSection = (s: string): s is ReconstructableSection =>
@@ -111,7 +122,7 @@ export function Sections({
                     <span>Include</span>
                     <Tooltip
                       position="right"
-                      label="Turn a section on to include it in the refined eICR, or off to leave it out entirely."
+                      label="Turn a section on to include it in the refined eICR, or off to leave it out entirely. Some sections are locked to ensure RCTC codes are retained."
                     />
                   </div>
                 </th>
@@ -156,7 +167,11 @@ export function Sections({
                         configurationId={configuration.id}
                         currentSection={section}
                         sections={configuration.section_processing}
-                        disabled={disabled || isDisabledSection(section.code)}
+                        disabled={
+                          disabled ||
+                          isDisabledSection(section.code) ||
+                          isTriggerCodeSection(section.code)
+                        }
                       />
                     </div>
                   </td>
@@ -411,7 +426,7 @@ function RefineSwitch({
 
   return (
     <div
-      className="grid grid-cols-1 grid-rows-1 place-items-end"
+      className="grid grid-cols-1 grid-rows-1 place-items-center"
       data-error-trigger
     >
       <div className="z-5 col-start-1 row-start-1">
@@ -441,12 +456,12 @@ function RefineSwitch({
       </div>
       {showError && (
         <p
-          className="text-state-error-dark col-start-1 row-start-1 translate-y-5 text-xs whitespace-nowrap"
+          className="text-state-error-dark col-start-1 row-start-1 mt-4 translate-y-5 text-xs whitespace-nowrap"
           role="alert"
         >
           {currentSection.narrative === 'reconstruct'
-            ? 'To reconstruct narrative, refine must be selected'
-            : 'To keep narrative on match, refine must be selected'}
+            ? 'To reconstruct narrative, "Refine" must be selected'
+            : 'To keep narrative on match, "Refine" must be selected'}
         </p>
       )}
     </div>

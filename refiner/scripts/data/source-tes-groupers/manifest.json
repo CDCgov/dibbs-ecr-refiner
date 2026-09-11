@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "tes-groupers",
-  "version": "2026.05.22",
-  "last_updated_utc": "2026-05-22T03:18:21.836673+00:00",
+  "version": "2026.09.10",
+  "last_updated_utc": "2026-09-10T20:16:52.599688+00:00",
   "files": {
     "additional_context_grouper_2.0.0.json": {
       "hash": "69b10772132ef727f478a474f892ddbffbe86eb137b1d6254eda077b63068893",
@@ -61,6 +61,36 @@
     "additional_context_grouper_6.0.0.part04.json": {
       "hash": "fb16cdaac184ddc129ebfa3180574e8292988cedc2f10719ab3928679fd91ff9",
       "record_count": 43,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "additional_context_grouper_7.0.0.part01.json": {
+      "hash": "5d5d1b199c3a7062711b621f71410aabb7fc74ba285cc363469f5b583f3f3e05",
+      "record_count": 44,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "additional_context_grouper_7.0.0.part02.json": {
+      "hash": "dec0d6eea9bda70f40de76c5287af20e427caddefb17d1055e961e26bf318da6",
+      "record_count": 44,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "additional_context_grouper_7.0.0.part03.json": {
+      "hash": "f5fce435940f0272a17c75842ad45a3f092f9b4284f759e14fd5c3294598d0bd",
+      "record_count": 44,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "additional_context_grouper_7.0.0.part04.json": {
+      "hash": "2c56c68215299b5b62651558f9666a4d779c0a4ce683566066785b3cad803a3f",
+      "record_count": 44,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "additional_context_grouper_7.0.0.part05.json": {
+      "hash": "4ebcb8edf028313f388c63edeae888cd58f0f7a741d95b95c5dff841c6f436eb",
+      "record_count": 44,
       "error_count": 0,
       "validation_ran": true
     },
@@ -130,6 +160,48 @@
       "error_count": 0,
       "validation_ran": true
     },
+    "condition_grouper_7.0.0.part01.json": {
+      "hash": "b74506c5a982c29bf545330cf33db3eac6b256a20c72ec63b10d38c932760b24",
+      "record_count": 40,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "condition_grouper_7.0.0.part02.json": {
+      "hash": "cdf92a38b78eaae9e487b911e1adf02f5bc985115bb19e9f1009272d03a4f929",
+      "record_count": 40,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "condition_grouper_7.0.0.part03.json": {
+      "hash": "6b2f8e720495369e984a75e7621bad6dc319be8f0eca0c5b099f458cdad6d3ea",
+      "record_count": 40,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "condition_grouper_7.0.0.part04.json": {
+      "hash": "0e095ad6ce875ad52875e9a3cc7f54afaf78b04b8c5a550c65f9ada225232fca",
+      "record_count": 40,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "condition_grouper_7.0.0.part05.json": {
+      "hash": "3aba608fdf8d23faf78694c91ab09e490a23291f8b9ae40aa7a42a4b8b77636f",
+      "record_count": 40,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "condition_grouper_7.0.0.part06.json": {
+      "hash": "03fafcb051750079f6e6b68d04fb29323d23a8c2076f1642ec441b4aa58f3c9c",
+      "record_count": 36,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "eicr_triggering.json": {
+      "hash": "5917a55c0a7ae71cd8767e30c0a708192a2a99581d29adb9b7d9176797b78242",
+      "record_count": 1399,
+      "error_count": 0,
+      "validation_ran": true
+    },
     "reporting_spec_grouper_20241008.part01.json": {
       "hash": "09b259db177cf0a8962b20abfbff1509e960af834febda7e0bc59de74dfcab17",
       "record_count": 121,
@@ -181,6 +253,24 @@
     "reporting_spec_grouper_20260327.part03.json": {
       "hash": "8bfd89dfc885542b07b21057935b804cf448e4b275babdf8a725ff15731fb83b",
       "record_count": 92,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "reporting_spec_grouper_20260731.part01.json": {
+      "hash": "54396b1ee319636ab32896ed4f6c4dc8d2e90a774deb02168023833c74c8abb3",
+      "record_count": 94,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "reporting_spec_grouper_20260731.part02.json": {
+      "hash": "d48ec1b7f6884daa56885b9134eb0354a264625ad9abfa4454b8b1fb16edcbf4",
+      "record_count": 94,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "reporting_spec_grouper_20260731.part03.json": {
+      "hash": "69dace99bd277b296cc24649404456edd207aeaa620e10241f211da8fd1e16cd",
+      "record_count": 93,
       "error_count": 0,
       "validation_ran": true
     }

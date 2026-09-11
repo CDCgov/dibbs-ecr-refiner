@@ -69,7 +69,9 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'create_custom_section',
     'edit_custom_section',
     'delete_custom_section',
-    'bulk_delete_custom_code'
+    'bulk_delete_custom_code',
+    'tes_update_existing_draft',
+    'tes_create_draft_from_active'
 );
 
 
@@ -201,7 +203,8 @@ CREATE TABLE public.conditions_codes_temp (
     condition_id uuid NOT NULL,
     code_id uuid NOT NULL,
     valueset_id uuid NOT NULL,
-    is_child_rsg boolean DEFAULT false
+    is_child_rsg boolean DEFAULT false,
+    is_trigger_code boolean DEFAULT false NOT NULL
 );
 
 
@@ -1071,4 +1074,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260813142548'),
     ('20260825151652'),
     ('20260826143830'),
-    ('20260901143317');
+    ('20260901143317'),
+    ('20260902230457'),
+    ('20260903182620'),
+    ('20260909225054');

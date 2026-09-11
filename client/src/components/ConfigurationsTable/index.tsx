@@ -15,7 +15,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
 
   if (!data.length) {
     return (
-      <Table stackedStyle="default">
+      <Table stackedStyle="default" className="max-w-full!">
         <thead>
           <tr>
             <th scope="col">{reportableConditionHeader}</th>
@@ -33,7 +33,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   }
 
   return (
-    <Table>
+    <Table className="max-w-full!">
       <thead>
         <tr>
           <th scope="col">{reportableConditionHeader}</th>

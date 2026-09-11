@@ -32,8 +32,10 @@ from app.services.ecr.policy import (
     DisabledSection,
     NarrativeOnlySection,
     ReconstructableSection,
+    TriggerCodeSection,
     is_disabled_section,
     is_reconstructable_section,
+    is_trigger_code_section,
     narrative_requires_refine,
 )
 
@@ -52,6 +54,7 @@ class UpdateSectionProcessingResponse:
     disabled_section: list[DisabledSection]
     narrative_only_section: list[NarrativeOnlySection]
     reconstructable_section: list[ReconstructableSection]
+    trigger_code_section: list[TriggerCodeSection]
     narrative_data_labels: NarrativeDataLabels
     coded_data_labels: CodedDataLabels
 
@@ -165,8 +168,10 @@ async def update_section(
             (`DisabledSection`) and therefore not configurable, the
             narrative/action combination is unsupported (e.g.
             narrative="reconstruct" or "keep_on_match" with
-            action="retain"), or narrative "reconstruct" targets a
-            section without a registered reconstructor
+            action="retain"), narrative "reconstruct" targets a
+            section without a registered reconstructor, or the
+            section can carry a trigger code and was sent with
+            include=False
         HTTPException: 404 if configuration isn't found
         HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if section processing can't be updated
@@ -210,6 +215,11 @@ async def update_section(
         code=section_update.code,
     )
 
+    _raise_if_section_not_removable(
+        include=section_update.include,
+        code=section_update.code,
+    )
+
     try:
         updated_config = await update_configuration_section_db(
             config=config,
@@ -235,6 +245,7 @@ async def update_section(
         narrative_only_section=list(NarrativeOnlySection),
         disabled_section=list(DisabledSection),
         reconstructable_section=list(ReconstructableSection),
+        trigger_code_section=list(TriggerCodeSection),
         narrative_data_labels=NarrativeDataLabels(),
         coded_data_labels=CodedDataLabels(),
     )
@@ -418,6 +429,39 @@ def _raise_if_reconstruct_unsupported(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(f"Narrative 'reconstruct' is not supported for section '{code}'."),
+        )
+
+
+def _raise_if_section_not_removable(include: bool, code: str) -> None:
+    """
+    Reject `include=False` on a section that can carry a trigger code.
+
+    `TriggerCodeSection` LOINC codes are the sections the eICR IG
+    defines trigger code templates for. Removing one strips every
+    `<entry>` it holds, so a configuration that removed them all would
+    emit a document with no trigger codes and fail Schematron
+    validation. The UI greys out the include toggle for these
+    sections; this validator makes the same guarantee for direct API
+    callers and stale clients.
+
+    Only removal is rejected. Coded data action and every narrative
+    setting remain the jurisdiction's choice.
+
+    Args:
+        include: The requested include flag.
+        code: The section's LOINC code.
+
+    Raises:
+        HTTPException: 400 when `include` is False and `code` is in
+            `TriggerCodeSection`.
+    """
+
+    if not include and is_trigger_code_section(code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Section '{code}' can carry a trigger code and cannot be removed."
+            ),
         )
 
 
