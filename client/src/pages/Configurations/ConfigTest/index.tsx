@@ -3,9 +3,7 @@ import { useParams } from 'react-router';
 import { RunSimulation } from '../../Simulator/RunSimulation';
 import { useState } from 'react';
 import {
-  getConfigurationExport,
   useGetConfiguration,
-  useGetConfigurationExport,
   useRunInlineConfigurationTest,
 } from '../../../api/configurations/configurations';
 import { Diff } from '@components/Diff';
@@ -17,7 +15,6 @@ import { Uploading } from '../../Simulator/Uploading';
 import { Status } from '../ManageCodes/Status';
 import { FileUploadWarning } from '@components/FileUploadWarning';
 import { Button } from '@components/Button';
-import axios from 'axios';
 import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 
 export function ConfigTest() {

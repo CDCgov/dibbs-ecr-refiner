@@ -15,7 +15,6 @@ export interface ButtonProps extends HeadlessButtonProps {
   href?: string;
   anchorProps?: React.AnchorHTMLAttributes<HTMLAnchorElement>;
   linkProps?: Omit<LinkProps, 'to'>;
-  download?: boolean;
 }
 
 const sharedStyles =
