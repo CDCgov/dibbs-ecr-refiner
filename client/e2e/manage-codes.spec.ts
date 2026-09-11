@@ -341,11 +341,11 @@ test.describe('Codes management - custom code interactions', () => {
 
     // exclusion still allows for actioning non-custom codes
     const exclusionButton = page.getByRole('button', {
-      name: 'Exclude 2 codes',
+      name: 'Exclude 12 codes',
     });
     await exclusionButton.click();
 
-    await expect(page.getByText('2 excluded')).toBeVisible();
+    await expect(page.getByText('12 excluded')).toBeVisible();
   });
 
   test('Individual custom codes can be added, edited, and deleted', async ({
@@ -536,7 +536,7 @@ test.describe('Codes management - code set interactions', () => {
 
     await test.step('Check page state after addition', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '940 of 940 codes included'
+        '977 of 977 codes included'
       );
       await expect(page.getByText('2 condition code sets')).toBeVisible();
       await expect(page.locator('table tr')).toHaveCount(MAX_PAGE_SIZE + 1); // page size + header row
@@ -559,10 +559,10 @@ test.describe('Codes management - code set interactions', () => {
 
     await test.step('Check page state after removal', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '2 of 2 codes included'
+        '12 of 12 codes included'
       );
       await expect(page.getByText('1 condition code sets')).toBeVisible();
-      await expect(page.locator('table tr')).toHaveCount(3); // two Anotia codes + header row
+      await expect(page.locator('table tr')).toHaveCount(13); // twelve Anotia codes + header row
     });
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -609,7 +609,7 @@ test.describe('Codes management - code interactions', () => {
 
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '1 of 2 codes included'
+        '11 of 12 codes included'
       );
       await expect(page.getByText('1 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
@@ -627,7 +627,7 @@ test.describe('Codes management - code interactions', () => {
 
     await test.step('Check stats bar after including all', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '2 of 2 codes included'
+        '12 of 12 codes included'
       );
       await expect(page.getByText('0 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
@@ -657,9 +657,9 @@ test.describe('Codes management - code interactions', () => {
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '193 of 7,838 codes included'
+        '193 of 7,842 codes included'
       );
-      await expect(page.getByText('7,645 excluded')).toBeVisible();
+      await expect(page.getByText('7,649 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
     });
 
@@ -671,7 +671,7 @@ test.describe('Codes management - code interactions', () => {
     await controlPanel.getByRole('button', { name: 'Include' }).click();
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '7,838  of 7,838 codes included'
+        '7,842  of 7,842 codes included'
       );
       await expect(page.getByText('193 RCTC Codes')).toBeVisible();
       await expect(page.getByText('0 excluded')).toBeVisible();
@@ -803,7 +803,7 @@ test.describe('Codes management - search', () => {
     const table = page.getByRole('table');
     const tableRows = table.getByRole('row');
     await expect(table).toBeVisible();
-    await expect(tableRows).toHaveCount(4); // include header
+    await expect(tableRows).toHaveCount(14); // include header
 
     await test.step('Enter search query', async () => {
       const searchBox = page.getByRole('searchbox', {
@@ -1173,7 +1173,7 @@ test.describe('Codes management - filters', () => {
 
     await test.step('Check the page on load', async () => {
       await expect(table).toBeVisible();
-      await expect(tableRows).toHaveCount(3);
+      await expect(tableRows).toHaveCount(13);
     });
 
     await test.step('Exclude a code', async () => {
@@ -1343,7 +1343,7 @@ test.describe('Codes management - filters', () => {
       const tableRows = table.getByRole('row');
 
       // this includes the header row
-      await expect(tableRows).toHaveCount(5);
+      await expect(tableRows).toHaveCount(16);
 
       const sourceCellNumber = 4;
       const sourceCells = tableRows
@@ -1365,7 +1365,7 @@ test.describe('Codes management - filters', () => {
         texts.filter((t) =>
           t.includes(`${associatedCondition} Reporting Specification Grouper`)
         )
-      ).toHaveLength(2);
+      ).toHaveLength(3);
     });
   });
 
@@ -1520,7 +1520,7 @@ test.describe('Codes management - data loading', () => {
     await configurationPage.goToManageCodesTab();
 
     await expect(page.getByTestId('codes-included-display')).toHaveText(
-      '2 of 2 codes included'
+      '12 of 12 codes included'
     );
     await expect(page.getByText('0 excluded')).toBeVisible();
     await expect(page.getByText('0 custom')).toBeVisible();
@@ -1593,7 +1593,7 @@ test.describe('Codes management - data loading', () => {
 
     // check stats
     await expect(page.getByTestId('codes-included-display')).toHaveText(
-      '4 of 4 codes included'
+      '14 of 14 codes included'
     );
     await expect(page.getByText('0 excluded')).toBeVisible();
     await expect(page.getByText('2 custom')).toBeVisible();
@@ -1699,7 +1699,7 @@ test.describe('Codes management - data loading', () => {
       await deleteButton.click();
 
       await expect(page.getByText('251 custom codes deleted')).toBeVisible();
-      await expect(page.getByText('2 of 2 codes included')).toBeVisible();
+      await expect(page.getByText('12 of 12 codes included')).toBeVisible();
     });
   });
 
