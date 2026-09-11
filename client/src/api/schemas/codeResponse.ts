@@ -1,4 +1,4 @@
-import type { CodeResponseStatus } from './codeResponseStatus';
+import type { ConfigurationCodeStatusLabel } from './configurationCodeStatusLabel';
 
 /**
  * Code object to return to the client.
@@ -11,7 +11,7 @@ export interface CodeResponse {
   description: string;
   system_id: string;
   system_name: string;
-  status: CodeResponseStatus;
+  status: ConfigurationCodeStatusLabel;
   is_custom: boolean;
   is_trigger_code: boolean;
 }

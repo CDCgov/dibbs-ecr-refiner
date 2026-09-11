@@ -1,13 +1,16 @@
 import base64
 import json
 from dataclasses import dataclass
-from typing import Literal
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.codes.model import FilterInput
-from app.db.configurations.model import DbConfiguration
+from app.db.configurations.model import (
+    ConfigurationCodeStatus,
+    ConfigurationCodeStatusLabel,
+    DbConfiguration,
+)
 from app.db.pool import AsyncDatabaseConnection
 
 
@@ -24,7 +27,7 @@ class DbCodeResult:
     description: str
     system_id: UUID
     system_name: str
-    status: Literal["included", "excluded"]
+    status: ConfigurationCodeStatus
     is_trigger_code: bool
 
 
@@ -290,7 +293,7 @@ async def get_codes_db(
 
 async def set_codes_status_beyond_rendered_db(
     config: DbConfiguration,
-    status: Literal["included", "excluded"],
+    status: ConfigurationCodeStatus,
     code_ids_to_skip: list[UUID],
     filters: FilterInput,
     db: AsyncDatabaseConnection,
@@ -403,7 +406,7 @@ async def _check_update_operation_excludes_primary_condition_trigger_codes(
 
 async def set_codes_status_within_rendered_set_db(
     config: DbConfiguration,
-    status: Literal["included", "excluded"],
+    status: ConfigurationCodeStatus,
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
 ) -> list[UUID]:
@@ -488,8 +491,8 @@ class StatusFilterOption:
     Model to represent a status filter option.
     """
 
-    label: Literal["Included", "Excluded"]
-    status: Literal["included", "excluded"]
+    label: ConfigurationCodeStatusLabel
+    status: ConfigurationCodeStatus
     code_count: int
 
 

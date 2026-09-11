@@ -17,6 +17,10 @@ from app.db.configurations.codes.db import (
     set_codes_status_within_rendered_set_db,
 )
 from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.model import (
+    ConfigurationCodeStatus,
+    ConfigurationCodeStatusLabel,
+)
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 
@@ -36,7 +40,7 @@ class CodeResponse:
     description: str
     system_id: UUID
     system_name: str
-    status: Literal["Included", "Excluded"]
+    status: ConfigurationCodeStatusLabel
     is_custom: bool
     is_trigger_code: bool
 
@@ -103,7 +107,7 @@ async def set_codes_status(
     update_beyond_rendered_set: bool,
     code_ids_to_skip: list[UUID],
     code_ids: list[UUID],
-    status: Literal["included", "excluded"],
+    status: ConfigurationCodeStatus,
     filters: FilterInput = Depends(_get_filter_input),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),

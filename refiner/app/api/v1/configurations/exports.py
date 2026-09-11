@@ -1,6 +1,5 @@
 import csv
 from io import StringIO
-from logging import Logger
 from typing import Literal
 from uuid import UUID
 
@@ -8,12 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.code_systems.db import get_id_to_code_system_dict_db
-from app.db.conditions.db import (
-    get_condition_codes_by_condition_id_db,
-    get_included_conditions_db,
-)
-from app.db.conditions.model import DbCondition
+from app.api.v1.configurations.codes.model import FilterInput
+from app.db.configurations.codes.db import get_codes_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 from app.db.configurations.model import (
@@ -27,7 +22,6 @@ from app.db.users.model import DbUser
 from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS
 from app.services.file_exports import get_export_timestamp
 from app.services.file_io import ZipFileItem, ZipFilePackage
-from app.services.logger import get_logger
 
 router = APIRouter(prefix="/{configuration_id}/export")
 
@@ -41,7 +35,6 @@ router = APIRouter(prefix="/{configuration_id}/export")
 async def get_configuration_export(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
-    logger: Logger = Depends(get_logger),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> Response:
     """
@@ -58,13 +51,7 @@ async def get_configuration_export(
             detail="Configuration not found.",
         )
 
-    included_conditions = await get_included_conditions_db(
-        included_conditions=config.included_conditions, db=db
-    )
-
-    codes_csv_content = await _build_config_csv(
-        config=config, conditions=included_conditions, logger=logger, db=db
-    )
+    codes_csv_content = await _build_config_csv(config=config, db=db)
     sections_csv_content = _build_sections_csv(sections=config.section_processing)
 
     timestamp = get_export_timestamp()
@@ -109,7 +96,7 @@ async def get_configuration_export(
         content=zip_package.iter_chunks(),
         media_type="application/zip",
         headers={
-            "Content-Disposition": f'attachment; filename="{zip_package.get_name()}"'
+            "Content-Disposition": f'attachment; filename="{zip_package.get_name()}"',
         },
     )
 
@@ -161,54 +148,40 @@ def _get_narrative_data_value(narrative: DbNarrativeAction, included: bool) -> s
 
 
 async def _build_config_csv(
-    config: DbConfiguration,
-    conditions: list[DbCondition],
-    logger: Logger,
-    db: AsyncDatabaseConnection,
+    config: DbConfiguration, db: AsyncDatabaseConnection
 ) -> str:
     """Build the CSV export content for a configuration."""
 
-    code_systems = await get_id_to_code_system_dict_db(db=db)
-
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)
-        writer.writerow(
-            ["Code Type", "Condition", "Code System", "Code", "Display Name"]
-        )
+        writer.writerow(["Code System", "Code", "Status", "Display Name", "Source(s)"])
+        cursor: str | None = None
 
-        for cond in conditions:
-            codes = await get_condition_codes_by_condition_id_db(
-                condition_id=cond.id, db=db
+        while True:
+            codes, cursor = await get_codes_db(
+                config=config,
+                db=db,
+                limit=1000,
+                filters=FilterInput(
+                    code_systems=[],
+                    sources=[],
+                    statuses=[],
+                ),
+                cursor=cursor,
             )
             for code in codes:
                 writer.writerow(
                     [
-                        "TES condition grouper code",
-                        cond.display_name,
                         code.system_name,
                         code.code,
-                        code.display,
+                        code.status,
+                        code.description,
+                        ", ".join(code.source),
                     ]
                 )
 
-        for cc in config.custom_codes or []:
-            code_system = code_systems.get(cc.system_id)
-            if code_system is None:
-                logger.warning(
-                    "Could not find code system for custom code, skipping",
-                    extra={"id": cc.id, "system_id": cc.system_id, "code": cc.code},
-                )
-                continue
-
-            writer.writerow(
-                [
-                    "Custom code",
-                    "",
-                    code_system.display_name,
-                    cc.code,
-                    cc.display,
-                ]
-            )
+            if not cursor:
+                break
 
         return csv_text.getvalue()
 
