@@ -109,11 +109,11 @@ class TestConfigurationExportCodesCsv:
         content = _get_csv_from_zip(response.content, r"Code_Export")
         reader = csv.DictReader(StringIO(content))
         assert reader.fieldnames == [
-            "Code Type",
-            "Condition",
             "Code System",
             "Code",
+            "Status",
             "Display Name",
+            "Source(s)",
         ]
 
     async def test_export_includes_all_codes_from_multiple_codesets(
@@ -173,9 +173,12 @@ class TestConfigurationExportCodesCsv:
 
         content = _get_csv_from_zip(response.content, r"Code_Export")
         reader = csv.DictReader(StringIO(content))
-        conditions_in_csv = {row["Condition"] for row in reader if row["Condition"]}
+        sources_in_csv = {row["Source(s)"] for row in reader if row["Source(s)"]}
 
-        assert conditions_in_csv == {"Amebiasis", "Byssinosis"}
+        assert sources_in_csv == {
+            "Amebiasis Reporting Specification Grouper",
+            "Byssinosis Reporting Specification Grouper",
+        }
 
     async def test_export_csv_code_systems_valid(
         self,
@@ -219,45 +222,6 @@ class TestConfigurationExportCodesCsv:
 
         assert code_systems_in_csv <= expected_systems
 
-    async def test_export_custom_codes_have_blank_condition(
-        self,
-        setup,
-        authed_client,
-        get_condition_id,
-        create_config,
-        add_custom_code,
-        db_pool,
-    ):
-        """
-        Custom code rows should have a blank "Condition" column.
-        """
-        condition_id = await get_condition_id("Amebiasis")
-        config = await create_config(condition_id)
-        config_id = config["id"]
-
-        loinc = await get_code_system_by_key_db(key="loinc", db=db_pool)
-        assert loinc
-
-        await add_custom_code(
-            config_id,
-            AddCustomCodeInput(
-                code="MOCK-CODE-001",
-                system_id=loinc.id,
-                display="Mock custom code",
-            ),
-        )
-
-        response = await authed_client.get(f"/api/v1/configurations/{config_id}/export")
-        assert response.status_code == status.HTTP_200_OK
-
-        content = _get_csv_from_zip(response.content, r"Code_Export")
-        reader = csv.DictReader(StringIO(content))
-        for row in reader:
-            if row["Code Type"] == "Custom code":
-                assert row["Condition"] == "", (
-                    f"Expected blank Condition for custom code, got {row['Condition']!r}"
-                )
-
     async def test_export_codes_csv_body_is_non_empty(
         self, setup, authed_client, get_condition_id, create_config
     ):
@@ -274,6 +238,41 @@ class TestConfigurationExportCodesCsv:
         content = _get_csv_from_zip(response.content, r"Code_Export")
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) >= 1, "Expected at least a CSV header row in the response"
+
+    async def test_export_codes_with_exclusions_appears_correctly(
+        self, setup, authed_client, get_condition_id, create_config
+    ):
+        """
+        Codes CSV should contain at least a header row.
+        """
+        condition_id = await get_condition_id("Cholera")
+        config = await create_config(condition_id)
+        resp = await authed_client.get(f"/api/v1/configurations/{config['id']}/codes")
+        assert resp.status_code == status.HTTP_200_OK
+        codes = resp.json()["codes"]
+        excludable_codes = [c for c in codes if not c["is_trigger_code"]]
+        # set all excludable codes as 'excluded'
+        resp = await authed_client.post(
+            f"/api/v1/configurations/{config['id']}/set-status?status=excluded&update_beyond_rendered_set=false",
+            json={
+                "code_ids": [c["id"] for c in excludable_codes],
+                "code_ids_to_skip": [],
+            },
+        )
+
+        response = await authed_client.get(
+            f"/api/v1/configurations/{config['id']}/export"
+        )
+
+        excludable_code_values = [c["code"] for c in excludable_codes]
+        assert response.status_code == status.HTTP_200_OK
+        content = _get_csv_from_zip(response.content, r"Code_Export")
+        reader = csv.DictReader(StringIO(content))
+        for row in reader:
+            if row["Code"] in excludable_code_values:
+                assert row["Status"] == "excluded"
+            else:
+                assert row["Status"] == "included"
 
 
 @pytest.mark.integration

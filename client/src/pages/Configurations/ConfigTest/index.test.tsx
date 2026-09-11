@@ -103,7 +103,7 @@ describe('Config testing page', () => {
   it('should display an "Export configuration" button', () => {
     renderPage();
     expect(
-      screen.getByText('Export configuration', { selector: 'a' })
+      screen.getByRole('button', { name: 'Export configuration' })
     ).toBeInTheDocument();
   });
 
