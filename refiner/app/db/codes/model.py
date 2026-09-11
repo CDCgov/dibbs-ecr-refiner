@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from app.db.configurations.model import ConfigurationCodeStatus
-
 
 @dataclass(frozen=True)
 class CodedConcept:
