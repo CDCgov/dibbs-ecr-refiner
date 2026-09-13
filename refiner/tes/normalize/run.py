@@ -322,15 +322,24 @@ def _write_csv_gz(path: Path, header: list[str], rows: Iterable[list]) -> str:
             with io.TextIOWrapper(
                 compressed, encoding="utf-8", newline=""
             ) as text_stream:
-                writer = csv.writer(text_stream)
+                writer = csv.writer(text_stream, lineterminator="\n")
                 writer.writerow(header)
                 writer.writerows(rows)
     return _file_hash(path)
 
 
 def _write_csv(path: Path, header: list[str], rows: Iterable[list]) -> str:
+    """
+    Write rows as plain CSV with LF line endings.
+
+    `csv.writer` defaults to CRLF per RFC 4180, but `.gitattributes` declares
+    `*.csv text eol=lf`, so git stores LF and hands LF back on checkout. Writing
+    CRLF makes the committed file hash differently after a fresh clone -- which is
+    exactly how this broke CI the first time.
+    """
+
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(header)
         writer.writerows(rows)
     return _file_hash(path)

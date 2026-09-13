@@ -276,6 +276,30 @@ def check_no_empty_valuesets(processed_dir: Path) -> Result:
     )
 
 
+def check_text_outputs_use_lf(processed_dir: Path) -> Result:
+    """
+    Committed text output uses LF line endings.
+
+    `.gitattributes` declares `*.csv text eol=lf`, so git normalizes CRLF on the
+    way in and hands LF back on checkout. A writer emitting CRLF therefore hashes
+    one way locally and another after a fresh clone, which surfaces as an opaque
+    manifest mismatch in CI. This names the cause directly instead.
+    """
+
+    offenders = []
+    for path in sorted(processed_dir.glob("*.csv")):
+        carriage_returns = path.read_bytes().count(b"\r")
+        if carriage_returns:
+            offenders.append(f"{path.name}: {carriage_returns:,} CR bytes, expected 0")
+
+    return Result(
+        "Committed text output uses LF line endings",
+        not offenders,
+        f"{len(list(processed_dir.glob('*.csv')))} plain-text outputs checked",
+        offenders,
+    )
+
+
 def check_dropped_systems_are_expected(processed_dir: Path) -> Result:
     """
     The set of unsupported code systems is exactly the one we decided to drop.
@@ -388,7 +412,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.integrity_only:
-        return render([check_manifest_hashes(args.processed_dir)])
+        return render(
+            [
+                check_manifest_hashes(args.processed_dir),
+                check_text_outputs_use_lf(args.processed_dir),
+            ]
+        )
 
     facts = read_membership_facts(args.processed_dir)
     results = [
@@ -398,6 +427,7 @@ def main(argv: list[str] | None = None) -> int:
         check_self_naming_codes_are_unique(facts),
         check_categories_are_known(args.processed_dir),
         check_no_empty_valuesets(args.processed_dir),
+        check_text_outputs_use_lf(args.processed_dir),
         check_dropped_systems_are_expected(args.processed_dir),
     ]
     # these two need the raw bundles and are the slowest, so they run last
