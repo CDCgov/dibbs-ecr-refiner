@@ -87,7 +87,7 @@ This is the main interactive script for validating a single eICR or RR document.
 python validation/validate_document.py
 ```
 
-The script will open an `fzf` prompt, allowing you to select an XML file from the `refiner/scripts/data/source-ecr-files/` directory to validate.
+The script will open an `fzf` prompt, allowing you to select an XML file from the `refiner/tests/source-ecr-files/` directory to validate.
 
 ## Automation
 
