@@ -119,22 +119,29 @@ def source_name(valueset: ValueSetDict) -> str:
         return title.strip()
 
     for context in valueset.get("useContext", []):
-        if "valueCodeableConcept" in context:
-            return f"{title} {context['valueCodeableConcept'].get('text')}"
+        if text := context.get("valueCodeableConcept", {}).get("text"):
+            return f"{title} {text}"
 
-    return ""
+    return title.strip()
 
 
-def category_for(name: str) -> str:
+def category_for(name: str, *, is_rsg: bool) -> str:
     """
     Derive the category slug a grouper's codes belong to.
 
     RSGs all share one category. ACG categories come from the title, with new
     ones normalized to snake_case rather than rejected, so a category TES adds
     mid-release lands in the data instead of failing the run.
+
+    Args:
+        name: The grouper's display name.
+        is_rsg: Whether this is a reporting specification grouper. Passed in
+            rather than re-derived from the name by substring -- the structural
+            answer already exists in `is_reporting_spec_grouper`, and matching on
+            the title is the failure mode this module was written to remove.
     """
 
-    if "reporting specification grouper" in name.lower():
+    if is_rsg:
         return RSG_CATEGORY
 
     match = CATEGORY_PATTERN.search(name)

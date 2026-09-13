@@ -13,8 +13,11 @@ application can store. The verify step asserts every OID in the processed data
 exists here, so the two cannot drift apart silently.
 """
 
-from config import logger
+import logging
+
 from psycopg import Cursor
+
+logger = logging.getLogger(__name__)
 
 CODE_SYSTEMS: dict[str, dict[str, str]] = {
     "snomed": {

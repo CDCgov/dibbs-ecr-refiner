@@ -31,7 +31,7 @@ import json
 import sys
 from collections import Counter
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .groupers import (
@@ -46,7 +46,14 @@ from .groupers import (
     snomed_from_rsg_url,
     source_name,
 )
-from .model import SNOMED_OID, SYSTEM_URL_TO_OID, ValueSetDict, ValueSetKey
+from .model import (
+    CODE_SYSTEMS,
+    SNOMED_OID,
+    SYSTEM_URL_TO_OID,
+    FhirCodeInfo,
+    ValueSetDict,
+    ValueSetKey,
+)
 from .readers import reader_for_version
 
 TES_DIR = Path(__file__).parent.parent
@@ -97,7 +104,7 @@ def load_raw_valuesets(raw_dir: Path) -> dict[ValueSetKey, ValueSetDict]:
     return valuesets
 
 
-def _trigger_codes_by_snomed(raw_dir: Path) -> dict[str, set[tuple[str, str, str]]]:
+def _trigger_codes_by_snomed(raw_dir: Path) -> dict[str, set[tuple[str, str]]]:
     """
     Index eICR triggering ValueSets by the SNOMED code they trigger on.
 
@@ -105,7 +112,7 @@ def _trigger_codes_by_snomed(raw_dir: Path) -> dict[str, set[tuple[str, str, str
     from `expansion.contains` directly rather than through a version reader.
     """
 
-    triggers: dict[str, set[tuple[str, str, str]]] = {}
+    triggers: dict[str, set[tuple[str, str]]] = {}
     for path in sorted(raw_dir.glob("eicr_triggering*.json")):
         with path.open(encoding="utf-8") as handle:
             bundle = json.load(handle)
@@ -114,14 +121,10 @@ def _trigger_codes_by_snomed(raw_dir: Path) -> dict[str, set[tuple[str, str, str
                 coding.get("code")
                 for context in valueset.get("useContext", [])
                 for coding in context.get("valueCodeableConcept", {}).get("coding", [])
-                if coding.get("system") == "http://snomed.info/sct"
+                if coding.get("system") == CODE_SYSTEMS["snomed"]["url"]
             ]
             entries = {
-                (
-                    SYSTEM_URL_TO_OID[entry["system"]],
-                    entry["code"],
-                    entry.get("display") or "",
-                )
+                (SYSTEM_URL_TO_OID[entry["system"]], entry["code"])
                 for entry in valueset.get("expansion", {}).get("contains", [])
                 if entry.get("system") in SYSTEM_URL_TO_OID and entry.get("code")
             }
@@ -132,7 +135,7 @@ def _trigger_codes_by_snomed(raw_dir: Path) -> dict[str, set[tuple[str, str, str
 
 def normalize(
     valuesets: dict[ValueSetKey, ValueSetDict],
-    triggers: dict[str, set[tuple[str, str, str]]],
+    triggers: dict[str, set[tuple[str, str]]],
 ) -> tuple[
     list[list], list[list], list[list], list[list], list[list], Counts, dict[str, int]
 ]:
@@ -196,13 +199,13 @@ def normalize(
             codes.setdefault((SNOMED_OID, snomed), rsg_display_name(rsg) or "")
 
         trigger_keys = {
-            (oid, code)
+            key
             for snomed in {code for _, _, code in self_naming}
-            for oid, code, _ in triggers.get(snomed, set())
+            for key in triggers.get(snomed, set())
         }
         emitted: set[tuple[str, str, str]] = set()
 
-        for leaf in [*rsgs, *acgs]:
+        for kind, leaf in [*(("rsg", r) for r in rsgs), *(("acg", a) for a in acgs)]:
             leaf_url = leaf.get("url")
             leaf_version = leaf.get("version")
             if not leaf_url or not leaf_version:
@@ -244,7 +247,7 @@ def normalize(
                     condition_version,
                     leaf_url,
                     name,
-                    category_for(name),
+                    category_for(name, is_rsg=kind == "rsg"),
                     len(leaf_codes),
                     coverage_completeness(leaf),
                 ]
@@ -253,7 +256,7 @@ def normalize(
                 [
                     name,
                     leaf_version,
-                    "rsg" if leaf in rsgs else "acg",
+                    kind,
                     len(supported),
                     _code_set_hash(supported),
                 ]
@@ -293,7 +296,7 @@ def normalize(
     )
 
 
-def _code_set_hash(entries) -> str:
+def _code_set_hash(entries: Iterable[FhirCodeInfo]) -> str:
     """
     Content hash of a grouper's code set, so a swap shows up even at equal count.
     """
@@ -325,7 +328,7 @@ def _write_csv_gz(path: Path, header: list[str], rows: Iterable[list]) -> str:
                 writer = csv.writer(text_stream, lineterminator="\n")
                 writer.writerow(header)
                 writer.writerows(rows)
-    return _file_hash(path)
+    return file_hash(path)
 
 
 def _write_csv(path: Path, header: list[str], rows: Iterable[list]) -> str:
@@ -342,10 +345,10 @@ def _write_csv(path: Path, header: list[str], rows: Iterable[list]) -> str:
         writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(header)
         writer.writerows(rows)
-    return _file_hash(path)
+    return file_hash(path)
 
 
-def _file_hash(path: Path) -> str:
+def file_hash(path: Path) -> str:
     """
     Hash a file's logical content, decompressing first when it is gzipped.
 
@@ -364,7 +367,7 @@ def _file_hash(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _source_hashes(raw_dir: Path) -> dict[str, str]:
+def source_hashes(raw_dir: Path) -> dict[str, str]:
     """
     Hash every raw bundle the outputs were derived from.
 
@@ -373,7 +376,7 @@ def _source_hashes(raw_dir: Path) -> dict[str, str]:
     """
 
     return {
-        path.name: _file_hash(path)
+        path.name: file_hash(path)
         for path in sorted(raw_dir.glob("*.json"))
         if path.name != "manifest.json"
     }
@@ -451,16 +454,16 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = {
         "manifest_version": MANIFEST_VERSION,
-        "counts": counts.__dict__,
+        "counts": asdict(counts),
         "dropped_by_system": dropped,
         "files": {name: {"hash": digest} for name, digest in outputs.items()},
-        "derived_from": _source_hashes(args.raw_dir),
+        "derived_from": source_hashes(args.raw_dir),
     }
     (args.out_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
 
-    for field, value in counts.__dict__.items():
+    for field, value in asdict(counts).items():
         print(f"  {field:<28} {value:>10,}")
     print(f"wrote {args.out_dir}")
     return 0

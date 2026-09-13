@@ -5,12 +5,14 @@ import os
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
-from fetch_api_data import run_fetch_pipeline
+
+from tes.fetch.fetch_api_data import run_fetch_pipeline
 
 
-def _convert_datetimes_to_iso(obj):
+def _convert_datetimes_to_iso(obj: Any) -> Any:
     """
     Recursively convert all datetime objects to ISO strings.
     """

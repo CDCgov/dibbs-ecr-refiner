@@ -8,7 +8,6 @@ This directory contains all scripts and resources for managing the DIBBS eCR Ref
 | -------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `data/`        | All data used by scripts. Includes raw source eICR/RR files, TES groupers, config samples, and generated packages. |
 | `exports/`     | Scripts and ephemeral output for internal/client engagement (e.g., CSVs, CG-RSG relationships, etc).               |
-| `maintenance/` | Sanity and integrity checks for DB/data (structure, relationship validation, etc).                                 |
 | `pipeline/`    | Update-detection, download, and hash scripts for TES and related artifacts.                                        |
 | `seeding/`     | Main logic and scripts for database seeding, typically called through orchestration/just commands.                 |
 | `validation/`  | HL7 eICR/RR document validation engine, including Schematron, XSLT, and automation scripts.                        |
@@ -38,13 +37,13 @@ Run the pipeline script to download the latest ValueSet data from the TES source
 Requires a TES API key in your `.env` file.
 
 ```bash
-just db fetch-tes-data
+just tes fetch
 ```
 
 And once this is finished, and if and only if there are either new files or changed files, validate them prior to seeding with:
 
 ```bash
-just db validate-tes-data
+just tes verify-bundles
 ```
 
 > [!NOTE]
@@ -55,12 +54,12 @@ just db validate-tes-data
 Use Docker Compose to build and start the PostgreSQL container.
 On first run, this will initialize the server, apply schemas, and run the seeding script to populate the database.
 
-The main seeding script lives in `seeding/load_processed_data.py`. It reads the
+The main seeding script lives in `refiner/ops/seeding/load_processed_data.py`. It reads the
 flat tables in `refiner/tes/data/processed/` -- produced once per TES release by
 `tes/normalize` -- and COPYs them into the database. It does not read the raw
 FHIR bundles and has no knowledge of TES versions.
 
-While you can run it directly with `python seeding/load_processed_data.py`, the recommended way is:
+While you can run it directly with `python ops/seeding/load_processed_data.py`, the recommended way is:
 
 ```bash
 just db seed

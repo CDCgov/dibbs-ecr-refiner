@@ -78,9 +78,10 @@ ignore = [
 "**/lambda/*" = ["D", "S", "ANN"]
 # - disable type annotation rules in scripts
 "**/scripts/*" = ["ANN", "T201"]
-# - same relaxation for the TES pipeline and the ops-container scripts
-"**/tes/*" = ["ANN", "T201"]
-"**/ops/*" = ["ANN", "T201"]
+# - the TES pipeline and ops scripts report by printing, but they are imported
+#   packages rather than one-off scripts, so annotations stay required
+"**/tes/*" = ["T201"]
+"**/ops/*" = ["T201"]
 # - allow missing docstrings in __init__
 "__init__.py" = ["D"]
 

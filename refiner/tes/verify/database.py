@@ -113,7 +113,7 @@ def check_systems_present(connection: Connection, versions: list[str]) -> Result
             "WHERE condition_version = ANY(%(versions)s)",
             {"versions": versions},
         )
-        used = (cursor.fetchone() or [0])[0]
+        (used,) = cursor.fetchone()
 
     return Result(
         "Every code system in the processed data exists in `systems`",
@@ -130,14 +130,12 @@ def check_row_counts(
     Table counts agree between the processed data and the database.
     """
 
-    expected = {
-        "conditions": _count_csv(
-            processed_dir / "conditions.csv.gz", "version", versions
-        ),
-        "valuesets": _count_csv(
-            processed_dir / "valuesets.csv.gz", "condition_version", versions
-        ),
-    }
+    expected_conditions = _count_csv(
+        processed_dir / "conditions.csv.gz", "version", versions
+    )
+    expected_valuesets = _count_csv(
+        processed_dir / "valuesets.csv.gz", "condition_version", versions
+    )
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -154,8 +152,8 @@ def check_row_counts(
         conditions, valuesets, memberships, expected_memberships = cursor.fetchone()
 
     comparisons = [
-        ("conditions", expected["conditions"], conditions),
-        ("valuesets", expected["valuesets"], valuesets),
+        ("conditions", expected_conditions, conditions),
+        ("valuesets", expected_valuesets, valuesets),
         ("memberships", expected_memberships, memberships),
     ]
     failures = [
@@ -213,12 +211,12 @@ def check_memberships_match(connection: Connection, versions: list[str]) -> Resu
         cursor.execute(
             f"SELECT count(*) FROM ({expected} EXCEPT {actual}) missing", params
         )
-        missing = (cursor.fetchone() or [0])[0]
+        (missing,) = cursor.fetchone()
 
         cursor.execute(
             f"SELECT count(*) FROM ({actual} EXCEPT {expected}) extra", params
         )
-        extra = (cursor.fetchone() or [0])[0]
+        (extra,) = cursor.fetchone()
 
         failures = []
         if missing or extra:

@@ -15,12 +15,12 @@ alias vd := verify-db
 [doc('Fetch grouper data from the TES API into data/source-tes-groupers (needs TES_API_KEY in your .env)')]
 [group('tes')]
 fetch:
-    docker compose exec server python tes/fetch/detect_changes.py
+    docker compose exec server python -m tes.fetch.detect_changes
 
 [doc('Check that newly fetched bundles still parse the way the seeding pipeline expects')]
 [group('tes')]
 verify-bundles:
-    docker compose exec server python tes/verify/validate_tes_valuesets.py
+    docker compose exec server python -m tes.verify.validate_tes_valuesets
 
 [doc('Check data/processed is intact, current, and exactly what normalize produces')]
 [group('tes')]

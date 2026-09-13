@@ -67,9 +67,6 @@ COPY ./refiner/tes/normalize ./tes/normalize
 COPY ./refiner/tes/verify ./tes/verify
 COPY ./refiner/tes/data/processed ./tes/data/processed
 
-# Copy active configuration regeneration script
-
-
 # Copy refiner modules
 COPY ./refiner/app/api app/api
 COPY ./refiner/app/core app/core

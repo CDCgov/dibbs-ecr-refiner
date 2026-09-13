@@ -59,10 +59,6 @@ from .model import FhirCodeInfo, ValueSetDict
 SEMVER_PATTERN = re.compile(r"\d+\.\d+\.\d+")
 DATETIME_PATTERN = re.compile(r"\d{8}")
 
-# the last release of each version family that still authored codes inline
-LAST_CONCEPT_LIST_SEMVER = (6, 0, 0)
-LAST_CONCEPT_LIST_DATETIME = "20260327"
-
 
 class SchemaEra(StrEnum):
     """
@@ -79,13 +75,43 @@ class UnknownReleaseError(ValueError):
     """
 
 
-def _semver_tuple(version: str) -> tuple[int, ...]:
-    return tuple(int(part) for part in version.split("."))
+def _release_key(version: str) -> tuple[str, tuple[int, ...] | str]:
+    """
+    Resolve a version string to a value comparable within its own family.
+
+    Returns a ("semver", tuple) or ("datetime", str) pair so callers compare
+    like with like. TES publishes one family or the other, never both, so a
+    version matching neither means a numbering scheme this module predates.
+
+    Args:
+        version: The `ValueSet.version` value, e.g. "7.0.0" or "20260731".
+
+    Returns:
+        The family name and a key comparable against that family's boundaries.
+
+    Raises:
+        UnknownReleaseError: The version matches neither family.
+    """
+
+    if match := SEMVER_PATTERN.search(version):
+        return ("semver", tuple(int(part) for part in match.group(0).split(".")))
+    if match := DATETIME_PATTERN.search(version):
+        return ("datetime", match.group(0))
+
+    raise UnknownReleaseError(
+        f"TES version {version!r} matches neither the semver nor the datetime "
+        "version family. A new reader and SCHEMA_ERAS entry are needed."
+    )
 
 
 def era_for_version(version: str) -> SchemaEra:
     """
     Map a TES version string to the artifact shape it uses.
+
+    This is the complement of `leaf_may_omit_concepts`: the expansion reader is
+    needed exactly when `concept[]` stopped being guaranteed. Deriving it rather
+    than encoding the boundary twice keeps the two from drifting -- they used to
+    disagree for any release between 6.0.0 and 7.0.0.
 
     Args:
         version: The `ValueSet.version` value, e.g. "7.0.0" or "20260731".
@@ -94,28 +120,13 @@ def era_for_version(version: str) -> SchemaEra:
         The SchemaEra whose reader understands this release.
 
     Raises:
-        UnknownReleaseError: The version matches neither version family, which
-            means TES has introduced a numbering scheme this module predates.
+        UnknownReleaseError: The version matches neither version family.
     """
 
-    if match := SEMVER_PATTERN.search(version):
-        era = (
-            SchemaEra.CONCEPT_LIST
-            if _semver_tuple(match.group(0)) <= LAST_CONCEPT_LIST_SEMVER
-            else SchemaEra.EXPANSION
-        )
-        return era
-
-    if match := DATETIME_PATTERN.search(version):
-        return (
-            SchemaEra.CONCEPT_LIST
-            if match.group(0) <= LAST_CONCEPT_LIST_DATETIME
-            else SchemaEra.EXPANSION
-        )
-
-    raise UnknownReleaseError(
-        f"TES version {version!r} matches neither the semver nor the datetime "
-        "version family. A new reader and SCHEMA_ERAS entry are needed."
+    return (
+        SchemaEra.EXPANSION
+        if leaf_may_omit_concepts(version)
+        else SchemaEra.CONCEPT_LIST
     )
 
 
@@ -216,23 +227,30 @@ def release_has_expansion(version: str) -> bool:
     Whether every grouper in this release carries `expansion.contains`.
     """
 
-    if match := SEMVER_PATTERN.search(version):
-        return _semver_tuple(match.group(0)) >= FIRST_SEMVER_WITH_EXPANSION
-    if match := DATETIME_PATTERN.search(version):
-        return match.group(0) >= FIRST_DATETIME_WITH_EXPANSION
-    raise UnknownReleaseError(version)
+    family, key = _release_key(version)
+    boundary = (
+        FIRST_SEMVER_WITH_EXPANSION
+        if family == "semver"
+        else FIRST_DATETIME_WITH_EXPANSION
+    )
+    return key >= boundary
 
 
 def leaf_may_omit_concepts(version: str) -> bool:
     """
     Whether a leaf grouper in this release may publish no `concept[]`.
+
+    This is the boundary the readers split on: below it the authored `concept[]`
+    is always present, at or above it the expansion is the only reliable source.
     """
 
-    if match := SEMVER_PATTERN.search(version):
-        return _semver_tuple(match.group(0)) >= FIRST_SEMVER_OMITTING_CONCEPTS
-    if match := DATETIME_PATTERN.search(version):
-        return match.group(0) >= FIRST_DATETIME_OMITTING_CONCEPTS
-    raise UnknownReleaseError(version)
+    family, key = _release_key(version)
+    boundary = (
+        FIRST_SEMVER_OMITTING_CONCEPTS
+        if family == "semver"
+        else FIRST_DATETIME_OMITTING_CONCEPTS
+    )
+    return key >= boundary
 
 
 def reader_for_version(version: str) -> CodeReader:

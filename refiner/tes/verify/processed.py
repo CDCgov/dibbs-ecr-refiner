@@ -41,9 +41,9 @@ from tes.normalize.readers import leaf_may_omit_concepts, release_has_expansion
 from tes.normalize.run import (
     PROCESSED_DIR,
     RAW_DIR,
-    _file_hash,
-    _source_hashes,
+    file_hash,
     load_raw_valuesets,
+    source_hashes,
 )
 from tes.normalize.run import (
     main as normalize_main,
@@ -51,26 +51,38 @@ from tes.normalize.run import (
 from tes.verify.report import Result, render
 
 
-def check_manifest_hashes(processed_dir: Path) -> Result:
+def read_manifest(processed_dir: Path) -> dict | None:
     """
-    Every file the manifest names exists and still hashes to what it recorded.
+    Parse the processed manifest, or None when it is absent.
+
+    Absence is a reportable failure rather than an exception so every check still
+    runs and the report names what is wrong.
     """
 
     manifest_path = processed_dir / "manifest.json"
     if not manifest_path.exists():
+        return None
+    return json.loads(manifest_path.read_text())
+
+
+def check_manifest_hashes(manifest: dict | None, processed_dir: Path) -> Result:
+    """
+    Every file the manifest names exists and still hashes to what it recorded.
+    """
+
+    if manifest is None:
         return Result(
             "Processed files match their manifest hashes",
             False,
-            f"{manifest_path} not found -- run `just tes normalize`",
+            f"{processed_dir / 'manifest.json'} not found -- run `just tes normalize`",
         )
 
-    manifest = json.loads(manifest_path.read_text())
     failures = []
     for name, entry in manifest["files"].items():
         path = processed_dir / name
         if not path.exists():
             failures.append(f"{name}: missing")
-        elif (actual := _file_hash(path)) != entry["hash"]:
+        elif (actual := file_hash(path)) != entry["hash"]:
             failures.append(f"{name}: {actual[:12]} != {entry['hash'][:12]}")
 
     return Result(
@@ -81,14 +93,24 @@ def check_manifest_hashes(processed_dir: Path) -> Result:
     )
 
 
-def check_derived_from(processed_dir: Path, raw_dir: Path) -> Result:
+def check_derived_from(manifest: dict | None, raw_dir: Path) -> Result:
     """
     The raw bundles still hash to what normalize recorded when it last ran.
+
+    Takes the parsed manifest rather than re-reading it: a missing manifest is a
+    clean failure in `check_manifest_hashes`, and this reading the file again
+    turned that into a crash that killed the rest of the run.
     """
 
-    manifest = json.loads((processed_dir / "manifest.json").read_text())
+    if manifest is None:
+        return Result(
+            "Processed data was built from the raw bundles on disk",
+            False,
+            "no manifest to compare against -- run `just tes normalize`",
+        )
+
     recorded = manifest["derived_from"]
-    actual = _source_hashes(raw_dir)
+    actual = source_hashes(raw_dir)
 
     failures = [
         f"{name}: added to raw, not in processed"
@@ -130,7 +152,7 @@ def check_regenerates_identically(processed_dir: Path, raw_dir: Path) -> Result:
                 failures.append(
                     f"{path.name}: normalize produced it, repo does not have it"
                 )
-            elif _file_hash(committed) != _file_hash(path):
+            elif file_hash(committed) != file_hash(path):
                 failures.append(f"{path.name}: committed copy differs from a fresh run")
 
         regenerated = {path.name for path in scratch_dir.iterdir()}
@@ -168,6 +190,19 @@ class MembershipFacts:
     conditions_by_self_naming_code: dict[tuple[str, str], set[str]]
 
 
+def _is_true(value: str) -> bool:
+    """
+    Parse a boolean out of CSV without depending on how it was written.
+
+    `csv.writer` renders Python's True as "True"; Postgres, pandas and polars all
+    write something different. Matching one spelling means a writer change makes
+    every row read as False and `check_self_naming_codes_are_unique` passes on an
+    empty set.
+    """
+
+    return value.strip().lower() in {"true", "t", "1", "yes"}
+
+
 def read_membership_facts(processed_dir: Path) -> MembershipFacts:
     """
     Make one pass over memberships.csv.gz and collect what the checks need.
@@ -181,7 +216,7 @@ def read_membership_facts(processed_dir: Path) -> MembershipFacts:
     ) as handle:
         for row in csv.DictReader(handle):
             with_codes.add((row["condition_url"], row["condition_version"]))
-            if row["is_child_rsg"] == "True":
+            if _is_true(row["is_child_rsg"]):
                 by_code[(row["system_oid"], row["code"])].add(row["condition_url"])
 
     return MembershipFacts(with_codes, dict(by_code))
@@ -236,7 +271,7 @@ def check_self_naming_codes_are_unique(facts: MembershipFacts) -> Result:
     )
 
 
-def check_categories_are_known(processed_dir: Path) -> Result:
+def check_categories_are_known(valuesets: list[dict[str, str]]) -> Result:
     """
     Every valueset category is one the application understands.
 
@@ -245,33 +280,32 @@ def check_categories_are_known(processed_dir: Path) -> Result:
     surfaces -- the app's filters and grouping are built around the known set.
     """
 
-    rows = _read_rows(processed_dir / "valuesets.csv.gz")
-    unknown = sorted({row["category"] for row in rows} - KNOWN_CATEGORIES)
+    unknown = sorted({row["category"] for row in valuesets} - KNOWN_CATEGORIES)
 
     return Result(
         "Every valueset category is a known slug",
         not unknown,
-        f"{len(rows):,} valuesets across {len({r['category'] for r in rows})} categories",
+        f"{len(valuesets):,} valuesets across "
+        f"{len({row['category'] for row in valuesets})} categories",
         [f"{category}: not in KNOWN_CATEGORIES" for category in unknown],
     )
 
 
-def check_no_empty_valuesets(processed_dir: Path) -> Result:
+def check_no_empty_valuesets(valuesets: list[dict[str, str]]) -> Result:
     """
     No leaf grouper projected zero codes.
     """
 
-    rows = _read_rows(processed_dir / "valuesets.csv.gz")
     empty = [
         f"{row['display_name']} ({row['canonical_url']})"
-        for row in rows
+        for row in valuesets
         if row["code_count"] == "0"
     ]
 
     return Result(
         "No valueset projected zero codes",
         not empty,
-        f"{len(rows):,} valuesets, {len(empty)} empty",
+        f"{len(valuesets):,} valuesets, {len(empty)} empty",
         empty,
     )
 
@@ -300,7 +334,7 @@ def check_text_outputs_use_lf(processed_dir: Path) -> Result:
     )
 
 
-def check_dropped_systems_are_expected(processed_dir: Path) -> Result:
+def check_dropped_systems_are_expected(manifest: dict | None) -> Result:
     """
     The set of unsupported code systems is exactly the one we decided to drop.
 
@@ -309,7 +343,13 @@ def check_dropped_systems_are_expected(processed_dir: Path) -> Result:
     discovering months later that codes were being discarded.
     """
 
-    manifest = json.loads((processed_dir / "manifest.json").read_text())
+    if manifest is None:
+        return Result(
+            "Dropped code systems are all expected",
+            False,
+            "no manifest to read the drop set from -- run `just tes normalize`",
+        )
+
     dropped = manifest.get("dropped_by_system", {})
     unexpected = sorted(set(dropped) - KNOWN_UNSUPPORTED_SYSTEMS)
 
@@ -342,22 +382,22 @@ def check_schema_era_assumptions(raw_dir: Path) -> Result:
     """
 
     failures = []
-    checked = 0
+    bundles = load_raw_valuesets(raw_dir)
 
-    for (_, version), valueset in load_raw_valuesets(raw_dir).items():
+    for (_, version), valueset in bundles.items():
         has_expansion = bool((valueset.get("expansion") or {}).get("contains"))
         has_concepts = any(
             include.get("concept")
             for include in (valueset.get("compose") or {}).get("include", [])
         )
         title = valueset.get("title") or valueset.get("url", "?")
-        checked += 1
 
-        if has_expansion is not release_has_expansion(version):
+        expected_expansion = release_has_expansion(version)
+        if has_expansion is not expected_expansion:
             failures.append(
                 f"{title} ({version}): expansion is "
                 f"{'present' if has_expansion else 'absent'}, release table says "
-                f"{'present' if not has_expansion else 'absent'}"
+                f"{'present' if expected_expansion else 'absent'}"
             )
 
         is_leaf = is_reporting_spec_grouper(valueset) or is_additional_context_grouper(
@@ -382,7 +422,7 @@ def check_schema_era_assumptions(raw_dir: Path) -> Result:
     return Result(
         "Raw bundles match the shape their release is documented to have",
         not failures,
-        f"{checked:,} valuesets checked against the release table",
+        f"{len(bundles):,} valuesets checked against the release table",
         failures,
     )
 
@@ -398,39 +438,45 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--quick",
         action="store_true",
-        help="skip the checks that re-read the raw bundles (~25s)",
+        help=(
+            "skip the two checks that re-read every raw bundle (~25s); the "
+            "cheaper raw hash comparison still runs"
+        ),
     )
     parser.add_argument(
         "--integrity-only",
         action="store_true",
         help=(
-            "only verify the processed files against their own manifest. This is "
-            "the one check that needs nothing but data/processed, so it is what "
-            "the ops container can run before seeding."
+            "only check the processed files against their own manifest. This is "
+            "the one mode needing nothing but data/processed, so it is what the "
+            "ops container runs before seeding."
         ),
     )
     args = parser.parse_args(argv)
 
+    manifest = read_manifest(args.processed_dir)
+
     if args.integrity_only:
         return render(
             [
-                check_manifest_hashes(args.processed_dir),
+                check_manifest_hashes(manifest, args.processed_dir),
                 check_text_outputs_use_lf(args.processed_dir),
             ]
         )
 
     facts = read_membership_facts(args.processed_dir)
+    valuesets = _read_rows(args.processed_dir / "valuesets.csv.gz")
     results = [
-        check_manifest_hashes(args.processed_dir),
-        check_derived_from(args.processed_dir, args.raw_dir),
+        check_manifest_hashes(manifest, args.processed_dir),
+        check_derived_from(manifest, args.raw_dir),
         check_every_condition_has_codes(args.processed_dir, facts),
         check_self_naming_codes_are_unique(facts),
-        check_categories_are_known(args.processed_dir),
-        check_no_empty_valuesets(args.processed_dir),
+        check_categories_are_known(valuesets),
+        check_no_empty_valuesets(valuesets),
         check_text_outputs_use_lf(args.processed_dir),
-        check_dropped_systems_are_expected(args.processed_dir),
+        check_dropped_systems_are_expected(manifest),
     ]
-    # these two need the raw bundles and are the slowest, so they run last
+    # these two re-read every raw bundle and are the slowest, so they run last
     if not args.quick:
         results.append(check_schema_era_assumptions(args.raw_dir))
         results.append(check_regenerates_identically(args.processed_dir, args.raw_dir))

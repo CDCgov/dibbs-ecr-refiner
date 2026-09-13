@@ -33,5 +33,8 @@ class TestTesVerify:
             + "\n".join(failures)
         )
 
-        # a passing run with no checks would be vacuous
-        assert len(results) == 4
+        # a passing run with no checks would be vacuous; assert on the
+        # properties we care about rather than a count that breaks on every add
+        titles = {result.title for result in results}
+        assert "Membership sets are identical in both directions" in titles
+        assert "Every code system in the processed data exists in `systems`" in titles

@@ -8,8 +8,9 @@ stay flat.
 """
 
 from dataclasses import dataclass
+from typing import Any
 
-type ValueSetDict = dict
+type ValueSetDict = dict[str, Any]
 type SystemOid = str
 type CanonicalUrl = str
 type Version = str

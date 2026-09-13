@@ -16,16 +16,18 @@ a cast with the row in hand rather than inside COPY.
 """
 
 import gzip
+import logging
 import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
 
-from config import ENV_PATH, logger
 from connection import get_db_connection
 from dotenv import load_dotenv
 from psycopg import Cursor
 from systems import upsert_systems
+
+logger = logging.getLogger(__name__)
 
 PROCESSED_DIR = Path(__file__).parent.parent.parent / "tes" / "data" / "processed"
 
@@ -410,7 +412,11 @@ def load_processed_data(
 
 
 if __name__ == "__main__":
-    load_dotenv(dotenv_path=ENV_PATH)
+    logging.basicConfig(level=logging.INFO)
+
+    # bare load_dotenv walks up from the working directory, matching tes/fetch.
+    # An absolute path here rotted silently when this module moved directories.
+    load_dotenv()
 
     seed_all_env = os.getenv("SEED_ALL_TES_DATA")
     env = os.getenv("ENV")
@@ -421,5 +427,6 @@ if __name__ == "__main__":
 
     if not url or not password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
-    else:
-        load_processed_data(db_url=url, db_password=password, seed_all=seed_all)
+        raise SystemExit(1)
+
+    load_processed_data(db_url=url, db_password=password, seed_all=seed_all)

@@ -1,5 +1,12 @@
+"""
+Database connection helper shared by the seeding scripts.
+"""
+
+import logging
+
 import psycopg
-from config import logger
+
+logger = logging.getLogger(__name__)
 
 
 def get_db_connection(db_url: str, db_password: str) -> psycopg.Connection:
