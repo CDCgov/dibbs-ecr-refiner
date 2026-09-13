@@ -3,7 +3,7 @@ Verify the seeded database against the processed tables.
 
 This is the check that answers "did this deploy seed correctly". It needs only
 the processed CSVs and a connection, both of which the ops container already
-has, so it runs anywhere -- including against production -- unlike the
+has, so it runs anywhere--including against production--unlike the
 raw-to-processed check, which needs the bundles.
 
 Properties asserted, for the TES releases actually seeded:
@@ -46,7 +46,9 @@ MEMBERSHIP_COLUMNS = (
 
 
 def seeded_versions(connection: Connection) -> list[str]:
-    """Return the TES releases present in the database."""
+    """
+    Return the TES releases present in the database.
+    """
 
     with connection.cursor() as cursor:
         cursor.execute("SELECT version FROM tes ORDER BY version")
@@ -90,7 +92,9 @@ def _stage_processed_memberships(connection: Connection, processed_dir: Path) ->
 
 
 def check_systems_present(connection: Connection, versions: list[str]) -> Result:
-    """Every code system the processed data uses is registered in `systems`."""
+    """
+    Every code system the processed data uses is registered in `systems`.
+    """
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -122,7 +126,9 @@ def check_systems_present(connection: Connection, versions: list[str]) -> Result
 def check_row_counts(
     connection: Connection, processed_dir: Path, versions: list[str]
 ) -> Result:
-    """Table counts agree between the processed data and the database."""
+    """
+    Table counts agree between the processed data and the database.
+    """
 
     expected = {
         "conditions": _count_csv(
@@ -291,7 +297,9 @@ def run_checks(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the processed-to-database checks against DB_URL."""
+    """
+    Run the processed-to-database checks against DB_URL.
+    """
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--processed-dir", type=Path, default=PROCESSED_DIR)

@@ -1,5 +1,3 @@
-"""Database connection helper shared by the seeding scripts."""
-
 import psycopg
 from config import logger
 

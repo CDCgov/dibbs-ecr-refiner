@@ -2,7 +2,7 @@
 Turn raw TES ValueSet bundles into flat rows the seeder can COPY.
 
 This is the only step that understands FHIR. It runs once per TES release, in
-dev or CI, where it can afford to be slow and thorough. Everything downstream --
+dev or CI, where it can afford to be slow and thorough. Everything downstream--
 the seeder, the ops container, CI -- reads the gzipped CSV this writes and needs
 no FHIR knowledge at all.
 
@@ -58,7 +58,9 @@ MANIFEST_VERSION = 1
 
 @dataclass
 class Counts:
-    """Row counts per output, reported and recorded in the manifest."""
+    """
+    Row counts per output, reported and recorded in the manifest.
+    """
 
     conditions: int = 0
     valuesets: int = 0
@@ -180,10 +182,10 @@ def normalize(
             1 for key in child_references(valueset) if key not in valuesets
         )
 
-        # A condition's own SNOMED codes are the ones naming its RSG children.
+        # a condition's own SNOMED codes are the ones naming its RSG children.
         # The flag is scoped to (code, the RSG that names itself with it): the
         # same SNOMED can appear as ordinary context in a sibling grouper, and
-        # that membership is not a self-naming one.
+        # that membership is not a self-naming one
         self_naming: set[tuple[str, str, str]] = set()
         for rsg in rsgs:
             snomed = snomed_from_rsg_url(rsg.get("url"))
@@ -258,9 +260,9 @@ def normalize(
             )
             counts.valuesets += 1
 
-        # An RSG does not always list the SNOMED code it names itself with. The
+        # an RSG does not always list the SNOMED code it names itself with. the
         # condition still owns that code, so the membership is emitted here even
-        # though no grouper published it as a concept.
+        # though no grouper published it as a concept
         for rsg_url, oid, snomed in sorted(self_naming - emitted):
             membership_rows.append(
                 [
@@ -292,7 +294,9 @@ def normalize(
 
 
 def _code_set_hash(entries) -> str:
-    """Content hash of a grouper's code set, so a swap shows up even at equal count."""
+    """
+    Content hash of a grouper's code set, so a swap shows up even at equal count.
+    """
 
     digest = hashlib.sha256()
     for system, code in sorted({(e.system_url, e.code) for e in entries}):

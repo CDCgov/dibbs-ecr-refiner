@@ -8,7 +8,7 @@ normalize time, and this step only moves flat rows.
 The shape is COPY into an unlogged stage table, then `INSERT ... SELECT` with
 `ON CONFLICT` into the real one. Because the stage tables carry the natural keys
 (canonical urls, versions, code system OIDs), the foreign keys are resolved by
-joining rather than by round-tripping generated ids back into Python -- which is
+joining rather than by round-tripping generated ids back into Python--which is
 what the previous loader spent most of its time doing.
 
 Every stage column is TEXT and cast on the way in, so a malformed value fails on
@@ -32,7 +32,9 @@ PROCESSED_DIR = Path(__file__).parent.parent.parent / "tes" / "data" / "processe
 
 @contextmanager
 def _timed(label: str):
-    """Log how long a load phase took, so a regression is attributable."""
+    """
+    Log how long a load phase took, so a regression is attributable.
+    """
 
     start = time.perf_counter()
     yield
@@ -151,7 +153,9 @@ def _versions_to_seed(cursor: Cursor, seed_all: bool, keep: int) -> list[str]:
 
 
 def _upsert_tes_versions(cursor: Cursor, versions: list[str]) -> None:
-    """Ensure a `tes` row exists for every release being seeded."""
+    """
+    Ensure a `tes` row exists for every release being seeded.
+    """
 
     cursor.executemany(
         "INSERT INTO tes (version) VALUES (%s) ON CONFLICT (version) DO NOTHING",
@@ -161,7 +165,9 @@ def _upsert_tes_versions(cursor: Cursor, versions: list[str]) -> None:
 
 
 def _upsert_conditions(cursor: Cursor, versions: list[str]) -> None:
-    """Project staged condition rows, joining each to its TES release."""
+    """
+    Project staged condition rows, joining each to its TES release.
+    """
 
     cursor.execute(
         """
@@ -195,7 +201,9 @@ def _upsert_conditions(cursor: Cursor, versions: list[str]) -> None:
 
 
 def _upsert_valuesets(cursor: Cursor, versions: list[str]) -> None:
-    """Project staged leaf groupers, resolving each to its condition row."""
+    """
+    Project staged leaf groupers, resolving each to its condition row.
+    """
 
     cursor.execute(
         """
@@ -271,13 +279,13 @@ def _refresh_memberships(cursor: Cursor, versions: list[str]) -> None:
     logger.info("⏳ Refreshing relationships table...")
     cursor.execute("TRUNCATE conditions_codes_temp")
 
-    # Three per-row foreign key checks across a million rows cost ~38s; dropping
+    # three per-row foreign key checks across a million rows cost ~38s; dropping
     # the constraints and re-adding them validates the whole table in one pass
-    # instead, for ~0.3s. Safe because this runs inside the loader's single
-    # transaction -- DDL is transactional in Postgres, so a failure anywhere
-    # rolls the constraints back with the data -- and because every id inserted
+    # instead, for ~0.3s. safe because this runs inside the loader's single
+    # transaction--DDL is transactional in postgres, so a failure anywhere
+    # rolls the constraints back with the data--and because every id inserted
     # below came from joining against the very tables being referenced.
-    for constraint, column, table in FOREIGN_KEYS:
+    for constraint, _, _ in FOREIGN_KEYS:
         cursor.execute(
             f"ALTER TABLE conditions_codes_temp DROP CONSTRAINT {constraint}"
         )

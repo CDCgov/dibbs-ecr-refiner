@@ -52,7 +52,9 @@ from tes.verify.report import Result, render
 
 
 def check_manifest_hashes(processed_dir: Path) -> Result:
-    """Every file the manifest names exists and still hashes to what it recorded."""
+    """
+    Every file the manifest names exists and still hashes to what it recorded.
+    """
 
     manifest_path = processed_dir / "manifest.json"
     if not manifest_path.exists():
@@ -80,7 +82,9 @@ def check_manifest_hashes(processed_dir: Path) -> Result:
 
 
 def check_derived_from(processed_dir: Path, raw_dir: Path) -> Result:
-    """The raw bundles still hash to what normalize recorded when it last ran."""
+    """
+    The raw bundles still hash to what normalize recorded when it last ran.
+    """
 
     manifest = json.loads((processed_dir / "manifest.json").read_text())
     recorded = manifest["derived_from"]
@@ -109,7 +113,9 @@ def check_derived_from(processed_dir: Path, raw_dir: Path) -> Result:
 
 
 def check_regenerates_identically(processed_dir: Path, raw_dir: Path) -> Result:
-    """Re-running normalize into a scratch directory reproduces the committed files."""
+    """
+    Re-running normalize into a scratch directory reproduces the committed files.
+    """
 
     with tempfile.TemporaryDirectory() as scratch:
         scratch_dir = Path(scratch)
@@ -163,7 +169,9 @@ class MembershipFacts:
 
 
 def read_membership_facts(processed_dir: Path) -> MembershipFacts:
-    """Make one pass over memberships.csv.gz and collect what the checks need."""
+    """
+    Make one pass over memberships.csv.gz and collect what the checks need.
+    """
 
     with_codes: set[tuple[str, str]] = set()
     by_code: dict[tuple[str, str], set[str]] = defaultdict(set)
@@ -249,7 +257,9 @@ def check_categories_are_known(processed_dir: Path) -> Result:
 
 
 def check_no_empty_valuesets(processed_dir: Path) -> Result:
-    """No leaf grouper projected zero codes."""
+    """
+    No leaf grouper projected zero codes.
+    """
 
     rows = _read_rows(processed_dir / "valuesets.csv.gz")
     empty = [
@@ -354,7 +364,9 @@ def check_schema_era_assumptions(raw_dir: Path) -> Result:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the raw-to-processed checks."""
+    """
+    Run the raw-to-processed checks.
+    """
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)

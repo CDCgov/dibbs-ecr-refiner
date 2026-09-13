@@ -14,6 +14,7 @@ def _convert_datetimes_to_iso(obj):
     """
     Recursively convert all datetime objects to ISO strings.
     """
+
     if isinstance(obj, dict):
         return {k: _convert_datetimes_to_iso(v) for k, v in obj.items()}
     if isinstance(obj, list):
@@ -85,6 +86,7 @@ def _validate_valuesets_file(filepath: Path) -> tuple[int, int]:
 
     Returns (valid_count, invalid_count).
     """
+
     # lazy import so this script can still run if not validating
     try:
         from fhir.resources.valueset import ValueSet

@@ -65,14 +65,18 @@ LAST_CONCEPT_LIST_DATETIME = "20260327"
 
 
 class SchemaEra(StrEnum):
-    """The distinct artifact shapes TES has published."""
+    """
+    The distinct artifact shapes TES has published.
+    """
 
     CONCEPT_LIST = "concept_list"
     EXPANSION = "expansion"
 
 
 class UnknownReleaseError(ValueError):
-    """Raised when a ValueSet's version matches no known version family."""
+    """
+    Raised when a ValueSet's version matches no known version family.
+    """
 
 
 def _semver_tuple(version: str) -> tuple[int, ...]:
@@ -196,19 +200,21 @@ SCHEMA_ERAS: dict[SchemaEra, CodeReader] = {
     SchemaEra.EXPANSION: read_codes_expansion,
 }
 
-# When `expansion.contains` first appeared on every kind of grouper, condition
-# groupers included. Absent before this, present from it.
+# when `expansion.contains` first appeared on every kind of grouper, condition
+# groupers included. Absent before this, present from it
 FIRST_SEMVER_WITH_EXPANSION = (4, 0, 0)
 FIRST_DATETIME_WITH_EXPANSION = "20260327"
 
-# When a leaf grouper was first allowed to publish no `compose.include[].concept`
-# at all. This is the boundary the readers split on.
+# when a leaf grouper was first allowed to publish no `compose.include[].concept`
+# at all. This is the boundary the readers split on
 FIRST_SEMVER_OMITTING_CONCEPTS = (7, 0, 0)
 FIRST_DATETIME_OMITTING_CONCEPTS = "20260731"
 
 
 def release_has_expansion(version: str) -> bool:
-    """Whether every grouper in this release carries `expansion.contains`."""
+    """
+    Whether every grouper in this release carries `expansion.contains`.
+    """
 
     if match := SEMVER_PATTERN.search(version):
         return _semver_tuple(match.group(0)) >= FIRST_SEMVER_WITH_EXPANSION
@@ -218,7 +224,9 @@ def release_has_expansion(version: str) -> bool:
 
 
 def leaf_may_omit_concepts(version: str) -> bool:
-    """Whether a leaf grouper in this release may publish no `concept[]`."""
+    """
+    Whether a leaf grouper in this release may publish no `concept[]`.
+    """
 
     if match := SEMVER_PATTERN.search(version):
         return _semver_tuple(match.group(0)) >= FIRST_SEMVER_OMITTING_CONCEPTS

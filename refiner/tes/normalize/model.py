@@ -56,7 +56,7 @@ SYSTEM_URL_TO_OID: dict[str, SystemOid] = {
     system["url"]: system["oid"] for system in CODE_SYSTEMS.values()
 }
 
-# Systems TES publishes that the refiner deliberately does not store: occupational
+# systems TES publishes that the refiner deliberately does not store: occupational
 # and industry coding, HL7 v3 administrative vocabularies, billing codes, retired
 # revisions, and local/naming-system variants. The verify step asserts the drop set
 # is exactly this -- a new entry means TES started publishing something, and

@@ -3,13 +3,13 @@ Classification and reference resolution for TES groupers.
 
 TES publishes three kinds of ValueSet:
 
-* **Condition grouper (CG)** -- a manifest. Its `compose.include[].valueSet`
+* **Condition grouper (CG)**--a manifest. Its `compose.include[].valueSet`
   entries name its children by `(url, version)`. From 7.0.0 it also carries its
   own `expansion.contains` union of everything below it; nothing reads that,
   because a condition's codes are defined by resolving its children.
-* **Reporting specification grouper (RSG)** -- one per reportable condition,
+* **Reporting specification grouper (RSG)**--one per reportable condition,
   identified by `rs-grouper-<SNOMED>` in its url. Carries codes.
-* **Additional context grouper (ACG)** -- annotates a condition with a category
+* **Additional context grouper (ACG)**--annotates a condition with a category
   (diagnosis, medication, symptom, ...) parsed from its title. Carries codes.
 
 This module is the single place that answers "what kind of grouper is this" and
@@ -146,7 +146,9 @@ def category_for(name: str) -> str:
 
 
 def snomed_from_rsg_url(url: str | None) -> str | None:
-    """Extract the SNOMED code an RSG names itself with, from its url."""
+    """
+    Extract the SNOMED code an RSG names itself with, from its url.
+    """
 
     if not url or RSG_URL_MARKER not in url:
         return None
@@ -289,7 +291,9 @@ def resolve_children(
 
 
 def condition_identity(valueset: ValueSetDict) -> tuple[CanonicalUrl, Version] | None:
-    """Return the (url, version) a condition grouper is identified by, if complete."""
+    """
+    Return the (url, version) a condition grouper is identified by, if complete.
+    """
 
     url = valueset.get("url")
     version = valueset.get("version")
