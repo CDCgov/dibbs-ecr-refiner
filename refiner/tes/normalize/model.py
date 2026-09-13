@@ -20,39 +20,38 @@ type Version = str
 type ValueSetKey = tuple[CanonicalUrl, Version]
 
 
+# The systems whose codes normalize keeps, as (url, oid) -- what TES publishes
+# mapped to what the database stores. Deliberately not the same table as
+# `ops/seeding/systems.py`: that one defines the application's vocabulary and
+# carries display names and an `Other` bucket for custom codes, which TES has no
+# concept of. This one exists only to decide which published codes survive, so it
+# holds nothing else. `tes/verify/database.py` asserts every OID here has a row
+# in `systems`, which is what keeps the two from drifting apart.
 CODE_SYSTEMS: dict[str, dict[str, str]] = {
     "snomed": {
         "oid": "2.16.840.1.113883.6.96",
-        "display_name": "SNOMED",
         "url": "http://snomed.info/sct",
     },
     "loinc": {
         "oid": "2.16.840.1.113883.6.1",
-        "display_name": "LOINC",
         "url": "http://loinc.org",
     },
     "icd10": {
         "oid": "2.16.840.1.113883.6.90",
-        "display_name": "ICD-10",
         "url": "http://hl7.org/fhir/sid/icd-10-cm",
     },
     "rxnorm": {
         "oid": "2.16.840.1.113883.6.88",
-        "display_name": "RxNorm",
         "url": "http://www.nlm.nih.gov/research/umls/rxnorm",
     },
     "cvx": {
         "oid": "2.16.840.1.113883.12.292",
-        "display_name": "CVX",
         "url": "http://hl7.org/fhir/sid/cvx",
     },
 }
 
 SNOMED_OID = CODE_SYSTEMS["snomed"]["oid"]
 
-# TES publishes codes in systems the refiner does not match against (occupational
-# data, CPT, ICD-9, NDC and others). They are dropped rather than stored, and the
-# verify step asserts the drop set has not grown unexpectedly.
 SYSTEM_URL_TO_OID: dict[str, SystemOid] = {
     system["url"]: system["oid"] for system in CODE_SYSTEMS.values()
 }
