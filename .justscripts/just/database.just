@@ -1,4 +1,4 @@
-set working-directory := '../../refiner/scripts'
+set working-directory := '../../refiner'
 set dotenv-load := true
 
 alias h := _default
@@ -13,16 +13,6 @@ alias c := clean
 clean:
     docker compose exec db psql -U postgres -d refiner -f drop-all.sql
 
-[doc('Runs the pipeline scripts that fetch data from the TES API (you must have a TES_API_KEY in your local .env file)')]
-[group('db')]
-fetch-tes-data:
-    docker compose exec server python scripts/pipeline/detect_changes.py
-
-[doc('If new or changed file from `fetch-tes-data` are found, check that their stucture supports the seeding process.')]
-[group('db')]
-validate-tes-data:
-    docker compose exec server python scripts/maintenance/validate_parsing.py
-
 [doc('Runs the seeding script to seed the database with condition data')]
 [group('db')]
 seed:
@@ -32,11 +22,6 @@ seed:
 [group('db')]
 refresh:
     just db clean && just migrate local && just db seed
-
-[doc('Run all DB sanity checks (seeding, integrity, etc)')]
-[group('db')]
-check-seeding:
-    docker compose exec server python ./scripts/maintenance/check_seeded_db.py
 
 [doc('Run a raw SQL query against the database (e.g., `just db query "SELECT * FROM conditions LIMIT 5;"`)')]
 [group('db')]
@@ -56,12 +41,12 @@ table TABLE:
 [doc('Get the count of conditions, grouped by version')]
 [group('db')]
 count-conditions:
-    just db query "SELECT version, COUNT(*) FROM conditions GROUP BY version ORDER BY version;"
+    just db query "SELECT t.version, COUNT(*) FROM conditions c JOIN tes t ON t.id = c.tes_id GROUP BY t.version ORDER BY t.version;"
 
 [doc('Find a condition by its name (case-insensitive search)')]
 [group('db')]
 find-condition NAME:
-    just db query "SELECT id, canonical_url, version, display_name FROM conditions WHERE display_name ILIKE '%{{ NAME }}%';"
+    just db query "SELECT c.id, c.canonical_url, t.version, c.display_name FROM conditions c JOIN tes t ON t.id = c.tes_id WHERE c.display_name ILIKE '%{{ NAME }}%' ORDER BY c.display_name, t.version;"
 
 [doc('Show the 5 most recently created configurations')]
 [group('db')]
@@ -71,7 +56,7 @@ recent-configurations:
 [doc('Check if conditions exist for a specific version (e.g., `just db check-condition-version 3.0.0`)')]
 [group('db')]
 check-condition-version VERSION:
-    just db query "SELECT version, display_name, canonical_url FROM conditions WHERE version = '{{ VERSION }}' LIMIT 5;"
+    just db query "SELECT t.version, c.display_name, c.canonical_url FROM conditions c JOIN tes t ON t.id = c.tes_id WHERE t.version = '{{ VERSION }}' LIMIT 5;"
 
 [doc('Find all configurations for a specific jurisdiction (e.g., `just db check-configs-by-jurisdiction wa`)')]
 [group('db')]
@@ -81,24 +66,12 @@ check-configs-by-jurisdiction JURISDICTION_ID:
 [doc('Find configurations for a jurisdiction and condition name (e.g., `just db check-config-combo wa zika`)')]
 [group('db')]
 check-config-combo JURISDICTION_ID CONDITION_NAME:
-    just db query "SELECT c.name, c.jurisdiction_id, cond.display_name FROM configurations c JOIN conditions cond ON c.condition_id = cond.id WHERE c.jurisdiction_id = '{{ JURISDICTION_ID }}' AND cond.display_name ILIKE '%{{ CONDITION_NAME }}%';"
+    just db query "SELECT c.name, c.jurisdiction_id, cond.display_name FROM configurations c JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary JOIN conditions cond ON cond.id = cc.condition_id WHERE c.jurisdiction_id = '{{ JURISDICTION_ID }}' AND cond.display_name ILIKE '%{{ CONDITION_NAME }}%';"
 
-[doc('Find a specific code within a condition, version, and code system. Usage: just db check-code "COVID-19" "3.0.0" "rxnorm_codes" "2284960"')]
+[doc('Find a code within a condition and TES version. Usage: just db find-code "COVID-19" "7.0.0" "94500-6"')]
 [group('db')]
-check-code CONDITION VERSION SYSTEM CODE:
-    docker compose exec db psql -U postgres -d refiner -c "\
-        SELECT \
-            c.display_name, \
-            c.version, \
-            elem AS matching_code \
-        FROM \
-            conditions c, \
-            LATERAL jsonb_array_elements(c.{{ SYSTEM }}) AS elem \
-        WHERE \
-            c.display_name = '{{ CONDITION }}' \
-            AND c.version = '{{ VERSION }}' \
-            AND elem->>'code' = '{{ CODE }}'; \
-    "
+find-code CONDITION VERSION CODE:
+    just db query "SELECT c.display_name, t.version, s.display_name AS system, co.code, co.display, v.display_name AS grouper, cct.is_child_rsg, cct.is_trigger_code FROM conditions c JOIN tes t ON t.id = c.tes_id JOIN conditions_codes_temp cct ON cct.condition_id = c.id JOIN codes co ON co.id = cct.code_id JOIN systems s ON s.id = co.system_id JOIN valuesets v ON v.id = cct.valueset_id WHERE c.display_name = '{{ CONDITION }}' AND t.version = '{{ VERSION }}' AND co.code = '{{ CODE }}';"
 
 [doc('Cascade delete all the related configuration artifacts. For use after an E2E test run')]
 [group('db')]
