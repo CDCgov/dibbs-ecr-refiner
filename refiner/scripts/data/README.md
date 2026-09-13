@@ -12,15 +12,15 @@ The data is organized into the following subdirectories, with a distinction betw
 
 - This is the **single source of truth** for all eCR-related test data.
 - Files in this directory are used for validation and as the basis for generating other, more specific test data sets.
-- The maintenance and validation scripts in `refiner/scripts/validation/` are designed to run against this data.
+- The CDA validation helpers now live in `refiner/tests/validation/`, and the eICR
+  fixtures they run against moved with them to `refiner/tests/source-ecr-files/`.
 
-### `source-tes-groupers/`
+### `source-tes-groupers/` — moved
 
-**Purpose:** Contains FHIR ValueSet resources that define condition Terminology Exchange Service (TES) groupers.
+**Moved to `refiner/tes/data/source-tes-groupers/`.**
 
-- These files are periodically fetched and saved from the TES API.
-- They serve as the raw source for populating and updating the `conditions` table in the database.
-- The `source-` prefix indicates that this is foundational data that other processes rely on.
+The raw TES ValueSet bundles now live alongside the pipeline that fetches and processes
+them. See `refiner/tes/README.md`.
 - The `manifest.json` has a checksum that helps us track changes in these files over time.
 
 `eicr_triggering.json` comes from the same API but plays a different role: these are the

@@ -55,8 +55,12 @@ just db validate-tes-data
 Use Docker Compose to build and start the PostgreSQL container.
 On first run, this will initialize the server, apply schemas, and run the seeding script to populate the database.
 
-The main seeding script lives in `seeding/load_static_data.py`.
-While you can run it directly with `python seeding/load_static_data.py`, the recommended way is:
+The main seeding script lives in `seeding/load_processed_data.py`. It reads the
+flat tables in `refiner/tes/data/processed/` -- produced once per TES release by
+`tes/normalize` -- and COPYs them into the database. It does not read the raw
+FHIR bundles and has no knowledge of TES versions.
+
+While you can run it directly with `python seeding/load_processed_data.py`, the recommended way is:
 
 ```bash
 just db seed
@@ -87,13 +91,19 @@ The `just db refresh` command will combine the cleaning, migration, and seeding 
 - **Maintenance scripts**: use for verifying data integrity and structure before/after seeding.
 - **Exports**: use scripts in `exports/` for generating CSVs or other data artifacts to share with stakeholders.
 
-There are a handful of helpful `just` commands that you can run to check that the seeding was successful but the `check-seeding` command in `maintenance` is going to contain a suite of helpful checks that we can quickly run to verify things are working as expected (and it should evolve over time):
+Verification lives with the TES pipeline rather than here. After seeding, check
+that the database is a faithful projection of the processed tables:
 
 ```bash
-just db check-seeding
+just tes verify-db        # processed data vs database; safe against a live database
+just tes verify-processed # processed data vs the raw bundles it came from
+just tes verify           # both, plus structural checks on the raw FHIR
 ```
 
-The script `validate_parsing.py` is designed to run **after** you've run the TES pipeline and there are changes to the `manifest.json` file. This script will check that the structure is unchanged.
+`just tes verify-processed` also asserts the data-quality properties that used to
+live in `check_seeded_db.py` -- every condition resolves to codes, self-naming
+SNOMED codes belong to one condition, categories are known slugs, no valueset is
+empty, and no unexpected code system is being dropped.
 
 #### Additional `just` utility commands
 

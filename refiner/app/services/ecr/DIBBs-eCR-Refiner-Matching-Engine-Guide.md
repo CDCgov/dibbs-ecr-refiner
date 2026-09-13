@@ -72,13 +72,15 @@ Open the original eICR and find the entry. Identify:
 
 There are three ways to check:
 
-**`just db check-code` — quickest:**
+**`just db find-code` — quickest:**
 
 ```bash
-just db check-code "COVID-19" "5.0.0" "snomed_codes" "260373001"
+just db find-code "COVID-19" "7.0.0" "260373001"
 ```
 
-This runs a targeted query against the condition's grouper and shows whether the code is present and what display name it has. Swap the system name (`snomed_codes`, `loinc_codes`, `icd10_codes`, `rxnorm_codes`, `cvx_codes`) to match the element's code system.
+This shows whether the code is present for that condition and TES version, which
+code system it belongs to, which grouper contributed it, and whether it is a
+trigger or self-naming code. The code system is looked up rather than passed in.
 
 **Webapp configuration screen**; useful if you need to browse all configured codes for a jurisdiction without knowing the specific code in advance.
 
