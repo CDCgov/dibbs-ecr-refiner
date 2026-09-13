@@ -154,6 +154,45 @@ def _versions_to_seed(cursor: Cursor, seed_all: bool, keep: int) -> list[str]:
     return versions if seed_all else versions[:keep]
 
 
+def _reject_partial_seed_over_fuller_database(
+    cursor: Cursor, versions: list[str]
+) -> None:
+    """
+    Refuse a seed that would strand releases already in the database.
+
+    `_refresh_memberships` truncates the whole junction and refills only the
+    versions being seeded, so a run whose window is narrower than what the
+    database already holds silently leaves every other release with conditions
+    and valuesets but no codes. Those conditions stay configurable in the UI and
+    activate to an `active.json` that matches nothing.
+
+    This is never something anyone means to do: production seeds every release,
+    local and CI seed two against a database they just wiped, and the only way to
+    cross them is pointing a local-mode run at a restored production dump --
+    exactly the case where the stranded releases still have configurations
+    pinned to them.
+
+    Args:
+        cursor: A database cursor.
+        versions: The releases this run is about to seed.
+
+    Raises:
+        SystemExit: The database holds releases this run would strand.
+    """
+
+    cursor.execute("SELECT version FROM tes")
+    stranded = {row[0] for row in cursor.fetchall()} - set(versions)
+    if not stranded:
+        return
+
+    raise SystemExit(
+        f"Refusing to seed {sorted(versions)} over a database that also holds "
+        f"{sorted(stranded)}: those releases would keep their conditions but "
+        "lose every code. Re-run with SEED_ALL_TES_DATA=true, or start from a "
+        "clean database with `just db refresh`."
+    )
+
+
 def _upsert_tes_versions(cursor: Cursor, versions: list[str]) -> None:
     """
     Ensure a `tes` row exists for every release being seeded.
@@ -393,6 +432,7 @@ def load_processed_data(
                 logger.info(f"📥 Staged {staged:,} rows from {filename}")
 
             versions = _versions_to_seed(cursor, seed_all, DEFAULT_VERSIONS_TO_KEEP)
+            _reject_partial_seed_over_fuller_database(cursor, versions)
             _upsert_tes_versions(cursor, versions)
             with _timed("conditions"):
                 _upsert_conditions(cursor, versions)

@@ -123,6 +123,49 @@ def check_systems_present(connection: Connection, versions: list[str]) -> Result
     )
 
 
+def check_no_stranded_conditions(connection: Connection) -> Result:
+    """
+    Every condition in the database resolves to at least one code.
+
+    The general form of the partial-seed failure: a condition row with no
+    memberships stays configurable in the UI and activates to an `active.json`
+    that matches nothing. `ops/seeding` refuses the specific run that causes it,
+    but this catches stranding from any cause -- a failed migration, a manual
+    delete, a future loader change -- and it covers every release in the database
+    rather than only the ones a given run touched.
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT t.version, c.display_name
+            FROM conditions c
+            JOIN tes t ON t.id = c.tes_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM conditions_codes_temp cct
+                WHERE cct.condition_id = c.id
+            )
+            ORDER BY t.version, c.display_name
+        """)
+        stranded = cursor.fetchall()
+
+        cursor.execute("SELECT count(*) FROM conditions")
+        (total,) = cursor.fetchone()
+
+    by_version: dict[str, int] = {}
+    for version, _ in stranded:
+        by_version[version] = by_version.get(version, 0) + 1
+
+    return Result(
+        "No condition is left without codes",
+        not stranded,
+        f"{total:,} conditions, {len(stranded):,} with no codes",
+        [
+            f"{version}: {count:,} conditions have no codes"
+            for version, count in sorted(by_version.items())
+        ],
+    )
+
+
 def check_row_counts(
     connection: Connection, processed_dir: Path, versions: list[str]
 ) -> Result:
@@ -289,6 +332,7 @@ def run_checks(
             f"seeded releases: {', '.join(versions)}",
         ),
         check_systems_present(connection, versions),
+        check_no_stranded_conditions(connection),
         check_row_counts(connection, processed_dir, versions),
         check_memberships_match(connection, versions),
     ]
