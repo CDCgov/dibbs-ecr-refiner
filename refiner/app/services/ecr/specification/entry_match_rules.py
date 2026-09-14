@@ -740,7 +740,7 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   on @root only
 #
 # VERIFYING A CONF NUMBER:
-#   the .sch files under scripts/validation/ encode only machine-testable
+#   the .sch files under tests/validation/ encode only machine-testable
 #   constraints, so "MAY contain zero or one component" and friends never
 #   appear there. absence from a schematron is NOT absence from the IG--
 #   CONF:4527-443/444 above was once wrongly called unsubstantiated on

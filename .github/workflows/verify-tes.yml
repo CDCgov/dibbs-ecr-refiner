@@ -1,0 +1,42 @@
+name: Verify TES data
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  PYTHON_RUNNER_VERSION: "3.14"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: ./refiner
+
+jobs:
+  # Reconciles the committed processed tables against the raw FHIR bundles they
+  # were derived from. This is the only verification layer that needs the raw
+  # bundles, so it cannot run anywhere the ops container reaches -- the other two
+  # layers run in `ops prepare-db` (exercised by the e2e job) and as an
+  # integration test.
+  #
+  # Runs on every PR rather than filtered to paths under tes/. It is ~30s of pure
+  # stdlib Python with no dependencies to install, no database and no Docker, and
+  # a path filter would miss the case that matters most: a change to
+  # tes/normalize that was never applied to the committed data. Path-filtered
+  # required checks are also a branch-protection trap, since a skipped workflow
+  # never reports a status.
+  verify-processed-tes-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup python ${{env.PYTHON_RUNNER_VERSION}}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{env.PYTHON_RUNNER_VERSION}}
+      - name: Verify processed data against the raw bundles
+        env:
+          PYTHONPATH: .
+        run: python -m tes.verify.processed

@@ -64,23 +64,42 @@ case "$COMMAND" in
         ;;
     import)
         echo "Importing static data"
-        exec python3 ./scripts/seeding/load_static_data.py
+        exec python3 ./ops/seeding/load_processed_data.py
+        ;;
+    verify-db)
+        echo "Verifying the database matches the processed TES tables"
+        exec python3 -m tes.verify.database
         ;;
     regenerate-active-configs)
         echo "Regenerating active configuration files"
-        exec python3 ./scripts/reactivations/regenerate_active_configs.py "$@"
+        exec python3 ./ops/reactivations/regenerate_active_configs.py "$@"
         ;;
     python|python3)
         echo "Running Python script: $*"
         exec python3 "$@"
         ;;
     prepare-db)
+        # set -e aborts the sequence on any failure, so each verification gates
+        # the step after it rather than just reporting
         echo "Running migration scripts and updating condition data"
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         echo "Migration step complete"
-        python3 ./scripts/seeding/load_static_data.py
+
+        # pre-flight: the processed tables are the only seeding input, so confirm
+        # they survived the image build before touching the database (~1s)
+        echo "Checking processed TES tables against their manifest"
+        python3 -m tes.verify.processed --integrity-only
+
+        python3 ./ops/seeding/load_processed_data.py
+
+        # smoke test: the database is a faithful projection of what we just
+        # loaded. runs before reactivation so a bad seed is not baked into
+        # regenerated active.json files (~13s)
+        echo "Verifying the seeded database"
+        python3 -m tes.verify.database
+
         echo "Regenerating active configuration files"
-        python3 ./scripts/reactivations/regenerate_active_configs.py
+        python3 ./ops/reactivations/regenerate_active_configs.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"

@@ -45,13 +45,13 @@ from app.db.configurations.model import (
     DbSectionAction,
 )
 from app.db.pool import create_db
-from scripts.validation.validate_document_schematron import (
+from tests.validation.validate_document_schematron import (
     STANDARDS_MAP,
     display_svrl_results,
     get_document_template_info,
     parse_svrl,
 )
-from scripts.validation.validate_document_xsd import build_schema, display_xsd_results
+from tests.validation.validate_document_xsd import build_schema, display_xsd_results
 
 get_app_config.cache_clear()
 get_auth_config.cache_clear()
@@ -597,7 +597,7 @@ def setup(request):
     refiner_service.exec_in_container(
         [
             "python",
-            "/app/scripts/seeding/load_static_data.py",
+            "/app/ops/seeding/load_processed_data.py",
         ],
         "server",
     )
@@ -671,7 +671,7 @@ def fixtures_path() -> Path:
 def validate_xml_string():
     """
     Fixture providing XML validation against Schematron rules.
-    Delegates to the canonical validation logic in scripts/validation/.
+    Delegates to the canonical validation logic in tests/validation/.
     """
 
     def _validate(xml_string: str, doc_type_hint: str) -> dict:

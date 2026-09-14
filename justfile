@@ -32,6 +32,10 @@ mod m './.justscripts/just/migrate.just'
 [group: 'alias']
 mod s './.justscripts/just/server.just'
 
+# Alias for `tes`
+[group: 'alias']
+mod tes './.justscripts/just/tes.just'
+
 # Alias for `cloud`
 [group: 'alias']
 mod cd './.justscripts/just/cloud.just'
