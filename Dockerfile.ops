@@ -55,12 +55,17 @@ RUN pip install --no-cache-dir -r scripts-requirements.txt -r requirements.txt
 # Copy migration files
 COPY ./refiner/migrations ./migrations
 
-# Copy TES update files
-COPY ./refiner/scripts/seeding ./scripts/seeding
-COPY ./refiner/scripts/data/source-tes-groupers ./scripts/data/source-tes-groupers
-
-# Copy active configuration regeneration script
-COPY ./refiner/scripts/reactivations ./scripts/reactivations
+# Copy TES seeding files
+# only the processed tables ship: seeding COPYs flat CSV and never reads the raw
+# FHIR bundles, which are ~740 MB and grow every release. tes/normalize and
+# tes/verify come along so `python -m tes.verify.database` can check a live
+# database from here; tes/fetch is deliberately left out, since it needs the raw
+# bundles and network credentials this container has no business holding.
+COPY ./refiner/ops ./ops
+COPY ./refiner/tes/__init__.py ./tes/__init__.py
+COPY ./refiner/tes/normalize ./tes/normalize
+COPY ./refiner/tes/verify ./tes/verify
+COPY ./refiner/tes/data/processed ./tes/data/processed
 
 # Copy refiner modules
 COPY ./refiner/app/api app/api

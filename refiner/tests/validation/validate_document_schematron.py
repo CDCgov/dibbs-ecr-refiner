@@ -9,7 +9,7 @@ from rich.table import Table
 from saxonche import PySaxonProcessor
 
 BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR.parent / "data" / "source-ecr-files"
+DATA_DIR = BASE_DIR.parent / "source-ecr-files"
 VALIDATION_ASSETS_DIR = BASE_DIR
 
 # in order to know which xslt to use, we need to look at the main document level OID and its extension (date)

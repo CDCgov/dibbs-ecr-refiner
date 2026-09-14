@@ -82,7 +82,7 @@ services:
       retries: 10
 
   auth:
-    image: quay.io/keycloak/keycloak:26.7.3-0
+    image: quay.io/keycloak/keycloak:26.7.3-1
     command:
       - "start-dev"
       - "--import-realm"
@@ -115,7 +115,7 @@ services:
     working_dir: /app
     command: >
       sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv &&
-             python refiner/scripts/seeding/load_static_data.py"
+             python refiner/ops/seeding/load_processed_data.py"
     profiles: ["seed"]
     depends_on:
       - db

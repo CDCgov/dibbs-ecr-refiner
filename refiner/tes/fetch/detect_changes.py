@@ -5,15 +5,18 @@ import os
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
-from fetch_api_data import run_fetch_pipeline
+
+from tes.fetch.fetch_api_data import run_fetch_pipeline
 
 
-def _convert_datetimes_to_iso(obj):
+def _convert_datetimes_to_iso(obj: Any) -> Any:
     """
     Recursively convert all datetime objects to ISO strings.
     """
+
     if isinstance(obj, dict):
         return {k: _convert_datetimes_to_iso(v) for k, v in obj.items()}
     if isinstance(obj, list):
@@ -28,11 +31,11 @@ load_dotenv()
 
 
 # build paths relative to this script's location
-# PIPELINE_DIR is dibbs-ecr-refiner/refiner/scripts/pipeline/
-# SCRIPTS_DIR is dibbs-ecr-refiner/refiner/scripts
-PIPELINE_DIR = Path(__file__).parent
-SCRIPTS_DIR = PIPELINE_DIR.parent
-TES_DATA_DIR = SCRIPTS_DIR / "data" / "source-tes-groupers"
+# FETCH_DIR is dibbs-ecr-refiner/refiner/tes/fetch/
+# TES_DIR is dibbs-ecr-refiner/refiner/tes
+FETCH_DIR = Path(__file__).parent
+TES_DIR = FETCH_DIR.parent
+TES_DATA_DIR = TES_DIR / "data" / "source-tes-groupers"
 TES_DATA_STAGING_DIR = TES_DATA_DIR / "staging"
 MANIFEST_PATH = TES_DATA_DIR / "manifest.json"
 
@@ -85,6 +88,7 @@ def _validate_valuesets_file(filepath: Path) -> tuple[int, int]:
 
     Returns (valid_count, invalid_count).
     """
+
     # lazy import so this script can still run if not validating
     try:
         from fhir.resources.valueset import ValueSet
@@ -133,17 +137,13 @@ def main() -> None:
         raise ValueError("TES_API_KEY not found in .env file.")
 
     # 1: setup
-    print(
-        f"🧹 Setting up staging area at: {TES_DATA_STAGING_DIR.relative_to(SCRIPTS_DIR)}"
-    )
+    print(f"🧹 Setting up staging area at: {TES_DATA_STAGING_DIR.relative_to(TES_DIR)}")
     shutil.rmtree(TES_DATA_STAGING_DIR, ignore_errors=True)
     TES_DATA_STAGING_DIR.mkdir(parents=True)
 
     old_manifest = {}
     if MANIFEST_PATH.exists():
-        print(
-            f"🔎 Found existing manifest at: {MANIFEST_PATH.relative_to(SCRIPTS_DIR)}"
-        )
+        print(f"🔎 Found existing manifest at: {MANIFEST_PATH.relative_to(TES_DIR)}")
         with open(MANIFEST_PATH, encoding="utf-8") as manifest_file:
             old_manifest = json.load(manifest_file)
 
@@ -170,7 +170,7 @@ def main() -> None:
         output_dir=TES_DATA_STAGING_DIR,
         api_key=API_KEY,
         sleep_interval=API_SLEEP_INTERVAL,
-        log_dir_base=SCRIPTS_DIR,
+        log_dir_base=TES_DIR,
     )
 
     # 3: analyze new files and add a safety check
@@ -285,9 +285,7 @@ def main() -> None:
             json.dump(final_manifest, manifest_file, indent=2)
             # write \n to conform with pre-commit
             manifest_file.write("\n")
-        print(
-            f"\n✨ Manifest file updated at: {MANIFEST_PATH.relative_to(SCRIPTS_DIR)}"
-        )
+        print(f"\n✨ Manifest file updated at: {MANIFEST_PATH.relative_to(TES_DIR)}")
 
     # 7: cleanup
     shutil.rmtree(TES_DATA_STAGING_DIR)
