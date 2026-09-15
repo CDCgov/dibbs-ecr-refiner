@@ -116,7 +116,7 @@
         <city>Senate District</city>
         <state>Galactic City</state>
         <postalCode>GC-500</postalCode>
-        <county>Administrative Core</county>
+        <county>Administrative Core Withé Some Non-Ascii Chars à, ü, ô, ñ</county>
         <country>Coruscant</country>
       </addr>
       <telecom value="tel:+1-555-555-9877" use="MC" />
