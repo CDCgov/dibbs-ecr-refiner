@@ -2,6 +2,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.model import HL7_NS
+from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.section import get_section_by_code, process_section
 from app.services.ecr.section.entry_matching import (
     process as entry_process,
@@ -611,13 +612,14 @@ def test_generic_path_recovers_display_from_narrative_reference():
 
 
 # NOTE:
-# RECONSTRUCT'S NO-MATCH FALLBACK — the two engines must agree
+# RECONSTRUCT'S NO-MATCH BRANCH — the two engines must agree
 # =============================================================================
-# "reconstruct" falls back to keep-on-match: nothing matched, every entry was
-# pruned, and the original narrative still describes all of them in full
-# clinical prose. Retaining it would ship back exactly the content the
-# jurisdiction's configuration excluded, with the structured entries stripped
-# so a receiver cannot process it either.
+# "reconstruct" reconstructs: nothing matched, every entry was pruned, and the
+# derived narrative for zero entries is a statement that nothing matched. The
+# original narrative is never retained here — it still describes all of the
+# pruned entries in full clinical prose, so shipping it back would return
+# exactly the content the jurisdiction's configuration excluded, with the
+# structured entries stripped so a receiver cannot process it either.
 #
 # entry_matching and generic_matching implement this branch separately, so a
 # change to one silently diverging from the other is the live risk. these pin
@@ -641,7 +643,7 @@ _NO_MATCH_SECTION = """
 """
 
 
-def test_generic_reconstruct_without_matches_removes_the_original_narrative() -> None:
+def test_generic_reconstruct_without_matches_reconstructs_an_empty_narrative() -> None:
     section = _build_section(_NO_MATCH_SECTION)
 
     result = generic_process(
@@ -654,14 +656,36 @@ def test_generic_reconstruct_without_matches_removes_the_original_narrative() ->
     )
 
     assert result.matches_found is False
-    assert result.narrative_disposition == "removed"
+    assert result.narrative_disposition == "reconstructed_empty"
 
     rendered = etree.tostring(section, encoding="unicode")
     assert "penicillin allergy" not in rendered, (
         "the source narrative described the entries that were just pruned"
     )
+    assert RECONSTRUCTED_EMPTY_MESSAGE in rendered
     assert section.findall("hl7:entry", HL7_NS) == []
     assert section.get("nullFlavor") == "NI"
+
+
+def test_generic_reconstruct_no_match_restores_the_neutralized_section_code() -> None:
+    # the generic path strips @code so the section's own LOINC cannot match,
+    # and reconstruct_narrative dispatches BY that LOINC. if the restore is
+    # dropped the section reconstructs as unregistered and silently falls
+    # back to the removal notice
+    section = _build_section(_NO_MATCH_SECTION)
+
+    generic_process(
+        section=section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+    )
+
+    code = _find_one(section, "hl7:code")
+    assert code is not None
+    assert code.get("code") == "30954-2"
 
 
 def test_generic_reconstruct_no_match_matches_the_entry_engine() -> None:

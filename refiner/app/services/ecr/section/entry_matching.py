@@ -102,14 +102,15 @@ def process(
       - "remove"           → narrative replaced with the removal notice
       - "keep_on_match"    → narrative replaced with the removal notice
                              (no matches means the negative branch)
-      - "reconstruct"      → same as "keep_on_match". There is nothing to
-                             rebuild from, and the original narrative
-                             describes the entries that were just pruned.
+      - "reconstruct"      → reconstruction runs over the empty entry set
+                             and writes a narrative saying no entries
+                             matched. Nothing to rebuild from is an answer,
+                             not a failure.
 
     The orchestrator maps the resulting `SectionRunResult` to
     `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
     `REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or
-    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED` — see
+    `REFINED_NARRATIVE_RECONSTRUCTED_EMPTY` — see
     `refine._interpret_run_result`.
 
     Returns:
@@ -148,26 +149,48 @@ def process(
                 remove_element(entry)
             section.attrib["nullFlavor"] = "NI"
 
-            if narrative_action in ("remove", "keep_on_match", "reconstruct"):
-                # all three are negative branches when NOTHING matched:
+            if narrative_action == "reconstruct":
+                # reconstruct anyway. zero surviving entries is not a failed
+                # reconstruction — it is one whose correct derived answer is
+                # "no content," and saying so in the reconstruction's own
+                # voice is what lets the footnote report that the feature ran.
+                # the alternative, reporting only "narrative removed", is what
+                # read as a broken feature to the PHA reviewer in #1635
+                if rebuilt := reconstruct_narrative(
+                    section, augmentation_timestamp=augmentation_timestamp
+                ):
+                    replace_narrative_with_reconstruction(
+                        section, rebuilt.text, namespaces
+                    )
+                    return SectionRunResult(
+                        matches_found=False,
+                        narrative_disposition="reconstructed_empty",
+                    )
+                # no registered reconstructor. policy coerces that combination
+                # away before it reaches here, so this is defensive: fall in
+                # with the other negative branches rather than retaining a
+                # narrative describing entries that are gone
+                replace_narrative_with_removal_notice(
+                    section, namespaces, removal_reason="no_match"
+                )
+                return SectionRunResult(
+                    matches_found=False,
+                    narrative_disposition="removed",
+                )
+
+            if narrative_action in ("remove", "keep_on_match"):
+                # both are negative branches when NOTHING matched:
                 #
                 #   "remove"        — unconditional
                 #   "keep_on_match" — keep on match, and there was none
-                #   "reconstruct"   — reconstruct falls back to keep-on-match
                 #
-                # reconstruct used to retain the original narrative here, on
-                # the reasoning that a stale narrative is more informative
-                # than a removal notice. That reasoning ignored what the
-                # retained narrative actually contains. Nothing matched, so
-                # every entry in this section was just pruned — and the
+                # neither may retain the original narrative. Nothing matched,
+                # so every entry in this section was just pruned — and the
                 # original narrative still describes all of them, in full
                 # clinical prose. Retaining it ships exactly the content the
                 # jurisdiction's configuration said should not be here, with
                 # the structured entries stripped so a receiver cannot even
-                # process it. Choosing "reconstruct" grants the refiner broad
-                # licence to rewrite the section; keep-on-match is far closer
-                # to the spirit of that grant than handing back the
-                # unrefined original.
+                # process it.
                 #
                 # "no_match" is what keeps the notice honest: every entry was
                 # just pruned, so it must not tell a reader the coded data is

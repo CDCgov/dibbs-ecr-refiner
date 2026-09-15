@@ -100,10 +100,21 @@ def reconstruct_narrative(
 
     Returns a `ReconstructedNarrative` carrying the detached, namespace-
     qualified <text> and how many entries needed the reduced form, or None
-    when no narrative could be produced -- the section has no registered
-    reconstructor, or it holds no entries at all. Both mean the same thing to
-    every caller ("keep what is already there"), so they are one return value
-    rather than two.
+    when no narrative could be produced.
+
+    None means exactly one thing: the section has no registered
+    reconstructor, so there is no rebuild to attempt and the caller should
+    keep what is already there. A section holding no entries used to return
+    None as well, on the reasoning that both cases tell a caller the same
+    thing. They do not. Zero surviving entries is not a failed
+    reconstruction -- it is a successful one whose derived answer is "no
+    content," which is exactly what the no-match branch needs to be able to
+    say. That case returns a narrative like any other.
+
+    The remaining degenerate case -- entries survived but produced no rows --
+    still returns None. It is unreachable (the reduced-form sweep gives every
+    surviving entry a row) and, if it ever became reachable, an empty
+    narrative would be a lie: entries matched.
 
     This function MUTATES `section`: it strips the now-dangling narrative
     references off the surviving entries, relinks each one to the row that
@@ -143,11 +154,19 @@ def reconstruct_narrative(
     if reduced := _unrepresented_statements(section, blocks):
         blocks = [*blocks, _generic_block(reduced)]
 
-    # only reachable for a section with no entries at all: the sweep above
-    # gives every surviving entry a row, so "entries survived but produced
-    # nothing" cannot happen
+    # the sweep above gives every surviving entry a row, so no rows means no
+    # entries -- the honest empty reconstruction, rendered as a paragraph
+    # because CDA R2 cannot express a rowless table. entries-with-no-rows is
+    # unreachable, and is the one shape that must NOT claim nothing matched
     if not any(block.rows for block in blocks):
-        return None
+        if section.findall("hl7:entry", HL7_NS):
+            return None
+        return ReconstructedNarrative(
+            text=render_section_text(
+                [], loinc=loinc, augmentation_timestamp=augmentation_timestamp
+            ),
+            reduced_entry_count=0,
+        )
 
     _strip_row_references(section)
     _mark_entries_derived(section)

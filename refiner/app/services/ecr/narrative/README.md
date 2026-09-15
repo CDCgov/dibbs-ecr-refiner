@@ -132,29 +132,48 @@ Reconstructable sections (`policy.ReconstructableSection`):
 Reconstruction is the one narrative writer that MUTATES surviving entries: it
 strips the now-dangling source references, relinks each entry to its minted
 row, and stamps `typeCode="DRIV"`. It only runs on the refine path — a retained
-section never reconstructs, and when nothing survived (or a section has no
-registered reconstructor) it falls back to retaining the original narrative.
+section never reconstructs, and a section with no registered reconstructor
+falls back to retaining the original narrative.
 
-### The fallback when there is nothing to rebuild from
+### When nothing matched
 
-`reconstruct` falls back to **keep-on-match**, not to keeping the original.
-When nothing in the section matched, every entry is pruned and the narrative
-is replaced with the removal notice.
+`reconstruct` reconstructs. Zero surviving entries is not a failed
+reconstruction — it is one whose correct derived answer is "no content" — so
+the no-match branch runs reconstruction like any other and the outcome is
+`REFINED_NARRATIVE_RECONSTRUCTED_EMPTY`.
 
-The reasoning is what the retained narrative would actually have contained.
-Nothing matched, so all the entries are gone — and the source narrative still
-describes every one of them, in full clinical prose. Keeping it ships exactly
-the content the jurisdiction's configuration said should not be here, with the
-structured entries stripped so a receiver cannot even process it. Choosing
-`reconstruct` grants the refiner broad licence to rewrite the section;
-keep-on-match is much closer to the spirit of that grant than handing back the
-unrefined original.
+What it must never do is retain the original. Nothing matched, so all the
+entries are gone — and the source narrative still describes every one of them,
+in full clinical prose. Keeping it ships exactly the content the jurisdiction's
+configuration said should not be here, with the structured entries stripped so
+a receiver cannot even process it.
+
+The footnote says both halves: reconstruction ran, *and* it has nothing in it.
+Reporting only the second half is what sent a PHA reviewer looking for a broken
+feature — the outcome read "narrative removed", which is what the refiner says
+when it declines to write a narrative at all. The reviewer's question is "did
+reconstruct do anything?", and the answer is yes.
+
+**The empty reconstruction is a `<paragraph>`, not an empty table**, and that is
+a schema obligation rather than a style choice. `StrucDoc.Table` requires a
+`<tbody>`, `StrucDoc.Tbody` requires a `<tr>`, and `StrucDoc.Tr` requires a
+cell, so a rowless table does not validate — verified against
+`tests/validation/cda-r2-schema/.../NarrativeBlock.xsd` and pinned by
+`tests/integration/test_narrative_reconstruction.py`. The nearest legal
+alternative, a one-cell stub row under a `<thead>`, would assert a column
+structure describing nothing, and the table's real job here — minting
+`xs:ID`-bearing rows for entries to reference — has no entries to do it for.
+The section already carries `nullFlavor="NI"`, which is the machine-readable
+half; the paragraph is the human-readable half, and it goes out through
+`render_section_text` so it carries the same machine-derived marker comment as
+any other reconstruction.
 
 One case still retains: **no registered reconstructor**, meaning
 `narrative="reconstruct"` on a section outside `ReconstructableSection`. The
 policy layer normally coerces that to `retain`, so it is a defensive branch.
 It says so in the section footnote, including that the retained narrative may
-describe entries the refinement removed.
+describe entries the refinement removed. This is now the *only* thing a `None`
+from `reconstruct_narrative` means.
 
 ### Entries the section reconstructor cannot cover
 
@@ -186,9 +205,13 @@ guessing. This is measured, not theoretical: across the five committed fixture
 eICRs the sweep fires zero times, but both shapes above are constructible and
 are pinned by tests.
 
-Making the fallback *configurable* is still not built. It needs design work
-(the narrative dropdown encodes one axis; a fallback is a second) and user
-feedback we do not have. The default above is the one to argue from.
+Making the no-match behavior *configurable* is still not built, and the empty
+reconstruction above is part of why: the question "should reconstruct keep the
+original when nothing matched?" presupposes that nothing-matched is a failure
+needing a fallback. It is not. If a jurisdiction does want the original prose
+back it can configure `retain`, which already means exactly that. A genuine
+second axis would still need design work (the narrative dropdown encodes one)
+and user feedback we do not have.
 
 On house style: the reconstruction stays vendor-neutral — it does not encode
 one EHR's stylesheet quirks ([see here](/docs/decisions/0011_2026-06-24_narrative-reconstruction-real-data-blocks-and-linkage.md)).
