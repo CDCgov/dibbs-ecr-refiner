@@ -227,17 +227,10 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
         str: The decoded contents of the file as a string.
     """
     content = zipfile.read(filename)
-    detected = detect(content).get("encoding")
-
-    if not detected or detected.lower() == "ascii":
-        encoding = "utf-8"
-    else:
-        encoding = detected
-
     try:
-        return content.decode(encoding)
+        return content.decode("utf-8-sig")
     except UnicodeDecodeError:
-        return content.decode("utf-8-sig", errors="replace")
+        return content.decode("latin-1")
 
 
 def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
