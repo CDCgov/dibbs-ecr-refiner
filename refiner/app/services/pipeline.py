@@ -231,11 +231,11 @@ def refine_for_condition(
     and RR.
 
     The pipeline owns the parse/serialize boundary:
-        1. Parse both documents once
-        2. Build refinement plans
-        3. Refine (mutate trees in place)
-        4. Augment (mutate same trees in place)
-        5. Serialize, format, and measure once at the end
+    1. Parse both documents once
+    2. Build refinement plans
+    3. Refine (mutate trees in place)
+    4. Augment (mutate same trees in place)
+    5. Serialize, format, and measure once at the end
 
     The AugmentationRun is supplied by the caller and shared across
     every refine_for_condition and produce_remainder_rr_for_jurisdiction
@@ -412,12 +412,12 @@ def produce_remainder_rr_for_jurisdiction(
     output package.
 
     Returns None when the if-and-only-if rule is not satisfied:
-        - refined_condition_codes is empty: the remainder is a
-          complement of refinement; if nothing was refined for this
-          jurisdiction, the original RR moves forward untouched and
-          there is no remainder to produce.
-        - skipped_condition_codes is empty: every condition was
-          refined, so there is nothing for the remainder to carry.
+    - refined_condition_codes is empty: the remainder is a
+      complement of refinement; if nothing was refined for this
+      jurisdiction, the original RR moves forward untouched and
+      there is no remainder to produce.
+    - skipped_condition_codes is empty: every condition was
+      refined, so there is nothing for the remainder to carry.
 
     Todo:
     * the if-and-only-if rule is enforced here as a None return
