@@ -98,6 +98,19 @@ export const getConfigurations = (
     );
   }
 
+export const getGetConfigurationsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -190,6 +203,19 @@ export const createConfiguration = (
     );
   }
 
+export const getCreateConfigurationUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -269,6 +295,19 @@ export const getSerializedConfiguration = (
       `/api/v1/configurations/${configurationId}/serialized`,options
     );
   }
+
+export const getGetSerializedConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/serialized`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -360,6 +399,19 @@ export const getConfiguration = (
       `/api/v1/configurations/${configurationId}`,options
     );
   }
+
+export const getGetConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -470,6 +522,19 @@ export const associateConditionWithConfiguration = (
     );
   }
 
+export const getAssociateConditionWithConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/code-sets`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -552,6 +617,20 @@ export const disassociateConditionWithConfiguration = (
     );
   }
 
+export const getDisassociateConditionWithConfigurationUrl = (configurationId: string,
+    conditionId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/code-sets/${conditionId}`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -628,6 +707,20 @@ export const getCustomCode = (
       `/api/v1/configurations/${configurationId}/custom-codes/${id}`,options
     );
   }
+
+export const getGetCustomCodeUrl = (configurationId: string,
+    id: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes/${id}`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -742,6 +835,20 @@ export const deleteCustomCodeFromConfiguration = (
     );
   }
 
+export const getDeleteCustomCodeFromConfigurationUrl = (configurationId: string,
+    id: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes/${id}`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -821,6 +928,19 @@ export const addCustomCodeToConfiguration = (
       addCustomCodeInput,options
     );
   }
+
+export const getAddCustomCodeToConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -902,6 +1022,19 @@ export const editCustomCodeFromConfiguration = (
     );
   }
 
+export const getEditCustomCodeFromConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -974,6 +1107,19 @@ export const uploadCustomCodesCsv = (
     );
   }
 
+export const getUploadCustomCodesCsvUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes/upload`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1039,6 +1185,19 @@ export const confirmUploadCustomCodesCsv = (
       confirmUploadCustomCodesInput,options
     );
   }
+
+export const getConfirmUploadCustomCodesCsvUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes/confirm`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -1120,6 +1279,19 @@ export const deleteCustomCodes = (
     );
   }
 
+export const getDeleteCustomCodesUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes/bulk-delete`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1198,6 +1370,19 @@ export const validateCustomCodeFromConfiguration = (
     );
   }
 
+export const getValidateCustomCodeFromConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/custom-codes/validate`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1261,6 +1446,19 @@ export const getConfigurationExport = (
       `/api/v1/configurations/${configurationId}/export`,options
     );
   }
+
+export const getGetConfigurationExportUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/export`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -1386,6 +1584,19 @@ if(bodyRunInlineConfigurationTest.uploaded_file !== undefined && bodyRunInlineCo
     );
   }
 
+export const getRunInlineConfigurationTestUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/test`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1458,6 +1669,19 @@ export const addCustomSection = (
     ...options,}
     );
   }
+
+export const getAddCustomSectionUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/sections`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -1538,6 +1762,19 @@ export const deleteCustomSection = (
     ...options,}
     );
   }
+
+export const getDeleteCustomSectionUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/sections`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -1628,6 +1865,19 @@ export const updateSection = (
     );
   }
 
+export const getUpdateSectionUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/sections`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1706,6 +1956,19 @@ export const activateConfiguration = (
       undefined,options
     );
   }
+
+export const getActivateConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/activate`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -1786,6 +2049,19 @@ export const deactivateConfiguration = (
     );
   }
 
+export const getDeactivateConfigurationUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/deactivate`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1859,6 +2135,19 @@ export const acquireConfigurationLock = (
     );
   }
 
+export const getAcquireConfigurationLockUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/acquire-lock`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -1928,6 +2217,19 @@ export const releaseConfigurationLock = (
       undefined,options
     );
   }
+
+export const getReleaseConfigurationLockUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/release-lock`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -2020,6 +2322,20 @@ export const setCodesStatus = (
     );
   }
 
+export const getSetCodesStatusUrl = (configurationId: string,
+    params: SetCodesStatusParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/set-status`,
+    baseURL: '',
+    params,
+
+  });
+}
+
 
 
 
@@ -2094,6 +2410,20 @@ export const getCodes = (
         params: {...params, ...options?.params},}
     );
   }
+
+export const getGetCodesUrl = (configurationId: string,
+    params?: GetCodesParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/codes`,
+    baseURL: '',
+    params,
+
+  });
+}
 
 
 
@@ -2283,6 +2613,19 @@ export const getCodeCounts = (
     );
   }
 
+export const getGetCodeCountsUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/code-counts`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -2384,6 +2727,19 @@ export const getCodeFilters = (
       `/api/v1/configurations/${configurationId}/filters`,options
     );
   }
+
+export const getGetCodeFiltersUrl = (configurationId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/configurations/${configurationId}/filters`,
+    baseURL: '',
+
+
+  });
+}
 
 
 

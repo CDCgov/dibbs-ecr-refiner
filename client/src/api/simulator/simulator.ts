@@ -82,6 +82,19 @@ if(bodyDiscoverConfigurations?.uploaded_file !== undefined && bodyDiscoverConfig
     );
   }
 
+export const getDiscoverConfigurationsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/simulator/discover-configurations`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -167,6 +180,19 @@ if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== 
     );
   }
 
+export const getUploadEcrUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/simulator/upload`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -233,6 +259,19 @@ export const downloadRefinedEcr = (
       `/api/v1/simulator/download/${filename}`,options
     );
   }
+
+export const getDownloadRefinedEcrUrl = (filename: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/simulator/download/${filename}`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
