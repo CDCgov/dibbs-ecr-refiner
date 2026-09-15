@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile, ZipInfo
 
-from chardet import detect
 from lxml import etree
 from lxml.etree import _Element
 
@@ -227,9 +226,10 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
         str: The decoded contents of the file as a string.
     """
     content = zipfile.read(filename)
-    encoding = detect(content)["encoding"] or "utf-8"
-    decoded = content.decode(encoding)
-    return decoded
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return content.decode("latin-1")
 
 
 def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
@@ -324,6 +324,4 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
         # re-raise ZipSizeError without wrapping it
         raise
     except Exception as e:
-        raise FileProcessingError(
-            message="Failed to process ZIP file", details={"error": str(e)}
-        )
+        raise FileProcessingError(message=f"Failed to process ZIP file: {str(e)}")
