@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile, ZipInfo
 
-from chardet import detect
 from lxml import etree
 from lxml.etree import _Element
 
