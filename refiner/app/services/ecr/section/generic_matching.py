@@ -79,9 +79,10 @@ def process(
       - "remove"           → narrative replaced with the removal notice
       - "keep_on_match"    → narrative replaced with the removal notice
                              (no matches means the negative branch)
-      - "reconstruct"      → same as "keep_on_match". There is nothing to
-                             rebuild from, and the original narrative
-                             describes the entries that were just pruned.
+      - "reconstruct"      → reconstruction runs over the empty entry set
+                             and writes a narrative saying no entries
+                             matched. Nothing to rebuild from is an answer,
+                             not a failure.
 
     `nullFlavor="NI"` is applied at the section level so the document
     continues to satisfy CDA schematron rules that require `SHALL
@@ -165,14 +166,45 @@ def process(
                 remove_element(entry)
             section.attrib["nullFlavor"] = "NI"
 
-            if narrative_action in ("remove", "keep_on_match", "reconstruct"):
-                # all three are negative branches when NOTHING matched.
-                # "reconstruct" falls back to keep-on-match: there is nothing
-                # to rebuild from, every entry was just pruned, and the
-                # original narrative still describes all of them — retaining
-                # it would ship back exactly the content the configuration
-                # excluded. Mirrors the entry-matching engine; the two paths
-                # must not disagree about what "reconstruct" means
+            if narrative_action == "reconstruct":
+                # reconstruct anyway over the empty entry set. mirrors the
+                # entry-matching engine; the two paths must not disagree
+                # about what "reconstruct" means. a section reaching the
+                # generic path has no registered reconstructor in practice,
+                # so the fallback below is the live branch here
+                #
+                # matching is over, so the @code neutralization above has
+                # done its job — and it has to come off before dispatch,
+                # since reconstruct_narrative looks the section up BY its
+                # LOINC and would otherwise find a section that claims to
+                # have no code. the finally block still swaps in the
+                # pristine copy; putting the attribute back here only
+                # brings that forward for this one read
+                _restore_section_code(section_code_element, original_code)
+                if rebuilt := reconstruct_narrative(
+                    section, augmentation_timestamp=augmentation_timestamp
+                ):
+                    replace_narrative_with_reconstruction(
+                        section, rebuilt.text, namespaces
+                    )
+                    return SectionRunResult(
+                        matches_found=False,
+                        narrative_disposition="reconstructed_empty",
+                    )
+                replace_narrative_with_removal_notice(
+                    section, namespaces, removal_reason="no_match"
+                )
+                return SectionRunResult(
+                    matches_found=False,
+                    narrative_disposition="removed",
+                )
+
+            if narrative_action in ("remove", "keep_on_match"):
+                # both are negative branches when NOTHING matched. neither may
+                # retain the original: every entry was just pruned, and the
+                # original narrative still describes all of them — keeping it
+                # would ship back exactly the content the configuration
+                # excluded
                 #
                 # "no_match" is what keeps the notice honest: every entry was
                 # just pruned, so it must not tell a reader the coded data is
@@ -278,6 +310,27 @@ def process(
         # the tree in a modified state for the caller
         if section_code_element is not None and original_code is not None:
             section.replace(section_code_element, original_code)
+
+
+def _restore_section_code(
+    section_code_element: _Element | None,
+    original_code: _Element | None,
+) -> None:
+    """
+    Put the neutralized `@code` back on the live `<code>` element.
+
+    The generic path strips `@code` so the section's own LOINC cannot
+    match during the unscoped search, and restores the whole element from
+    a deep copy in the caller's finally block. Anything that needs the
+    LOINC *before* then calls this: it mutates the live element rather
+    than swapping it, so the finally block's `section.replace` still
+    finds the node it expects.
+    """
+
+    if section_code_element is None or original_code is None:
+        return
+    if code_value := original_code.get("code"):
+        section_code_element.set("code", code_value)
 
 
 # NOTE:
