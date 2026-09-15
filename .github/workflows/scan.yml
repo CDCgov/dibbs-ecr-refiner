@@ -178,7 +178,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const script = require('./.github/scripts/security-summary.js');
+            const script = require('./.github/vulnerabilities/security-summary.js');
             await script.generateRiskExceptionTemplate(core);
 
       - name: Upload risk exception template
@@ -211,5 +211,5 @@ jobs:
           RISK_EXCEPTION_URL: ${{ needs.generate-risk-exception.result == 'success' && format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) || '' }}
         with:
           script: |
-            const script = require('./.github/scripts/security-summary.js');
+            const script = require('./.github/vulnerabilities/security-summary.js');
             await script.generateScheduledSummary(github, context, core);
