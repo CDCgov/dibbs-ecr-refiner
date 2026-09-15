@@ -227,9 +227,17 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
         str: The decoded contents of the file as a string.
     """
     content = zipfile.read(filename)
-    encoding = detect(content)["encoding"] or "utf-8"
-    decoded = content.decode(encoding)
-    return decoded
+    detected = detect(content).get("encoding")
+
+    if not detected or detected.lower() == "ascii":
+        encoding = "utf-8"
+    else:
+        encoding = detected
+
+    try:
+        return content.decode(encoding)
+    except UnicodeDecodeError:
+        return content.decode("utf-8-sig", errors="replace")
 
 
 def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
@@ -324,6 +332,4 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
         # re-raise ZipSizeError without wrapping it
         raise
     except Exception as e:
-        raise FileProcessingError(
-            message="Failed to process ZIP file", details={"error": str(e)}
-        )
+        raise FileProcessingError(message=f"Failed to process ZIP file: {str(e)}")
