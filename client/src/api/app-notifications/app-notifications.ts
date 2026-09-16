@@ -40,6 +40,19 @@ export const updateUserNotifications = (
     );
   }
 
+export const getUpdateUserNotificationsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/notifications`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 

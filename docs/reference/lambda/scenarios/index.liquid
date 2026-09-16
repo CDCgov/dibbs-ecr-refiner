@@ -1,0 +1,39 @@
+---
+title: Lambda Handlers — Processing Scenarios
+layout: layout.liquid
+---
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">
+  <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
+  Processing Scenarios
+</h1>
+
+<p class="text-gray-60 mb-6">Integration test scenarios that document real-world Lambda execution paths.</p>
+
+{% assign testModules = lambdaApiArray.modules | where: "source_type", "test" %}
+
+<div class="space-y-6">
+  {% for module in testModules %}
+  <div id="{{ module.name }}" class="border rounded-lg p-6 border-gray-cool-4 scroll-mt-4 max-w-3xl">
+    <div class="flex items-start justify-between mb-3">
+      <h3 class="font-merriweather text-xl font-semibold group">
+        <code class="text-lg">{{ module.name }}</code>
+        <a href="#{{ module.name }}" class="ml-2 text-gray-40 hover:text-gray-60 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Link to {{ module.name }}">#</a>
+      </h3>
+      <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 whitespace-nowrap ml-3">Scenario</span>
+    </div>
+
+    {% assign has_parsed = false %}
+    {% if module.parsed_docstring.summary != "" or module.parsed_docstring.description != "" %}
+      {% assign has_parsed = true %}
+    {% endif %}
+    {% if has_parsed %}
+      {{ module.parsed_docstring | renderDocstring }}
+    {% elsif module.docstring %}
+      <div class="prose max-w-none mb-3">
+        {{ module.docstring | renderMarkdown | sanitize }}
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
