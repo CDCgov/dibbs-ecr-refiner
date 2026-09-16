@@ -1,0 +1,100 @@
+---
+title: Lambda Handlers — Pipeline Diagram
+layout: layout.liquid
+---
+
+{% include "lambda-stage-data" %}
+
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">
+  <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
+  Pipeline roles & diagram
+</h1>
+
+<p class="text-gray-60 mb-8 prose">Role badges shown under <a href="/reference/lambda/code/">Lambda > Function Reference</a> and in the diagram.</p>
+
+<div class="flex flex-wrap gap-3 mb-8">
+  {% for role in roleColors %}
+    {% assign idx = 0 %}
+    {% for r in roleColors %}
+      {% if r == role %}{% assign roleIdx = idx %}{% endif %}
+      {% assign idx = idx | plus: 1 %}
+    {% endfor %}
+    <span class="text-xs font-medium px-2.5 py-0.5 rounded-full
+      {% if roleIdx == 0 %}bg-blue-100 text-blue-800
+      {% elsif roleIdx == 1 %}bg-cyan-100 text-cyan-800
+      {% elsif roleIdx == 2 %}bg-teal-100 text-teal-800
+      {% elsif roleIdx == 3 %}bg-green-100 text-green-800
+      {% elsif roleIdx == 4 %}bg-orange-100 text-orange-800
+      {% elsif roleIdx == 5 %}bg-red-100 text-red-800
+      {% elsif roleIdx == 6 %}bg-purple-100 text-purple-800
+      {% endif %}">
+      {{ role }}
+    </span>
+  {% endfor %}
+</div>
+
+<h2 class="font-merriweather text-xl font-bold mb-4">Pipeline Diagram</h2>
+
+<p class="text-gray-60 mb-8">End-to-end processing flow through the Lambda stages.</p>
+
+<div class="bg-gray-2 rounded-lg p-6 mb-8 overflow-x-auto not-prose">
+  <pre class="text-sm leading-relaxed font-mono">
+
+                                                         +--------------------------------------------+
+                                                         |                    Entry                   |
+                                      +-----------+      |                  (Handler)                 |
+                                      | SQS Event +------>                                            |
+                                      | (Trigger) |      |              `lambda_handler` →            |
+                                      +-----------+      |`read_active_configuration_maintenance_lock`|
+                                                         +----------------------+---------------------+
+                                                                                |
+                                                                                |
+               +-------------+---------------------+                +-----------v----------+
+               |             | Skip/Error Handling <---+     +------+    is lock held?     +------+
++--------------v-------+     |  (Error Handling)   |   | +---v-+    +----------------------+    +-v--+
+|`MaintenanceModeError`|  +--+---------------------+   +-+ yes |                                | no |
+|     (Exception)      |  |                              +-----+                                +--+-+
++----------------------+  |                                   +--------------------------------+   |
+                          |                                   |     S3 Retrieval               <---+
+     +--------------------v-----------------+                 |      (S3 I/O)                  |
+     |`IncompatibleActiveConfigurationError`|      +----------+ `extract_persistence_id` →     |
+     |             (Exception)              |      |          |   `get_s3_object_content` →    |
+     +--------------------------------------+      |          |     `parse_s3_content_to_dict` |
+                                                   |          +--------------------------------+
+                                                   |
+                     +-----------------------------v------+
+                     |   Configuration Loading            |                +----------------------------+
+                     |      (Configuration)               |                |  Refinement Pipeline       |
+                     | `read_rsg_cg_mapping_file` →       +---------------->    (Orchestrator)          |
+                     |   `read_current_version` →         |                | `run_refinement` →         |
+                     |     `read_configuration_file` →    |                |   `process_jurisdiction` → |
+                     |        `load_active_configuration` |                |     `process_condition`    |
+                     +------------------------------------+                +--+-------------------------+
+                                                                              |
+                                                                              |
+                                                 +----------------------------+
+                                                 |
+                        +------------------------v-----+
+                        |      Output Writing          +---------------+
+                        |         (Output)             |         +-----v---+
+                        |  `write_refined_outputs` →   |         | success |
+                        |    `write_remainder_rs`      |         +-----+---+
+                        +--------------+---------------+               |
+                                       |                               |
+                                       |                               |
+                                  +----v----+              +-----------v----------+
+                                  | failure |              |  `RefinerComplete`   |
+                                  +----+----+              | Manifest → AIMS (S3) |
+                                       |                   +----------------------+
+                                       |
+                            +----------v-------------+
+                            | `RefinerCompleteError` |
+                            |  Manifest → AIMS (S3)  |
+                            +------------------------+
+  </pre>
+  <!--
+    NOTE: source link below for the diagram above (updated):
+    https://asciiflow.com/#/share/eJzVWU1L3EAY%2FitDTrtgkVYorZeidqGCYusWellIYjK7jmaTMMn6gQgllJ56CEXsHnr06LGn4q%2Fxl%2FSdJOZ7MpPdaNshuJvsZJ7neTPvM%2B%2FEC8XWp1hZV95ub256CG%2Fto308Jjam6Bna0acHpo7GlnOqrCiWfo4p9LwYKSeYesSxR8r6i5WRcgafr5%2BvwbdzduXVS%2Fjm4zMfTkYK6rrdf%2F3O%2BWU0shcf9erb%2FdXnf%2BAIl9UR1F0e2D4953WXxpMLUtjApPdOt00L0%2F7STAI0%2FDBEgxNs%2B3D2s4bI9W%2B5sRbF732kZDJhWlKpFc2aFaWQehjL1sqzty3qlUT85%2BnQGsW6qeqGT06wajj2mExmVPchc9WpTmwf27ptYNVyjGOtHZOFyQmP26VHmC%2BngyuvNrFY%2B9tobbxr%2BfCGVa4S8Nd37catUxlUzofHxF0dUOpQFBkLsSfo%2FseXyqgcijfsN%2BIhlgDoEFvmm6R3nZ08EARm7RYLrvQw09UriuinetnfAlwyWhjf2knKzXMhysiGD1oDbTczi13HxBFXLeKXo%2FarEx4Pku7QOfYqz7ymsS62k%2FSM%2BUbXe4MzA7vM6%2Fq5%2BSMcsC6kczGH9Kbb9I6IS1fPRyIQ6ImKmBBldBqdT5Zz3Gu4BoWnTwk%2B0a1yl0JGzwvIy0oW%2BxI3CBy1PVCyvbpXrXAKAcn4B9q2bThTF9blAwtvRIv1Vn6tzqWbpOIbpEH5TWHhV11WqXuQvLDOEzOrPzhcCnwrKVQRUrgjPtEm2Fe9NdU5OMKAD1UHgPspcD1uJ2nS9phzNYAKV6ceZjoSAarvqCYxmJAaBe1aCfEJxGcO1gHjFo2H9ohGVZ%2FQ1XxdkDeLQyE70Y6jm6zuqHR7GsVhM1dovQLfsi%2FVcoVL8VuAKdtevScuhqoEZz83YcabDupNVGMC2wzXheCoY2Lh%2FOaHU2I1P9loP9fbo8Yh9sDdfCe%2FjRSwQgkvY0YpS%2BfkDUZxQ8aJhUZntkrTeFTuET2BBLmw%2FyoEhPcMwIaoY2DPU49mlHjMf1LOErhsAMvh7AA1PmoOF24xSdxdpPWJPbxSlFWKsM6QOt%2FfNdrpv4%2F2aF7WUGgvxnOxVasRrUvxNWtVy4VKxDUJwN7Md2c%2B%2BkQhl%2FNLVXsbFvOT4YOYj0ec%2BtwONYEuxKuZiYiFdgqxwImrm6oTkfEeHLnII0DezGB2KJxRYu0pLnsBZ2IKC6VWp73qpnlTa96RNrJoZdNtjbTMSyYD5TNbPNp%2Fi1ee7GVnCJu7y7qLXDJLMg7QWCfWjOJqGOIUS%2F6RtAWbWwv7UO40BEwSszR7S%2FNzXu4eoF3dJmMoF6PE3tjeHbL9eX9JHplGMcXFDk6Cdzl3xU2AJp6ELV6utF%2F3JPgFlTkYv0tZMDoSeLz59liIHRbdwrecdfyUS%2BXyD9kuEus%3D)
+  -->
+</div>
