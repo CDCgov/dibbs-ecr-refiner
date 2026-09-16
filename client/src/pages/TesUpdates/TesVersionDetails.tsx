@@ -3,6 +3,14 @@ import { useGetTesDiffDetails } from '../../api/tes/tes';
 import { Spinner } from '@components/Spinner';
 import { TesDiffInformation } from '.';
 import { Button } from '@components/Button';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 
 interface TesVersionProps {
   selectedUpdate: TesDiffInformation;
@@ -38,43 +46,43 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
         </ExternalLink>
       </p>
 
-      <table className="w-full">
-        <thead className="border-b-gray-cool-20 border-b">
-          <tr className="text-gray-cool-60 w-1/2 text-left font-bold">
-            <th className="px-2 py-3" scope="col">
+      <Table>
+        <TableHead className="border-b-gray-cool-20 border-b">
+          <TableRow className="text-gray-cool-60 w-1/2 text-left font-bold">
+            <TableHeaderCell className="px-2 py-3" scope="col">
               Condition code set
-            </th>
-            <th className="px-2 py-3">Change</th>
-            <th className="px-2 py-3" />
-          </tr>
-        </thead>
-        <tbody className="divide-gray-cool-20 divide-y">
+            </TableHeaderCell>
+            <TableHeaderCell className="px-2 py-3">Change</TableHeaderCell>
+            <TableHeaderCell className="px-2 py-3" />
+          </TableRow>
+        </TableHead>
+        <TableBody className="divide-gray-cool-20 divide-y">
           {response.data.map((r) => {
             const shouldShowNewConditionPill =
               // don't show pill if oldVersion is undefined (the "baseline" config)
               // since everything in that version would be a new condition
               r.is_new && oldVersion != '';
             return (
-              <tr key={r.canonical_url}>
-                <td className="px-2 py-3">
+              <TableRow key={r.canonical_url}>
+                <TableCell className="px-2 py-3">
                   {r.display_name}{' '}
                   {shouldShowNewConditionPill ? <NewConditionPill /> : null}
-                </td>
-                <td className="px-2 py-3">
+                </TableCell>
+                <TableCell className="px-2 py-3">
                   {r.added_code_total} added, {r.removed_code_total} removed
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <ExportLink
                     canonical_url={r.canonical_url}
                     cur_version={newVersion}
                     prev_version={oldVersion}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
