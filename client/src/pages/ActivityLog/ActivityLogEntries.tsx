@@ -105,8 +105,8 @@ export function ActivityLogEntries({
                 </TableCell>
                 <TableCell data-label={dateHeader}>
                   <div className="flex flex-col">
-                    <span>{date}</span>
-                    <span>{time}</span>
+                    <span className="text-gray-cool-60">{date}</span>
+                    <span className="text-gray-cool-60">{time}</span>
                   </div>
                 </TableCell>
               </TableRow>
