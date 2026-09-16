@@ -7,6 +7,9 @@ set -e
 REPO_URL="https://github.com/CDCgov/dibbs-ecr-refiner.git"
 REPO_DIR="dibbs-ecr-refiner"
 APP_URL="http://localhost:8081/"
+DOCS_PORT=9091
+DOCS_IMAGE="dibbs-ecr-refiner-docs"
+DOCS_CONTAINER="dibbs-docs"
 
 # function to display error messages and exit
 error_exit() {
@@ -105,12 +108,41 @@ just db seed
 # wait for application to be available
 wait_for_service "$APP_URL" "Waiting for application to start..."
 
+# Build and start docs container
+echo -e "📚 Building and starting docs server..."
+if ! docker image inspect "$DOCS_IMAGE" &>/dev/null 2>&1; then
+    echo -e "🏗️ Building docs Docker image (this may take a few minutes)..."
+    docker build -t "$DOCS_IMAGE" -f Dockerfile.docs . || \
+        echo -e "⚠️ Warning: Failed to build docs image, skipping docs server"
+fi
+
+if docker image inspect "$DOCS_IMAGE" &>/dev/null 2>&1; then
+    # Clean up any leftover container from a previous run
+    docker rm -f "$DOCS_CONTAINER" 2>/dev/null || true
+    docker run -d --name "$DOCS_CONTAINER" \
+        -p "$DOCS_PORT:$DOCS_PORT" \
+        "$DOCS_IMAGE" || \
+        echo -e "⚠️ Warning: Failed to start docs container, skipping..."
+    echo -e "⏳ Waiting for docs server to start..."
+    sleep 5
+fi
+
 # open in default browser
 echo -e "🌐 Opening application in browser..."
 open "$APP_URL"
 
 echo -e "🎉 Review environment is ready!\n"
+echo -e "📚 Documentation site: http://localhost:$DOCS_PORT/"
+
 echo -e "👋 Press Enter to end review and cleanup containers..."
 read -r
+
+# Cleanup docs container
+if docker ps -q --filter "name=$DOCS_CONTAINER" &>/dev/null 2>&1; then
+    echo -e "🧹 Stopping docs container..."
+    docker stop "$DOCS_CONTAINER" 2>/dev/null || true
+    docker rm "$DOCS_CONTAINER" 2>/dev/null || true
+fi
+
 docker-compose down
 echo -e "✨ Cleanup complete!"
