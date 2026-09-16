@@ -65,6 +65,19 @@ export const getConditions = (
     );
   }
 
+export const getGetConditionsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/conditions/`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -165,6 +178,19 @@ export const getCondition = (
       `/api/v1/conditions/${conditionId}`,options
     );
   }
+
+export const getGetConditionUrl = (conditionId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/conditions/${conditionId}`,
+    baseURL: '',
+
+
+  });
+}
 
 
 

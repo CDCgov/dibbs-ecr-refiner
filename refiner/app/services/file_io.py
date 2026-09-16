@@ -228,7 +228,7 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
     """
     content = zipfile.read(filename)
     try:
-        return content.decode("utf-8-sig")
+        return content.decode("utf-8")
     except UnicodeDecodeError:
         return content.decode("latin-1")
 
