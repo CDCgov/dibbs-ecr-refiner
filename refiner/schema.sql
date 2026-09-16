@@ -337,6 +337,28 @@ CREATE TABLE public.jurisdictions (
 
 
 --
+-- Name: orphaned_valuesets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.orphaned_valuesets (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    valueset_id uuid NOT NULL,
+    canonical_url text NOT NULL,
+    condition_canonical_url text NOT NULL,
+    condition_version text NOT NULL,
+    display_name text,
+    category text,
+    code_count integer,
+    completeness text,
+    parent_url text,
+    memberships_at_removal integer NOT NULL,
+    valueset_created_at timestamp with time zone NOT NULL,
+    valueset_updated_at timestamp with time zone NOT NULL,
+    removed_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -582,6 +604,14 @@ ALTER TABLE ONLY public.events
 
 ALTER TABLE ONLY public.jurisdictions
     ADD CONSTRAINT jurisdictions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: orphaned_valuesets orphaned_valuesets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orphaned_valuesets
+    ADD CONSTRAINT orphaned_valuesets_pkey PRIMARY KEY (id);
 
 
 --
@@ -1077,4 +1107,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260901143317'),
     ('20260902230457'),
     ('20260903182620'),
-    ('20260909225054');
+    ('20260909225054'),
+    ('20260916173742');

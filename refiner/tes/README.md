@@ -90,6 +90,14 @@ just tes diff               # what changed in data/processed since last commit
 
 Then `just db seed` (or `just db refresh`) loads `data/processed` into Postgres.
 
+In a deployed environment the ops image is the interface:
+
+```sh
+ops prepare-db              # migrate, verify, seed, verify, regenerate active configs
+ops verify-db               # just the processed-vs-database checks
+ops orphans                 # valueset rows seeding has quarantined, and why
+```
+
 ## The three stages
 
 ### `fetch/` — talk to TES
@@ -211,6 +219,62 @@ shows what moved:
 The content hash catches a grouper that swapped codes without changing its count —
 Rubella went +3/−13 between 6.0.0 and 7.0.0, which a count alone would show as −10.
 
+## When a grouper stops existing
+
+This one is worth understanding even if you never touch the SQL, because it
+decides which table you should be reading.
+
+Four tables come out of seeding, and it helps to say what each one *means*:
+
+- **`conditions`** — one row per reportable condition, per TES release. "Influenza
+  as published in 6.0.0" and "Influenza as published in 7.0.0" are two rows.
+- **`valuesets`** — one row per grouper: the buckets TES sorts a condition's codes
+  into (diagnosis, medication, symptom, and so on). Each belongs to one condition
+  row, so a grouper is also per-release.
+- **`codes`** — the vocabulary. Just "this code, in this code system, means this."
+- **`conditions_codes_temp`** — the join that carries the actual meaning: *this
+  condition gets this code, by way of this grouper.*
+
+Seeding does not treat these the same way, and that asymmetry is the thing to
+know. The junction is thrown away and rebuilt from scratch on every run, so it
+always reflects exactly what the processed files say. Conditions and valuesets
+are updated in place — new rows inserted, changed rows updated.
+
+For a long time nothing ever *removed* one. So when TES stopped publishing a
+grouper, or when a bug that had attached a grouper to the wrong condition got
+fixed, the membership rows vanished on the next seed (the junction was rebuilt
+without them) while the `valuesets` row stayed behind. What is left is a grouper
+that belongs to a condition and contributes no codes to it. Nothing about the row
+itself says so: it keeps its name, its category, and even its `code_count`,
+frozen at whatever it was the day it was written.
+
+The seeder now moves those rows to `orphaned_valuesets` instead of leaving them
+(see `_quarantine_stale_valuesets`), so they stop accumulating. They are moved
+rather than deleted because the environments where this matters most are ones
+nobody can open a database session against, and a row that only ever existed as a
+number in a log is a row nobody can examine or put back.
+
+**The rule of thumb this leaves you with:** if the question is *what codes does
+this condition have*, start from `conditions_codes_temp` and join outward. If you
+start from `valuesets` instead, you are asking a subtly different question — *what
+groupers are on file for this condition* — and the answer can include groupers
+that contribute nothing.
+
+Most of the app already gets this right by construction: every query in
+`app/db/configurations/codes/db.py` enters through the junction and reaches
+`valuesets` only to read a grouper's name, so a contributing-nothing row is
+unreachable. The one query that read `valuesets` directly,
+`get_context_groupers_by_condition_id_db`, now filters on the grouper having at
+least one membership. That matters because its rows become the code category
+badges on a condition's detail page, and a grouper with no codes should not get a
+vote in what those say.
+
+Note that quarantine and that filter cover different things and you want both. A
+grouper whose codes all happen to live in code systems the refiner does not
+support is *legitimately* declared by the processed files — the quarantine will
+never remove it, correctly — and it still contributes no memberships. There are
+none in the current data, but the query handles it either way.
+
 ## Things that are easy to get wrong
 
 - **A ValueSet is `(canonical_url, version)`, never url alone.** The same url is
@@ -231,6 +295,8 @@ Rubella went +3/−13 between 6.0.0 and 7.0.0, which a count alone would show as
   that membership is not a self-naming one.
 - **An RSG does not always list the SNOMED code it names itself with.** The
   membership is emitted anyway — the condition owns that code regardless.
+- **A row in `valuesets` is not proof the grouper still contributes codes.** Ask
+  the junction, not the table. See "When a grouper stops existing" above.
 
 ## Seeding window
 
