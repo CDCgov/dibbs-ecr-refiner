@@ -516,7 +516,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 79,
+      "lineno": 80,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -545,7 +545,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 101,
+      "lineno": 102,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -561,7 +561,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 121,
+      "lineno": 122,
       "stage": "Skip/Error Handling",
       "role": "Error Handling",
       "source_type": "production",
@@ -577,7 +577,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 132,
+      "lineno": 133,
       "stage": "Skip/Error Handling",
       "role": "Error Handling",
       "source_type": "production",
@@ -612,7 +612,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 143,
+      "lineno": 144,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -695,7 +695,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 172,
+      "lineno": 173,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -770,7 +770,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 197,
+      "lineno": 198,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -817,7 +817,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 219,
+      "lineno": 220,
       "stage": "Entry",
       "role": "Handler",
       "source_type": "production",
@@ -846,7 +846,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 428,
+      "lineno": 429,
       "stage": "Entry",
       "role": "Handler",
       "source_type": "production",
@@ -875,7 +875,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 493,
+      "lineno": 494,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -904,7 +904,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 521,
+      "lineno": 522,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -938,7 +938,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 543,
+      "lineno": 544,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -972,7 +972,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 576,
+      "lineno": 577,
       "stage": "S3 Retrieval",
       "role": "S3 I/O",
       "source_type": "production",
@@ -996,7 +996,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 603,
+      "lineno": 604,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1030,7 +1030,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 642,
+      "lineno": 643,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1064,7 +1064,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 675,
+      "lineno": 676,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1098,7 +1098,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 745,
+      "lineno": 746,
       "stage": "Refinement Pipeline",
       "role": "Orchestrator",
       "source_type": "production",
@@ -1122,7 +1122,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 816,
+      "lineno": 817,
       "stage": "Refinement Pipeline",
       "role": "Orchestrator",
       "source_type": "production",
@@ -1161,7 +1161,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 858,
+      "lineno": 860,
       "stage": "Refinement Pipeline",
       "role": "Orchestrator",
       "source_type": "production",
@@ -1210,7 +1210,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 937,
+      "lineno": 955,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1244,11 +1244,11 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 970,
+      "lineno": 988,
       "stage": "Skip/Error Handling",
       "role": "Error Handling",
       "source_type": "production",
-      "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState) -> None",
+      "signature": "skip_all_conditions_for_missing_mapping(jurisdiction_code: str, jurisdiction_group: JurisdictionReportableConditions, state: RefinementState, refiner_input: RefinementInput) -> None",
       "parameters": [
         {
           "name": "jurisdiction_code",
@@ -1264,6 +1264,11 @@
           "name": "state",
           "annotation": "RefinementState",
           "default": null
+        },
+        {
+          "name": "refiner_input",
+          "annotation": "RefinementInput",
+          "default": null
         }
       ],
       "return_annotation": "None"
@@ -1278,11 +1283,11 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 992,
+      "lineno": 1014,
       "stage": "Skip/Error Handling",
       "role": "Error Handling",
       "source_type": "production",
-      "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState, **kwargs) -> None",
+      "signature": "mark_condition_skipped(jurisdiction_code: str, condition_code: str, reason: str, state: RefinementState, input_eicr_size_mib: float, **kwargs) -> None",
       "parameters": [
         {
           "name": "jurisdiction_code",
@@ -1305,9 +1310,68 @@
           "default": null
         },
         {
+          "name": "input_eicr_size_mib",
+          "annotation": "float",
+          "default": null
+        },
+        {
           "name": "kwargs",
           "annotation": null,
           "default": "{}"
+        }
+      ],
+      "return_annotation": "None"
+    },
+    {
+      "name": "app.lambda.lambda_function.log_metrics",
+      "docstring": "Log only the fields required for metrics reporting.\n\nStage:\n    Output Metrics\nRole:\n    Output",
+      "parsed_docstring": {
+        "summary": "Log only the fields required for metrics reporting.",
+        "description": "",
+        "params": [],
+        "returns": null,
+        "raises": []
+      },
+      "lineno": 1051,
+      "stage": "Output Metrics",
+      "role": "Output",
+      "source_type": "production",
+      "signature": "log_metrics(*, jurisdiction_code: str, condition_code: str, input_eicr_size_mib: float, skipped: bool, skip_reason: str | None = None, output_eicr_size_mib: float | None = None, percent_size_reduction: float | None = None) -> None",
+      "parameters": [
+        {
+          "name": "jurisdiction_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "condition_code",
+          "annotation": "str",
+          "default": null
+        },
+        {
+          "name": "input_eicr_size_mib",
+          "annotation": "float",
+          "default": null
+        },
+        {
+          "name": "skipped",
+          "annotation": "bool",
+          "default": null
+        },
+        {
+          "name": "skip_reason",
+          "annotation": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "output_eicr_size_mib",
+          "annotation": "float | None",
+          "default": "None"
+        },
+        {
+          "name": "percent_size_reduction",
+          "annotation": "float | None",
+          "default": "None"
         }
       ],
       "return_annotation": "None"
@@ -1335,7 +1399,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 1020,
+      "lineno": 1090,
       "stage": "Types",
       "role": "Data Type",
       "source_type": "production",
@@ -1382,7 +1446,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 1040,
+      "lineno": 1110,
       "stage": "Configuration Loading",
       "role": "Configuration",
       "source_type": "production",
@@ -1426,7 +1490,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 1103,
+      "lineno": 1173,
       "stage": "Output Writing",
       "role": "Output",
       "source_type": "production",
@@ -1475,7 +1539,7 @@
         "returns": null,
         "raises": []
       },
-      "lineno": 1155,
+      "lineno": 1225,
       "stage": "Output Writing",
       "role": "Output",
       "source_type": "production",

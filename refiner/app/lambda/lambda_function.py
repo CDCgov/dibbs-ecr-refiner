@@ -1058,7 +1058,15 @@ def log_metrics(
     output_eicr_size_mib: float | None = None,
     percent_size_reduction: float | None = None,
 ) -> None:
-    """Log only the fields required for metrics reporting."""
+    """
+    Log only the fields required for metrics reporting.
+
+    Stage:
+        Output Metrics
+    Role:
+        Output
+
+    """
     size_difference_mib = (
         input_eicr_size_mib - output_eicr_size_mib
         if output_eicr_size_mib is not None
