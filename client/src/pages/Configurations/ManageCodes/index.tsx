@@ -11,6 +11,14 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Button } from '@components/Button';
 import classNames from 'classnames';
 import { Checkbox } from '@components/Checkbox';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { useState } from 'react';
 import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import {
@@ -239,10 +247,10 @@ function CodesTable({
           }
           style={{ overflow: 'unset' }} // this allows the sticky header to work
         >
-          <table className="w-full table-auto">
-            <thead className="bg-gray-cool-5 z-sticky sticky top-0">
-              <tr className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
-                <th scope="col" className="text-center">
+          <Table className="table-auto">
+            <TableHead className="bg-gray-cool-5 z-sticky sticky top-0">
+              <TableRow className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
+                <TableHeaderCell scope="col" className="text-center">
                   <Checkbox
                     aria-label="Include all codes in bulk operation"
                     disabled={disabled}
@@ -256,11 +264,11 @@ function CodesTable({
                       );
                     }}
                   />
-                </th>
-                <th scope="col">Code no.</th>
-                <th scope="col">System</th>
-                <th scope="col">Description</th>
-                <th scope="col">
+                </TableHeaderCell>
+                <TableHeaderCell scope="col">Code no.</TableHeaderCell>
+                <TableHeaderCell scope="col">System</TableHeaderCell>
+                <TableHeaderCell scope="col">Description</TableHeaderCell>
+                <TableHeaderCell scope="col">
                   <div className="flex flex-row items-center gap-1">
                     <span>Source</span>
                     <Button
@@ -272,14 +280,14 @@ function CodesTable({
                       <QuestionIcon />
                     </Button>
                   </div>
-                </th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-gray-cool-20 divide-y">
+                </TableHeaderCell>
+                <TableHeaderCell scope="col">Status</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody className="divide-gray-cool-20 divide-y">
               {codes.length === 0 ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={6}
                     className="text-gray-cool-60 px-4 py-8 text-center"
                   >
@@ -297,11 +305,11 @@ function CodesTable({
                         </Button>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 codes.map((code) => (
-                  <tr
+                  <TableRow
                     key={`${code.condition_id ?? 'custom-code'}-${code.id}`}
                     className={classNames(
                       'text-gray-cool-60 [&>td]:px-4 [&>td]:py-2',
@@ -310,7 +318,7 @@ function CodesTable({
                       }
                     )}
                   >
-                    <td className="text-center">
+                    <TableCell className="text-center">
                       {code.is_trigger_code ? (
                         <Tooltip
                           position="right"
@@ -336,19 +344,19 @@ function CodesTable({
                           }
                         />
                       )}
-                    </td>
-                    <td>{code.code}</td>
-                    <td>{code.system_name}</td>
-                    <td>{code.description}</td>
-                    <td>
+                    </TableCell>
+                    <TableCell>{code.code}</TableCell>
+                    <TableCell>{code.system_name}</TableCell>
+                    <TableCell>{code.description}</TableCell>
+                    <TableCell>
                       <SourceCell configurationId={id} code={code} />
-                    </td>
-                    <td>{code.status}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>{code.status}</TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </InfiniteScroll>
       </div>
     </div>
