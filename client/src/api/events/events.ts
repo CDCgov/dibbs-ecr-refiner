@@ -76,6 +76,19 @@ export const getEvents = (
     );
   }
 
+export const getGetEventsUrl = (params?: GetEventsParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/events/`,
+    baseURL: '',
+    params,
+
+  });
+}
+
 
 
 
@@ -174,6 +187,19 @@ export const getCustomCodeUploadEvents = (
       `/api/v1/events/${eventId}/custom-code-uploads`,options
     );
   }
+
+export const getGetCustomCodeUploadEventsUrl = (eventId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/events/${eventId}/custom-code-uploads`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -277,6 +303,19 @@ export const getEventsExportApiV1EventsExportGet = (
     );
   }
 
+export const getGetEventsExportApiV1EventsExportGetUrl = (params?: GetEventsExportApiV1EventsExportGetParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/events/export`,
+    baseURL: '',
+    params,
+
+  });
+}
+
 
 
 
@@ -367,6 +406,19 @@ export const getEventCodesExportApiV1EventsEventIdCodesExportGet = (
       `/api/v1/events/${eventId}/codes/export`,options
     );
   }
+
+export const getGetEventCodesExportApiV1EventsEventIdCodesExportGetUrl = (eventId: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/events/${eventId}/codes/export`,
+    baseURL: '',
+
+
+  });
+}
 
 
 

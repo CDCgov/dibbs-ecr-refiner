@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).parent
 SCHEMA_DIR = BASE_DIR / "cda-r2-schema"
 ROOT_SCHEMA = SCHEMA_DIR / "infrastructure" / "cda" / "CDA_SDTC.xsd"
 
-DATA_DIR = BASE_DIR.parent / "data" / "source-ecr-files"
+DATA_DIR = BASE_DIR.parent / "source-ecr-files"
 
 
 def build_schema(console: Console) -> etree.XMLSchema | None:

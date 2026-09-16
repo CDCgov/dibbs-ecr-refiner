@@ -1,0 +1,15 @@
+# Build contexts only need source and the processed TES tables. Excluding the rest
+# takes the context from ~2.7 GB to a few hundred MB, which every image build pays.
+**/.venv
+**/node_modules
+**/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/.scratch
+**/coverage
+**/playwright-report
+**/test-results
+refiner/tests
+refiner/tes/data/source-tes-groupers
+.git

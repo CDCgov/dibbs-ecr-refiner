@@ -1,0 +1,93 @@
+{
+  "manifest_version": 1,
+  "counts": {
+    "conditions": 1596,
+    "valuesets": 2854,
+    "codes": 97264,
+    "memberships": 2045558,
+    "unresolved_references": 0,
+    "dropped_unsupported_system": 67632
+  },
+  "dropped_by_system": {
+    "http://hl7.org/fhir/sid/icd-10": 14,
+    "http://hl7.org/fhir/sid/icd-9-cm": 936,
+    "http://hl7.org/fhir/sid/ndc": 108,
+    "http://terminology.hl7.org/CodeSystem/PHIndustryCDCCensus2010": 266,
+    "http://terminology.hl7.org/CodeSystem/PHOccupationCDCCensus2010": 126,
+    "http://terminology.hl7.org/CodeSystem/PHOccupationalDataForHealthODH": 39340,
+    "http://terminology.hl7.org/CodeSystem/nddf": 36,
+    "http://terminology.hl7.org/CodeSystem/v3-ActCode": 319,
+    "http://terminology.hl7.org/CodeSystem/v3-ActStatus": 1781,
+    "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation": 19804,
+    "http://terminology.hl7.org/NamingSystem/CDCLocal": 4,
+    "http://terminology.hl7.org/NamingSystem/ICD-9CM-diagnosiscodes": 532,
+    "http://www.ama-assn.org/go/cpt": 1587,
+    "https://phinvads.cdc.gov/baseStu3/CodeSystem/2.16.840.1.114222.4.5.274": 8,
+    "urn:oid:2.16.840.1.113883.12.112": 990,
+    "urn:oid:2.16.840.1.113883.3.1937.98.5.8": 1781
+  },
+  "files": {
+    "conditions.csv.gz": {
+      "hash": "0c3f04572830c468bd7c58c1245c7e742f252a5aae3b3a993c544493d04c4305"
+    },
+    "valuesets.csv.gz": {
+      "hash": "1c0b0aa767f2fd1b959a5ca81fe1b66ff174a7340dea2b8234de1832eeb44a12"
+    },
+    "codes.csv.gz": {
+      "hash": "64d3dd37b69e4c979de875aadc6e04f987514115d15ded4e5c7ec4ed7f084370"
+    },
+    "memberships.csv.gz": {
+      "hash": "333e360cefdbf4dc1f912702805bb8a868b6b7cd0a742158845f8f206648c06a"
+    },
+    "summary.csv": {
+      "hash": "bff3cb494fb0442ca7839a49b5488a03abb9f3324c2b2c53077d061aa91b212e"
+    }
+  },
+  "derived_from": {
+    "additional_context_grouper_2.0.0.json": "69b10772132ef727f478a474f892ddbffbe86eb137b1d6254eda077b63068893",
+    "additional_context_grouper_3.0.0.json": "884597a30d7d2480f0dc6ddbe4b957294228467438439ea07697890692f22e9c",
+    "additional_context_grouper_4.0.0.part01.json": "bf6427cbb770f1342e657d259e8c67166b43c593ab9996517e17efd904a03863",
+    "additional_context_grouper_4.0.0.part02.json": "6c8c1be24786ca407b54e8a02b9c5241a015ae5dfc1236f08e5fc00fa0a153a5",
+    "additional_context_grouper_5.0.0.part01.json": "9bddb5bdfbb500e1364f9b097227a136c4c61e7d989924690c5657b701c4d48c",
+    "additional_context_grouper_5.0.0.part02.json": "ba2d635583155059d8960add2321c420986047b2ca5333e6df84ad0fce20283f",
+    "additional_context_grouper_6.0.0.part01.json": "2e9a3f837b0fe48bb25a5c9465234065254a14fb28560106fe8017f563478900",
+    "additional_context_grouper_6.0.0.part02.json": "536dcb17cc56564ad01bdd9808f08edf6044253fdbec19dc4e9d674152713724",
+    "additional_context_grouper_6.0.0.part03.json": "f9589ffd03262e3d016f785d54ae7d38da3da946b131da836ee346228608531e",
+    "additional_context_grouper_6.0.0.part04.json": "fb16cdaac184ddc129ebfa3180574e8292988cedc2f10719ab3928679fd91ff9",
+    "additional_context_grouper_7.0.0.part01.json": "5d5d1b199c3a7062711b621f71410aabb7fc74ba285cc363469f5b583f3f3e05",
+    "additional_context_grouper_7.0.0.part02.json": "dec0d6eea9bda70f40de76c5287af20e427caddefb17d1055e961e26bf318da6",
+    "additional_context_grouper_7.0.0.part03.json": "f5fce435940f0272a17c75842ad45a3f092f9b4284f759e14fd5c3294598d0bd",
+    "additional_context_grouper_7.0.0.part04.json": "2c56c68215299b5b62651558f9666a4d779c0a4ce683566066785b3cad803a3f",
+    "additional_context_grouper_7.0.0.part05.json": "4ebcb8edf028313f388c63edeae888cd58f0f7a741d95b95c5dff841c6f436eb",
+    "condition_grouper_1.0.0.json": "30f4e0c45ed54b3a0f9223d558bcd35923589d646e90ceace5ce57f5929264b3",
+    "condition_grouper_2.0.0.json": "e16c3982d037f40ff074f81669dfbad090acf58be885e246155e2a4be7ed0880",
+    "condition_grouper_3.0.0.json": "c2293c185f851aee35fc9b6d967d233fb65a07235d0b1a286c34ad3f622195b3",
+    "condition_grouper_4.0.0.part01.json": "aaaccc8e1564c7bede1d461506448521877abe021012c7d2cf456317a25df47a",
+    "condition_grouper_4.0.0.part02.json": "b5a4be680d821465fa95cda36c8a3fdad5b45d2146b78570490480fc38ea099c",
+    "condition_grouper_5.0.0.part01.json": "d9e21cc08d20b2403604a08c60ddd1b69e7e7e7ea635bc4a4a1c0062f8a70ea0",
+    "condition_grouper_5.0.0.part02.json": "bcbed534462b99f033f0e1f4473331d348f26a600bb5cc61cacedec02fdb8dcc",
+    "condition_grouper_6.0.0.part01.json": "b0144e9915435bb62d9bcc59fc553d4819e4204280f64295321e8f1f939e7817",
+    "condition_grouper_6.0.0.part02.json": "391d88998861b4a3e31b77b296e3ea17f1d0a804330ef9e98c0de6d793b0d077",
+    "condition_grouper_6.0.0.part03.json": "9085d2304a7509dd5be08b1a4086067b5f43ecf93d7e6783b1bcb8246246e95d",
+    "condition_grouper_6.0.0.part04.json": "38b5c8982dfcc2fa5716d4eb9c1ba7a547de54669c530905ee3026cbc65155d3",
+    "condition_grouper_7.0.0.part01.json": "b74506c5a982c29bf545330cf33db3eac6b256a20c72ec63b10d38c932760b24",
+    "condition_grouper_7.0.0.part02.json": "cdf92a38b78eaae9e487b911e1adf02f5bc985115bb19e9f1009272d03a4f929",
+    "condition_grouper_7.0.0.part03.json": "6b2f8e720495369e984a75e7621bad6dc319be8f0eca0c5b099f458cdad6d3ea",
+    "condition_grouper_7.0.0.part04.json": "0e095ad6ce875ad52875e9a3cc7f54afaf78b04b8c5a550c65f9ada225232fca",
+    "condition_grouper_7.0.0.part05.json": "3aba608fdf8d23faf78694c91ab09e490a23291f8b9ae40aa7a42a4b8b77636f",
+    "condition_grouper_7.0.0.part06.json": "03fafcb051750079f6e6b68d04fb29323d23a8c2076f1642ec441b4aa58f3c9c",
+    "eicr_triggering.json": "5917a55c0a7ae71cd8767e30c0a708192a2a99581d29adb9b7d9176797b78242",
+    "reporting_spec_grouper_20241008.part01.json": "09b259db177cf0a8962b20abfbff1509e960af834febda7e0bc59de74dfcab17",
+    "reporting_spec_grouper_20241008.part02.json": "8740f9953d4ba28e6d44a833d53da90d139fbea6215775efc332677fcea5bffa",
+    "reporting_spec_grouper_20250328.part01.json": "804e38c5046216c2d0a4bf8add7799220117aef468ea70a3c5216e876bba5819",
+    "reporting_spec_grouper_20250328.part02.json": "ca701c5b32e1535f4291b83d3099138dc09964d99952c799a95023be80ef14de",
+    "reporting_spec_grouper_20250829.part01.json": "0ac3c107988680cbda1f3b7037ee4df3055e131932e509cbd4e7d468b5b2cbf7",
+    "reporting_spec_grouper_20250829.part02.json": "a223ed68ce2ab8ac596c2b090cb22d86cb01eebc9c3e9e0360d5237266b9f1d9",
+    "reporting_spec_grouper_20260327.part01.json": "1c4161c09c456f822469a6ea57741083cebf20c89ae8ab8238270b29e9b0e14c",
+    "reporting_spec_grouper_20260327.part02.json": "929ce4f22ddda4cf014c836d871f319b3d4f4c7af288ee4a22747fa2144bde80",
+    "reporting_spec_grouper_20260327.part03.json": "8bfd89dfc885542b07b21057935b804cf448e4b275babdf8a725ff15731fb83b",
+    "reporting_spec_grouper_20260731.part01.json": "54396b1ee319636ab32896ed4f6c4dc8d2e90a774deb02168023833c74c8abb3",
+    "reporting_spec_grouper_20260731.part02.json": "d48ec1b7f6884daa56885b9134eb0354a264625ad9abfa4454b8b1fb16edcbf4",
+    "reporting_spec_grouper_20260731.part03.json": "69dace99bd277b296cc24649404456edd207aeaa620e10241f211da8fd1e16cd"
+  }
+}

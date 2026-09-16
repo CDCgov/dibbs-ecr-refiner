@@ -78,6 +78,10 @@ ignore = [
 "**/lambda/*" = ["D", "S", "ANN"]
 # - disable type annotation rules in scripts
 "**/scripts/*" = ["ANN", "T201"]
+# - the TES pipeline and ops scripts report by printing, but they are imported
+#   packages rather than one-off scripts, so annotations stay required
+"**/tes/*" = ["T201"]
+"**/ops/*" = ["T201"]
 # - allow missing docstrings in __init__
 "__init__.py" = ["D"]
 
@@ -88,7 +92,7 @@ convention = "google"
 # import configuration
 [tool.ruff.lint.isort]
 # - project-specific imports
-known-first-party = ["app", "pipeline"]
+known-first-party = ["app", "tes"]
 # - key third-party imports
 known-third-party = ["fastapi", "pydantic", "starlette", "psycopg"]
 

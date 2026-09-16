@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 # define the single source of truth and the destination
-SOURCE_DIR = Path(__file__).parent.parent / "scripts/data/source-ecr-files"
+SOURCE_DIR = Path(__file__).parent / "source-ecr-files"
 DEST_DIR = Path(__file__).parent / "fixtures"
 
 # a manifest of the files we care about

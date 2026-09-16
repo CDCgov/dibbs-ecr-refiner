@@ -16,8 +16,8 @@ from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.configurations import convert_config_to_storage_payload
 from app.services.logger import get_logger
-from scripts.reactivations import regenerate_active_configs as reactivation
-from scripts.reactivations.regenerate_active_configs import (
+from ops.reactivations import regenerate_active_configs as reactivation
+from ops.reactivations.regenerate_active_configs import (
     regenerate_active_configuration,
 )
 
@@ -313,7 +313,7 @@ class TestActivations:
         assert configuration is not None
 
         with patch(
-            "scripts.reactivations.regenerate_active_configs.upload_configuration_payload",
+            "ops.reactivations.regenerate_active_configs.upload_configuration_payload",
             side_effect=upload_regenerated_payload_to_localstack,
         ):
             await regenerate_active_configuration(
@@ -389,14 +389,14 @@ class TestActivations:
 
         with (
             patch(
-                "scripts.reactivations.regenerate_active_configs.create_maintenance_lock"
+                "ops.reactivations.regenerate_active_configs.create_maintenance_lock"
             ) as create_lock_mock,
             patch(
-                "scripts.reactivations.regenerate_active_configs.regenerate_active_configs",
+                "ops.reactivations.regenerate_active_configs.regenerate_active_configs",
                 new_callable=AsyncMock,
             ) as regenerate_active_configs_mock,
             patch(
-                "scripts.reactivations.regenerate_active_configs.remove_maintenance_lock"
+                "ops.reactivations.regenerate_active_configs.remove_maintenance_lock"
             ) as remove_lock_mock,
         ):
             await reactivation.run_active_config_reactivation(db=db_pool)
@@ -424,10 +424,10 @@ class TestActivations:
 
         with (
             patch(
-                "scripts.reactivations.regenerate_active_configs.create_maintenance_lock"
+                "ops.reactivations.regenerate_active_configs.create_maintenance_lock"
             ) as create_lock_mock,
             patch(
-                "scripts.reactivations.regenerate_active_configs.regenerate_active_configs",
+                "ops.reactivations.regenerate_active_configs.regenerate_active_configs",
                 new_callable=AsyncMock,
                 return_value={
                     "total": 2,
@@ -436,7 +436,7 @@ class TestActivations:
                 },
             ) as regenerate_active_configs_mock,
             patch(
-                "scripts.reactivations.regenerate_active_configs.remove_maintenance_lock"
+                "ops.reactivations.regenerate_active_configs.remove_maintenance_lock"
             ) as remove_lock_mock,
         ):
             await reactivation.run_active_config_reactivation(db=db_pool)
