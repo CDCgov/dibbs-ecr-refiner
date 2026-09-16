@@ -78,6 +78,19 @@ export const getTesUpdates = (
     );
   }
 
+export const getGetTesUpdatesUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/diff-details`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -181,6 +194,19 @@ export const getTesDiffDetails = (
     );
   }
 
+export const getGetTesDiffDetailsUrl = (params: GetTesDiffDetailsParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/`,
+    baseURL: '',
+    params,
+
+  });
+}
+
 
 
 
@@ -283,6 +309,19 @@ export const exportConditionDiff = (
     );
   }
 
+export const getExportConditionDiffUrl = (params: ExportConditionDiffParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/export`,
+    baseURL: '',
+    params,
+
+  });
+}
+
 
 
 
@@ -373,6 +412,19 @@ export const getConfigurationsToUpdate = (
       `/api/v1/tes/configurations-to-update`,options
     );
   }
+
+export const getGetConfigurationsToUpdateUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/configurations-to-update`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -469,6 +521,19 @@ export const applyTesUpdatesToExistingDrafts = (
     );
   }
 
+export const getApplyTesUpdatesToExistingDraftsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/configurations/drafts`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 
@@ -537,6 +602,19 @@ export const createDraftsFromActiveConfigurations = (
       createDraftsFromActiveConfigsRequest,options
     );
   }
+
+export const getCreateDraftsFromActiveConfigurationsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/configurations/drafts-from-active`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
