@@ -34,12 +34,18 @@ export function ActivityLogEntries({
     <Table className="legacy-table legacy-table--striped table-auto">
       <TableHead>
         <TableRow>
-          <TableHeaderCell className="w-[16%]">{nameHeader}</TableHeaderCell>
-          <TableHeaderCell className="w-[22%]">
+          <TableHeaderCell className="text-gray-cool-90 w-[16%]">
+            {nameHeader}
+          </TableHeaderCell>
+          <TableHeaderCell className="text-gray-cool-90 w-[22%]">
             {conditionHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="w-[46%]">{actionHeader}</TableHeaderCell>
-          <TableHeaderCell className="w-[16%]">{dateHeader}</TableHeaderCell>
+          <TableHeaderCell className="text-gray-cool-90 w-[46%]">
+            {actionHeader}
+          </TableHeaderCell>
+          <TableHeaderCell className="text-gray-cool-90 w-[16%]">
+            {dateHeader}
+          </TableHeaderCell>
         </TableRow>
       </TableHead>
       <TableBody>
