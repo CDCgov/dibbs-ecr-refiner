@@ -509,6 +509,7 @@ interface PreviewRowProps {
   openPreviewEditModal: (itemId: string) => void;
   handleRowDelete: (itemToDelete: UploadCustomCodesPreviewItem) => void;
 }
+// NOTE: text-gray-cool-90 applied explicitly here because <Table>'s inherited text color doesn't reliably cascade to th/td/a; consider making this a Table component default with design sign-off.
 function PreviewRow({
   previewItem,
   openPreviewEditModal,
@@ -518,11 +519,13 @@ function PreviewRow({
 
   return (
     <TableRow className="border-y border-blue-50">
-      <TableCell className="px-2 py-1">
+      <TableCell className="text-gray-cool-90 px-2 py-1">
         {highlightMatches(item.code, matches, 'code')}
       </TableCell>
-      <TableCell className="px-2 py-1">{item.system_name}</TableCell>
-      <TableCell className="px-2 py-1">
+      <TableCell className="text-gray-cool-90 px-2 py-1">
+        {item.system_name}
+      </TableCell>
+      <TableCell className="text-gray-cool-90 px-2 py-1">
         {highlightMatches(item.display, matches, 'display')}
       </TableCell>
       <TableCell className="px-2 py-1 text-right text-sm">

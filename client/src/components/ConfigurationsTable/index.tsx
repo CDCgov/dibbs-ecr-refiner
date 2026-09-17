@@ -12,10 +12,12 @@ import {
   TableRow,
 } from '../Table';
 import { StatusIndicator } from '@components/StatusIndicator';
+
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
 }
 
+// NOTE: text-gray-cool-90 applied explicitly here because <Table>'s inherited text color doesn't reliably cascade to th/td/a; consider making this a Table component default with design sign-off.
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   const reportableConditionHeader = 'Reportable Condition Configurations';
   const statusHeader = 'Status';
@@ -26,14 +28,17 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
         <Table className="legacy-table legacy-table--borderless max-w-full!">
           <TableHead>
             <TableRow>
-              <TableHeaderCell scope="col">
+              <TableHeaderCell scope="col" className="text-gray-cool-90">
                 {reportableConditionHeader}
               </TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             <TableRow>
-              <TableCell data-label={reportableConditionHeader}>
+              <TableCell
+                data-label={reportableConditionHeader}
+                className="text-gray-cool-90"
+              >
                 No configurations available
               </TableCell>
             </TableRow>
@@ -48,10 +53,12 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
       <Table className="legacy-table legacy-table--borderless max-w-full!">
         <TableHead>
           <TableRow>
-            <TableHeaderCell scope="col">
+            <TableHeaderCell scope="col" className="text-gray-cool-90">
               {reportableConditionHeader}
             </TableHeaderCell>
-            <TableHeaderCell scope="col">{statusHeader}</TableHeaderCell>
+            <TableHeaderCell scope="col" className="text-gray-cool-90">
+              {statusHeader}
+            </TableHeaderCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -66,7 +73,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   <Link
                     aria-label={`Configure ${name}`}
                     to={`/configurations/${id}/customize-sections`}
-                    className="relative z-0 flex items-center px-4 py-2 after:absolute after:inset-0 after:content-['']"
+                    className="text-gray-cool-90 relative z-0 flex items-center px-4 py-2 after:absolute after:inset-0 after:content-['']"
                   >
                     {name}
                   </Link>
