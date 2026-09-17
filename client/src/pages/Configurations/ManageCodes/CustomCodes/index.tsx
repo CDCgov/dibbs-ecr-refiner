@@ -9,6 +9,14 @@ import {
 import { CustomCodeResponse } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { CustomCodeModal } from './CustomCodeModal';
 
 interface CustomCodesDetailProps {
@@ -38,28 +46,28 @@ export function CustomCodesDetail({
 
   return (
     <div role="region">
-      <table className="mt-6! w-full border-separate">
-        <thead className="sr-only">
-          <tr>
-            <th>Custom code</th>
-            <th>Custom code system</th>
-            <th>Custom Display name</th>
-            <th>Modify the custom code</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="mt-6! border-separate">
+        <TableHead className="sr-only">
+          <TableRow>
+            <TableHeaderCell>Custom code</TableHeaderCell>
+            <TableHeaderCell>Custom code system</TableHeaderCell>
+            <TableHeaderCell>Custom Display name</TableHeaderCell>
+            <TableHeaderCell>Modify the custom code</TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {customCodes.map((customCode) => (
-            <tr
+            <TableRow
               key={customCode.code + customCode.system_id}
               className="align-middle"
             >
-              <td className="w-1/6 pb-6">{customCode.code}</td>
-              <td className="text-gray-cool-60 w-1/6 pb-6">
+              <TableCell className="w-1/6 pb-6">{customCode.code}</TableCell>
+              <TableCell className="text-gray-cool-60 w-1/6 pb-6">
                 {customCode.system_name}
-              </td>
-              <td className="w-1/6 pb-6">{customCode.display}</td>
+              </TableCell>
+              <TableCell className="w-1/6 pb-6">{customCode.display}</TableCell>
 
-              <td className="flex w-1/2 justify-end pb-6 whitespace-nowrap">
+              <TableCell className="flex w-1/2 justify-end pb-6 whitespace-nowrap">
                 {!disabled && (
                   <div className="flex flex-row gap-2">
                     <Button
@@ -114,11 +122,11 @@ export function CustomCodesDetail({
                     </div>
                   </div>
                 )}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       <CustomCodeModal
         isOpen={isOpen}
         setIsOpen={setIsOpen}

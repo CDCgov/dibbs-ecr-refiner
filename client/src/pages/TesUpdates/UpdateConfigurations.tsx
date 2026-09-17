@@ -2,7 +2,14 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { Button } from '@components/Button';
 import { Checkbox } from '@components/Checkbox';
 import { Spinner } from '@components/Spinner';
-import { Table } from '@components/Table';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { Title } from '@components/Title';
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
@@ -205,14 +212,14 @@ export function UpdateConfigurations() {
       </p>
 
       <div className="mt-4 bg-white px-10 py-6 lg:max-w-[75%]">
-        <Table className="mt-0 mb-4 border-none">
+        <Table className="legacy-table legacy-table--borderless mt-0 mb-4 border-none">
           <caption className="text-lg! font-bold">
             Update existing drafts
           </caption>
 
-          <thead>
-            <tr>
-              <th scope="col" className="bg-white! pl-0! font-bold">
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     onClick={() => handleBulkSelection(existingDraftIds)}
@@ -227,29 +234,29 @@ export function UpdateConfigurations() {
 
                   <span>Configuration</span>
                 </div>
-              </th>
+              </TableHeaderCell>
 
-              <th scope="col" className="bg-white! pl-0! font-bold">
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
                 Current TES version
-              </th>
+              </TableHeaderCell>
 
-              <th scope="col" className="bg-white! pl-0! font-bold">
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
                 Code sets to update
-              </th>
-            </tr>
-          </thead>
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
 
-          <tbody>
+          <TableBody>
             {existingDrafts.length === 0 ? (
-              <tr>
-                <td className="pl-0!" colSpan={3}>
+              <TableRow>
+                <TableCell className="pl-0!" colSpan={3}>
                   No existing drafts need to be updated.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               existingDrafts.map((draft) => (
-                <tr key={draft.configuration_id}>
-                  <td className="pl-0!">
+                <TableRow key={draft.configuration_id}>
+                  <TableCell className="pl-0!">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         onClick={() =>
@@ -263,27 +270,29 @@ export function UpdateConfigurations() {
 
                       <span>{draft.configuration_name}</span>
                     </div>
-                  </td>
+                  </TableCell>
 
-                  <td className="pl-0!">{draft.configuration_tes_version}</td>
+                  <TableCell className="pl-0!">
+                    {draft.configuration_tes_version}
+                  </TableCell>
 
-                  <td className="pl-0!">
+                  <TableCell className="pl-0!">
                     {draft.codesets_to_update.join(', ')}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
+          </TableBody>
         </Table>
 
-        <Table className="mt-0 mb-4 border-none">
+        <Table className="legacy-table legacy-table--borderless mt-0 mb-4 border-none">
           <caption className="mb-0 text-lg! font-bold">
             Create draft to update
           </caption>
 
-          <thead>
-            <tr>
-              <th scope="col" className="bg-white! pl-0! font-bold">
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     onClick={() => handleBulkSelection(activeConfigurationIds)}
@@ -298,29 +307,29 @@ export function UpdateConfigurations() {
 
                   <span>Configuration</span>
                 </div>
-              </th>
+              </TableHeaderCell>
 
-              <th scope="col" className="bg-white! pl-0! font-bold">
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
                 Current TES version
-              </th>
+              </TableHeaderCell>
 
-              <th scope="col" className="bg-white! pl-0! font-bold">
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
                 Code sets to update
-              </th>
-            </tr>
-          </thead>
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
 
-          <tbody>
+          <TableBody>
             {draftsToCreate.length === 0 ? (
-              <tr>
-                <td className="pl-0!" colSpan={3}>
+              <TableRow>
+                <TableCell className="pl-0!" colSpan={3}>
                   No active configurations require a new draft.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               draftsToCreate.map((configuration) => (
-                <tr key={configuration.configuration_id}>
-                  <td className="pl-0!">
+                <TableRow key={configuration.configuration_id}>
+                  <TableCell className="pl-0!">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         onClick={() =>
@@ -336,19 +345,19 @@ export function UpdateConfigurations() {
 
                       <span>{configuration.configuration_name}</span>
                     </div>
-                  </td>
+                  </TableCell>
 
-                  <td className="pl-0!">
+                  <TableCell className="pl-0!">
                     {configuration.configuration_tes_version}
-                  </td>
+                  </TableCell>
 
-                  <td className="pl-0!">
+                  <TableCell className="pl-0!">
                     {configuration.codesets_to_update.join(', ')}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
+          </TableBody>
         </Table>
 
         <Button
