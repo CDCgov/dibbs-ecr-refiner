@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from copy import deepcopy
 from typing import cast
 
@@ -28,7 +30,52 @@ from .utils import (
     build_generic_match_comment_text,
     enrich_surviving_entries,
     insert_comment_before,
+    resolve_no_match_section,
 )
+
+# NOTE:
+# SEARCH-TIME TREE STATE
+# =============================================================================
+
+
+@contextmanager
+def _neutralized_section_code(
+    section: _Element,
+    namespaces: NamespaceMap,
+) -> Iterator[None]:
+    """
+    Hide the section's own `@code` for the duration of the unscoped search.
+
+    The generic engine matches any `@code` anywhere in the section, so a
+    jurisdiction configured for the section's own LOINC would match the
+    `<code>` element that identifies the section and preserve every entry
+    on a false positive. It is removed for the search and put back the
+    moment the search ends.
+
+    Scoped rather than restored at the end of `process` because a section
+    that misreports its own LOINC is a trap for everything downstream:
+    `reconstruct_narrative` dispatches _by_ that LOINC and silently
+    returns `None` when it is missing, which reads as "no reconstructor
+    registered" and degrades to keeping the original narrative. Narrowing
+    the window to the only consumer that needs it means nothing else can
+    be misled.
+
+    Restores exactly what it removed--the attribute, **not** a deep copy
+    of the element--so a legitimate change made to `<code>` inside the
+    window survives rather than being silently reverted.
+    """
+
+    code_element = section.find("./hl7:code", namespaces=namespaces)
+    original_value = code_element.get("code") if code_element is not None else None
+
+    if code_element is not None and original_value:
+        del code_element.attrib["code"]
+    try:
+        yield
+    finally:
+        if code_element is not None and original_value:
+            code_element.set("code", original_value)
+
 
 # NOTE:
 # PUBLIC ENTRY POINT
@@ -57,14 +104,21 @@ def process(
     entry-level only. `displayName` enrichment runs post-prune when
     `code_system_sets` is available.
 
-    The generic path neutralizes the section's `<code>` and
-    `<text>` elements before searching to prevent false matches.
-    Both are saved as deep copies and restored after processing —
-    `<code>` unconditionally in the finally block (to avoid
-    corrupting the tree on error), and `<text>` whenever the
-    `narrative` action may end up preserving the original
-    ("retain", "keep_on_match", or the "reconstruct" fallback
-    branch — see Step 5 below).
+    The generic path neutralizes the section's `<code>` and `<text>`
+    before searching, to prevent either from producing a false match.
+    They are put back differently, because "put back" means different
+    things for the two:
+
+    - `<code>` is restored the instant the search ends
+      (`_neutralized_section_code`). A section's LOINC is its identity and
+      is never legitimately different afterward, so restoring it is an
+      **undo**--everything below the search reads a truthful section.
+    - `<text>` stays cleared, because the original narrative is not a
+      state to undo; it is one of several possible **outcomes**
+      ("retain" keeps it, "remove" replaces it with the notice,
+      "reconstruct" replaces it with a rebuilt table). The deep copy is
+      taken whenever a branch might still choose it, and the branch that
+      chooses it restores it explicitly (see Step 5 below).
 
     Source document XML comments are stripped before matching begins.
     Match provenance comments (`eCR Refiner: generic match — ...`)
@@ -94,16 +148,6 @@ def process(
         what the engine did with the narrative.
     """
 
-    # neutralize <code>: remove the @code attribute so the section's
-    # own LOINC code doesn't match during the unscoped search
-    # the full element is deep-copied and restored in the finally block
-    section_code_element = section.find("./hl7:code", namespaces=namespaces)
-    original_code = (
-        deepcopy(section_code_element) if section_code_element is not None else None
-    )
-    if section_code_element is not None and section_code_element.get("code"):
-        section_code_element.attrib.pop("code")
-
     # neutralize <text>: clear it so inline codes in the narrative
     # don't produce false matches
     # save a deep copy whenever the narrative may end up preserved —
@@ -127,13 +171,17 @@ def process(
     if text_element is not None:
         text_element.clear()
 
-    try:
-        if not codes_to_match:
-            # nothing to match against → treat as no-match. defer to
-            # the shared no-match handler below by jumping straight to
-            # the empty-matches branch.
-            contextual_matches: list[_Element] = []
-        else:
+    if not codes_to_match:
+        # nothing to match against → treat as no-match. defer to
+        # the shared no-match handler below by jumping straight to
+        # the empty-matches branch.
+        contextual_matches: list[_Element] = []
+    else:
+        # the **only** place the section may misreport its own LOINC; the
+        # window is the search and nothing else--everything below reads a
+        # truthful section, including `reconstruct_narrative`, which
+        # dispatches by that LOINC
+        with _neutralized_section_code(section, namespaces):
             try:
                 # STEP 1: strip source document comments before matching
                 # so they cannot interfere with candidate gathering.
@@ -155,182 +203,109 @@ def process(
                     },
                 )
 
-        if not contextual_matches:
-            # no matches: prune every <entry> and apply the configured
-            # narrative behavior. nullFlavor="NI" is set at the section
-            # level so the document continues to satisfy CDA
-            # schematron rules that require `SHALL contain at least
-            # one entry` for refinable sections — the narrative
-            # remains the source of clinical information.
-            for entry in section.findall("hl7:entry", namespaces=namespaces):
-                remove_element(entry)
-            section.attrib["nullFlavor"] = "NI"
+    if not contextual_matches:
+        # no matches: prune every <entry> and apply the configured
+        # narrative behavior. nullFlavor="NI" is set at the section
+        # level so the document continues to satisfy CDA
+        # schematron rules that require `SHALL contain at least
+        # one entry` for refinable sections — the narrative
+        # remains the source of clinical information.
+        if run_result := resolve_no_match_section(
+            section=section,
+            narrative_action=narrative_action,
+            namespaces=namespaces,
+            augmentation_timestamp=augmentation_timestamp,
+        ):
+            return run_result
 
-            if narrative_action == "reconstruct":
-                # reconstruct anyway over the empty entry set. mirrors the
-                # entry-matching engine; the two paths must not disagree
-                # about what "reconstruct" means. a section reaching the
-                # generic path has no registered reconstructor in practice,
-                # so the fallback below is the live branch here
-                #
-                # matching is over, so the @code neutralization above has
-                # done its job — and it has to come off before dispatch,
-                # since reconstruct_narrative looks the section up BY its
-                # LOINC and would otherwise find a section that claims to
-                # have no code. the finally block still swaps in the
-                # pristine copy; putting the attribute back here only
-                # brings that forward for this one read
-                _restore_section_code(section_code_element, original_code)
-                if rebuilt := reconstruct_narrative(
+        # "retain": restore the original <text> we saved before
+        # neutralizing it
+        if original_text is not None:
+            restore_narrative(section, original_text, namespaces)
+        return SectionRunResult(
+            matches_found=False,
+            narrative_disposition="retained",
+        )
+
+    try:
+        # STEP 3: PRUNE non-matching entries and inject provenance
+        # comments above the surviving ones
+        surviving_entries = _preserve_relevant_entries(section, contextual_matches)
+        _inject_generic_match_comments(surviving_entries, contextual_matches)
+
+        # STEP 4: ENRICH displayName on surviving entries
+        if code_system_sets is not None:
+            enrich_surviving_entries(
+                section,
+                code_system_sets,
+                namespaces,
+                narrative_index=narrative_index,
+            )
+
+        # STEP 5: handle narrative <text> reconstruction runs HERE,
+        # after STEP 4 enrichment, because it reads displayName off
+        # the surviving entries it rebuilds the table from
+        match narrative_action:
+            case "remove":
+                replace_narrative_with_removal_notice(section, namespaces)
+                return SectionRunResult(
+                    matches_found=True,
+                    narrative_disposition="removed",
+                )
+            case "reconstruct":
+                match reconstruct_narrative(
                     section, augmentation_timestamp=augmentation_timestamp
                 ):
-                    replace_narrative_with_reconstruction(
-                        section, rebuilt.text, namespaces
-                    )
-                    return SectionRunResult(
-                        matches_found=False,
-                        narrative_disposition="reconstructed_empty",
-                    )
-                replace_narrative_with_removal_notice(
-                    section, namespaces, removal_reason="no_match"
-                )
+                    case ReconstructedNarrative() as rebuilt:
+                        replace_narrative_with_reconstruction(
+                            section, rebuilt.text, namespaces
+                        )
+                        # entries the section's reconstructor could not
+                        # cover are present in reduced form; say so
+                        # rather than reporting a clean rebuild
+                        return SectionRunResult(
+                            matches_found=True,
+                            narrative_disposition=(
+                                "reconstructed_reduced"
+                                if rebuilt.reduced_entry_count
+                                else "reconstructed"
+                            ),
+                        )
+                    # these two branches **did** match — the surviving
+                    # entries are real content, they just could not be
+                    # rendered as rows (or the section has no registered
+                    # reconstructor). keep-on-match keeps on a match, so
+                    # the original narrative stays; removing it would
+                    # leave real entries with no readable representation.
+                    # the footnote says the narrative may describe
+                    # entries the refinement removed
+                    case None:
+                        if original_text is not None:
+                            restore_narrative(section, original_text, namespaces)
+                        return SectionRunResult(
+                            matches_found=True,
+                            narrative_disposition="reconstruct_unavailable",
+                        )
+
+            case _:
+                # "retain" or "keep_on_match" (matches found):
+                # restore the saved original when present; a None
+                # original means the source had no <text>
+                if original_text is not None:
+                    restore_narrative(section, original_text, namespaces)
                 return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="removed",
+                    matches_found=True,
+                    narrative_disposition="retained",
                 )
 
-            if narrative_action in ("remove", "keep_on_match"):
-                # both are negative branches when NOTHING matched. neither may
-                # retain the original: every entry was just pruned, and the
-                # original narrative still describes all of them — keeping it
-                # would ship back exactly the content the configuration
-                # excluded
-                #
-                # "no_match" is what keeps the notice honest: every entry was
-                # just pruned, so it must not tell a reader the coded data is
-                # still here
-                replace_narrative_with_removal_notice(
-                    section, namespaces, removal_reason="no_match"
-                )
-                return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="removed",
-                )
-
-            # "retain": restore the original <text> we saved before
-            # neutralizing it
-            if original_text is not None:
-                restore_narrative(section, original_text, namespaces)
-            return SectionRunResult(
-                matches_found=False,
-                narrative_disposition="retained",
-            )
-
-        try:
-            # STEP 3: PRUNE non-matching entries and inject provenance
-            # comments above the surviving ones
-            surviving_entries = _preserve_relevant_entries(section, contextual_matches)
-            _inject_generic_match_comments(surviving_entries, contextual_matches)
-
-            # STEP 4: ENRICH displayName on surviving entries
-            if code_system_sets is not None:
-                enrich_surviving_entries(
-                    section,
-                    code_system_sets,
-                    namespaces,
-                    narrative_index=narrative_index,
-                )
-
-            # STEP 5: handle narrative <text> reconstruction runs HERE,
-            # after STEP 4 enrichment, because it reads displayName off
-            # the surviving entries it rebuilds the table from
-            match narrative_action:
-                case "remove":
-                    replace_narrative_with_removal_notice(section, namespaces)
-                    return SectionRunResult(
-                        matches_found=True,
-                        narrative_disposition="removed",
-                    )
-                case "reconstruct":
-                    match reconstruct_narrative(
-                        section, augmentation_timestamp=augmentation_timestamp
-                    ):
-                        case ReconstructedNarrative() as rebuilt:
-                            replace_narrative_with_reconstruction(
-                                section, rebuilt.text, namespaces
-                            )
-                            # entries the section's reconstructor could not
-                            # cover are present in reduced form; say so
-                            # rather than reporting a clean rebuild
-                            return SectionRunResult(
-                                matches_found=True,
-                                narrative_disposition=(
-                                    "reconstructed_reduced"
-                                    if rebuilt.reduced_entry_count
-                                    else "reconstructed"
-                                ),
-                            )
-                        # these two branches **did** match — the surviving
-                        # entries are real content, they just could not be
-                        # rendered as rows (or the section has no registered
-                        # reconstructor). keep-on-match keeps on a match, so
-                        # the original narrative stays; removing it would
-                        # leave real entries with no readable representation.
-                        # the footnote says the narrative may describe
-                        # entries the refinement removed
-                        case None:
-                            if original_text is not None:
-                                restore_narrative(section, original_text, namespaces)
-                            return SectionRunResult(
-                                matches_found=True,
-                                narrative_disposition="reconstruct_unavailable",
-                            )
-
-                case _:
-                    # "retain" or "keep_on_match" (matches found):
-                    # restore the saved original when present; a None
-                    # original means the source had no <text>
-                    if original_text is not None:
-                        restore_narrative(section, original_text, namespaces)
-                    return SectionRunResult(
-                        matches_found=True,
-                        narrative_disposition="retained",
-                    )
-
-        except etree.XPathEvalError as e:
-            raise XMLParsingError(
-                message="Invalid XPath expression",
-                details={
-                    "section_details": dict(section.attrib),
-                    "error": str(e),
-                },
-            )
-    finally:
-        # always restore <code> — even on error — to avoid leaving
-        # the tree in a modified state for the caller
-        if section_code_element is not None and original_code is not None:
-            section.replace(section_code_element, original_code)
-
-
-def _restore_section_code(
-    section_code_element: _Element | None,
-    original_code: _Element | None,
-) -> None:
-    """
-    Put the neutralized `@code` back on the live `<code>` element.
-
-    The generic path strips `@code` so the section's own LOINC cannot
-    match during the unscoped search, and restores the whole element from
-    a deep copy in the caller's finally block. Anything that needs the
-    LOINC *before* then calls this: it mutates the live element rather
-    than swapping it, so the finally block's `section.replace` still
-    finds the node it expects.
-    """
-
-    if section_code_element is None or original_code is None:
-        return
-    if code_value := original_code.get("code"):
-        section_code_element.set("code", code_value)
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message="Invalid XPath expression",
+            details={
+                "section_details": dict(section.attrib),
+                "error": str(e),
+            },
+        )
 
 
 # NOTE:

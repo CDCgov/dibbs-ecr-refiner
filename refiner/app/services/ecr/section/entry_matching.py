@@ -29,6 +29,7 @@ from .utils import (
     build_entry_match_comment_text,
     enrich_surviving_entries,
     insert_comment_before,
+    resolve_no_match_section,
 )
 
 # NOTE:
@@ -145,65 +146,16 @@ def process(
             # the document satisfies CDA schematron rules that require
             # `SHALL contain at least one entry` for refinable sections.
             # the narrative remains the source of clinical information.
-            for entry in section.findall("hl7:entry", namespaces):
-                remove_element(entry)
-            section.attrib["nullFlavor"] = "NI"
+            if run_result := resolve_no_match_section(
+                section=section,
+                narrative_action=narrative_action,
+                namespaces=namespaces,
+                augmentation_timestamp=augmentation_timestamp,
+            ):
+                return run_result
 
-            if narrative_action == "reconstruct":
-                # reconstruct anyway. zero surviving entries is not a failed
-                # reconstruction — it is one whose correct derived answer is
-                # "no content," and saying so in the reconstruction's own
-                # voice is what lets the footnote report that the feature ran.
-                # the alternative, reporting only "narrative removed", is what
-                # read as a broken feature to the PHA reviewer in #1635
-                if rebuilt := reconstruct_narrative(
-                    section, augmentation_timestamp=augmentation_timestamp
-                ):
-                    replace_narrative_with_reconstruction(
-                        section, rebuilt.text, namespaces
-                    )
-                    return SectionRunResult(
-                        matches_found=False,
-                        narrative_disposition="reconstructed_empty",
-                    )
-                # no registered reconstructor. policy coerces that combination
-                # away before it reaches here, so this is defensive: fall in
-                # with the other negative branches rather than retaining a
-                # narrative describing entries that are gone
-                replace_narrative_with_removal_notice(
-                    section, namespaces, removal_reason="no_match"
-                )
-                return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="removed",
-                )
-
-            if narrative_action in ("remove", "keep_on_match"):
-                # both are negative branches when NOTHING matched:
-                #
-                #   "remove"        — unconditional
-                #   "keep_on_match" — keep on match, and there was none
-                #
-                # neither may retain the original narrative. Nothing matched,
-                # so every entry in this section was just pruned — and the
-                # original narrative still describes all of them, in full
-                # clinical prose. Retaining it ships exactly the content the
-                # jurisdiction's configuration said should not be here, with
-                # the structured entries stripped so a receiver cannot even
-                # process it.
-                #
-                # "no_match" is what keeps the notice honest: every entry was
-                # just pruned, so it must not tell a reader the coded data is
-                # still here
-                replace_narrative_with_removal_notice(
-                    section, namespaces, removal_reason="no_match"
-                )
-                return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="removed",
-                )
-
-            # "retain": leave the original narrative in place
+            # "retain": the original narrative was never touched, so there
+            # is nothing to put back
             return SectionRunResult(
                 matches_found=False,
                 narrative_disposition="retained",
