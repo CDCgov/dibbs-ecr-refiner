@@ -303,10 +303,14 @@ def _quarantine_stale_valuesets(cursor: Cursor, versions: list[str]) -> None:
     this matters most in is one nobody can open a psql session against, so the
     seeder has to be the thing that keeps the evidence.
 
-    Ordering is load-bearing in both directions: after `_upsert_valuesets`, so
-    a row this run re-declared is not mistaken for cruft, and before
-    `_refresh_memberships`, whose TRUNCATE would erase the membership counts
-    recorded here.
+    Must run before `_refresh_memberships`: that function truncates the junction,
+    and `memberships_at_removal` can only be read while the old rows are still
+    there. Swapping them records 0 for every row and nothing else changes, so
+    the loss is silent -- `test_tes_quarantine.py` pins it.
+
+    Its position relative to `_upsert_valuesets` does not matter. `stage_valuesets`
+    is filled by COPY long before either runs, so the `NOT EXISTS` sees the same
+    data in both orders; an earlier version of this docstring claimed otherwise.
 
     Args:
         cursor: A database cursor.
@@ -317,6 +321,17 @@ def _quarantine_stale_valuesets(cursor: Cursor, versions: list[str]) -> None:
             tables rather than the database.
     """
 
+    # materialized once rather than inlined three times: the guardrail's count,
+    # the insert into `orphaned_valuesets` and the delete all need the same set,
+    # and `DELETE ... USING` cannot share a predicate with a `SELECT` verbatim.
+    # `ON COMMIT DROP` inside the loader's single transaction cleans it up, the
+    # same way `tes/verify/database.py` stages its comparison.
+    #
+    # `t.version = ANY(...)` is the load-bearing line. unscoped, a run seeding two
+    # releases against a database holding seven would quarantine every valueset
+    # belonging to the other five. `_reject_partial_seed_over_fuller_database`
+    # already refuses that shape of run, but a destructive statement should be
+    # scoped on its own terms rather than by a check fifty lines away
     cursor.execute(
         """
         CREATE TEMP TABLE stale_valuesets ON COMMIT DROP AS
@@ -364,8 +379,9 @@ def _quarantine_stale_valuesets(cursor: Cursor, versions: list[str]) -> None:
         )
 
     # RETURNING, ordered, so the move is reconstructible from the log alone.
-    # Nobody can open a psql session against the database where this matters, so
-    # a row that is described only by a count is a row nobody can put back
+    # nobody can open a psql session against the environments where this matters,
+    # which makes these log lines the only recovery path there is: a row
+    # described by a count alone is a row nobody can examine or put back
     cursor.execute("""
         INSERT INTO orphaned_valuesets (
             valueset_id, canonical_url, condition_canonical_url, condition_version,
@@ -387,14 +403,15 @@ def _quarantine_stale_valuesets(cursor: Cursor, versions: list[str]) -> None:
                   canonical_url, display_name, category, code_count,
                   memberships_at_removal, valueset_created_at, valueset_updated_at
     """)
-    moved = cursor.fetchall()
+    columns = [column.name for column in cursor.description or []]
+    moved = [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
 
     cursor.execute("DELETE FROM valuesets WHERE id IN (SELECT id FROM stale_valuesets)")
 
     _log_quarantined(moved)
 
 
-def _log_quarantined(moved: list[tuple]) -> None:
+def _log_quarantined(moved: list[dict]) -> None:
     """
     Write the whole move to the log, one row per line.
 
@@ -407,13 +424,18 @@ def _log_quarantined(moved: list[tuple]) -> None:
     Lines are flat `key=value` rather than indented blocks so a log search can
     pull a single row out of a deploy.
 
+    Keyed by column name rather than unpacked positionally: the `RETURNING` list
+    that produces these rows lives in another function, so reordering it there
+    would silently misassign here.
+
     Args:
         moved: Rows returned by the insert into `orphaned_valuesets`.
     """
 
     by_version: dict[str, int] = {}
     for row in moved:
-        by_version[row[2]] = by_version.get(row[2], 0) + 1
+        version = row["condition_version"]
+        by_version[version] = by_version.get(version, 0) + 1
     breakdown = ", ".join(
         f"{version}: {count:,}" for version, count in sorted(by_version.items())
     )
@@ -425,26 +447,18 @@ def _log_quarantined(moved: list[tuple]) -> None:
         "valueset_id."
     )
 
-    for (
-        orphan_id,
-        valueset_id,
-        version,
-        condition_url,
-        canonical_url,
-        display_name,
-        category,
-        code_count,
-        memberships,
-        created_at,
-        updated_at,
-    ) in moved:
+    for row in moved:
         logger.info(
-            f"   quarantined orphan_id={orphan_id} valueset_id={valueset_id} "
-            f"version={version} category={category} code_count={code_count} "
-            f"memberships={memberships} seeded={created_at:%Y-%m-%dT%H:%M:%SZ} "
-            f"last_changed={updated_at:%Y-%m-%dT%H:%M:%SZ} "
-            f'name="{display_name or ""}" valueset={canonical_url} '
-            f"condition={condition_url}"
+            f"   quarantined orphan_id={row['id']} "
+            f"valueset_id={row['valueset_id']} "
+            f"version={row['condition_version']} category={row['category']} "
+            f"code_count={row['code_count']} "
+            f"memberships={row['memberships_at_removal']} "
+            f"seeded={row['valueset_created_at']:%Y-%m-%dT%H:%M:%SZ} "
+            f"last_changed={row['valueset_updated_at']:%Y-%m-%dT%H:%M:%SZ} "
+            f'name="{row["display_name"] or ""}" '
+            f"valueset={row['canonical_url']} "
+            f"condition={row['condition_canonical_url']}"
         )
 
 
@@ -657,6 +671,10 @@ def load_processed_data(
                 _warn_on_unaccounted_conditions(cursor, versions)
             with _timed("valuesets"):
                 _upsert_valuesets(cursor, versions)
+                # must stay ahead of `_refresh_memberships` below -- it truncates
+                # the junction, and the quarantine reads each row's membership
+                # count on the way out. swapped, every row records 0 and nothing
+                # else changes. `test_tes_quarantine.py` fails if it moves
                 _quarantine_stale_valuesets(cursor, versions)
             with _timed("codes"):
                 _upsert_codes(cursor, versions)

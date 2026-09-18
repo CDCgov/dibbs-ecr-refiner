@@ -37,11 +37,12 @@ import sys
 
 from connection import get_db_connection
 from psycopg import Connection
+from psycopg.rows import dict_row
 
 
 def fetch_orphans(
     connection: Connection, version: str | None, limit: int
-) -> list[tuple]:
+) -> list[dict]:
     """
     Read quarantined valuesets, most recently removed first.
 
@@ -54,7 +55,9 @@ def fetch_orphans(
         One row per quarantined valueset.
     """
 
-    with connection.cursor() as cursor:
+    # keyed rows, not tuples: `render` is a separate function, so a column
+    # reordered here would silently misassign there
+    with connection.cursor(row_factory=dict_row) as cursor:
         cursor.execute(
             """
             SELECT removed_at, condition_version, display_name, canonical_url,
@@ -73,7 +76,7 @@ def fetch_orphans(
         return cursor.fetchall()
 
 
-def render(rows: list[tuple]) -> None:
+def render(rows: list[dict]) -> None:
     """
     Print one block per quarantined row.
 
@@ -89,33 +92,23 @@ def render(rows: list[tuple]) -> None:
         return
 
     print(f"{len(rows):,} quarantined valueset rows\n")
-    for (
-        removed_at,
-        version,
-        display_name,
-        canonical_url,
-        condition_url,
-        code_count,
-        memberships,
-        created_at,
-        updated_at,
-        orphan_id,
-        valueset_id,
-    ) in rows:
+    for row in rows:
         # memberships tells you which kind of removal this was: 0 means the row
         # was already stranded when the quarantine first ran, anything higher
         # means that seed is what retired it
-        print(f"  {display_name or '(no title)'}  [{version}]")
-        print(f"    valueset    {canonical_url}")
-        print(f"    condition   {condition_url}")
-        print(f"    orphan_id   {orphan_id}")
+        print(f"  {row['display_name'] or '(no title)'}  [{row['condition_version']}]")
+        print(f"    valueset    {row['canonical_url']}")
+        print(f"    condition   {row['condition_canonical_url']}")
+        print(f"    orphan_id   {row['id']}")
         # the id the row held in `valuesets`, and what the membership junction
         # referenced -- a restore that does not reuse it is not a restore
-        print(f"    valueset_id {valueset_id}")
+        print(f"    valueset_id {row['valueset_id']}")
         print(
-            f"    codes {code_count:,} | memberships at removal {memberships:,} | "
-            f"seeded {created_at:%Y-%m-%d} | last changed {updated_at:%Y-%m-%d} | "
-            f"removed {removed_at:%Y-%m-%d %H:%M}"
+            f"    codes {row['code_count']:,} | "
+            f"memberships at removal {row['memberships_at_removal']:,} | "
+            f"seeded {row['valueset_created_at']:%Y-%m-%d} | "
+            f"last changed {row['valueset_updated_at']:%Y-%m-%d} | "
+            f"removed {row['removed_at']:%Y-%m-%d %H:%M}"
         )
         print()
 

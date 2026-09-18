@@ -546,6 +546,9 @@ async def get_context_groupers_by_condition_id_db(
             updated_at
         FROM valuesets v
         WHERE v.condition_id = %s
+          -- the only read of `valuesets` that does not enter through
+          -- `conditions_codes_temp`; the EXISTS is what keeps a grouper with no
+          -- codes from becoming a code category badge. see the docstring
           AND EXISTS (
               SELECT 1
               FROM conditions_codes_temp cct
