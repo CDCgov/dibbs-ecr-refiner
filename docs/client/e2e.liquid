@@ -1,0 +1,6 @@
+---
+layout: layout.liquid
+title: "End-to-End Testing"
+is_readme: true
+---
+{{ readmes.client.e2e | renderReadme: githubPath: "client/e2e" | sanitize }}

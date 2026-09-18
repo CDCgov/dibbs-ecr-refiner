@@ -1,0 +1,10 @@
+---
+layout: layout.liquid
+title: "Frontend Development Guide"
+is_readme: true
+---
+{{ readmes.client.root | renderReadme: githubPath: "client" | sanitize }}
+
+{{ "### Client Documentation
+- [End-to-End Testing](client/e2e.liquid)
+- [Dropdown Component Guide](client/components/dropdown.liquid)" | renderMarkdown | sanitize }}

@@ -1,0 +1,21 @@
+---
+title: Operations & Maintenance
+layout: layout.liquid
+is_readme: true
+---
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">Operations & Maintenance</h1>
+
+<div class="border rounded-lg p-6 border-gray-cool-4">
+  <div class="prose max-w-none">
+    {{ readmes.ops | renderMarkdown | sanitize }}
+  </div>
+  <div class="mt-6 mb-6">
+    <a href="/ops/keycloak" class="text-blue-cool-50 hover:text-blue-cool-80 font-semibold">Keycloak Identity Management &rarr;</a>
+  </div>
+  <div class="mt-6 pt-4 border-t border-gray-cool-4 flex justify-end">
+    <a href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/ops" class="text-sm text-blue-cool-50 hover:text-blue-cool-80 flex items-center gap-1">
+      View on GitHub <span class="text-xs opacity-70">&nearr;</span>
+    </a>
+  </div>
+</div>

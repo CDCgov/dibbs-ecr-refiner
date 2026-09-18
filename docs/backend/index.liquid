@@ -1,0 +1,28 @@
+---
+layout: layout.liquid
+title: "Backend Documentation"
+is_readme: true
+---
+
+{{ "# Backend Documentation
+
+This section provides comprehensive technical documentation for the DIBBs eCR Refiner backend systems.
+
+## Components
+
+### [Refiner Service](/backend/refiner/)
+The core processing engine responsible for refining eCR data.
+
+- [Application Architecture](/backend/refiner/app/)
+- [Lambda Workers](/backend/refiner/lambda)
+- [Database Migrations](/backend/refiner/migrations)
+- [Utility Scripts](/backend/refiner/scripts)
+- [TES Integration](/backend/refiner/tes)
+
+## Architecture Overview
+
+The backend is built using a decoupled architecture:
+- **API Layer**: FastAPI for request handling and orchestration.
+- **Service Layer**: Pure business logic and domain algorithms.
+- **Worker Layer**: AWS Lambda for asynchronous, event-driven processing.
+- **Data Layer**: PostgreSQL for persistent state and configuration." | renderMarkdown | sanitize }}
