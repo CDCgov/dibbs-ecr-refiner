@@ -1,0 +1,149 @@
+---
+title: "Documentation Verification Page"
+layout: layout.liquid
+---
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">Phase 2 Documentation Verification</h1>
+
+<div class="space-y-12">
+  <!-- 1. Navigation Links Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">1. Navigation Links Test</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 border rounded bg-gray-50">
+        <h3 class="font-medium mb-2">Core Navigation</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li><a href="/" class="text-blue-600 hover:underline">Root Documentation</a></li>
+          <li><a href="/refiner/" class="text-blue-600 hover:underline">Refiner Overview</a></li>
+          <li><a href="/client/" class="text-blue-600 hover:underline">Client Overview</a></li>
+        </ul>
+      </div>
+      <div class="p-4 border rounded bg-gray-50">
+        <h3 class="font-medium mb-2">Quick Links</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li><a href="/decisions/" class="text-blue-600 hover:underline">Design Decisions</a></li>
+          <li><a href="/tes/" class="text-blue-600 hover:underline">TES Documentation</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Backend Documentation Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">2. Backend Documentation Test</h2>
+    <div class="space-y-4">
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Refiner App Architecture</h3>
+        <div class="prose max-w-none">
+          {{ readmes.refiner.app | renderReadme: githubPath: "refiner/app" }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Client Documentation Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">3. Client Documentation Test</h2>
+    <div class="space-y-4">
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Client Root README</h3>
+        <div class="prose max-w-none">
+          {{ readmes.client.root | renderReadme: githubPath: "client" }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Testing Documentation Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">4. Testing Documentation Test</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Testing Scenarios</h3>
+        <p class="text-sm text-gray-600 mb-2">Verify link to testing scenarios</p>
+        <a href="/testing/scenarios" class="text-blue-600 hover:underline">Testing Scenarios Page</a>
+      </div>
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Validation Tests</h3>
+        <p class="text-sm text-gray-600 mb-2">Verify link to validation tests</p>
+        <a href="/testing/validation" class="text-blue-600 hover:underline">Validation Tests Page</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. API Documentation Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">5. API Documentation Test</h2>
+    <div class="space-y-4">
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Data Model</h3>
+        <div class="prose max-w-none">
+          {{ readmes.refiner.data_model | renderReadme: githubPath: "refiner/data-model" }}
+        </div>
+      </div>
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">TES API</h3>
+        <div class="prose max-w-none">
+          {{ readmes.tes | renderReadme: githubPath: "tes" }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Ops & Config Documentation Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">6. Ops & Config Documentation Test</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Operations</h3>
+        <ul class="list-disc pl-5 space-y-1">
+           <li><a href="/ops/deployment" class="text-blue-600 hover:underline">Deployment Guide</a></li>
+           <li><a href="/ops/keycloak" class="text-blue-600 hover:underline">Keycloak Config</a></li>
+        </ul>
+      </div>
+      <div class="p-4 border rounded">
+        <h3 class="font-medium mb-2">Configuration</h3>
+        <ul class="list-disc pl-5 space-y-1">
+           <li><a href="/config/data" class="text-blue-600 hover:underline">Data Configuration</a></li>
+           <li><a href="/config/jurisdictions" class="text-blue-600 hover:underline">Jurisdiction Setup</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Mermaid Rendering Test -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">7. Mermaid Rendering Test</h2>
+    <div class="space-y-4">
+      <div class="p-4 border rounded bg-blue-50">
+        <h3 class="font-medium mb-2">Refiner Architecture Diagram</h3>
+        <div class="prose max-w-none">
+          {{ readmes.refiner.root | renderReadme: githubPath: "refiner" }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Summary Statistics -->
+  <section>
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2">8. Summary Statistics</h2>
+    <div class="p-6 border rounded bg-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div class="p-4 bg-white rounded shadow-sm">
+        <div class="text-2xl font-bold">{{ readmes | size }}</div>
+        <div class="text-xs text-gray-500 uppercase">Integrated READMEs</div>
+      </div>
+      <div class="p-4 bg-white rounded shadow-sm">
+        <div class="text-2xl font-bold">17</div>
+        <div class="text-xs text-gray-500 uppercase">Design Decisions</div>
+      </div>
+      <div class="p-4 bg-white rounded shadow-sm">
+        <div class="text-2xl font-bold">Phase 2</div>
+        <div class="text-xs text-gray-500 uppercase">Verification Level</div>
+      </div>
+      <div class="p-4 bg-white rounded shadow-sm">
+        <div class="text-2xl font-bold">Complete</div>
+        <div class="text-xs text-gray-500 uppercase">Status</div>
+      </div>
+    </div>
+  </section>
+</div>
