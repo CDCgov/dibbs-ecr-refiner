@@ -47,6 +47,12 @@ def _timed(label: str):
 # only ever compare the current release against the one before it
 DEFAULT_VERSIONS_TO_KEEP = 2
 
+# a run that quarantines more than this share of a release's valuesets is not
+# clearing cruft, it is reacting to a bad input: a truncated normalize output
+# would otherwise empty most of the table and take the condition detail page's
+# code categories with it
+MAX_STALE_VALUESET_FRACTION = 0.05
+
 STAGE_TABLES: dict[str, tuple[str, ...]] = {
     "stage_conditions": (
         "canonical_url",
@@ -281,6 +287,232 @@ def _upsert_valuesets(cursor: Cursor, versions: list[str]) -> None:
     logger.info(f"✨ {cursor.rowcount:,} valueset rows inserted or updated.")
 
 
+def _quarantine_stale_valuesets(cursor: Cursor, versions: list[str]) -> None:
+    """
+    Move valueset rows the processed data no longer declares into quarantine.
+
+    `_upsert_valuesets` only inserts and updates, so a leaf grouper that
+    disappears upstream -- retired by TES, or dropped when a release's bundles
+    were refetched -- survives every later seed. Nothing references it once
+    `_refresh_memberships` rebuilds the junction, which is precisely why the
+    membership checks cannot see it: it shows up only as a row-count drift,
+    while `get_context_groupers_by_condition_id_db` goes on serving it as a
+    code category on the condition detail page.
+
+    Rows move to `orphaned_valuesets` rather than being deleted. The database
+    this matters most in is one nobody can open a psql session against, so the
+    seeder has to be the thing that keeps the evidence.
+
+    Must run before `_refresh_memberships`: that function truncates the junction,
+    and `memberships_at_removal` can only be read while the old rows are still
+    there. Swapping them records 0 for every row and nothing else changes, so
+    the loss is silent -- `test_tes_quarantine.py` pins it.
+
+    Its position relative to `_upsert_valuesets` does not matter. `stage_valuesets`
+    is filled by COPY long before either runs, so the `NOT EXISTS` sees the same
+    data in both orders; an earlier version of this docstring claimed otherwise.
+
+    Args:
+        cursor: A database cursor.
+        versions: The releases this run is seeding.
+
+    Raises:
+        SystemExit: The removal is large enough to implicate the processed
+            tables rather than the database.
+    """
+
+    # materialized once rather than inlined three times: the guardrail's count,
+    # the insert into `orphaned_valuesets` and the delete all need the same set,
+    # and `DELETE ... USING` cannot share a predicate with a `SELECT` verbatim.
+    # `ON COMMIT DROP` inside the loader's single transaction cleans it up, the
+    # same way `tes/verify/database.py` stages its comparison.
+    #
+    # `t.version = ANY(...)` is the load-bearing line. unscoped, a run seeding two
+    # releases against a database holding seven would quarantine every valueset
+    # belonging to the other five. `_reject_partial_seed_over_fuller_database`
+    # already refuses that shape of run, but a destructive statement should be
+    # scoped on its own terms rather than by a check fifty lines away
+    cursor.execute(
+        """
+        CREATE TEMP TABLE stale_valuesets ON COMMIT DROP AS
+        SELECT v.id, v.canonical_url, v.display_name, v.category, v.code_count,
+               v.completeness, v.parent_url, v.created_at, v.updated_at,
+               c.canonical_url AS condition_url,
+               t.version       AS condition_version
+        FROM valuesets v
+        JOIN conditions c ON c.id = v.condition_id
+        JOIN tes t ON t.id = c.tes_id
+        WHERE t.version = ANY(%(versions)s)
+          AND NOT EXISTS (
+              SELECT 1 FROM stage_valuesets s
+              WHERE s.condition_version = t.version
+                AND s.condition_url = c.canonical_url
+                AND s.canonical_url = v.canonical_url
+          )
+        """,
+        {"versions": versions},
+    )
+
+    cursor.execute("SELECT count(*) FROM stale_valuesets")
+    row = cursor.fetchone()
+    stale = row[0] if row else 0
+
+    if not stale:
+        logger.info("🧹 No stale valueset rows to quarantine.")
+        return
+
+    cursor.execute(
+        "SELECT count(*) FROM stage_valuesets WHERE condition_version = ANY(%(versions)s)",
+        {"versions": versions},
+    )
+    row = cursor.fetchone()
+    declared = row[0] if row else 0
+
+    if stale > declared * MAX_STALE_VALUESET_FRACTION:
+        raise SystemExit(
+            f"Refusing to quarantine {stale:,} valuesets against the "
+            f"{declared:,} declared for {versions}: that is more than "
+            f"{MAX_STALE_VALUESET_FRACTION:.0%} of the release, which points at "
+            "the processed tables rather than at the database. Re-run "
+            "`just tes normalize` and check the manifest counts. Nothing has "
+            "been written."
+        )
+
+    # RETURNING, ordered, so the move is reconstructible from the log alone.
+    # nobody can open a psql session against the environments where this matters,
+    # which makes these log lines the only recovery path there is: a row
+    # described by a count alone is a row nobody can examine or put back
+    cursor.execute("""
+        INSERT INTO orphaned_valuesets (
+            valueset_id, canonical_url, condition_canonical_url, condition_version,
+            display_name, category, code_count, completeness, parent_url,
+            memberships_at_removal, valueset_created_at, valueset_updated_at
+        )
+        SELECT s.id, s.canonical_url, s.condition_url, s.condition_version,
+               s.display_name, s.category, s.code_count, s.completeness,
+               s.parent_url, coalesce(m.memberships, 0), s.created_at, s.updated_at
+        FROM stale_valuesets s
+        LEFT JOIN (
+            SELECT valueset_id, count(*) AS memberships
+            FROM conditions_codes_temp
+            WHERE valueset_id IN (SELECT id FROM stale_valuesets)
+            GROUP BY valueset_id
+        ) m ON m.valueset_id = s.id
+        ORDER BY s.condition_version, s.canonical_url
+        RETURNING id, valueset_id, condition_version, condition_canonical_url,
+                  canonical_url, display_name, category, code_count,
+                  memberships_at_removal, valueset_created_at, valueset_updated_at
+    """)
+    columns = [column.name for column in cursor.description or []]
+    moved = [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
+
+    cursor.execute("DELETE FROM valuesets WHERE id IN (SELECT id FROM stale_valuesets)")
+
+    _log_quarantined(moved)
+
+
+def _log_quarantined(moved: list[dict]) -> None:
+    """
+    Write the whole move to the log, one row per line.
+
+    Every column needed to reverse the move by hand is here: `valueset_id` is
+    the id the row held in `valuesets`, which is what the membership junction
+    referenced, so restoring under that id is what makes a restore whole rather
+    than approximate. `memberships` separates a row that was already stranded
+    before this run (0) from one this release retired (anything higher).
+
+    Lines are flat `key=value` rather than indented blocks so a log search can
+    pull a single row out of a deploy.
+
+    Keyed by column name rather than unpacked positionally: the `RETURNING` list
+    that produces these rows lives in another function, so reordering it there
+    would silently misassign here.
+
+    Args:
+        moved: Rows returned by the insert into `orphaned_valuesets`.
+    """
+
+    by_version: dict[str, int] = {}
+    for row in moved:
+        version = row["condition_version"]
+        by_version[version] = by_version.get(version, 0) + 1
+    breakdown = ", ".join(
+        f"{version}: {count:,}" for version, count in sorted(by_version.items())
+    )
+
+    logger.info(
+        f"🧹 {len(moved):,} stale valueset rows moved to orphaned_valuesets "
+        f"({breakdown}). Every row is listed below and readable later with "
+        "`ops orphans`; restore one by reinserting into `valuesets` under its "
+        "valueset_id."
+    )
+
+    for row in moved:
+        logger.info(
+            f"   quarantined orphan_id={row['id']} "
+            f"valueset_id={row['valueset_id']} "
+            f"version={row['condition_version']} category={row['category']} "
+            f"code_count={row['code_count']} "
+            f"memberships={row['memberships_at_removal']} "
+            f"seeded={row['valueset_created_at']:%Y-%m-%dT%H:%M:%SZ} "
+            f"last_changed={row['valueset_updated_at']:%Y-%m-%dT%H:%M:%SZ} "
+            f'name="{row["display_name"] or ""}" '
+            f"valueset={row['canonical_url']} "
+            f"condition={row['condition_canonical_url']}"
+        )
+
+
+def _warn_on_unaccounted_conditions(cursor: Cursor, versions: list[str]) -> None:
+    """
+    Report condition rows the processed data no longer declares.
+
+    Conditions get a report where valuesets get a quarantine, because removing
+    one is not a decision a seed can make on its own: `configurations_conditions`
+    and `events` both reference `conditions` without a cascade, so a delete
+    either aborts the deploy or strands a jurisdiction's configuration. What to
+    do about a live configuration pinned to a retired condition is a judgment
+    call, and this is the log line that starts it.
+
+    Args:
+        cursor: A database cursor.
+        versions: The releases this run is seeding.
+    """
+
+    cursor.execute(
+        """
+        SELECT t.version, c.canonical_url, c.display_name,
+               (SELECT count(*) FROM configurations_conditions cc
+                WHERE cc.condition_id = c.id)
+        FROM conditions c
+        JOIN tes t ON t.id = c.tes_id
+        WHERE t.version = ANY(%(versions)s)
+          AND NOT EXISTS (
+              SELECT 1 FROM stage_conditions s
+              WHERE s.version = t.version AND s.canonical_url = c.canonical_url
+          )
+        ORDER BY t.version, c.canonical_url
+        """,
+        {"versions": versions},
+    )
+    unaccounted = cursor.fetchall()
+
+    if not unaccounted:
+        return
+
+    logger.warning(
+        f"⚠️ {len(unaccounted):,} conditions in the database are no longer "
+        "declared by the processed tables. They are left in place -- removing a "
+        "condition a configuration points at is not something seeding decides."
+    )
+    for version, url, display_name, configurations in unaccounted[:20]:
+        logger.warning(
+            f"   {version} {display_name or '(no title)'} <{url}> "
+            f"-- {configurations:,} configurations reference it"
+        )
+    if len(unaccounted) > 20:
+        logger.warning(f"   ... and {len(unaccounted) - 20:,} more")
+
+
 def _upsert_codes(cursor: Cursor, versions: list[str]) -> None:
     """
     Project the codes actually referenced by the releases being seeded.
@@ -436,8 +668,14 @@ def load_processed_data(
             _upsert_tes_versions(cursor, versions)
             with _timed("conditions"):
                 _upsert_conditions(cursor, versions)
+                _warn_on_unaccounted_conditions(cursor, versions)
             with _timed("valuesets"):
                 _upsert_valuesets(cursor, versions)
+                # must stay ahead of `_refresh_memberships` below -- it truncates
+                # the junction, and the quarantine reads each row's membership
+                # count on the way out. swapped, every row records 0 and nothing
+                # else changes. `test_tes_quarantine.py` fails if it moves
+                _quarantine_stale_valuesets(cursor, versions)
             with _timed("codes"):
                 _upsert_codes(cursor, versions)
             with _timed("memberships"):
