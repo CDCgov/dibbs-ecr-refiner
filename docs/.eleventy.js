@@ -29,12 +29,19 @@ module.exports = function(eleventyConfig) {
   //   - rewrites relative URLs to GitHub absolute URLs
   //   - converts GitHub admonitions to styled HTML
   //   - renders remaining markdown through markdown-it
-  eleventyConfig.addFilter("renderReadme", (value) => {
+  eleventyConfig.addFilter("renderReadme", (value, options = {}) => {
     if (!value) return "";
-    const GITHUB_BASE = "https://github.com/CDCgov/dibbs-ecr-refiner/blob/main";
+    const GITHUB_BASE = options.baseUrl || "https://github.com/CDCgov/dibbs-ecr-refiner/blob/main";
+    const githubPath = options.githubPath || "";
+    const stripTitle = options.stripTitle !== undefined ? options.stripTitle : true;
     let content = String(value);
 
-    // 1. Rewrite relative URLs in markdown links and images
+    // 1. Strip first # heading if requested
+    if (stripTitle) {
+      content = content.replace(/^# .*\n/m, "");
+    }
+
+    // 2. Rewrite relative URLs in markdown links and images
     content = content.replace(
       /(!?\[[^\]]*\]\()([^)]+)(\))/g,
       (match, prefix, url, suffix) => {
@@ -42,11 +49,20 @@ module.exports = function(eleventyConfig) {
           return match;
         }
         const clean = url.replace(/^[.\/]+/, "");
-        return `${prefix}${GITHUB_BASE}/${clean}${suffix}`;
+        const pathPrefix = githubPath ? `${githubPath}/` : "";
+        return `${prefix}${GITHUB_BASE}/${pathPrefix}${clean}${suffix}`;
       }
     );
 
-    // 2. Convert GitHub admonitions to styled HTML
+    // 3. Convert Mermaid code blocks to HTML
+    content = content.replace(
+      /```mermaid\n?([\s\S]*?)\n?```/g,
+      (match, code) => {
+        return `<div class="mermaid">\n${code}\n</div>`;
+      }
+    );
+
+    // 4. Convert GitHub admonitions to styled HTML
     content = content.replace(
       /^> \[!(\w+)\]\n((?:^> .*\n?)*)/gm,
       (match, type, inner) => {
@@ -63,7 +79,7 @@ module.exports = function(eleventyConfig) {
       }
     );
 
-    // 3. Render remaining markdown
+    // 5. Render remaining markdown
     return md.render(content);
   });
 
