@@ -353,13 +353,12 @@ def _interpret_run_result(
         no matches:
             "retained"                       → REFINED_NO_MATCHES_NARRATIVE_RETAINED
             "removed"                        → REFINED_NO_MATCHES_NARRATIVE_REMOVED
-            "reconstructed"                  → (engines never produce
-                                                this on no-match)
+            "reconstructed_empty"            → REFINED_NARRATIVE_RECONSTRUCTED_EMPTY
 
-    The reconstruct-fallback disposition collapses to one outcome
-    label regardless of whether matches were found — the relevant
-    fact for a reviewer is "you asked for reconstruct, we couldn't,
-    we kept the original."
+    "reconstruct_unavailable" appears only under "matches found": it
+    means the section has no registered reconstructor, and on the
+    no-match branch the engines write the removal notice instead rather
+    than hand back a narrative describing entries that are gone.
 
     Contract: this function is only ever called for sections that
     actually went through the refinement engine (i.e., the section has
@@ -376,15 +375,20 @@ def _interpret_run_result(
         The SectionOutcome describing what happened to this section.
     """
 
-    # reconstruct fallback means the engine attempted reconstruction, couldn't
-    # complete it, and kept the original narrative. Could be either because
-    # there were no matches or the section requested doesn't have a rule configured.
+    # reconstruct fallback means the engine had matches to rebuild from but no
+    # registered reconstructor for the section, so it kept the original
+    # narrative. no-match runs never produce this — see the docstring
     if run_result.narrative_disposition == "reconstruct_unavailable":
         return SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
 
     if not run_result.matches_found:
         if run_result.narrative_disposition == "retained":
             return SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED
+        # reconstruction ran over zero surviving entries and said so. the
+        # outcome reports the run, not just the emptiness, because "did
+        # reconstruct do anything?" is the question a reviewer is asking
+        if run_result.narrative_disposition == "reconstructed_empty":
+            return SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_EMPTY
         return SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
 
     # matches were found; outcome reflects what happened to the narrative

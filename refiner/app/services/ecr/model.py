@@ -460,10 +460,28 @@ class SectionOutcome(StrEnum):
         derive from it. A reader seeing a thin table gets told why.
 
     - REFINED_NARRATIVE_RECONSTRUCTED:
-        include=True, action="refine", narrative="refine" (future).
-        Entries filtered, narrative reconstructed from surviving
-        entries. Not yet reachable — depends on narrative
-        reconstruction work landing.
+        include=True, action="refine", narrative="reconstruct".
+        Entries filtered, narrative reconstructed from the
+        surviving entries.
+
+    - REFINED_NARRATIVE_RECONSTRUCTED_EMPTY:
+        include=True, action="refine", narrative="reconstruct",
+        and nothing matched. Every entry was pruned, so the
+        reconstruction's correct derived answer is "no content"--
+        **not** a failure. The section carries nullFlavor="NI" and a
+        narrative stating that no entries matched, written by the
+        reconstruction path so it carries the machine-derived
+        marker like any other reconstruction. Distinct from
+        REFINED_NO_MATCHES_NARRATIVE_REMOVED because the reviewer's
+        question is "did reconstruction run?" and the answer here
+        is yes.
+
+        Named for the reconstruction family (plain / `_REDUCED` /
+        `_EMPTY`) rather than the `REFINED_NO_MATCHES_*` family, though
+        it belongs to both: nothing matched **and** reconstruction ran.
+        No single name says both, so the cross-references in the two
+        `REFINED_NO_MATCHES_*` entries below are what make it findable
+        from that direction.
 
     - REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED:
         include=True, action="refine", narrative="reconstruct".
@@ -483,12 +501,22 @@ class SectionOutcome(StrEnum):
         jurisdiction asked us to keep the original narrative —
         entries are pruned, narrative is preserved.
 
+        Note there is a third no-match outcome that does not carry
+        the `REFINED_NO_MATCHES_` prefix:
+        `REFINED_NARRATIVE_RECONSTRUCTED_EMPTY`, for
+        narrative="reconstruct".
+
     - REFINED_NO_MATCHES_NARRATIVE_REMOVED:
         include=True, action="refine", narrative in
         ("remove" / "keep_on_match"). Matching produced nothing;
         entries are pruned and the narrative is replaced with
         the removal notice. For "keep_on_match" this is the
         negative branch: no matches → narrative removed.
+
+        Does **not** cover narrative="reconstruct"--that reconstructs
+        over the empty entry set instead and reports
+        `REFINED_NARRATIVE_RECONSTRUCTED_EMPTY`. Grepping
+        `REFINED_NO_MATCHES_` will not surface it.
 
     The combination (action="retain", narrative in ("reconstruct",
     "keep_on_match")) is invalid because both require refined entries
@@ -506,6 +534,7 @@ class SectionOutcome(StrEnum):
     REFINED_NARRATIVE_REMOVED = "refined_narrative_removed"
     REFINED_NARRATIVE_RECONSTRUCTED = "refined_narrative_reconstructed"
     REFINED_NARRATIVE_RECONSTRUCTED_REDUCED = "refined_narrative_reconstructed_reduced"
+    REFINED_NARRATIVE_RECONSTRUCTED_EMPTY = "refined_narrative_reconstructed_empty"
     REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED = (
         "refined_reconstruct_unavailable_retained"
     )
@@ -682,6 +711,10 @@ class SectionRunResult:
                 surviving entries were in a structure the section's
                 reconstructor does not cover and are present in reduced
                 form — see SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_REDUCED.
+              - "reconstructed_empty": nothing matched, so reconstruction
+                ran over zero surviving entries and produced a narrative
+                saying exactly that — see
+                SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_EMPTY.
               - "reconstruct_unavailable": the jurisdiction asked
                 for reconstruction but the engine couldn't run it since there
                 was no registered reconstructor, so the original narrative was
@@ -697,5 +730,6 @@ class SectionRunResult:
         "removed",
         "reconstructed",
         "reconstructed_reduced",
+        "reconstructed_empty",
         "reconstruct_unavailable",
     ]

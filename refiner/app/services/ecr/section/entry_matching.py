@@ -29,6 +29,7 @@ from .utils import (
     build_entry_match_comment_text,
     enrich_surviving_entries,
     insert_comment_before,
+    resolve_no_match_section,
 )
 
 # NOTE:
@@ -102,14 +103,15 @@ def process(
     - "remove"           → narrative replaced with the removal notice
     - "keep_on_match"    → narrative replaced with the removal notice
                          (no matches means the negative branch)
-    - "reconstruct"      → same as "keep_on_match". There is nothing to
-                         rebuild from, and the original narrative
-                         describes the entries that were just pruned.
+    - "reconstruct"      → reconstruction runs over the empty entry set
+                         and writes a narrative saying no entries
+                         matched. Nothing to rebuild from is an answer,
+                         not a failure.
 
     The orchestrator maps the resulting `SectionRunResult` to
     `REFINED_NO_MATCHES_NARRATIVE_RETAINED`,
     `REFINED_NO_MATCHES_NARRATIVE_REMOVED`, or
-    `REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED` — see
+    `REFINED_NARRATIVE_RECONSTRUCTED_EMPTY` — see
     `refine._interpret_run_result`.
 
     Returns:
@@ -144,43 +146,16 @@ def process(
             # the document satisfies CDA schematron rules that require
             # `SHALL contain at least one entry` for refinable sections.
             # the narrative remains the source of clinical information.
-            for entry in section.findall("hl7:entry", namespaces):
-                remove_element(entry)
-            section.attrib["nullFlavor"] = "NI"
+            if run_result := resolve_no_match_section(
+                section=section,
+                narrative_action=narrative_action,
+                namespaces=namespaces,
+                augmentation_timestamp=augmentation_timestamp,
+            ):
+                return run_result
 
-            if narrative_action in ("remove", "keep_on_match", "reconstruct"):
-                # all three are negative branches when NOTHING matched:
-                #
-                #   "remove"        — unconditional
-                #   "keep_on_match" — keep on match, and there was none
-                #   "reconstruct"   — reconstruct falls back to keep-on-match
-                #
-                # reconstruct used to retain the original narrative here, on
-                # the reasoning that a stale narrative is more informative
-                # than a removal notice. That reasoning ignored what the
-                # retained narrative actually contains. Nothing matched, so
-                # every entry in this section was just pruned — and the
-                # original narrative still describes all of them, in full
-                # clinical prose. Retaining it ships exactly the content the
-                # jurisdiction's configuration said should not be here, with
-                # the structured entries stripped so a receiver cannot even
-                # process it. Choosing "reconstruct" grants the refiner broad
-                # licence to rewrite the section; keep-on-match is far closer
-                # to the spirit of that grant than handing back the
-                # unrefined original.
-                #
-                # "no_match" is what keeps the notice honest: every entry was
-                # just pruned, so it must not tell a reader the coded data is
-                # still here
-                replace_narrative_with_removal_notice(
-                    section, namespaces, removal_reason="no_match"
-                )
-                return SectionRunResult(
-                    matches_found=False,
-                    narrative_disposition="removed",
-                )
-
-            # "retain": leave the original narrative in place
+            # "retain": the original narrative was never touched, so there
+            # is nothing to put back
             return SectionRunResult(
                 matches_found=False,
                 narrative_disposition="retained",

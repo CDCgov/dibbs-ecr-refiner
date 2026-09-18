@@ -1,6 +1,7 @@
 from lxml import etree
 
 from app.services.ecr.model import HL7_NS
+from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.narrative.reconstruction import (
     reconstruct_immunizations,
     reconstruct_medications,
@@ -570,10 +571,13 @@ def test_plan_of_treatment_carries_performer_per_row():
     assert blocks[1].rows[0].values["Performer"] == ""
 
 
-def test_plan_of_treatment_empty_section_reconstructs_to_nothing():
+def test_plan_of_treatment_empty_section_reconstructs_to_an_empty_narrative():
     """
-    Nothing survived pruning -> no blocks, so reconstruct_narrative returns
-    None and the caller falls back to retaining the original narrative.
+    Nothing survived pruning -> no blocks, but reconstruction still succeeds.
+
+    Zero entries has a correct derived answer, and it is not None: the
+    narrative says no entries matched. CDA R2 forbids a rowless table
+    (StrucDoc.Tbody requires a <tr>), so the answer is a paragraph.
     """
 
     section = parse_element(
@@ -583,8 +587,28 @@ def test_plan_of_treatment_empty_section_reconstructs_to_nothing():
     )
 
     assert reconstruct_plan_of_treatment(section) == []
-    # a section with no entries at all is the one case that still produces no
-    # narrative; the reduced-form sweep covers every other shape
+
+    rebuilt = reconstruct_narrative(section, augmentation_timestamp=RUN_TS)
+    assert rebuilt is not None
+    assert rebuilt.reduced_entry_count == 0
+    assert rebuilt.text.findall("hl7:table", HL7_NS) == []
+
+    paragraphs = rebuilt.text.findall("hl7:paragraph", HL7_NS)
+    assert len(paragraphs) == 1
+    assert paragraphs[0].text == RECONSTRUCTED_EMPTY_MESSAGE
+
+
+def test_reconstruct_narrative_is_none_only_without_a_reconstructor():
+    """
+    None now means exactly one thing: nothing is registered for this LOINC.
+    """
+
+    section = parse_element(
+        '<section xmlns="urn:hl7-org:v3">'
+        '<code code="29762-2" codeSystem="2.16.840.1.113883.6.1"/>'
+        "</section>"
+    )
+
     assert reconstruct_narrative(section, augmentation_timestamp=RUN_TS) is None
 
 
