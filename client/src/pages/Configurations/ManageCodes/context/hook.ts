@@ -1,25 +1,25 @@
 import { createContext, useContext } from 'react';
-import { CodeResponse } from '../../../../api/schemas/codeResponse';
+import { CodeResponse } from '../../../../api/schemas';
 
-export interface CodeActionState {
-  performBulkAction: boolean;
-  statusChange: 'include' | 'exclude';
+type StatusChange = 'include' | 'exclude' | 'default';
+export interface SelectedCodeState {
   selectedCodeIds: Set<string>;
-  renderedTesCodes: CodeResponse[];
-  renderedExcludableCodes: CodeResponse[];
-  renderedCustomCodes: [];
+  selectedCustomCodeIds: Set<string>;
+  allSelected: boolean;
+  statusChange: StatusChange;
+}
+export interface CodeAction {
+  bulkAction: boolean;
+  include: boolean;
+  selectedCodeIds?: Set<string>;
+  selectedCustomCodeIds?: Set<string>;
+  selectableCodes?: CodeResponse[];
 }
 
-export type Action =
-  | {
-      type: 'singleSelection';
-    }
-  | { type: 'bulkSelection' };
-
-export type Dispatch = (action: Action) => void;
+export type Dispatch = (action: CodeAction) => void;
 
 export const CodeManagementContext = createContext<
-  { state: CodeActionState; dispatch: Dispatch } | undefined
+  { state: SelectedCodeState; dispatch: Dispatch } | undefined
 >(undefined);
 
 export function useSelectedCodes() {
