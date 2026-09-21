@@ -11,6 +11,7 @@ from app.services.ecr.model import (
     EntryMatchRule,
     SectionSpecification,
 )
+from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.section import get_section_by_code
 from app.services.ecr.section.entry_matching import (
     _group_rules_by_precedence,
@@ -364,12 +365,16 @@ def test_narrative_reconstruct_results_rebuilds_text(spec_v1_1) -> None:
     assert len(detail_rows) == 1
 
 
-def test_narrative_reconstruct_without_matches_removes_the_original_narrative(
+def test_narrative_reconstruct_without_matches_reconstructs_an_empty_narrative(
     spec_v1_1,
 ) -> None:
     """
-    narrative="reconstruct" on Results swaps the stale source narrative for
-    a machine-derived table built from the surviving result entries.
+    narrative="reconstruct" with nothing matching still reconstructs.
+
+    Zero surviving entries is not a failed reconstruction; it is one whose
+    derived answer is "no content". The stale source narrative goes, and what
+    replaces it is reconstruction output — marker comment included — saying
+    no entries matched.
     """
 
     section = _build_section(
@@ -404,13 +409,28 @@ def test_narrative_reconstruct_without_matches_removes_the_original_narrative(
         narrative_action="reconstruct",
     )
     assert result.matches_found is False
-    assert result.narrative_disposition == "removed"
+    assert result.narrative_disposition == "reconstructed_empty"
 
     # the original narrative described the entries that were just pruned, so
     # retaining it would ship exactly the content the configuration excluded
     text = _find_one(section, "hl7:text")
     assert text is not None
-    assert "Original narrative" not in etree.tostring(text, encoding="unicode")
+    rendered = etree.tostring(text, encoding="unicode")
+    assert "Original narrative" not in rendered
+    assert RECONSTRUCTED_EMPTY_MESSAGE in rendered
+
+    # it is the reconstruction path that wrote this, not the removal notice —
+    # the marker is what says so to anything reading the output
+    assert any(
+        isinstance(node, etree._Comment)
+        and "reconstructed by the eCR Refiner" in node.text
+        for node in text.iter()
+    )
+
+    # CDA R2 cannot express a rowless table, so the empty reconstruction is a
+    # paragraph. no table means no invalid <tbody>
+    assert text.findall("hl7:table", HL7_NS) == []
+    assert section.get("nullFlavor") == "NI"
 
 
 def test_narrative_reconstruct_without_reconstructor_falls_back_to_retain(

@@ -18,6 +18,7 @@ from app.services.ecr.model import (
 from app.services.ecr.narrative.constants import (
     MINIMAL_SECTION_MESSAGE,
     PROVENANCE_OUTCOME_NOTES,
+    RECONSTRUCTED_EMPTY_MESSAGE,
     REMOVE_NARRATIVE_MESSAGE,
 )
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
@@ -490,15 +491,17 @@ class TestRefiningService:
             in rendered
         )
 
-    async def test_refine_reconstruct_no_matches_removes_narrative_v1_1(
+    async def test_refine_reconstruct_no_matches_reconstructs_empty_v1_1(
         self, eicr_root_v1_1: etree._Element
     ):
         """
-        narrative='reconstruct' + no matches: there is nothing to rebuild
-        from, and every entry was just pruned, so the fallback is
-        keep-on-match — the original narrative goes rather than shipping
-        the excluded content back in prose. Outcome is
-        REFINED_NO_MATCHES_NARRATIVE_REMOVED.
+        narrative='reconstruct' + no matches: reconstruction still runs.
+
+        Every entry was pruned, so the derived narrative for this section is
+        a statement that nothing matched — not the original prose, which
+        would ship the excluded content back. Outcome is
+        REFINED_NARRATIVE_RECONSTRUCTED_EMPTY, which reports that the
+        reconstruction ran as well as that it is empty.
         """
 
         empty_config = await _make_empty_processed_config()
@@ -537,12 +540,14 @@ class TestRefiningService:
         assert results_section.get("nullFlavor") == "NI"
         # entries pruned
         assert results_section.findall("hl7:entry", namespaces=HL7_NS) == []
-        # narrative replaced with the no-match notice
-        assert MINIMAL_SECTION_MESSAGE in rendered
+        # narrative is reconstruction output, not the removal notice
+        assert RECONSTRUCTED_EMPTY_MESSAGE in rendered
+        assert MINIMAL_SECTION_MESSAGE not in rendered
         assert REMOVE_NARRATIVE_MESSAGE not in rendered
+        # the footnote says BOTH halves: reconstruction ran, and it is empty
         assert (
             PROVENANCE_OUTCOME_NOTES[
-                SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
+                SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_EMPTY
             ]
             in rendered
         )
