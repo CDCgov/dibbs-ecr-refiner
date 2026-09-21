@@ -75,6 +75,41 @@ class TestReconstructableSections:
 
         assert set(RECONSTRUCTABLE_SECTIONS) == set(SECTION_RECONSTRUCTORS)
 
+    def test_every_reconstructable_section_has_entry_match_rules(self):
+        """
+        Reconstruction only works on the entry-matching engine.
+
+        `process_section` routes a section to the generic engine when its
+        specification declares no entry match rules. The generic engine
+        supports "reconstruct" too, but it is the weaker path and not
+        where any reconstructor was designed to run--so a reconstructable
+        section arriving without match rules would be refined somewhere
+        nothing has verified it.
+
+        Today this holds for all five codes in every supported version,
+        which is the **only** reason the generic engine's reconstruct
+        branch is unreachable in production. It holds by coincidence of
+        which sections were chosen, not by construction; nothing else in
+        the codebase states it. This test is what turns the coincidence
+        into a guarantee, so adding a reconstructable section without
+        match rules fails here rather than silently downgrading at
+        runtime.
+        """
+
+        for version in ("1.1", "3.0", "3.1.1"):
+            spec = load_spec(version)
+            for loinc_code in RECONSTRUCTABLE_SECTIONS:
+                spec_entry = spec.sections.get(loinc_code)
+                assert spec_entry is not None, (
+                    f"reconstructable section {loinc_code} is missing from the "
+                    f"eICR {version} specification catalog"
+                )
+                assert spec_entry.has_match_rules, (
+                    f"reconstructable section {loinc_code} "
+                    f"({spec_entry.display_name}) has no entry match rules in "
+                    f"eICR {version}, so it would route to the generic engine"
+                )
+
 
 class TestPolicyPredicates:
     def test_is_disabled_section(self):

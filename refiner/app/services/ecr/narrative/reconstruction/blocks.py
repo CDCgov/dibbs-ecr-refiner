@@ -7,6 +7,7 @@ from lxml.etree import _Element
 from app.services.format import remove_element
 
 from ...model import HL7_NS
+from ..constants import RECONSTRUCTED_EMPTY_MESSAGE
 from ..elements import _make_element, _sub_element
 from ..identifiers import REFINER_ID_PREFIX, run_id_digits
 
@@ -337,6 +338,15 @@ def render_section_text(
     source entry is relinked to its row, so the entry↔narrative round-trip
     holds after the caller swaps in this <text>.
 
+    A block with no rows is skipped, and when that leaves nothing to render
+    the <text> is a single paragraph saying the reconstruction found no
+    content. Both halves are schema obligations rather than style: a
+    `StrucDoc.Table` requires a `<tbody>`, which requires a `<tr>`, which
+    requires a cell, so "render the tables anyway, just empty" is not
+    expressible in CDA R2 — the narrative has to say it in prose. Every
+    reconstructor already guards `if rows:` before appending a Block, so
+    the skip is a safety net that keeps this function total.
+
     Args:
         blocks: One self-contained block per grouping entry.
         loinc: The section's LOINC code, used in the row ID namespace.
@@ -350,10 +360,15 @@ def render_section_text(
     text = _make_element("text")
     text.append(etree.Comment(_RECONSTRUCTION_MARKER))
 
+    renderable = [block for block in blocks if block.rows]
+    if not renderable:
+        _sub_element(text, "paragraph").text = RECONSTRUCTED_EMPTY_MESSAGE
+        return text
+
     digits = run_id_digits(augmentation_timestamp)
     row_seq = 0
 
-    for block in blocks:
+    for block in renderable:
         if block.context:
             context_body = _append_table(text, list(block.context))
             context_row = _sub_element(context_body, "tr")
