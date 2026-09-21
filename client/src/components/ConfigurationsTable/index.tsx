@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import classNames from 'classnames';
 import {
   DbConfigurationStatus,
   GetConfigurationsResponse,
@@ -15,16 +16,17 @@ import { StatusIndicator } from '@components/StatusIndicator';
 
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
+  className?: string;
 }
 
 // NOTE: text-gray-cool-90 applied explicitly here because <Table>'s inherited text color doesn't reliably cascade to th/td/a; consider making this a Table component default with design sign-off.
-export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
+export function ConfigurationsTable({ data, className }: ConfigurationsTableProps) {
   const reportableConditionHeader = 'Reportable Condition Configurations';
   const statusHeader = 'Status';
 
   if (!data.length) {
     return (
-      <div className="overflow-x-auto">
+      <div className={classNames('overflow-x-auto', className)}>
         <Table className="legacy-table legacy-table--borderless max-w-full!">
           <TableHead>
             <TableRow>
@@ -49,7 +51,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className={classNames('overflow-x-auto', className)}>
       <Table className="legacy-table legacy-table--borderless max-w-full!">
         <TableHead>
           <TableRow>

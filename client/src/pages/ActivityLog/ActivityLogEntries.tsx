@@ -31,7 +31,7 @@ export function ActivityLogEntries({
   const navigate = useNavigate();
 
   return (
-    <Table className="legacy-table legacy-table--striped table-auto">
+    <Table className="legacy-table legacy-table--borderless legacy-table--striped table-auto">
       <TableHead>
         <TableRow>
           <TableHeaderCell className="text-gray-cool-90 w-[16%]">

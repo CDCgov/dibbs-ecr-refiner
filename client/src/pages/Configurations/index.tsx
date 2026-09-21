@@ -131,6 +131,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
           <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
         </div>
         <ConfigurationsTable
+          className="mt-10"
           data={searchText ? results.map((r) => r.item) : configs}
         />
       </section>

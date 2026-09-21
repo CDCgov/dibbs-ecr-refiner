@@ -253,9 +253,28 @@
   @apply text-sm;
 }
 
+/* Base border rules - overridden by borderless variant */
 .legacy-table th,
 .legacy-table tr:not(:last-child) td {
   @apply border-gray-cool-60! border-b!;
+}
+
+/* Higher specificity for borderless to override base rules */
+.legacy-table.legacy-table--borderless {
+  @apply border-separate! border-spacing-0!;
+}
+
+.legacy-table.legacy-table--borderless th,
+.legacy-table.legacy-table--borderless td {
+  @apply border-0!;
+}
+
+.legacy-table.legacy-table--borderless thead th {
+  @apply border-gray-cool-60 border-b;
+}
+
+.legacy-table.legacy-table--borderless tbody tr:first-child {
+  @apply border-gray-cool-60 border-t;
 }
 
 .legacy-table tbody tr:hover th,
@@ -263,8 +282,8 @@
   @apply bg-gray-200;
 }
 
-.legacy-table--borderless thead th {
-  @apply text-gray-cool-60 bg-gray-cool-5 py-3 leading-6.5;
+.legacy-table--borderless tbody tr {
+  @apply bg-white;
 }
 
 .link-dark-bg {

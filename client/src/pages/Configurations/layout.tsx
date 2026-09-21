@@ -160,20 +160,20 @@ function RsgDetailsModal({
         <Table>
           <TableHead className="border-b-gray-cool-20 border-b">
             <TableRow>
-              <TableHeaderCell className="w-[40%] px-2 py-3 font-bold">
-                SNOMED code
-              </TableHeaderCell>
-              <TableHeaderCell className="w-[60%] px-2 py-3 font-bold">
-                Display name
-              </TableHeaderCell>
+               <TableHeaderCell className="w-[40%] px-2 py-3 font-bold text-gray-cool-90">
+                 SNOMED code
+               </TableHeaderCell>
+               <TableHeaderCell className="w-[60%] px-2 py-3 font-bold text-gray-cool-90">
+                 Display name
+               </TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody className="divide-gray-cool-20 divide-y">
             {rsgCodes.map((c) => {
               return (
                 <TableRow key={c.code}>
-                  <TableCell className="py-3 pl-2">{c.code}</TableCell>
-                  <TableCell className="py-3 pl-2">{c.display}</TableCell>
+                   <TableCell className="py-3 pl-2 text-gray-cool-90">{c.code}</TableCell>
+                   <TableCell className="py-3 pl-2 text-gray-cool-90">{c.display}</TableCell>
                 </TableRow>
               );
             })}
