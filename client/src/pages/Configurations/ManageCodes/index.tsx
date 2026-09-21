@@ -225,7 +225,7 @@ function CodesTable({
   const { state, dispatch } = useSelectedCodes();
   const { selectedCodeIds, selectedCustomCodeIds, allSelected } = state;
   const showControlPanel =
-    selectedCodeIds.size + selectedCustomCodeIds.size > 0;
+    selectedCodeIds.size + selectedCustomCodeIds.size > 0 || allSelected;
 
   const selectableCodes = codes.filter((c) => !c.is_trigger_code);
 
@@ -254,8 +254,7 @@ function CodesTable({
                 (pages && pages[pages.length - 1].data.codes) ?? [];
 
               dispatch({
-                bulkAction: true,
-                include: true,
+                type: 'bulkInclude',
                 selectableCodes: [...selectableCodes, ...newCodes],
               });
             }
@@ -279,8 +278,7 @@ function CodesTable({
                     checked={allSelected}
                     onChange={(checked) => {
                       dispatch({
-                        bulkAction: true,
-                        include: checked,
+                        type: checked ? 'bulkInclude' : 'bulkExclude',
                         selectableCodes: selectableCodes,
                       });
                     }}
@@ -357,8 +355,9 @@ function CodesTable({
                           }
                           onChange={(checked) => {
                             dispatch({
-                              bulkAction: false,
-                              include: checked,
+                              type: checked
+                                ? 'individualInclude'
+                                : 'individualExclude',
                               selectedCodeIds: new Set(
                                 !code.is_custom ? [code.id] : []
                               ),

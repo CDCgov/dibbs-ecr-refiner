@@ -106,10 +106,7 @@ export function ControlPanel({
             body: `${resp.data.length} codes ${status.toLowerCase()}`,
           });
           dispatch({
-            bulkAction: false,
-            include: false,
-            selectedCodeIds: new Set(),
-            selectedCustomCodeIds: new Set(),
+            type: 'reset',
           });
         },
         onError: (e) => {
@@ -126,7 +123,7 @@ export function ControlPanel({
   const selectedCount = formatSelectedCodeCount(
     allSelected,
     filters,
-    selectedCodeIds.size,
+    selectedCodeIds.size + selectedCustomCodeIds.size,
     deselectedCodesIds.length,
     deselectedCustomCodesIds.length,
     renderedCodes.length,
@@ -310,9 +307,7 @@ function CustomCodeDeletionModal({
             body: `${resp.data.length} custom codes deleted.`,
           });
           dispatch({
-            bulkAction: false,
-            include: false,
-            selectedCustomCodeIds: new Set(),
+            type: 'reset',
           });
         },
         onError: () => {
@@ -408,7 +403,7 @@ function calculateCounts(
 
   // If in the progressive section case, start with the number of selected codes
   // and forbid exclusion if they're all custom codes.
-  const totalCodeCount = selectedCodeIds.size;
+  const totalCodeCount = selectedCodeIds.size + selectedCustomCodeIds.size;
   const totalCustomCodeCount = selectedCustomCodeIds.size;
   const excludeableCodeCount = totalCodeCount - totalCustomCodeCount;
 

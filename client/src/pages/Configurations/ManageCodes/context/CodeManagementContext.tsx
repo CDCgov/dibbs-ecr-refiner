@@ -19,65 +19,69 @@ function codeActionReducer(
     .filter((c) => !c.is_custom)
     .map((c) => c.id);
 
-  switch (action.bulkAction) {
-    case true: {
-      if (action.include) {
-        return {
-          ...codeState,
-          allSelected: action.include,
-          selectedCodeIds: new Set([
-            ...codeState.selectedCodeIds,
-            ...selectedCodeIds,
-          ]),
-          selectedCustomCodeIds: new Set([
-            ...codeState.selectedCustomCodeIds,
-            ...selectedCustomCodeIds,
-          ]),
-        };
-      } else {
-        return {
-          ...codeState,
-          allSelected: action.include,
-          selectedCodeIds: removeAll(
-            codeState.selectedCodeIds,
-            new Set(selectedCodeIds)
-          ),
-
-          selectedCustomCodeIds: removeAll(
-            codeState.selectedCustomCodeIds,
-            new Set(selectedCustomCodeIds)
-          ),
-        };
-      }
+  switch (action.type) {
+    case 'bulkInclude': {
+      return {
+        allSelected: true,
+        selectedCodeIds: new Set([
+          ...codeState.selectedCodeIds,
+          ...selectedCodeIds,
+        ]),
+        selectedCustomCodeIds: new Set([
+          ...codeState.selectedCustomCodeIds,
+          ...selectedCustomCodeIds,
+        ]),
+      };
     }
-    case false: {
-      if (action.include) {
-        return {
-          ...codeState,
-          selectedCodeIds: action.selectedCodeIds
-            ? new Set([...codeState.selectedCodeIds, ...action.selectedCodeIds])
-            : codeState.selectedCodeIds,
-          selectedCustomCodeIds: action.selectedCustomCodeIds
-            ? new Set([
-                ...codeState.selectedCustomCodeIds,
-                ...action.selectedCustomCodeIds,
-              ])
-            : codeState.selectedCustomCodeIds,
-        };
-      } else {
-        return {
-          ...codeState,
-          selectedCodeIds: action.selectedCodeIds
-            ? removeAll(codeState.selectedCodeIds, action.selectedCodeIds)
-            : codeState.selectedCodeIds,
-          selectedCustomCodeIds: action.selectedCustomCodeIds
-            ? removeAll(
-                codeState.selectedCustomCodeIds,
-                action.selectedCustomCodeIds
-              )
-            : codeState.selectedCustomCodeIds,
-        };
-      }
+    case 'bulkExclude': {
+      return {
+        allSelected: false,
+        selectedCodeIds: removeAll(
+          codeState.selectedCodeIds,
+          new Set(selectedCodeIds)
+        ),
+
+        selectedCustomCodeIds: removeAll(
+          codeState.selectedCustomCodeIds,
+          new Set(selectedCustomCodeIds)
+        ),
+      };
+    }
+    case 'individualInclude': {
+      return {
+        ...codeState,
+        selectedCodeIds: action.selectedCodeIds
+          ? new Set([...codeState.selectedCodeIds, ...action.selectedCodeIds])
+          : codeState.selectedCodeIds,
+        selectedCustomCodeIds: action.selectedCustomCodeIds
+          ? new Set([
+              ...codeState.selectedCustomCodeIds,
+              ...action.selectedCustomCodeIds,
+            ])
+          : codeState.selectedCustomCodeIds,
+      };
+    }
+    case 'individualExclude': {
+      return {
+        ...codeState,
+        selectedCodeIds: action.selectedCodeIds
+          ? removeAll(codeState.selectedCodeIds, action.selectedCodeIds)
+          : codeState.selectedCodeIds,
+        selectedCustomCodeIds: action.selectedCustomCodeIds
+          ? removeAll(
+              codeState.selectedCustomCodeIds,
+              action.selectedCustomCodeIds
+            )
+          : codeState.selectedCustomCodeIds,
+      };
+    }
+
+    case 'reset': {
+      return {
+        allSelected: false,
+        selectedCodeIds: new Set(),
+        selectedCustomCodeIds: new Set(),
+      };
     }
   }
 }

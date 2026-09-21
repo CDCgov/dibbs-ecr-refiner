@@ -1,16 +1,18 @@
 import { createContext, useContext } from 'react';
 import { CodeResponse } from '../../../../api/schemas';
 
-type StatusChange = 'include' | 'exclude' | 'default';
 export interface SelectedCodeState {
   selectedCodeIds: Set<string>;
   selectedCustomCodeIds: Set<string>;
   allSelected: boolean;
-  statusChange: StatusChange;
 }
 export interface CodeAction {
-  bulkAction: boolean;
-  include: boolean;
+  type:
+    | 'bulkInclude'
+    | 'bulkExclude'
+    | 'individualInclude'
+    | 'individualExclude'
+    | 'reset';
   selectedCodeIds?: Set<string>;
   selectedCustomCodeIds?: Set<string>;
   selectableCodes?: CodeResponse[];
