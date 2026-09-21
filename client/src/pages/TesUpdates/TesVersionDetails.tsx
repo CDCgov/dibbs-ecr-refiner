@@ -64,14 +64,14 @@ export function TesVersionDetails({ selectedUpdate }: TesVersionProps) {
               r.is_new && oldVersion != '';
             return (
               <TableRow key={r.canonical_url}>
-                 <TableCell className="px-2 py-3 text-gray-cool-90">
-                   {r.display_name}{' '}
-                   {shouldShowNewConditionPill ? <NewConditionPill /> : null}
-                 </TableCell>
-                 <TableCell className="px-2 py-3 text-gray-cool-90">
-                   {r.added_code_total} added, {r.removed_code_total} removed
-                 </TableCell>
-                 <TableCell className="text-gray-cool-90">
+                <TableCell className="text-gray-cool-90 px-2 py-3">
+                  {r.display_name}{' '}
+                  {shouldShowNewConditionPill ? <NewConditionPill /> : null}
+                </TableCell>
+                <TableCell className="text-gray-cool-90 px-2 py-3">
+                  {r.added_code_total} added, {r.removed_code_total} removed
+                </TableCell>
+                <TableCell className="text-gray-cool-90">
                   <ExportLink
                     canonical_url={r.canonical_url}
                     cur_version={newVersion}
