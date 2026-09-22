@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -24,6 +25,7 @@ os.environ["LOG_LEVEL"] = "debug"
 
 # # ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
+import psycopg
 from fastapi import status
 from httpx import AsyncClient
 from lxml import etree
@@ -415,6 +417,72 @@ async def get_event_by_id(db_pool):
                 return result
 
     return _get
+
+
+ABSORBED_GROUPERS_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "absorbed_context_groupers.json"
+)
+
+
+@pytest.fixture
+def absorbed_context_groupers(setup):
+    """
+    Insert the orphaned valueset rows a pre-#1250 seeder really produced.
+
+    Real rows rather than invented ones, so a test that passes here says
+    something about production: the same two conditions, the same grouper urls,
+    the same code counts. The fixture file carries the provenance.
+
+    Rows are inserted for every seeded release -- condition canonical urls are
+    stable across releases, so this follows the seeding window instead of
+    pinning to a version that eventually gets evicted.
+
+    Yields:
+        The ids of the inserted `valuesets` rows.
+    """
+
+    entries = json.loads(ABSORBED_GROUPERS_FIXTURE.read_text())["absorbed"]
+    db_config = get_db_config()
+    inserted: list[UUID] = []
+
+    with psycopg.connect(
+        db_config.DB_URL, password=db_config.DB_PASSWORD
+    ) as connection:
+        with connection.cursor() as cursor:
+            for entry in entries:
+                for grouper in entry["groupers"]:
+                    cursor.execute(
+                        """
+                        INSERT INTO valuesets (
+                            condition_id, display_name, category, canonical_url,
+                            code_count, completeness, parent_url
+                        )
+                        SELECT c.id, %(display_name)s, %(category)s,
+                               %(canonical_url)s, %(code_count)s,
+                               %(completeness)s, c.canonical_url
+                        FROM conditions c
+                        WHERE c.canonical_url = %(condition_url)s
+                        RETURNING id
+                        """,
+                        {**grouper, "condition_url": entry["condition_canonical_url"]},
+                    )
+                    inserted.extend(row[0] for row in cursor.fetchall())
+        connection.commit()
+
+    assert inserted, "fixture inserted nothing -- are the conditions seeded?"
+    yield inserted
+
+    with psycopg.connect(
+        db_config.DB_URL, password=db_config.DB_PASSWORD
+    ) as connection:
+        with connection.cursor() as cursor:
+            # the quarantine may have moved some of these already
+            cursor.execute(
+                "DELETE FROM orphaned_valuesets WHERE valueset_id = ANY(%s)",
+                (inserted,),
+            )
+            cursor.execute("DELETE FROM valuesets WHERE id = ANY(%s)", (inserted,))
+        connection.commit()
 
 
 @pytest_asyncio.fixture(autouse=True)

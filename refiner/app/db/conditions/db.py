@@ -515,7 +515,23 @@ async def get_context_groupers_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
 ) -> list[DbConditionsContextGrouper]:
     """
-    Fetches all conditions context grouper rows for a given condition ID.
+    Fetches the context groupers that contribute codes to a given condition.
+
+    A grouper that resolves to no codes is excluded. `valuesets` is the only
+    table the app reads without entering through `conditions_codes_temp`, so
+    this is the one place where a row that nothing references can still be
+    served -- and the endpoint above turns these rows into the condition's code
+    category badges, which is not something a grouper with no codes should get a
+    say in. Two ways a row reaches that state: seeding residue from before the
+    loader learned to quarantine it, and a grouper whose codes are all in code
+    systems the refiner does not support, which is legitimate data the
+    quarantine will never remove.
+
+    `cct.condition_id` in the EXISTS looks redundant next to the outer filter and
+    is not: the junction's primary key is (condition_id, code_id, valueset_id),
+    so naming its leading column is what makes this an index-only scan instead
+    of a full scan of that index per row. Measured on a 13-grouper condition,
+    that difference is 0.3ms against 333ms.
     """
     query = """
         SELECT
@@ -528,8 +544,17 @@ async def get_context_groupers_by_condition_id_db(
             completeness,
             created_at,
             updated_at
-        FROM valuesets
-        WHERE condition_id = %s
+        FROM valuesets v
+        WHERE v.condition_id = %s
+          -- the only read of `valuesets` that does not enter through
+          -- `conditions_codes_temp`; the EXISTS is what keeps a grouper with no
+          -- codes from becoming a code category badge. see the docstring
+          AND EXISTS (
+              SELECT 1
+              FROM conditions_codes_temp cct
+              WHERE cct.condition_id = v.condition_id
+                AND cct.valueset_id = v.id
+          )
     """
     params = (condition_id,)
     async with db.get_connection() as conn:

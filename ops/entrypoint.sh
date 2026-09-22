@@ -70,6 +70,10 @@ case "$COMMAND" in
         echo "Verifying the database matches the processed TES tables"
         exec python3 -m tes.verify.database
         ;;
+    orphans)
+        echo "Listing valueset rows seeding has quarantined"
+        exec python3 ./ops/seeding/report_orphans.py "$@"
+        ;;
     regenerate-active-configs)
         echo "Regenerating active configuration files"
         exec python3 ./ops/reactivations/regenerate_active_configs.py "$@"

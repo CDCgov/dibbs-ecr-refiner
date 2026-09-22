@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
@@ -110,6 +111,13 @@ def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
     return "not expanded"
 
 
+# ordered worst to best; anything unrecognized (including NULL) ranks lowest
+_COMPLETENESS_RANK: dict[str | None, int] = {
+    "partially complete": 1,
+    "fully complete": 2,
+}
+
+
 def _get_code_category_status(value: str | None) -> CodeCategoryStatus:
     if value == "fully complete":
         return "fully complete"
@@ -132,7 +140,19 @@ def _get_code_category_statuses(
         "specimen_source": "Specimen source codes",
     }
 
-    completeness_by_category = {row.category: row.completeness for row in groupers}
+    # a category can be described by more than one grouper, and the row order
+    # the database returns is not defined. taking the least complete of them is
+    # both deterministic and the safe direction to be wrong in: calling a
+    # category fully complete while one of its groupers is only partial claims
+    # coverage the refiner will not deliver
+    by_category: dict[str, list[str | None]] = defaultdict(list)
+    for row in groupers:
+        by_category[row.category].append(row.completeness)
+
+    completeness_by_category = {
+        category: min(values, key=lambda value: _COMPLETENESS_RANK.get(value, 0))
+        for category, values in by_category.items()
+    }
 
     return [
         CodeCategoryCompletenessStatus(
