@@ -66,21 +66,16 @@ export function ControlPanel({
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
-  // These codes are unselected ones within the rendered cursor, or the anti-join
-  // between the selected rows and the rendered ones, which we need in cases
-  // where bulk selection is applied to "all but the selected" codes
-
-  const deselectedCodesIds = renderedCodes
-    .filter((c) => !c.is_custom)
-    .map((c) => c.id)
-    .filter((id) => !selectedCodeIds.has(id));
-
-  const deselectedCustomCodesIds = renderedCodes
-    .filter((c) => c.is_custom)
-    .map((c) => c.id)
-    .filter((id) => !selectedCodeIds.has(id));
-
   const updateSelectedCodesStatus = (status: ConfigurationCodeStatusLabel) => {
+    // These codes are unselected ones within the rendered cursor, or the anti-join
+    // between the selected rows and the rendered ones, which we need in cases
+    // where bulk selection is applied to "all but the selected" codes
+
+    const deselectedCodesIds = renderedCodes
+      .filter((c) => !c.is_custom)
+      .map((c) => c.id)
+      .filter((id) => !selectedCodeIds.has(id));
+
     updateStatusWithinCursor(
       {
         configurationId,
@@ -137,6 +132,11 @@ export function ControlPanel({
     hasNextPage,
     codeCounts.data
   );
+
+  const deselectedCustomCodesIds = renderedCodes
+    .filter((c) => c.is_custom)
+    .map((c) => c.id)
+    .filter((id) => !selectedCustomCodeIds.has(id));
   return (
     <>
       {

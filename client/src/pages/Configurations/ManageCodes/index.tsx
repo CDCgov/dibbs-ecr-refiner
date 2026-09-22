@@ -27,7 +27,6 @@ import {
   CodeResponse,
   CodesResponse,
   GetConfigurationResponse,
-  HTTPValidationError,
 } from '../../../api/schemas';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
@@ -163,7 +162,6 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
         selectedCodeIds: new Set(),
         selectedCustomCodeIds: new Set(),
         allSelected: false,
-        statusChange: 'default',
       }}
     >
       <CodeInformationBar id={id} />
