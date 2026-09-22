@@ -1275,12 +1275,13 @@ test.describe('Codes management - filters', () => {
       const codeSystemFilterButton = page.getByTestId('code-system-button');
       const codeSystemOptions = page.getByTestId('code-system-options');
 
-      const snomedOption = codeSystemOptions.getByRole('option', {
-        name: 'SNOMED',
-        exact: false,
-      });
       const otherOption = codeSystemOptions.getByRole('option', {
         name: 'Other',
+        exact: false,
+      });
+
+      const snomedOption = codeSystemOptions.getByRole('option', {
+        name: 'SNOMED',
         exact: false,
       });
 
@@ -1291,6 +1292,8 @@ test.describe('Codes management - filters', () => {
       await expect(otherOption).toBeVisible();
 
       await snomedOption.click();
+
+      await codeSystemFilterButton.click();
       await otherOption.click();
 
       await page.keyboard.press('Escape');
@@ -1313,6 +1316,8 @@ test.describe('Codes management - filters', () => {
         const option = sourceOptions.getByRole('option').nth(i);
         await expect(option).toBeVisible();
         await option.click();
+        await sourceFilterButton.click();
+
         await expect(option).toHaveAttribute('aria-selected', 'true');
       }
       await page.keyboard.press('Escape');
@@ -1332,6 +1337,7 @@ test.describe('Codes management - filters', () => {
       await expect(statusOptions).toBeVisible();
       await expect(includedOption).toBeVisible();
       await includedOption.click();
+      await statusFilterButton.click();
       await expect(includedOption).toHaveAttribute('aria-selected', 'true');
 
       await page.keyboard.press('Escape');
