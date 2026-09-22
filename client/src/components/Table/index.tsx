@@ -1,23 +1,5 @@
-import React, { createContext, useContext } from 'react';
+import React from 'react';
 import classNames from 'classnames';
-
-interface TableContextValue {
-  striped: boolean;
-  bordered: boolean;
-  stickyHeader: boolean;
-}
-
-const TableContext = createContext<TableContextValue | undefined>(undefined);
-
-function useTableContext() {
-  const context = useContext(TableContext);
-  if (!context) {
-    throw new Error(
-      'Table compound components must be used within a <Table />'
-    );
-  }
-  return context;
-}
 
 interface TableProps {
   children: React.ReactNode;
@@ -58,26 +40,41 @@ export function Table({
   stickyHeader = false,
 }: TableProps) {
   return (
-    <TableContext.Provider value={{ striped, bordered, stickyHeader }}>
-      <table
-        className={classNames(
-          'text-gray-cool-90 w-full border-collapse text-left text-base',
-          className
-        )}
-      >
-        {children}
-      </table>
-    </TableContext.Provider>
+    <table
+      className={classNames(
+        'text-gray-cool-90 w-full border-collapse text-left text-base',
+        className
+      )}
+    >
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          if (child.type === TableHead) {
+            return React.cloneElement(child as React.ReactElement<any>, { ...(child.props as object), stickyHeader, bordered });
+          }
+          if (child.type === TableBody) {
+            return React.cloneElement(child as React.ReactElement<any>, { ...(child.props as object), striped, bordered });
+          }
+        }
+        return child;
+      })}
+    </table>
   );
 }
 
 interface TableHeadProps extends React.HTMLAttributes<HTMLTableSectionElement> {
   children: React.ReactNode;
   className?: string;
+  stickyHeader?: boolean;
+  bordered?: boolean;
 }
 
-export function TableHead({ children, className, ...props }: TableHeadProps) {
-  const { stickyHeader, bordered } = useTableContext();
+export function TableHead({
+  children,
+  className,
+  stickyHeader = false,
+  bordered = false,
+  ...props
+}: TableHeadProps) {
   return (
     <thead
       className={classNames(
@@ -95,10 +92,17 @@ export function TableHead({ children, className, ...props }: TableHeadProps) {
 interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {
   children: React.ReactNode;
   className?: string;
+  striped?: boolean;
+  bordered?: boolean;
 }
 
-export function TableBody({ children, className, ...props }: TableBodyProps) {
-  const { striped, bordered } = useTableContext();
+export function TableBody({
+  children,
+  className,
+  striped = false,
+  bordered = false,
+  ...props
+}: TableBodyProps) {
   return (
     <tbody
       className={classNames(
