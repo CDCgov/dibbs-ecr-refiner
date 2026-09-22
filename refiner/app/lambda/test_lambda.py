@@ -19,6 +19,19 @@ S3_BUCKET_CONFIG = "dibbs-refiner-dev"
 
 
 class MockLambdaContext:
+    """
+    Lambda runtime context
+
+    This class is used used by Lambda as a context to run mock Lambda
+    functions.
+
+    Args:
+        function_name: The name of the function being mocked.
+        memory_limit_in_mb: The memory limit in megabytes.
+        invoked_function_arn: A set of AWS ARN strings.
+        aws_request_id: The request ID used in AWS.
+    """
+
     function_name = "test-function"
     memory_limit_in_mb = 128
     invoked_function_arn = (
@@ -29,12 +42,25 @@ class MockLambdaContext:
 
 @pytest.fixture
 def aws_mock():
+    """
+    Wrapper around Moto's `mock_aws()` function.
+    """
     with mock_aws():
         yield
 
 
 @pytest.fixture
 def config_lambda_env(monkeypatch) -> dict[str, str]:
+    """
+    Sets up the Lambda environment variables for testing.
+
+    Args:
+        monkeypatch: Pytest fixture for mocking environment variables.
+
+    Returns:
+        A dictionary containing the environment variables set.
+    """
+
     monkeypatch.setenv("EICR_INPUT_PREFIX", ECR_INPUT_PREFIX)
     monkeypatch.setenv("REFINER_INPUT_PREFIX", REFINER_INPUT_PREFIX)
     monkeypatch.setenv("REFINER_OUTPUT_PREFIX", REFINER_OUTPUT_PREFIX)
@@ -51,6 +77,12 @@ def config_lambda_env(monkeypatch) -> dict[str, str]:
 
 @pytest.fixture
 def lambda_event() -> dict:
+    """
+    Provides a sample Lambda event loaded from a JSON file.
+
+    Returns:
+        A dictionary representing the Lambda event.
+    """
     event_file_path = Path(__file__).parent / "example-events" / "event.json"
     with open(event_file_path) as f:
         return json.load(f)
@@ -58,6 +90,12 @@ def lambda_event() -> dict:
 
 @pytest.fixture
 def sample_xml_files() -> dict[str, bytes]:
+    """
+    Provides sample XML files (RR and eICR) extracted from a demo zip asset.
+
+    Returns:
+        A dictionary containing the bytes of 'rr_xml' and 'eicr_xml'.
+    """
     zip_path = get_asset_path("demo", "mon-mothma-reportable-two-jds.zip")
 
     with ZipFile(zip_path) as z:
@@ -74,17 +112,44 @@ def sample_xml_files() -> dict[str, bytes]:
 
 @pytest.fixture
 def s3_client(aws_mock):
+    """
+    Provides a mocked Boto3 S3 client.
+
+    Args:
+        aws_mock: Fixture that ensures AWS services are mocked via Moto.
+
+    Returns:
+        An S3 client instance.
+    """
     return boto3.client("s3", region_name="us-east-1")
 
 
 @pytest.fixture
 def data_bucket(s3_client) -> str:
+    """
+    Creates and returns the name of the S3 bucket used for data.
+
+    Args:
+        s3_client: Mocked S3 client used to create the bucket.
+
+    Returns:
+        The name of the created data bucket.
+    """
     s3_client.create_bucket(Bucket=S3_BUCKET_CONFIG)
     return S3_BUCKET_CONFIG
 
 
 @pytest.fixture
 def config_bucket(s3_client) -> str:
+    """
+    Creates and returns the name of the S3 bucket used for configurations.
+
+    Args:
+        s3_client: Mocked S3 client used to create the bucket.
+
+    Returns:
+        The name of the created configuration bucket.
+    """
     s3_client.create_bucket(Bucket=S3_BUCKET_CONFIG)
     return S3_BUCKET_CONFIG
 
@@ -95,6 +160,17 @@ def s3_input_objects(
     data_bucket,
     sample_xml_files,
 ):
+    """
+    Uploads sample XML files to the S3 data bucket and returns the persistence ID.
+
+    Args:
+        s3_client: Mocked S3 client.
+        data_bucket: Name of the S3 bucket to upload to.
+        sample_xml_files: Dictionary containing the sample XML bytes.
+
+    Returns:
+        The persistence ID used as the S3 key suffix.
+    """
     persistence_id = "persistence/id"
 
     s3_client.put_object(
@@ -137,8 +213,7 @@ def test_lambda_inactive(
     s3_input_objects,
 ):
     """
-    Test that a file with two reportable conditions works when configurations are not
-    present for either condition.
+    Test that a file with two reportable conditions works when configurations are not present for either condition.
     """
     from .lambda_function import lambda_handler
 
@@ -212,8 +287,7 @@ def test_lambda_one_active(
     s3_input_objects,
 ):
     """
-    Test that a file with two reportable conditions works when a configuration is
-    active for only one of those conditions.
+    Test that a file with two reportable conditions works when a configuration is active for only one of those conditions.
     """
     from .lambda_function import lambda_handler
 
@@ -348,8 +422,7 @@ def test_lambda_all_active(
     s3_input_objects,
 ):
     """
-    Test that a file with two reportable conditions works when a configuration is
-    active for both of those conditions.
+    Test that a file with two reportable conditions works when a configuration is active for both of those conditions.
     """
     from .lambda_function import lambda_handler
 

@@ -19,3 +19,7 @@ client/shared/** -diff
 
 # Ignore Structurizr JSON file diffs
 docs/workspace.json -diff
+
+# Ignore 11ty JSON & CSS file diffs
+docs/_data/*.json -diff
+docs/css/*.css -diff

@@ -1,0 +1,20 @@
+---
+title: Lambda Handlers — Glossary of Terms
+layout: layout.liquid
+---
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">
+  <span class="text-lg font-normal text-gray-60 block">Lambda Handlers</span>
+  Glossary of Terms
+</h1>
+
+<p class="text-gray-60 mb-6">Domain terminology used throughout the Lambda functions.</p>
+
+<dl class="max-w-3xl space-y-4">
+  {% for term in glossary.terms %}
+  <div class="border-b border-gray-cool-3 pb-4">
+    <dt class="font-mono text-sm font-semibold text-gray-900 mb-1">{{ term.term }}</dt>
+    <dd class="text-sm text-gray-60 leading-relaxed">{{ term.definition | renderMarkdown | sanitize }}</dd>
+  </div>
+  {% endfor %}
+</dl>

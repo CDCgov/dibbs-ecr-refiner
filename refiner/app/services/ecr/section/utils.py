@@ -9,7 +9,19 @@ if TYPE_CHECKING:
     from app.services.terminology import CodeSystemSets
 
 
-from ..model import EntryMatchRule, NamespaceMap
+from app.services.format import remove_element
+
+from ..model import (
+    DbNarrativeAction,
+    EntryMatchRule,
+    NamespaceMap,
+    SectionRunResult,
+)
+from ..narrative import (
+    reconstruct_narrative,
+    replace_narrative_with_reconstruction,
+    replace_narrative_with_removal_notice,
+)
 from ..specification.constants import CODE_SYSTEM_DISPLAY_NAMES
 
 # NOTE:
@@ -48,8 +60,8 @@ def enrich_surviving_entries(
     """
     Enrich `displayName` on all surviving code-bearing elements.
 
-    Walks every <entry> in the section after pruning and sets
-    `displayName` on any <code>, <value>, or <translation> element
+    Walks every `<entry>` in the section after pruning and sets
+    `displayName` on any `<code>`, `<value>`, or `<translation>` element
     that has a `@code` attribute but no `@displayName`, trying two
     sources in order:
 
@@ -67,13 +79,13 @@ def enrich_surviving_entries(
     complete AND narrative reconstruction (which reads `@displayName`
     first) renders the label instead of a bare code.
 
-    The narrative fallback only works while the original <text> is still
+    The narrative fallback only works while the original `<text>` is still
     readable. `entry_matching` calls this before touching the narrative,
-    so it can build its own index. `generic_matching` clears <text>
+    so it can build its own index. `generic_matching` clears `<text>`
     *before* matching, so by the time it calls here the narrative is
     gone--it captures the index up front and passes it in via
     `narrative_index`. Order of operations, not an optional extra: with
-    no index and an already-cleared <text>, the fallback silently does
+    no index and an already-cleared `<text>`, the fallback silently does
     nothing.
 
     This is how the refiner surfaces human-readable labels on code
@@ -233,16 +245,16 @@ def build_entry_match_comment_text(
     list of EntryMatch objects (typed as `list` to avoid importing the
     dataclass here; callers are responsible for passing the correct type).
 
-    Comment format (single match):
-        eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
+    - Comment format (single match):
+        - eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
 
-    Comment format (multiple matches):
-        eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
-        eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
-        ...
+    - Comment format (multiple matches):
+        - eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
+        - eCR Refiner: rule N (TN) [xpath_tail] — element[code] "display" (CodeSystem)
+        - ...
 
-    Returns a string suitable for passing to etree.Comment(). Leading/
-    trailing spacing is included for readability.
+    Returns a string suitable for passing to etree.Comment(). Leading/trailing
+    spacing is included for readability.
     """
 
     lines: list[str] = []
@@ -304,9 +316,9 @@ def build_generic_match_comment_text(
         eCR Refiner: generic match — {tag}[{code}] "{display}" at {path}
 
     Args:
-        matched_code:    The code value that triggered the match.
+        matched_code: The code value that triggered the match.
         matched_display: Display name for the code, or empty string.
-        matched_tag:     Local element name (e.g. "code", "value").
+        matched_tag: Local element name (e.g. "code", "value").
         path_from_entry: Slash-separated path from the entry root to
                          the matched element (e.g. "act/observation/value").
                          Used to show where in the entry the match landed.
@@ -331,7 +343,7 @@ def build_generic_match_comment_text(
 
 def insert_comment_before(entry: _Element, comment_text: str) -> None:
     """
-    Insert an XML comment immediately before an <entry> element.
+    Insert an XML comment immediately before an `<entry>` element.
 
     Used by both matching engines after pruning to annotate surviving
     entries with match provenance. The comment is inserted as the
@@ -344,7 +356,7 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
     readability.
 
     Args:
-        entry:        The <entry> element to annotate.
+        entry: The `<entry>` element to annotate.
         comment_text: Text for the comment node. Passed directly to
                       etree.Comment(). Include a leading and trailing
                       space for readability within the comment delimiters.
@@ -364,3 +376,93 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
             indent = list(parent)[idx - 1].tail or ""
         comment.tail = indent
         parent.insert(idx, comment)
+
+
+# NOTE:
+# THE NO-MATCH RESOLUTION, SHARED BY BOTH ENGINES
+# =============================================================================
+# what happens when nothing matched is a **policy** decision, not a mechanical
+# one, and it is the same decision whichever engine did the matching. it lived
+# in both engines as parallel copies and drifted twice--once when "reconstruct"
+# stopped retaining the original narrative, and again when the reconstruct
+# branch was split out--so it lives here now, in one place, and the parity test
+# between the engines guards the seam rather than the duplication
+#
+# only the **negative** branches are shared; "retain" is genuinely per-engine:
+# `generic_matching` cleared `<text>` before searching and has to put it back,
+# `entry_matching` never touched it. folding that in would need a flag, and the
+# flag would put the difference right back
+
+
+def resolve_no_match_section(
+    section: _Element,
+    narrative_action: "DbNarrativeAction",
+    namespaces: NamespaceMap,
+    augmentation_timestamp: str,
+) -> "SectionRunResult | None":
+    """
+    Prune a section that matched nothing and settle its narrative.
+
+    Removes every `<entry>` and marks the section `nullFlavor="NI"` — the
+    narrative becomes the section's only clinical content, and the null
+    flavor is what keeps the document satisfying the CDA schematron rule
+    that refinable sections SHALL contain at least one entry.
+
+    Then resolves the narrative for every action except `"retain"`:
+
+    - `"reconstruct"` reconstructs. Zero surviving entries is not a failed
+      reconstruction; it is one whose correct derived answer is "no
+      content", and saying so in the reconstruction's own voice is what
+      lets the provenance footnote report that the feature ran. Reporting
+      only "narrative removed" is what read as a broken feature to the PHA
+      reviewer in #1635. A section with no registered reconstructor falls
+      through to the removal notice--policy coerces that combination away
+      before it reaches here, so it is defensive.
+    - `"remove"` and `"keep_on_match"` both write the removal notice:
+      "remove" unconditionally, "keep_on_match" because there was no match.
+      Neither may hand back the original narrative — every entry was just
+      pruned, and that narrative still describes all of them in full
+      clinical prose, so keeping it would return exactly the content the
+      jurisdiction's configuration excluded, with the structured entries
+      stripped so a receiver cannot process it either. `removal_reason` is
+      `"no_match"` for the same reason: the notice must **not** tell a
+      reader the coded data is still here.
+
+    Args:
+        section: The section being refined. Mutated in place.
+        narrative_action: The jurisdiction's configured narrative setting.
+        namespaces: HL7 namespace map for element search.
+        augmentation_timestamp: The run's HL7 V3 time value, passed to
+            reconstruction so minted row IDs share the run's stamp.
+
+    Returns:
+        The `SectionRunResult` to return, or None for `"retain"` — the
+        one case the caller must finish itself, because restoring the
+        original narrative differs between the engines.
+    """
+
+    for entry in section.findall("hl7:entry", namespaces):
+        remove_element(entry)
+    section.attrib["nullFlavor"] = "NI"
+
+    if narrative_action == "reconstruct":
+        if rebuilt := reconstruct_narrative(
+            section, augmentation_timestamp=augmentation_timestamp
+        ):
+            replace_narrative_with_reconstruction(section, rebuilt.text, namespaces)
+            return SectionRunResult(
+                matches_found=False,
+                narrative_disposition="reconstructed_empty",
+            )
+        replace_narrative_with_removal_notice(
+            section, namespaces, removal_reason="no_match"
+        )
+        return SectionRunResult(matches_found=False, narrative_disposition="removed")
+
+    if narrative_action in ("remove", "keep_on_match"):
+        replace_narrative_with_removal_notice(
+            section, namespaces, removal_reason="no_match"
+        )
+        return SectionRunResult(matches_found=False, narrative_disposition="removed")
+
+    return None

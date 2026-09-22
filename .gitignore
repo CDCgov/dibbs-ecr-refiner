@@ -53,3 +53,6 @@ client/e2e/downloads/
 # Risk Assessments
 docs/risk-assessments/
 !docs/risk-assessments/.template
+
+# 11ty
+docs/_site

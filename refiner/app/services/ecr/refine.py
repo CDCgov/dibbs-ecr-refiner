@@ -353,13 +353,12 @@ def _interpret_run_result(
         no matches:
             "retained"                       → REFINED_NO_MATCHES_NARRATIVE_RETAINED
             "removed"                        → REFINED_NO_MATCHES_NARRATIVE_REMOVED
-            "reconstructed"                  → (engines never produce
-                                                this on no-match)
+            "reconstructed_empty"            → REFINED_NARRATIVE_RECONSTRUCTED_EMPTY
 
-    The reconstruct-fallback disposition collapses to one outcome
-    label regardless of whether matches were found — the relevant
-    fact for a reviewer is "you asked for reconstruct, we couldn't,
-    we kept the original."
+    "reconstruct_unavailable" appears only under "matches found": it
+    means the section has no registered reconstructor, and on the
+    no-match branch the engines write the removal notice instead rather
+    than hand back a narrative describing entries that are gone.
 
     Contract: this function is only ever called for sections that
     actually went through the refinement engine (i.e., the section has
@@ -376,15 +375,20 @@ def _interpret_run_result(
         The SectionOutcome describing what happened to this section.
     """
 
-    # reconstruct fallback means the engine attempted reconstruction, couldn't
-    # complete it, and kept the original narrative. Could be either because
-    # there were no matches or the section requested doesn't have a rule configured.
+    # reconstruct fallback means the engine had matches to rebuild from but no
+    # registered reconstructor for the section, so it kept the original
+    # narrative. no-match runs never produce this — see the docstring
     if run_result.narrative_disposition == "reconstruct_unavailable":
         return SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED
 
     if not run_result.matches_found:
         if run_result.narrative_disposition == "retained":
             return SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED
+        # reconstruction ran over zero surviving entries and said so. the
+        # outcome reports the run, not just the emptiness, because "did
+        # reconstruct do anything?" is the question a reviewer is asking
+        if run_result.narrative_disposition == "reconstructed_empty":
+            return SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_EMPTY
         return SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_REMOVED
 
     # matches were found; outcome reflects what happened to the narrative
@@ -418,39 +422,39 @@ def refine_eicr(
     function receives a fully resolved plan with no document introspection.
 
     Processing behavior:
-        - It iterates through the instructions in the plan.
-        - For each section, it executes one of four branches based on the
-          configured (include, action, narrative) combination and whether
-          the section is narrative-only in the eICR spec:
+    - It iterates through the instructions in the plan.
+    - For each section, it executes one of four branches based on the
+      configured (include, action, narrative) combination and whether
+      the section is narrative-only in the eICR spec:
 
-            - include=False                              -> remove (stub)
-            - include=True, narrative-only section       -> narrative-only branch
-            - include=True, action="retain", refinable   -> retain branch
-            - include=True, action="refine", refinable   -> refine via process_section
+        - `include=False`                              -> remove (stub)
+        - `include=True, narrative-only section`       -> narrative-only branch
+        - `include=True, action="retain", refinable`   -> retain branch
+        - `include=True, action="refine", refinable`   -> refine via `process_section`
 
-        - The narrative-only branch is reached when the section has no
-          entry match rules in the spec. There is no coded data to
-          refine, so the only decision is what to do with the narrative.
-          The outcome is NARRATIVE_ONLY_RETAINED or NARRATIVE_ONLY_REMOVED
-          depending on the configured narrative setting — distinct from
-          the configured-retain outcomes below because this reflects the
-          spec's structural reality, not a jurisdiction choice.
-        - The retain branch honors the narrative setting: when the
-          jurisdiction has configured narrative removal on a retained
-          section, the narrative is replaced with the removal notice
-          while the entries are left untouched.
-        - The refine branch delegates to process_section, which dispatches
-          to the section-aware or generic matching engine based on the
-          section specification. The engine returns a SectionRunResult
-          which is then interpreted into a SectionOutcome via
-          _interpret_run_result.
-        - After each branch, the section's provenance record is finalized
-          with the runtime outcome via dataclasses.replace, and an
-          unanchored provenance footnote is appended to the section's
-          <text> element. The footnote ID is built from the section's
-          LOINC code and the plan's augmentation_timestamp, tying it to
-          the augmentation author's <time> value for forensic
-          traceability.
+    - The narrative-only branch is reached when the section has no
+      entry match rules in the spec. There is no coded data to
+      refine, so the only decision is what to do with the narrative.
+      The outcome is `NARRATIVE_ONLY_RETAINED` or `NARRATIVE_ONLY_REMOVED`
+      depending on the configured narrative setting — distinct from
+      the configured-retain outcomes below because this reflects the
+      spec's structural reality, not a jurisdiction choice.
+    - The retain branch honors the narrative setting: when the
+      jurisdiction has configured narrative removal on a retained
+      section, the narrative is replaced with the removal notice
+      while the entries are left untouched.
+    - The refine branch delegates to process_section, which dispatches
+      to the section-aware or generic matching engine based on the
+      section specification. The engine returns a `SectionRunResult`
+      which is then interpreted into a `SectionOutcome` via
+      `_interpret_run_result`.
+    - After each branch, the section's provenance record is finalized
+      with the runtime outcome via `dataclasses.replace`, and an
+      unanchored provenance footnote is appended to the section's
+      `<text>` element. The footnote ID is built from the section's
+      LOINC code and the plan's augmentation_timestamp, tying it to
+      the augmentation author's `<time>` value for forensic
+      traceability.
 
     Args:
         eicr_root: The parsed eICR root element.
@@ -590,13 +594,13 @@ def refine_rr(
     beforehand and serializing afterward.
 
     Processing behavior:
-        - It iterates through the RR and removes information common to all RR's.
-        - It loops through all the condition observations in the reportability RC
-            - Anything that isn't RRSVS1 reportable is filtered out
-            - Of the remaining reportable observations, anything that isn't specified
-              in the refinement configurations are filtered out
-            - For anything remaining, any codes that aren't specified within the
-              in the configuration RSG or custom codes are filtered out.
+    - It iterates through the RR and removes information common to all RR's.
+    - It loops through all the condition observations in the reportability RC
+        - Anything that isn't RRSVS1 reportable is filtered out
+        - Of the remaining reportable observations, anything that isn't specified
+          in the refinement configurations are filtered out
+        - For anything remaining, any codes that aren't specified within the
+          in the configuration RSG or custom codes are filtered out.
 
     Args:
         rr_root: The parsed RR root element.
@@ -732,15 +736,14 @@ def refine_rr_for_unconfigured_conditions(
     reportability information appears exactly once.
 
     Example scenario:
-        SDDH has two reportable conditions: COVID (840539006) and Influenza (772828001).
-        Only COVID has an active configuration.
-
+    - SDDH has two reportable conditions: COVID (840539006) and Influenza
+      (772828001). Only COVID has an active configuration.
         - COVID goes through refine_for_condition → produces refined_eICR.xml + refined_RR.xml
         - Influenza has no config → this function produces an RR with only the
           Influenza reportability observation, written to unrefined_rr/refined_RR.xml
 
-        The jurisdiction receives both and can process each condition without
-        seeing COVID reported twice.
+    The jurisdiction receives both and can process each condition without
+    seeing COVID reported twice.
 
     Args:
         xml_files: The eICR/RR pair. Only the RR is used.

@@ -63,11 +63,15 @@ the narrative is then driven by the jurisdiction's narrative setting — "retain
 leaves the original narrative intact (`Outcome: Refined; no matches found,
 narrative retained`), while "remove" and "keep_on_match" both replace it with
 the removal notice (`Outcome: Refined; no matches found, narrative removed`).
-"reconstruct" falls back to retaining the original narrative when the engine
-can't rebuild — either no entries survived to build from, or the section has no
-registered reconstructor (`Outcome: Refined; reconstruction unavailable,
-original narrative retained`). The footnote makes that decision visible in the
-same row as the configured action.
+"reconstruct" reconstructs either way: with no entries left to build from, the
+derived narrative is a statement that nothing matched (`Outcome: Refined;
+narrative reconstructed successfully, but no entries matched the configuration,
+so the reconstruction reports no content`), which reports that the
+reconstruction ran rather than only that the section came out empty. It falls
+back to retaining the original only when the section has no registered
+reconstructor (`Outcome: Refined; reconstruction currently unavailable for this
+section, original narrative retained and may describe removed entries`). The
+footnote makes that decision visible in the same row as the configured action.
 
 The footnote ID is built from the section's LOINC code and the augmentation timestamp (`ecr-refiner-{loinc}-{timestamp}`), so every footnote in a refinement run is structurally tied to the augmentation author's `<time>` value. A consumer can verify document integrity by checking that all footnote IDs in a document carry the same timestamp the augmentation header advertises.
 
