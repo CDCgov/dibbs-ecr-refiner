@@ -2,6 +2,7 @@ import { Button } from '@components/Button';
 import { Menu, MenuButton, MenuItem } from '@headlessui/react';
 import { BaseMenuItems } from '@components/Dropdown';
 import {
+  CodeCountsResponse,
   CodeResponse,
   CodesLimitResponseValue,
   ConfigurationCodeStatusLabel,
@@ -46,7 +47,11 @@ export function ControlPanel({
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
-  const { data: codeCounts } = useGetCodeCounts(configurationId);
+  const {
+    data: codeCounts,
+    isPending,
+    isError,
+  } = useGetCodeCounts(configurationId);
 
   const { mutate: updateStatusWithinCursor } = useSetCodesStatus({
     axios: {
@@ -57,6 +62,9 @@ export function ControlPanel({
 
   const { state, dispatch } = useSelectedCodes();
   const { selectedCodeIds, selectedCustomCodeIds, allSelected } = state;
+
+  if (isPending) return <Spinner variant="centered" />;
+  if (isError) return 'Error!';
 
   // These codes are unselected ones within the rendered cursor, or the anti-join
   // between the selected rows and the rendered ones, which we need in cases
@@ -123,13 +131,11 @@ export function ControlPanel({
   const selectedCount = formatSelectedCodeCount(
     allSelected,
     filters,
-    selectedCodeIds.size + selectedCustomCodeIds.size,
-    deselectedCodesIds.length,
-    deselectedCustomCodesIds.length,
-    renderedCodes.length,
+    selectedCodeIds,
+    selectedCustomCodeIds,
+    renderedCodes,
     hasNextPage,
-    codeCounts?.data.primary_condition_rctc_count,
-    codeCounts?.data.total_code_count
+    codeCounts.data
   );
   return (
     <>
@@ -367,19 +373,21 @@ interface CountResult {
 }
 
 function calculateCounts(
-  allSelected: boolean,
   selectedCodeIds: Set<string>,
   selectedCustomCodeIds: Set<string>,
   renderedCodes: CodeResponse[],
-  total_code_count: number,
-  total_custom_codes_count: number,
-  lockedCodesCount: number,
-  hasNextPage: boolean
+  codeCounts: CodeCountsResponse,
+  allSelectedWithUnrenderedCodes: boolean
 ): CountResult {
-  if (allSelected && hasNextPage) {
+  const lockedCodesCount = renderedCodes.filter(
+    (c) => c.is_trigger_code
+  ).length;
+
+  if (allSelectedWithUnrenderedCodes) {
     // If in the all selected case, start with the totals as fetched from the
     // code counts hook and tally any custom codes we've selected. Forbid exclusion
     // only if we've down-selected to a subset with only custom codes
+    const { total_code_count, total_custom_codes_count } = codeCounts;
     const deselectedCodeCount = renderedCodes.filter(
       (c) => !selectedCodeIds.has(c.id)
     ).length;
@@ -450,16 +458,14 @@ function ExclusionWarningModal({
     excludeableCodeCount,
     exclusionForbidden,
   } = calculateCounts(
-    allSelected,
     selectedCodeIds,
     selectedCustomCodeIds,
     renderedCodes,
-    codeCounts?.data.total_code_count,
-    codeCounts?.data.total_custom_codes_count,
-    codeCounts.data.primary_condition_rctc_count,
-    hasNextPage
+    codeCounts.data,
+    allSelected && hasNextPage
   );
-  const lockedCodesCount = codeCounts.data.primary_condition_rctc_count;
+
+  const rctcCodeCount = codeCounts.data.primary_condition_rctc_count;
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
       <ModalHeader>
@@ -481,8 +487,8 @@ function ExclusionWarningModal({
             </span>
 
             <span className="mt-2">
-              {lockedCodesCount
-                ? `This configuration's primary condition has ${lockedCodesCount} RCTC code(s) that can't be excluded. These codes must be included to properly process the eCR.`
+              {rctcCodeCount
+                ? `This configuration's primary condition has ${rctcCodeCount} RCTC code(s) that can't be excluded. These codes must be included to properly process the eCR.`
                 : null}
             </span>
           </p>
@@ -512,17 +518,19 @@ function ExclusionWarningModal({
     </Modal>
   );
 }
+const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
+
 function formatSelectedCodeCount(
   allSelected: boolean,
   filters: CodeFilters,
-  selectedCodeCount: number,
-  deselectedCodesCount: number,
-  deselectedCustomCodesCount: number,
-  renderedCodeCount: number,
+  selectedCodeIds: Set<string>,
+  selectedCustomCodeIds: Set<string>,
+  renderedCodes: CodeResponse[],
   hasNextPage: boolean,
-  lockedCodesCount?: number,
-  totalCodeCount?: number
+  codeCounts: CodeCountsResponse
 ): string {
+  const renderedCodeCount = renderedCodes.length;
+  const selectedCodeCount = selectedCodeIds.size + selectedCustomCodeIds.size;
   // If the rendered code count is under the pagination limit, or we're not in the bulk selection case
   // just return the selected values
   if (renderedCodeCount < CodesLimitResponseValue.codes_limit || !allSelected) {
@@ -530,8 +538,6 @@ function formatSelectedCodeCount(
   }
 
   // Otherwise, check the active filters and tabulate the values
-  const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
-
   const atLeastOneFilterActive =
     hasFilterEntry(filters.codeSystems) ||
     hasFilterEntry(filters.sources) ||
@@ -539,14 +545,23 @@ function formatSelectedCodeCount(
     filters.search;
 
   if (!atLeastOneFilterActive) {
-    return totalCodeCount
-      ? (
-          totalCodeCount -
-          deselectedCodesCount -
-          deselectedCustomCodesCount -
-          (lockedCodesCount ?? 0)
-        ).toString()
-      : 'All ';
+    const { primary_condition_rctc_count, total_code_count } = codeCounts;
+    const deselectedCodesCount = renderedCodes
+      .filter((c) => !c.is_custom)
+      .map((c) => c.id)
+      .filter((id) => !selectedCodeIds.has(id)).length;
+
+    const deselectedCustomCodesCount = renderedCodes
+      .filter((c) => c.is_custom)
+      .map((c) => c.id)
+      .filter((id) => !selectedCodeIds.has(id)).length;
+
+    return (
+      total_code_count -
+      deselectedCodesCount -
+      deselectedCustomCodesCount -
+      primary_condition_rctc_count
+    ).toString();
   }
 
   return selectedCodeCount > CodesLimitResponseValue.codes_limit || hasNextPage
