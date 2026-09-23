@@ -13,6 +13,7 @@ import {
   testTesCodes,
 } from './fixtures';
 import userEvent from '@testing-library/user-event';
+import { useFilterState } from './useFilterState';
 
 // Mock all API requests.
 vi.mock('../../../api/configurations/configurations', async () => {
@@ -69,12 +70,16 @@ vi.mock('../../../api/configurations/configurations', async () => {
       isFetchingNextPage: false,
     })),
 
-    useFilterState: vi.fn(() => ({
-      data: { data: testFiltersResponse },
-    })),
-
     useGetCodeCounts: vi.fn(() => ({
       data: { data: testCodeCounts },
+    })),
+  };
+});
+
+vi.mock('./useFilterState', async () => {
+  return {
+    useFilterState: vi.fn(() => ({
+      filters: testFiltersResponse,
     })),
   };
 });
@@ -232,5 +237,24 @@ describe('Mangage codes page', () => {
         { exact: false }
       )
     ).toBeVisible();
+  });
+
+  it('displays a different tally string for the search field', async () => {
+    vi.mocked(useFilterState).mockReturnValue({
+      filters: { ...testFiltersResponse, search: 'ana' },
+    } as any);
+
+    const user = userEvent.setup();
+    renderPageView();
+
+    const search = screen.getByPlaceholderText('Search by keyword');
+    await user.type(search, 'ana');
+
+    const selectAllCheckbox = screen.getByLabelText(
+      'Include all codes in bulk operation'
+    );
+    await user.click(selectAllCheckbox);
+    expect(screen.getByTestId(`control-panel`)).toBeVisible();
+    expect(screen.getByText('100+ codes selected')).toBeVisible();
   });
 });

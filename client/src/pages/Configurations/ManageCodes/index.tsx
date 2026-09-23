@@ -31,7 +31,6 @@ import {
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 import { CodeFilters, Filters } from './Filters';
-import { useFilterState } from './useFilterState';
 import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
@@ -46,6 +45,7 @@ import {
 } from '@tanstack/react-query';
 import { useSelectedCodes } from './context/hook';
 import { AxiosResponse } from 'axios';
+import { useFilterState } from './useFilterState';
 
 export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
@@ -120,7 +120,6 @@ interface CodesPanelProps {
 function CodesPanel({ id, disabled }: CodesPanelProps) {
   const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
     useFilterState(id);
-
   const {
     data,
     isPending,

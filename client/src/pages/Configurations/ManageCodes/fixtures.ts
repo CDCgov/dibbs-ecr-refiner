@@ -1319,7 +1319,7 @@ export const testCodeResponse = {
 };
 
 export const testFiltersResponse = {
-  code_systems: [
+  codeSystems: [
     {
       system_id: 'ed5c557e-4ce2-494b-a3e0-e01c6ca899e8',
       system_name: 'LOINC',

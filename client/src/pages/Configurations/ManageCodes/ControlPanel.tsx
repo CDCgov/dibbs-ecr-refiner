@@ -562,6 +562,7 @@ function formatSelectedCodeCount(
 
   // Handle the search string case separately since we do the count of the
   // search results in the DB.
+
   return selectedCodeCount > CodesLimitResponseValue.codes_limit || hasNextPage
     ? `${CodesLimitResponseValue.codes_limit}+ codes`
     : selectedCodeCount.toString();
