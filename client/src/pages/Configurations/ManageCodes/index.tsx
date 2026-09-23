@@ -153,8 +153,8 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
-
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
+  console.log(codes);
 
   return (
     <CodeManagementProvider
