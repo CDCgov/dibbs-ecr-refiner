@@ -1,7 +1,90 @@
-export const anaplasmosisCodeResponse = {
+export const testCodeCounts = {
+  total_code_count: 1611,
+  total_code_sets_count: 1,
+  total_excluded_codes_count: 0,
+  total_custom_codes_count: 6,
+  primary_condition_rctc_count: 42,
+};
+
+export const testCustomCodes = [
+  {
+    id: 'ea0c4288-fe1b-4f6b-83cd-28350684be9e',
+    condition_id: null,
+    source: ['Custom Code'],
+    code: '1111111-cvx',
+    description: 'CVX Example',
+    system_id: '2dd6e545-9161-4e3b-b280-7f4de3942682',
+    system_name: 'CVX',
+    status: 'Included',
+    is_custom: true,
+    is_trigger_code: false,
+  },
+  {
+    id: '83b9cec9-4624-4047-bcd4-9a1eff8530c6',
+    condition_id: null,
+    source: ['Custom Code'],
+    code: '1111111-icd10',
+    description: 'ICD-10 Example',
+    system_id: '3c4197a8-d37d-465f-b2b3-8e25ecca4d92',
+    system_name: 'ICD-10',
+    status: 'Included',
+    is_custom: true,
+    is_trigger_code: false,
+  },
+  {
+    id: '39378fce-4fc9-482e-9a0d-1fd064c186e8',
+    condition_id: null,
+    source: ['Custom Code'],
+    code: '1111111-loinc',
+    description: 'LOINC Example',
+    system_id: 'ed5c557e-4ce2-494b-a3e0-e01c6ca899e8',
+    system_name: 'LOINC',
+    status: 'Included',
+    is_custom: true,
+    is_trigger_code: false,
+  },
+  {
+    id: '7cf392a0-b227-4961-b3f0-13552a8a0812',
+    condition_id: null,
+    source: ['Custom Code'],
+    code: '1111111-other',
+    description: 'Other Example',
+    system_id: 'b16d48e5-6ee3-48f4-81af-1e358332d957',
+    system_name: 'Other',
+    status: 'Included',
+    is_custom: true,
+    is_trigger_code: false,
+  },
+  {
+    id: 'c9aac53d-e600-4950-aa59-555717e14f22',
+    condition_id: null,
+    source: ['Custom Code'],
+    code: '1111111-rxnorm',
+    description: 'RxNorm Example',
+    system_id: 'bfd18633-9be7-4f33-96f1-1fb514267481',
+    system_name: 'RxNorm',
+    status: 'Included',
+    is_custom: true,
+    is_trigger_code: false,
+  },
+  {
+    id: '6aea90fc-89b1-4aae-b744-519152112730',
+    condition_id: null,
+    source: ['Custom Code'],
+    code: '1111111-snomed',
+    description: 'SNOMED Example',
+    system_id: '159d1b7b-217c-4866-95e9-29d78c9cfe38',
+    system_name: 'SNOMED',
+    status: 'Included',
+    is_custom: true,
+    is_trigger_code: false,
+  },
+];
+export const testCodeResponse = {
   next_cursor:
     'eyJjb25kaXRpb25faWQiOiAiMjUyMjFiYjAtY2VmMi00NjA0LWE3MTktODhiOTFlMmNhMzEyIiwgImNvZGUiOiAiMTA3MzctNSIsICJpbl9jdXN0b20iOiBmYWxzZSwgImlzX3RyaWdnZXJfY29kZSI6IGZhbHNlfQ==',
   codes: [
+    ...testCustomCodes,
     {
       id: '24845563-9cec-4997-9017-f769b46c40a8',
       condition_id: '25221bb0-cef2-4604-a719-88b91e2ca312',
@@ -1238,4 +1321,78 @@ export const anaplasmosisCodeResponse = {
   codes_limit: {
     codes_limit: 100,
   },
+};
+
+export const testFiltersResponse = {
+  code_systems: [
+    {
+      system_id: 'ed5c557e-4ce2-494b-a3e0-e01c6ca899e8',
+      system_name: 'LOINC',
+      code_count: 886,
+    },
+    {
+      system_id: 'bfd18633-9be7-4f33-96f1-1fb514267481',
+      system_name: 'RxNorm',
+      code_count: 564,
+    },
+    {
+      system_id: '159d1b7b-217c-4866-95e9-29d78c9cfe38',
+      system_name: 'SNOMED',
+      code_count: 130,
+    },
+    {
+      system_id: '3c4197a8-d37d-465f-b2b3-8e25ecca4d92',
+      system_name: 'ICD-10',
+      code_count: 25,
+    },
+    {
+      system_id: '2dd6e545-9161-4e3b-b280-7f4de3942682',
+      system_name: 'CVX',
+      code_count: 0,
+    },
+    {
+      system_id: 'b16d48e5-6ee3-48f4-81af-1e358332d957',
+      system_name: 'Other',
+      code_count: 0,
+    },
+  ],
+  sources: [
+    {
+      condition_id: 'de59c48d-c800-4a4b-b2e0-c9899a79c7ed',
+      source: 'Anaplasmosis Reporting Specification Grouper',
+      code_count: 966,
+    },
+    {
+      condition_id: '0eeca416-3105-4fea-b8f2-31439908606c',
+      source: 'Anaplasmosis Additional Context Medication Codes',
+      code_count: 564,
+    },
+    {
+      condition_id: '32fae017-1813-4906-9296-a281fcc328cf',
+      source: 'Anaplasmosis Additional Context Symptom Codes',
+      code_count: 59,
+    },
+    {
+      condition_id: 'f9b57fe0-9fe3-4ee8-a38e-c2425e7151ac',
+      source: 'Anaplasmosis Additional Context Diagnosis Codes',
+      code_count: 9,
+    },
+    {
+      condition_id: 'ef420235-43f3-4273-b020-411d55c1e88d',
+      source: 'Anaplasmosis Additional Context Clinical Lab Result Codes',
+      code_count: 7,
+    },
+  ],
+  statuses: [
+    {
+      label: 'Included',
+      status: 'included',
+      code_count: 1605,
+    },
+    {
+      label: 'Excluded',
+      status: 'excluded',
+      code_count: 0,
+    },
+  ],
 };
