@@ -23,17 +23,29 @@ import {
 import { AddCustomCodeButton } from './CustomCodes/AddCustomCodeButton';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { AddConditionCodeSetsDrawer } from './CodeSets/AddConditionCodeSetsDrawer';
-import { CodeResponse, GetConfigurationResponse } from '../../../api/schemas';
+import {
+  CodeResponse,
+  CodesResponse,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
 import { DeleteCustomCodeButton } from './CustomCodes/DeleteCustomCodeButton';
 import { EditCustomCodeButton } from './CustomCodes/EditCustomCodeButton';
 import { CodeFilters, Filters } from './Filters';
-import { useFilterState } from './useFilterState';
 import { ControlPanel } from './ControlPanel';
 import { SearchBar } from './SearchBar';
 import { ImportCustomCodes } from './CustomCodes/CsvImport/ImportCustomCodes';
 import { Tooltip } from '@components/Tooltip';
 import { filterParamSerializer, ParamValue } from './Filters/utils';
 import { LockIcon } from './LockIcon';
+import { CodeManagementProvider } from './context/CodeManagementContext';
+import {
+  FetchNextPageOptions,
+  InfiniteData,
+  InfiniteQueryObserverResult,
+} from '@tanstack/react-query';
+import { useSelectedCodes } from './context/hook';
+import { AxiosResponse } from 'axios';
+import { useFilterState } from './useFilterState';
 
 export function ManageCodes() {
   const { id } = useParams<{ id: string }>();
@@ -108,45 +120,6 @@ interface CodesPanelProps {
 function CodesPanel({ id, disabled }: CodesPanelProps) {
   const { filters, setFilters, clearFilters, isFilterActive, filtersKey } =
     useFilterState(id);
-
-  return (
-    <>
-      <CodeInformationBar id={id} />
-      <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
-        <SearchBar filters={filters} setFilters={setFilters} />
-        <Filters
-          configurationId={id}
-          filters={filters}
-          onFiltersChange={setFilters}
-        />
-      </div>
-      <CodesTable
-        key={filtersKey}
-        id={id}
-        disabled={disabled}
-        filters={filters}
-        onClearFilters={clearFilters}
-        isFilterActive={isFilterActive}
-      />
-    </>
-  );
-}
-
-interface CodesTableProps {
-  id: string;
-  disabled: boolean;
-  filters: CodeFilters;
-  isFilterActive: boolean;
-  onClearFilters: () => void;
-}
-
-function CodesTable({
-  id,
-  disabled,
-  filters,
-  isFilterActive,
-  onClearFilters,
-}: CodesTableProps) {
   const {
     data,
     isPending,
@@ -177,22 +150,80 @@ function CodesTable({
     }
   );
 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [allSelected, setAllSelected] = useState<boolean>(false);
-  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
-
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
-
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
-  const excludableCodes = codes.filter((c) => !c.is_trigger_code);
-
-  const selectedCustomCodes = excludableCodes.filter(
-    (c) => selectedIds.has(c.id) && c.is_custom
+  return (
+    <CodeManagementProvider
+      initialCodeState={{
+        selectedCodeIds: new Set(),
+        selectedCustomCodeIds: new Set(),
+        allSelected: false,
+      }}
+    >
+      <CodeInformationBar id={id} />
+      <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
+        <SearchBar filters={filters} setFilters={setFilters} />
+        <Filters
+          configurationId={id}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      </div>
+      <CodesTable
+        key={filtersKey}
+        id={id}
+        codes={codes}
+        fetchNextPage={fetchNextPage}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        disabled={disabled}
+        filters={filters}
+        onClearFilters={clearFilters}
+        isFilterActive={isFilterActive}
+      />
+    </CodeManagementProvider>
   );
+}
 
-  const hasCodesSelected = selectedIds.size > 0 || allSelected;
+interface CodesTableProps {
+  id: string;
+  codes: CodeResponse[];
+  fetchNextPage: (
+    options?: FetchNextPageOptions
+  ) => Promise<
+    InfiniteQueryObserverResult<
+      InfiniteData<AxiosResponse<CodesResponse>, string | null | undefined>
+    >
+  >;
+  isFetchingNextPage: boolean;
+  disabled: boolean;
+  hasNextPage: boolean;
+  filters: CodeFilters;
+  isFilterActive: boolean;
+  onClearFilters: () => void;
+}
+
+function CodesTable({
+  id,
+  codes,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+  disabled,
+  filters,
+  isFilterActive,
+  onClearFilters,
+}: CodesTableProps) {
+  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
+
+  const { state, dispatch } = useSelectedCodes();
+  const { selectedCodeIds, selectedCustomCodeIds, allSelected } = state;
+  const showControlPanel =
+    selectedCodeIds.size + selectedCustomCodeIds.size > 0 || allSelected;
+
+  const selectableCodes = codes.filter((c) => !c.is_trigger_code);
 
   return (
     <div className="flex flex-col items-end gap-4">
@@ -201,21 +232,14 @@ function CodesTable({
         onClose={() => setIsSourceModalOpen(false)}
       />
       <div className="w-full">
-        {hasCodesSelected ? (
+        {showControlPanel && (
           <ControlPanel
-            configurationId={id}
-            selectedCodeIds={selectedIds}
-            selectedCustomCodes={selectedCustomCodes}
-            clearSelections={() => {
-              setSelectedIds(new Set());
-              setAllSelected(false);
-            }}
-            allSelected={allSelected}
             renderedCodes={codes}
+            configurationId={id}
             hasNextPage={hasNextPage}
             filters={filters}
           />
-        ) : null}
+        )}
         <InfiniteScroll
           dataLength={codes.length}
           next={async () => {
@@ -225,9 +249,10 @@ function CodesTable({
               const newCodes =
                 (pages && pages[pages.length - 1].data.codes) ?? [];
 
-              setSelectedIds(
-                new Set([...excludableCodes, ...newCodes].map((c) => c.id))
-              );
+              dispatch({
+                type: 'bulkInclude',
+                selectableCodes: [...selectableCodes, ...newCodes],
+              });
             }
           }}
           hasMore={!!hasNextPage}
@@ -248,12 +273,10 @@ function CodesTable({
                     disabled={disabled}
                     checked={allSelected}
                     onChange={(checked) => {
-                      setAllSelected(checked);
-                      setSelectedIds(
-                        checked
-                          ? new Set(excludableCodes.map((c) => c.id))
-                          : new Set()
-                      );
+                      dispatch({
+                        type: checked ? 'bulkInclude' : 'bulkExclude',
+                        selectableCodes: selectableCodes,
+                      });
                     }}
                   />
                 </th>
@@ -322,18 +345,23 @@ function CodesTable({
                         <Checkbox
                           aria-label={`Include ${code.code} in bulk operation`}
                           disabled={disabled}
-                          checked={selectedIds.has(code.id)}
-                          onChange={(checked) =>
-                            setSelectedIds((prev) => {
-                              const next = new Set(prev);
-                              if (checked) {
-                                next.add(code.id);
-                              } else {
-                                next.delete(code.id);
-                              }
-                              return next;
-                            })
+                          checked={
+                            selectedCodeIds.has(code.id) ||
+                            selectedCustomCodeIds.has(code.id)
                           }
+                          onChange={(checked) => {
+                            dispatch({
+                              type: checked
+                                ? 'individualInclude'
+                                : 'individualExclude',
+                              selectedCodeIds: new Set(
+                                !code.is_custom ? [code.id] : []
+                              ),
+                              selectedCustomCodeIds: new Set(
+                                code.is_custom ? [code.id] : []
+                              ),
+                            });
+                          }}
                         />
                       )}
                     </td>
