@@ -76,7 +76,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
   };
 });
 
-vi.mock('./useFilterState', async () => {
+vi.mock('./useFilterState', () => {
   return {
     useFilterState: vi.fn(() => ({
       filters: testFiltersResponse,
