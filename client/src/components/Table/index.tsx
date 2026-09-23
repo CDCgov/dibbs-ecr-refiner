@@ -49,10 +49,24 @@ export function Table({
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           if (child.type === TableHead) {
-            return React.cloneElement(child as React.ReactElement<any>, { ...(child.props as object), stickyHeader, bordered });
+            return React.cloneElement(
+              child as React.ReactElement<TableHeadProps>,
+              {
+                ...(child.props as object),
+                stickyHeader,
+                bordered,
+              }
+            );
           }
           if (child.type === TableBody) {
-            return React.cloneElement(child as React.ReactElement<any>, { ...(child.props as object), striped, bordered });
+            return React.cloneElement(
+              child as React.ReactElement<TableBodyProps>,
+              {
+                ...(child.props as object),
+                striped,
+                bordered,
+              }
+            );
           }
         }
         return child;
