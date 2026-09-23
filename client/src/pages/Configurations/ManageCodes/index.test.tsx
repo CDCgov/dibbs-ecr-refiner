@@ -10,6 +10,7 @@ import {
   testCodeResponse,
   testCustomCodes,
   testFiltersResponse,
+  testTesCodes,
 } from './fixtures';
 import userEvent from '@testing-library/user-event';
 
@@ -114,6 +115,10 @@ const renderPageView = () =>
   );
 
 describe('Mangage codes page', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   it('renders page in MemoryRouter with the correct tab selected', () => {
     renderPageView();
     expect(screen.getByText('Manage codes', { selector: 'a' })).toHaveAttribute(
@@ -133,7 +138,7 @@ describe('Mangage codes page', () => {
     ).not.toBeInTheDocument();
   });
 
-  it.only('selection and deletion of custom codes should render as expected', async () => {
+  it('selection and deletion of custom codes should render as expected', async () => {
     const user = userEvent.setup();
     renderPageView();
 
@@ -149,6 +154,83 @@ describe('Mangage codes page', () => {
     expect(screen.getByTestId(`control-panel`)).toBeVisible();
     expect(
       screen.getByText(`${testCustomCodes.length} selected`)
+    ).toBeVisible();
+
+    const deselectCode = testCustomCodes[1];
+    const customCodeCheckbox = screen.getByLabelText(
+      `Include ${deselectCode.code} in bulk operation`
+    );
+
+    await user.click(customCodeCheckbox);
+    expect(customCodeCheckbox).not.toBeChecked();
+
+    expect(
+      screen.getByText(`${testCustomCodes.length - 1} selected`)
+    ).toBeVisible();
+
+    await user.click(screen.getByLabelText('More options'));
+
+    const deletionButton = screen.getByText(
+      `Delete ${testCustomCodes.length - 1} custom codes`
+    );
+
+    expect(deletionButton).toBeVisible();
+    await user.click(deletionButton);
+
+    expect(
+      screen.getByText(
+        `${testCustomCodes.length - 1} custom codes will be deleted`
+      )
+    );
+
+    const exclusionButton = screen.getByText('Exclude');
+    await user.click(exclusionButton);
+    expect(
+      screen.getByText('None of the selected codes can be excluded.')
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        `${testCustomCodes.length - 1} custom code(s) can't be excluded.`,
+        { exact: false }
+      )
+    ).toBeVisible();
+  });
+
+  it('select all modal edge cases render as elected', async () => {
+    const user = userEvent.setup();
+    renderPageView();
+
+    const selectAllCheckbox = screen.getByLabelText(
+      'Include all codes in bulk operation'
+    );
+
+    await user.click(selectAllCheckbox);
+    expect(screen.getByTestId(`control-panel`)).toBeVisible();
+    await user.click(screen.getByLabelText('More options'));
+
+    expect(
+      screen.getByText(`Delete ${testCustomCodes.length} custom codes`)
+    ).toBeVisible();
+
+    const exclusionButton = screen.getByText('Exclude');
+
+    const rctcCount = testTesCodes.filter((c) => c.is_trigger_code).length;
+    const totalCodeCount = testCodeCounts.total_code_count;
+    const excludeableCodeCount =
+      totalCodeCount - rctcCount - testCustomCodes.length;
+
+    await user.click(exclusionButton);
+
+    expect(
+      screen.getByText(
+        `${excludeableCodeCount} of ${totalCodeCount} selected codes will be excluded from this configuration.`
+      )
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        `${testCustomCodes.length} custom code(s) can't be excluded.`,
+        { exact: false }
+      )
     ).toBeVisible();
   });
 });

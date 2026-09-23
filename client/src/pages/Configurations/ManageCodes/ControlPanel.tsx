@@ -389,21 +389,18 @@ function calculateCounts(
     // only if we've down-selected to a subset with only custom codes
     const { total_code_count, total_custom_codes_count } = codeCounts;
     const deselectedCodeCount = renderedCodes.filter(
-      (c) => !selectedCodeIds.has(c.id)
+      (c) => !selectedCodeIds.has(c.id) && !c.is_trigger_code && !c.is_custom
     ).length;
 
-    const totalCodeCount = total_code_count;
-    const totalCustomCodeCount = total_custom_codes_count;
-
     const excludeableCodeCount =
-      totalCodeCount -
+      total_code_count -
       deselectedCodeCount -
-      totalCustomCodeCount -
+      total_custom_codes_count -
       lockedCodesCount;
 
     return {
-      totalCodeCount,
-      totalCustomCodeCount,
+      totalCodeCount: total_code_count,
+      totalCustomCodeCount: total_custom_codes_count,
       excludeableCodeCount,
       exclusionForbidden: excludeableCodeCount <= 0,
     };
@@ -547,20 +544,19 @@ function formatSelectedCodeCount(
   if (!atLeastOneFilterActive) {
     const { primary_condition_rctc_count, total_code_count } = codeCounts;
     const deselectedCodesCount = renderedCodes
-      .filter((c) => !c.is_custom)
+      .filter((c) => !c.is_custom && !c.is_trigger_code)
       .map((c) => c.id)
       .filter((id) => !selectedCodeIds.has(id)).length;
 
     const deselectedCustomCodesCount = renderedCodes
       .filter((c) => c.is_custom)
       .map((c) => c.id)
-      .filter((id) => !selectedCodeIds.has(id)).length;
-
+      .filter((id) => !selectedCustomCodeIds.has(id)).length;
     return (
       total_code_count -
+      primary_condition_rctc_count -
       deselectedCodesCount -
-      deselectedCustomCodesCount -
-      primary_condition_rctc_count
+      deselectedCustomCodesCount
     ).toString();
   }
 
