@@ -41,26 +41,32 @@ export function Table({
   };
 
   return (
-    <table
-      className={classNames(
-        'text-gray-cool-90 w-full text-left text-base',
-        { 'border-collapse': !borderless && !rounded },
-        { 'border-separate border-spacing-0 rounded-lg': rounded },
-        { 'border-gray-cool-30 border': bordered },
-        { 'border-separate border-spacing-0': borderless },
-        { '[&_tbody_tr:hover]:bg-gray-200': hover },
-        layout === 'auto' ? 'table-auto' : 'table-fixed',
-        maxWidth ? maxWidthClasses[maxWidth] : '',
-        cellHeightClasses[cellHeight],
-        // Custom CSS for corner cell radius when rounded is true
-        rounded &&
-          '[&_tr:first-child_th:first-child]:rounded-tl-lg [&_tr:first-child_th:last-child]:rounded-tr-lg [&_tr:last-child_td:first-child]:rounded-bl-lg [&_tr:last-child_td:last-child]:rounded-br-lg',
-        className
-      )}
-      {...props}
+    <div
+      role="presentation"
+      className={classNames({
+        'overflow-hidden rounded-lg': rounded,
+        'border-gray-cool-30 border': bordered && rounded,
+      })}
     >
-      {children}
-    </table>
+      <table
+        className={classNames(
+          'text-gray-cool-90 w-full text-left text-base',
+            {
+              'border-collapse': !borderless,
+              'border-gray-cool-30 border': bordered && !rounded,
+              'border-spacing-0': borderless,
+              '[&_tbody_tr:hover]:bg-gray-200': hover,
+            },
+          layout === 'auto' ? 'table-auto' : 'table-fixed',
+          maxWidth ? maxWidthClasses[maxWidth] : '',
+          cellHeightClasses[cellHeight],
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </table>
+    </div>
   );
 }
 
@@ -112,7 +118,8 @@ export function TableBody({
     <tbody
       className={classNames(
         {
-          'divide-gray-cool-40 divide-y': bordered,
+          'divide-y divide-gray-cool-60':
+            bordered,
           '[&>tr:nth-child(even)]:bg-gray-cool-2': striped,
           'bg-white': background === 'white',
           'bg-transparent': background === 'transparent',
@@ -129,6 +136,8 @@ export function TableBody({
 interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   children: React.ReactNode;
   className?: string;
+  // NOTE: TableBody borders override TableRow borders.
+  // TableRow bordered prop should not be used when TableBody is bordered.
   bordered?: boolean;
 }
 
@@ -141,6 +150,8 @@ export function TableRow({
   return (
     <tr
       className={classNames(
+        // Only apply border if not overridden by TableBody (handled by CSS
+        // precedence/documentation)
         { 'border-gray-cool-60 border-b': bordered },
         className
       )}
