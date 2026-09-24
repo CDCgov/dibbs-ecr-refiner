@@ -31,37 +31,37 @@ export function ActivityLogEntries({
   const navigate = useNavigate();
 
   return (
-    <Table className="legacy-table legacy-table--borderless legacy-table--striped table-auto">
-      <TableHead>
+    <Table bordered rounded hover maxWidth="md" layout="auto">
+      <TableHead bordered>
         <TableRow>
-          <TableHeaderCell className="text-gray-cool-90 w-[16%]">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[16%] py-3 leading-6.5">
             {nameHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="text-gray-cool-90 w-[22%]">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[22%] py-3 leading-6.5">
             {conditionHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="text-gray-cool-90 w-[46%]">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[46%] py-3 leading-6.5">
             {actionHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="text-gray-cool-90 w-[16%]">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[16%] py-3 leading-6.5">
             {dateHeader}
           </TableHeaderCell>
         </TableRow>
       </TableHead>
-      <TableBody>
+      <TableBody striped bordered background="white">
         {filteredLogEntries
           .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
           .map((r) => {
             const { date, time } = formatDatetime(r.created_at);
             return (
-              <TableRow key={r.id} aria-label="Log entry">
+              <TableRow key={r.id} aria-label="Log entry" bordered>
                 <TableCell
                   data-label={nameHeader}
                   className="text-gray-cool-90! font-bold! break-all"
                 >
                   {r.username}
                 </TableCell>
-                <TableCell data-label={conditionHeader}>
+                <TableCell size="sm" data-label={conditionHeader}>
                   <div className="flex flex-col gap-1">
                     <span className="text-gray-cool-90!">
                       {r.configuration_name}
@@ -72,6 +72,7 @@ export function ActivityLogEntries({
                   </div>
                 </TableCell>
                 <TableCell
+                  size="sm"
                   className="text-gray-cool-90!"
                   data-label={actionHeader}
                 >
@@ -109,7 +110,7 @@ export function ActivityLogEntries({
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell data-label={dateHeader}>
+                <TableCell size="sm" data-label={dateHeader}>
                   <div className="flex flex-col">
                     <span className="text-gray-cool-60">{date}</span>
                     <span className="text-gray-cool-60">{time}</span>
@@ -175,7 +176,7 @@ function ViewAllCustomCodeEventsButton({
                   <p>No custom code events found.</p>
                 ) : (
                   <Table className="w-full table-fixed">
-                    <TableHead>
+                    <TableHead bordered>
                       <TableRow className="border-gray-cool-20 text-gray-cool-90 border-b">
                         <TableHeaderCell>Code system</TableHeaderCell>
                         <TableHeaderCell>Code</TableHeaderCell>

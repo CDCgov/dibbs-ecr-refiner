@@ -30,17 +30,21 @@ export function ConfigurationsTable({
   if (!data.length) {
     return (
       <div className={classNames('overflow-x-auto', className)}>
-        <Table className="legacy-table legacy-table--borderless max-w-full!">
-          <TableHead>
+        <Table bordered rounded hover maxWidth="full">
+          <TableHead bordered>
             <TableRow>
-              <TableHeaderCell scope="col" className="text-gray-cool-90">
+              <TableHeaderCell
+                scope="col"
+                className="bg-gray-cool-5 text-gray-cool-60 py-3 leading-6.5"
+              >
                 {reportableConditionHeader}
               </TableHeaderCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody bordered background="white">
             <TableRow>
               <TableCell
+                size="sm"
                 data-label={reportableConditionHeader}
                 className="text-gray-cool-90"
               >
@@ -55,22 +59,28 @@ export function ConfigurationsTable({
 
   return (
     <div className={classNames('overflow-x-auto', className)}>
-      <Table className="legacy-table legacy-table--borderless max-w-full!">
-        <TableHead>
+      <Table bordered rounded hover maxWidth="full">
+        <TableHead bordered>
           <TableRow>
-            <TableHeaderCell scope="col" className="text-gray-cool-90">
+            <TableHeaderCell
+              scope="col"
+              className="bg-gray-cool-5 text-gray-cool-60 py-3 leading-6.5"
+            >
               {reportableConditionHeader}
             </TableHeaderCell>
-            <TableHeaderCell scope="col" className="text-gray-cool-90">
+            <TableHeaderCell
+              scope="col"
+              className="bg-gray-cool-5 text-gray-cool-60 py-3 leading-6.5"
+            >
               {statusHeader}
             </TableHeaderCell>
           </TableRow>
         </TableHead>
-        <TableBody>
+        <TableBody bordered background="white">
           {data.map(({ id, name, status }) => {
             const isActive = status === DbConfigurationStatus.active;
             return (
-              <TableRow key={id} className="relative">
+              <TableRow key={id} bordered>
                 <TableCell
                   data-label={reportableConditionHeader}
                   className="p-0! font-bold!"
@@ -84,6 +94,7 @@ export function ConfigurationsTable({
                   </Link>
                 </TableCell>
                 <TableCell
+                  size="sm"
                   data-label={statusHeader}
                   className="p-0! align-middle"
                 >

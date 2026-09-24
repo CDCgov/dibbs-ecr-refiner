@@ -60,8 +60,8 @@ describe('Table Component', () => {
 
   it('applies striped class to TableBody when prop is passed', () => {
     const { container } = render(
-      <Table striped>
-        <TableBody>
+      <Table>
+        <TableBody striped>
           <TableRow>
             <TableCell>1</TableCell>
           </TableRow>
@@ -77,13 +77,13 @@ describe('Table Component', () => {
 
   it('applies bordered class to TableBody and TableHead when prop is passed', () => {
     const { container } = render(
-      <Table bordered>
-        <TableHead>
+      <Table>
+        <TableHead bordered>
           <TableRow>
             <TableHeaderCell>Header</TableHeaderCell>
           </TableRow>
         </TableHead>
-        <TableBody>
+        <TableBody bordered>
           <TableRow>
             <TableCell>1</TableCell>
           </TableRow>
@@ -101,8 +101,8 @@ describe('Table Component', () => {
 
   it('applies sticky class to TableHead when prop is passed', () => {
     const { container } = render(
-      <Table stickyHeader>
-        <TableHead>
+      <Table>
+        <TableHead stickyHeader>
           <TableRow>
             <TableHeaderCell>Header</TableHeaderCell>
           </TableRow>
