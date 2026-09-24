@@ -44,6 +44,18 @@ repos:
     # - run the formatter
     -   id: ruff-format
 
+  # tsx formatting only
+  # PERF: Linting can take about 5 seconds to complete so should be done
+  # manually.
+  - repo: local
+    hooks:
+      - id: tsx-format
+        name: Format TSX files
+        entry: just client::run fmt
+        language: system
+        files: \.tsx$
+        pass_filenames: false
+
 # CI configuration
 ci:
     autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks
