@@ -51,12 +51,12 @@ export function Table({
       <table
         className={classNames(
           'text-gray-cool-90 w-full text-left text-base',
-            {
-              'border-collapse': !borderless,
-              'border-gray-cool-30 border': bordered && !rounded,
-              'border-spacing-0': borderless,
-              '[&_tbody_tr:hover]:bg-gray-200': hover,
-            },
+          {
+            'border-collapse': !borderless,
+            'border-gray-cool-30 border': bordered && !rounded,
+            'border-spacing-0': borderless,
+            '[&_tbody_tr:hover]:bg-gray-200': hover,
+          },
           layout === 'auto' ? 'table-auto' : 'table-fixed',
           maxWidth ? maxWidthClasses[maxWidth] : '',
           cellHeightClasses[cellHeight],
@@ -118,7 +118,7 @@ export function TableBody({
     <tbody
       className={classNames(
         {
-          'divide-y divide-gray-cool-60':
+          '[&>tr:not(:last-child)]:border-gray-cool-60 [&>tr:not(:last-child)]:border-b':
             bordered,
           '[&>tr:nth-child(even)]:bg-gray-cool-2': striped,
           'bg-white': background === 'white',

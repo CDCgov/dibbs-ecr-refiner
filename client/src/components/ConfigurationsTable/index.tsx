@@ -80,7 +80,7 @@ export function ConfigurationsTable({
           {data.map(({ id, name, status }) => {
             const isActive = status === DbConfigurationStatus.active;
             return (
-              <TableRow key={id} bordered>
+              <TableRow key={id}>
                 <TableCell
                   data-label={reportableConditionHeader}
                   className="p-0! font-bold!"

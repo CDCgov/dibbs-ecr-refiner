@@ -54,7 +54,7 @@ export function ActivityLogEntries({
           .map((r) => {
             const { date, time } = formatDatetime(r.created_at);
             return (
-              <TableRow key={r.id} aria-label="Log entry" bordered>
+              <TableRow key={r.id} aria-label="Log entry">
                 <TableCell
                   data-label={nameHeader}
                   className="text-gray-cool-90! font-bold! break-all"
