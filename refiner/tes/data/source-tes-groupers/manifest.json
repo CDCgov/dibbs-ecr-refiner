@@ -196,12 +196,6 @@
       "error_count": 0,
       "validation_ran": true
     },
-    "eicr_triggering.json": {
-      "hash": "5917a55c0a7ae71cd8767e30c0a708192a2a99581d29adb9b7d9176797b78242",
-      "record_count": 1399,
-      "error_count": 0,
-      "validation_ran": true
-    },
     "reporting_spec_grouper_20241008.part01.json": {
       "hash": "09b259db177cf0a8962b20abfbff1509e960af834febda7e0bc59de74dfcab17",
       "record_count": 121,
