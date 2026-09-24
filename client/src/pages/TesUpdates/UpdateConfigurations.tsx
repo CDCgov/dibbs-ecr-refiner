@@ -211,156 +211,160 @@ export function UpdateConfigurations() {
         to receive the most up to date eCRs.
       </p>
 
-      <Table borderless hover maxWidth="md" className="mt-0 mb-4">
-        <caption className="text-lg! font-bold">Update existing drafts</caption>
+      <div className="mt-4 bg-white px-10 py-6 lg:max-w-[75%]">
+        <Table borderless hover maxWidth="md" className="mt-0 mb-4 text-black!">
+          <caption className="mt-10 pb-5 text-left text-lg! font-bold">
+            Update existing drafts
+          </caption>
 
-        <TableHead>
-          <TableRow>
-            <TableHeaderCell className="bg-white! pl-0! font-bold">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  onClick={() => handleBulkSelection(existingDraftIds)}
-                  checked={areAllSelected(existingDraftIds)}
-                  aria-checked={
-                    areSomeSelected(existingDraftIds)
-                      ? 'mixed'
-                      : areAllSelected(existingDraftIds)
-                  }
-                  aria-label="Select all existing drafts"
-                />
-
-                <span>Configuration</span>
-              </div>
-            </TableHeaderCell>
-
-            <TableHeaderCell className="bg-white! pl-0! font-bold">
-              Current TES version
-            </TableHeaderCell>
-
-            <TableHeaderCell className="bg-white! pl-0! font-bold">
-              Code sets to update
-            </TableHeaderCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody background="white">
-          {existingDrafts.length === 0 ? (
+          <TableHead className="text-gray-cool-60">
             <TableRow>
-              <TableCell className="pl-0!" colSpan={3}>
-                No existing drafts need to be updated.
-              </TableCell>
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    onClick={() => handleBulkSelection(existingDraftIds)}
+                    checked={areAllSelected(existingDraftIds)}
+                    aria-checked={
+                      areSomeSelected(existingDraftIds)
+                        ? 'mixed'
+                        : areAllSelected(existingDraftIds)
+                    }
+                    aria-label="Select all existing drafts"
+                  />
+
+                  <span>Configuration</span>
+                </div>
+              </TableHeaderCell>
+
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
+                Current TES version
+              </TableHeaderCell>
+
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
+                Code sets to update
+              </TableHeaderCell>
             </TableRow>
-          ) : (
-            existingDrafts.map((draft) => (
-              <TableRow key={draft.configuration_id}>
-                <TableCell className="pl-0!">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      onClick={() =>
-                        handleIndividualSelection(draft.configuration_id)
-                      }
-                      checked={selectedConfigurations.includes(
-                        draft.configuration_id
-                      )}
-                      aria-label={`Select ${draft.configuration_name}`}
-                    />
+          </TableHead>
 
-                    <span>{draft.configuration_name}</span>
-                  </div>
-                </TableCell>
-
-                <TableCell size="sm" className="pl-0!">
-                  {draft.configuration_tes_version}
-                </TableCell>
-                <TableCell size="sm" className="pl-0!">
-                  {draft.codesets_to_update.join(', ')}
+          <TableBody background="white">
+            {existingDrafts.length === 0 ? (
+              <TableRow>
+                <TableCell className="pl-0!" colSpan={3}>
+                  No existing drafts need to be updated.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              existingDrafts.map((draft) => (
+                <TableRow key={draft.configuration_id}>
+                  <TableCell className="pl-0!">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        onClick={() =>
+                          handleIndividualSelection(draft.configuration_id)
+                        }
+                        checked={selectedConfigurations.includes(
+                          draft.configuration_id
+                        )}
+                        aria-label={`Select ${draft.configuration_name}`}
+                      />
 
-      <Table borderless hover maxWidth="md" className="mt-0 mb-4">
-        <caption className="mb-0 text-lg! font-bold">
-          Create draft to update
-        </caption>
+                      <span>{draft.configuration_name}</span>
+                    </div>
+                  </TableCell>
 
-        <TableHead>
-          <TableRow>
-            <TableHeaderCell className="bg-white! pl-0! font-bold">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  onClick={() => handleBulkSelection(activeConfigurationIds)}
-                  checked={areAllSelected(activeConfigurationIds)}
-                  aria-checked={
-                    areSomeSelected(activeConfigurationIds)
-                      ? 'mixed'
-                      : areAllSelected(activeConfigurationIds)
-                  }
-                  aria-label="Select all configurations requiring a draft"
-                />
+                  <TableCell size="sm" className="pl-0!">
+                    {draft.configuration_tes_version}
+                  </TableCell>
+                  <TableCell size="sm" className="pl-0!">
+                    {draft.codesets_to_update.join(', ')}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
-                <span>Configuration</span>
-              </div>
-            </TableHeaderCell>
+        <Table borderless hover maxWidth="md" className="mt-0 mb-4 text-black!">
+          <caption className="mt-10 mb-0 text-left text-lg! font-bold">
+            Create draft to update
+          </caption>
 
-            <TableHeaderCell className="bg-white! pl-0! font-bold">
-              Current TES version
-            </TableHeaderCell>
-
-            <TableHeaderCell className="bg-white! pl-0! font-bold">
-              Code sets to update
-            </TableHeaderCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody background="white">
-          {draftsToCreate.length === 0 ? (
+          <TableHead className="text-gray-cool-60">
             <TableRow>
-              <TableCell className="pl-0!" colSpan={3}>
-                No active configurations require a new draft.
-              </TableCell>
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    onClick={() => handleBulkSelection(activeConfigurationIds)}
+                    checked={areAllSelected(activeConfigurationIds)}
+                    aria-checked={
+                      areSomeSelected(activeConfigurationIds)
+                        ? 'mixed'
+                        : areAllSelected(activeConfigurationIds)
+                    }
+                    aria-label="Select all configurations requiring a draft"
+                  />
+
+                  <span>Configuration</span>
+                </div>
+              </TableHeaderCell>
+
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
+                Current TES version
+              </TableHeaderCell>
+
+              <TableHeaderCell className="bg-white! pl-0! font-bold">
+                Code sets to update
+              </TableHeaderCell>
             </TableRow>
-          ) : (
-            draftsToCreate.map((configuration) => (
-              <TableRow key={configuration.configuration_id}>
-                <TableCell className="pl-0!">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      onClick={() =>
-                        handleIndividualSelection(
+          </TableHead>
+
+          <TableBody background="white">
+            {draftsToCreate.length === 0 ? (
+              <TableRow>
+                <TableCell className="pl-0!" colSpan={3}>
+                  No active configurations require a new draft.
+                </TableCell>
+              </TableRow>
+            ) : (
+              draftsToCreate.map((configuration) => (
+                <TableRow key={configuration.configuration_id}>
+                  <TableCell className="pl-0!">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        onClick={() =>
+                          handleIndividualSelection(
+                            configuration.configuration_id
+                          )
+                        }
+                        checked={selectedConfigurations.includes(
                           configuration.configuration_id
-                        )
-                      }
-                      checked={selectedConfigurations.includes(
-                        configuration.configuration_id
-                      )}
-                      aria-label={`Select ${configuration.configuration_name}`}
-                    />
+                        )}
+                        aria-label={`Select ${configuration.configuration_name}`}
+                      />
 
-                    <span>{configuration.configuration_name}</span>
-                  </div>
-                </TableCell>
+                      <span>{configuration.configuration_name}</span>
+                    </div>
+                  </TableCell>
 
-                <TableCell size="sm" className="pl-0!">
-                  {configuration.configuration_tes_version}
-                </TableCell>
-                <TableCell size="sm" className="pl-0!">
-                  {configuration.codesets_to_update.join(', ')}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                  <TableCell size="sm" className="pl-0!">
+                    {configuration.configuration_tes_version}
+                  </TableCell>
+                  <TableCell size="sm" className="pl-0!">
+                    {configuration.codesets_to_update.join(', ')}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
-      <Button
-        disabled={selectedConfigurations.length === 0}
-        onClick={openConfirmationModal}
-      >
-        Apply updates
-      </Button>
+        <Button
+          disabled={selectedConfigurations.length === 0}
+          onClick={openConfirmationModal}
+        >
+          Apply updates
+        </Button>
+      </div>
 
       <UpdateConfirmationModal
         open={confirmationModalOpen}
