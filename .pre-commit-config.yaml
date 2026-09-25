@@ -20,10 +20,13 @@ repos:
         -   --unsafe
     # - ensure files end with newline
     -   id: end-of-file-fixer
+        # * source-ersd/ holds eRSD releases byte-for-byte as served; normalize
+        #   records their hashes, so any rewrite fails verify-processed
         exclude: |
           (?x)^(
             refiner/openapi\.json|
-            client/src/api/
+            client/src/api/|
+            refiner/tes/data/source-ersd/ersd_.+\.json
           )$
     # - remove trailing whitespace
     -   id: trailing-whitespace
@@ -31,7 +34,8 @@ repos:
           (?x)^(
             refiner/openapi\.json|
             client/src/api/|
-            refiner/tests/integration/scenarios/snapshots/.+/.+\.xml
+            refiner/tests/integration/scenarios/snapshots/.+/.+\.xml|
+            refiner/tes/data/source-ersd/ersd_.+\.json
           )$
 
 # ruff linting and formatting
