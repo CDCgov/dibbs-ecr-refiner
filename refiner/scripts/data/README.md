@@ -23,14 +23,10 @@ The raw TES ValueSet bundles now live alongside the pipeline that fetches and pr
 them. See `refiner/tes/README.md`.
 - The `manifest.json` has a checksum that helps us track changes in these files over time.
 
-`eicr_triggering.json` comes from the same API but plays a different role: these are the
-eICR triggering (eRSD) ValueSets, enumerating the codes that would carry a trigger-code
-templateId in an eICR. Seeding uses them only to set `is_trigger_code` on codes the
-groupers already supplied — they never introduce code rows of their own, so a trigger code
-no grouper mentions can't be flagged (the seeder logs a count of those). Unlike the
-groupers these carry no `version` field, since VSAC updates them in place rather than
-cutting releases, so the filename is deliberately unversioned: a refetch overwrites it and
-`manifest.json` records when it last changed.
+Trigger codes no longer come from TES: they are fetched from the eRSD API into
+`refiner/tes/data/source-ersd/`. They still only set `is_trigger_code` on codes the
+groupers already supplied, never adding code rows of their own. See the `fetch/` section
+of `refiner/tes/README.md`.
 
 ### `jurisdiction-packages/`
 
