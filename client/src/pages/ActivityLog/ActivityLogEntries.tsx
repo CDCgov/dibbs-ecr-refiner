@@ -34,16 +34,16 @@ export function ActivityLogEntries({
     <Table bordered rounded hover maxWidth="md" layout="auto">
       <TableHead bordered>
         <TableRow>
-          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[16%] py-3 leading-6.5">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[16%] py-3 leading-6.5">
             {nameHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[22%] py-3 leading-6.5">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[22%] py-3 leading-6.5">
             {conditionHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[46%] py-3 leading-6.5">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[46%] py-3 leading-6.5">
             {actionHeader}
           </TableHeaderCell>
-          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-60 w-[16%] py-3 leading-6.5">
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[16%] py-3 leading-6.5">
             {dateHeader}
           </TableHeaderCell>
         </TableRow>
@@ -66,7 +66,7 @@ export function ActivityLogEntries({
                     <span className="text-gray-cool-90!">
                       {r.configuration_name}
                     </span>
-                    <span className="text-gray-cool-60!">
+                    <span className="text-gray-cool-90!">
                       Version {r.configuration_version}
                     </span>
                   </div>
@@ -112,8 +112,8 @@ export function ActivityLogEntries({
                 </TableCell>
                 <TableCell size="sm" data-label={dateHeader}>
                   <div className="flex flex-col">
-                    <span className="text-gray-cool-60">{date}</span>
-                    <span className="text-gray-cool-60">{time}</span>
+                    <span className="text-gray-cool-90">{date}</span>
+                    <span className="text-gray-cool-90">{time}</span>
                   </div>
                 </TableCell>
               </TableRow>

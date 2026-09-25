@@ -204,8 +204,8 @@ export function TableCell({
     <td
       className={classNames(
         'px-4 py-2',
-        { 'text-sm text-gray-cool-90': size === 'sm' },
-        { 'text-base text-gray-cool-90': size === 'base' },
+        { 'text-gray-cool-90! text-sm': size === 'sm' },
+        { 'text-gray-cool-90! text-base': size === 'base' },
         className
       )}
       {...props}
