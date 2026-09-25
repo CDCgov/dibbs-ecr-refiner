@@ -99,7 +99,7 @@ function FilterCombobox<T extends FilterOption>({
                     {option.label}
                   </span>
                   {option.count !== undefined && (
-                    <span className="text-gray-cool-50 text-sm">
+                    <span className="text-gray-cool-60 text-sm">
                       {option.count.toLocaleString()}
                     </span>
                   )}
