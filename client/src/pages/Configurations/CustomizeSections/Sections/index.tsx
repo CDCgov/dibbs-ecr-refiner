@@ -258,7 +258,7 @@ function SectionName({
       <div className="flex items-center gap-2">
         <span
           title={section.name}
-          className={classNames('truncate', {
+          className={classNames('text-gray-cool-90 truncate', {
             italic: !section.include,
             'font-bold': section.include,
           })}
@@ -268,7 +268,10 @@ function SectionName({
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       <div className="flex items-center gap-2">
-        <span title={section.code} className="truncate text-sm">
+        <span
+          title={section.code}
+          className="text-gray-cool-90 truncate text-sm"
+        >
           {section.code}
         </span>
         {isCustom && !disabled ? (
@@ -449,9 +452,11 @@ function RefineSwitch({
             }
           >
             {curSectionSetToRefine ? (
-              <span>{refineLabelText}</span>
+              <span className="text-gray-cool-90">{refineLabelText}</span>
             ) : (
-              <span className="italic">{retainLabelText}</span>
+              <span className="text-gray-cool-90 italic">
+                {retainLabelText}
+              </span>
             )}
           </Label>
           <Switch
