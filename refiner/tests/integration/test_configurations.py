@@ -1015,7 +1015,7 @@ class TestConfigurationsExclusions:
         """
         Configurations with a non-`draft` status cannot have their codes updated.
         """
-        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        condition_id = await get_condition_id("Nipah Virus Infection")
         payload = {"condition_id": str(condition_id)}
 
         # create and activate a configuration
@@ -1070,7 +1070,7 @@ class TestConfigurationsExclusions:
         operation and should always remain 'Included'.
         """
         # Create a draft
-        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        condition_id = await get_condition_id("Nipah Virus Infection")
         payload = {"condition_id": str(condition_id)}
         resp = await authed_client.post("/api/v1/configurations/", json=payload)
         assert resp.status_code == status.HTTP_200_OK
@@ -1088,6 +1088,8 @@ class TestConfigurationsExclusions:
 
         excludable_codes = [c for c in codes if not c["is_trigger_code"]]
         trigger_codes = [c for c in codes if c["is_trigger_code"]]
+        assert excludable_codes, "Expected at least one excludable code"
+        assert trigger_codes, "Expected at least one trigger code"
 
         # set all excludable codes as 'excluded'
         resp = await authed_client.post(
@@ -1139,7 +1141,7 @@ class TestConfigurationsExclusions:
         (including associated condition trigger codes, which appear as
         regular codes from the API's perspective) can still be excluded.
         """
-        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        condition_id = await get_condition_id("Nipah Virus Infection")
         payload = {"condition_id": str(condition_id)}
 
         resp = await authed_client.post("/api/v1/configurations/", json=payload)
@@ -1154,9 +1156,8 @@ class TestConfigurationsExclusions:
         assert resp.status_code == status.HTTP_200_OK
         codes = resp.json()["codes"]
 
-        # This should only flag Alpha-gal trigger codes. Trigger codes from
-        # Anotia are valid to exclude (Anotia isn't the primary condition,
-        # and it has no eICR trigger codes of its own besides).
+        # This should only flag Nipah trigger codes. Anotia's own trigger codes
+        # are valid to exclude, because Anotia isn't the primary condition.
         primary_trigger_codes = [c for c in codes if c["is_trigger_code"]]
         excludable_codes = [c for c in codes if not c["is_trigger_code"]]
 
@@ -1201,7 +1202,7 @@ class TestConfigurationsExclusions:
         """
         If the source config has no exclusions, the clone starts fully included (no entries in table).
         """
-        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        condition_id = await get_condition_id("Nipah Virus Infection")
         payload = {"condition_id": str(condition_id)}
 
         # create and activate a draft with no exclusions
@@ -1235,7 +1236,7 @@ class TestConfigurationsExclusions:
         Only the excluded subset of codes is carried over to the cloned config.
         Trigger codes are never excluded and should always remain 'Included'.
         """
-        condition_id = await get_condition_id("Alpha-gal Syndrome")
+        condition_id = await get_condition_id("Nipah Virus Infection")
         payload = {"condition_id": str(condition_id)}
 
         # create a draft
@@ -1252,6 +1253,8 @@ class TestConfigurationsExclusions:
 
         excludable_codes = [c for c in codes if not c["is_trigger_code"]]
         trigger_codes = [c for c in codes if c["is_trigger_code"]]
+        assert len(excludable_codes) >= 2, "Expected excludable codes to split"
+        assert trigger_codes, "Expected at least one trigger code"
 
         half = len(excludable_codes) // 2
         excluded_ids = {code["id"] for code in excludable_codes[:half]}

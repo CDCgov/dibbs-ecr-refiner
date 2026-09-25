@@ -36,16 +36,11 @@ def dynamic_classify_valueset(valueset: dict[str, Any]) -> str | None:
     archetype = "unclassified"
 
     # rule 1:
-    # eICR triggering valuesets -- the eRSD trigger-code content. Kept (not
-    # ignored) so we can identify codes that would carry a trigger-code
-    # templateId in an eICR and protect them from accidental exclusion.
-    # * unversioned on purpose: unlike the grouper archetypes below, these
-    #   carry no 'version' field (VSAC updates individual ValueSets in place
-    #   rather than cutting dated/semver releases), and a synthetic
-    #   fetch-date suffix would make every refetch look like a new file to
-    #   detect_changes even when the content is byte-identical
+    # ignore eICR triggering valuesets
+    # * TES's copy of the eRSD is a stale, unversioned snapshot; the current
+    #   release comes from the eRSD API instead
     if any("us-ph-triggering-valueset" in p for p in profiles):
-        return "eicr_triggering"
+        return None
 
     # rule 2:
     # identify by profile first (most reliable)
@@ -275,7 +270,7 @@ def run_fetch_pipeline(
 
     print("  🏁 Finalizing files...")
     if ignored_count > 0:
-        print(f"    🙈 Ignored {ignored_count} unclassified ValueSets.")
+        print(f"    🙈 Ignored {ignored_count} triggering or unclassified ValueSets.")
 
     record_counts: dict[str, int] = {}
     for category in sorted(buffered.keys()):

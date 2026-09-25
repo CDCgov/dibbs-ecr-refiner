@@ -1,6 +1,9 @@
 """
 Turn raw TES ValueSet bundles into flat rows the seeder can COPY.
 
+Trigger codes are the one input from outside TES: `is_trigger_code` comes from the
+current eRSD release, read by `ersd.py`.
+
 This is the only step that understands FHIR. It runs once per TES release, in
 dev or CI, where it can afford to be slow and thorough. Everything downstream--
 the seeder, the ops container, CI -- reads the gzipped CSV this writes and needs
@@ -12,8 +15,8 @@ Output lands in `tes/data/processed/`:
     valuesets.csv.gz     one row per leaf grouper per condition per release
     codes.csv.gz         distinct (system, code, display)
     memberships.csv.gz   the junction: condition x code x leaf grouper
-    summary.csv          per-grouper code count and content hash, uncompressed
-                         and committed so data PRs show what changed
+    summary.csv          per-grouper code count, trigger count and content hash,
+                         uncompressed and committed so data PRs show what changed
     manifest.json        row counts, output hashes, and the source file hashes
                          these were derived from
 
@@ -35,6 +38,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import NamedTuple
 
+from .ersd import ERSD_DIR, current_release, trigger_codes_by_snomed
 from .groupers import (
     category_for,
     child_references,
@@ -48,7 +52,6 @@ from .groupers import (
     source_name,
 )
 from .model import (
-    CODE_SYSTEMS,
     SNOMED_OID,
     SYSTEM_URL_TO_OID,
     FhirCodeInfo,
@@ -128,6 +131,7 @@ class SummaryRow(NamedTuple):
     version: str
     kind: str
     code_count: int
+    trigger_count: int
     codes_sha256: str
 
 
@@ -176,35 +180,6 @@ def load_raw_valuesets(raw_dir: Path) -> dict[ValueSetKey, ValueSetDict]:
             if url and version:
                 valuesets[(url, version)] = valueset
     return valuesets
-
-
-def _trigger_codes_by_snomed(raw_dir: Path) -> dict[str, set[tuple[str, str]]]:
-    """
-    Index eICR triggering ValueSets by the SNOMED code they trigger on.
-
-    Triggering bundles ship pre-expanded regardless of release, so they are read
-    from `expansion.contains` directly rather than through a version reader.
-    """
-
-    triggers: dict[str, set[tuple[str, str]]] = {}
-    for path in sorted(raw_dir.glob("eicr_triggering*.json")):
-        with path.open(encoding="utf-8") as handle:
-            bundle = json.load(handle)
-        for valueset in bundle.get("valuesets", []):
-            focus = [
-                coding.get("code")
-                for context in valueset.get("useContext", [])
-                for coding in context.get("valueCodeableConcept", {}).get("coding", [])
-                if coding.get("system") == CODE_SYSTEMS["snomed"]["url"]
-            ]
-            entries = {
-                (SYSTEM_URL_TO_OID[entry["system"]], entry["code"])
-                for entry in valueset.get("expansion", {}).get("contains", [])
-                if entry.get("system") in SYSTEM_URL_TO_OID and entry.get("code")
-            }
-            for snomed in filter(None, focus):
-                triggers.setdefault(snomed, set()).update(entries)
-    return triggers
 
 
 def normalize(
@@ -364,6 +339,10 @@ def _normalize_condition(
                 version=leaf_version,
                 kind=kind,
                 code_count=len(supported),
+                trigger_count=sum(
+                    (SYSTEM_URL_TO_OID[code.system_url], code.code) in trigger_keys
+                    for code in supported
+                ),
                 codes_sha256=_code_set_hash(supported),
             )
         )
@@ -457,18 +436,24 @@ def file_hash(path: Path) -> str:
     return digest.hexdigest()
 
 
-def source_hashes(raw_dir: Path) -> dict[str, str]:
+def source_hashes(raw_dir: Path, ersd_dir: Path) -> dict[str, str]:
     """
     Hash every raw bundle the outputs were derived from.
 
     Recorded in the processed manifest so a source file that changes without a
     re-normalize is detectable in CI without shipping the raw bundles anywhere.
+    Only the current eRSD release is included, since it is the only one read; a
+    new release then shows up as one file removed and another added.
     """
 
+    ersd_release = current_release(ersd_dir)
     return {
-        path.name: file_hash(path)
-        for path in sorted(raw_dir.glob("*.json"))
-        if path.name != "manifest.json"
+        **{
+            path.name: file_hash(path)
+            for path in sorted(raw_dir.glob("*.json"))
+            if path.name != "manifest.json"
+        },
+        ersd_release.name: file_hash(ersd_release),
     }
 
 
@@ -477,6 +462,7 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
+    parser.add_argument("--ersd-dir", type=Path, default=ERSD_DIR)
     parser.add_argument("--out-dir", type=Path, default=PROCESSED_DIR)
     args = parser.parse_args(argv)
 
@@ -484,8 +470,14 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"reading {args.raw_dir}")
     valuesets = load_raw_valuesets(args.raw_dir)
-    triggers = _trigger_codes_by_snomed(args.raw_dir)
-    print(f"  {len(valuesets):,} valuesets, {len(triggers):,} triggering SNOMED codes")
+    ersd_release = current_release(args.ersd_dir)
+    triggers = trigger_codes_by_snomed(
+        json.loads(ersd_release.read_text(encoding="utf-8"))
+    )
+    print(
+        f"  {len(valuesets):,} valuesets, {len(triggers):,} triggering SNOMED codes "
+        f"from {ersd_release.name}"
+    )
 
     tables = normalize(valuesets, triggers)
     code_rows = sorted(
@@ -521,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         "counts": asdict(tables.counts),
         "dropped_by_system": dict(sorted(tables.dropped_by_system.items())),
         "files": {name: {"hash": digest} for name, digest in outputs.items()},
-        "derived_from": source_hashes(args.raw_dir),
+        "derived_from": source_hashes(args.raw_dir, args.ersd_dir),
     }
     (args.out_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
