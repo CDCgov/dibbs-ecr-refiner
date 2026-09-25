@@ -13,6 +13,14 @@ import { ConfirmModal, UndoModal, PreviewEditModal } from './Modals';
 import { Button } from '@components/Button';
 import { Search } from '@components/Search';
 import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
+import {
   DbCodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
@@ -318,18 +326,21 @@ export function ImportCustomCodes({
             {error?.rowErrors && error?.rowErrors.length > 0 ? (
               <>
                 <hr className="border-gray-cool-20" />
-                <table className="w-full border-spacing-y-2 text-left text-sm">
-                  <tbody>
+                <Table className="border-spacing-y-2 text-left text-sm">
+                  <TableBody>
                     {error.rowErrors.map(({ row, error }) => (
-                      <tr key={`${row}-${error}`} className="h-6 text-red-700">
-                        <td className="w-20 px-3 py-3 font-bold">
+                      <TableRow
+                        key={`${row}-${error}`}
+                        className="h-6 text-red-700"
+                      >
+                        <TableCell className="w-20 px-3 py-3 font-bold">
                           Row {row > 0 ? row : '—'}
-                        </td>
-                        <td className="px-3 py-3">{error}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="px-3 py-3">{error}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </>
             ) : (
               <p className="text-sm text-red-700">
@@ -455,17 +466,17 @@ function PreviewEditTable({
 
   return (
     <>
-      <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
-        <thead className="sr-only">
-          <tr>
-            <th>Custom code</th>
-            <th>Custom code system</th>
-            <th>Custom code name</th>
-            <th>Modify the custom code</th>
-          </tr>
-        </thead>
+      <Table className="border-separate border-spacing-y-2 text-left text-sm">
+        <TableHead className="sr-only">
+          <TableRow>
+            <TableHeaderCell>Custom code</TableHeaderCell>
+            <TableHeaderCell>Custom code system</TableHeaderCell>
+            <TableHeaderCell>Custom code name</TableHeaderCell>
+            <TableHeaderCell>Modify the custom code</TableHeaderCell>
+          </TableRow>
+        </TableHead>
 
-        <tbody>
+        <TableBody>
           {codeSystems &&
             previewDisplayItems.map((previewItem) => (
               <PreviewRow
@@ -475,8 +486,8 @@ function PreviewEditTable({
                 key={previewItem.item.id}
               />
             ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {codeSystems && itemBeingEdited && (
         <PreviewEditModal
           previewEditItem={itemBeingEdited}
@@ -498,6 +509,7 @@ interface PreviewRowProps {
   openPreviewEditModal: (itemId: string) => void;
   handleRowDelete: (itemToDelete: UploadCustomCodesPreviewItem) => void;
 }
+// NOTE: text-gray-cool-90 applied explicitly here because <Table>'s inherited text color doesn't reliably cascade to th/td/a; consider making this a Table component default with design sign-off.
 function PreviewRow({
   previewItem,
   openPreviewEditModal,
@@ -506,15 +518,17 @@ function PreviewRow({
   const { item, matches } = previewItem;
 
   return (
-    <tr className="border-y border-blue-50">
-      <td className="px-2 py-1">
+    <TableRow className="border-y border-blue-50">
+      <TableCell className="text-gray-cool-90 px-2 py-1">
         {highlightMatches(item.code, matches, 'code')}
-      </td>
-      <td className="px-2 py-1">{item.system_name}</td>
-      <td className="px-2 py-1">
+      </TableCell>
+      <TableCell className="text-gray-cool-90 px-2 py-1">
+        {item.system_name}
+      </TableCell>
+      <TableCell className="text-gray-cool-90 px-2 py-1">
         {highlightMatches(item.display, matches, 'display')}
-      </td>
-      <td className="px-2 py-1 text-right text-sm">
+      </TableCell>
+      <TableCell className="px-2 py-1 text-right text-sm">
         <Button
           variant="tertiary"
           onClick={() => openPreviewEditModal(item.id)}
@@ -525,8 +539,8 @@ function PreviewRow({
         <Button variant="tertiary" onClick={() => handleRowDelete(item)}>
           Delete
         </Button>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 

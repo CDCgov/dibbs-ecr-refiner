@@ -1,5 +1,13 @@
 import { LayoutContainer } from '@components/Layout/LayoutContainer';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
 import { useState } from 'react';
@@ -149,26 +157,32 @@ function RsgDetailsModal({
         </p>
       </ModalHeader>
       <ModalBody>
-        <table>
-          <thead className="border-b-gray-cool-20 border-b">
-            <tr>
-              <th scope="col" className="w-[40%] px-2 py-3 font-bold">
+        <Table>
+          <TableHead className="border-b-gray-cool-20 border-b">
+            <TableRow>
+              <TableHeaderCell className="text-gray-cool-90 w-[40%] px-2 py-3 font-bold">
                 SNOMED code
-              </th>
-              <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
+              </TableHeaderCell>
+              <TableHeaderCell className="text-gray-cool-90 w-[60%] px-2 py-3 font-bold">
+                Display name
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="divide-gray-cool-20 divide-y">
             {rsgCodes.map((c) => {
               return (
-                <tr key={c.code}>
-                  <td className="py-3 pl-2">{c.code}</td>
-                  <td className="py-3 pl-2">{c.display}</td>
-                </tr>
+                <TableRow key={c.code}>
+                  <TableCell className="text-gray-cool-90 py-3 pl-2">
+                    {c.code}
+                  </TableCell>
+                  <TableCell className="text-gray-cool-90 py-3 pl-2">
+                    {c.display}
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </ModalBody>
     </Modal>
   );

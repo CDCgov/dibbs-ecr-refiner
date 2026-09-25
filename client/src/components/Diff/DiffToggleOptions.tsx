@@ -71,7 +71,7 @@ export function DiffToggleOptions({
               'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black',
               {
                 'bg-blue-cool-10 text-blue-cool-60': splitView,
-                'text-gray-cool-50 bg-white': !splitView,
+                'text-gray-cool-60 bg-white': !splitView,
               }
             )}
           >
@@ -85,7 +85,7 @@ export function DiffToggleOptions({
               'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black focus:outline-offset-0 focus:outline-solid',
               {
                 'bg-blue-cool-10 text-blue-cool-60': !splitView,
-                'text-gray-cool-50 bg-white': splitView,
+                'text-gray-cool-60 bg-white': splitView,
               }
             )}
           >
@@ -104,7 +104,7 @@ export function DiffToggleOptions({
             className={classNames(
               'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
               {
-                'text-gray-cool-50 bg-white': showDiffOnly,
+                'text-gray-cool-60 bg-white': showDiffOnly,
                 'bg-blue-cool-10 text-blue-cool-60': !showDiffOnly,
               }
             )}
@@ -118,7 +118,7 @@ export function DiffToggleOptions({
               'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
               {
                 'bg-blue-cool-10 text-blue-cool-60': showDiffOnly,
-                'text-gray-cool-50 bg-white': !showDiffOnly,
+                'text-gray-cool-60 bg-white': !showDiffOnly,
               }
             )}
           >

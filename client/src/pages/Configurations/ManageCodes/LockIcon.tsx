@@ -5,7 +5,7 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
 
 export function LockIcon({
   size = 18,
-  color = '#71767a',
+  color = '#565c65',
   ...props
 }: IconProps) {
   return (

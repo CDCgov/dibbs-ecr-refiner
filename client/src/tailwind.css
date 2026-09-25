@@ -209,68 +209,6 @@
   }
 }
 
-/**
-
-  * README:
-  * Overriding USWDS Table styles with TailwindCSS. This helps standardize the
-  * look of USWDS Tables for the eCR Refiner application.
-  * TODO: Fold these changes into `cdcgov/dibbs-design-system` after it has
-  * TailwindCSS support.
-  */
-
-.usa-table {
-  @apply border-gray-cool-30 w-full max-w-302 table-auto border-separate! rounded-lg border md:table-fixed;
-}
-/* round the four corner cells */
-.usa-table tr:last-child td:first-child {
-  border-bottom-left-radius: 7px;
-}
-.usa-table tr:last-child td:last-child {
-  border-bottom-right-radius: 7px;
-}
-
-.usa-table--striped tbody tr:nth-child(odd) td {
-  background-color: white !important;
-}
-.usa-table--striped tbody tr:nth-child(even) td {
-  @apply bg-gray-cool-2!;
-}
-
-.usa-table tr:last-child th:first-child {
-  border-top-left-radius: 7px;
-}
-
-.usa-table tr:last-child th:last-child {
-  border-top-right-radius: 7px;
-}
-
-.usa-table tbody tr td {
-  @apply h-17;
-}
-
-.usa-table tbody td:not(:first-child) {
-  @apply text-sm;
-}
-
-.usa-table th,
-.usa-table tr:not(:last-child) td {
-  @apply border-gray-cool-60! border-b!;
-}
-
-.usa-table tbody tr:hover th,
-.usa-table tbody tr:hover td {
-  @apply bg-gray-200;
-}
-
-.usa-table--borderless thead th {
-  @apply text-gray-cool-60 bg-gray-cool-5 py-3 leading-6.5;
-}
-
-.usa-table--stacked th[data-label]:before,
-.usa-table--stacked td[data-label]:before {
-  @apply bg-gray-cool-10 mb-3! pb-3!;
-}
-
 .link-dark-bg {
   @apply text-blue-cool-5 hover:text-blue-cool-20;
 }
