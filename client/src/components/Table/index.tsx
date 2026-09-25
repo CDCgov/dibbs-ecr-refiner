@@ -152,7 +152,7 @@ export function TableRow({
       className={classNames(
         // Only apply border if not overridden by TableBody (handled by CSS
         // precedence/documentation)
-        { 'border-gray-cool-60 border-b': bordered },
+        { 'border-gray-cool-60 border-b last:border-0': bordered },
         className
       )}
       {...props}
