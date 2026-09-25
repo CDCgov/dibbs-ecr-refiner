@@ -1,0 +1,14 @@
+{
+  "manifest_version": 1,
+  "name": "ersd",
+  "current": "3.2.0",
+  "files": {
+    "ersd_3.2.0.json": {
+      "rctc_version": "3.2.0",
+      "release_date": "2026-08-12T11:29:58-06:00",
+      "hash": "c6621b527fd1e422eb27f0ff9048ca3ee06de4ec66fb1877bf9c0333b276ec57",
+      "valueset_count": 1588,
+      "fetched_at_utc": "2026-09-24T22:01:45.213846+00:00"
+    }
+  }
+}
