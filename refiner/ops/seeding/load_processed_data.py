@@ -692,8 +692,8 @@ def load_processed_data(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    # bare load_dotenv walks up from the working directory, matching tes/fetch.
-    # An absolute path here rotted silently when this module moved directories.
+    # bare `load_dotenv` walks up from this file's directory, same as `tes/fetch`;
+    # an absolute path here rotted silently when this module moved directories
     load_dotenv()
 
     seed_all_env = os.getenv("SEED_ALL_TES_DATA")
