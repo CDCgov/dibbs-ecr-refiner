@@ -6,7 +6,6 @@ import { Spinner } from '@components/Spinner';
 import { useGetTesUpdates } from '../../api/tes/tes';
 import { TesVersionDetails } from './TesVersionDetails';
 import { TesUpdate } from '../../api/schemas';
-import { BreakoutContainer } from '@components/Layout';
 
 export interface TesDiffInformation {
   selected_update: TesUpdate;
