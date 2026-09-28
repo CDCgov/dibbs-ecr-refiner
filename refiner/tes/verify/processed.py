@@ -5,8 +5,8 @@ Three properties, cheapest first:
 
 1. **The processed files are intact.** Each file's hash matches the manifest.
 2. **The processed files are current.** The raw bundle hashes recorded in
-   `derived_from` still match the bundles on disk, so nobody changed a raw file
-   without re-running normalize.
+   `derived_from` -- the TES bundles and the current eRSD release -- still match
+   the files on disk, so nobody changed a raw file without re-running normalize.
 3. **The processed files are what normalize produces.** Regenerating into a
    scratch directory yields byte-identical output. This catches a hand-edited
    artifact, and a normalize change that was never applied to the committed data.
@@ -31,6 +31,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+from tes.normalize.ersd import (
+    ERSD_DIR,
+    bundle_valuesets,
+    current_release,
+    focus_snomeds,
+)
 from tes.normalize.groupers import (
     is_additional_context_grouper,
     is_condition_grouper,
@@ -93,7 +99,7 @@ def check_manifest_hashes(manifest: dict | None, processed_dir: Path) -> Result:
     )
 
 
-def check_derived_from(manifest: dict | None, raw_dir: Path) -> Result:
+def check_derived_from(manifest: dict | None, raw_dir: Path, ersd_dir: Path) -> Result:
     """
     The raw bundles still hash to what normalize recorded when it last ran.
 
@@ -110,7 +116,7 @@ def check_derived_from(manifest: dict | None, raw_dir: Path) -> Result:
         )
 
     recorded = manifest["derived_from"]
-    actual = source_hashes(raw_dir)
+    actual = source_hashes(raw_dir, ersd_dir)
 
     failures = [
         f"{name}: added to raw, not in processed"
@@ -134,7 +140,9 @@ def check_derived_from(manifest: dict | None, raw_dir: Path) -> Result:
     )
 
 
-def check_regenerates_identically(processed_dir: Path, raw_dir: Path) -> Result:
+def check_regenerates_identically(
+    processed_dir: Path, raw_dir: Path, ersd_dir: Path
+) -> Result:
     """
     Re-running normalize into a scratch directory reproduces the committed files.
     """
@@ -143,7 +151,16 @@ def check_regenerates_identically(processed_dir: Path, raw_dir: Path) -> Result:
         scratch_dir = Path(scratch)
         # normalize narrates its own progress; this is a check, not a run
         with contextlib.redirect_stdout(io.StringIO()):
-            normalize_main(["--raw-dir", str(raw_dir), "--out-dir", str(scratch_dir)])
+            normalize_main(
+                [
+                    "--raw-dir",
+                    str(raw_dir),
+                    "--ersd-dir",
+                    str(ersd_dir),
+                    "--out-dir",
+                    str(scratch_dir),
+                ]
+            )
 
         failures = []
         for path in sorted(scratch_dir.iterdir()):
@@ -427,6 +444,45 @@ def check_schema_era_assumptions(raw_dir: Path) -> Result:
     )
 
 
+def check_ersd_shape(ersd_dir: Path) -> Result:
+    """
+    The current eRSD release still has the v3 shape `tes/normalize/ersd.py` reads.
+
+    The reader relies on a clean split: groupers name members and carry no
+    `focus`, while every member names at least one condition and publishes its
+    codes in `expansion.contains`. A member with no `focus` would have its codes
+    silently dropped, which is the failure worth catching before it reaches the
+    flags.
+    """
+
+    release = current_release(ersd_dir)
+    valuesets = bundle_valuesets(json.loads(release.read_text(encoding="utf-8")))
+
+    failures = []
+    for valueset in valuesets:
+        is_grouper = any(
+            include.get("valueSet")
+            for include in (valueset.get("compose") or {}).get("include", [])
+        )
+        has_focus = bool(focus_snomeds(valueset))
+        has_codes = bool((valueset.get("expansion") or {}).get("contains"))
+        title = valueset.get("title") or valueset.get("url", "?")
+
+        if is_grouper and has_focus:
+            failures.append(f"{title}: grouper names a focus condition")
+        elif not is_grouper and not has_focus:
+            failures.append(f"{title}: member names no focus condition")
+        elif not is_grouper and not has_codes:
+            failures.append(f"{title}: member has no expansion.contains")
+
+    return Result(
+        "Current eRSD release has the shape the trigger-code reader expects",
+        not failures,
+        f"{len(valuesets):,} valuesets in {release.name} checked",
+        failures,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     """
     Run the raw-to-processed checks.
@@ -434,12 +490,13 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
+    parser.add_argument("--ersd-dir", type=Path, default=ERSD_DIR)
     parser.add_argument("--processed-dir", type=Path, default=PROCESSED_DIR)
     parser.add_argument(
         "--quick",
         action="store_true",
         help=(
-            "skip the two checks that re-read every raw bundle (~25s); the "
+            "skip the checks that re-read every raw bundle (~25s); the "
             "cheaper raw hash comparison still runs"
         ),
     )
@@ -468,7 +525,7 @@ def main(argv: list[str] | None = None) -> int:
     valuesets = _read_rows(args.processed_dir / "valuesets.csv.gz")
     results = [
         check_manifest_hashes(manifest, args.processed_dir),
-        check_derived_from(manifest, args.raw_dir),
+        check_derived_from(manifest, args.raw_dir, args.ersd_dir),
         check_every_condition_has_codes(args.processed_dir, facts),
         check_self_naming_codes_are_unique(facts),
         check_categories_are_known(valuesets),
@@ -476,10 +533,15 @@ def main(argv: list[str] | None = None) -> int:
         check_text_outputs_use_lf(args.processed_dir),
         check_dropped_systems_are_expected(manifest),
     ]
-    # these two re-read every raw bundle and are the slowest, so they run last
+    # these re-read every raw bundle and are the slowest, so they run last
     if not args.quick:
         results.append(check_schema_era_assumptions(args.raw_dir))
-        results.append(check_regenerates_identically(args.processed_dir, args.raw_dir))
+        results.append(check_ersd_shape(args.ersd_dir))
+        results.append(
+            check_regenerates_identically(
+                args.processed_dir, args.raw_dir, args.ersd_dir
+            )
+        )
 
     return render(results)
 

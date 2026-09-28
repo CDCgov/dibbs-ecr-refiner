@@ -57,7 +57,7 @@ test.describe('Codes management - custom code interactions', () => {
     configurationPage,
   }) => {
     await test.step('Set up configuration', async () => {
-      const condition = 'Anotia';
+      const condition = 'Methemoglobinemia';
       const config = await api.createConfiguration(condition);
       const systems = await api.getSystems();
       await api.uploadCustomCodeCsv(config.id, [
@@ -74,7 +74,7 @@ test.describe('Codes management - custom code interactions', () => {
       await expect(
         page.getByRole('heading', { name: 'Configurations', level: 1 })
       ).toBeVisible();
-      await page.getByRole('link', { name: 'Anotia' }).click();
+      await page.getByRole('link', { name: 'Methemoglobinemia' }).click();
       await expect(
         page.getByRole('heading', { name: 'Customize eICR sections' })
       ).toBeVisible();
@@ -93,7 +93,7 @@ test.describe('Codes management - custom code interactions', () => {
 
       const controlPanel = page.getByTestId('control-panel');
       await expect(controlPanel).toBeVisible();
-      await expect(controlPanel).toContainText('3 selected');
+      await expect(controlPanel).toContainText('37 selected');
       await controlPanel.getByRole('button', { name: 'Include' }).click();
       await expect(controlPanel).not.toBeVisible();
 
@@ -167,7 +167,7 @@ test.describe('Codes management - custom code interactions', () => {
     configurationsPage,
     makeAxeBuilder,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Methemoglobinemia';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -341,11 +341,11 @@ test.describe('Codes management - custom code interactions', () => {
 
     // exclusion still allows for actioning non-custom codes
     const exclusionButton = page.getByRole('button', {
-      name: 'Exclude 12 codes',
+      name: 'Exclude 36 codes',
     });
     await exclusionButton.click();
 
-    await expect(page.getByText('12 excluded')).toBeVisible();
+    await expect(page.getByText('36 excluded')).toBeVisible();
   });
 
   test('Individual custom codes can be added, edited, and deleted', async ({
@@ -584,7 +584,7 @@ test.describe('Codes management - code interactions', () => {
     configurationPage,
     makeAxeBuilder,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Methemoglobinemia';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -609,7 +609,7 @@ test.describe('Codes management - code interactions', () => {
 
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '11 of 12 codes included'
+        '35 of 36 codes included'
       );
       await expect(page.getByText('1 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
@@ -627,7 +627,7 @@ test.describe('Codes management - code interactions', () => {
 
     await test.step('Check stats bar after including all', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '12 of 12 codes included'
+        '36 of 36 codes included'
       );
       await expect(page.getByText('0 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
@@ -657,9 +657,9 @@ test.describe('Codes management - code interactions', () => {
     await controlPanel.getByRole('button', { name: 'Exclude' }).click();
     await test.step('Check stats bar after excluding one code', async () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
-        '193 of 7,842 codes included'
+        '215 of 7,842 codes included'
       );
-      await expect(page.getByText('7,649 excluded')).toBeVisible();
+      await expect(page.getByText('7,627 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
     });
 
@@ -673,7 +673,7 @@ test.describe('Codes management - code interactions', () => {
       await expect(page.getByTestId('codes-included-display')).toHaveText(
         '7,842  of 7,842 codes included'
       );
-      await expect(page.getByText('193 RCTC Codes')).toBeVisible();
+      await expect(page.getByText('215 RCTC Codes')).toBeVisible();
       await expect(page.getByText('0 excluded')).toBeVisible();
       await expect(controlPanel).not.toBeVisible();
     });
@@ -684,7 +684,7 @@ test.describe('Codes management - code interactions', () => {
     page,
     configurationPage,
   }) => {
-    const condition = 'Alpha-gal Syndrome';
+    const condition = 'Nipah Virus Infection';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -699,10 +699,10 @@ test.describe('Codes management - code interactions', () => {
     await selectAllCheckbox.click();
     await expect(selectAllCheckbox).toBeChecked();
 
-    // Alpha-gal's three non-trigger codes are the only selectable rows;
-    // its ten trigger codes render a lock icon instead of a checkbox
+    // Nipah's 34 non-trigger codes are the only selectable rows;
+    // its three trigger codes render a lock icon instead of a checkbox
     const rowCheckboxes = table.locator('tbody tr').getByRole('checkbox');
-    await expect(rowCheckboxes).toHaveCount(3);
+    await expect(rowCheckboxes).toHaveCount(34);
     for (const checkbox of await rowCheckboxes.all()) {
       await expect(checkbox).toBeChecked();
     }
@@ -715,7 +715,7 @@ test.describe('Codes management - code interactions', () => {
     page,
     configurationPage,
   }) => {
-    const condition = 'Alpha-gal Syndrome';
+    const condition = 'Nipah Virus Infection';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -757,7 +757,7 @@ test.describe('Codes management - code interactions', () => {
     // Interrupted Aortic Arch's trigger codes are excludable because it
     // is not the primary condition
     const statusCells = table.locator('tbody tr td:last-child');
-    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(10);
+    await expect(statusCells.filter({ hasText: 'Included' })).toHaveCount(3);
   });
 });
 
@@ -1162,7 +1162,7 @@ test.describe('Codes management - filters', () => {
     configurationsPage,
     configurationPage,
   }) => {
-    const condition = 'Anotia';
+    const condition = 'Methemoglobinemia';
     await configurationsPage.createConfiguration(condition);
     await configurationPage.goToManageCodesTab();
 
@@ -1173,7 +1173,7 @@ test.describe('Codes management - filters', () => {
 
     await test.step('Check the page on load', async () => {
       await expect(table).toBeVisible();
-      await expect(tableRows).toHaveCount(13);
+      await expect(tableRows).toHaveCount(37);
     });
 
     await test.step('Exclude a code', async () => {
