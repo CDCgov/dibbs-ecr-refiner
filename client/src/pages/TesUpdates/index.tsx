@@ -6,10 +6,7 @@ import { Spinner } from '@components/Spinner';
 import { useGetTesUpdates } from '../../api/tes/tes';
 import { TesVersionDetails } from './TesVersionDetails';
 import { TesUpdate } from '../../api/schemas';
-import { UpdateConfigurations } from './UpdateConfigurations';
 import { BreakoutContainer } from '@components/Layout';
-
-type UPDATE_STEP = 'summary' | 'action';
 
 export interface TesDiffInformation {
   selected_update: TesUpdate;
@@ -19,7 +16,6 @@ export interface TesDiffInformation {
 export function TesUpdates() {
   const { data: tesUpdates, isPending, isError } = useGetTesUpdates();
   const [tesDiff, setTesDiff] = useState<TesDiffInformation | null>(null);
-  const [tesStage, setTesStage] = useState<UPDATE_STEP>('summary');
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error occurred!';
@@ -41,45 +37,22 @@ export function TesUpdates() {
 
   return (
     <div className="my-8 flex flex-col">
-      {tesStage === 'summary' && (
-        <>
-          <div className="mb-4 flex justify-between py-4">
-            <Title>TES Updates</Title>
-            <Button onClick={() => setTesStage('action')}>
-              Update configurations
-            </Button>
-          </div>
+      <>
+        <div className="mb-4 flex justify-between py-4">
+          <Title>TES Updates</Title>
+          <Button href="/tes-updates/configurations">
+            Update configurations
+          </Button>
+        </div>
 
-          <div className="flex h-200">
-            <UpdateInformation
-              tesDiff={tesDiff}
-              setTesDiff={setTesDiff}
-              fetchedTesUpdates={fetchedTesUpdates}
-            />
-          </div>
-        </>
-      )}
-      {tesStage === 'action' && (
-        <>
-          <BreakoutContainer
-            background="bg-blue-cool-70"
-            className="py-3 text-left text-white"
-            maxWidth="max-w-7xl"
-          >
-            <div className="flex items-center gap-5">
-              <Button
-                className="cursor-pointer"
-                variant="unstyled"
-                onClick={() => setTesStage('summary')}
-              >
-                TES Updates
-              </Button>
-              {' > Updates'}
-            </div>
-          </BreakoutContainer>
-          <UpdateConfigurations />
-        </>
-      )}
+        <div className="flex h-200">
+          <UpdateInformation
+            tesDiff={tesDiff}
+            setTesDiff={setTesDiff}
+            fetchedTesUpdates={fetchedTesUpdates}
+          />
+        </div>
+      </>
     </div>
   );
 }

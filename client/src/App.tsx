@@ -17,6 +17,7 @@ import { TesUpdates } from './pages/TesUpdates';
 import { CustomizeSections } from './pages/Configurations/CustomizeSections';
 import { Overrides } from './pages/Configurations/Overrides';
 import { ManageCodes } from './pages/Configurations/ManageCodes';
+import { UpdateConfigurations } from './pages/TesUpdates/UpdateConfigurations';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -43,6 +44,10 @@ export function App() {
         <Route path="/" element={<Navigate to="/configurations" replace />} />
         <Route path="/activity" element={<ActivityLog />} />
         <Route path="/tes-updates" element={<TesUpdates />} />
+        <Route
+          path="/tes-updates/configurations"
+          element={<UpdateConfigurations />}
+        />
         <Route
           path="/configurations"
           element={<Configurations user={user} refreshUser={refreshUser} />}
