@@ -321,29 +321,31 @@ async def _get_tes_update_diff_db(
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
     query = """
-   WITH tes_records AS (
-        SELECT
-            c.canonical_url,
-            c.display_name,
-            cc.code_id,
-            BOOL_OR(c.tes_id = %(cur_tes_id)s) AS in_cur,
-            BOOL_OR(c.tes_id = %(prev_tes_id)s) AS in_prev
-        FROM conditions_codes_temp cc
-        JOIN conditions c ON cc.condition_id = c.id
-        WHERE c.tes_id IN (%(cur_tes_id)s, %(prev_tes_id)s)
-        GROUP BY c.canonical_url, c.display_name, cc.code_id
+    WITH cur_data AS (
+        SELECT c.canonical_url, c.display_name, cc.code_id
+        FROM conditions c
+        JOIN conditions_codes_temp cc ON c.id = cc.condition_id
+        WHERE c.tes_id = %(cur_tes_id)s
+        ),
+    prev_data AS (
+        SELECT c.canonical_url, c.display_name, cc.code_id
+        FROM conditions c
+        JOIN conditions_codes_temp cc ON c.id = cc.condition_id
+        WHERE c.tes_id = %(prev_tes_id)s
     )
     SELECT
-        canonical_url,
-        display_name,
-        COALESCE(ARRAY_AGG(code_id) FILTER (WHERE in_cur AND NOT in_prev), '{}'::uuid[]) AS added_code_ids,
-        COALESCE(ARRAY_AGG(code_id) FILTER (WHERE in_prev AND NOT in_cur), '{}'::uuid[]) AS removed_code_ids,
-        NOT BOOL_OR(in_prev) AS is_new
-    FROM tes_records
-    GROUP BY canonical_url, display_name
-    HAVING
-        COUNT(*) FILTER (WHERE in_cur AND NOT in_prev) > 0
-        OR COUNT(*) FILTER (WHERE in_prev AND NOT in_cur) > 0;
+        COALESCE(curr.canonical_url, prev.canonical_url) AS canonical_url,
+        MAX(COALESCE(curr.display_name, prev.display_name)) AS display_name,
+        COALESCE(ARRAY_AGG(curr.code_id) FILTER (WHERE prev.code_id IS NULL), '{}'::uuid[]) AS added_code_ids,
+        COALESCE(ARRAY_AGG(prev.code_id) FILTER (WHERE curr.code_id IS NULL), '{}'::uuid[]) AS removed_code_ids,
+        BOOL_AND(prev.canonical_url IS NULL) AS is_new
+    FROM cur_data curr
+    FULL OUTER JOIN prev_data prev
+        ON curr.canonical_url = prev.canonical_url
+        AND curr.code_id = prev.code_id
+    GROUP BY COALESCE(curr.canonical_url, prev.canonical_url)
+    HAVING COUNT(curr.code_id) FILTER (WHERE prev.code_id IS NULL) > 0
+        OR COUNT(prev.code_id) FILTER (WHERE curr.code_id IS NULL) > 0;
     """
 
     async with db.get_connection() as conn:
