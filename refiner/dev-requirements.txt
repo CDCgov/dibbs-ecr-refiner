@@ -18,6 +18,6 @@ types-requests
 jsonschema==4.26.0
 
 # Local-dev documentation site
-griffe==2.1.0
+griffe==2.3.0
 docstring-parser==0.18.0
 watchdog==6.0.0
