@@ -36,22 +36,20 @@ export function TesUpdates() {
 
   return (
     <div className="my-8 flex flex-col">
-      <>
-        <div className="mb-4 flex justify-between py-4">
-          <Title>TES Updates</Title>
-          <Button href="/tes-updates/configurations">
-            Update configurations
-          </Button>
-        </div>
+      <div className="mb-4 flex justify-between py-4">
+        <Title>TES Updates</Title>
+        <Button href="/tes-updates/configurations">
+          Update configurations
+        </Button>
+      </div>
 
-        <div className="flex h-200">
-          <UpdateInformation
-            tesDiff={tesDiff}
-            setTesDiff={setTesDiff}
-            fetchedTesUpdates={fetchedTesUpdates}
-          />
-        </div>
-      </>
+      <div className="flex h-200">
+        <UpdateInformation
+          tesDiff={tesDiff}
+          setTesDiff={setTesDiff}
+          fetchedTesUpdates={fetchedTesUpdates}
+        />
+      </div>
     </div>
   );
 }
