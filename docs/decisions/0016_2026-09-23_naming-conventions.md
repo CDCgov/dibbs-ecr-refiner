@@ -263,12 +263,25 @@ That is E1's job, below.
 ### The junction table name
 
 `conditions_codes_temp` is the permanent membership junction, referenced 43 times
-across `app/`, `ops/` and `tes/`. The `_temp` suffix was deliberate: it let the
-new junction be built alongside the old `conditions_codes` while environments
-were reseeded, working around a chicken-and-egg ordering problem in seeding. The
-suffix describes nothing now, and the old `conditions_codes` still exists with
-nothing querying it (the docstring at `refiner/app/db/conditions/db.py:277` still
-claims to, but the query below it reads `conditions_codes_temp`).
+across `app/`, `ops/` and `tes/`. The `_temp` suffix was deliberate, and
+`migrations/20260813142548_generalize_context_grouper_table.sql` records why:
+_"create a new temp table to allow for unique primary key"_. The grain changed
+from `(condition_id, code_id)` to `(condition_id, code_id, valueset_id)`, and the
+old rows had no `valueset_id` to backfill--the two-column grain had already
+discarded which valueset contributed each code. The data could not be migrated
+forward at all, so the new table was created empty to be filled by the next
+reseed, and the old one was left in place rather than dropped in the same
+migration.
+
+That is the chicken-and-egg: the old table cannot be dropped until every
+environment has seeded the new one. It is now resolved by construction rather
+than by attestation--`conditions_codes_temp` is truncated and rebuilt on every
+seed run, nothing in `app/`, `ops/` or `tes/` reads or writes
+`conditions_codes`, and migrations apply in order, so any environment running
+current code necessarily has the new table populated and the old one write-dead.
+The suffix describes nothing now, and the docstring at
+`refiner/app/db/conditions/db.py:277` still claims to query the old table while
+the query below it reads `conditions_codes_temp`.
 
 | Option                           | For                                                                     | Against                                                                                                                 |
 | -------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -508,8 +521,7 @@ grep-verifiable in review.
    own work item rather than a blocker on this one.
 4. `CodeRow.display` -> `display_name` and the regenerated `.csv.gz`, in a commit
    of its own.
-5. Table, model and constraint renames; drop the dead `conditions_codes` once
-   every environment is confirmed past the seeding transition it was kept for.
+5. Table, model and constraint renames; drop the dead `conditions_codes`.
 6. The small ones: the duplicated `_get_code_set_status`, `CodeSystemsReponse`,
    the `_db` suffix misses, `Config` -> `Configuration`.
 
