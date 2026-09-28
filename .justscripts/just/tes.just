@@ -4,6 +4,8 @@ set dotenv-load := true
 alias h := _default
 alias help := _default
 alias f := fetch
+alias ft := fetch-tes
+alias fe := fetch-ersd
 alias n := normalize
 alias v := verify
 alias vp := verify-processed
@@ -12,10 +14,19 @@ alias vd := verify-db
 @_default:
     just --list tes
 
-[doc('Fetch grouper data from the TES API into data/source-tes-groupers (needs TES_API_KEY in your .env)')]
+[doc('Fetch both sources: TES groupers and the current eRSD release')]
 [group('tes')]
-fetch:
+fetch: fetch-tes fetch-ersd
+
+[doc('Fetch grouper data from the TES API into data/source-tes-groupers (needs TES_API_KEY in tes/.env)')]
+[group('tes')]
+fetch-tes:
     docker compose exec server python -m tes.fetch.detect_changes
+
+[doc('Fetch the current eRSD v3 release into data/source-ersd (needs ERSD_API_KEY in tes/.env)')]
+[group('tes')]
+fetch-ersd:
+    docker compose exec server python -m tes.fetch.ersd
 
 [doc('Check that newly fetched bundles still parse the way the seeding pipeline expects')]
 [group('tes')]
