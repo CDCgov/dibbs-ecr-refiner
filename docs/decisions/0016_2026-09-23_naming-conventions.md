@@ -191,9 +191,18 @@ DbCode:           display, code, system_id, system_name
 ```
 
 `system_name` is a join onto `systems.display_name`; `id` and the timestamps are
-dropped. `DbCode` has always been a response shape wearing a db-facing name, as
-have `DbTotalConditionCodeCount` (an aggregate with no table), `DbCodeResult` (a
-paginated projection) and `DbConfigurationSectionProcessing`.
+dropped. `DbTotalConditionCodeCount` (an aggregate with no table), `DbCodeResult`
+(a paginated projection) and `DbConfigurationSectionProcessing` are the same
+story--response shapes wearing a db-facing name.
+
+`DbCode` is a different case, and the one the rule has to handle carefully. It is
+a genuine db projection--the `class_row` for `app/db/codes/db.py:25,71` and
+`app/db/conditions/db.py:261`, nested inside `DbCondition.codes` and
+`ConditionDiffExportData`--*and* it is the wire type for
+`GetConditionResponse.codes` and `GetConfigurationResponse.rsg_codes`. It crosses
+two boundaries, which Rule 3 does not allow, so it splits rather than gets
+renamed: `DbCode` stays in `app/db`, and a `CodeResponse` carries it to the
+browser.
 
 #### D1. One family per boundary (RECOMMENDED)
 
@@ -217,10 +226,12 @@ the client already branches on `DbSectionAction.refine`
 `app/db/configurations/labels.py` is the existing precedent, written deliberately
 so orval can ship it.
 
-**Pros**: adds no layer and no models. The response models already exist for
-every true row model (`DbCustomCode` -> `CustomCodeResponse`, `DbConfiguration`
--> `GetConfigurationResponse`, `DbCondition` -> `GetConditionResponse`), so this
-is a rename. It makes the `active.json` boundary visible for the first time,
+**Pros**: adds no layer and, with one exception, no models. The response models
+already exist for every true row model (`DbCustomCode` -> `CustomCodeResponse`,
+`DbConfiguration` -> `GetConfigurationResponse`, `DbCondition` ->
+`GetConditionResponse`), so three of the four leaking types are pure renames;
+only `DbCode` needs a new `CodeResponse` and a mapping at its two response sites.
+It makes the `active.json` boundary visible for the first time,
 which is the boundary that has already drifted. And it gives the rule a test an
 engineer can apply alone: _if you cannot name the boundary, the model is in the
 wrong place._
@@ -252,10 +263,12 @@ That is E1's job, below.
 ### The junction table name
 
 `conditions_codes_temp` is the permanent membership junction, referenced 43 times
-across `app/`, `ops/` and `tes/`. The `_temp` suffix is a leftover; a dead
-`conditions_codes` table also remains, which nothing queries (the docstring at
-`refiner/app/db/conditions/db.py:277` still claims to, but the query below it
-reads `conditions_codes_temp`).
+across `app/`, `ops/` and `tes/`. The `_temp` suffix was deliberate: it let the
+new junction be built alongside the old `conditions_codes` while environments
+were reseeded, working around a chicken-and-egg ordering problem in seeding. The
+suffix describes nothing now, and the old `conditions_codes` still exists with
+nothing querying it (the docstring at `refiner/app/db/conditions/db.py:277` still
+claims to, but the query below it reads `conditions_codes_temp`).
 
 | Option                           | For                                                                     | Against                                                                                                                 |
 | -------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -478,19 +491,25 @@ while `ConfigurationStorageMetadata` maps db `display_name` -> payload
 One pull request, ordered commits, one concept per commit so each is
 grep-verifiable in review.
 
-1. Rename the four leaking `Db*` types and move the persisted enums to a domain
-   module (Rule 3). **First**: once `DbCode` is no longer the client's type, the
-   column renames are server-internal.
+1. Rename three of the four leaking `Db*` types, split `DbCode` into `DbCode`
+   plus a new `CodeResponse`, and move the persisted enums to a domain module
+   (Rule 3). **First**: once `DbCode` is no longer the client's type, the column
+   renames are server-internal.
 2. `display_name` unification in the database, db models, SQL aliases and API
    fields.
 3. `active.json`: `display` -> `display_name`, `schema_version` -> 2, strict
    reads per Rule 8, and the `*Payload` family applied to the code and section
    shapes. Exercise `ops/reactivations/regenerate_active_configs.py` end to end
    with DevOps before merge--this is the first real test of that mechanism, and
-   the one commit that can degrade refined output if it is wrong.
+   the one commit that can degrade refined output if it is wrong. It is also the
+   cheapest exercise of the reactivation path we are likely to get: a minor,
+   well-scoped change. A failure here is information about
+   `regenerate_active_configs.py` rather than about the rename, and becomes its
+   own work item rather than a blocker on this one.
 4. `CodeRow.display` -> `display_name` and the regenerated `.csv.gz`, in a commit
    of its own.
-5. Table, model and constraint renames; drop the dead `conditions_codes`.
+5. Table, model and constraint renames; drop the dead `conditions_codes` once
+   every environment is confirmed past the seeding transition it was kept for.
 6. The small ones: the duplicated `_get_code_set_status`, `CodeSystemsReponse`,
    the `_db` suffix misses, `Config` -> `Configuration`.
 
