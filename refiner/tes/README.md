@@ -5,8 +5,12 @@ seed. This directory owns the FHIR knowledge; nothing downstream needs any.
 
 ```
 fetch  ──▶  data/source-tes-groupers/   ──▶  normalize  ──▶  data/processed/  ──▶  seeding  ──▶  database
-           raw FHIR ValueSet bundles              flat gzipped CSV
-           741 MB, 45 files                       11 MB, 6 files
+           raw FHIR ValueSet bundles     ▲        flat gzipped CSV
+           741 MB, 45 files              │        11 MB, 6 files
+                                         │
+fetch  ──▶  data/source-ersd/  ──────────┘
+           eRSD releases (trigger codes)
+           25 MB each, current one read
 ```
 
 The split matters: **version-specific unpacking happens once per release, here.**
@@ -81,12 +85,17 @@ Not a speedup, but the reason the work is worth more than the seconds:
 ## Commands
 
 ```sh
-just tes fetch              # TES API -> data/source-tes-groupers  (needs TES_API_KEY)
+just tes fetch              # both sources below
+just tes fetch-tes          # TES API -> data/source-tes-groupers  (needs TES_API_KEY)
+just tes fetch-ersd         # eRSD API -> data/source-ersd          (needs ERSD_API_KEY)
 just tes normalize          # raw bundles -> data/processed
 just tes verify             # all three verification layers
 just tes release            # fetch, verify bundles, normalize, verify processed
 just tes diff               # what changed in data/processed since last commit
 ```
+
+Both API keys go in `tes/.env`; copy `tes/.env.sample` to start. The fetchers find it
+by walking up from their own directory, so it has to live here.
 
 Then `just db seed` (or `just db refresh`) loads `data/processed` into Postgres.
 
@@ -100,7 +109,7 @@ ops orphans                 # valueset rows seeding has quarantined, and why
 
 ## The three stages
 
-### `fetch/` — talk to TES
+### `fetch/` — talk to TES and eRSD
 
 `detect_changes.py` pulls from the TES API into a staging area, validates every
 resource with `fhir.resources`, compares hashes against
@@ -111,15 +120,25 @@ warning, so categories arrive as `<category>_<version>.partNN.json`.
 This is the only stage that validates FHIR. The files it writes are
 `ValueSet.model_dump()` output, which is why re-parsing them downstream is safe.
 
+`ersd.py` pulls the eICR trigger codes from the eRSD API, not TES, whose copy is a
+stale unversioned snapshot (`fetch_api_data.py` drops it). The API serves only the
+latest release and has retired v1 and v2, so each release is kept as it arrives:
+stored byte-for-byte as `data/source-ersd/ersd_<rctc version>.json`, validated as
+FHIR **R4** (the default R5 models reject its `PlanDefinition`), and never deleted.
+`manifest.json` there records every release and names the newest as `current`. The
+two sources release on different cycles, so each keeps its own manifest and can be
+fetched alone.
+
 ### `normalize/` — the only place that understands FHIR
 
-Reads the bundles and writes flat tables. Four modules:
+Reads the bundles and writes flat tables. Five modules:
 
 | Module | Role |
 |---|---|
 | `readers.py` | Per-release code readers, selected by a version→era lookup. **The release table in its docstring is the record of what TES changed and when.** |
 | `groupers.py` | The single answer to "what kind of grouper is this" and "what are its children" |
 | `model.py` | Flat row types, supported code systems, the sets verify asserts against |
+| `ersd.py` | Reads trigger codes from the current eRSD release into `is_trigger_code`. Includes `retired` members on purpose: the RCTC groupers still expand them |
 | `run.py` | Orchestration and the writers |
 
 Three kinds of ValueSet go in:
@@ -185,7 +204,7 @@ data/processed/
   valuesets.csv.gz     2,854 rows   one per leaf grouper per condition per release
   codes.csv.gz        97,264 rows   distinct (system_oid, code, display)
   memberships.csv.gz   2.0 M rows   the junction: condition x code x leaf grouper
-  summary.csv          2,854 rows   per-grouper code count + content hash
+  summary.csv          2,854 rows   per-grouper code count, trigger count + content hash
   manifest.json                     counts, output hashes, source hashes
 ```
 
@@ -212,12 +231,14 @@ identical.
 shows what moved:
 
 ```diff
--Anotia Reporting Specification Grouper,7.0.0,rsg,2,4f2a...
-+Anotia Reporting Specification Grouper,7.0.0,rsg,12,9c81...
+-Anotia Reporting Specification Grouper,7.0.0,rsg,2,0,4f2a...
++Anotia Reporting Specification Grouper,7.0.0,rsg,12,3,9c81...
 ```
 
 The content hash catches a grouper that swapped codes without changing its count —
 Rubella went +3/−13 between 6.0.0 and 7.0.0, which a count alone would show as −10.
+`trigger_count` does the same job for an eRSD release bump: the grouper's codes
+don't change, so it is the only column that moves.
 
 ## When a grouper stops existing
 
