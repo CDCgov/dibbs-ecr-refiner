@@ -704,33 +704,36 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   are **not** result observations--the Specimen Collection Procedure (ID)
 #   ...4.415 (SHOULD 0..1, CONF:4527-450/451: collection date, body site,
 #   source) and the Laboratory Result Status (ID) ...4.418 (MAY 0..1,
-#   CONF:4527-443/444). these
-#   are organizer-scoped context applying to every result in the battery and
-#   are unmatchable by construction (their codes are never configured
-#   triggers). because they contain no Result Observation, the plain
-#   component prune would drop them even when a sibling result is retained,
-#   silently losing the specimen context a PHA keys a case to. the guard
-#   below exempts them BY NAME, so those siblings survive alongside a
-#   retained result. an organizer with zero result matches is still removed
-#   wholesale (its procedure goes with it)--the carve-out only fires within a
+#   CONF:4527-443/444). these are organizer-scoped context applying to every
+#   result in the battery and are unmatchable by construction (their codes are
+#   never configured triggers). the plain component prune would drop them even
+#   when a sibling result is retained, silently losing the specimen context a
+#   PHA keys a case to. an organizer with zero result matches is still removed
+#   wholesale (its context goes with it)--the carve-out only fires within a
 #   matched entry
 #
-#   naming the two templates is a correction, not the original design. the
-#   guard used to exempt any component that did **not** contain a Result
-#   Observation V3, on the reasoning that requiring the template would drop a
-#   whole battery from any sender who omits it. but "has no result templateId"
-#   is not the same claim as "is shared context", and Epic's proprietary
-#   result components (templateId 1.2.840.114350.*) satisfy the first while
-#   being neither. they rode the exemption through the prune and then
-#   rendered as narrative rows reading "16"--a bare proprietary enum value,
-#   in a table where every other row is a lab result. PHAs in two
-#   jurisdictions reported them as unreadable
+#   the guard decides by the component's statement **kind**, then by name:
+#   * a component is prunable only when its statement is result-shaped--an
+#     `<observation>`, or a nested `<organizer>` of them
+#   * a result-shaped statement carrying ...4.415 or ...4.418 is still context;
+#     this keeps a specimen a sender mis-shaped as an `<observation>`
+#   * every other statement kind (`<procedure>`, `<act>`, ...) is context
+#     whatever its templateId, or lack of one
 #
-#   the fear the old guard was written against is real but belongs one level
-#   up: it is the ORGANIZER whose templateId a sender may omit, and an
-#   organizer that matches nothing is dropped whole regardless of this guard.
-#   within a matched organizer, "which siblings are shared context" is a
-#   closed question the IG answers by name
+#   both halves have been gotten wrong before, one each way (#1504):
+#   * #1522 exempted anything that did not contain a Result Observation V3.
+#     Epic's proprietary result components (`<observation>`, templateId
+#     1.2.840.114350.1.72.3.4) satisfy that while being neither results nor
+#     context; they rode the exemption through the prune and rendered as
+#     narrative rows reading "16", which PHAs in two jurisdictions reported as
+#     unreadable
+#   * #1763 fixed that by exempting **only** the two templates above. but Epic
+#     sends its specimen collection `<procedure>` (17636008) with no templateId
+#     at all, plus a second `<procedure>` under 1.2.840.114350.1.72.3.7, so the
+#     specimen context PHAs asked to keep was pruned again
+#   the IG separates the two by statement kind--results are observations,
+#   specimen collection is a procedure--so that is the axis the guard keys on,
+#   and a sender's templateId choices on non-result statements stop mattering
 #
 #   version trap: the organizer cites ...4.418 as extension 2018-06-11
 #   (CONF:4527-444) while the template's own definition requires
@@ -748,10 +751,6 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   is the authority for cardinality; use the .sch only to confirm the
 #   machine-testable asserts
 
-# a component is **prunable** unless it is one of the two IG-named organizer-scoped
-# context templates. evaluated relative to the component: a truthy result means
-# "this is an ordinary candidate, prune it if it holds no match"; empty means
-# "shared context, exempt". see the SHARED-CONTEXT CARVE-OUT note above
 # the three Results rules are one statement read three ways; see the
 # PRECEDENCE GROUP note above
 _RESULT_OBSERVATION_GROUP: Final[str] = "results:result-observation"
@@ -761,12 +760,17 @@ _SHARED_CONTEXT_TEMPLATES: Final[tuple[str, ...]] = (
     LABORATORY_RESULT_STATUS_ID,
 )
 
-# scoped to the component's OWN child (hl7:*/hl7:templateId, not .//) so a
-# result observation that nests a specimen elsewhere in its entryRelationships
-# is not mistaken for shared context
-_RESULT_COMPONENT_PRUNE_GUARD: Final[str] = "self::*[not({})]".format(
-    " or ".join(
-        f"hl7:*/hl7:templateId[@root='{oid}']" for oid in _SHARED_CONTEXT_TEMPLATES
+# evaluated relative to a component: truthy means "result-shaped candidate,
+# prune it if it holds no match"; empty means "shared context, keep it alongside
+# a retained sibling". see the SHARED-CONTEXT CARVE-OUT note above
+#
+# scoped to the component's OWN child (hl7:*, not .//) so a result observation
+# that nests a specimen in its entryRelationships is not mistaken for context
+_RESULT_COMPONENT_PRUNE_GUARD: Final[str] = (
+    "self::*[(hl7:observation or hl7:organizer) and not({})]".format(
+        " or ".join(
+            f"hl7:*/hl7:templateId[@root='{oid}']" for oid in _SHARED_CONTEXT_TEMPLATES
+        )
     )
 )
 
