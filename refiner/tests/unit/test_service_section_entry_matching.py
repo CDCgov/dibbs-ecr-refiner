@@ -845,12 +845,13 @@ def test_results_rule_matches_snomed_on_value(spec_v1_1) -> None:
 # RESULTS SHARED-CONTEXT CARVE-OUT (prune_container_guard_xpath)
 # =============================================================================
 # a Result Organizer may carry sibling components that are NOT result
-# observations — the Specimen Collection Procedure (...4.415, the specimen
-# collection date / body site / source) and the Laboratory Result Status
-# (...4.418). They are organizer-scoped shared context and unmatchable by
-# construction. The guard on the Results rules exempts any component that does
-# not itself contain a Result Observation V3, so those siblings survive
-# alongside a retained result instead of being pruned as non-matching
+# observations — the specimen collection procedure (the specimen collection
+# date / body site / source) and the Laboratory Result Status (...4.418). They
+# are organizer-scoped shared context and unmatchable by construction. The
+# guard on the Results rules treats a component as prunable only when its
+# statement is an <observation> or nested <organizer> that is not one of the
+# IG-named context templates, so those siblings survive alongside a retained
+# result instead of being pruned as non-matching
 
 
 def _results_organizer_with_specimen() -> str:
@@ -912,8 +913,8 @@ def test_results_specimen_and_labstatus_survive_with_matched_result(
     non-matching one is still pruned, and BOTH the Specimen Collection
     Procedure and the Laboratory Result Status survive as shared context.
     Lab Result Status is itself an <observation> under a sibling component —
-    its survival proves the guard keys on the Result Observation V3 templateId,
-    not "any observation".
+    its survival proves an observation carrying an IG-named context template
+    is exempt even though observations are otherwise prunable.
     """
 
     section = _build_section(_results_organizer_with_specimen())
@@ -1706,11 +1707,11 @@ def test_results_proprietary_component_is_pruned_not_treated_as_context(
     """
     A vendor-proprietary component is an ordinary prunable candidate.
 
-    The shared-context exemption names the two IG context templates. It used
-    to exempt anything that merely lacked a Result Observation templateId,
-    which swept in Epic's proprietary result components (a nullFlavored code
-    plus a bare enum value) — they rode through the prune and rendered as
-    narrative rows reading "16".
+    Observations are prunable unless they carry one of the two IG context
+    templates. The exemption used to cover anything that merely lacked a Result
+    Observation templateId, which swept in Epic's proprietary result components
+    (a nullFlavored code plus a bare enum value) — they rode through the prune
+    and rendered as narrative rows reading "16".
     """
 
     section = _build_section(
@@ -1755,6 +1756,70 @@ def test_results_proprietary_component_is_pruned_not_treated_as_context(
     assert proprietary == [], "proprietary component survived as shared context"
     # the matched result is untouched
     assert _result_codes(section) == ["94533-7"]
+
+
+# every component kind a Result Organizer has been seen to carry, keyed by the
+# fixture's `<id @extension>` and paired with whether it must survive. the
+# guard has been wrong in both directions (#1504): too loose let Epic's "16"
+# rows through, too tight pruned Epic's templateId-less specimen procedure, so
+# both halves are pinned together and a fix to one cannot silently undo the other
+_VENDOR_ORGANIZER_COMPONENTS: list[tuple[str, bool]] = [
+    ("specimen-no-templateid", True),
+    ("result-matched", True),
+    ("result-unmatched", False),
+    ("epic-proprietary-result", False),
+    ("epic-venipuncture", True),
+    ("specimen-as-observation", True),
+    ("comment-activity", True),
+    ("lab-result-status", True),
+    ("nested-organizer-unmatched", False),
+    # organizer 2 matches nothing: removed whole, its specimen with it
+    ("organizer-unmatched", False),
+    ("specimen-in-unmatched-organizer", False),
+]
+
+
+@pytest.fixture
+def refined_vendor_organizer(spec_v3_1_1) -> _Element:
+    section = _build_section(load_section("results_vendor_organizer_components"))
+    result = process(
+        section=section,
+        code_system_sets=_make_code_system_sets({"loinc": ["94500-6"]}),
+        section_specification=spec_v3_1_1.sections["30954-2"],
+        namespaces=HL7_NS,
+    )
+    assert result.matches_found is True
+    return section
+
+
+@pytest.mark.parametrize(
+    ("component_id", "should_survive"),
+    _VENDOR_ORGANIZER_COMPONENTS,
+    ids=[component_id for component_id, _ in _VENDOR_ORGANIZER_COMPONENTS],
+)
+def test_results_vendor_organizer_component_survival(
+    refined_vendor_organizer: _Element,
+    component_id: str,
+    should_survive: bool,
+) -> None:
+    """
+    Within a matched organizer, results are pruned and context is kept.
+
+    The guard keys on statement kind: only an `<observation>` or nested
+    `<organizer>` is prunable, unless it carries ...4.415 or ...4.418. So a
+    `<procedure>` or `<act>` survives whatever its templateId, while a
+    proprietary or unmatched observation does not.
+    """
+
+    survived = bool(
+        refined_vendor_organizer.xpath(
+            f".//hl7:id[@extension='{component_id}']", namespaces=HL7_NS
+        )
+    )
+    assert survived is should_survive, (
+        f"{component_id}: expected {'kept' if should_survive else 'pruned'}, "
+        f"got {'kept' if survived else 'pruned'}"
+    )
 
 
 def test_rule_grouping_is_by_adjacency_not_by_xpath_globally() -> None:
