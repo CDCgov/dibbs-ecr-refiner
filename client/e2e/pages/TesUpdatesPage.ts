@@ -29,9 +29,7 @@ export class TesUpdatesPage {
   }
 
   async goToUpdateActionsPage() {
-    await this.page
-      .getByRole('button', { name: `Update configurations` })
-      .click();
+    await this.page.goto('/tes-updates/configurations');
 
     expect(this.page.getByText(`Update to latest release`)).toBeDefined();
   }

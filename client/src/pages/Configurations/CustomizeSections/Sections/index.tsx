@@ -26,6 +26,14 @@ import { useSectionError } from './useSectionError';
 import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { Tooltip } from '@components/Tooltip';
 import { KeepOnMatchModal } from './KeepOnMatchModal';
 import { InfoIcon } from '@components/Icons/InfoIcon';
@@ -114,10 +122,10 @@ export function Sections({
           {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
               whether a virtualized list is appropriate for large section counts.
               */}
-          <table className="w-full table-fixed">
-            <thead className="bg-page-bg border-gray-cool-70 z-sticky sticky top-0 border-b-2">
-              <tr className="text-gray-cool-60">
-                <th scope="col" className="w-20 py-3">
+          <Table className="table-fixed">
+            <TableHead className="bg-page-bg border-gray-cool-70 z-sticky sticky top-0 border-b-2">
+              <TableRow className="text-gray-cool-60">
+                <TableHeaderCell scope="col" className="w-20 py-3">
                   <div className="flex justify-center gap-1">
                     <span>Include</span>
                     <Tooltip
@@ -125,11 +133,11 @@ export function Sections({
                       label="Turn a section on to include it in the refined eICR, or off to leave it out entirely. Some sections are locked to ensure RCTC codes are retained."
                     />
                   </div>
-                </th>
-                <th scope="col" className="w-70 text-left">
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" className="w-70 text-left">
                   Section name
-                </th>
-                <th scope="col" className="w-60">
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" className="w-60">
                   <div className="flex justify-center gap-1">
                     <span>Coded data</span>
                     <Tooltip
@@ -137,8 +145,8 @@ export function Sections({
                       label="Turn on Refine to filter this section's coded entries down to the codes in your configuration. Off keeps all coded data."
                     />
                   </div>
-                </th>
-                <th scope="col" className="w-40">
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" className="w-40">
                   <div className="flex items-center justify-between">
                     <div className="flex gap-1">
                       <span>Narrative data</span>
@@ -155,13 +163,13 @@ export function Sections({
                       </Button>
                     </div>
                   </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-gray-cool-20 divide-y">
+                </TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody className="divide-gray-cool-20 divide-y">
               {configuration.section_processing.map((section) => (
-                <tr key={section.code} className="text-gray-cool-90">
-                  <td>
+                <TableRow key={section.code} className="text-gray-cool-90">
+                  <TableCell>
                     <div className="flex justify-center p-8">
                       <IncludeSwitch
                         configurationId={configuration.id}
@@ -174,16 +182,16 @@ export function Sections({
                         }
                       />
                     </div>
-                  </td>
-                  <td>
+                  </TableCell>
+                  <TableCell>
                     <SectionName
                       configurationId={configuration.id}
                       section={section}
                       disabled={disabled}
                       setSelectedSection={() => onSelectedSection(section)}
                     />
-                  </td>
-                  <td className="flex h-21 justify-center">
+                  </TableCell>
+                  <TableCell className="flex h-21 justify-center">
                     {section.include ? (
                       <div className="flex flex-col items-center justify-center">
                         {isNarrativeSection(section.code) ? (
@@ -205,8 +213,8 @@ export function Sections({
                         )}
                       </div>
                     ) : null}
-                  </td>
-                  <td>
+                  </TableCell>
+                  <TableCell>
                     {section.include ? (
                       <NarrativeSelect
                         configurationId={configuration.id}
@@ -219,11 +227,11 @@ export function Sections({
                         codedDataAction={section.action}
                       />
                     ) : null}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
     </SectionErrorProvider>
@@ -250,7 +258,7 @@ function SectionName({
       <div className="flex items-center gap-2">
         <span
           title={section.name}
-          className={classNames('truncate', {
+          className={classNames('text-gray-cool-90 truncate', {
             italic: !section.include,
             'font-bold': section.include,
           })}
@@ -260,7 +268,10 @@ function SectionName({
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       <div className="flex items-center gap-2">
-        <span title={section.code} className="truncate text-sm">
+        <span
+          title={section.code}
+          className="text-gray-cool-90 truncate text-sm"
+        >
           {section.code}
         </span>
         {isCustom && !disabled ? (
@@ -441,9 +452,11 @@ function RefineSwitch({
             }
           >
             {curSectionSetToRefine ? (
-              <span>{refineLabelText}</span>
+              <span className="text-gray-cool-90">{refineLabelText}</span>
             ) : (
-              <span className="italic">{retainLabelText}</span>
+              <span className="text-gray-cool-90 italic">
+                {retainLabelText}
+              </span>
             )}
           </Label>
           <Switch
