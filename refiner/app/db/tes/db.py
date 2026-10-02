@@ -321,7 +321,7 @@ async def _get_tes_update_diff_db(
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
     query = """
-   WITH tes_records AS (
+    WITH tes_records AS (
         SELECT
             c.canonical_url,
             c.display_name,
