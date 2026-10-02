@@ -202,7 +202,7 @@ export function UpdateConfigurations() {
     <>
       <BreakoutContainer
         background="bg-blue-cool-70"
-        className="px-0! py-3 text-left text-white"
+        className="py-3 text-left text-white"
         maxWidth="max-w-7xl"
       >
         <div className="flex items-center gap-5">
