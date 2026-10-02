@@ -217,7 +217,7 @@ export function UpdateConfigurations() {
             Update existing drafts
           </caption>
 
-          <TableHead className="text-gray-cool-60">
+          <TableHead bordered className="text-gray-cool-60">
             <TableRow>
               <TableHeaderCell className="bg-white! pl-0! font-bold">
                 <div className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export function UpdateConfigurations() {
             </TableRow>
           </TableHead>
 
-          <TableBody background="white">
+          <TableBody bordered background="white">
             {existingDrafts.length === 0 ? (
               <TableRow>
                 <TableCell className="pl-0!" colSpan={3}>
@@ -289,7 +289,7 @@ export function UpdateConfigurations() {
             Create draft to update
           </caption>
 
-          <TableHead className="text-gray-cool-60">
+          <TableHead bordered className="text-gray-cool-60">
             <TableRow>
               <TableHeaderCell className="bg-white! pl-0! font-bold">
                 <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export function UpdateConfigurations() {
             </TableRow>
           </TableHead>
 
-          <TableBody background="white">
+          <TableBody bordered background="white">
             {draftsToCreate.length === 0 ? (
               <TableRow>
                 <TableCell className="pl-0!" colSpan={3}>
