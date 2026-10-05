@@ -9,8 +9,10 @@ import boto3
 import httpx
 from botocore.client import Config
 
-# Session info
-TEST_SESSION_TOKEN = "test-token"
+# Session info. If running this script locally, replace it with the token from
+# the application session token in Applications > Cookies > refiner-session
+# generated after logging in.
+TEST_SESSION_TOKEN = "nad4wMRg99oU051JJioY6aVfhoQ_IStQV-mx2L2706U"
 
 # add Refiner to the sys path so we can import the relevant methods from the
 # internal modules when running the script
