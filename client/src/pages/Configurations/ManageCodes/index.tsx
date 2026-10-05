@@ -247,7 +247,7 @@ function CodesTable({
           }
           style={{ overflow: 'unset' }} // this allows the sticky header to work
         >
-          <Table className="table-auto">
+          <Table layout="auto">
             <TableHead className="bg-gray-cool-5 z-sticky sticky top-0">
               <TableRow className="border-gray-cool-60 text-gray-cool-60 border-b-2 text-left [&>th]:px-4 [&>th]:py-2">
                 <TableHeaderCell scope="col" className="text-center">

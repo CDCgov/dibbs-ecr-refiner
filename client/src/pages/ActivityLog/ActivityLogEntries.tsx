@@ -31,7 +31,7 @@ export function ActivityLogEntries({
   const navigate = useNavigate();
 
   return (
-    <Table bordered rounded hover maxWidth="md" layout="auto">
+    <Table bordered rounded hover width="md" layout="fixed">
       <TableHead bordered>
         <TableRow>
           <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[16%] py-3 leading-6.5">

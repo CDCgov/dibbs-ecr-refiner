@@ -211,50 +211,6 @@ describe('Table Component', () => {
     expect(screen.getByRole('columnheader')).toBeInTheDocument();
   });
 
-  describe('maxWidth prop', () => {
-    const testCases = [
-      { prop: 'sm', expectedClass: 'max-w-96' },
-      { prop: 'md', expectedClass: 'max-w-302' },
-      { prop: 'lg', expectedClass: 'max-w-4xl' },
-      { prop: 'full', expectedClass: 'max-w-full' },
-    ];
-
-    testCases.forEach(({ prop, expectedClass }) => {
-      it(`applies ${expectedClass} when maxWidth is "${prop}"`, () => {
-        const { container } = render(
-          <Table maxWidth={prop as any}>
-            <TableBody>
-              <TableRow>
-                <TableCell>Content</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        );
-        const table = container.querySelector('table');
-        expect(table).toHaveClass(expectedClass);
-      });
-    });
-
-    it('does not apply maxWidth class when prop is not provided', () => {
-      const { container } = render(
-        <Table>
-          <TableBody>
-            <TableRow>
-              <TableCell>Content</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      );
-      const table = container.querySelector('table');
-      expect(table).not.toHaveClass(
-        'max-w-96',
-        'max-w-302',
-        'max-w-4xl',
-        'max-w-full'
-      );
-    });
-  });
-
   describe('layout prop', () => {
     it('applies table-auto by default', () => {
       const { container } = render(

@@ -30,7 +30,7 @@ export function ConfigurationsTable({
   if (!data.length) {
     return (
       <div className={classNames('overflow-x-auto', className)}>
-        <Table bordered rounded hover maxWidth="full">
+        <Table bordered rounded hover width="full">
           <TableHead bordered>
             <TableRow>
               <TableHeaderCell
@@ -59,7 +59,7 @@ export function ConfigurationsTable({
 
   return (
     <div className={classNames('overflow-x-auto', className)}>
-      <Table bordered rounded hover maxWidth="full">
+      <Table bordered rounded hover width="full">
         <TableHead bordered>
           <TableRow>
             <TableHeaderCell
