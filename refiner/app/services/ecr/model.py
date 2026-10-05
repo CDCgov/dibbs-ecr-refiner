@@ -160,32 +160,32 @@ class EntryMatchRule:
             individually retained or removed.
 
         prune_container_guard_xpath:
-            XPath expression (relative to a prune_container_xpath
-            container) that gates whether the container is eligible for
-            pruning at all. When set, a container is only pruned when
-            this xpath matches *inside* it AND it holds no matched code
-            element; a container that does not match the guard is
-            retained as shared, organizer-scoped context.
+            XPath expression, evaluated relative to a
+            prune_container_xpath container, that gates whether the
+            container is eligible for pruning at all. When set, a
+            container is only pruned when this xpath selects something
+            AND the container holds no matched code element; a container
+            the guard does not select is retained as shared,
+            organizer-scoped context.
 
             This exists because an organizer may carry sibling
             components that are not themselves match candidates but
             apply to every observation in the battery. The canonical
-            case is the Results Specimen Collection Procedure (ID)
-            (2.16.840.1.113883.10.20.22.4.415) — a <component><procedure>
-            with fixed code 17636008 that carries the specimen collection
-            date, body site, and source. It is unmatchable by
-            construction (its code is never a configured trigger), so the
-            component-level prune would drop it even when a Result
-            Observation in the same organizer is retained, silently
-            losing the very context a PHA keys a case to.
+            case is the Results specimen collection `<procedure>`
+            (code 17636008), which carries the collection date, body
+            site, and source. It is unmatchable by construction (its
+            code is never a configured trigger), so the component-level
+            prune would drop it even when a Result Observation in the
+            same organizer is retained, silently losing the very context
+            a PHA keys a case to.
 
-            The guard is deliberately specific to the match target
-            (Result Observation V3), not "any observation": Laboratory
-            Result Status (...4.418) is itself an <observation> under a
-            sibling component and must also survive as shared context.
-            Keying the guard on the Result Observation V3 templateId
-            retains those siblings while still pruning non-matching
-            Result Observations.
+            The Results guard keys on the component's statement **kind**:
+            only an `<observation>` or nested `<organizer>` is prunable,
+            and even those are kept when they carry the IG-named context
+            templates (Specimen Collection Procedure ...4.415, Laboratory
+            Result Status ...4.418). Keying on templateIds alone fails
+            in both directions--see the SHARED-CONTEXT CARVE-OUT note in
+            `specification/entry_match_rules.py` for the #1504 history.
 
             When None, every container in prune_container_xpath is
             eligible for pruning (the original behavior). Default None.
