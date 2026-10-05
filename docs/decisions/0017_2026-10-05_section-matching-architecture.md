@@ -27,24 +27,24 @@ context to. It was fixed, broke again, and was fixed again:
 - **#1522** added a guard: "only prune an organizer component that contains a
   Result Observation (`…22.4.2`)". Procedures survived.
 - Epic sends proprietary result rows: an `<observation>` with an Epic
-  templateId, no code, and a bare value like `16`. They lacked the Result
-  Observation templateId, so the guard kept them as context, and they rendered
+  `templateId`, no code, and a bare value like `16`. They lacked the Result
+  Observation `templateId`, so the guard kept them as context, and they rendered
   as narrative rows reading "16". PHAs in two jurisdictions reported them as
   unreadable.
 - **#1763** flipped the guard to "keep a component **only** if it carries one
   of the IG's two context templates (`…4.415`, `…4.418`)". The "16" rows were
   gone.
 - A state jurisdiction then reported specimen procedures missing again. Epic
-  sends its specimen collection `<procedure>` with **no** templateId, so it no
+  sends its specimen collection `<procedure>` with **no** `templateId`, so it no
   longer qualified as context.
 
 Each fix was reasonable and tested against the case in front of it. The guard
 is a single XPath expression answering two questions at once ("is this context
-to keep?" and "is this noise to drop?"), and it keyed on templateIds, the part
+to keep?" and "is this noise to drop?"), and it keyed on `templateId`s, the part
 vendors are least consistent about. The tests used only IG-conformant shapes,
 so neither change failed anything.
 
-#1504 has since been fixed again: the guard now keys on statement **kind**, so
+# 1504 has since been fixed again: the guard now keys on statement **kind**, so
 only `<observation>`s and nested `<organizer>`s are prunable. A hand-authored
 fixture now pins every component kind seen in a Results organizer, in both
 directions.
@@ -56,7 +56,7 @@ reflects a broader pattern.
 
 **Each rule answers three questions at once**, all encoded as XPath strings:
 
-1. **What kind of statement is this?** It's never asked directly. A templateId
+1. **What kind of statement is this?** It's never asked directly. A `templateId`
    predicate inside the rule's `code_xpath` stands in for it.
 2. **Where can a condition code live in it?** That's `code_xpath`,
    `translation_xpath` and the code-system bucket.
@@ -76,7 +76,7 @@ condition code that no rule searches:
 - Indications in Encounters, Procedures and Medications
 
 **Rule precedence.** When a section has several rules, the first group whose
-XPath finds *any* code claims the entry, and later rules are never tried. This
+XPath finds _any_ code claims the entry, and later rules are never tried. This
 only has an effect in Plan of Treatment (8 groups) and Procedures (3 groups);
 every other section's rules form one group. In those two sections it silently
 drops real matches:
@@ -103,8 +103,8 @@ behavior from earlier PRs.
 
 **Tests skew toward IG shapes.** The integration scenarios all run against one
 synthetic document. The unit fixtures are mostly IG-conformant. The existing
-reachability test proves every rule *can* fire, not that a code at a given
-location is *retained*.
+reachability test proves every rule _can_ fire, not that a code at a given
+location is _retained_.
 
 **What isn't a problem.** The layering above the engines is sound:
 `pipeline → refine → process_section → engine`. Engines report facts
@@ -160,7 +160,7 @@ Keep the rule-driven engine and fix it incrementally, behind a new test net:
 **Cons:**
 
 - the "what survives" decision stays mostly XPath
-- there's no record of *how* each statement was recognized, and none shared
+- there's no record of _how_ each statement was recognized, and none shared
   with narrative reconstruction
 
 ### 2. Recognize, extract, decide, apply
@@ -168,7 +168,7 @@ Keep the rule-driven engine and fix it incrementally, behind a new test net:
 Classify each entry's statements into explicit kinds first, then work from
 those kinds:
 
-- **Recognize:** use templateIds where present, fall back to structure (element
+- **Recognize:** use `templateId`s where present, fall back to structure (element
   name, mood, parent and relationship), and otherwise mark the statement
   "unknown".
 - **Extract:** each `(section, kind)` declares every location where a condition
@@ -279,7 +279,7 @@ Any of these:
 
 If revisited:
 
-- unknown statements default to *kept as context*, with named noise dropped
+- unknown statements default to _kept as context_, with named noise dropped
   explicitly
 - keeping a statement keeps its subtree
 - code locations are declared per section, not globally
