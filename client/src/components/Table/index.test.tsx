@@ -76,7 +76,11 @@ describe('Table Component', () => {
   });
 
   it('applies rounded class to presentation div when prop is passed', () => {
-    render(<Table rounded>Content</Table>);
+    render(
+      <Table rounded>
+        <></>
+      </Table>
+    );
     const presentationDiv = screen.getByRole('presentation');
     expect(presentationDiv).toHaveClass('overflow-hidden rounded-lg');
   });
@@ -84,7 +88,7 @@ describe('Table Component', () => {
   it('applies border to presentation div when both bordered and rounded props are passed', () => {
     render(
       <Table bordered rounded>
-        Content
+        <></>
       </Table>
     );
     const presentationDiv = screen.getByRole('presentation');
@@ -92,7 +96,11 @@ describe('Table Component', () => {
   });
 
   it('applies border to table element when bordered prop is passed without rounded', () => {
-    const { container } = render(<Table bordered>Content</Table>);
+    const { container } = render(
+      <Table bordered>
+        <></>
+      </Table>
+    );
     const table = container.querySelector('table');
     expect(table).toHaveClass('border-gray-cool-30 border');
 
