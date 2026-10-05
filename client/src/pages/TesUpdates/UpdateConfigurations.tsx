@@ -229,12 +229,13 @@ export function UpdateConfigurations() {
           order to receive the most up to date eCRs.
         </p>
 
-        <div className="mt-4 bg-white px-10 py-6 lg:max-w-[75%]">
+        <div className="mt-4 bg-white px-10 py-6 lg:max-w-full">
           <Table
             borderless
             hover
-            maxWidth="md"
             className="mt-0 mb-4 text-black!"
+            width="lg"
+            layout="fixed"
           >
             <caption className="mt-10 pb-5 text-left text-lg! font-bold">
               Update existing drafts
@@ -310,7 +311,8 @@ export function UpdateConfigurations() {
           <Table
             borderless
             hover
-            maxWidth="md"
+            width="lg"
+            layout="fixed"
             className="mt-0 mb-4 text-black!"
           >
             <caption className="mt-10 mb-0 text-left text-lg! font-bold">

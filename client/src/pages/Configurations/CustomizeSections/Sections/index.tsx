@@ -122,7 +122,7 @@ export function Sections({
           {/* TODO: Revisit table layout for Refiner 2.0 UI migration. Evaluate
               whether a virtualized list is appropriate for large section counts.
               */}
-          <Table className="table-fixed">
+          <Table layout="fixed">
             <TableHead className="bg-page-bg border-gray-cool-70 z-sticky sticky top-0 border-b-2">
               <TableRow className="text-gray-cool-60">
                 <TableHeaderCell scope="col" className="w-20 py-3">

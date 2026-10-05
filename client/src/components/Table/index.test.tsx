@@ -220,9 +220,9 @@ describe('Table Component', () => {
     ];
 
     testCases.forEach(({ prop, expectedClass }) => {
-      it(`applies ${expectedClass} when maxWidth is "${prop}"`, () => {
+      it(`applies ${expectedClass} when width is "${prop}"`, () => {
         const { container } = render(
-          <Table maxWidth={prop as any}>
+          <Table width={prop as any}>
             <TableBody>
               <TableRow>
                 <TableCell>Content</TableCell>

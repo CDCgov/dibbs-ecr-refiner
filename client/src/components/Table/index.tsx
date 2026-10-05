@@ -10,7 +10,7 @@ interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   bordered?: boolean; // border-gray-cool-30 border + cell borders
   borderless?: boolean; // border-separate border-spacing-0 + minimal borders
   hover?: boolean; // hover:bg-gray-200 on tbody rows
-  maxWidth?: 'sm' | 'md' | 'lg' | 'full'; // max-w-302 equivalent
+  width?: 'sm' | 'md' | 'lg' | 'full'; // max-w-302 equivalent
   layout?: 'auto' | 'fixed'; // table-auto vs table-fixed
   cellHeight?: 'compact' | 'normal' | 'spacious'; // h-17 equivalent
 }
@@ -22,16 +22,16 @@ export function Table({
   bordered = false,
   borderless = false,
   hover = false,
-  maxWidth,
+  width = 'md',
   layout = 'auto',
   cellHeight = 'normal',
   ...props
 }: TableProps) {
-  const maxWidthClasses = {
-    sm: 'max-w-96',
-    md: 'max-w-302',
-    lg: 'max-w-4xl',
-    full: 'max-w-full',
+  const widthClasses = {
+    sm: 'w-96',
+    md: 'w-302',
+    lg: 'w-4xl',
+    full: 'w-full',
   };
 
   const cellHeightClasses = {
@@ -50,7 +50,7 @@ export function Table({
     >
       <table
         className={classNames(
-          'text-gray-cool-90 w-full text-left text-base',
+          `text-gray-cool-90 w-full text-left text-base ${widthClasses[width]}`,
           {
             'border-collapse': !borderless,
             'border-gray-cool-30 border': bordered && !rounded,
@@ -58,7 +58,6 @@ export function Table({
             '[&_tbody_tr:hover]:bg-gray-200': hover,
           },
           layout === 'auto' ? 'table-auto' : 'table-fixed',
-          maxWidth ? maxWidthClasses[maxWidth] : '',
           cellHeightClasses[cellHeight],
           className
         )}
