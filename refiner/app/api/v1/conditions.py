@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
@@ -6,11 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.code_systems import CodeSystemsReponse
 from app.db.code_systems.db import get_code_systems_db
-from app.db.codes.model import CodedConcept
-from app.db.conditions.model import DbConditionsContextGrouper
+from app.db.codes.model import CodedConcept, DbCode
+from app.db.conditions.model import (
+    DbConditionsContextGrouper,
+)
+from app.services.conditions.grouper_statuses import CodeSetStatus
 
 from ...db.conditions.db import (
-    GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
     get_conditions_with_rsg_codes_db,
@@ -59,8 +62,6 @@ async def get_conditions(
     ]
 
 
-type CodeSetStatus = Literal["not expanded", "partially complete", "fully complete"]
-
 type CodeCategoryStatus = Literal[
     "not included", "partially complete", "fully complete"
 ]
@@ -96,7 +97,7 @@ class GetConditionResponse:
     id: UUID
     display_name: str
     completeness_status: CompletenessStatus
-    codes: list[GetConditionCode]
+    codes: list[DbCode]
     systems: list[CodeSystemsReponse]
 
 
@@ -108,6 +109,13 @@ def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
         return "partially complete"
 
     return "not expanded"
+
+
+# ordered worst to best; anything unrecognized (including NULL) ranks lowest
+_COMPLETENESS_RANK: dict[str | None, int] = {
+    "partially complete": 1,
+    "fully complete": 2,
+}
 
 
 def _get_code_category_status(value: str | None) -> CodeCategoryStatus:
@@ -132,7 +140,19 @@ def _get_code_category_statuses(
         "specimen_source": "Specimen source codes",
     }
 
-    completeness_by_category = {row.category: row.completeness for row in groupers}
+    # a category can be described by more than one grouper, and the row order
+    # the database returns is not defined. taking the least complete of them is
+    # both deterministic and the safe direction to be wrong in: calling a
+    # category fully complete while one of its groupers is only partial claims
+    # coverage the refiner will not deliver
+    by_category: dict[str, list[str | None]] = defaultdict(list)
+    for row in groupers:
+        by_category[row.category].append(row.completeness)
+
+    completeness_by_category = {
+        category: min(values, key=lambda value: _COMPLETENESS_RANK.get(value, 0))
+        for category, values in by_category.items()
+    }
 
     return [
         CodeCategoryCompletenessStatus(
@@ -176,7 +196,7 @@ async def get_condition(
         )
 
     condition_codes = await get_condition_codes_by_condition_id_db(
-        id=condition.id, db=db
+        condition_id=condition.id, db=db
     )
 
     code_set_status = _get_code_set_status(condition.coverage_level)

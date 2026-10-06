@@ -2621,7 +2621,7 @@ def test_defensive_parser():
 
 > [!TIP]
 > **For Production Systems:** The eICR and RR IGs have complex business rules best validated with Schematron. Building this yourself is difficult. For a robust, pre-built solution integrated with the DiBBs ecosystem, refer to the validation scripts in the CDC's open-source **dibbs-ecr-refiner** project:
-> **<https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/validation>**
+> **<https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/tests/validation>**
 >
 > This repository contains executable Schematron and supporting code that can be integrated into your own validation pipeline. It saves the significant effort of implementing IG-specific business rule validation from scratch.
 

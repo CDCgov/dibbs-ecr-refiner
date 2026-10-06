@@ -65,6 +65,19 @@ export const getUser = (
     );
   }
 
+export const getGetUserUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/user`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 

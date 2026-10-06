@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
@@ -6,7 +5,6 @@ from pydantic import BaseModel
 
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
-from ..db.conditions.model import DbCondition, DbConditionCoding
 from ..db.configurations.model import DbNarrativeAction
 
 # NOTE:
@@ -18,21 +16,6 @@ from ..db.configurations.model import DbNarrativeAction
 # =============================================================================
 type CodeSystemKey = str
 type Oid = str
-
-
-def index_condition_code_list_by_system(
-    condition: DbCondition, system_keys_to_index_by: list[CodeSystemKey]
-) -> dict[CodeSystemKey, list[DbConditionCoding]]:
-    """
-    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
-    """
-    result: dict[CodeSystemKey, list[DbConditionCoding]] = defaultdict(list)
-    for s in system_keys_to_index_by:
-        # TODO: replace this string mapping with proper read to the codes table
-        condition_column_index = f"{s}_codes"
-        result[s] = getattr(condition, condition_column_index, [])
-
-    return result
 
 
 @dataclass(frozen=True)

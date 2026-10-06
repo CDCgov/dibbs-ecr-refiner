@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.db.codes.model import CodeDisplay
+from app.db.codes.model import DbCode
 
 
 @dataclass
@@ -51,18 +51,16 @@ class ConditionDiffExportData:
 
     canonical_url: str
     condition_name: str
-    added_codes: list[CodeDisplay]
-    removed_codes: list[CodeDisplay]
+    added_codes: list[DbCode]
+    removed_codes: list[DbCode]
 
     def __post_init__(self):
         """Helper to transform nested JSON returned from SQL into CodeDisplay objects."""
         self.added_codes = [
-            c if isinstance(c, CodeDisplay) else CodeDisplay(**c)
-            for c in self.added_codes
+            c if isinstance(c, DbCode) else DbCode(**c) for c in self.added_codes
         ]
         self.removed_codes = [
-            c if isinstance(c, CodeDisplay) else CodeDisplay(**c)
-            for c in self.removed_codes
+            c if isinstance(c, DbCode) else DbCode(**c) for c in self.removed_codes
         ]
 
 
@@ -74,3 +72,23 @@ class ExportDiffInput(BaseModel):
     canonical_url: str
     cur_tes_version: str
     prev_tes_version: str
+
+
+@dataclass(frozen=True)
+class TesConfigToUpdate:
+    """A configuration to update with new TES codes."""
+
+    configuration_id: UUID
+    configuration_name: str
+    codesets_to_update: list[str]
+    configuration_tes_version: str
+
+
+@dataclass
+class DbTesConfigsToUpdateResponse:
+    """
+    The response needed for rendering of the TES update configuration page.
+    """
+
+    existing_drafts: list[TesConfigToUpdate]
+    drafts_to_create: list[TesConfigToUpdate]

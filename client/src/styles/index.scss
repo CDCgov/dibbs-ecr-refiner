@@ -1,11 +1,6 @@
 @forward 'uswds-theme';
 @forward 'uswds';
 
-#root {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
 /**
   * @mixin
   * @desc Sets outline to a better complimentary and WCAG AA rated contrast
@@ -63,8 +58,8 @@ button:focus:not(:focus-visible),
 .usa-select {
   margin: 0;
 }
-.usa-table td,
-.usa-table th {
+.legacy-table td,
+.legacy-table th {
   border: none;
 }
 

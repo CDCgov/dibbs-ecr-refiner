@@ -14,6 +14,9 @@
 
 # Local Data Storage
 __pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 node_modules/
 .npm/
 .cache/
@@ -50,3 +53,6 @@ client/e2e/downloads/
 # Risk Assessments
 docs/risk-assessments/
 !docs/risk-assessments/.template
+
+# 11ty
+docs/_site

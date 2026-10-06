@@ -1,6 +1,7 @@
 import { Button } from '@components/Button';
 import {
   getGetCodeCountsQueryKey,
+  getGetCodeFiltersQueryKey,
   getGetCodesInfiniteQueryKey,
   getGetConfigurationQueryKey,
   useDeleteCustomCodeFromConfiguration,
@@ -37,6 +38,9 @@ export function DeleteCustomCodeButton({
           await queryClient.invalidateQueries({
             queryKey: getGetCodeCountsQueryKey(configurationId),
           });
+          await queryClient.invalidateQueries({
+            queryKey: getGetCodeFiltersQueryKey(configurationId),
+          });
           showToast({
             heading: 'Deleted code',
             body: code,
@@ -50,6 +54,7 @@ export function DeleteCustomCodeButton({
       className="text-state-error-dark text-sm! font-semibold hover:cursor-pointer hover:underline"
       variant="unstyled"
       onClick={handleDelete}
+      aria-label="Delete custom code"
     >
       Delete
     </Button>

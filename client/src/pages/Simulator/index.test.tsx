@@ -10,7 +10,7 @@ import { Mock } from 'vitest';
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
-import { TestQueryClientProvider } from '../../test-utils.tsx';
+import { TestProviders } from '../../test-utils.tsx';
 import { DiscoveredConfigurationsResponse } from '../../api/schemas';
 
 vi.mock('../../api/simulator/simulator', () => ({
@@ -52,9 +52,9 @@ const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
 const renderView = () =>
   render(
     <MemoryRouter>
-      <TestQueryClientProvider>
+      <TestProviders>
         <Simulator />
-      </TestQueryClientProvider>
+      </TestProviders>
     </MemoryRouter>
   );
 

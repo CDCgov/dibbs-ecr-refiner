@@ -17,14 +17,39 @@ REMOVE_SECTION_MESSAGE: Final[str] = (
     "Section details have been removed as requested by jurisdiction for this condition."
 )
 
-REMOVE_NARRATIVE_MESSAGE: Final[str] = (
+# the removal notice is two claims, and only the first always holds. a
+# narrative-only section (Chief Complaint, Reason for Visit, ...) has no coded
+# entries to preserve by definition, so the second sentence is appended only
+# when the section actually still carries entries -- see
+# writers.replace_narrative_with_removal_notice
+NARRATIVE_REMOVED_MESSAGE: Final[str] = (
     "Section narrative has been removed from this refined document as "
-    "configured by jurisdiction. Clinical entries are preserved for "
-    "machine processing."
+    "configured by jurisdiction."
+)
+
+ENTRIES_PRESERVED_SENTENCE: Final[str] = (
+    " Clinical entries are preserved for machine processing."
+)
+
+REMOVE_NARRATIVE_MESSAGE: Final[str] = (
+    NARRATIVE_REMOVED_MESSAGE + ENTRIES_PRESERVED_SENTENCE
 )
 
 MINIMAL_SECTION_MESSAGE: Final[str] = (
     "No clinical information matches the configured code sets for this condition."
+)
+
+# the reconstruction path's counterpart to MINIMAL_SECTION_MESSAGE. it says the
+# same clinical fact and one more thing: reconstruction RAN. zero surviving
+# entries has a correct derived answer -- no content -- and a reviewer asking
+# "did reconstruct do anything?" needs the narrative to answer that rather than
+# read like the section was skipped. CDA R2 has no empty table to say it with:
+# StrucDoc.Table requires a <tbody>, which requires a <tr>, which requires a
+# cell, so a rowless table is schema-invalid and a one-cell stub table would
+# only be this paragraph wearing a thead that describes nothing
+RECONSTRUCTED_EMPTY_MESSAGE: Final[str] = (
+    "Narrative reconstructed after refinement: no clinical entries in this "
+    "section matched the configured code sets for this condition."
 )
 
 PROVENANCE_LABEL: Final[str] = "eCR Refiner — Jurisdiction Configuration"
@@ -80,11 +105,25 @@ PROVENANCE_OUTCOME_NOTES: Final[dict[SectionOutcome, str]] = {
     SectionOutcome.REFINED_WITH_MATCHES: "Refined; matches found",
     SectionOutcome.REFINED_NARRATIVE_REMOVED: "Refined; narrative removed",
     SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED: "Refined; narrative reconstructed",
-    SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED: (
-        "Refined; reconstruction attempted but no matching entries were found, original narrative retained"
+    SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_REDUCED: (
+        "Refined; narrative reconstructed, but some entries could not be fully "
+        "rebuilt and are shown in reduced form"
     ),
+    # says both halves on purpose: the reconstruction succeeded AND it has
+    # nothing in it. reporting only the second half is what sent a reviewer
+    # looking for a broken feature in #1635
+    SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_EMPTY: (
+        "Refined; narrative reconstructed successfully, but no entries matched "
+        "the configuration, so the reconstruction reports no content"
+    ),
+    # both reconstruction fallbacks say plainly that the retained narrative is
+    # the **source** narrative, written against the full entry set: it may describe
+    # entries this refinement removed. a reviewer who reads "original narrative
+    # retained" as "nothing was dropped here" is reading it backwards
+    #
     SectionOutcome.REFINED_RECONSTRUCT_UNAVAILABLE_FALLBACK_RETAINED: (
-        "Refined; reconstruction currently unavailable for this section, original narrative retained"
+        "Refined; reconstruction currently unavailable for this section, "
+        "original narrative retained and may describe removed entries"
     ),
     SectionOutcome.REFINED_NO_MATCHES_NARRATIVE_RETAINED: (
         "Refined; no matches found, narrative retained"

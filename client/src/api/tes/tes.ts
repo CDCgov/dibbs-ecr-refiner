@@ -1,14 +1,18 @@
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -21,9 +25,14 @@ import type {
 } from 'axios';
 
 import type {
+  ApplyTesUpdatesToDraftsRequest,
+  ApplyTesUpdatesToDraftsResponse,
+  CreateDraftsFromActiveConfigsRequest,
+  CreateDraftsFromActiveConfigsResponse,
   ExportConditionDiffParams,
   GetTesDiffDetailsParams,
   HTTPValidationError,
+  TesConfigsToUpdateResponse,
   TesDiffConditionDetails,
   TesResponse
 } from '../schemas';
@@ -68,6 +77,19 @@ export const getTesUpdates = (
       `/api/v1/tes/diff-details`,options
     );
   }
+
+export const getGetTesUpdatesUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/diff-details`,
+    baseURL: '',
+
+
+  });
+}
 
 
 
@@ -172,6 +194,19 @@ export const getTesDiffDetails = (
     );
   }
 
+export const getGetTesDiffDetailsUrl = (params: GetTesDiffDetailsParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/`,
+    baseURL: '',
+    params,
+
+  });
+}
+
 
 
 
@@ -257,6 +292,9 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
  *     prev_version(str) : The floor TES version to compare against
  *     canonical_url(str) : The condition diff being requested
  *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *         Response: an HTTP response that gives the browser a CSV file to download
  * @summary Export Tes Condition Diff
  */
 export const exportConditionDiff = (
@@ -270,6 +308,19 @@ export const exportConditionDiff = (
         params: {...params, ...options?.params},}
     );
   }
+
+export const getExportConditionDiffUrl = (params: ExportConditionDiffParams,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/export`,
+    baseURL: '',
+    params,
+
+  });
+}
 
 
 
@@ -342,3 +393,276 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+/**
+ * Return outdated drafts and active configurations for the current jurisdiction.
+ * @summary Get Configurations To Update
+ */
+export const getConfigurationsToUpdate = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<TesConfigsToUpdateResponse>> => {
+
+
+    return axios.default.get(
+      `/api/v1/tes/configurations-to-update`,options
+    );
+  }
+
+export const getGetConfigurationsToUpdateUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/configurations-to-update`,
+    baseURL: '',
+
+
+  });
+}
+
+
+
+
+export const getGetConfigurationsToUpdateQueryKey = () => {
+    return [
+    `/api/v1/tes/configurations-to-update`
+    ] as const;
+    }
+
+
+export const getGetConfigurationsToUpdateQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationsToUpdateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationsToUpdate>>> = ({ signal }) => getConfigurationsToUpdate({ signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetConfigurationsToUpdateQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationsToUpdate>>>
+export type GetConfigurationsToUpdateQueryError = AxiosError<unknown>
+
+
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationsToUpdate>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Configurations To Update
+ */
+
+export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetConfigurationsToUpdateQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+/**
+ * Apply the latest TES release to selected existing drafts.
+ *
+ * Active configurations are not handled by this endpoint. The separate
+ * create-draft workflow handles those configurations.
+ * @summary Apply Tes Updates To Existing Drafts
+ */
+export const applyTesUpdatesToExistingDrafts = (
+    applyTesUpdatesToDraftsRequest: ApplyTesUpdatesToDraftsRequest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ApplyTesUpdatesToDraftsResponse>> => {
+
+
+    return axios.default.patch(
+      `/api/v1/tes/configurations/drafts`,
+      applyTesUpdatesToDraftsRequest,options
+    );
+  }
+
+export const getApplyTesUpdatesToExistingDraftsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/configurations/drafts`,
+    baseURL: '',
+
+
+  });
+}
+
+
+
+
+export const getApplyTesUpdatesToExistingDraftsMutationKey = () => ['applyTesUpdatesToExistingDrafts'] as const;
+
+export const getApplyTesUpdatesToExistingDraftsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyTesUpdatesToExistingDrafts>>, TError,ApplyTesUpdatesToExistingDraftsMutationVariables, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof applyTesUpdatesToExistingDrafts>>, TError,ApplyTesUpdatesToExistingDraftsMutationVariables, TContext> => {
+
+const mutationKey = getApplyTesUpdatesToExistingDraftsMutationKey();
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyTesUpdatesToExistingDrafts>>, ApplyTesUpdatesToExistingDraftsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyTesUpdatesToExistingDrafts(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyTesUpdatesToExistingDraftsMutationResult = NonNullable<Awaited<ReturnType<typeof applyTesUpdatesToExistingDrafts>>>
+    export type ApplyTesUpdatesToExistingDraftsMutationBody = ApplyTesUpdatesToDraftsRequest
+    export type ApplyTesUpdatesToExistingDraftsMutationError = AxiosError<HTTPValidationError>
+    export type ApplyTesUpdatesToExistingDraftsMutationVariables = {data: ApplyTesUpdatesToDraftsRequest}
+
+    /**
+ * @summary Apply Tes Updates To Existing Drafts
+ */
+export const useApplyTesUpdatesToExistingDrafts = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyTesUpdatesToExistingDrafts>>, TError,ApplyTesUpdatesToExistingDraftsMutationVariables, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof applyTesUpdatesToExistingDrafts>>,
+        TError,
+        ApplyTesUpdatesToExistingDraftsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApplyTesUpdatesToExistingDraftsMutationOptions(options), queryClient);
+    }
+    /**
+ * Create new draft configurations from selected active configurations.
+ *
+ * Each new draft uses the latest TES release and inherits all settings
+ * (custom codes, section processing, code exclusions) from the active config.
+ * Active configurations remain unchanged until new drafts are activated.
+ * @summary Create Drafts From Active Configurations
+ */
+export const createDraftsFromActiveConfigurations = (
+    createDraftsFromActiveConfigsRequest: CreateDraftsFromActiveConfigsRequest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CreateDraftsFromActiveConfigsResponse>> => {
+
+
+    return axios.default.post(
+      `/api/v1/tes/configurations/drafts-from-active`,
+      createDraftsFromActiveConfigsRequest,options
+    );
+  }
+
+export const getCreateDraftsFromActiveConfigurationsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/tes/configurations/drafts-from-active`,
+    baseURL: '',
+
+
+  });
+}
+
+
+
+
+export const getCreateDraftsFromActiveConfigurationsMutationKey = () => ['createDraftsFromActiveConfigurations'] as const;
+
+export const getCreateDraftsFromActiveConfigurationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, TError,CreateDraftsFromActiveConfigurationsMutationVariables, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, TError,CreateDraftsFromActiveConfigurationsMutationVariables, TContext> => {
+
+const mutationKey = getCreateDraftsFromActiveConfigurationsMutationKey();
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, CreateDraftsFromActiveConfigurationsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDraftsFromActiveConfigurations(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDraftsFromActiveConfigurationsMutationResult = NonNullable<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>>
+    export type CreateDraftsFromActiveConfigurationsMutationBody = CreateDraftsFromActiveConfigsRequest
+    export type CreateDraftsFromActiveConfigurationsMutationError = AxiosError<HTTPValidationError>
+    export type CreateDraftsFromActiveConfigurationsMutationVariables = {data: CreateDraftsFromActiveConfigsRequest}
+
+    /**
+ * @summary Create Drafts From Active Configurations
+ */
+export const useCreateDraftsFromActiveConfigurations = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>, TError,CreateDraftsFromActiveConfigurationsMutationVariables, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createDraftsFromActiveConfigurations>>,
+        TError,
+        CreateDraftsFromActiveConfigurationsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateDraftsFromActiveConfigurationsMutationOptions(options), queryClient);
+    }

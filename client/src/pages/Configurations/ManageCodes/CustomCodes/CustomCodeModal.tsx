@@ -1,6 +1,7 @@
 import { Button } from '@components/Button';
 import {
   getGetCodeCountsQueryKey,
+  getGetCodeFiltersQueryKey,
   getGetCodesInfiniteQueryKey,
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
@@ -156,6 +157,9 @@ function CustomCodeForm({
             await queryClient.invalidateQueries({
               queryKey: getGetCodeCountsQueryKey(configurationId),
             });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeFiltersQueryKey(configurationId),
+            });
             showToast({ heading: 'Custom code updated', body: code });
             onClose();
           },
@@ -189,6 +193,9 @@ function CustomCodeForm({
             });
             await queryClient.invalidateQueries({
               queryKey: getGetCodeCountsQueryKey(configurationId),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: getGetCodeFiltersQueryKey(configurationId),
             });
             showToast({ heading: 'Custom code added', body: code });
             onClose();

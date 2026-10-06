@@ -1,7 +1,7 @@
 \restrict dbmate
 
--- Dumped from database version 18.4
--- Dumped by pg_dump version 18.4
+-- Dumped from database version 18.6
+-- Dumped by pg_dump version 18.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -68,7 +68,10 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'bulk_add_custom_code',
     'create_custom_section',
     'edit_custom_section',
-    'delete_custom_section'
+    'delete_custom_section',
+    'bulk_delete_custom_code',
+    'tes_update_existing_draft',
+    'tes_create_draft_from_active'
 );
 
 
@@ -171,13 +174,8 @@ CREATE TABLE public.conditions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     canonical_url text NOT NULL,
     display_name text,
-    loinc_codes jsonb,
-    snomed_codes jsonb,
-    icd10_codes jsonb,
-    rxnorm_codes jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
     coverage_level text,
     coverage_level_reason text,
     coverage_level_date date,
@@ -198,19 +196,15 @@ CREATE TABLE public.conditions_codes (
 
 
 --
--- Name: conditions_context_groupers; Type: TABLE; Schema: public; Owner: -
+-- Name: conditions_codes_temp; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.conditions_context_groupers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
+CREATE TABLE public.conditions_codes_temp (
     condition_id uuid NOT NULL,
-    name text NOT NULL,
-    category text NOT NULL,
-    canonical_url text NOT NULL,
-    code_count integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    completeness text
+    code_id uuid NOT NULL,
+    valueset_id uuid NOT NULL,
+    is_child_rsg boolean DEFAULT false,
+    is_trigger_code boolean DEFAULT false NOT NULL
 );
 
 
@@ -312,20 +306,22 @@ CREATE TABLE public.events (
     configuration_id uuid NOT NULL,
     event_type public.event_type_enum NOT NULL,
     action_text text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    condition_id uuid,
+    code_count integer
 );
 
 
 --
--- Name: events_custom_code_uploads; Type: TABLE; Schema: public; Owner: -
+-- Name: events_custom_codes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.events_custom_code_uploads (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    event_id uuid NOT NULL,
-    system text NOT NULL,
-    code text NOT NULL,
-    name text NOT NULL
+CREATE TABLE public.events_custom_codes (
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT events_custom_code_uploads_id_not_null NOT NULL,
+    event_id uuid CONSTRAINT events_custom_code_uploads_event_id_not_null NOT NULL,
+    system text CONSTRAINT events_custom_code_uploads_system_not_null NOT NULL,
+    code text CONSTRAINT events_custom_code_uploads_code_not_null NOT NULL,
+    name text CONSTRAINT events_custom_code_uploads_name_not_null NOT NULL
 );
 
 
@@ -337,6 +333,28 @@ CREATE TABLE public.jurisdictions (
     id text NOT NULL,
     name text NOT NULL,
     state_code text
+);
+
+
+--
+-- Name: orphaned_valuesets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.orphaned_valuesets (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    valueset_id uuid NOT NULL,
+    canonical_url text NOT NULL,
+    condition_canonical_url text NOT NULL,
+    condition_version text NOT NULL,
+    display_name text,
+    category text,
+    code_count integer,
+    completeness text,
+    parent_url text,
+    memberships_at_removal integer NOT NULL,
+    valueset_created_at timestamp with time zone NOT NULL,
+    valueset_updated_at timestamp with time zone NOT NULL,
+    removed_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -403,6 +421,24 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: valuesets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.valuesets (
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT conditions_context_groupers_id_not_null NOT NULL,
+    condition_id uuid CONSTRAINT conditions_context_groupers_condition_id_not_null NOT NULL,
+    display_name text CONSTRAINT conditions_context_groupers_name_not_null NOT NULL,
+    category text CONSTRAINT conditions_context_groupers_category_not_null NOT NULL,
+    canonical_url text CONSTRAINT conditions_context_groupers_canonical_url_not_null NOT NULL,
+    code_count integer DEFAULT 0 CONSTRAINT conditions_context_groupers_code_count_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT conditions_context_groupers_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT conditions_context_groupers_updated_at_not_null NOT NULL,
+    completeness text,
+    parent_url text
+);
+
+
+--
 -- Name: active_payload_schema_reactivations active_payload_schema_reactivations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -435,18 +471,26 @@ ALTER TABLE ONLY public.conditions
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: conditions_codes_temp conditions_codes_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_context_groupers
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT conditions_codes_temp_pkey PRIMARY KEY (condition_id, code_id, valueset_id);
+
+
+--
+-- Name: valuesets conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.valuesets
     ADD CONSTRAINT conditions_context_groupers_condition_id_canonical_url_key UNIQUE (condition_id, canonical_url);
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: valuesets conditions_context_groupers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_context_groupers
+ALTER TABLE ONLY public.valuesets
     ADD CONSTRAINT conditions_context_groupers_pkey PRIMARY KEY (id);
 
 
@@ -456,14 +500,6 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
-
-
---
--- Name: conditions_codes conditions_rsg_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions_codes
-    ADD CONSTRAINT conditions_rsg_codes_pkey PRIMARY KEY (condition_id, code_id);
 
 
 --
@@ -547,10 +583,10 @@ ALTER TABLE ONLY public.custom_codes
 
 
 --
--- Name: events_custom_code_uploads events_custom_code_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: events_custom_codes events_custom_code_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.events_custom_code_uploads
+ALTER TABLE ONLY public.events_custom_codes
     ADD CONSTRAINT events_custom_code_uploads_pkey PRIMARY KEY (id);
 
 
@@ -568,6 +604,14 @@ ALTER TABLE ONLY public.events
 
 ALTER TABLE ONLY public.jurisdictions
     ADD CONSTRAINT jurisdictions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: orphaned_valuesets orphaned_valuesets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orphaned_valuesets
+    ADD CONSTRAINT orphaned_valuesets_pkey PRIMARY KEY (id);
 
 
 --
@@ -683,14 +727,14 @@ CREATE INDEX active_payload_schema_reactivations_target_schema_version_idx ON pu
 -- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX conditions_context_groupers_category_idx ON public.conditions_context_groupers USING btree (category);
+CREATE INDEX conditions_context_groupers_category_idx ON public.valuesets USING btree (category);
 
 
 --
 -- Name: conditions_context_groupers_condition_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX conditions_context_groupers_condition_id_idx ON public.conditions_context_groupers USING btree (condition_id);
+CREATE INDEX conditions_context_groupers_condition_id_idx ON public.valuesets USING btree (condition_id);
 
 
 --
@@ -722,6 +766,13 @@ CREATE INDEX idx_conditions_codes_condition_id ON public.conditions_codes USING 
 
 
 --
+-- Name: idx_configuration_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_configuration_status ON public.configurations USING btree (status);
+
+
+--
 -- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -743,10 +794,10 @@ CREATE TRIGGER update_codes_updated_at BEFORE UPDATE ON public.codes FOR EACH RO
 
 
 --
--- Name: conditions_context_groupers update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: valuesets update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER update_conditions_context_groupers_updated_at BEFORE UPDATE ON public.conditions_context_groupers FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+CREATE TRIGGER update_conditions_context_groupers_updated_at BEFORE UPDATE ON public.valuesets FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -799,10 +850,10 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: valuesets conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.conditions_context_groupers
+ALTER TABLE ONLY public.valuesets
     ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
@@ -843,7 +894,7 @@ ALTER TABLE ONLY public.configurations_conditions_code_exclusions
 --
 
 ALTER TABLE ONLY public.configurations_conditions_code_exclusions
-    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT configurations_conditions_code_exclusions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -927,11 +978,27 @@ ALTER TABLE ONLY public.custom_codes
 
 
 --
--- Name: events_custom_code_uploads events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: events events_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.events_custom_code_uploads
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT events_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
+
+
+--
+-- Name: events_custom_codes events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events_custom_codes
     ADD CONSTRAINT events_custom_code_uploads_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions_codes_temp fk_code_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT fk_code_id_fkey FOREIGN KEY (code_id) REFERENCES public.codes(id) ON DELETE CASCADE;
 
 
 --
@@ -940,6 +1007,14 @@ ALTER TABLE ONLY public.events_custom_code_uploads
 
 ALTER TABLE ONLY public.codes
     ADD CONSTRAINT fk_codes_system_id_fkey FOREIGN KEY (system_id) REFERENCES public.systems(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conditions_codes_temp fk_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT fk_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
 --
@@ -956,6 +1031,14 @@ ALTER TABLE ONLY public.events
 
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: conditions_codes_temp fk_valueset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conditions_codes_temp
+    ADD CONSTRAINT fk_valueset_id_fkey FOREIGN KEY (valueset_id) REFERENCES public.valuesets(id) ON DELETE CASCADE;
 
 
 --
@@ -1015,4 +1098,14 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260728212408'),
     ('20260729154745'),
     ('20260803202038'),
-    ('20260810165940');
+    ('20260810165940'),
+    ('20260813133341'),
+    ('20260813142528'),
+    ('20260813142548'),
+    ('20260825151652'),
+    ('20260826143830'),
+    ('20260901143317'),
+    ('20260902230457'),
+    ('20260903182620'),
+    ('20260909225054'),
+    ('20260916173742');

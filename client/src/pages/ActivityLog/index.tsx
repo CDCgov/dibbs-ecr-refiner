@@ -32,7 +32,7 @@ export function ActivityLog() {
   const { total_pages, configuration_options } = eventResponse.data;
 
   return (
-    <section className="mx-auto p-4">
+    <section className="mx-auto">
       <div className="mt-10">
         <Title>Activity log</Title>
         <p className="mt-2">
@@ -71,7 +71,7 @@ export function ActivityLog() {
           />
         </div>
       </div>
-      <div className="mt-6 flex flex-col">
+      <div className="mt-5 flex flex-col">
         <ActivityLogEntries
           filteredLogEntries={eventResponse.data.audit_events}
         />

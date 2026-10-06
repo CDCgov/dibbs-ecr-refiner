@@ -60,6 +60,19 @@ export const getCodeSystems = (
     );
   }
 
+export const getGetCodeSystemsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/code-systems/`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigTest } from '.';
-import { TestQueryClientProvider } from '../../../test-utils';
+import { TestProviders } from '../../../test-utils';
 import { Condition, HTTPValidationError } from '../../../api/schemas';
 import userEvent, { UserEvent } from '@testing-library/user-event';
 import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
@@ -83,13 +83,13 @@ export async function uploadTestFile(user: UserEvent) {
 describe('Config testing page', () => {
   function renderPage() {
     return render(
-      <TestQueryClientProvider>
+      <TestProviders>
         <MemoryRouter initialEntries={['/configurations/config-id/test']}>
           <Routes>
             <Route path="/configurations/:id/test" element={<ConfigTest />} />
           </Routes>
         </MemoryRouter>
-      </TestQueryClientProvider>
+      </TestProviders>
     );
   }
 
@@ -103,7 +103,7 @@ describe('Config testing page', () => {
   it('should display an "Export configuration" button', () => {
     renderPage();
     expect(
-      screen.getByText('Export configuration', { selector: 'a' })
+      screen.getByRole('button', { name: 'Export configuration' })
     ).toBeInTheDocument();
   });
 

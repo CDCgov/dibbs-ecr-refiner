@@ -1,0 +1,60 @@
+{
+  "_provenance": "Real orphaned valueset rows, not invented ones. Before #1250 the seeder resolved a condition's Additional Context Groupers by name substring rather than by the reference graph, so any condition whose name is a substring of another's absorbed that condition's ACGs: 'Influenza' from 'Invasive_Haemophilus_Influenzae_Disease', 'Encephalitis' from 'Eastern equine encephalitis virus disease'. 32c7d01a fixed the matching; nothing removed the rows already written, so a production database carried 16 of them until the quarantine landed. Regenerate by replaying the pre-fix matcher (git show 32c7d01a^:refiner/scripts/seeding/lib.py:408) against the committed bundles and keeping the pairs resolve_children does not declare.",
+  "_why_these_two": "They cover both failure modes. Influenza has one live grouper in each of the five categories it absorbs, so every one collides. Encephalitis has no ACGs at all, so its absorbed grouper invents a category from nothing.",
+  "absorbed": [
+    {
+      "condition_canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/74731f8c-a961-4b64-b485-1d7525019c58",
+      "condition_display_name": "Encephalitis",
+      "groupers": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/df63975f-e01a-4e7e-b7cd-6d7ef8cc6a93",
+          "display_name": "Eastern equine encephalitis virus disease Additional Context Symptom Codes",
+          "category": "symptom",
+          "code_count": 38,
+          "completeness": "partially complete"
+        }
+      ]
+    },
+    {
+      "condition_canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+      "condition_display_name": "Influenza",
+      "groupers": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/03760828-500d-492d-8d16-6e955f57c877",
+          "display_name": "Invasive Haemophilus Influenzae Disease Additional Context Clinical Lab Result Codes",
+          "category": "clinical_lab_result",
+          "code_count": 23,
+          "completeness": "fully complete"
+        },
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/9337f37f-13df-4461-b151-bbac14aa3fbc",
+          "display_name": "Invasive Haemophilus Influenzae Disease Additional Context Diagnosis Codes",
+          "category": "diagnosis",
+          "code_count": 10223,
+          "completeness": "fully complete"
+        },
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/68b87275-8621-4f24-8c3c-f955239af338",
+          "display_name": "Invasive Haemophilus Influenzae Disease Additional Context Immunization Codes",
+          "category": "immunization",
+          "code_count": 99,
+          "completeness": "fully complete"
+        },
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/b7616656-bddc-48d8-83fe-a4534ab5c5ca",
+          "display_name": "Invasive Haemophilus Influenzae Disease Additional Context Medication Codes",
+          "category": "medication",
+          "code_count": 5677,
+          "completeness": "fully complete"
+        },
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/1acf850f-c0d6-438f-8f6c-e784b99f9482",
+          "display_name": "Invasive Haemophilus Influenzae Disease Additional Context Symptom Codes",
+          "category": "symptom",
+          "code_count": 2215,
+          "completeness": "fully complete"
+        }
+      ]
+    }
+  ]
+}

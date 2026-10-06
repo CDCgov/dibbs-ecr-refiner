@@ -60,6 +60,19 @@ export const getReleases = (
     );
   }
 
+export const getGetReleasesUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/releases/`,
+    baseURL: '',
+
+
+  });
+}
+
 
 
 

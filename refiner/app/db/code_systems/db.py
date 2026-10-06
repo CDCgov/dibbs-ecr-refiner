@@ -1,21 +1,9 @@
-from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg.rows import class_row
 
+from app.db.code_systems.model import DbCodeSystem
 from app.db.pool import AsyncDatabaseConnection
-
-
-@dataclass
-class DbCodeSystem:
-    """
-    A code system row from the `systems` table.
-    """
-
-    id: UUID
-    key: str
-    display_name: str
-    oid: str
 
 
 async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[DbCodeSystem]:

@@ -1,11 +1,19 @@
 import { AuditEvent } from '../../api/schemas';
-import { Table } from '@components/Table';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { useDatetimeFormatter } from '../../hooks/UseDatetimeFormatter';
 import { Button } from '@components/Button';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { useState } from 'react';
 import { useGetCustomCodeUploadEvents } from '../../api/events/events';
 import { Spinner } from '@components/Spinner';
+import { useNavigate } from 'react-router';
 
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];
@@ -20,76 +28,112 @@ export function ActivityLogEntries({
   const dateHeader = 'Date';
 
   const formatDatetime = useDatetimeFormatter();
+  const navigate = useNavigate();
 
   return (
-    <Table striped fullWidth>
-      <thead>
-        <tr>
-          <th scope="col">{nameHeader} </th>
-          <th scope="col">{conditionHeader} </th>
-          <th scope="col">{actionHeader}</th>
-          <th scope="col">{dateHeader}</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table bordered rounded hover width="md" layout="fixed">
+      <TableHead bordered>
+        <TableRow>
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[16%] py-3 leading-6.5">
+            {nameHeader}
+          </TableHeaderCell>
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[22%] py-3 leading-6.5">
+            {conditionHeader}
+          </TableHeaderCell>
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[46%] py-3 leading-6.5">
+            {actionHeader}
+          </TableHeaderCell>
+          <TableHeaderCell className="bg-gray-cool-5 text-gray-cool-90 w-[16%] py-3 leading-6.5">
+            {dateHeader}
+          </TableHeaderCell>
+        </TableRow>
+      </TableHead>
+      <TableBody striped bordered background="white">
         {filteredLogEntries
           .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
           .map((r) => {
             const { date, time } = formatDatetime(r.created_at);
             return (
-              <tr key={r.id} aria-label="Log entry">
-                <td
+              <TableRow key={r.id} aria-label="Log entry">
+                <TableCell
                   data-label={nameHeader}
                   className="text-gray-cool-90! font-bold! break-all"
                 >
                   {r.username}
-                </td>
-                <td data-label={conditionHeader}>
+                </TableCell>
+                <TableCell size="sm" data-label={conditionHeader}>
                   <div className="flex flex-col gap-1">
                     <span className="text-gray-cool-90!">
                       {r.configuration_name}
                     </span>
-                    <span className="text-gray-cool-60!">
+                    <span className="text-gray-cool-90!">
                       Version {r.configuration_version}
                     </span>
                   </div>
-                </td>
-                <td className="text-gray-cool-90!" data-label={actionHeader}>
-                  <p className="flex flex-col items-start gap-1">
-                    <span>{r.action_text}</span>
+                </TableCell>
+                <TableCell
+                  size="sm"
+                  className="text-gray-cool-90!"
+                  data-label={actionHeader}
+                >
+                  <div className="flex flex-col items-start gap-1">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {r.action_text}
+                        {r.code_count != null
+                          ? ` (${r.code_count.toLocaleString()} codes)`
+                          : null}
+                      </span>
+
+                      {r.condition_id && r.code_count != null ? (
+                        <CodeSetExportLink eventId={r.id} />
+                      ) : null}
+                    </div>
+
                     {r.has_custom_code_upload_events ? (
                       <ViewAllCustomCodeEventsButton
                         eventId={r.id}
-                        importedByUsername={r.username}
-                        importDate={date}
+                        modifiedByUsername={r.username}
+                        modifiedDate={date}
                       />
                     ) : null}
-                  </p>
-                </td>
-                <td data-label={dateHeader}>
-                  <div className="flex flex-col">
-                    <span>{date}</span>
-                    <span>{time}</span>
+
+                    {r.event_type === 'tes_update_existing_draft' ||
+                    r.event_type === 'tes_create_draft_from_active' ? (
+                      <Button
+                        className="p-0!"
+                        variant="tertiary"
+                        onClick={() => navigate('/tes-updates')}
+                      >
+                        View updates
+                      </Button>
+                    ) : null}
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+                <TableCell size="sm" data-label={dateHeader}>
+                  <div className="flex flex-col">
+                    <span className="text-gray-cool-90">{date}</span>
+                    <span className="text-gray-cool-90">{time}</span>
+                  </div>
+                </TableCell>
+              </TableRow>
             );
           })}
-      </tbody>
+      </TableBody>
     </Table>
   );
 }
 
 interface ViewAllCustomCodeEventsButtonProps {
   eventId: string;
-  importedByUsername: string;
-  importDate: string;
+  modifiedByUsername: string;
+  modifiedDate: string;
 }
 
 function ViewAllCustomCodeEventsButton({
   eventId,
-  importedByUsername,
-  importDate,
+  modifiedByUsername,
+  modifiedDate,
 }: ViewAllCustomCodeEventsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const {
@@ -125,32 +169,32 @@ function ViewAllCustomCodeEventsButton({
           ) : (
             <div className="flex max-h-130 flex-col gap-6">
               <p>
-                Imported by {importedByUsername} on {importDate}
+                Modified by {modifiedByUsername} on {modifiedDate}
               </p>
               <div className="overflow-auto">
                 {events.data.length === 0 ? (
                   <p>No custom code events found.</p>
                 ) : (
-                  <table className="w-full table-fixed">
-                    <thead>
-                      <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                        <th scope="col">Code system</th>
-                        <th scope="col">Code</th>
-                        <th scope="col" className="py-3">
+                  <Table className="w-full table-fixed">
+                    <TableHead bordered>
+                      <TableRow className="border-gray-cool-20 text-gray-cool-90 border-b">
+                        <TableHeaderCell>Code system</TableHeaderCell>
+                        <TableHeaderCell>Code</TableHeaderCell>
+                        <TableHeaderCell className="py-3">
                           Display name
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-gray-cool-20 divide-y">
+                        </TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody className="divide-gray-cool-20 divide-y">
                       {events.data.map((cc) => (
-                        <tr key={cc.id}>
-                          <td>{cc.system_display_name}</td>
-                          <td>{cc.code}</td>
-                          <td className="py-3">{cc.name}</td>
-                        </tr>
+                        <TableRow key={cc.id}>
+                          <TableCell>{cc.system_display_name}</TableCell>
+                          <TableCell>{cc.code}</TableCell>
+                          <TableCell className="py-3">{cc.name}</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 )}
               </div>
             </div>
@@ -158,5 +202,22 @@ function ViewAllCustomCodeEventsButton({
         </ModalBody>
       </Modal>
     </>
+  );
+}
+
+interface CodeSetExportLinkProps {
+  eventId: string;
+}
+
+function CodeSetExportLink({ eventId }: CodeSetExportLinkProps) {
+  return (
+    <Button
+      className="p-0!"
+      variant="tertiary"
+      href={`/api/v1/events/${eventId}/codes/export`}
+      anchorProps={{ download: true }}
+    >
+      <span className="whitespace-nowrap">Export as CSV</span>
+    </Button>
   );
 }

@@ -1,0 +1,6 @@
+{% assign md = markdown_description %}
+{% if md %}
+  <div class="prose max-w-none">
+    {{ md | renderMarkdown | sanitize }}
+  </div>
+{% endif %}

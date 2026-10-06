@@ -16,13 +16,13 @@ from app.api.v1.configurations.custom_codes.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
-    DbCodeSystem,
     get_code_system_by_id_db,
     get_code_systems_db,
 )
+from app.db.code_systems.model import DbCodeSystem
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.custom_codes.db import (
-    delete_custom_code_db,
+    delete_custom_codes_db,
     edit_custom_code_db,
     get_custom_code_by_id_db,
     get_custom_codes_by_configuration_id_db,
@@ -561,17 +561,23 @@ async def delete_custom_code(
             detail=f"Failed to find custom code to delete with ID: {id}",
         )
 
-    deleted_code = await delete_custom_code_db(
-        config=config, id=custom_code.id, user_id=user.id, db=db
+    systems = await get_code_systems_db(db=db)
+
+    deleted_codes = await delete_custom_codes_db(
+        config=config,
+        ids=[custom_code.id],
+        code_systems=systems,
+        user_id=user.id,
+        db=db,
     )
 
-    if not deleted_code:
+    if len(deleted_codes) < 1:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to delete custom code.",
         )
 
-    systems = await get_code_systems_db(db=db)
+    deleted_code = deleted_codes[0]
 
     return CustomCodeResponse(
         id=deleted_code.id,
@@ -582,6 +588,99 @@ async def delete_custom_code(
             id=deleted_code.system_id, systems=systems
         ).display_name,
     )
+
+
+class BulkDeleteCustomCodesInput(BaseModel):
+    """
+    Input model for a bulk custom codes deletion request.
+    """
+
+    ids: list[UUID]
+    ids_to_skip: list[UUID]
+    delete_all: bool
+
+
+@router.post(
+    "/bulk-delete",
+    response_model=list[CustomCodeResponse],
+    tags=["configurations"],
+    operation_id="deleteCustomCodes",
+)
+async def bulk_delete_custom_codes(
+    configuration_id: UUID,
+    body: BulkDeleteCustomCodesInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[CustomCodeResponse]:
+    """
+    Deletes custom codes in bulk for a given configuration.
+
+    Args:
+        configuration_id (UUID): The ID of the configuration to modify.
+        body (BulkDeleteCustomCodesInput): The input body containing IDs of the custom codes.
+        user (DbUser): The logged-in user.
+        db (AsyncDatabaseConnection): The database connection.
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
+        HTTPException: 500 if configuration can't be updated
+
+    Returns:
+        ConfigurationCustomCodeResponse: The updated configuration
+    """
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    await ConfigurationLock.raise_if_locked_by_other(
+        configuration_id,
+        user.id,
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    systems = await get_code_systems_db(db=db)
+
+    deleted_codes = await delete_custom_codes_db(
+        config=config,
+        ids=body.ids,
+        user_id=user.id,
+        code_systems=systems,
+        db=db,
+        ids_to_skip=body.ids_to_skip,
+        delete_all=body.delete_all,
+    )
+
+    if len(deleted_codes) < 1:
+        return []
+
+    return [
+        CustomCodeResponse(
+            id=deleted_code.id,
+            display=deleted_code.display,
+            code=deleted_code.code,
+            system_id=deleted_code.system_id,
+            system_name=find_code_system_by_id_or_raise(
+                id=deleted_code.system_id, systems=systems
+            ).display_name,
+        )
+        for deleted_code in deleted_codes
+    ]
 
 
 class ValidateCustomCodeInput(BaseModel):

@@ -1,0 +1,35 @@
+<!--
+  Results where the section's own reconstructor covers only SOME entries.
+
+  The first entry has an organizer and reconstructs normally. The second is a
+  bare Result Observation directly under <entry> — it matches and survives
+  pruning, but reconstruct_results anchors on entry/organizer and cannot see
+  it. Without the reduced-form sweep that entry is stamped typeCode="DRIV"
+  while being absent from the narrative said to derive from it.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2"/>
+  <text>Original clinician narrative.</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <statusCode code="completed"/>
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" displayName="COVID"/>
+        <value xsi:type="PQ" value="1" unit="1"/>
+      </observation></component>
+    </organizer>
+  </entry>
+  <!-- no organizer: reconstruct_results anchors on entry/organizer and
+       cannot see this one -->
+  <entry>
+    <observation classCode="OBS" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+      <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" displayName="Bare result"/>
+      <statusCode code="completed"/>
+      <effectiveTime value="20260803"/>
+      <value xsi:type="PQ" value="2" unit="1"/>
+    </observation>
+  </entry>
+</section>

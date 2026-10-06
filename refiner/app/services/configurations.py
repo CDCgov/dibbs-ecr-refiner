@@ -3,13 +3,16 @@ from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
+from uuid import UUID
 
 from app.db.code_systems.db import (
-    get_code_system_by_key_db,
     get_id_to_code_system_dict_db,
 )
+from app.db.code_systems.model import DbCodeSystem
+from app.db.codes.db import get_pruned_configuration_codes_db
+from app.db.codes.model import DbCode
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
-from app.db.conditions.model import DbConditionCoding
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
@@ -19,24 +22,20 @@ from app.db.configurations.model import (
     DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
-from app.services.code_systems import (
-    get_allowed_code_system_keys,
-)
 from app.services.ecr.policy import (
     NARRATIVE_ONLY_SECTIONS,
     SECTION_PROCESSING_SKIP,
-    normalize_section_narrative,
+    normalize_section_processing,
 )
 from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
 )
-from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP, OTHER_OID
 from app.services.terminology import (
     CodeSystemKey,
     CodeSystemSets,
     Coding,
-    index_condition_code_list_by_system,
 )
 
 
@@ -88,11 +87,14 @@ def clone_section_processing_instructions(
 
     Handles narrative-only sections specially: ensures they always have action="retain"
     regardless of what was cloned, since they cannot be refined (no entry match rules).
+    Trigger code sections are likewise forced back to include=True, so a draft cloned
+    from a configuration authored before that policy landed can't carry a removal
+    forward.
 
     Stale (action, narrative) combinations on the source — e.g. from
     configurations persisted before the API validators landed — are
     coerced to a safe baseline via
-    `ecr.policy.normalize_section_narrative`, with each coercion
+    `ecr.policy.normalize_section_processing`, with each coercion
     logged. Clone is a system-initiated operation (runs during
     activation/clone of a draft), so we prefer coerce-and-log over
     raising to avoid blocking unrelated work.
@@ -131,14 +133,18 @@ def clone_section_processing_instructions(
             new_action = action_map.get(section.code, section.action)
 
         new_narrative = narrative_map.get(section.code, section.narrative)
+        new_include = include_map.get(section.code, section.include)
 
         # normalize before persisting — stale combos from older
         # configurations get coerced to a safe baseline instead of
         # propagating into a fresh draft
-        coerced_action, coerced_narrative, notes = normalize_section_narrative(
-            code=section.code,
-            section_action=new_action,
-            narrative_action=new_narrative,
+        coerced_include, coerced_action, coerced_narrative, notes = (
+            normalize_section_processing(
+                code=section.code,
+                include=new_include,
+                section_action=new_action,
+                narrative_action=new_narrative,
+            )
         )
         if notes and logger is not None:
             for note in notes:
@@ -148,12 +154,39 @@ def clone_section_processing_instructions(
             replace(
                 section,
                 action=coerced_action,
-                include=include_map.get(section.code, section.include),
+                include=coerced_include,
                 narrative=coerced_narrative,
             )
         )
 
     return standard_updates + custom_sections
+
+
+def index_code_list_by_system_key(
+    codes: list[DbCode | DbCustomCode],
+    code_systems: dict[UUID, DbCodeSystem],
+    logger: Logger,
+) -> dict[CodeSystemKey, list[dict]]:
+    """
+    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
+    """
+    result: dict[CodeSystemKey, list[dict]] = defaultdict(list)
+    for c in codes:
+        if c.system_id not in code_systems:
+            logger.warning(
+                f"Code system id of {c.system_id} not found in map, defaulting to other to {OTHER_OID}"
+            )
+            system_oid = OTHER_OID
+            system_key = OID_TO_SYSTEM_KEY_MAP[OTHER_OID]
+        else:
+            system_oid = code_systems[c.system_id].oid
+            system_key = code_systems[c.system_id].key
+
+        result[system_key].append(
+            asdict(Coding(code=c.code, display=c.display, system_oid=system_oid))
+        )
+
+    return result
 
 
 async def get_config_payload_metadata(
@@ -195,7 +228,7 @@ async def get_config_payload_metadata(
 
 
 async def convert_config_to_storage_payload(
-    configuration: DbConfiguration, db: AsyncDatabaseConnection
+    configuration: DbConfiguration, db: AsyncDatabaseConnection, logger: Logger
 ) -> ConfigurationStoragePayload | None:
     """
     Takes a DbConfiguration and distills it down to the bare minimum data required for refining.
@@ -205,77 +238,66 @@ async def convert_config_to_storage_payload(
     not serialized into active.json because code_system_sets contains the required
     code information without duplication.
 
+    Section processing instructions are normalized via
+    `ecr.policy.normalize_section_processing` before serialization, so an
+    invalid combination can never reach the refiner even if one is sitting
+    in the database. Each coercion is logged.
+
     Args:
         configuration (DbConfiguration): The configuration from the database
         db (AsyncDatabaseConnection): The async database connection
+        logger (Logger): The logger
 
     Returns:
         ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
     """
-    sections: list[dict[str, Any]] = []
+
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
-    coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-    code_systems = await get_id_to_code_system_dict_db(db=db)
-
-    # custom codes
-    for cc in configuration.custom_codes:
-        cur_code_system = code_systems[cc.system_id]
-
-        if cur_code_system is None:
-            raise ValueError(
-                f"System with ID {cc.system_id} doesn't match supported systems"
-            )
-
-        system_to_extend = cur_code_system.key
-
-        # route custom codes to the correct system dict
-        coding_by_code_system[system_to_extend].append(
-            asdict(
-                Coding(
-                    code=cc.code,
-                    display=cc.display,
-                    system_oid=cur_code_system.oid,
-                )
-            )
-        )
-
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
-    systems_keys_to_index_by = await get_allowed_code_system_keys(db=db)
-    # condition codes -> build both the flat set and per-system dicts
-    for condition in conditions:
-        # map each db code list to its target dict + OID
-        code_system_map: dict[CodeSystemKey, list[DbConditionCoding]] = (
-            index_condition_code_list_by_system(
-                condition=condition, system_keys_to_index_by=systems_keys_to_index_by
+    code_systems = await get_id_to_code_system_dict_db(db=db)
+
+    configuration_codes = await get_pruned_configuration_codes_db(
+        configuration_id=configuration.id, db=db
+    )
+    codes_to_index = configuration_codes + configuration.custom_codes
+
+    # map each db code list to its target dict + OID
+    coding_by_code_system: dict[str, list[dict]] = index_code_list_by_system_key(
+        codes=codes_to_index, code_systems=code_systems, logger=logger
+    )
+
+    # activation is the last system-initiated path before a configuration
+    # reaches the refiner, and it serializes straight from the database rows.
+    # the API validators guard user edits and the clone path guards new
+    # versions, but an inactive configuration can be re-activated directly
+    # from stale rows without passing through either — so normalize here too.
+    sections: list[dict[str, Any]] = []
+    for section_process in configuration.section_processing:
+        coerced_include, coerced_action, coerced_narrative, notes = (
+            normalize_section_processing(
+                code=section_process.code,
+                include=section_process.include,
+                section_action=section_process.action,
+                narrative_action=section_process.narrative,
             )
         )
+        for note in notes:
+            logger.warning("convert_config_to_storage_payload: %s", note)
 
-        for key, code_list in code_system_map.items():
-            system_metadata = await get_code_system_by_key_db(key=key, db=db)
-            if system_metadata is None:
-                raise ValueError(
-                    f"System of name {key} doesn't match supported systems"
+        sections.append(
+            asdict(
+                replace(
+                    section_process,
+                    include=coerced_include,
+                    action=coerced_action,
+                    narrative=coerced_narrative,
                 )
-            coding_by_code_system[system_metadata.key].extend(
-                [
-                    asdict(
-                        Coding(
-                            code=c.code,
-                            display=c.display,
-                            system_oid=system_metadata.oid,
-                        )
-                    )
-                    for c in code_list
-                ]
             )
-
-    sections = [
-        asdict(section_process) for section_process in configuration.section_processing
-    ]
+        )
 
     for c in conditions:
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)

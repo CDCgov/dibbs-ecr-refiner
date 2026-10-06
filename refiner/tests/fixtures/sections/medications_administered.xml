@@ -1,0 +1,33 @@
+<!--
+  Medications Administered (29549-3): the flat twin of Immunizations.
+
+  Carries TWO effectiveTimes — an IVL_TS administration window and a PIVL_TS
+  dosing frequency — so the field map's split between "Date administered" and
+  "Frequency" is exercised rather than assumed.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="29549-3" codeSystem="2.16.840.1.113883.6.1"
+        displayName="Medications Administered"/>
+  <title>Medications Administered</title>
+  <text>...original clinician narrative...</text>
+  <entry>
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+      <id root="00000000-0000-0000-0000-0000000000aa"/>
+      <statusCode code="completed"/>
+      <effectiveTime xsi:type="IVL_TS"><low value="20120318"/></effectiveTime>
+      <effectiveTime xsi:type="PIVL_TS"><period value="8" unit="h"/></effectiveTime>
+      <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1"
+                 displayName="ORAL"/>
+      <doseQuantity value="1" unit="g"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code code="1115699" codeSystem="2.16.840.1.113883.6.88"
+                  displayName="oseltamivir 6 MG/ML [Tamiflu]"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

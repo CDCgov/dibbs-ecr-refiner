@@ -82,7 +82,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const hasMultipleConfigs = configs.length > 0;
 
   return (
-    <>
+    <div className="flex flex-1 flex-col">
       <AppUpdateBanner
         isVisible={
           user.notifications.to_render[
@@ -99,7 +99,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         }
         refreshUser={refreshUser}
       />
-      <section className="mx-auto p-3">
+      <section className="mx-auto w-full max-w-7xl p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
           <p>
@@ -131,10 +131,11 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
           <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
         </div>
         <ConfigurationsTable
+          className="my-10"
           data={searchText ? results.map((r) => r.item) : configs}
         />
       </section>
-    </>
+    </div>
   );
 }
 
@@ -290,7 +291,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                 }}
                 placeholder="Start typing to search (3 characters minimum)"
               />
-              <ComboboxOptions anchor="bottom" className="max-h-85!">
+              <ComboboxOptions anchor="bottom" className="z-dropdown max-h-85!">
                 {({ option: condition }) => {
                   const matchResult = results.find(
                     (r) => r.item.id === condition.id
@@ -399,7 +400,7 @@ function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
             ? highlightMatches(matchedCode.display, matchResult.indices)
             : `${matchedCode.display}`}
         </p>
-        <p className="flex-1 text-right">
+        <p className="text-gray-cool-90! flex-1 text-right">
           {isRsgCodeMatch
             ? highlightMatches(matchedCode.code, matchResult.indices)
             : matchedCode.code}
@@ -463,6 +464,7 @@ function prepareSearchTextForFuse(s: string) {
   return s;
 }
 
+// NOTE: text-gray-cool-90 applied explicitly to <mark> because browser default <mark> styling fails WCAG color-contrast; consider a shared/centralized highlight utility with design sign-off.
 function highlightMatches(
   text: string,
   regions: readonly RangeTuple[] | undefined
@@ -479,7 +481,11 @@ function highlightMatches(
       chunks.push(text.slice(lastIndex, start));
     }
     // Wrap the matched range in a <mark> tag
-    chunks.push(<mark key={start}>{text.slice(start, end + 1)}</mark>);
+    chunks.push(
+      <mark key={start} className="text-gray-cool-90!">
+        {text.slice(start, end + 1)}
+      </mark>
+    );
     lastIndex = end + 1;
   }
 

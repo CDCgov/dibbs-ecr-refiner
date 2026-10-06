@@ -66,6 +66,19 @@ export default defineConfig(
         { allowConstantExport: true },
       ],
       'import/no-duplicates': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@headlessui/react',
+              importNames: ['MenuItems', 'ComboboxOptions'],
+              message:
+                'Use BaseMenuItems/BaseComboboxOptions from @/components/Dropdown instead for automatic z-index handling. See client/src/components/Dropdown/README.md',
+            },
+          ],
+        },
+      ],
       'no-console': ['error', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -127,6 +140,15 @@ export default defineConfig(
     rules: {
       'testing-library/no-debugging-utils': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: [
+      'src/components/Dropdown/**/*.tsx',
+      'src/components/Combobox/index.tsx',
+    ],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
   {

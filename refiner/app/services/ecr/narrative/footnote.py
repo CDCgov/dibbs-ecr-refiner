@@ -15,9 +15,9 @@ from .identifiers import REFINER_ID_PREFIX, run_id_digits
 # NOTE:
 # PROVENANCE FOOTNOTE
 # =============================================================================
-# every section in the refined document carries a trailing <footnote>
+# every section in the refined document carries a trailing `<footnote>`
 # documenting how the refiner treated it. the footnote is unanchored:
-# no <footnoteRef> points to it. This represents "annotation attached
+# no `<footnoteRef>` points to it. This represents "annotation attached
 # to the section as a whole" — valid per NarrativeBlock.xsd's
 # StrucDoc.Text and StrucDoc.Footnote content models (both allow
 # footnote as an optional child with no anchoring requirement) and
@@ -27,7 +27,7 @@ from .identifiers import REFINER_ID_PREFIX, run_id_digits
 # the footnote's xs:ID ties it to the augmentation run's timestamp,
 # giving the two structural consistency that a consumer can verify
 # programmatically (e.g., "every refiner footnote ID should contain
-# the timestamp present in the augmentation author's <time> value")
+# the timestamp present in the augmentation author's `<time>` value")
 #
 # the footnote's data row carries both the configured action ("what
 # the jurisdiction asked for") and the runtime outcome ("what the
@@ -77,7 +77,7 @@ def append_section_provenance_footnote(
     occurrence_index: int = 0,
 ) -> None:
     """
-    Append an unanchored <footnote> carrying refiner provenance.
+    Append an unanchored `<footnote>` carrying refiner provenance.
 
     Called by refine_eicr after processing every section (refine,
     retain, remove, narrative-removed) so that every section in the
@@ -87,7 +87,7 @@ def append_section_provenance_footnote(
     single-row table summarizing the jurisdiction's configuration
     and the runtime outcome for this section. The table follows
     NarrativeBlock.xsd's StrucDoc.Table content model with proper
-    <thead>/<th> header semantics and <tbody>/<tr>/<td> body rows.
+    `<thead>`/`<th>` header semantics and `<tbody>`/`<tr>`/`<td>` body rows.
 
     The provenance record passed in must have its `outcome` field
     finalized — refine_eicr does this via dataclasses.replace before
@@ -95,7 +95,7 @@ def append_section_provenance_footnote(
     value at render time, that's a bug in refine_eicr's
     interpretation logic, not in this function.
 
-    If the section has no <text> element (e.g., a retained section
+    If the section has no `<text>` element (e.g., a retained section
     where the source document omitted it), one is created and inserted
     per `_ensure_text_element`'s CDA R2 xs:sequence rules.
 
@@ -103,7 +103,7 @@ def append_section_provenance_footnote(
         section: The section element to annotate.
         provenance: The SectionProvenanceRecord built during plan
             creation and finalized by refine_eicr.
-        augmentation_timestamp: The augmentation run's <time> value,
+        augmentation_timestamp: The augmentation run's `<time>` value,
             shared across all footnotes in this refinement run.
         occurrence_index: Disambiguator for repeated-LOINC sections;
             zero for the normal case.
@@ -161,7 +161,7 @@ def append_section_provenance_footnote(
 
 def _add_provenance_cell(row: _Element, text: str) -> None:
     """
-    Append a single <td> with text content to a provenance table row.
+    Append a single `<td>` with text content to a provenance table row.
     """
 
     td = _sub_element(row, "td")

@@ -2,14 +2,22 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.model import HL7_NS
+from app.services.ecr.narrative import reconstruction
+from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.section import get_section_by_code, process_section
+from app.services.ecr.section.entry_matching import (
+    process as entry_process,
+)
 from app.services.ecr.section.generic_matching import (
     _find_path_to_entry,
 )
 from app.services.ecr.section.generic_matching import (
     process as generic_process,
 )
+from app.services.ecr.specification import load_spec
 from app.services.terminology import CodeSystemSets
+
+_RUN_TS = "20260101000000+0000"
 
 # NOTE:
 # HELPERS
@@ -604,3 +612,211 @@ def test_generic_path_recovers_display_from_narrative_reference():
         "the narrative index was captured after <text> was cleared, so the "
         "originalText/reference fallback had nothing to resolve against"
     )
+
+
+# NOTE:
+# RECONSTRUCT'S NO-MATCH BRANCH — the two engines must agree
+# =============================================================================
+# "reconstruct" reconstructs: nothing matched, every entry was pruned, and the
+# derived narrative for zero entries is a statement that nothing matched. The
+# original narrative is never retained here — it still describes all of the
+# pruned entries in full clinical prose, so shipping it back would return
+# exactly the content the jurisdiction's configuration excluded, with the
+# structured entries stripped so a receiver cannot process it either.
+#
+# entry_matching and generic_matching implement this branch separately, so a
+# change to one silently diverging from the other is the live risk. these pin
+# both engines against the same expectation
+
+
+_NO_MATCH_SECTION = """
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2"/>
+  <text>Patient has a documented penicillin allergy and a positive culture.</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        <code code="00000-0" codeSystem="2.16.840.1.113883.6.1"/>
+        <value xsi:type="PQ" value="9.2" unit="g/dL"/>
+      </observation></component>
+    </organizer>
+  </entry>
+</section>
+"""
+
+
+def test_generic_reconstruct_without_matches_reconstructs_an_empty_narrative() -> None:
+    section = _build_section(_NO_MATCH_SECTION)
+
+    result = generic_process(
+        section=section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+    )
+
+    assert result.matches_found is False
+    assert result.narrative_disposition == "reconstructed_empty"
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert "penicillin allergy" not in rendered, (
+        "the source narrative described the entries that were just pruned"
+    )
+    assert RECONSTRUCTED_EMPTY_MESSAGE in rendered
+    assert section.findall("hl7:entry", HL7_NS) == []
+    assert section.get("nullFlavor") == "NI"
+
+
+# NOTE:
+# THE SECTION MUST NOT MISREPORT ITS OWN LOINC OUTSIDE THE SEARCH
+# =============================================================================
+# the generic path hides `@code` so the section's own LOINC cannot match during
+# the unscoped search; `reconstruct_narrative` dispatches by that LOINC and
+# returns `None` when it is missing--which is indistinguishable from "this
+# section has no registered reconstructor", so the failure is silent and the
+# outcome (`reconstruct_unavailable`, original narrative retained) looks
+# entirely legitimate. these pin that the window is the search and nothing more
+
+
+_MATCHING_SECTION = """
+<section xmlns="urn:hl7-org:v3"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2"/>
+  <text>Original narrative content here.</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <code displayName="CBC panel"/>
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        <code code="MATCHME" codeSystem="2.16.840.1.113883.6.1"
+              displayName="Hemoglobin"/>
+        <effectiveTime value="20240115"/>
+        <value xsi:type="PQ" value="9.2" unit="g/dL"/>
+      </observation></component>
+    </organizer>
+  </entry>
+</section>
+"""
+
+
+def test_generic_reconstruct_no_match_restores_the_neutralized_section_code() -> None:
+    section = _build_section(_NO_MATCH_SECTION)
+
+    generic_process(
+        section=section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+    )
+
+    code = _find_one(section, "hl7:code")
+    assert code is not None
+    assert code.get("code") == "30954-2"
+
+
+def test_generic_reconstruct_with_matches_actually_reconstructs() -> None:
+    # the no-match branch is not the only caller of `reconstruct_narrative`--
+    # the matched branch (STEP 5) dispatches on the same LOINC. this reported
+    # `reconstruct_unavailable` and kept the stale narrative for as long as
+    # `@code` stayed neutralized past the search
+    section = _build_section(_MATCHING_SECTION)
+
+    result = generic_process(
+        section=section,
+        codes_to_match={"MATCHME"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+        augmentation_timestamp=_RUN_TS,
+    )
+
+    assert result.matches_found is True
+    assert result.narrative_disposition == "reconstructed"
+
+    rendered = etree.tostring(section, encoding="unicode")
+    assert "Original narrative content here." not in rendered
+    assert "Hemoglobin" in rendered
+
+
+def test_generic_section_code_is_truthful_once_matching_is_done() -> None:
+    # the guarantee is not "restored by the time `process` returns"--it is
+    # "restored **before** anything downstream of the search reads it".
+    # asserting from inside the section's own reconstructor is the only way
+    # to observe that from a test
+    section = _build_section(_MATCHING_SECTION)
+    seen: list[str | None] = []
+
+    real = reconstruction.SECTION_RECONSTRUCTORS["30954-2"]
+
+    def spy(sec: _Element):
+        code = sec.find("hl7:code", HL7_NS)
+        seen.append(code.get("code") if code is not None else None)
+        return real(sec)
+
+    reconstruction.SECTION_RECONSTRUCTORS["30954-2"] = spy
+    try:
+        generic_process(
+            section=section,
+            codes_to_match={"MATCHME"},
+            section_specification=None,
+            namespaces=HL7_NS,
+            code_system_sets=CodeSystemSets(),
+            narrative_action="reconstruct",
+            augmentation_timestamp=_RUN_TS,
+        )
+    finally:
+        reconstruction.SECTION_RECONSTRUCTORS["30954-2"] = real
+
+    assert seen == ["30954-2"], (
+        "the reconstructor saw a section that misreported its own LOINC"
+    )
+
+
+def test_generic_reconstruct_no_match_matches_the_entry_engine() -> None:
+    # the two engines implement this branch independently; they must not
+    # disagree about what "reconstruct" means when nothing matched
+    generic_section = _build_section(_NO_MATCH_SECTION)
+    generic_result = generic_process(
+        section=generic_section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="reconstruct",
+    )
+
+    entry_section = _build_section(_NO_MATCH_SECTION)
+    entry_result = entry_process(
+        section=entry_section,
+        code_system_sets=CodeSystemSets(),
+        section_specification=load_spec("1.1").sections["30954-2"],
+        namespaces=HL7_NS,
+        narrative_action="reconstruct",
+    )
+
+    assert generic_result.matches_found == entry_result.matches_found
+    assert generic_result.narrative_disposition == entry_result.narrative_disposition
+    assert generic_section.get("nullFlavor") == entry_section.get("nullFlavor")
+
+
+def test_generic_retain_still_keeps_the_original_narrative() -> None:
+    # the change is scoped to "reconstruct"; "retain" is untouched
+    section = _build_section(_NO_MATCH_SECTION)
+
+    result = generic_process(
+        section=section,
+        codes_to_match={"SOMETHING-ELSE"},
+        section_specification=None,
+        namespaces=HL7_NS,
+        code_system_sets=CodeSystemSets(),
+        narrative_action="retain",
+    )
+
+    assert result.narrative_disposition == "retained"
+    assert "penicillin allergy" in etree.tostring(section, encoding="unicode")

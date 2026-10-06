@@ -327,7 +327,7 @@ async def _convert_to_processed_config(
     """
     # Convert the config to a storage payload
     serialized_configuration = await convert_config_to_storage_payload(
-        configuration=configuration, db=db
+        configuration=configuration, db=db, logger=logger
     )
 
     if not serialized_configuration:

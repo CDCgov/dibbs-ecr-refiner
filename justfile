@@ -32,6 +32,10 @@ mod m './.justscripts/just/migrate.just'
 [group: 'alias']
 mod s './.justscripts/just/server.just'
 
+# Alias for `tes`
+[group: 'alias']
+mod tes './.justscripts/just/tes.just'
+
 # Alias for `cloud`
 [group: 'alias']
 mod cd './.justscripts/just/cloud.just'
@@ -39,6 +43,10 @@ mod cd './.justscripts/just/cloud.just'
 # Alias for `dev`
 [group: 'alias']
 mod d './.justscripts/just/dev.just'
+
+# Run `docs` commands
+[group: 'sub-command']
+mod docs './.justscripts/just/docs.just'
 
 # Run docker build commands
 [group: 'sub-command']

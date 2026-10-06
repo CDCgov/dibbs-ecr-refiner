@@ -27,6 +27,7 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import SerializedFiles, get_serialized_files
+from app.services.conditions.grouper_statuses import get_code_set_status
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
     format_section_naming,
@@ -333,6 +334,7 @@ async def get_configuration(
             version=condition.version,
             associated=condition.id in included_ids
             or condition.id == primary_condition.id,
+            code_set_status=get_code_set_status(condition.coverage_level),
         )
         for condition in all_conditions
     ]

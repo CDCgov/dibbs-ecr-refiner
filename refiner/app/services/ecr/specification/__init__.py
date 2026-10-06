@@ -10,7 +10,12 @@ from .constants import (
     RXNORM_OID,
     SNOMED_OID,
 )
-from .loader import detect_eicr_version, get_section_version_map, load_spec
+from .loader import (
+    detect_eicr_version,
+    get_section_version_map,
+    get_trigger_code_sections,
+    load_spec,
+)
 
 __all__ = [
     "CVX_OID",
@@ -21,5 +26,6 @@ __all__ = [
     "SNOMED_OID",
     "detect_eicr_version",
     "get_section_version_map",
+    "get_trigger_code_sections",
     "load_spec",
 ]

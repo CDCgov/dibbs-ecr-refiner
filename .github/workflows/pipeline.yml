@@ -26,5 +26,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
   run-type-checking:
     uses: ./.github/workflows/typecheck.yml
+  run-tes-verification:
+    uses: ./.github/workflows/verify-tes.yml
   run-build:
     uses: ./.github/workflows/build.yml

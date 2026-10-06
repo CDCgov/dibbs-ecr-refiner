@@ -6,7 +6,6 @@ import { Layout } from '@components/Layout';
 import { useLogin } from './hooks/useLogin';
 import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
-import { ManageCodes } from './pages/Configurations/ManageCodes';
 import { ConfigTest } from './pages/Configurations/ConfigTest';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner } from '@components/Spinner';
@@ -16,7 +15,9 @@ import { AppUpdates } from './pages/AppUpdates';
 import { ConfigSerialized } from './pages/Configurations/ConfigSerialized';
 import { TesUpdates } from './pages/TesUpdates';
 import { CustomizeSections } from './pages/Configurations/CustomizeSections';
-import { ManageCodesDev } from './pages/Configurations/ManageCodes/ManageCodesDev';
+import { Overrides } from './pages/Configurations/Overrides';
+import { ManageCodes } from './pages/Configurations/ManageCodes';
+import { UpdateConfigurations } from './pages/TesUpdates/UpdateConfigurations';
 
 export function App() {
   const { user, refreshUser, isLoading } = useLogin();
@@ -44,6 +45,10 @@ export function App() {
         <Route path="/activity" element={<ActivityLog />} />
         <Route path="/tes-updates" element={<TesUpdates />} />
         <Route
+          path="/tes-updates/configurations"
+          element={<UpdateConfigurations />}
+        />
+        <Route
           path="/configurations"
           element={<Configurations user={user} refreshUser={refreshUser} />}
         />
@@ -51,19 +56,12 @@ export function App() {
           path="/configurations/:id/customize-sections"
           element={<CustomizeSections />}
         />
-        {/* TODO: This route will be removed once codes management is more complete.
-         * This will only be used while the work is in progress. Once complete we'll
-         * move to using only the route below this one and we will delete the /view route entirely.
-         */}
-        <Route
-          path="/configurations/:id/manage-codes/view"
-          element={<ManageCodesDev />}
-        />
         <Route
           path="/configurations/:id/manage-codes"
           element={<ManageCodes />}
         />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
+        <Route path="/configurations/:id/overrides" element={<Overrides />} />
         <Route
           path="/configurations/:id/serialized"
           element={<ConfigSerialized />}

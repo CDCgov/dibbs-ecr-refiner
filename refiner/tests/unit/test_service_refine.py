@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 from lxml import etree
 
-from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.conditions.model import DbCode, DbCondition
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionInstructions,
@@ -16,12 +16,15 @@ from app.services.ecr.model import (
     SectionSource,
 )
 from app.services.ecr.narrative.constants import (
+    MINIMAL_SECTION_MESSAGE,
     PROVENANCE_OUTCOME_NOTES,
+    RECONSTRUCTED_EMPTY_MESSAGE,
     REMOVE_NARRATIVE_MESSAGE,
 )
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
+from tests.unit.conftest import get_mock_system_id_by_name  # noqa: E402
 from tests.unit.helpers.configuration import create_processed_config
 
 # NOTE:
@@ -40,7 +43,14 @@ _PLACEHOLDER_AUGMENTATION_TIMESTAMP = "19700101000000+0000"
 
 # ProcessedConfiguration must contain at least one code or otherwise is considered
 # to be invalid. We are using a code that definitely will not appear in a real code set.
-_MOCK_CONDITION_CODES = [DbConditionCoding(code="fake-code-0!", display="")]
+_MOCK_CONDITION_CODES = [
+    DbCode(
+        code="fake-code-0!",
+        display="",
+        system_id=get_mock_system_id_by_name("Other"),
+        system_name="Other",
+    )
+]
 
 # NOTE:
 # LOCAL TEST HELPER FUNCTIONS - v1.1
@@ -58,11 +68,7 @@ def _make_condition_v1_1(**kwargs) -> DbCondition:
         "canonical_url": "http://example.com/condition/v1.1",
         "version": "1.1",
         "child_rsg_snomed_codes": [],
-        "snomed_codes": [],
-        "loinc_codes": [],
-        "icd10_codes": [],
-        "rxnorm_codes": [],
-        "cvx_codes": [],
+        "codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -108,11 +114,7 @@ def _make_condition_v3_1_1(**kwargs) -> DbCondition:
         "canonical_url": "http://example.com/condition/v3.1.1",
         "version": "3.1.1",
         "child_rsg_snomed_codes": [],
-        "snomed_codes": [],
-        "loinc_codes": [],
-        "icd10_codes": [],
-        "rxnorm_codes": [],
-        "cvx_codes": [],
+        "codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -155,7 +157,7 @@ async def _make_empty_processed_config() -> ProcessedConfiguration:
     care about matching (e.g., retain, no-match tests).
     """
 
-    condition = _make_condition_v1_1(cvx_codes=_MOCK_CONDITION_CODES)
+    condition = _make_condition_v1_1(codes=_MOCK_CONDITION_CODES)
     config = _make_db_configuration_v1_1()
     return await create_processed_config(config=config, conditions=[condition])
 
@@ -220,15 +222,6 @@ def mock_db_functions(monkeypatch, mock_all_systems):
     monkeypatch.setattr(
         "app.services.code_systems.get_code_systems_db",
         AsyncMock(return_value=mock_all_systems),
-    )
-
-    monkeypatch.setattr(
-        "app.services.configurations.get_code_system_by_key_db",
-        AsyncMock(
-            side_effect=lambda key, db: next(
-                m for m in mock_all_systems if m.key == key
-            ),
-        ),
     )
 
 
@@ -308,10 +301,12 @@ class TestRefiningService:
         assert problems_section.get("nullFlavor") == "NI"
 
         # entries should be pruned and the narrative replaced with the
-        # removal notice
+        # no-match notice — nothing survived, so the stub must not claim
+        # the coded data is still here
         assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
         rendered = etree.tostring(problems_section, encoding="unicode")
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
 
     async def test_refine_no_matches_narrative_retain_v1_1(
         self,
@@ -394,8 +389,13 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            loinc_codes=[
-                DbConditionCoding(code="94533-7", display="SARS-CoV-2 N gene"),
+            codes=[
+                DbCode(
+                    code="94533-7",
+                    display="SARS-CoV-2 N gene",
+                    system_name="LOINC",
+                    system_id=get_mock_system_id_by_name("LOINC"),
+                ),
             ],
         )
 
@@ -480,8 +480,9 @@ class TestRefiningService:
         assert problems_section.get("nullFlavor") == "NI"
         # entries pruned
         assert problems_section.findall("hl7:entry", namespaces=HL7_NS) == []
-        # narrative replaced with removal notice
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        # narrative replaced with the no-match notice
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
         # footnote shows the negative branch outcome
         assert (
             PROVENANCE_OUTCOME_NOTES[
@@ -490,14 +491,17 @@ class TestRefiningService:
             in rendered
         )
 
-    async def test_refine_reconstruct_no_matches_falls_back_to_retain_v1_1(
+    async def test_refine_reconstruct_no_matches_reconstructs_empty_v1_1(
         self, eicr_root_v1_1: etree._Element
     ):
         """
-        narrative='reconstruct' + no matches: the engine can't rebuild
-        from anything, so it falls back to retaining the original
-        narrative rather than swapping in a removal notice. Outcome
-        is REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED.
+        narrative='reconstruct' + no matches: reconstruction still runs.
+
+        Every entry was pruned, so the derived narrative for this section is
+        a statement that nothing matched — not the original prose, which
+        would ship the excluded content back. Outcome is
+        REFINED_NARRATIVE_RECONSTRUCTED_EMPTY, which reports that the
+        reconstruction ran as well as that it is empty.
         """
 
         empty_config = await _make_empty_processed_config()
@@ -536,12 +540,14 @@ class TestRefiningService:
         assert results_section.get("nullFlavor") == "NI"
         # entries pruned
         assert results_section.findall("hl7:entry", namespaces=HL7_NS) == []
-        # narrative NOT replaced with removal notice
+        # narrative is reconstruction output, not the removal notice
+        assert RECONSTRUCTED_EMPTY_MESSAGE in rendered
+        assert MINIMAL_SECTION_MESSAGE not in rendered
         assert REMOVE_NARRATIVE_MESSAGE not in rendered
-        # footnote shows reconstruct-fallback outcome
+        # the footnote says BOTH halves: reconstruction ran, and it is empty
         assert (
             PROVENANCE_OUTCOME_NOTES[
-                SectionOutcome.REFINED_RECONSTRUCT_NO_MATCHES_FALLBACK_RETAINED
+                SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED_EMPTY
             ]
             in rendered
         )
@@ -559,9 +565,12 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            snomed_codes=[
-                DbConditionCoding(
-                    code="840539006", display="Disease caused by SARS-CoV-2"
+            codes=[
+                DbCode(
+                    code="840539006",
+                    display="Disease caused by SARS-CoV-2",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
                 ),
             ],
         )
@@ -618,7 +627,14 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            loinc_codes=[DbConditionCoding(code="94533-7", display="")]
+            codes=[
+                DbCode(
+                    code="94533-7",
+                    display="",
+                    system_id=get_mock_system_id_by_name("LOINC"),
+                    system_name="LOINC",
+                )
+            ]
         )
 
         plan = EICRRefinementPlan(
@@ -771,9 +787,19 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            loinc_codes=[
-                DbConditionCoding(code="94533-7", display="SARS-CoV-2 N gene"),
-                DbConditionCoding(code="94558-4", display="SARS-CoV-2 Ag Rapid"),
+            codes=[
+                DbCode(
+                    code="94533-7",
+                    display="SARS-CoV-2 N gene",
+                    system_id=get_mock_system_id_by_name("LOINC"),
+                    system_name="LOINC",
+                ),
+                DbCode(
+                    code="94558-4",
+                    display="SARS-CoV-2 Ag Rapid",
+                    system_id=get_mock_system_id_by_name("LOINC"),
+                    system_name="LOINC",
+                ),
             ],
         )
         plan = _make_plan(processed_config, {"30954-2": "refine"})
@@ -808,12 +834,25 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            snomed_codes=[
-                DbConditionCoding(
-                    code="840539006", display="Disease caused by SARS-CoV-2"
+            codes=[
+                DbCode(
+                    code="840539006",
+                    display="Disease caused by SARS-CoV-2",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
                 ),
-                DbConditionCoding(code="186747009", display="Coronavirus infection"),
-                DbConditionCoding(code="230145002", display="Difficulty Breathing"),
+                DbCode(
+                    code="186747009",
+                    display="Coronavirus infection",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
+                ),
+                DbCode(
+                    code="230145002",
+                    display="Difficulty Breathing",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
+                ),
             ],
         )
         plan = _make_plan(processed_config, {"11450-4": "refine"})
@@ -855,15 +894,18 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            loinc_codes=[
-                DbConditionCoding(
+            codes=[
+                DbCode(
                     code="94759-8",
                     display="SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection",
+                    system_id=get_mock_system_id_by_name("LOINC"),
+                    system_name="LOINC",
                 ),
-            ],
-            snomed_codes=[
-                DbConditionCoding(
-                    code="260373001", display="Detected (qualifier value)"
+                DbCode(
+                    code="260373001",
+                    display="Detected (qualifier value)",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
                 ),
             ],
         )
@@ -910,12 +952,18 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            loinc_codes=[
-                DbConditionCoding(code="94500-6", display="SARS-CoV-2 RNA panel"),
-            ],
-            rxnorm_codes=[
-                DbConditionCoding(
-                    code="2284960", display="remdesivir 100 MG Injection"
+            codes=[
+                DbCode(
+                    code="94500-6",
+                    display="SARS-CoV-2 RNA panel",
+                    system_id=get_mock_system_id_by_name("LOINC"),
+                    system_name="LOINC",
+                ),
+                DbCode(
+                    code="2284960",
+                    display="remdesivir 100 MG Injection",
+                    system_id=get_mock_system_id_by_name("RxNorm"),
+                    system_name="RxNorm",
                 ),
             ],
         )
@@ -948,9 +996,12 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            snomed_codes=[
-                DbConditionCoding(
-                    code="840539006", display="Disease caused by SARS-CoV-2"
+            codes=[
+                DbCode(
+                    code="840539006",
+                    display="Disease caused by SARS-CoV-2",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
                 ),
             ],
         )
@@ -989,9 +1040,12 @@ class TestRefiningService:
         """
 
         processed_config = await _make_processed_config_v1_1(
-            snomed_codes=[
-                DbConditionCoding(
-                    code="840539006", display="Disease caused by SARS-CoV-2"
+            codes=[
+                DbCode(
+                    code="840539006",
+                    display="Disease caused by SARS-CoV-2",
+                    system_id=get_mock_system_id_by_name("SNOMED"),
+                    system_name="SNOMED",
                 ),
             ],
         )
@@ -1010,9 +1064,10 @@ class TestRefiningService:
         entries = imm_section.xpath(".//hl7:entry", namespaces=HL7_NS)
         assert len(entries) == 0
 
-        # narrative replaced with the removal notice
+        # narrative replaced with the no-match notice
         rendered = etree.tostring(imm_section, encoding="unicode")
-        assert REMOVE_NARRATIVE_MESSAGE in rendered
+        assert MINIMAL_SECTION_MESSAGE in rendered
+        assert REMOVE_NARRATIVE_MESSAGE not in rendered
 
     # NOTE:
     # RR REFINEMENT TESTS
@@ -1025,7 +1080,7 @@ class TestRefiningService:
         """
 
         covid_condition = _make_condition_v1_1(
-            child_rsg_snomed_codes=["840539006"], rxnorm_codes=_MOCK_CONDITION_CODES
+            child_rsg_snomed_codes=["840539006"], codes=_MOCK_CONDITION_CODES
         )
         config = _make_db_configuration_v1_1()
 
@@ -1050,7 +1105,7 @@ class TestRefiningService:
         """
 
         covid_condition = _make_condition_v1_1(
-            child_rsg_snomed_codes=["840539006"], snomed_codes=_MOCK_CONDITION_CODES
+            child_rsg_snomed_codes=["840539006"], codes=_MOCK_CONDITION_CODES
         )
         config = _make_db_configuration_v1_1(jurisdiction_id="SOME-OTHER-JD")
 
@@ -1074,7 +1129,7 @@ class TestRefiningService:
         """
 
         zika_condition = _make_condition_v3_1_1(
-            child_rsg_snomed_codes=["3928002"], loinc_codes=_MOCK_CONDITION_CODES
+            child_rsg_snomed_codes=["3928002"], codes=_MOCK_CONDITION_CODES
         )
         config = _make_db_configuration_v3_1_1()
 
@@ -1100,7 +1155,7 @@ class TestRefiningService:
         """
 
         zika_condition = _make_condition_v3_1_1(
-            child_rsg_snomed_codes=["3928002"], icd10_codes=_MOCK_CONDITION_CODES
+            child_rsg_snomed_codes=["3928002"], codes=_MOCK_CONDITION_CODES
         )
         config = _make_db_configuration_v3_1_1(jurisdiction_id="SOME-OTHER-JD")
 

@@ -1,0 +1,49 @@
+<!--
+  Results: the Trigger Code Result Organizer's three permitted component kinds
+  side by side — CONF:4527-441/442 (Result Observation), 4527-443/444
+  (Laboratory Result Status ...4.418), 4527-450/451 (Specimen Collection
+  Procedure ...4.415).
+
+  Only the first is a result ROW. The other two are organizer-scoped context
+  and must land in the block's context table, not the detail rows. The fourth
+  observation deliberately carries NO templateId, because the row filter
+  excludes known non-results rather than requiring the result template — a
+  sender omitting it must not blank the table.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2" codeSystem="2.16.840.1.113883.6.1"/>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1"
+            displayName="CBC panel"/>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+          <code code="718-7" codeSystem="2.16.840.1.113883.6.1"
+                displayName="Hemoglobin"/>
+          <value xsi:type="PQ" value="13.2" unit="g/dL"/>
+        </observation>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.418"
+                      extension="2018-06-11"/>
+          <code code="92235-1" codeSystem="2.16.840.1.113883.6.1"
+                displayName="Lab order result status"/>
+          <value xsi:type="CD" code="final"
+                 codeSystem="2.16.840.1.113883.5.83" displayName="Final"/>
+        </observation>
+      </component>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.415"
+                      extension="2018-09-01"/>
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96"/>
+          <targetSiteCode code="368208006"
+                          codeSystem="2.16.840.1.113883.6.96"
+                          displayName="Left upper arm structure"/>
+        </procedure>
+      </component>
+    </organizer>
+  </entry>
+</section>

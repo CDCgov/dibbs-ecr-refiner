@@ -181,7 +181,9 @@ class TestCloneSectionProcessingInstructions:
         Tests cloning with a mix of narrative-only, refinable, and custom sections.
         """
         narrative_code = NARRATIVE_ONLY_SECTIONS[0]
-        refinable_code = "11450-4"
+        # Social History carries no trigger codes, so include=False survives
+        # the clone — see TestCloneTriggerCodeSections for the other case
+        refinable_code = "29762-2"
         custom_code = "custom-456"
 
         clone_from = [
@@ -196,7 +198,7 @@ class TestCloneSectionProcessingInstructions:
             ),
             DbConfigurationSectionProcessing(
                 code=refinable_code,
-                name="Problem Section",
+                name="Social History Section",
                 action="refine",
                 include=False,
                 narrative="remove",
@@ -226,7 +228,7 @@ class TestCloneSectionProcessingInstructions:
             ),
             DbConfigurationSectionProcessing(
                 code=refinable_code,
-                name="Problem Section",
+                name="Social History Section",
                 action="retain",
                 include=True,
                 narrative="retain",
@@ -245,6 +247,49 @@ class TestCloneSectionProcessingInstructions:
         assert result_map[refinable_code].action == "refine"
         assert result_map[refinable_code].include is False
         assert result_map[custom_code].section_type == "custom"
+
+
+class TestCloneTriggerCodeSections:
+    def test_clone_coerces_trigger_section_include_to_true(self):
+        """
+        A source configuration authored before the trigger-code policy
+        landed can hold include=False on a section that carries trigger
+        codes. Cloning must not carry that removal forward.
+        """
+
+        trigger_code = "30954-2"  # Results
+
+        clone_from = [
+            DbConfigurationSectionProcessing(
+                code=trigger_code,
+                name="Results Section",
+                action="refine",
+                include=False,
+                narrative="remove",
+                versions=["1.1"],
+                section_type="standard",
+            )
+        ]
+
+        clone_to = [
+            DbConfigurationSectionProcessing(
+                code=trigger_code,
+                name="Results Section",
+                action="retain",
+                include=True,
+                narrative="retain",
+                versions=["3.1.1"],
+                section_type="standard",
+            )
+        ]
+
+        result = clone_section_processing_instructions(clone_from, clone_to)
+
+        assert result[0].include is True
+
+        # only removal is forced; the jurisdiction's other choices clone through
+        assert result[0].action == "refine"
+        assert result[0].narrative == "remove"
 
 
 class TestBuildSectionUpdateNormalization:

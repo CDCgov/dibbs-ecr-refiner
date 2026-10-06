@@ -1,0 +1,25 @@
+---
+title: Python API Reference
+layout: layout.liquid
+---
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">Python API Reference</h1>
+
+<p class="text-gray-60 mb-8">Browse Python modules organized by domain. Each module includes docstrings, signatures, and parameter details.</p>
+
+<h2 class="font-merriweather text-xl font-semibold mb-4">Domains</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {% for domain in domains %}
+  <div class="border rounded-lg p-4 border-gray-cool-4">
+    <h3 class="font-merriweather font-semibold mb-1">{{ domain.name }}</h3>
+    <p class="text-sm text-gray-60 mb-3">{{ domain.description }}</p>
+    <div class="space-y-1">
+      {% for module_name in domain.modules %}
+      {% assign slug = module_name | slugify %}
+      <a href="/reference/python-api/module-{{ slug }}/" class="block text-sm text-blue-cool-50 hover:text-blue-cool-80">{{ module_name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>

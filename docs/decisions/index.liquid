@@ -1,0 +1,31 @@
+---
+title: Decisions
+layout: layout.liquid
+is_adr: false
+---
+
+<h1 class="font-merriweather text-3xl font-bold mb-6">Architecture Decision Records</h1>
+
+<p class="text-gray-70 mb-6">Design decisions and trade-offs made during the development of the eCR Refiner.</p>
+
+<div class="space-y-4">
+{% for adr in collections.decisions %}
+  <div class="border rounded-lg p-4 border-gray-cool-4 hover:border-blue-cool-30 transition-colors">
+    <a href="{{ adr.url }}" class="block no-underline">
+      <div class="flex items-start justify-between">
+        <h3 class="font-merriweather text-lg font-semibold text-gray-90">{{ adr.number }}. {{ adr.title }}</h3>
+        <span class="text-sm text-gray-50 ml-4 shrink-0">{{ adr.date }}</span>
+      </div>
+      <p class="text-sm text-gray-60 mt-1">
+        {% if adr.status == "Accepted" %}
+          <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Accepted</span>
+        {% elsif adr.status == "Proposed" %}
+          <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full">Proposed</span>
+        {% else %}
+          <span class="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ adr.status }}</span>
+        {% endif %}
+      </p>
+    </a>
+  </div>
+{% endfor %}
+</div>

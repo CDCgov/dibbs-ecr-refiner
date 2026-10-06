@@ -5,6 +5,7 @@ import { highlightMatches } from '../../../../utils';
 import { IncludedCondition } from '../../../../api/schemas';
 import { TesLink } from '../../TesLink';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
+import { useModalContext } from '@components/Modal/ModalContext';
 
 interface AddConditionCodeSetsDrawerProps {
   isOpen: boolean;
@@ -24,6 +25,11 @@ export function AddConditionCodeSetsDrawer({
   disabled,
 }: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const { isModalOpen } = useModalContext();
+
+  const effectiveHoveredId = isModalOpen ? null : hoveredId;
 
   // Search and highlight logic
   const filteredConditions = searchTerm
@@ -80,10 +86,14 @@ export function AddConditionCodeSetsDrawer({
             return (
               <ConditionCodeSetListItem
                 key={key}
+                showHiddenElements={effectiveHoveredId === condition.id}
+                onMouseEnter={() => setHoveredId(condition.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onFocus={() => setHoveredId(condition.id)}
                 condition={condition}
                 configurationId={configurationId}
                 highlight={highlight}
-                reportable_condition_display_name={
+                reportableConditionDisplayName={
                   reportable_condition_display_name
                 }
                 disabled={disabled}

@@ -82,14 +82,29 @@ if(bodyDiscoverConfigurations?.uploaded_file !== undefined && bodyDiscoverConfig
     );
   }
 
+export const getDiscoverConfigurationsUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/simulator/discover-configurations`,
+    baseURL: '',
 
 
+  });
+}
+
+
+
+
+export const getDiscoverConfigurationsMutationKey = () => ['discoverConfigurations'] as const;
 
 export const getDiscoverConfigurationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,DiscoverConfigurationsMutationVariables, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,DiscoverConfigurationsMutationVariables, TContext> => {
 
-const mutationKey = ['discoverConfigurations'];
+const mutationKey = getDiscoverConfigurationsMutationKey();
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -99,7 +114,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discoverConfigurations>>, {data?: BodyDiscoverConfigurations}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discoverConfigurations>>, DiscoverConfigurationsMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  discoverConfigurations(data,axiosOptions)
@@ -115,16 +130,17 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type DiscoverConfigurationsMutationResult = NonNullable<Awaited<ReturnType<typeof discoverConfigurations>>>
     export type DiscoverConfigurationsMutationBody = BodyDiscoverConfigurations | undefined
     export type DiscoverConfigurationsMutationError = AxiosError<HTTPValidationError>
+    export type DiscoverConfigurationsMutationVariables = {data?: BodyDiscoverConfigurations}
 
     /**
  * @summary Discover Configurations
  */
 export const useDiscoverConfigurations = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,DiscoverConfigurationsMutationVariables, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof discoverConfigurations>>,
         TError,
-        {data?: BodyDiscoverConfigurations},
+        DiscoverConfigurationsMutationVariables,
         TContext
       > => {
       return useMutation(getDiscoverConfigurationsMutationOptions(options), queryClient);
@@ -164,14 +180,29 @@ if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== 
     );
   }
 
+export const getUploadEcrUrl = () => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/simulator/upload`,
+    baseURL: '',
 
 
+  });
+}
+
+
+
+
+export const getUploadEcrMutationKey = () => ['uploadEcr'] as const;
 
 export const getUploadEcrMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,UploadEcrMutationVariables, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,UploadEcrMutationVariables, TContext> => {
 
-const mutationKey = ['uploadEcr'];
+const mutationKey = getUploadEcrMutationKey();
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -181,7 +212,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEcr>>, {data: BodyUploadEcr}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEcr>>, UploadEcrMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  uploadEcr(data,axiosOptions)
@@ -197,16 +228,17 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type UploadEcrMutationResult = NonNullable<Awaited<ReturnType<typeof uploadEcr>>>
     export type UploadEcrMutationBody = BodyUploadEcr
     export type UploadEcrMutationError = AxiosError<HTTPValidationError>
+    export type UploadEcrMutationVariables = {data: BodyUploadEcr}
 
     /**
  * @summary Simulator Upload
  */
 export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,UploadEcrMutationVariables, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof uploadEcr>>,
         TError,
-        {data: BodyUploadEcr},
+        UploadEcrMutationVariables,
         TContext
       > => {
       return useMutation(getUploadEcrMutationOptions(options), queryClient);
@@ -227,6 +259,19 @@ export const downloadRefinedEcr = (
       `/api/v1/simulator/download/${filename}`,options
     );
   }
+
+export const getDownloadRefinedEcrUrl = (filename: string,) => {
+
+  return axios.default.create({
+    baseURL: '',
+    params: null,
+  }).getUri({
+    url: `/api/v1/simulator/download/${filename}`,
+    baseURL: '',
+
+
+  });
+}
 
 
 

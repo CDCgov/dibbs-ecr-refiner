@@ -1,6 +1,14 @@
+import { LayoutContainer } from '@components/Layout/LayoutContainer';
 import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { Title } from '@components/Title';
-import { QuestionIcon } from '@components/Tooltip/QuestionIcon';
 import { Button } from '@components/Button';
 import { useState } from 'react';
 import { GetConfigurationResponse, DbCode } from '../../api/schemas';
@@ -11,6 +19,7 @@ import { VersionMenu } from './ManageCodes/VersionMenu';
 import { SerializedContentButton } from './SerializedContentButton';
 import { StepsContainer, Steps } from './Steps';
 import { ActivationButtons } from './ActivationButtons';
+import { InfoIcon } from '@components/Icons/InfoIcon';
 
 export function NavigationContainer({
   children,
@@ -18,22 +27,38 @@ export function NavigationContainer({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-blue-cool-5 drop-shadow-nav flex flex-col items-start gap-4 px-8 py-2 md:flex-row md:items-center md:py-2 lg:px-20">
-      {children}
-    </div>
+    <LayoutContainer
+      breakout={true}
+      background="bg-white border-b border-gray-400"
+    >
+      <div className="flex flex-col items-start gap-4 border-t border-gray-400 md:flex-row md:items-end">
+        {children}
+      </div>
+    </LayoutContainer>
   );
 }
 
 export function SectionContainer({ children }: { children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-8 px-8 py-9 lg:px-20">
-      {children}
-    </section>
+    <LayoutContainer
+      breakout={true}
+      className="flex flex-1 flex-col gap-8 py-9"
+    >
+      <section className="h-full w-full">{children}</section>
+    </LayoutContainer>
   );
 }
 
 export function TitleContainer({ children }: { children: React.ReactNode }) {
-  return <div className="px-8 py-6 shadow-lg lg:px-20">{children}</div>;
+  return (
+    <LayoutContainer
+      breakout={true}
+      background="bg-white"
+      className="z-dropdown py-6"
+    >
+      {children}
+    </LayoutContainer>
+  );
 }
 
 interface HeaderProps {
@@ -47,15 +72,16 @@ export function Header({ configuration }: HeaderProps) {
       <TitleContainer>
         <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col">
+            <Status version={configuration.active_version} />
             <div className="flex flex-row items-center gap-2">
-              <Title>{configuration.display_name}</Title>
+              <Title className="max-w-xl">{configuration.display_name}</Title>
               <Button
                 variant="tertiary"
                 onClick={() => setIsRsgDetailsModalOpen(true)}
                 className="p-0!"
                 aria-label="Open reporting specification details modal"
               >
-                <QuestionIcon />
+                <InfoIcon />
               </Button>
               <RsgDetailsModal
                 open={isRsgDetailsModalOpen}
@@ -64,7 +90,6 @@ export function Header({ configuration }: HeaderProps) {
                 rsgCodes={configuration.rsg_codes}
               />
             </div>
-            <Status version={configuration.active_version} />
           </div>
           <div className="flex flex-col items-start gap-4 md:items-end">
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -132,26 +157,32 @@ function RsgDetailsModal({
         </p>
       </ModalHeader>
       <ModalBody>
-        <table>
-          <thead className="border-b-gray-cool-20 border-b">
-            <tr>
-              <th scope="col" className="w-[40%] px-2 py-3 font-bold">
+        <Table>
+          <TableHead className="border-b-gray-cool-20 border-b">
+            <TableRow>
+              <TableHeaderCell className="text-gray-cool-90 w-[40%] px-2 py-3 font-bold">
                 SNOMED code
-              </th>
-              <th className="w-[60%] px-2 py-3 font-bold">Display name</th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
+              </TableHeaderCell>
+              <TableHeaderCell className="text-gray-cool-90 w-[60%] px-2 py-3 font-bold">
+                Display name
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="divide-gray-cool-20 divide-y">
             {rsgCodes.map((c) => {
               return (
-                <tr key={c.code}>
-                  <td className="py-3 pl-2">{c.code}</td>
-                  <td className="py-3 pl-2">{c.display}</td>
-                </tr>
+                <TableRow key={c.code}>
+                  <TableCell className="text-gray-cool-90 py-3 pl-2">
+                    {c.code}
+                  </TableCell>
+                  <TableCell className="text-gray-cool-90 py-3 pl-2">
+                    {c.display}
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </ModalBody>
     </Modal>
   );

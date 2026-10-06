@@ -1,10 +1,10 @@
 import { useParams } from 'react-router';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { Spinner } from '@components/Spinner';
+import { Button } from '@components/Button';
 import { SectionModalState, Sections } from './Sections';
 import { Header, SectionContainer } from '../layout';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
-import { Button } from '@components/Button';
 import { useState } from 'react';
 import { useConfigLock } from '../../../hooks/useConfigLock';
 
@@ -32,18 +32,18 @@ export function CustomizeSections() {
     configuration.data.is_locked || !configuration.data.is_draft;
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <Header configuration={configuration.data} />
       <SectionContainer>
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
+        <div className="mb-4 flex items-center justify-between">
           <ConfigurationTitleBar
             title="Customize eICR sections"
             subtitle="Choose which sections of your eICR to include, as well as whether to refine or retain each section."
           />
-          {isDisabled ? null : (
+          {!isDisabled && (
             <Button
-              className="m-0! p-0! whitespace-nowrap"
-              variant="tertiary"
+              variant="secondary"
+              className="m-0! p-2! px-4! text-sm! whitespace-nowrap"
               onClick={() =>
                 setModalState({ isOpen: true, selectedSection: null })
               }
