@@ -104,7 +104,7 @@ async def _get_tes_by_version_number_db(
     ORDER BY version
     """
 
-    params = (version,)
+    params = {"version": version}
 
     async with (
         db.get_connection() as conn,
