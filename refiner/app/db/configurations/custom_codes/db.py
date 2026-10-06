@@ -164,7 +164,7 @@ async def insert_custom_codes_db(
                 cursor=event_cur,
             )
 
-    return rows
+        return rows
 
 
 async def delete_custom_codes_db(

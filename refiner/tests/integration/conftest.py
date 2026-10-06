@@ -358,7 +358,7 @@ async def get_condition_by_id(db_pool):
                         WHERE c.id = %(id)s
                         GROUP BY c.id
                     """,
-                (id,),
+                {"id": id},
             )
             result = await cur.fetchone()
             assert result, f"Condition with ID '{id}' not found."
