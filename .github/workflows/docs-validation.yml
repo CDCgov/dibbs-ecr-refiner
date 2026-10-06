@@ -33,14 +33,13 @@ jobs:
           cache: pip
 
       - name: Install Just
-        run: |
-          curl -L https://just.systems/install.sh | bash -s
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
       - name: Run docs validation
         id: docs_val
         continue-on-error: true
         run: |
-          /home/runner/bin/just docs::validate
+          just docs::validate
 
       - name: Generate validation summary
         if: always()
