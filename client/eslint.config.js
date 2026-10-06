@@ -117,6 +117,7 @@ export default defineConfig(
         typescript: {
           alwaysTryTypes: true,
           project: ['./tsconfig.app.json', './e2e/tsconfig.json'],
+          noWarnOnMultipleProjects: true,
         },
         node: true, // or omit entirely if TypeScript resolves all imports
       },
