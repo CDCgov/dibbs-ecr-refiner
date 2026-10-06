@@ -6,6 +6,14 @@ import {
   ModalTitle,
   ModalFooter,
 } from '@components/Modal';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@components/Table';
 import { Button } from '@components/Button';
 import { CodeCategoryStatus, CodeSetStatus } from '../../../../api/schemas';
 import classNames from 'classnames';
@@ -74,32 +82,32 @@ function StatusModal({ conditionId, isOpen, onClose }: StatusModalProps) {
       </ModalHeader>
 
       <ModalBody>
-        <table className="w-full table-fixed">
+        <Table className="table-fixed">
           <colgroup>
             <col className="w-[55%]" />
             <col className="w-[45%]" />
           </colgroup>
-          <thead>
-            <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-              <th className="px-2 py-2 text-left" scope="col">
+          <TableHead>
+            <TableRow className="border-gray-cool-20 text-gray-cool-90 border-b">
+              <TableHeaderCell className="px-2 py-2 text-left">
                 Expanded codes
-              </th>
-              <th className="px-2 py-2 text-left" scope="col">
+              </TableHeaderCell>
+              <TableHeaderCell className="px-2 py-2 text-left">
                 Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-gray-cool-20 divide-y">
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="divide-gray-cool-20 divide-y">
             {condition.completeness_status.code_category_statuses.map((ccs) => (
-              <tr key={ccs.category}>
-                <td className="px-2 py-3">{ccs.name}</td>
-                <td className="px-2 py-3">
+              <TableRow key={ccs.category}>
+                <TableCell className="px-2 py-3">{ccs.name}</TableCell>
+                <TableCell className="px-2 py-3">
                   <CategoryCompletenessStatus completeness={ccs.completeness} />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </ModalBody>
 
       <ModalFooter align="center">

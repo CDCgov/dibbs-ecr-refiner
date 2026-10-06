@@ -1,6 +1,7 @@
 import React from 'react';
 import { FuseResultMatch } from 'fuse.js';
 
+// NOTE: text-gray-cool-90 applied explicitly to <mark> because browser default <mark> styling fails WCAG color-contrast; consider a shared/centralized highlight utility with design sign-off.
 export function highlightMatches(
   text: string,
   matches?: readonly FuseResultMatch[],
@@ -19,7 +20,11 @@ export function highlightMatches(
     if (lastIndex < start) {
       parts.push(text.slice(lastIndex, start));
     }
-    parts.push(<mark key={i}>{text.slice(start, end + 1)}</mark>);
+    parts.push(
+      <mark key={i} className="text-gray-cool-90!">
+        {text.slice(start, end + 1)}
+      </mark>
+    );
     lastIndex = end + 1;
   });
 

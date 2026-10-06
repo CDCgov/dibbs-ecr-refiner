@@ -1,0 +1,153 @@
+<!--
+  Results: every component kind a Result Organizer has been seen to carry, in
+  one matched organizer, so the shared-context guard is pinned against vendor
+  shapes and not just the IG-conformant ones (#1504).
+
+  Hand-authored. The **shapes** (element kinds, templateIds, what is present or
+  absent) are modelled on Epic eICR output; every value is fabricated, and ids
+  use the HL7 example OID 2.16.840.1.113883.19.5.
+
+  Organizer 1 (matched via 94500-6) carries, in order:
+    - a specimen collection <procedure> with **no** templateId      -> context, kept
+    - the matched Result Observation                                -> kept
+    - an unmatched Result Observation                               -> pruned
+    - an Epic proprietary result <observation> (...72.3.4)          -> pruned ("16" rows)
+    - an Epic <procedure> (...72.3.7), nullFlavored code            -> context, kept
+    - a Specimen Collection Procedure mis-sent as an
+      <observation> carrying ...4.415                               -> context, kept
+    - a Comment Activity <act> (...4.64)                            -> context, kept
+    - a Laboratory Result Status <observation> (...4.418)           -> context, kept
+    - a nested <organizer> whose only result is unmatched           -> pruned
+
+  Organizer 2 matches nothing, so it is removed whole and its templateId-less
+  specimen procedure goes with it: the carve-out only fires inside a matched
+  entry.
+-->
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <templateId root="2.16.840.1.113883.10.20.22.2.3.1" extension="2015-08-01" />
+  <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" displayName="Results" />
+  <title>Results</title>
+  <text>...original narrative...</text>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.1" extension="2015-08-01" />
+      <id root="2.16.840.1.113883.19.5" extension="organizer-matched" />
+      <code code="94531-1" codeSystem="2.16.840.1.113883.6.1" />
+      <statusCode code="completed" />
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <id root="2.16.840.1.113883.19.5" extension="specimen-no-templateid" />
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96"
+            displayName="Specimen collection (procedure)" />
+          <effectiveTime value="20260105143651+0000" />
+          <participant typeCode="PRD">
+            <participantRole classCode="SPEC">
+              <playingEntity>
+                <code code="119297000" codeSystem="2.16.840.1.113883.6.96"
+                  displayName="Blood specimen" />
+              </playingEntity>
+            </participantRole>
+          </participant>
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01" />
+          <id root="2.16.840.1.113883.19.5" extension="result-matched" />
+          <code code="94500-6" codeSystem="2.16.840.1.113883.6.1" />
+          <statusCode code="completed" />
+          <value xsi:type="CD" code="260373001" codeSystem="2.16.840.1.113883.6.96"
+            displayName="Detected" />
+        </observation>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01" />
+          <id root="2.16.840.1.113883.19.5" extension="result-unmatched" />
+          <code code="2160-0" codeSystem="2.16.840.1.113883.6.1" />
+          <statusCode code="completed" />
+          <value xsi:type="PQ" value="0.9" unit="mg/dL" />
+        </observation>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="1.2.840.114350.1.72.3.4" />
+          <id root="2.16.840.1.113883.19.5" extension="epic-proprietary-result" />
+          <code nullFlavor="UNK" />
+          <value xsi:type="CD" code="16" codeSystem="1.2.840.114350.1.72.1.5007"
+            codeSystemName="Epic.Result.Type" />
+        </observation>
+      </component>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <templateId root="1.2.840.114350.1.72.3.7" />
+          <id root="2.16.840.1.113883.19.5" extension="epic-venipuncture" />
+          <code nullFlavor="UNK">
+            <originalText>Venipuncture</originalText>
+          </code>
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.415" extension="2018-09-01" />
+          <id root="2.16.840.1.113883.19.5" extension="specimen-as-observation" />
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96" />
+        </observation>
+      </component>
+      <component>
+        <act classCode="ACT" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.64" />
+          <id root="2.16.840.1.113883.19.5" extension="comment-activity" />
+          <code code="48767-8" codeSystem="2.16.840.1.113883.6.1"
+            displayName="Annotation comment" />
+          <text>Specimen received hemolyzed; result may be affected.</text>
+        </act>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.418" extension="2018-09-01" />
+          <id root="2.16.840.1.113883.19.5" extension="lab-result-status" />
+          <code code="92235-1" codeSystem="2.16.840.1.113883.6.1" />
+          <value xsi:type="CD" code="F" codeSystem="2.16.840.1.113883.18.51" />
+        </observation>
+      </component>
+      <component>
+        <organizer classCode="BATTERY" moodCode="EVN">
+          <id root="2.16.840.1.113883.19.5" extension="nested-organizer-unmatched" />
+          <code code="24326-1" codeSystem="2.16.840.1.113883.6.1" />
+          <statusCode code="completed" />
+          <component>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01" />
+              <id root="2.16.840.1.113883.19.5" extension="nested-result-unmatched" />
+              <code code="2951-2" codeSystem="2.16.840.1.113883.6.1" />
+              <value xsi:type="PQ" value="140" unit="mmol/L" />
+            </observation>
+          </component>
+        </organizer>
+      </component>
+    </organizer>
+  </entry>
+  <entry>
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.1" extension="2015-08-01" />
+      <id root="2.16.840.1.113883.19.5" extension="organizer-unmatched" />
+      <code code="24323-8" codeSystem="2.16.840.1.113883.6.1" />
+      <statusCode code="completed" />
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <id root="2.16.840.1.113883.19.5" extension="specimen-in-unmatched-organizer" />
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96" />
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01" />
+          <id root="2.16.840.1.113883.19.5" extension="result-in-unmatched-organizer" />
+          <code code="1920-8" codeSystem="2.16.840.1.113883.6.1" />
+          <value xsi:type="PQ" value="22" unit="U/L" />
+        </observation>
+      </component>
+    </organizer>
+  </entry>
+</section>

@@ -614,10 +614,10 @@ def _prune_at_container_level(
         had_containers = bool(containers)
 
         for container in containers:
-            # a guarded container that does not itself contain a match
-            # candidate is shared, organizer-scoped context (e.g. the
-            # Specimen Collection Procedure) — retain it alongside any
-            # surviving sibling rather than pruning it as non-matching
+            # a container the guard does not select is shared,
+            # organizer-scoped context (e.g. the specimen collection
+            # procedure) — retain it alongside any surviving sibling rather
+            # than pruning it as non-matching
             if guard_xpath and not container.xpath(guard_xpath, namespaces=namespaces):
                 continue
 

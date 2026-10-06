@@ -47,7 +47,10 @@ This endpoint can be requested using an HTTP client of your choice in order to i
 
 ## Seeding Localstack for manual testing
 
-A script accessible via `just server seed-localstack` is available to put Localstack in a state suitable for local testing (ie hitting the `localhost:9000` endpoint with a POST command simulating an SQS event). The same code is used by Pytest to set up our integration tests.
+A script accessible via `just server seed-localstack` is available to put Localstack in a state suitable for local testing (ie hitting the `localhost:9000` endpoint with a POST command simulating an SQS event). The same code is used by Pytest to set up our integration tests. If running the script locally, you'll need to
+
+1. Not have a COVID config. You can ensure this by cleaning the db using `just db refresh`
+2. Inserting the `refiner-session` token into the script. You can grab this in the Application tab in browser dev tools under `Application > Storage > Cookies > refiner-session`
 
 After containers are spun up, run `just server seed-localstack` to seed Localstack accordingly. If all goes well, you should see an example POST body that you can use to further invoke / manually test the Lambda.
 

@@ -37,10 +37,10 @@
       "hash": "64d3dd37b69e4c979de875aadc6e04f987514115d15ded4e5c7ec4ed7f084370"
     },
     "memberships.csv.gz": {
-      "hash": "333e360cefdbf4dc1f912702805bb8a868b6b7cd0a742158845f8f206648c06a"
+      "hash": "ba043259a83a514aaab4c4a5b50f8c0ed6ded27dd7bc900307f805c011f61c12"
     },
     "summary.csv": {
-      "hash": "bff3cb494fb0442ca7839a49b5488a03abb9f3324c2b2c53077d061aa91b212e"
+      "hash": "7e773757c250e37f27a175e9750324c5de48cb740010cc448ba87e3f12991945"
     }
   },
   "derived_from": {
@@ -76,7 +76,6 @@
     "condition_grouper_7.0.0.part04.json": "0e095ad6ce875ad52875e9a3cc7f54afaf78b04b8c5a550c65f9ada225232fca",
     "condition_grouper_7.0.0.part05.json": "3aba608fdf8d23faf78694c91ab09e490a23291f8b9ae40aa7a42a4b8b77636f",
     "condition_grouper_7.0.0.part06.json": "03fafcb051750079f6e6b68d04fb29323d23a8c2076f1642ec441b4aa58f3c9c",
-    "eicr_triggering.json": "5917a55c0a7ae71cd8767e30c0a708192a2a99581d29adb9b7d9176797b78242",
     "reporting_spec_grouper_20241008.part01.json": "09b259db177cf0a8962b20abfbff1509e960af834febda7e0bc59de74dfcab17",
     "reporting_spec_grouper_20241008.part02.json": "8740f9953d4ba28e6d44a833d53da90d139fbea6215775efc332677fcea5bffa",
     "reporting_spec_grouper_20250328.part01.json": "804e38c5046216c2d0a4bf8add7799220117aef468ea70a3c5216e876bba5819",
@@ -88,6 +87,7 @@
     "reporting_spec_grouper_20260327.part03.json": "8bfd89dfc885542b07b21057935b804cf448e4b275babdf8a725ff15731fb83b",
     "reporting_spec_grouper_20260731.part01.json": "54396b1ee319636ab32896ed4f6c4dc8d2e90a774deb02168023833c74c8abb3",
     "reporting_spec_grouper_20260731.part02.json": "d48ec1b7f6884daa56885b9134eb0354a264625ad9abfa4454b8b1fb16edcbf4",
-    "reporting_spec_grouper_20260731.part03.json": "69dace99bd277b296cc24649404456edd207aeaa620e10241f211da8fd1e16cd"
+    "reporting_spec_grouper_20260731.part03.json": "69dace99bd277b296cc24649404456edd207aeaa620e10241f211da8fd1e16cd",
+    "ersd_3.2.0.json": "c6621b527fd1e422eb27f0ff9048ca3ee06de4ec66fb1877bf9c0333b276ec57"
   }
 }
