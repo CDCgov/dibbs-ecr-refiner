@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App.tsx';
+import { App } from './App';
 import { BrowserRouter } from 'react-router';
 import '@fontsource-variable/merriweather';
 import '@fontsource-variable/public-sans';
@@ -14,7 +14,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { ModalProvider } from '@components/Modal/ModalProvider.tsx';
+import { ModalProvider } from '@components/Modal/ModalProvider';
 
 function handleSessionExpiry(error: Error) {
   if (isAxiosError(error) && error.response?.status === 401) {

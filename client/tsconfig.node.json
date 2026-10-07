@@ -25,6 +25,7 @@
     "vite.config.ts",
     "tests/setup.ts",
     "orval.config.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "eslint-kit-rules/**/*"
   ]
 }
