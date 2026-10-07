@@ -396,7 +396,7 @@ async def download_refined_ecr(
     except Exception as e:
         logger.error(
             "Failed to fetch refined zip from S3",
-            extra={"error": str(e), "key": key, "filename": filename},
+            extra={"error": str(e), "key": key},
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
