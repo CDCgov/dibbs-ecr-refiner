@@ -39,14 +39,27 @@ repos:
           )$
 
   # ruff linting and formatting
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+  # - runs the refiner venv's ruff so `refiner/dev-requirements.txt` is the only
+  #   place the version is pinned; CI's lint job and Dependabot both read it there
+  - repo: local
     hooks:
       # - run the linter with auto-fixes
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
-      # - run the formatter
+      - id: ruff-check
+        name: ruff check
+        entry: refiner/.venv/bin/ruff check --force-exclude --fix --exit-non-zero-on-fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+      # - run the formatter; ruff 0.16+ also formats python blocks in markdown
       - id: ruff-format
+        name: ruff format
+        entry: refiner/.venv/bin/ruff format --force-exclude
+        language: system
+        types_or: [python, pyi, markdown]
+        # * ruff only recognizes lowercase `.md`; an explicitly passed `.MD` file
+        #   is parsed as python and fails
+        exclude: \.MD$
+        require_serial: true
 
   # tsx formatting only
   # PERF: Linting can take about 5 seconds to complete so should be done

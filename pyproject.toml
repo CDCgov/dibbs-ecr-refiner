@@ -68,6 +68,35 @@ ignore = [
   "D401",
   # - line too long (handled by black/formatter)
   "E501",
+
+  # TODO: ruff 0.16 default rules that fire on the codebase; each is removed
+  # from here in the commit that fixes it, and this block should be empty
+  # before the upgrade PR merges
+  "ASYNC230",
+  "B006",
+  "BLE001",
+  "DTZ005",
+  "DTZ011",
+  "DTZ901",
+  "G101",
+  "ISC004",
+  "PIE790",
+  "PIE810",
+  "PLR1722",
+  "PLW0127",
+  "PLW0602",
+  "PYI064",
+  "RUF010",
+  "RUF015",
+  "RUF022",
+  "RUF100",
+  "S112",
+  "SIM102",
+  "SIM114",
+  "SIM117",
+  "SIM118",
+  "SIM210",
+  "TRY002",
 ]
 
 # file-specific rule exclusions
