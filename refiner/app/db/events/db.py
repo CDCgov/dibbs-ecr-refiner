@@ -333,7 +333,7 @@ async def insert_custom_code_event_db(
     insert all of the required subevents. This occurs for bulk additions or deletions.
     """
 
-    is_adding = True if event_type == "add" else False
+    is_adding = event_type == "add"
 
     def _get_system_name(id: UUID) -> str:
         system = next((s for s in code_systems if s.id == id), None)

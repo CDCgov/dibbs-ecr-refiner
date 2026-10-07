@@ -352,12 +352,15 @@ def is_additional_context_grouper(vs: ValueSet) -> bool:
     if not vs.useContext:
         return False
     for context in vs.useContext:
-        if context.valueCodeableConcept and context.valueCodeableConcept.coding:
-            if any(
+        if (
+            context.valueCodeableConcept
+            and context.valueCodeableConcept.coding
+            and any(
                 coding.code == "additional-context-grouper"
                 for coding in context.valueCodeableConcept.coding
-            ):
-                return True
+            )
+        ):
+            return True
     return False
 
 
@@ -400,10 +403,12 @@ def get_condition_parents_by_version(
 
     parents: defaultdict[str, dict[str, ValueSet]] = defaultdict(dict)
     for vs in all_vs.values():
-        if is_condition_grouper(vs):
-            if cond_name := (vs.title or vs.name):
-                if vs.version:
-                    parents[cond_name][vs.version] = vs
+        if (
+            is_condition_grouper(vs)
+            and (cond_name := (vs.title or vs.name))
+            and vs.version
+        ):
+            parents[cond_name][vs.version] = vs
     return dict(parents)
 
 

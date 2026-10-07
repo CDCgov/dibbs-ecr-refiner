@@ -169,7 +169,7 @@ async def delete_custom_codes_db(
     code_systems: list[DbCodeSystem],
     db: AsyncDatabaseConnection,
     delete_all: bool = False,
-    ids_to_skip: list[UUID] = [],
+    ids_to_skip: list[UUID] | None = None,
 ) -> list[DbCustomCode]:
     """
     Given a config and custom code IDs, deletes the custom codes from the configuration.
@@ -183,7 +183,7 @@ async def delete_custom_codes_db(
                 AND custom_codes.configuration_id = %(configuration_id)s
             RETURNING *;
             """
-        params = {"code_ids_to_skip": ids_to_skip, "configuration_id": config.id}
+        params = {"code_ids_to_skip": ids_to_skip or [], "configuration_id": config.id}
 
     else:
         query = """

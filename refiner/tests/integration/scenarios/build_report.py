@@ -565,9 +565,11 @@ def _render_scenarios_section(scenarios: list[ScenarioSnapshot]) -> str:
     lines = [
         "## Scenarios",
         "",
-        f"Total: {len(scenarios)} scenario{plural} across "
-        f"{len({s.fixture for s in scenarios})} "
-        f"fixture{'s' if len({s.fixture for s in scenarios}) != 1 else ''}.",
+        (
+            f"Total: {len(scenarios)} scenario{plural} across "
+            f"{len({s.fixture for s in scenarios})} "
+            f"fixture{'s' if len({s.fixture for s in scenarios}) != 1 else ''}."
+        ),
         "",
     ]
     for scenario in scenarios:

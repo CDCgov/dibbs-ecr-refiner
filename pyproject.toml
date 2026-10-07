@@ -73,18 +73,8 @@ ignore = [
   # from here in the commit that fixes it, and this block should be empty
   # before the upgrade PR merges
   "ASYNC230",
-  "B006",
   "BLE001",
-  "ISC004",
-  "PIE810",
-  "PLR1722",
-  "PLW0127",
-  "PLW0602",
-  "RUF015",
-  "SIM102",
-  "SIM114",
   "SIM117",
-  "SIM210",
 ]
 
 # file-specific rule exclusions

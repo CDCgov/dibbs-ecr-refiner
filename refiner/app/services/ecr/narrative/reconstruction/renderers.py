@@ -152,11 +152,12 @@ def render_code_display(el: _Element | None) -> str:
         return ""
 
     original_text = el.find("hl7:originalText", HL7_NS)
-    if original_text is not None:
-        # normalize-space gathers descendant text (skipping the <reference>
-        # child, which has none) and collapses whitespace in one step
-        if text := str(original_text.xpath("normalize-space(.)")):
-            return text
+    # normalize-space gathers descendant text (skipping the <reference>
+    # child, which has none) and collapses whitespace in one step
+    if original_text is not None and (
+        text := str(original_text.xpath("normalize-space(.)"))
+    ):
+        return text
 
     if display := _normalize(el.get("displayName")):
         return display

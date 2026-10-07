@@ -150,11 +150,11 @@ CODE_SYSTEM_DATA = {
 
 
 def get_mock_system_id_by_name(system_display_name: str):
-    id_string = [
+    id_string = next(
         k
         for k, v in CODE_SYSTEM_DATA.items()
         if v["display_name"] == system_display_name
-    ][0]
+    )
     return UUID(id_string)
 
 
