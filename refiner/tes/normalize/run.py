@@ -387,16 +387,16 @@ def _write_csv_gz(path: Path, header: Sequence[str], rows: Iterable[Sequence]) -
     change and CI cannot verify processed output against its sources by hash.
     """
 
-    with path.open("wb") as raw:
-        with gzip.GzipFile(
+    with (
+        path.open("wb") as raw,
+        gzip.GzipFile(
             filename="", mode="wb", fileobj=raw, mtime=0, compresslevel=6
-        ) as compressed:
-            with io.TextIOWrapper(
-                compressed, encoding="utf-8", newline=""
-            ) as text_stream:
-                writer = csv.writer(text_stream, lineterminator="\n")
-                writer.writerow(header)
-                writer.writerows(rows)
+        ) as compressed,
+        io.TextIOWrapper(compressed, encoding="utf-8", newline="") as text_stream,
+    ):
+        writer = csv.writer(text_stream, lineterminator="\n")
+        writer.writerow(header)
+        writer.writerows(rows)
     return file_hash(path)
 
 

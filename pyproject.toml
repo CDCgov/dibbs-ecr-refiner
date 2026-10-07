@@ -74,7 +74,6 @@ ignore = [
   # before the upgrade PR merges
   "ASYNC230",
   "BLE001",
-  "SIM117",
 ]
 
 # file-specific rule exclusions

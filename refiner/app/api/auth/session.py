@@ -82,9 +82,8 @@ async def create_session(user_id: str, db: AsyncDatabaseConnection) -> str:
         user_id,
         expires,
     )
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
 
     return token
 
@@ -108,13 +107,12 @@ async def get_user_from_session(
     """
     params = (token_hash, now)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            user = await cur.fetchone()
-            if not user:
-                return None
-            return DbUser(**user)
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        user = await cur.fetchone()
+        if not user:
+            return None
+        return DbUser(**user)
 
 
 async def _delete_expired_sessions(db: AsyncDatabaseConnection) -> None:
@@ -126,9 +124,8 @@ async def _delete_expired_sessions(db: AsyncDatabaseConnection) -> None:
     now = dt.now(UTC)
     query = "DELETE FROM sessions where expires_at < %s"
     params = (now,)
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
 
 
 async def run_expired_session_cleanup_task(
@@ -160,6 +157,5 @@ async def delete_session(token: str, db: AsyncDatabaseConnection) -> None:
     token_hash = get_hashed_token(token)
     query = "DELETE FROM sessions WHERE token_hash = %s"
     params = (token_hash,)
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)

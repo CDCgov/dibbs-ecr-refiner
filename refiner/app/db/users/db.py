@@ -47,10 +47,9 @@ async def upsert_user_db(
         oidc_user_info.jurisdiction_id,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if row is None:
         raise DatabaseQueryError(message="Failed to upsert user and retrieve id.")
@@ -70,11 +69,13 @@ async def get_users_by_jd_id_db(
             WHERE jurisdiction_id = %s
             """
     params = (jurisdiction_id,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbUser)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
@@ -88,10 +89,12 @@ async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
             """
     params = (id,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbUser)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if not row:
         raise ResourceNotFoundError(message=f"User with ID {id} not found.")
@@ -119,10 +122,12 @@ async def update_user_notifications_db(
 
     params = (name, date_acknowledged, user_id)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbUser)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if row is None:
         raise ResourceNotFoundError(message=f"User with ID {user_id} not found.")
