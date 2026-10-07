@@ -389,7 +389,9 @@ def lambda_handler(event, context) -> dict:
                 )
                 batch_item_failures.append({"itemIdentifier": record_id})
 
-            except Exception as e:
+            # one bad record must not fail the batch; every failure is reported
+            # back through `RefinerComplete` and `batchItemFailures`
+            except Exception as e:  # noqa: BLE001
                 logger.error("Fatal error processing record", exception=e)
 
                 # Attempt to write a skip file
@@ -408,7 +410,8 @@ def lambda_handler(event, context) -> dict:
                     logger.info(
                         f"Wrote fatal error signal to {complete_key}", key=complete_key
                     )
-                except Exception as s3_err:
+                # best effort; the record is already marked failed below
+                except Exception as s3_err:  # noqa: BLE001
                     logger.error(
                         "Failed to write error signal to S3",
                         exception=s3_err,

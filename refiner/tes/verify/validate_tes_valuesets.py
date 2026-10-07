@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from fhir.resources.valueset import ValueSet
+from pydantic import ValidationError
 
 # configuration
 logging.basicConfig(level=logging.INFO)
@@ -325,7 +326,7 @@ def load_all_valuesets(data_dir: Path) -> dict[tuple[str, str], ValueSet]:
                 vs_obj = ValueSet.model_validate(vs_dict)
                 if vs_obj.url and vs_obj.version:
                     all_valuesets[(vs_obj.url, vs_obj.version)] = vs_obj
-            except Exception as e:
+            except ValidationError as e:
                 logger.warning(f"Failed to parse ValueSet in {file.name}: {e}")
     logger.info(f"Loaded {len(all_valuesets)} unique ValueSets from {data_dir}")
     return all_valuesets

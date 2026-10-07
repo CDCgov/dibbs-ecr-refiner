@@ -68,18 +68,13 @@ ignore = [
   "D401",
   # - line too long (handled by black/formatter)
   "E501",
-
-  # TODO: ruff 0.16 default rules that fire on the codebase; each is removed
-  # from here in the commit that fixes it, and this block should be empty
-  # before the upgrade PR merges
-  "ASYNC230",
-  "BLE001",
 ]
 
 # file-specific rule exclusions
 [tool.ruff.lint.per-file-ignores]
-# - disable docstring/type/security rules in tests
-"**/tests/*" = ["D", "S", "ANN", "T201"]
+# - disable docstring/type/security rules in tests; tests and their helper
+#   scripts may catch broadly and open files inside async test functions
+"**/tests/*" = ["D", "S", "ANN", "T201", "BLE001", "ASYNC230"]
 # - disable docstring/type/security rules in lambda
 "**/lambda/*" = ["D", "S", "ANN"]
 # - disable type annotation rules in scripts

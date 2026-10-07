@@ -139,10 +139,10 @@ async def run_expired_session_cleanup_task(
         try:
             await _delete_expired_sessions(db=db)
             logger.info("Expired sessions cleaned up.")
-        except Exception as e:
-            logger.error(
-                "Expired sessions could not be cleaned up", extra={"error": str(e)}
-            )
+        except Exception:
+            # a background loop that has to survive any failure; `exception`
+            # keeps the traceback that `str(e)` used to drop
+            logger.exception("Expired sessions could not be cleaned up")
         await asyncio.sleep(cleanup_interval_seconds)
 
 

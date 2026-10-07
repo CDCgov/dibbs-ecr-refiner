@@ -295,7 +295,7 @@ async def simulator_upload(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server error occurred. Please check your file and try again.",
-        )
+        ) from e
 
     formatted_documents = format_refined_documents_or_raise(
         docs=test_results.refined_documents
@@ -401,7 +401,7 @@ async def download_refined_ecr(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File not found.",
-        )
+        ) from e
 
     body = resp.get("Body")
     if body is None or not hasattr(body, "iter_chunks"):

@@ -318,4 +318,4 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
         # re-raise ZipSizeError without wrapping it
         raise
     except Exception as e:
-        raise FileProcessingError(message=f"Failed to process ZIP file: {e}")
+        raise FileProcessingError(message=f"Failed to process ZIP file: {e}") from e

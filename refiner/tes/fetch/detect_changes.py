@@ -92,6 +92,7 @@ def _validate_valuesets_file(filepath: Path) -> tuple[int, int]:
     # lazy import so this script can still run if not validating
     try:
         from fhir.resources.valueset import ValueSet
+        from pydantic import ValidationError
     except Exception as e:
         raise ImportError(
             "fhir.resources is required for TES validation. Install it (pip install fhir.resources)."
@@ -109,7 +110,7 @@ def _validate_valuesets_file(filepath: Path) -> tuple[int, int]:
             validated = ValueSet.model_validate(vs)
             vs_dict = validated.model_dump()
             valid_vs.append(_convert_datetimes_to_iso(vs_dict))
-        except Exception as e:
+        except ValidationError as e:
             invalid_count += 1
             print(
                 f"    ⚠️  Validation failed for resource #{idx} in {filepath.name}: {e}"
