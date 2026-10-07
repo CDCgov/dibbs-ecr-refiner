@@ -176,7 +176,7 @@ function ModalForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               type="text"
-              autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- focus first input on modal open for keyboard/screen reader users
+              autoFocus
             />
           </Field>
           <Field className="flex flex-col gap-2">
