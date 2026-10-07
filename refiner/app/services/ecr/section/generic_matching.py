@@ -463,10 +463,7 @@ def _inject_generic_match_comments(
     # build a map from entry id → first matching element within it
     entry_id_to_first_match: dict[int, _Element] = {}
     for matched_el in contextual_matches:
-        try:
-            entry = _find_path_to_entry(matched_el)
-        except Exception:
-            continue
+        entry = _find_path_to_entry(matched_el)
         eid = id(entry)
         if eid not in entry_id_to_first_match:
             entry_id_to_first_match[eid] = matched_el
