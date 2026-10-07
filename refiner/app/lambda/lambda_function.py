@@ -15,6 +15,7 @@ from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
 from app.core.config import get_env_variable
+from app.core.exceptions import ExternalServiceError, ResourceNotFoundError
 from app.core.models.types import XMLFiles
 from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
 from app.db.configurations.model import (
@@ -559,7 +560,8 @@ def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
         bool: True if the object exists, False if not found.
 
     Raises:
-        Exception: If the S3 request fails with an error other than 404/NoSuchKey.
+        ExternalServiceError: If the S3 request fails with an error other than
+            404/NoSuchKey.
     """
 
     try:
@@ -571,7 +573,10 @@ def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
         if error_code in ("404", "NoSuchKey"):
             return False
 
-        raise Exception(f"Unexpected error while fetching file from S3: {key}", e)
+        raise ExternalServiceError(
+            message=f"Unexpected error while fetching file from S3: {key}",
+            details={"error_code": error_code},
+        ) from e
 
 
 def parse_s3_content_to_dict(body: str) -> dict:
@@ -696,8 +701,9 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
         dict: The configuration data as a dictionary.
 
     Raises:
-        Exception: If the file does not exist. This indicates a mismatch between
-            current.json, which pointed to this version, and the actual files on S3.
+        ResourceNotFoundError: If the file does not exist. This indicates a
+            mismatch between current.json, which pointed to this version, and the
+            actual files on S3.
         IncompatibleActiveConfigurationError: If the active configuration schema
             version is missing or unsupported.
     """
@@ -707,7 +713,9 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
 
     if not config_exists:
         # It should exist because we've already checked the active version by this point
-        raise Exception(f"Activated configuration file could not be read at: {key}")
+        raise ResourceNotFoundError(
+            message=f"Activated configuration file could not be read at: {key}"
+        )
 
     # Read the file content and ensure required data is present
     config_file_content = get_s3_object_content(

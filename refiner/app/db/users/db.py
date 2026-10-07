@@ -3,6 +3,7 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 from pydantic import BaseModel
 
+from ...core.exceptions import DatabaseQueryError, ResourceNotFoundError
 from ..pool import AsyncDatabaseConnection
 from .model import DbUser
 
@@ -52,7 +53,7 @@ async def upsert_user_db(
             row = await cur.fetchone()
 
     if row is None:
-        raise Exception("Failed to upsert user and retrieve id.")
+        raise DatabaseQueryError(message="Failed to upsert user and retrieve id.")
 
     return str(row["id"])
 
@@ -93,7 +94,7 @@ async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
             row = await cur.fetchone()
 
     if not row:
-        raise Exception(f"User with ID {id} not found.")
+        raise ResourceNotFoundError(message=f"User with ID {id} not found.")
 
     return row
 
@@ -124,6 +125,6 @@ async def update_user_notifications_db(
             row = await cur.fetchone()
 
     if row is None:
-        raise Exception(f"User with ID {user_id} not found.")
+        raise ResourceNotFoundError(message=f"User with ID {user_id} not found.")
 
     return row

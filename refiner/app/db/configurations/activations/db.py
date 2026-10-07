@@ -4,6 +4,7 @@ from uuid import UUID
 from psycopg import AsyncCursor
 from psycopg.rows import dict_row
 
+from app.core.exceptions import DatabaseQueryError
 from app.db.configurations.db import (
     get_active_config_db,
     get_configuration_by_id_db,
@@ -155,8 +156,12 @@ async def activate_configuration_db(
                     cur=cur,
                 )
                 if not deactivated_config:
-                    raise Exception(
-                        "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
+                    raise DatabaseQueryError(
+                        message="Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
+                        details={
+                            "active_configuration_id": current_active_config.id,
+                            "configuration_id": configuration_id,
+                        },
                     )
 
                 activated_config_id = await _activate_configuration_db(
