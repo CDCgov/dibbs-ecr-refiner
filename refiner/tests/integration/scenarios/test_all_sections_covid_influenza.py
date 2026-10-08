@@ -30,7 +30,7 @@ def _snapshot_dir(scenario: Scenario) -> Path:
 # * sorted-key json serialization makes diffs trivial to read
 
 
-def _summary_from_result(result: RefinementResult) -> dict:  # noqa: ANN001 - RefinementResult, avoid import cycle
+def _summary_from_result(result: RefinementResult) -> dict:
     return {
         "configuration_version": result.report.configuration_version,
         "canonical_url": result.report.canonical_url,

@@ -21,7 +21,7 @@ os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
 
 from copy import deepcopy
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 from zipfile import ZipFile
@@ -109,8 +109,8 @@ def mock_user():
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         notifications={},
     )
 
@@ -150,11 +150,11 @@ CODE_SYSTEM_DATA = {
 
 
 def get_mock_system_id_by_name(system_display_name: str):
-    id_string = [
+    id_string = next(
         k
         for k, v in CODE_SYSTEM_DATA.items()
         if v["display_name"] == system_display_name
-    ][0]
+    )
     return UUID(id_string)
 
 
