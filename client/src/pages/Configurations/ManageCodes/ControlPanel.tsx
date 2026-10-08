@@ -2,6 +2,7 @@ import { Button } from '@components/Button';
 import { Menu, MenuButton, MenuItem } from '@headlessui/react';
 import { BaseMenuItems } from '@components/Dropdown';
 import {
+  CodeCountsResponse,
   CodeResponse,
   CodesLimitResponseValue,
   ConfigurationCodeStatusLabel,
@@ -29,31 +30,28 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { CodeFilters } from './Filters';
 import { filterParamSerializer } from './Filters/utils';
 import { Spinner } from '@components/Spinner';
+import { useSelectedCodes } from './context/hook';
 
 interface ControlPanelProps {
-  configurationId: string;
-  selectedCodeIds: Set<string>;
-  selectedCustomCodes: CodeResponse[];
-  clearSelections: () => void;
-  allSelected: boolean;
   renderedCodes: CodeResponse[];
+  configurationId: string;
   filters: CodeFilters;
   hasNextPage: boolean;
 }
 export function ControlPanel({
   configurationId,
-  selectedCodeIds,
-  selectedCustomCodes,
-  clearSelections,
-  allSelected,
-  renderedCodes,
   filters,
   hasNextPage,
+  renderedCodes,
 }: ControlPanelProps) {
   const toast = useToast();
   const formatError = useApiErrorFormatter();
   const queryClient = useQueryClient();
-  const { data: codeCounts } = useGetCodeCounts(configurationId);
+  const {
+    data: codeCounts,
+    isPending,
+    isError,
+  } = useGetCodeCounts(configurationId);
 
   const { mutate: updateStatusWithinCursor } = useSetCodesStatus({
     axios: {
@@ -62,29 +60,22 @@ export function ControlPanel({
   });
   const [isOpen, setIsOpen] = useState(false);
 
-  // These custom codes can be deleted
-  const customCodeIds = new Set(selectedCustomCodes.map((cc) => cc.id));
+  const { state, dispatch } = useSelectedCodes();
+  const { selectedCodeIds, selectedCustomCodeIds, allSelected } = state;
 
-  // These code set codes can be either included or excluded
-  const codeSetCodeIds = Array.from(
-    new Set([...selectedCodeIds].filter((id) => !customCodeIds.has(id)))
-  );
-
-  // These codes are unselected ones within the rendered cursor, or the anti-join
-  // between the selected rows and the rendered ones, which we need in cases
-  // where bulk selection is applied to "all but the selected" codes
-
-  const deselectedCodesIds = renderedCodes
-    .filter((c) => !c.is_custom)
-    .map((c) => c.id)
-    .filter((id) => !selectedCodeIds.has(id));
-
-  const deselectedCustomCodesIds = renderedCodes
-    .filter((c) => c.is_custom)
-    .map((c) => c.id)
-    .filter((id) => !selectedCodeIds.has(id));
+  if (isPending) return <Spinner variant="centered" />;
+  if (isError) return 'Error!';
 
   const updateSelectedCodesStatus = (status: ConfigurationCodeStatusLabel) => {
+    // These codes are unselected ones within the rendered cursor, or the anti-join
+    // between the selected rows and the rendered ones, which we need in cases
+    // where bulk selection is applied to "all but the selected" codes
+
+    const deselectedCodesIds = renderedCodes
+      .filter((c) => !c.is_custom)
+      .map((c) => c.id)
+      .filter((id) => !selectedCodeIds.has(id));
+
     updateStatusWithinCursor(
       {
         configurationId,
@@ -97,7 +88,7 @@ export function ControlPanel({
           update_beyond_rendered_set: allSelected,
         },
         data: {
-          code_ids: codeSetCodeIds,
+          code_ids: Array.from(selectedCodeIds),
           code_ids_to_skip: deselectedCodesIds,
         },
       },
@@ -117,7 +108,9 @@ export function ControlPanel({
             heading: `Code ${status}`,
             body: `${resp.data.length} codes ${status.toLowerCase()}`,
           });
-          clearSelections();
+          dispatch({
+            type: 'reset',
+          });
         },
         onError: (e) => {
           toast({
@@ -130,19 +123,20 @@ export function ControlPanel({
     );
   };
 
-  const hasCustomCodesSelected = selectedCustomCodes.length > 0;
-
   const selectedCount = formatSelectedCodeCount(
     allSelected,
     filters,
-    selectedCodeIds.size,
-    deselectedCodesIds.length,
-    deselectedCustomCodesIds.length,
-    renderedCodes.length,
+    selectedCodeIds,
+    selectedCustomCodeIds,
+    renderedCodes,
     hasNextPage,
-    codeCounts?.data.primary_condition_rctc_count,
-    codeCounts?.data.total_code_count
+    codeCounts.data
   );
+
+  const deselectedCustomCodesIds = renderedCodes
+    .filter((c) => c.is_custom)
+    .map((c) => c.id)
+    .filter((id) => !selectedCustomCodeIds.has(id));
   return (
     <>
       {
@@ -151,11 +145,8 @@ export function ControlPanel({
           configurationId={configurationId}
           onClose={() => setIsOpen(false)}
           updateCodesToExcluded={() => updateSelectedCodesStatus('Excluded')}
-          allSelected={allSelected}
-          renderedCodes={renderedCodes}
-          selectedCodeIds={selectedCodeIds}
-          selectedCustomCodeIds={customCodeIds}
           hasNextPage={hasNextPage}
+          renderedCodes={renderedCodes}
         />
       }
       <div
@@ -179,7 +170,7 @@ export function ControlPanel({
               variant="unstyled"
               className="text-gray-cool-90 hover:bg-gray-5 rounded border-2! px-4.5 py-2 text-sm! font-bold hover:cursor-pointer"
               onClick={() => {
-                if (customCodeIds.size === 0) {
+                if (selectedCustomCodeIds.size === 0) {
                   updateSelectedCodesStatus('Excluded');
                 } else {
                   setIsOpen(true);
@@ -188,13 +179,10 @@ export function ControlPanel({
             >
               Exclude
             </Button>
-            {hasCustomCodesSelected ? (
+            {selectedCustomCodeIds.size > 0 ? (
               <CustomCodeDeletionMenu
                 configurationId={configurationId}
-                clearSelections={clearSelections}
-                allSelected={allSelected}
                 hasNextPage={hasNextPage}
-                selectedCustomCodeIds={selectedCustomCodes.map((c) => c.id)}
                 deselectedCustomCodeIds={deselectedCustomCodesIds}
               />
             ) : null}
@@ -207,25 +195,22 @@ export function ControlPanel({
 
 interface CustomCodeDeletionMenuProps {
   configurationId: string;
-  allSelected: boolean;
-  clearSelections: () => void;
-  selectedCustomCodeIds: string[];
   deselectedCustomCodeIds: string[];
   hasNextPage: boolean;
 }
 
 function CustomCodeDeletionMenu({
   configurationId,
-  clearSelections,
-  allSelected,
-  selectedCustomCodeIds,
-  deselectedCustomCodeIds,
   hasNextPage,
+  deselectedCustomCodeIds,
 }: CustomCodeDeletionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: codeCounts } = useGetCodeCounts(configurationId);
 
-  let totalCustomCodes = selectedCustomCodeIds.length;
+  const { state } = useSelectedCodes();
+  const { selectedCustomCodeIds, allSelected } = state;
+
+  let totalCustomCodes = selectedCustomCodeIds.size;
   if (allSelected && codeCounts?.data.total_custom_codes_count) {
     totalCustomCodes = codeCounts.data.total_custom_codes_count;
   }
@@ -234,7 +219,7 @@ function CustomCodeDeletionMenu({
 
   const customCodesToDeleteCount = deletePastCursor
     ? totalCustomCodes - deselectedCustomCodeIds.length
-    : selectedCustomCodeIds.length;
+    : selectedCustomCodeIds.size;
 
   return (
     <>
@@ -242,9 +227,7 @@ function CustomCodeDeletionMenu({
         configurationId={configurationId}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        clearSelections={clearSelections}
         totalCustomCodes={totalCustomCodes}
-        selectedCustomCodeIds={selectedCustomCodeIds}
         deselectedCustomCodeIds={deselectedCustomCodeIds}
         deletePastCursor={deletePastCursor}
         customCodesToDeleteCount={customCodesToDeleteCount}
@@ -283,9 +266,7 @@ interface CustomCodeDeletionModalProps {
   isOpen: boolean;
   onClose: () => void;
   configurationId: string;
-  clearSelections: () => void;
   totalCustomCodes: number;
-  selectedCustomCodeIds: string[];
   deselectedCustomCodeIds: string[];
   deletePastCursor: boolean;
   customCodesToDeleteCount: number;
@@ -295,9 +276,7 @@ function CustomCodeDeletionModal({
   isOpen,
   onClose,
   configurationId,
-  clearSelections,
   deletePastCursor,
-  selectedCustomCodeIds,
   deselectedCustomCodeIds,
   customCodesToDeleteCount,
 }: CustomCodeDeletionModalProps) {
@@ -305,12 +284,15 @@ function CustomCodeDeletionModal({
   const { mutate } = useDeleteCustomCodes();
   const toast = useToast();
 
+  const { state, dispatch } = useSelectedCodes();
+  const { selectedCustomCodeIds } = state;
+
   const deleteCustomCodes = () => {
     mutate(
       {
         configurationId,
         data: {
-          ids: selectedCustomCodeIds,
+          ids: Array.from(selectedCustomCodeIds),
           ids_to_skip: deselectedCustomCodeIds,
           delete_all: deletePastCursor,
         },
@@ -330,7 +312,9 @@ function CustomCodeDeletionModal({
             heading: 'Codes updated',
             body: `${resp.data.length} custom codes deleted.`,
           });
-          clearSelections();
+          dispatch({
+            type: 'reset',
+          });
         },
         onError: () => {
           toast({
@@ -389,35 +373,34 @@ interface CountResult {
 }
 
 function calculateCounts(
-  allSelected: boolean,
   selectedCodeIds: Set<string>,
   selectedCustomCodeIds: Set<string>,
   renderedCodes: CodeResponse[],
-  total_code_count: number,
-  total_custom_codes_count: number,
-  lockedCodesCount: number,
-  hasNextPage: boolean
+  codeCounts: CodeCountsResponse,
+  allSelectedWithUnrenderedCodes: boolean
 ): CountResult {
-  if (allSelected && hasNextPage) {
+  const lockedCodesCount = renderedCodes.filter(
+    (c) => c.is_trigger_code
+  ).length;
+
+  if (allSelectedWithUnrenderedCodes) {
     // If in the all selected case, start with the totals as fetched from the
     // code counts hook and tally any custom codes we've selected. Forbid exclusion
     // only if we've down-selected to a subset with only custom codes
+    const { total_code_count, total_custom_codes_count } = codeCounts;
     const deselectedCodeCount = renderedCodes.filter(
-      (c) => !selectedCodeIds.has(c.id)
+      (c) => !selectedCodeIds.has(c.id) && !c.is_trigger_code && !c.is_custom
     ).length;
 
-    const totalCodeCount = total_code_count;
-    const totalCustomCodeCount = total_custom_codes_count;
-
     const excludeableCodeCount =
-      totalCodeCount -
+      total_code_count -
       deselectedCodeCount -
-      totalCustomCodeCount -
+      total_custom_codes_count -
       lockedCodesCount;
 
     return {
-      totalCodeCount,
-      totalCustomCodeCount,
+      totalCodeCount: total_code_count,
+      totalCustomCodeCount: total_custom_codes_count,
       excludeableCodeCount,
       exclusionForbidden: excludeableCodeCount <= 0,
     };
@@ -425,7 +408,7 @@ function calculateCounts(
 
   // If in the progressive section case, start with the number of selected codes
   // and forbid exclusion if they're all custom codes.
-  const totalCodeCount = selectedCodeIds.size;
+  const totalCodeCount = selectedCodeIds.size + selectedCustomCodeIds.size;
   const totalCustomCodeCount = selectedCustomCodeIds.size;
   const excludeableCodeCount = totalCodeCount - totalCustomCodeCount;
 
@@ -442,10 +425,7 @@ interface ExclusionWarningModalProps {
   isOpen: boolean;
   onClose: () => void;
   updateCodesToExcluded: () => void;
-  allSelected: boolean;
   renderedCodes: CodeResponse[];
-  selectedCodeIds: Set<string>;
-  selectedCustomCodeIds: Set<string>;
   hasNextPage: boolean;
 }
 
@@ -454,17 +434,17 @@ function ExclusionWarningModal({
   isOpen,
   onClose,
   updateCodesToExcluded,
-  allSelected,
-  renderedCodes,
-  selectedCodeIds,
-  selectedCustomCodeIds,
   hasNextPage,
+  renderedCodes,
 }: ExclusionWarningModalProps) {
   const {
     data: codeCounts,
     isPending,
     isError,
   } = useGetCodeCounts(configurationId);
+
+  const { state } = useSelectedCodes();
+  const { selectedCodeIds, selectedCustomCodeIds, allSelected } = state;
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
@@ -475,16 +455,14 @@ function ExclusionWarningModal({
     excludeableCodeCount,
     exclusionForbidden,
   } = calculateCounts(
-    allSelected,
     selectedCodeIds,
     selectedCustomCodeIds,
     renderedCodes,
-    codeCounts?.data.total_code_count,
-    codeCounts?.data.total_custom_codes_count,
-    codeCounts.data.primary_condition_rctc_count,
-    hasNextPage
+    codeCounts.data,
+    allSelected && hasNextPage
   );
-  const lockedCodesCount = codeCounts.data.primary_condition_rctc_count;
+
+  const rctcCodeCount = codeCounts.data.primary_condition_rctc_count;
   return (
     <Modal open={isOpen} onClose={onClose} position="center">
       <ModalHeader>
@@ -506,8 +484,8 @@ function ExclusionWarningModal({
             </span>
 
             <span className="mt-2">
-              {lockedCodesCount
-                ? `This configuration's primary condition has ${lockedCodesCount} RCTC code(s) that can't be excluded. These codes must be included to properly process the eCR.`
+              {rctcCodeCount
+                ? `This configuration's primary condition has ${rctcCodeCount} RCTC code(s) that can't be excluded. These codes must be included to properly process the eCR.`
                 : null}
             </span>
           </p>
@@ -537,17 +515,19 @@ function ExclusionWarningModal({
     </Modal>
   );
 }
+const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
+
 function formatSelectedCodeCount(
   allSelected: boolean,
   filters: CodeFilters,
-  selectedCodeCount: number,
-  deselectedCodesCount: number,
-  deselectedCustomCodesCount: number,
-  renderedCodeCount: number,
+  selectedCodeIds: Set<string>,
+  selectedCustomCodeIds: Set<string>,
+  renderedCodes: CodeResponse[],
   hasNextPage: boolean,
-  lockedCodesCount?: number,
-  totalCodeCount?: number
+  codeCounts: CodeCountsResponse
 ): string {
+  const renderedCodeCount = renderedCodes.length;
+  const selectedCodeCount = selectedCodeIds.size + selectedCustomCodeIds.size;
   // If the rendered code count is under the pagination limit, or we're not in the bulk selection case
   // just return the selected values
   if (renderedCodeCount < CodesLimitResponseValue.codes_limit || !allSelected) {
@@ -555,8 +535,6 @@ function formatSelectedCodeCount(
   }
 
   // Otherwise, check the active filters and tabulate the values
-  const hasFilterEntry = (arr?: { count?: number }[]) => arr && arr.length > 0;
-
   const atLeastOneFilterActive =
     hasFilterEntry(filters.codeSystems) ||
     hasFilterEntry(filters.sources) ||
@@ -564,15 +542,26 @@ function formatSelectedCodeCount(
     filters.search;
 
   if (!atLeastOneFilterActive) {
-    return totalCodeCount
-      ? (
-          totalCodeCount -
-          deselectedCodesCount -
-          deselectedCustomCodesCount -
-          (lockedCodesCount ?? 0)
-        ).toString()
-      : 'All ';
+    const { primary_condition_rctc_count, total_code_count } = codeCounts;
+    const deselectedCodesCount = renderedCodes
+      .filter((c) => !c.is_custom && !c.is_trigger_code)
+      .map((c) => c.id)
+      .filter((id) => !selectedCodeIds.has(id)).length;
+
+    const deselectedCustomCodesCount = renderedCodes
+      .filter((c) => c.is_custom)
+      .map((c) => c.id)
+      .filter((id) => !selectedCustomCodeIds.has(id)).length;
+    return (
+      total_code_count -
+      primary_condition_rctc_count -
+      deselectedCodesCount -
+      deselectedCustomCodesCount
+    ).toString();
   }
+
+  // Handle the search string case separately since we do the count of the
+  // search results in the DB.
 
   return selectedCodeCount > CodesLimitResponseValue.codes_limit || hasNextPage
     ? `${CodesLimitResponseValue.codes_limit}+ codes`
