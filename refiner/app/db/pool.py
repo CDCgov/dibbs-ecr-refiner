@@ -61,7 +61,7 @@ class AsyncDatabaseConnection:
             raise DatabaseConnectionError(
                 message="Could not open connection pool",
                 details={"error": str(e)},
-            )
+            ) from e
 
     async def close(self) -> None:
         """

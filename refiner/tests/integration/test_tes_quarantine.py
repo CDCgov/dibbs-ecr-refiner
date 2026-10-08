@@ -13,7 +13,7 @@ from app.db.conditions.db import get_context_groupers_by_condition_id_db
 # sys.path instead
 sys.path.insert(0, str(Path(__file__).parents[2] / "ops" / "seeding"))
 
-import load_processed_data as loader  # noqa: E402
+import load_processed_data as loader
 
 PROCESSED_DIR = Path(__file__).parents[2] / "tes" / "data" / "processed"
 

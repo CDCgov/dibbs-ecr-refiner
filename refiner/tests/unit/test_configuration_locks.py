@@ -55,7 +55,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
             created_by=mock_user.username,
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
             last_activated_at=None,
             last_activated_by=None,
         )
@@ -131,7 +131,6 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition
     # Mock ConfigurationLock database operations
     # We'll use a simple in-memory dict to simulate lock storage for unit tests
     # Clear any existing locks from previous tests
-    global _locks_storage
     _locks_storage.clear()
 
     async def mock_get_lock(configuration_id: str, db=None):

@@ -31,18 +31,20 @@ class TestTesUpdates:
 
         draft_id = body["created_configuration_ids"][0]
 
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
+        async with (
+            db_pool.get_connection() as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
+            await cur.execute(
+                """
                     SELECT *
                     FROM events
                     WHERE configuration_id = %s
                       AND event_type = 'tes_create_draft_from_active'
                     """,
-                    (draft_id,),
-                )
-                rows = await cur.fetchall()
+                (draft_id,),
+            )
+            rows = await cur.fetchall()
 
         assert len(rows) == 1
         assert rows[0]["action_text"] == (

@@ -648,41 +648,43 @@ def load_processed_data(
 
     start = time.perf_counter()
 
-    with get_db_connection(db_url, db_password) as connection:
-        with connection.cursor() as cursor:
-            upsert_systems(cursor=cursor)
+    with (
+        get_db_connection(db_url, db_password) as connection,
+        connection.cursor() as cursor,
+    ):
+        upsert_systems(cursor=cursor)
 
-            for table, filename in SOURCE_FILES.items():
-                path = processed_dir / filename
-                if not path.exists():
-                    raise FileNotFoundError(
-                        f"{path} not found. Run `just tes normalize` to build the "
-                        "processed tables before seeding."
-                    )
-                with _timed(f"stage {filename}"):
-                    staged = _stage(cursor, table, path)
-                logger.info(f"📥 Staged {staged:,} rows from {filename}")
+        for table, filename in SOURCE_FILES.items():
+            path = processed_dir / filename
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"{path} not found. Run `just tes normalize` to build the "
+                    "processed tables before seeding."
+                )
+            with _timed(f"stage {filename}"):
+                staged = _stage(cursor, table, path)
+            logger.info(f"📥 Staged {staged:,} rows from {filename}")
 
-            versions = _versions_to_seed(cursor, seed_all, DEFAULT_VERSIONS_TO_KEEP)
-            _reject_partial_seed_over_fuller_database(cursor, versions)
-            _upsert_tes_versions(cursor, versions)
-            with _timed("conditions"):
-                _upsert_conditions(cursor, versions)
-                _warn_on_unaccounted_conditions(cursor, versions)
-            with _timed("valuesets"):
-                _upsert_valuesets(cursor, versions)
-                # must stay ahead of `_refresh_memberships` below -- it truncates
-                # the junction, and the quarantine reads each row's membership
-                # count on the way out. swapped, every row records 0 and nothing
-                # else changes. `test_tes_quarantine.py` fails if it moves
-                _quarantine_stale_valuesets(cursor, versions)
-            with _timed("codes"):
-                _upsert_codes(cursor, versions)
-            with _timed("memberships"):
-                _refresh_memberships(cursor, versions)
+        versions = _versions_to_seed(cursor, seed_all, DEFAULT_VERSIONS_TO_KEEP)
+        _reject_partial_seed_over_fuller_database(cursor, versions)
+        _upsert_tes_versions(cursor, versions)
+        with _timed("conditions"):
+            _upsert_conditions(cursor, versions)
+            _warn_on_unaccounted_conditions(cursor, versions)
+        with _timed("valuesets"):
+            _upsert_valuesets(cursor, versions)
+            # must stay ahead of `_refresh_memberships` below -- it truncates
+            # the junction, and the quarantine reads each row's membership
+            # count on the way out. swapped, every row records 0 and nothing
+            # else changes. `test_tes_quarantine.py` fails if it moves
+            _quarantine_stale_valuesets(cursor, versions)
+        with _timed("codes"):
+            _upsert_codes(cursor, versions)
+        with _timed("memberships"):
+            _refresh_memberships(cursor, versions)
 
-            for table in STAGE_TABLES:
-                cursor.execute(f"DROP TABLE IF EXISTS {table}")
+        for table in STAGE_TABLES:
+            cursor.execute(f"DROP TABLE IF EXISTS {table}")
 
     logger.info(
         f"⏱️  Processed data loaded in {time.perf_counter() - start:.3f} seconds"

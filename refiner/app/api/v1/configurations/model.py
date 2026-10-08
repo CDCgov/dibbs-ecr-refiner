@@ -67,8 +67,6 @@ class LockedByUser(UserInfoBase):
     LockedByUser response to provide user information.
     """
 
-    pass
-
 
 @dataclass(frozen=True)
 class GetConfigurationResponse:
@@ -139,8 +137,6 @@ class DeleteSectionInput(SectionInputBase):
     """
     Request body to delete a section.
     """
-
-    pass
 
 
 class SectionUpdateInput(BaseModel):

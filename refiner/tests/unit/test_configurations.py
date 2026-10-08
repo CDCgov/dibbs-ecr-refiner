@@ -1,6 +1,6 @@
 import typing
 from dataclasses import replace
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
@@ -121,7 +121,7 @@ def mock_db_functions(
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
             created_by=mock_user.username,
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
             last_activated_at=None,
             last_activated_by=None,
         )
@@ -298,8 +298,8 @@ async def test_add_custom_code_to_configuration(
                 code="test-code",
                 display="test-name",
                 system_id=code_system.id,
-                updated_at=datetime.now(),
-                created_at=datetime.now(),
+                updated_at=datetime.now(UTC),
+                created_at=datetime.now(UTC),
                 configuration_id=mock_configuration.id,
             )
         ],
@@ -336,8 +336,8 @@ async def test_delete_custom_code_from_configuration(
         id=custom_code_id,
         display="delete me",
         code="deleted soon",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         configuration_id=mock_configuration.id,
         system_id=get_mock_system("snomed").id,
     )
@@ -401,8 +401,8 @@ async def test_edit_custom_code_from_configuration(
                 code="test-code",
                 display="updated-name",
                 system_id=get_mock_system("snomed").id,
-                updated_at=datetime.now(),
-                created_at=datetime.now(),
+                updated_at=datetime.now(UTC),
+                created_at=datetime.now(UTC),
                 configuration_id=mock_configuration.id,
             )
         ],
@@ -428,8 +428,8 @@ async def test_edit_custom_code_from_configuration(
                 code="test-code",
                 display="test-name",
                 system_id=get_mock_system("loinc").id,
-                updated_at=datetime.now(),
-                created_at=datetime.now(),
+                updated_at=datetime.now(UTC),
+                created_at=datetime.now(UTC),
                 configuration_id=mock_configuration.id,
             )
         ],

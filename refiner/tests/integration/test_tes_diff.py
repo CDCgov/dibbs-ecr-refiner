@@ -23,9 +23,9 @@ class TestTesDiff:
         assert expected_acanthamoeba["added_code_total"] == 27
         assert expected_acanthamoeba["removed_code_total"] == 0
 
-        expected_rubella = [
+        expected_rubella = next(
             c for c in diff_cur_and_prev if c["display_name"] == "Rubella"
-        ][0]
+        )
         assert expected_rubella
         assert expected_rubella["added_code_total"] == 3
         assert expected_rubella["removed_code_total"] == 13

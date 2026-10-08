@@ -7,6 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import AppConfig, get_app_config
+from app.core.exceptions import ResourceNotFoundError
 from app.db.code_systems.db import get_id_to_code_system_dict_db
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
 from app.db.conditions.db import (
@@ -235,11 +236,11 @@ async def get_serialized_configuration(
             config.version,
             logger,
         )
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to fetch one or more files from S3. See logs for details.",
-        )
+        ) from e
 
 
 @router.get(
@@ -285,16 +286,12 @@ async def get_configuration(
     if lock and lock.expires_at.timestamp() > datetime.now(UTC).timestamp():
         try:
             user_obj = await get_user_by_id_db(lock.user_id, db)
-            if user_obj:
-                locked_by = LockedByUser(
-                    id=user_obj.id, name=user_obj.username, email=user_obj.email
-                )
-            else:
-                locked_by = None
-                logger.warning(f"Could not find user with ID: {lock.user_id}")
-        except Exception as e:
+            locked_by = LockedByUser(
+                id=user_obj.id, name=user_obj.username, email=user_obj.email
+            )
+        except ResourceNotFoundError:
             locked_by = None
-            logger.error(f"Error fetching user for lock: {e}")
+            logger.warning(f"Could not find user with ID: {lock.user_id}")
 
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db

@@ -269,10 +269,8 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
             namelist = zf.namelist()
             for filename in namelist:
                 # skip files we don't need
-                if (
-                    filename.startswith("__MACOSX/")
-                    or filename.startswith("._")
-                    or not filename.endswith(("CDA_eICR.xml", "CDA_RR.xml"))
+                if filename.startswith(("__MACOSX/", "._")) or not filename.endswith(
+                    ("CDA_eICR.xml", "CDA_RR.xml")
                 ):
                     continue
 
@@ -286,9 +284,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     message="Required file CDA_eICR.xml not found in .zip file or was empty.",
                     details={
                         "files_found": [
-                            f
-                            for f in namelist
-                            if not (f.startswith("__MACOSX/") or f.startswith("._"))
+                            f for f in namelist if not f.startswith(("__MACOSX/", "._"))
                         ],
                         "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
                     },
@@ -299,9 +295,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     message="Required file CDA_RR.xml not found in .zip file or was empty",
                     details={
                         "files_found": [
-                            f
-                            for f in namelist
-                            if not (f.startswith("__MACOSX/") or f.startswith("._"))
+                            f for f in namelist if not f.startswith(("__MACOSX/", "._"))
                         ],
                         "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
                     },
@@ -324,4 +318,4 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
         # re-raise ZipSizeError without wrapping it
         raise
     except Exception as e:
-        raise FileProcessingError(message=f"Failed to process ZIP file: {str(e)}")
+        raise FileProcessingError(message=f"Failed to process ZIP file: {e}") from e

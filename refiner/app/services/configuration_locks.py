@@ -31,12 +31,11 @@ class ConfigurationLock:
         """
         query = "SELECT configuration_id, user_id, expires_at FROM configurations_locks WHERE configuration_id = %s"
         params = (configuration_id,)
-        async with db.get_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query, params)
-                row = await cur.fetchone()
-                if row:
-                    return ConfigurationLock(row[0], row[1], row[2])
+        async with db.get_connection() as conn, conn.cursor() as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if row:
+                return ConfigurationLock(row[0], row[1], row[2])
         return None
 
     @staticmethod
@@ -60,10 +59,9 @@ class ConfigurationLock:
             "ON CONFLICT (configuration_id) DO UPDATE SET user_id = EXCLUDED.user_id, expires_at = EXCLUDED.expires_at"
         )
         params = (configuration_id, user_id, expires_at)
-        async with db.get_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query, params)
-                return True
+        async with db.get_connection() as conn, conn.cursor() as cur:
+            await cur.execute(query, params)
+            return True
         return False
 
     @staticmethod
@@ -77,9 +75,8 @@ class ConfigurationLock:
         """
         query = "DELETE FROM configurations_locks WHERE configuration_id = %s AND user_id = %s"
         params = (configuration_id, user_id)
-        async with db.get_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query, params)
+        async with db.get_connection() as conn, conn.cursor() as cur:
+            await cur.execute(query, params)
 
     @staticmethod
     async def renew_lock(
@@ -94,9 +91,8 @@ class ConfigurationLock:
         expires_at = now + timedelta(minutes=LOCK_TIMEOUT_MINUTES)
         query = "UPDATE configurations_locks SET expires_at = %s WHERE configuration_id = %s AND user_id = %s"
         params = (expires_at, configuration_id, user_id)
-        async with db.get_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query, params)
+        async with db.get_connection() as conn, conn.cursor() as cur:
+            await cur.execute(query, params)
 
     @staticmethod
     async def raise_if_locked_by_other(

@@ -26,6 +26,12 @@ jobs:
           python-version: ${{env.PYTHON_RUNNER_VERSION}}
           cache: pip
 
+      # the ruff hooks run `refiner/.venv/bin/ruff`, so mirror the local layout
+      - name: Install ruff into the refiner venv
+        run: |
+          python -m venv refiner/.venv
+          refiner/.venv/bin/pip install $(grep "^ruff==" refiner/dev-requirements.txt)
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         continue-on-error: true
