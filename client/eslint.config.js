@@ -4,12 +4,15 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
-import importPlugin from 'eslint-plugin-import';
+import { importX } from 'eslint-plugin-import-x';
 import { defineConfig } from 'eslint/config';
-import reactPlugin from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 import testingLibraryPlugin from 'eslint-plugin-testing-library';
 import tanstackQuery from '@tanstack/eslint-plugin-query';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
+import jsxA11yX from 'eslint-plugin-jsx-a11y-x';
+import eslintReactKit from '@eslint-react/kit';
+import { functionComponentDefinition } from './eslint-kit-rules/functionComponentDefinition.ts';
+import stylistic from '@stylistic/eslint-plugin';
 
 export default defineConfig(
   { ignores: ['dist', 'tests/setup.ts', 'src/api'] },
@@ -17,9 +20,9 @@ export default defineConfig(
     extends: [
       js.configs.recommended,
       eslintConfigPrettier,
-      importPlugin.flatConfigs.recommended,
-      jsxA11y.flatConfigs.recommended,
+      importX.flatConfigs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
+      eslintReactKit().use(functionComponentDefinition).getConfig(),
     ],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -31,41 +34,37 @@ export default defineConfig(
       },
     },
     plugins: {
-      react: reactPlugin,
+      react: eslintReact,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       '@tanstack/query': tanstackQuery,
+      'jsx-a11y-x': jsxA11yX,
+      '@stylistic': stylistic,
+      'import-x': importX,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...tanstackQuery.configs.recommended.rules,
-      'react/function-component-definition': [
-        'error',
-        {
-          namedComponents: 'function-declaration',
-          unnamedComponents: 'arrow-function',
-        },
-      ],
-      'react/self-closing-comp': [
+      '@stylistic/jsx-self-closing-comp': [
         'error',
         {
           component: true,
           html: true,
         },
       ],
-
-      'react/jsx-curly-brace-presence': [
+      '@stylistic/jsx-curly-brace-presence': [
         'error',
         {
           props: 'never',
           children: 'ignore',
         },
       ],
+
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
-      'import/no-duplicates': 'error',
+      'import-x/extensions': ['error', 'never', { fix: true }],
       'no-restricted-imports': [
         'error',
         {
@@ -114,23 +113,20 @@ export default defineConfig(
       react: {
         version: 'detect',
       },
-      'import/resolver': {
+      'import-x/resolver': {
         typescript: {
           alwaysTryTypes: true,
-          extensions: ['.js', '.jsx', '.ts', '.tsx'],
           project: ['./tsconfig.app.json', './e2e/tsconfig.json'],
           noWarnOnMultipleProjects: true,
         },
-        node: {
-          extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        },
+        node: true, // or omit entirely if TypeScript resolves all imports
       },
     },
   },
   {
     files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'import/no-default-export': 'error',
+      'import-x/no-default-export': 'error',
     },
   },
   {

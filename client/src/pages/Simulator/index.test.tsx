@@ -5,12 +5,12 @@ import { MemoryRouter } from 'react-router';
 import {
   useDiscoverConfigurations,
   useUploadEcr,
-} from '../../api/simulator/simulator.ts';
+} from '../../api/simulator/simulator';
 import { Mock } from 'vitest';
-import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
-import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
+import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning';
+import { uploadTestFile } from '../Configurations/ConfigTest/index.test';
 import { AxiosError } from 'axios';
-import { TestProviders } from '../../test-utils.tsx';
+import { TestProviders } from '../../test-utils';
 import { DiscoveredConfigurationsResponse } from '../../api/schemas';
 
 vi.mock('../../api/simulator/simulator', () => ({

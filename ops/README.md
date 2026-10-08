@@ -2,17 +2,17 @@
 
 ## Environment variables
 
-| Name                    | Description                                      | Required | Default value |
-| ----------------------- | ------------------------------------------------ | -------- | ------------- |
-| `ENV`                   | Runtime environment, such as `development` or `production`   | Yes      | N/A           |
-| `DB_URL`                | The PostgreSQL database URL                      | Yes      | N/A           |
-| `DB_PASSWORD`           | The PostgreSQL password                          | Yes      | N/A           |
-| `S3_BUCKET_CONFIG`      | S3 bucket containing configuration artifacts     | Yes      | N/A           |
-| `AWS_REGION`            | AWS region used when creating the S3 client      | Yes      | N/A           |
-| `SSL_MODE`              | PostgreSQL `sslmode` value                       | No       | `require`     |
-| `AWS_ACCESS_KEY_ID`     | AWS access key for local/demo S3 access          | Local/demo only | N/A    |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key for local/demo S3 access          | Local/demo only | N/A    |
-| `S3_ENDPOINT_URL`       | Custom S3 endpoint, used for LocalStack/demo S3  | Local/demo only | N/A    |
+| Name                    | Description                                                | Required        | Default value |
+| ----------------------- | ---------------------------------------------------------- | --------------- | ------------- |
+| `ENV`                   | Runtime environment, such as `development` or `production` | Yes             | N/A           |
+| `DB_URL`                | The PostgreSQL database URL                                | Yes             | N/A           |
+| `DB_PASSWORD`           | The PostgreSQL password                                    | Yes             | N/A           |
+| `S3_BUCKET_CONFIG`      | S3 bucket containing configuration artifacts               | Yes             | N/A           |
+| `AWS_REGION`            | AWS region used when creating the S3 client                | Yes             | N/A           |
+| `SSL_MODE`              | PostgreSQL `sslmode` value                                 | No              | `require`     |
+| `AWS_ACCESS_KEY_ID`     | AWS access key for local/demo S3 access                    | Local/demo only | N/A           |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for local/demo S3 access                    | Local/demo only | N/A           |
+| `S3_ENDPOINT_URL`       | Custom S3 endpoint, used for LocalStack/demo S3            | Local/demo only | N/A           |
 
 ## entrypoint.sh
 
@@ -67,7 +67,19 @@ docker run \
 
 To run the ops image against the Skylight DIBBs demo environment, make sure you have the correct ops image installed locally from which to run the commands. For example, if you're deploying tagged image 0.0.12, make sure the ops image tag matches the tag for the image you're seeking to deploy.
 
-You'll also need the DB demo creds. Get this from a developer on the team.
+You'll need the following credentials. Get this from a developer on the team or from the relevant key vault config in Azure.
+
+```
+docker run \
+  -e ENV='demo' \
+  -e DB_URL='<SECRET_VALUE>' \
+  -e DB_PASSWORD='<SECRET_VALUE>' \
+  -e AWS_REGION='<SECRET_VALUE>' \
+  -e S3_BUCKET_CONFIG='<SECRET_VALUE>' \
+  -e AWS_ACCESS_KEY_ID='<SECRET_VALUE>' \
+  -e AWS_SECRET_ACCESS_KEY='<SECRET_VALUE>' \
+  -e S3_ENDPOINT_URL='<SECRET_VALUE>' ops prepare-db
+```
 
 You'll also need to check that your local IP address is allowlist in [the global DB firewall settings.](https://portal.azure.com/?l=en.en-us#@skylighthq.onmicrosoft.com/resource/subscriptions/6848426c-8ca8-4832-b493-fed851be1f95/resourceGroups/skylight-dibbs-global/providers/Microsoft.DBforPostgreSQL/flexibleServers/dibbs-global-postgres/networking). To do so
 
