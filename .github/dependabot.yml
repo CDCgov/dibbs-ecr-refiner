@@ -59,6 +59,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 5
+    ignore:
+      # the calver `localstack/localstack` images (2026.x) require a pro license and exit
+      # without `LOCALSTACK_AUTH_TOKEN`; stay on the `4` community line
+      - dependency-name: "localstack/localstack"
+        update-types:
+          - "version-update:semver-major"
     groups:
       minor-and-patch:
         applies-to: version-updates
