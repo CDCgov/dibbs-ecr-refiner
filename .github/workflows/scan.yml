@@ -89,7 +89,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner (SARIF)
         if: steps.check.outputs.exists == 'true'
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ steps.check.outputs.image }}
           format: "sarif"
@@ -100,7 +100,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner (JSON)
         if: steps.check.outputs.exists == 'true'
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ steps.check.outputs.image }}
           format: "json"
@@ -110,7 +110,7 @@ jobs:
           timeout: "10m"
 
       - name: Display Trivy results as table
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ steps.check.outputs.image }}
           format: "table"
@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload JSON results as artifact
         if: steps.check.outputs.exists == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: trivy-results-${{ matrix.image.name }}
           path: trivy-${{ matrix.image.name }}-results.json
@@ -182,7 +182,7 @@ jobs:
             await script.generateRiskExceptionTemplate(core);
 
       - name: Upload risk exception template
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: risk-exception-template
           path: risk-exception.md
