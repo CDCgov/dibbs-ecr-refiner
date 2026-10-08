@@ -1,2 +1,2 @@
-moto[s3]==5.2.2
-aws-lambda-powertools[aws-sdk]==3.34.0
+moto[s3]==5.2.3
+aws-lambda-powertools[aws-sdk]==3.35.0
