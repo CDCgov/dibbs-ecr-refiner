@@ -176,7 +176,7 @@ export function PreviewEditModal({
                   setError(null);
                 }
               }}
-              autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- focus first input on modal open for keyboard/screen reader users
+              autoFocus
             />
           </Field>
           {error && (
