@@ -3,6 +3,7 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 from pydantic import BaseModel
 
+from ...core.exceptions import DatabaseQueryError, ResourceNotFoundError
 from ..pool import AsyncDatabaseConnection
 from .model import DbUser
 
@@ -46,13 +47,12 @@ async def upsert_user_db(
         oidc_user_info.jurisdiction_id,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if row is None:
-        raise Exception("Failed to upsert user and retrieve id.")
+        raise DatabaseQueryError(message="Failed to upsert user and retrieve id.")
 
     return str(row["id"])
 
@@ -69,11 +69,13 @@ async def get_users_by_jd_id_db(
             WHERE jurisdiction_id = %s
             """
     params = (jurisdiction_id,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbUser)) as cur,
+    ):
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
@@ -87,13 +89,15 @@ async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
             """
     params = (id,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbUser)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if not row:
-        raise Exception(f"User with ID {id} not found.")
+        raise ResourceNotFoundError(message=f"User with ID {id} not found.")
 
     return row
 
@@ -118,12 +122,14 @@ async def update_user_notifications_db(
 
     params = (name, date_acknowledged, user_id)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbUser)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
     if row is None:
-        raise Exception(f"User with ID {user_id} not found.")
+        raise ResourceNotFoundError(message=f"User with ID {user_id} not found.")
 
     return row

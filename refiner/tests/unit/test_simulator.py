@@ -1,20 +1,25 @@
 import io
 import time
 import zipfile
+from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
 
+from app.api.v1.simulator import download_refined_ecr
 from app.api.validation.file_validation import (
     UNCOMPRESSED_MAX_BYTES,
     _validate_ecr_zip_pair,
 )
+from app.db.users.model import DbUser
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
     create_refined_ecr_zip_in_memory,
 )
+from app.services.logger import get_logger
 from app.services.pipeline import _get_size_reduction_percentage
 
 
@@ -141,3 +146,32 @@ def test_create_refined_ecr_zip():
         assert "covid_condition.xml" in namelist
         assert "flu_condition.xml" in namelist
         assert "CDA_eICR.xml" in namelist
+
+
+@pytest.mark.asyncio
+async def test_download_refined_ecr_returns_404_when_s3_fetch_fails():
+    # the failure is logged before the 404 is raised; a log `extra` key that
+    # clashes with a `LogRecord` attribute raised `KeyError` there instead
+    def failing_s3_download(key: str) -> dict:
+        raise RuntimeError(f"no such key: {key}")
+
+    now = datetime.now(UTC)
+    user = DbUser(
+        id=uuid4(),
+        username="refiner",
+        email="refiner@example.com",
+        jurisdiction_id="SDDH",
+        created_at=now,
+        updated_at=now,
+        notifications={},
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await download_refined_ecr(
+            filename=f"{uuid4()}_refined_ecr.zip",
+            user=user,
+            s3_download=failing_s3_download,
+            logger=get_logger(),
+        )
+
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND

@@ -476,7 +476,7 @@ async def confirm_upload_custom_codes_csv(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to insert custom codes.",
-        )
+        ) from e
 
     if not inserted_codes:
         raise HTTPException(

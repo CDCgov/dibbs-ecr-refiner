@@ -34,11 +34,13 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
     FROM tes
     ORDER BY version
     """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTes)) as cur,
+    ):
+        await cur.execute(query)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def _get_latest_tes_record_db(
@@ -67,15 +69,17 @@ async def _get_latest_tes_record_db(
         LIMIT 1
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query)
-            record = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTes)) as cur,
+    ):
+        await cur.execute(query)
+        record = await cur.fetchone()
 
-            if record is None:
-                raise ValueError("No TES releases have been loaded.")
+        if record is None:
+            raise ValueError("No TES releases have been loaded.")
 
-            return record
+        return record
 
 
 async def _get_tes_by_version_number_db(
@@ -102,14 +106,16 @@ async def _get_tes_by_version_number_db(
     ORDER BY version
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTes)) as cur:
-            await cur.execute(query=query, params={"version": version})
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTes)) as cur,
+    ):
+        await cur.execute(query=query, params={"version": version})
+        row = await cur.fetchone()
 
-            if not row:
-                raise ValueError(f"No record found for TES version {version}")
-            return row
+        if not row:
+            raise ValueError(f"No record found for TES version {version}")
+        return row
 
 
 async def _get_baseline_tes_diff_db(
@@ -139,11 +145,13 @@ async def _get_baseline_tes_diff_db(
         GROUP BY c.canonical_url, c.display_name
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur:
-            await cur.execute(query, {"tes_id": tes_id})
-            result = await cur.fetchall()
-            return result
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur,
+    ):
+        await cur.execute(query, {"tes_id": tes_id})
+        result = await cur.fetchall()
+        return result
 
 
 async def _get_baseline_tes_update_condition_diff_db(
@@ -178,21 +186,23 @@ async def _get_baseline_tes_update_condition_diff_db(
             cond.display_name;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur:
-            await cur.execute(
-                query,
-                {
-                    "tes_id": tes_record.id,
-                    "cond_url": cond_url,
-                },
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur,
+    ):
+        await cur.execute(
+            query,
+            {
+                "tes_id": tes_record.id,
+                "cond_url": cond_url,
+            },
+        )
+        result = await cur.fetchone()
+        if not result:
+            raise ValueError(
+                f"Condition with URL {cond_url} not found for TES versions {tes_record.version} "
             )
-            result = await cur.fetchone()
-            if not result:
-                raise ValueError(
-                    f"Condition with URL {cond_url} not found for TES versions {tes_record.version} "
-                )
-            return result
+        return result
 
 
 async def get_tes_update_condition_diff_db(
@@ -285,22 +295,24 @@ async def get_tes_update_condition_diff_db(
             OR COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur:
-            await cur.execute(
-                query,
-                {
-                    "cur_tes_id": cur_tes_record.id,
-                    "prev_tes_id": prev_tes_record.id,
-                    "cond_url": cond_url,
-                },
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur,
+    ):
+        await cur.execute(
+            query,
+            {
+                "cur_tes_id": cur_tes_record.id,
+                "prev_tes_id": prev_tes_record.id,
+                "cond_url": cond_url,
+            },
+        )
+        result = await cur.fetchone()
+        if not result:
+            raise ValueError(
+                f"Condition with URL {cond_url} not found for TES versions {cur_version} or {prev_version} "
             )
-            result = await cur.fetchone()
-            if not result:
-                raise ValueError(
-                    f"Condition with URL {cond_url} not found for TES versions {cur_version} or {prev_version} "
-                )
-            return result
+        return result
 
 
 async def _get_tes_update_diff_db(
@@ -346,13 +358,13 @@ async def _get_tes_update_diff_db(
         OR COUNT(*) FILTER (WHERE in_prev AND NOT in_cur) > 0;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur:
-            await cur.execute(
-                query, {"cur_tes_id": cur_tes_id, "prev_tes_id": prev_tes_id}
-            )
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbTesConditionUpdate)) as cur,
+    ):
+        await cur.execute(query, {"cur_tes_id": cur_tes_id, "prev_tes_id": prev_tes_id})
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_tes_version_diff_db(
@@ -669,15 +681,18 @@ async def apply_latest_tes_to_existing_drafts_db(
         db=db, configuration_ids=deduplicated_ids, latest_tes_id=latest_tes_record.id
     )
 
-    async with db.get_connection() as conn, conn.transaction():
-        async with conn.cursor(row_factory=dict_row) as cur:
-            # Replace each old condition link with the corresponding
-            # condition from the latest TES release.
-            #
-            # is_primary remains unchanged because only condition_id is
-            # updated.
-            await cur.execute(
-                """
+    async with (
+        db.get_connection() as conn,
+        conn.transaction(),
+        conn.cursor(row_factory=dict_row) as cur,
+    ):
+        # Replace each old condition link with the corresponding
+        # condition from the latest TES release.
+        #
+        # is_primary remains unchanged because only condition_id is
+        # updated.
+        await cur.execute(
+            """
                     WITH condition_replacements AS (
                         SELECT
                             cc.configuration_id,
@@ -706,41 +721,41 @@ async def apply_latest_tes_to_existing_drafts_db(
                             replacements.old_condition_id
                     RETURNING cc.configuration_id
                     """,
-                {
-                    "configuration_ids": deduplicated_ids,
-                    "latest_tes_id": latest_tes_record.id,
-                },
-            )
+            {
+                "configuration_ids": deduplicated_ids,
+                "latest_tes_id": latest_tes_record.id,
+            },
+        )
 
-            updated_id_set = {row["configuration_id"] for row in await cur.fetchall()}
+        updated_id_set = {row["configuration_id"] for row in await cur.fetchall()}
 
-            # Updating configurations_conditions does not fire the
-            # configurations updated_at trigger, so explicitly touch the
-            # configurations that changed.
-            if updated_id_set:
-                await cur.execute(
-                    """
+        # Updating configurations_conditions does not fire the
+        # configurations updated_at trigger, so explicitly touch the
+        # configurations that changed.
+        if updated_id_set:
+            await cur.execute(
+                """
                         UPDATE configurations
                         SET updated_at = NOW()
                         WHERE id = ANY(%(configuration_ids)s)
                         """,
-                    {
-                        "configuration_ids": list(updated_id_set),
-                    },
-                )
+                {
+                    "configuration_ids": list(updated_id_set),
+                },
+            )
 
-                # Log TES update events for successfully updated configurations
-                for config_id in updated_id_set:
-                    await insert_event_db(
-                        event=EventInput(
-                            jurisdiction_id=jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=config_id,
-                            event_type="tes_update_existing_draft",
-                            action_text="Applied TES updates",
-                        ),
-                        cursor=cur,
-                    )
+            # Log TES update events for successfully updated configurations
+            for config_id in updated_id_set:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config_id,
+                        event_type="tes_update_existing_draft",
+                        action_text="Applied TES updates",
+                    ),
+                    cursor=cur,
+                )
 
     # Keep the response in the same order as the request.
     return [
@@ -878,54 +893,56 @@ async def create_drafts_from_active_configurations_db(
         db=db, active_configs=active_configs, jurisdiction_id=jurisdiction_id
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            async with conn.transaction():
-                # Create drafts.
-                created_ids = []
-                for row in active_configs:
-                    config_id, _ = row
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=dict_row) as cur,
+        conn.transaction(),
+    ):
+        # Create drafts.
+        created_ids = []
+        for row in active_configs:
+            config_id, _ = row
 
-                    config_to_clone = await get_configuration_by_id_db(
-                        id=config_id, jurisdiction_id=jurisdiction_id, db=db
-                    )
+            config_to_clone = await get_configuration_by_id_db(
+                id=config_id, jurisdiction_id=jurisdiction_id, db=db
+            )
 
-                    from app.db.conditions.db import get_primary_condition_db
+            from app.db.conditions.db import get_primary_condition_db
 
-                    primary_condition = await get_primary_condition_db(
-                        configuration_id=config_id, db=db
-                    )
+            primary_condition = await get_primary_condition_db(
+                configuration_id=config_id, db=db
+            )
 
-                    if not primary_condition:
-                        raise ValueError(
-                            f"Primary condition not found for configuration {config_id}"
-                        )
+            if not primary_condition:
+                raise ValueError(
+                    f"Primary condition not found for configuration {config_id}"
+                )
 
-                    new_config = await insert_configuration_db(
-                        condition=primary_condition,
-                        user_id=user_id,
-                        jurisdiction_id=jurisdiction_id,
-                        db=db,
-                        config_to_clone=config_to_clone,
-                    )
+            new_config = await insert_configuration_db(
+                condition=primary_condition,
+                user_id=user_id,
+                jurisdiction_id=jurisdiction_id,
+                db=db,
+                config_to_clone=config_to_clone,
+            )
 
-                    if not new_config:
-                        raise ValueError(
-                            f"Failed to create draft for configuration {config_id}"
-                        )
+            if not new_config:
+                raise ValueError(
+                    f"Failed to create draft for configuration {config_id}"
+                )
 
-                    created_ids.append(new_config.id)
+            created_ids.append(new_config.id)
 
-                    # Log TES update event for the new draft configuration
-                    await insert_event_db(
-                        event=EventInput(
-                            jurisdiction_id=jurisdiction_id,
-                            user_id=user_id,
-                            configuration_id=new_config.id,
-                            event_type="tes_create_draft_from_active",
-                            action_text="Created draft from active configuration with TES updates",
-                        ),
-                        cursor=cur,
-                    )
+            # Log TES update event for the new draft configuration
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=new_config.id,
+                    event_type="tes_create_draft_from_active",
+                    action_text="Created draft from active configuration with TES updates",
+                ),
+                cursor=cur,
+            )
 
     return created_ids

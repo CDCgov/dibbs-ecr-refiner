@@ -356,7 +356,7 @@ def refine_for_condition(
     except Exception as e:
         raise RefinementException(
             message="Refinement failed for given condition", detail=str(e)
-        )
+        ) from e
 
 
 # NOTE:

@@ -14,11 +14,13 @@ async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[DbCodeSystem]
     SELECT id, display_name, oid, key FROM systems;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
-            return rows
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
+    ):
+        await cur.execute(query)
+        rows = await cur.fetchall()
+        return rows
 
 
 async def get_id_to_code_system_dict_db(
@@ -40,11 +42,13 @@ async def get_id_to_code_system_dict_db(
     SELECT id, display_name, oid, key FROM systems;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
-            return {system.id: system for system in rows}
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
+    ):
+        await cur.execute(query)
+        rows = await cur.fetchall()
+        return {system.id: system for system in rows}
 
 
 async def get_code_system_by_key_db(
@@ -67,15 +71,17 @@ async def get_code_system_by_key_db(
     """
     params = (key,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
-            await cur.execute(query=query, params=params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
+    ):
+        await cur.execute(query=query, params=params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
+        if not row:
+            return None
 
-            return row
+        return row
 
 
 async def get_code_system_by_id_db(
@@ -104,15 +110,17 @@ async def get_code_system_by_id_db(
     """
     params = (id,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
-            await cur.execute(query=query, params=params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
+    ):
+        await cur.execute(query=query, params=params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
+        if not row:
+            return None
 
-            return row
+        return row
 
 
 async def get_code_system_by_display_name_db(
@@ -135,12 +143,14 @@ async def get_code_system_by_display_name_db(
     """
     params = (name,)
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
 
-            if not row:
-                return None
+        if not row:
+            return None
 
-            return row
+        return row

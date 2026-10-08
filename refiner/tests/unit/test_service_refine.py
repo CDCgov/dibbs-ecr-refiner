@@ -24,7 +24,7 @@ from app.services.ecr.narrative.constants import (
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
-from tests.unit.conftest import get_mock_system_id_by_name  # noqa: E402
+from tests.unit.conftest import get_mock_system_id_by_name
 from tests.unit.helpers.configuration import create_processed_config
 
 # NOTE:

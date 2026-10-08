@@ -184,10 +184,12 @@ async def get_codes_db(
                     LIMIT %(limit)s;
                 """
 
-                async with db.get_connection() as conn:
-                    async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
-                        await cur.execute(custom_query, custom_params)
-                        custom_rows = await cur.fetchall()
+                async with (
+                    db.get_connection() as conn,
+                    conn.cursor(row_factory=class_row(DbCodeResult)) as cur,
+                ):
+                    await cur.execute(custom_query, custom_params)
+                    custom_rows = await cur.fetchall()
 
                 if len(custom_rows) >= remaining:
                     rows = custom_rows[:limit]
@@ -268,10 +270,12 @@ async def get_codes_db(
         LIMIT %(limit)s;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeResult)) as cur:
-            await cur.execute(cond_query, cond_params)
-            cond_rows = await cur.fetchall()
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeResult)) as cur,
+    ):
+        await cur.execute(cond_query, cond_params)
+        cond_rows = await cur.fetchall()
 
     if len(cond_rows) > limit - len(rows):
         cond_rows = cond_rows[: remaining - 1]
@@ -395,10 +399,9 @@ async def _check_update_operation_excludes_primary_condition_trigger_codes(
         AND cc.is_trigger_code = true
         AND cc.code_id = ANY(%(code_ids)s::uuid[])
         """
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(rsg_check_query, params)
-            rsg_rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(rsg_check_query, params)
+        rsg_rows = await cur.fetchall()
     if rsg_rows:
         rsg_ids = [row["code_id"] for row in rsg_rows]
         raise ValueError(f"Cannot exclude RSG codes: {rsg_ids}")
@@ -455,10 +458,9 @@ async def set_codes_status_within_rendered_set_db(
             RETURNING code_id
         """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     return [row["code_id"] for row in rows]
 
@@ -590,10 +592,9 @@ async def get_all_filter_options_db(
     ORDER BY cond_id, filter_type, code_count DESC;
     """
 
-    async with db.get_connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, {"configuration_id": configuration_id})
-            rows = await cur.fetchall()
+    async with db.get_connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, {"configuration_id": configuration_id})
+        rows = await cur.fetchall()
 
     code_systems, sources, statuses = [], [], []
     for filter_type, value, label, _, code_count in rows:
@@ -672,10 +673,12 @@ async def get_code_count_metadata_db(
         "configuration_id": configuration_id,
         "primary_condition_id": primary_condition_id,
     }
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCodeResultCountMetadata)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                return None
-            return row
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbCodeResultCountMetadata)) as cur,
+    ):
+        await cur.execute(query, params)
+        row = await cur.fetchone()
+        if not row:
+            return None
+        return row

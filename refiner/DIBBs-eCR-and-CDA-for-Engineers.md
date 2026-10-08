@@ -1068,6 +1068,7 @@ Every eICR and RR document declares its type in the same place. This should be t
 ```python
 from lxml import etree
 
+
 def identify_document(xml_root):
     """
     Return 'eicr', 'rr', or 'unknown' based on the document code.
@@ -1131,8 +1132,7 @@ def find_all_trigger_stamps(xml_root):
 
     # Find any element with the valueSet attribute for the RCTC master OID
     return xml_root.xpath(
-        ".//*[@sdtc:valueSet='2.16.840.1.114222.4.11.7508']",
-        namespaces=ns
+        ".//*[@sdtc:valueSet='2.16.840.1.114222.4.11.7508']", namespaces=ns
     )
 ```
 
@@ -1201,7 +1201,7 @@ def extract_rr_determinations(xml_root):
     # Find the RR11 container (template 2.16.840.1.113883.10.20.15.2.3.34)
     rr11_nodes = xml_root.xpath(
         "//hl7:organizer[hl7:templateId/@root='2.16.840.1.113883.10.20.15.2.3.34']",
-        namespaces=ns
+        namespaces=ns,
     )
 
     if not rr11_nodes:
@@ -1215,7 +1215,7 @@ def extract_rr_determinations(xml_root):
     # so this filter correctly finds any observation that asserts this template ID.
     conditions = rr11.xpath(
         "hl7:component/hl7:observation[hl7:templateId/@root='2.16.840.1.113883.10.20.15.2.3.12']",
-        namespaces=ns
+        namespaces=ns,
     )
 
     for condition in conditions:
@@ -1227,8 +1227,7 @@ def extract_rr_determinations(xml_root):
 
         # For each jurisdiction organizer under this condition
         jurisdiction_nodes = condition.xpath(
-            "hl7:entryRelationship/hl7:organizer",
-            namespaces=ns
+            "hl7:entryRelationship/hl7:organizer", namespaces=ns
         )
 
         cond_data["jurisdictions"] = []
@@ -1254,7 +1253,7 @@ def extract_rr_determinations(xml_root):
             resp_nodes = juris.xpath(
                 "hl7:participant[hl7:participantRole/hl7:code/@code='RR8']/"
                 "hl7:participantRole/hl7:playingEntity/hl7:name/text()",
-                namespaces=ns
+                namespaces=ns,
             )
             juris_data["responsible_agency"] = resp_nodes[0] if resp_nodes else None
 
@@ -1262,7 +1261,7 @@ def extract_rr_determinations(xml_root):
             route_nodes = juris.xpath(
                 "hl7:participant[hl7:participantRole/hl7:code/@code='RR7']/"
                 "hl7:participantRole/hl7:playingEntity/hl7:name/text()",
-                namespaces=ns
+                namespaces=ns,
             )
             juris_data["routing_entity"] = route_nodes[0] if route_nodes else None
 
@@ -1270,15 +1269,17 @@ def extract_rr_determinations(xml_root):
             rules_nodes = juris.xpath(
                 "hl7:participant[hl7:participantRole/hl7:code/@code='RR12']/"
                 "hl7:participantRole/hl7:playingEntity/hl7:name/text()",
-                namespaces=ns
+                namespaces=ns,
             )
-            juris_data["rules_authoring_agency"] = rules_nodes[0] if rules_nodes else None
+            juris_data["rules_authoring_agency"] = (
+                rules_nodes[0] if rules_nodes else None
+            )
 
             # Determination of reportability (RRVS1: reportable, RRVS2: maybe, RRVS3: not, RRVS4: no rule)
             det_nodes = juris.xpath(
                 "hl7:component/hl7:observation[hl7:templateId/@root='2.16.840.1.113883.10.20.15.2.3.19']/"
                 "hl7:value/@code",
-                namespaces=ns
+                namespaces=ns,
             )
             juris_data["determination"] = det_nodes[0] if det_nodes else None
 
@@ -1811,31 +1812,35 @@ def validate_initiation_rules(xml_root):
     # Find initiation type
     init_code = xml_root.xpath(
         "/hl7:ClinicalDocument/hl7:documentationOf/hl7:serviceEvent/hl7:code/@code",
-        namespaces=ns
+        namespaces=ns,
     )
 
     # Find trigger stamps
     trigger_stamps = xml_root.xpath(
         ".//*[@sdtc:valueSet='2.16.840.1.114222.4.11.7508']",
-        namespaces={"sdtc": "urn:hl7-org:sdtc"}
+        namespaces={"sdtc": "urn:hl7-org:sdtc"},
     )
 
     # Find manual initiation reason
     manual_reason = xml_root.xpath(
         ".//hl7:observation[hl7:templateId/@root='2.16.840.1.113883.10.20.15.2.3.5']",
-        namespaces=ns
+        namespaces=ns,
     )
 
     if init_code and init_code[0] in ["PHC1464", "PHC2235"]:
         # Manual or alternate initiation
         if not manual_reason:
-            raise ValueError("Manually/alternately initiated eICR MUST contain "
-                           "an Initial Case Report Initiation Reason Observation")
+            raise ValueError(
+                "Manually/alternately initiated eICR MUST contain "
+                "an Initial Case Report Initiation Reason Observation"
+            )
     else:
         # Auto-initiated (or no initiation specified)
         if not trigger_stamps:
-            raise ValueError("Automatically initiated eICR MUST contain at least one "
-                           "trigger code template")
+            raise ValueError(
+                "Automatically initiated eICR MUST contain at least one "
+                "trigger code template"
+            )
 ```
 
 ### 4.4 The Translation Pattern: When Local Codes Meet RCTC
@@ -1939,6 +1944,7 @@ When extracting a clinical code for matching, enrichment, or display, you must a
 ```python
 ns = {"hl7": "urn:hl7-org:v3", "sdtc": "urn:hl7-org:sdtc"}
 
+
 def extract_best_code(code_element):
     """
     Return the most specific (standardized) code available.
@@ -1946,8 +1952,7 @@ def extract_best_code(code_element):
     """
     # First, look for a translation with an RCTC stamp — this is the enrichable code
     stamped_translations = code_element.xpath(
-        "hl7:translation[@sdtc:valueSet]",
-        namespaces=ns
+        "hl7:translation[@sdtc:valueSet]", namespaces=ns
     )
     if stamped_translations:
         t = stamped_translations[0]
@@ -2409,6 +2414,7 @@ Attempt to parse the raw XML. Use a try-except block to catch syntax errors.
 ```python
 from lxml import etree
 
+
 def ingest_xml(xml_string):
     """
     Safely parse XML, handling syntax errors.
@@ -2420,7 +2426,7 @@ def ingest_xml(xml_string):
         (root_element, error_message) tuple
     """
     try:
-        root = etree.fromstring(xml_string.encode('utf-8'))
+        root = etree.fromstring(xml_string.encode("utf-8"))
         return root, None
     except etree.XMLSyntaxError as e:
         return None, f"XML parsing error: {e}"
@@ -2542,7 +2548,7 @@ def assemble_output(doc_type, header_context, extracted_data):
         "document_type": doc_type,
         "header": header_context,
         "warnings": [],  # Populated by previous stages
-        "errors": [],    # Populated by previous stages
+        "errors": [],  # Populated by previous stages
     }
 
     if doc_type == "eicr":
@@ -2700,8 +2706,9 @@ The IG specifies cardinality (how many times an element can appear) alongside th
 
 ```python
 # SHALL [1..1] — Safe to access directly (but still check for nullFlavor!)
-patient_role = root.xpath("/hl7:ClinicalDocument/hl7:recordTarget/hl7:patientRole",
-                          namespaces=ns)
+patient_role = root.xpath(
+    "/hl7:ClinicalDocument/hl7:recordTarget/hl7:patientRole", namespaces=ns
+)
 # This WILL be present in a conformant document, but still use defensive access.
 
 # SHOULD [0..1] — Must handle absence

@@ -461,7 +461,7 @@ async def inline_testing(
     # `rc_snomed_code` that was **in** the RR that matches the condition and
     # has a configuration. picking the first entry in an index isn't correct but
     # we should wait to see how the testing service evolves with the routes
-    matched_code = list(matched_codes)[0]
+    matched_code = next(iter(matched_codes))
 
     # inline testing refines a single condition; refine_for_condition
     # requires an AugmentationRun, so build one for this refinement

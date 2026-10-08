@@ -10,10 +10,10 @@ from .writers import (
 )
 
 __all__ = [
+    "ReconstructedNarrative",
     "append_section_provenance_footnote",
     "compact_reconstruction_references",
     "create_minimal_section",
-    "ReconstructedNarrative",
     "reconstruct_narrative",
     "remove_all_comments",
     "replace_narrative_with_reconstruction",
