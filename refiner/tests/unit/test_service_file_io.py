@@ -205,7 +205,7 @@ async def test_read_xml_zip_general_error():
 
     class BrokenFileUpload:
         async def read(self):
-            raise Exception("Simulated error")
+            raise RuntimeError("Simulated error")
 
     with pytest.raises(FileProcessingError) as exc_info:
         await read_xml_zip(BrokenFileUpload())

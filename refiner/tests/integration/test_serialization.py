@@ -89,7 +89,7 @@ class TestSerialization:
             for c in coding:
                 assert c["code"] and c["code"] != ""
                 assert c["display"] and c["display"] != ""
-                assert c["system"] in OID_TO_SYSTEM_KEY_MAP.keys()
+                assert c["system"] in OID_TO_SYSTEM_KEY_MAP
 
     async def test_exclusion_excludes_code_from_serialization(
         self,
@@ -125,7 +125,7 @@ class TestSerialization:
                 payload_without_exclusion_length += 1
                 assert c["code"] and c["code"] != "" and c["code"]
                 assert c["display"] and c["display"] != ""
-                assert c["system"] in OID_TO_SYSTEM_KEY_MAP.keys()
+                assert c["system"] in OID_TO_SYSTEM_KEY_MAP
 
         # exclude codes and ensure the payloads on reserialization pick up the change
         # both must be non-trigger codes for the condition: the primary

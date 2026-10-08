@@ -107,9 +107,10 @@ def get_eicr_version(root: _Element, ns: NamespaceMap) -> str | None:
         template_id := root.find(
             'cda:templateId[@root="2.16.840.1.113883.10.20.15.2"]', namespaces=ns
         )
-    ) is not None:
-        if (version_date := template_id.get("extension")) in EICR_VERSION_MAP:
-            return EICR_VERSION_MAP[version_date]
+    ) is not None and (
+        version_date := template_id.get("extension")
+    ) in EICR_VERSION_MAP:
+        return EICR_VERSION_MAP[version_date]
     return None
 
 

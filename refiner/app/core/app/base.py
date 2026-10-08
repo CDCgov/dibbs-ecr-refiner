@@ -53,7 +53,6 @@ class BaseService:
                 Defaults to "/openapi.json".
         """
 
-        description = description
         self.service_path = service_path
         self.include_health_check_endpoint = include_health_check_endpoint
         self.app = FastAPI(

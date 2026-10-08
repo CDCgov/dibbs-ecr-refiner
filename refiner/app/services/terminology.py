@@ -65,9 +65,7 @@ class CodeSystemSets:
         defined yet (the old generic search path).
         """
 
-        return {
-            code for system_dict in self._iter_dicts() for code in system_dict.keys()
-        }
+        return {code for system_dict in self._iter_dicts() for code in system_dict}
 
     def _iter_dicts(self) -> Iterator[dict[str, Coding]]:
         """Helper to iterate over all dictionary fields in the dataclass."""
@@ -89,10 +87,7 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
         matching_system = self.oid_to_system_map.get(code_system_oid)
-        if (
-            matching_system is None
-            or matching_system not in self.system_to_code_maps.keys()
-        ):
+        if matching_system is None or matching_system not in self.system_to_code_maps:
             return None
         return self.system_to_code_maps[matching_system]
 

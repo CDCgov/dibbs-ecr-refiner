@@ -313,10 +313,12 @@ async def get_active_jurisdiction_ids_db(
         ORDER BY jurisdiction_id;
     """
 
-    async with db.get_connection() as connection:
-        async with connection.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(query)
-            rows = await cursor.fetchall()
+    async with (
+        db.get_connection() as connection,
+        connection.cursor(row_factory=dict_row) as cursor,
+    ):
+        await cursor.execute(query)
+        rows = await cursor.fetchall()
 
     return [row["jurisdiction_id"] for row in rows]
 
@@ -367,10 +369,12 @@ async def get_latest_complete_reactivation_schema_version_db(
         LIMIT 1;
     """
 
-    async with db.get_connection() as connection:
-        async with connection.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(query)
-            row = await cursor.fetchone()
+    async with (
+        db.get_connection() as connection,
+        connection.cursor(row_factory=dict_row) as cursor,
+    ):
+        await cursor.execute(query)
+        row = await cursor.fetchone()
 
     if row is None:
         return None
@@ -399,11 +403,13 @@ async def create_reactivation_tracking_record_db(
         RETURNING id;
     """
 
-    async with db.get_connection() as connection:
-        async with connection.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(query, (target_schema_version,))
-            row = await cursor.fetchone()
-            await connection.commit()
+    async with (
+        db.get_connection() as connection,
+        connection.cursor(row_factory=dict_row) as cursor,
+    ):
+        await cursor.execute(query, (target_schema_version,))
+        row = await cursor.fetchone()
+        await connection.commit()
 
     return str(row["id"])
 
@@ -434,18 +440,17 @@ async def update_reactivation_tracking_record_db(
         WHERE id = %s;
     """
 
-    async with db.get_connection() as connection:
-        async with connection.cursor() as cursor:
-            await cursor.execute(
-                query,
-                (
-                    status,
-                    success_count,
-                    failure_count,
-                    reactivation_id,
-                ),
-            )
-            await connection.commit()
+    async with db.get_connection() as connection, connection.cursor() as cursor:
+        await cursor.execute(
+            query,
+            (
+                status,
+                success_count,
+                failure_count,
+                reactivation_id,
+            ),
+        )
+        await connection.commit()
 
 
 async def regenerate_active_configuration(

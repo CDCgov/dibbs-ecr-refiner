@@ -85,8 +85,10 @@ def create_lifespan(
             warnings.filterwarnings("error", category=UserWarning, module="pydantic")
 
             # Write OpenAPI doc
+            # NOTE: a blocking write is fine here; it runs once, local-only,
+            # before the app starts serving
             schema = create_custom_openapi(app)
-            with open("openapi.json", "w") as f:
+            with open("openapi.json", "w") as f:  # noqa: ASYNC230
                 json.dump(schema, f)
 
         # Start the DB connection
@@ -140,14 +142,17 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
         """
 
         try:
-            async with db.get_connection() as conn:
-                async with conn.cursor(row_factory=dict_row) as cursor:
-                    await cursor.execute("SELECT 1")
-                    return JSONResponse(
-                        status_code=status.HTTP_200_OK,
-                        content=jsonable_encoder({"status": "OK", "db": "OK"}),
-                    )
-        except Exception:
+            async with (
+                db.get_connection() as conn,
+                conn.cursor(row_factory=dict_row) as cursor,
+            ):
+                await cursor.execute("SELECT 1")
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK,
+                    content=jsonable_encoder({"status": "OK", "db": "OK"}),
+                )
+        # any failure at all means the db is unhealthy
+        except Exception:  # noqa: BLE001
             return JSONResponse(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 content=jsonable_encoder({"status": "FAIL", "db": "FAIL"}),

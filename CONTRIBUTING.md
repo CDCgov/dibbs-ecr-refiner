@@ -83,12 +83,15 @@ Let's add the route and handler for this:
 class DeleteConfigurationResponse(BaseModel):
     id: UUID
 
+
 # The FastAPI route and its async handler function
 @router.delete(
-    "/{configuration_id}", # ID of the configuration to delete
-    response_model=DeleteConfigurationResponse, # JSON model to return to the client
-    tags=["configurations"], # Tag defining which file to store the generated client code
-    operation_id="deleteConfiguration", # How the hook will be named (`useDeleteConfiguration`)
+    "/{configuration_id}",  # ID of the configuration to delete
+    response_model=DeleteConfigurationResponse,  # JSON model to return to the client
+    tags=[
+        "configurations"
+    ],  # Tag defining which file to store the generated client code
+    operation_id="deleteConfiguration",  # How the hook will be named (`useDeleteConfiguration`)
 )
 async def delete_configuration(
     configuration_id: UUID,
@@ -99,7 +102,7 @@ async def delete_configuration(
     # Get the user's jurisdiction, find the configuration by its ID, perform any validation, etc.
     ...
     ...
-     # Return the response with the ID of the deleted record
+    # Return the response with the ID of the deleted record
     return DeleteConfigurationResponse(...)
 ```
 

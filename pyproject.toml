@@ -72,8 +72,9 @@ ignore = [
 
 # file-specific rule exclusions
 [tool.ruff.lint.per-file-ignores]
-# - disable docstring/type/security rules in tests
-"**/tests/*" = ["D", "S", "ANN", "T201"]
+# - disable docstring/type/security rules in tests; tests and their helper
+#   scripts may catch broadly and open files inside async test functions
+"**/tests/*" = ["D", "S", "ANN", "T201", "BLE001", "ASYNC230"]
 # - disable docstring/type/security rules in lambda
 "**/lambda/*" = ["D", "S", "ANN"]
 # - disable type annotation rules in scripts

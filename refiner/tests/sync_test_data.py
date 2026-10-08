@@ -1,4 +1,5 @@
 import shutil
+import sys
 from pathlib import Path
 
 # define the single source of truth and the destination
@@ -57,4 +58,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())
