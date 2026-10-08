@@ -162,7 +162,7 @@ jobs:
         working-directory: client
 
       - name: Upload HTML Report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: playwright-report

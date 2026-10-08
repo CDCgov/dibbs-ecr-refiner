@@ -86,7 +86,7 @@ jobs:
           category: "pr-scan-${{ matrix.image.name }}"
 
       - name: Upload JSON results as artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: trivy-results-${{ matrix.image.name }}
