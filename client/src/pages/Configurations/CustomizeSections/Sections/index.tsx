@@ -191,7 +191,7 @@ export function Sections({
                       setSelectedSection={() => onSelectedSection(section)}
                     />
                   </TableCell>
-                  <TableCell className="flex h-21 justify-center">
+                  <TableCell>
                     {section.include ? (
                       <div className="flex flex-col items-center justify-center">
                         {isNarrativeSection(section.code) ? (
