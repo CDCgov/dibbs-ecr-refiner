@@ -2,6 +2,7 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/client"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
@@ -17,6 +18,7 @@ updates:
     directories:
       - "/refiner"
       - "/refiner/app/lambda"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
@@ -30,6 +32,7 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
@@ -43,6 +46,7 @@ updates:
 
   - package-ecosystem: "docker-compose"
     directory: "/"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
@@ -62,6 +66,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
