@@ -7,15 +7,11 @@ updates:
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      frontend-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "pip"
     directories:
@@ -26,15 +22,11 @@ updates:
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      backend-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -43,15 +35,11 @@ updates:
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      docker-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "docker-compose"
     directory: "/"
@@ -66,15 +54,11 @@ updates:
         update-types:
           - "version-update:semver-major"
     groups:
-      minor-and-patch:
+      docker-compose-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -83,12 +67,8 @@ updates:
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      actions-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
