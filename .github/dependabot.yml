@@ -2,59 +2,51 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/client"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      frontend-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "pip"
     directories:
       - "/refiner"
       - "/refiner/app/lambda"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      backend-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "docker"
     directory: "/"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      docker-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "docker-compose"
     directory: "/"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
@@ -66,29 +58,22 @@ updates:
         update-types:
           - "version-update:semver-major"
     groups:
-      minor-and-patch:
+      docker-compose-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 5
     groups:
-      minor-and-patch:
+      actions-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-      majors:
-        applies-to: version-updates
-        update-types:
-          - "major"
