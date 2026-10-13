@@ -22,7 +22,7 @@ alias ild := install-lambda-dev
 @_default:
     just --list server
 
-set dotenv-load
+set dotenv-load := true
 
 _venv:
     [ -d .venv ] || python3 -m venv .venv
@@ -108,4 +108,9 @@ install-lambda-dev: _venv
 [doc('Seed Localstack with the infra needed for manual tests')]
 [group('localstack')]
 seed-localstack: _venv
-    .venv/bin/python ./tests/localstack/seed.py
+    .venv/bin/python ./tests/localstack/seed.py || just server print-common-seed-errors
+
+[doc('Print error if seed failed')]
+[group('localstack')]
+print-common-seed-errors: _venv
+    echo "❌ Seed localstack failed! Ensure you have 1) a clean DB by running just db refresh and 2) that you've added your session token to the top of the seed.py file." && exit 1
