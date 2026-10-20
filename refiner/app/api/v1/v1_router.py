@@ -7,7 +7,7 @@ from .configurations.router import router as configurations_router
 from .events import router as events_router
 from .info import router as info_router
 from .releases import router as releases_router
-from .simulator import router as simulator_router
+from .simulator.router import router as simulator_router
 from .tes import router as tes_router
 
 router = APIRouter(prefix="/v1")

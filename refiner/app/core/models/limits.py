@@ -6,7 +6,7 @@ from typing import Literal, get_args
 # every layer enforces or reports these, which is why they live in `core`:
 # * `api/validation/file_validation.py` rejects oversized uploads
 # * `services/file_io.py` checks a ZIP's uncompressed total before extracting
-# * `db/simulator/model.py` reports the ceiling back to the client
+# * `api/v1/simulator/model.py` reports the ceiling back to the client
 #
 # they were defined in `api/validation/` and reached for from the other two.
 # that made `api` import `services.file_io` while `file_io` imported back, so

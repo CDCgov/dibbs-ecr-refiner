@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v1.configurations.custom_codes.model import CustomCodeResponse
+from app.api.v1.simulator.model import Condition
 from app.core.models.configurations import (
     ConfigurationStatus,
     NarrativeAction,
@@ -14,7 +15,6 @@ from app.db.configurations.model import (
     ConfiguredSection,
     GetConfigurationResponseVersion,
 )
-from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
 from app.services.conditions.grouper_statuses import CodeSetStatus
 
