@@ -3,7 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCustomCode:
     """
     Model to represent a custom code row in the database.

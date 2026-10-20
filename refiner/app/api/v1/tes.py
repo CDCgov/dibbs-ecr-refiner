@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from packaging.version import parse
 from pydantic import BaseModel, Field
 
 from app.api.auth.middleware import get_logged_in_user
@@ -14,11 +16,26 @@ from app.db.tes.db import (
     get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
-from app.db.tes.model import TesConfigToUpdate, TesUpdate
+from app.db.tes.model import DbTes, TesConfigToUpdate
 from app.db.users.model import DbUser
-from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
+from app.services.tes import build_tes_export_csv
 
 router = APIRouter(prefix="/tes")
+
+
+@dataclass
+class TesUpdate:
+    """
+    All metadata for a TES update needed for the frontend.
+    """
+
+    id: UUID
+    version: str
+    created_at: datetime
+
+
+def _to_tes_update(row: DbTes) -> TesUpdate:
+    return TesUpdate(id=row.id, version=row.version, created_at=row.created_at)
 
 
 @dataclass
@@ -50,8 +67,9 @@ async def get_tes_updates(
             - The version
             - The when it was created
     """
-    updates = await get_loaded_tes_versions_db(db=db)
-    return TesResponse(sort_tes_updates_by_version(updates))
+    rows = await get_loaded_tes_versions_db(db=db)
+    newest_first = sorted(rows, key=lambda r: parse(r.version), reverse=True)
+    return TesResponse([_to_tes_update(r) for r in newest_first])
 
 
 @dataclass

@@ -7,7 +7,7 @@ from app.core.models.terminology import CodeLabel
 from app.db.codes.model import DbConditionCode
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbConditionsContextGrouper:
     """
     Model for a condition context grouper row in the database.
@@ -24,7 +24,7 @@ class DbConditionsContextGrouper:
     updated_at: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbConditionBase:
     """
     Simple information about a condition from the database. Excludes info about code sets.
@@ -37,7 +37,7 @@ class DbConditionBase:
     coverage_level: str | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCondition(DbConditionBase):
     """
     Model to represent a complete condition row from the database (row).

@@ -16,7 +16,7 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCodeResult:
     """
     Result from query.
@@ -33,7 +33,7 @@ class DbCodeResult:
     is_trigger_code: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCodeCursor:
     """
     Cursor object for pagination.
@@ -633,7 +633,7 @@ async def get_all_filter_options_db(
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCodeResultCountMetadata:
     """
     Code count metadata.

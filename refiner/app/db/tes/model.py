@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from app.core.models.terminology import CodeExportRow
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbTes:
     """
     Model to represent a TES record in the database.
@@ -19,7 +19,7 @@ class DbTes:
     updated_at: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbTesConditionUpdate:
     """
     Model to represent the codes within a condition packaged in a TES update.
@@ -30,17 +30,6 @@ class DbTesConditionUpdate:
     added_code_ids: list[UUID]
     removed_code_ids: list[UUID]
     is_new: bool
-
-
-@dataclass
-class TesUpdate:
-    """
-    All metadata for a TES update needed for the frontend.
-    """
-
-    id: UUID
-    version: str
-    created_at: datetime
 
 
 @dataclass
@@ -86,7 +75,7 @@ class TesConfigToUpdate:
     configuration_tes_version: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbTesConfigsToUpdateResponse:
     """
     The response needed for rendering of the TES update configuration page.
