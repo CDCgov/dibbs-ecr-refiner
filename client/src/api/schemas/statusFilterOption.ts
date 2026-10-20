@@ -5,7 +5,7 @@ import type { ConfigurationCodeStatusLabel } from './configurationCodeStatusLabe
  * Model to represent a status filter option.
  */
 export interface StatusFilterOption {
-  label: ConfigurationCodeStatusLabel;
+  display_name: ConfigurationCodeStatusLabel;
   status: ConfigurationCodeStatus;
   code_count: number;
 }

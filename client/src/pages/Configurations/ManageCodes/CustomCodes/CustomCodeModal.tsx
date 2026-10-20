@@ -85,7 +85,7 @@ function CustomCodeForm({
 
   const { data: codeSystems, isPending, isError } = useGetCodeSystems();
 
-  const [name, setName] = useState(selectedCustomCode?.display ?? '');
+  const [name, setName] = useState(selectedCustomCode?.display_name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
 
   const [selectedSystemId, setSelectedSystemId] = useState(
@@ -143,7 +143,7 @@ function CustomCodeForm({
             id: selectedCustomCode.id,
             code: code.trim() || selectedCustomCode.code,
             system_id: selectedSystemId || selectedCustomCode.system_id,
-            display: name.trim() || selectedCustomCode.display,
+            display_name: name.trim() || selectedCustomCode.display_name,
           },
         },
         {
@@ -180,7 +180,7 @@ function CustomCodeForm({
           data: {
             code: code.trim(),
             system_id: selectedSystemId,
-            display: name.trim(),
+            display_name: name.trim(),
           },
         },
         {

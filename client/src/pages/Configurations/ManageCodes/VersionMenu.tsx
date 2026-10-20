@@ -3,7 +3,7 @@ import { BaseMenu, BaseMenuButton, BaseMenuItems } from '@components/Dropdown';
 import { Link } from 'react-router';
 import {
   GetConfigurationResponseVersion,
-  DbConfigurationStatus,
+  ConfigurationStatus,
 } from '../../../api/schemas';
 import { Fragment } from 'react';
 import { useDatetimeFormatter } from '../../../hooks/UseDatetimeFormatter';
@@ -12,7 +12,7 @@ import { useGetStep } from './useGetStep';
 interface VersionMenuProps {
   id: string;
   currentVersion: number;
-  status: DbConfigurationStatus;
+  status: ConfigurationStatus;
   versions: GetConfigurationResponseVersion[];
 }
 

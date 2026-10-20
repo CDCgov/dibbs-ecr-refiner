@@ -1,7 +1,7 @@
 import { describe, it, expect, Mock } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { TestProviders } from '../../../test-utils';
-import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
+import { ConfiguredSection } from '../../../api/schemas/configuredSection';
 import userEvent from '@testing-library/user-event';
 import { baseMockConfig, MOCK_CONFIG_DRAFT_ID } from '../test/fixtures';
 import { CustomizeSections } from '.';
@@ -23,9 +23,9 @@ vi.mock('../../../api/configurations/configurations', async () => {
   };
 });
 
-const sections: DbConfigurationSectionProcessing[] = [
+const sections: ConfiguredSection[] = [
   {
-    name: 'History section',
+    display_name: 'History section',
     action: 'refine',
     include: true,
     code: 'hist',
@@ -34,7 +34,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     section_type: 'standard',
   },
   {
-    name: 'Med section',
+    display_name: 'Med section',
     action: 'refine',
     include: false,
     code: 'med',
@@ -43,7 +43,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     section_type: 'standard',
   },
   {
-    name: 'Immunizations section',
+    display_name: 'Immunizations section',
     action: 'retain',
     include: true,
     code: '11369-6',
@@ -52,7 +52,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     section_type: 'standard',
   },
   {
-    name: 'Mock custom section',
+    display_name: 'Mock custom section',
     action: 'refine',
     include: true,
     code: 'mock-custom-section',
@@ -62,10 +62,10 @@ const sections: DbConfigurationSectionProcessing[] = [
   },
 ];
 
-const sectionsWithDisabled: DbConfigurationSectionProcessing[] = [
+const sectionsWithDisabled: ConfiguredSection[] = [
   ...sections,
   {
-    name: 'Disabled section',
+    display_name: 'Disabled section',
     action: 'retain',
     include: true,
     code: '83910-0',
@@ -75,10 +75,10 @@ const sectionsWithDisabled: DbConfigurationSectionProcessing[] = [
   },
 ];
 
-const sectionsWithNarrativeOnly: DbConfigurationSectionProcessing[] = [
+const sectionsWithNarrativeOnly: ConfiguredSection[] = [
   ...sections,
   {
-    name: 'Chief Complaint',
+    display_name: 'Chief Complaint',
     action: 'retain',
     include: true,
     code: '10154-3',
@@ -88,9 +88,9 @@ const sectionsWithNarrativeOnly: DbConfigurationSectionProcessing[] = [
   },
 ];
 
-const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
+const sectionsWithReconstruct: ConfiguredSection[] = [
   {
-    name: 'Results section',
+    display_name: 'Results section',
     action: 'refine',
     include: true,
     code: '30954-2',
@@ -99,7 +99,7 @@ const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
     section_type: 'standard',
   },
   {
-    name: 'Medications section',
+    display_name: 'Medications section',
     action: 'retain',
     include: true,
     code: '10160-0',
@@ -109,9 +109,9 @@ const sectionsWithReconstruct: DbConfigurationSectionProcessing[] = [
   },
 ];
 
-const sectionsWithKeepOnMatch: DbConfigurationSectionProcessing[] = [
+const sectionsWithKeepOnMatch: ConfiguredSection[] = [
   {
-    name: 'Results section',
+    display_name: 'Results section',
     action: 'refine',
     include: true,
     code: '30954-2',
@@ -120,7 +120,7 @@ const sectionsWithKeepOnMatch: DbConfigurationSectionProcessing[] = [
     section_type: 'standard',
   },
   {
-    name: 'Immunizations section',
+    display_name: 'Immunizations section',
     action: 'retain',
     include: true,
     code: '11369-6',

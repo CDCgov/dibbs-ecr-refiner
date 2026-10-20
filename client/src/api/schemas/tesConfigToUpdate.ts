@@ -4,7 +4,7 @@
  */
 export interface TesConfigToUpdate {
   configuration_id: string;
-  configuration_name: string;
+  configuration_display_name: string;
   codesets_to_update: string[];
   configuration_tes_version: string;
 }

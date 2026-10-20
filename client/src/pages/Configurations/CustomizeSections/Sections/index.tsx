@@ -1,8 +1,8 @@
-import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { ConfiguredSection } from '../../../../api/schemas/configuredSection';
 import { useToast } from '../../../../hooks/useToast';
 import {
   CodedDataLabelsValue,
-  DbSectionAction,
+  SectionAction,
   DisabledSection,
   GetConfigurationResponse,
   NarrativeOnlySection,
@@ -40,7 +40,7 @@ import { InfoIcon } from '@components/Icons/InfoIcon';
 
 export interface SectionModalState {
   isOpen: boolean;
-  selectedSection: DbConfigurationSectionProcessing | null;
+  selectedSection: ConfiguredSection | null;
 }
 
 interface SectionsProps {
@@ -85,7 +85,7 @@ export function Sections({
   const isReconstructableSection = (s: string): s is ReconstructableSection =>
     reconstructableSections.some((v) => (v as string) === s);
 
-  const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
+  const onSelectedSection = (section: ConfiguredSection) => {
     setModalState({ isOpen: true, selectedSection: section });
   };
 
@@ -107,7 +107,7 @@ export function Sections({
               initialSection={
                 modalState.selectedSection
                   ? {
-                      name: modalState.selectedSection.name,
+                      name: modalState.selectedSection.display_name,
                       currentCode: modalState.selectedSection.code,
                     }
                   : null
@@ -240,7 +240,7 @@ export function Sections({
 
 interface SectionNameProps {
   configurationId: string;
-  section: DbConfigurationSectionProcessing;
+  section: ConfiguredSection;
   disabled: boolean;
   setSelectedSection: () => void;
 }
@@ -257,13 +257,13 @@ function SectionName({
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <span
-          title={section.name}
+          title={section.display_name}
           className={classNames('text-gray-cool-90 truncate', {
             italic: !section.include,
             'font-bold': section.include,
           })}
         >
-          {section.name}
+          {section.display_name}
         </span>
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
@@ -277,7 +277,7 @@ function SectionName({
         {isCustom && !disabled ? (
           <div className="flex items-center gap-1">
             <EditButton
-              name={section.name}
+              name={section.display_name}
               setSelectedSection={setSelectedSection}
             />
             <span className="text-sm" aria-hidden>
@@ -286,7 +286,7 @@ function SectionName({
             <DeleteButton
               configurationId={configurationId}
               code={section.code}
-              name={section.name}
+              name={section.display_name}
             />
           </div>
         ) : null}
@@ -369,8 +369,8 @@ function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
 
 interface SelectionToggleProps {
   configurationId: string;
-  currentSection: DbConfigurationSectionProcessing;
-  sections: DbConfigurationSectionProcessing[];
+  currentSection: ConfiguredSection;
+  sections: ConfiguredSection[];
   disabled: boolean;
 }
 
@@ -385,7 +385,7 @@ function IncludeSwitch({
   return (
     <Switch
       variant="violet"
-      aria-label={`Include ${currentSection.name} section rules in refined document.`}
+      aria-label={`Include ${currentSection.display_name} section rules in refined document.`}
       checked={currentSection.include}
       disabled={disabled}
       onChange={(checked) => {
@@ -406,8 +406,7 @@ function RefineSwitch({
 
   const refineLabelText = CodedDataLabelsValue.refine;
   const retainLabelText = CodedDataLabelsValue.retain;
-  const curSectionSetToRefine =
-    currentSection.action === DbSectionAction.refine;
+  const curSectionSetToRefine = currentSection.action === SectionAction.refine;
 
   const [toggled, setToggled] = useState(curSectionSetToRefine);
 
@@ -428,7 +427,7 @@ function RefineSwitch({
     }
     clearError();
     updateSection(currentSection, {
-      action: toggled ? DbSectionAction.retain : DbSectionAction.refine,
+      action: toggled ? SectionAction.retain : SectionAction.refine,
     });
     setToggled((prev) => !prev);
   };
@@ -446,9 +445,9 @@ function RefineSwitch({
             aria-label={
               curSectionSetToRefine
                 ? // "Refine Admission Diagnosis section"
-                  `${refineLabelText} ${currentSection.name} section`
+                  `${refineLabelText} ${currentSection.display_name} section`
                 : // "Keep original for Admission Diagnosis section"
-                  `${retainLabelText} for ${currentSection.name} section`
+                  `${retainLabelText} for ${currentSection.display_name} section`
             }
           >
             {curSectionSetToRefine ? (

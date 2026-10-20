@@ -374,8 +374,8 @@ function CodesTable({
                       )}
                     </TableCell>
                     <TableCell>{code.code}</TableCell>
-                    <TableCell>{code.system_name}</TableCell>
-                    <TableCell>{code.description}</TableCell>
+                    <TableCell>{code.system_display_name}</TableCell>
+                    <TableCell>{code.display_name}</TableCell>
                     <TableCell>
                       <SourceCell configurationId={id} code={code} />
                     </TableCell>
@@ -397,7 +397,7 @@ interface SourceCellProps {
 }
 
 function SourceCell({ configurationId, code }: SourceCellProps) {
-  if (!code.is_custom) return code.source.join(', ');
+  if (!code.is_custom) return code.source_display_names.join(', ');
 
   return (
     <div className="flex flex-col items-center gap-2 xl:flex-row">
@@ -473,9 +473,8 @@ function CodeInformationBar({ id }: { id: string }) {
     );
 
   const includedCount =
-    codeCounts.data.total_code_count -
-    codeCounts.data.total_excluded_codes_count;
-  const total = codeCounts.data.total_code_count;
+    codeCounts.data.code_count - codeCounts.data.excluded_code_count;
+  const total = codeCounts.data.code_count;
   const barFillPercentage = total > 0 ? (includedCount / total) * 100 : 0;
 
   return (
@@ -491,15 +490,14 @@ function CodeInformationBar({ id }: { id: string }) {
         </div>
         <div className="flex flex-col gap-4 text-left md:flex-row md:gap-8">
           <span>
-            {codeCounts.data.total_excluded_codes_count.toLocaleString()}{' '}
-            excluded
+            {codeCounts.data.excluded_code_count.toLocaleString()} excluded
           </span>
           <span>
-            {codeCounts.data.total_custom_codes_count.toLocaleString()} custom
+            {codeCounts.data.custom_code_count.toLocaleString()} custom
           </span>
           <span>
-            {codeCounts.data.total_code_sets_count.toLocaleString()} condition
-            code sets
+            {codeCounts.data.code_set_count.toLocaleString()} condition code
+            sets
           </span>
           <span>
             {codeCounts.data.primary_condition_rctc_count.toLocaleString()} RCTC

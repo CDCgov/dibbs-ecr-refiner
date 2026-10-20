@@ -4,6 +4,6 @@
  */
 export interface SourceFilterOption {
   condition_id: string | null;
-  source: string;
+  display_name: string;
   code_count: number;
 }

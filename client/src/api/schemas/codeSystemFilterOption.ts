@@ -4,6 +4,6 @@
  */
 export interface CodeSystemFilterOption {
   system_id: string;
-  system_name: string;
+  display_name: string;
   code_count: number;
 }

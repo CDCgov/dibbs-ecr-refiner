@@ -1,4 +1,4 @@
-import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { ConfiguredSection } from '../../../../api/schemas/configuredSection';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import {
@@ -8,10 +8,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 
 export type SectionPatch = Partial<
-  Pick<
-    DbConfigurationSectionProcessing,
-    'action' | 'include' | 'narrative' | 'code'
-  >
+  Pick<ConfiguredSection, 'action' | 'include' | 'narrative' | 'code'>
 >;
 
 export function useSectionUpdater(configurationId: string) {
@@ -20,10 +17,7 @@ export function useSectionUpdater(configurationId: string) {
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
 
-  return (
-    currentSection: DbConfigurationSectionProcessing,
-    patch: SectionPatch
-  ) => {
+  return (currentSection: ConfiguredSection, patch: SectionPatch) => {
     updateSection(
       {
         configurationId,

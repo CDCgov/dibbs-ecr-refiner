@@ -5,5 +5,5 @@
 export interface AssociateCodesetResponse {
   id: string;
   included_conditions: string[];
-  condition_name: string;
+  condition_display_name: string;
 }

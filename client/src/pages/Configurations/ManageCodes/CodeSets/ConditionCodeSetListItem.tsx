@@ -59,7 +59,7 @@ export function ConditionCodeSetListItem({
         onSuccess: async (resp) => {
           showToast({
             heading: 'Condition code set added',
-            body: resp.data.condition_name,
+            body: resp.data.condition_display_name,
           });
 
           await queryClient.invalidateQueries({
@@ -98,7 +98,7 @@ export function ConditionCodeSetListItem({
         onSuccess: async (resp) => {
           showToast({
             heading: 'Condition code set removed',
-            body: resp.data.condition_name,
+            body: resp.data.condition_display_name,
           });
 
           await queryClient.invalidateQueries({

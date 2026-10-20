@@ -6,11 +6,11 @@ import type { ConfigurationCodeStatusLabel } from './configurationCodeStatusLabe
 export interface CodeResponse {
   id: string;
   condition_id: string | null;
-  source: string[];
+  source_display_names: string[];
   code: string;
-  description: string;
+  display_name: string;
   system_id: string;
-  system_name: string;
+  system_display_name: string;
   status: ConfigurationCodeStatusLabel;
   is_custom: boolean;
   is_trigger_code: boolean;

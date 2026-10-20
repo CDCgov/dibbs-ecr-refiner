@@ -52,13 +52,15 @@ export function ActivityLog() {
                 <option value={ALL_CONDITIONS_LITERAL}>
                   {ALL_CONDITIONS_LITERAL}
                 </option>
-                {configuration_options.map(({ canonical_url, name }) => {
-                  return (
-                    <option value={canonical_url} key={canonical_url}>
-                      {name}
-                    </option>
-                  );
-                })}
+                {configuration_options.map(
+                  ({ canonical_url, display_name }) => {
+                    return (
+                      <option value={canonical_url} key={canonical_url}>
+                        {display_name}
+                      </option>
+                    );
+                  }
+                )}
               </Select>
             </Field>
           </SelectContainer>

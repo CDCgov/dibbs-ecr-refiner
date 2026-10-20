@@ -1,6 +1,6 @@
 import {
   AddCustomCodeInput,
-  DbCodeSystem,
+  CodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 import { Button } from '@components/Button';
@@ -92,7 +92,7 @@ interface PreviewEditModalProps {
   closePreviewEditModal: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
   error: UploadError | null;
-  codeSystems: DbCodeSystem[];
+  codeSystems: CodeSystem[];
   isOpen: boolean;
 }
 
@@ -140,7 +140,7 @@ export function PreviewEditModal({
     error != null ||
     !previewEditForm ||
     !previewEditForm.code ||
-    !previewEditForm.display ||
+    !previewEditForm.display_name ||
     !previewEditForm.system_id;
 
   return (
@@ -193,7 +193,8 @@ export function PreviewEditModal({
                 setPreviewEditForm((prev) => ({
                   ...prev,
                   system_id: e.target.value,
-                  system_name: system?.display_name ?? prev.system_name,
+                  system_display_name:
+                    system?.display_name ?? prev.system_display_name,
                 }));
               }}
             >
@@ -209,8 +210,8 @@ export function PreviewEditModal({
           <Label>Display name</Label>
           <TextInput
             type="text"
-            value={previewEditForm.display}
-            onChange={(e) => handlePreviewEditChange('display', e)}
+            value={previewEditForm.display_name}
+            onChange={(e) => handlePreviewEditChange('display_name', e)}
           />
         </Field>
       </ModalBody>

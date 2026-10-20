@@ -108,7 +108,7 @@ function ModalForm({
         {
           configurationId,
           data: {
-            name: trimmedName,
+            display_name: trimmedName,
             new_code: trimmedCode,
             current_code: initialSection.currentCode,
           },
@@ -140,7 +140,7 @@ function ModalForm({
         configurationId,
         data: {
           code: newCode,
-          name,
+          display_name: trimmedName,
         },
       },
       {

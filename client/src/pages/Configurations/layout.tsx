@@ -11,7 +11,7 @@ import {
 import { Title } from '@components/Title';
 import { Button } from '@components/Button';
 import { useState } from 'react';
-import { GetConfigurationResponse, DbCode } from '../../api/schemas';
+import { GetConfigurationResponse, CodeLabel } from '../../api/schemas';
 import { DraftBanner } from './ManageCodes/DraftBanner';
 import { ConfigLockBanner } from './ManageCodes/Lock/ConfigLockBanner';
 import { Status } from './ManageCodes/Status';
@@ -132,7 +132,7 @@ export function Header({ configuration }: HeaderProps) {
 interface RsgDetailsModal {
   open: boolean;
   onClose: () => void;
-  rsgCodes: DbCode[];
+  rsgCodes: CodeLabel[];
   primaryConditionDisplayName: string;
 }
 
@@ -176,7 +176,7 @@ function RsgDetailsModal({
                     {c.code}
                   </TableCell>
                   <TableCell className="text-gray-cool-90 py-3 pl-2">
-                    {c.display}
+                    {c.display_name}
                   </TableCell>
                 </TableRow>
               );
