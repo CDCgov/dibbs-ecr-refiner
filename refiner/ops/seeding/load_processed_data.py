@@ -523,7 +523,10 @@ def _upsert_codes(cursor: Cursor, versions: list[str]) -> None:
 
     cursor.execute(
         """
-        INSERT INTO codes (system_id, code, display)
+        -- `codes.display_name` is ours; `stage_codes.display` mirrors the
+        -- `codes.csv.gz` header, which ADR 0016 step 4 renames. the asymmetry is
+        -- deliberate until then
+        INSERT INTO codes (system_id, code, display_name)
         SELECT DISTINCT sys.id, s.code, s.display
         FROM stage_codes s
         JOIN systems sys ON sys.oid = s.system_oid

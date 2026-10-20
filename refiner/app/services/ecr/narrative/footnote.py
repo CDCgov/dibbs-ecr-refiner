@@ -1,6 +1,6 @@
 from lxml.etree import _Element
 
-from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
+from app.core.models.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 
 from ..model import SectionProvenanceRecord
 from .constants import (

@@ -16,13 +16,14 @@ from botocore.exceptions import ClientError
 
 from app.core.config import get_env_variable
 from app.core.exceptions import ExternalServiceError, ResourceNotFoundError
-from app.core.models.types import XMLFiles
-from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
-from app.db.configurations.model import (
+from app.core.models.payloads import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-    MAINTENANCE_LOCK_KEY,
+    ConditionMappingPayload,
+    ConditionMapValue,
 )
+from app.core.models.types import XMLFiles
 from app.services.aws.s3_keys import (
+    MAINTENANCE_LOCK_KEY,
     get_active_file_key,
     get_current_file_key,
     get_rsg_cg_mapping_file_key,

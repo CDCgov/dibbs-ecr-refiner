@@ -5,6 +5,7 @@ from uuid import UUID
 
 from packaging.version import parse
 
+from app.core.models.configurations import ConfigurationStatus
 from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
@@ -12,11 +13,11 @@ from ..db.conditions.db import (
     get_conditions_by_child_rsg_snomed_codes_db,
     get_primary_condition_db,
 )
-from ..db.conditions.model import DbCondition
+from ..db.conditions.model import DbCondition, DbConditionRsgMatch
 from ..db.configurations.db import (
     get_configurations_db,
 )
-from ..db.configurations.model import DbConfiguration, DbConfigurationStatus
+from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ProcessedConfiguration
 from .ecr.model import (
@@ -73,7 +74,7 @@ class DiscoveredConfigurationVersion:
 
     id: UUID
     version: int
-    status: DbConfigurationStatus
+    status: ConfigurationStatus
 
 
 @dataclass
@@ -82,7 +83,7 @@ class DiscoveredConfigurationSet:
     Model to represent a set of discovered configurations.
     """
 
-    name: str
+    display_name: str
     condition_id: UUID
     versions: list[DiscoveredConfigurationVersion]
 
@@ -162,7 +163,7 @@ async def discover_configurations_for_conditions(
 
         condition_sets.append(
             DiscoveredConfigurationSet(
-                name=primary_condition.display_name,
+                display_name=primary_condition.display_name,
                 condition_id=primary_condition.id,
                 versions=[
                     DiscoveredConfigurationVersion(
@@ -174,17 +175,17 @@ async def discover_configurations_for_conditions(
         )
 
     return DiscoveredConfigurationsResponse(
-        sets=sorted(condition_sets, key=lambda g: g.name)
+        sets=sorted(condition_sets, key=lambda g: g.display_name)
     )
 
 
 def _group_conditions_by_url(
-    rc_to_conditions_map: dict,
-) -> dict[str, list[DbCondition]]:
+    rc_to_conditions_map: dict[str, list[DbConditionRsgMatch]],
+) -> dict[str, list[DbConditionRsgMatch]]:
     """
-    Deduplicates and groups DbConditions by their canonical url.
+    Deduplicates and groups matched conditions by their canonical url.
     """
-    grouped: dict[str, list[DbCondition]] = defaultdict(list)
+    grouped: dict[str, list[DbConditionRsgMatch]] = defaultdict(list)
     seen_ids: dict[str, set[UUID]] = defaultdict(set)
 
     for conditions_list in rc_to_conditions_map.values():
@@ -239,7 +240,7 @@ async def run_simulation(
 
         if not primary_condition:
             raise ValueError(
-                f"Unable to determine primary condition of configuration ({configuration.name}) with ID: {configuration.id}"
+                f"Unable to determine primary condition of configuration ({configuration.display_name}) with ID: {configuration.id}"
             )
 
         rr_code_used = primary_condition.child_rsg_snomed_codes[0]
@@ -263,7 +264,7 @@ async def run_simulation(
         refined_docs.append(
             RefinedDocument(
                 reportable_condition=ReportableCondition(
-                    code=rr_code_used, display_name=configuration.name
+                    code=rr_code_used, display_name=configuration.display_name
                 ),
                 refined_eicr=result.documents.eicr,
                 refined_rr=result.documents.rr,
@@ -276,7 +277,7 @@ async def run_simulation(
             extra={
                 "triggered_by_condition": primary_condition.display_name,
                 "triggering_codes": primary_condition.child_rsg_snomed_codes,
-                "configuration_found": configuration.name,
+                "configuration_found": configuration.display_name,
                 "total_conditions_used": len(configurations),
                 "configuration_settings": asdict(configuration),
                 "eicr_size_reduction_percentage": result.metrics.eicr.size_reduction_percentage,
@@ -517,7 +518,7 @@ def _log_inline_testing_outcome(
     logger.info(
         "Inline testing: Processed one configuration",
         extra={
-            "configuration_tested": configuration.name,
+            "configuration_tested": configuration.display_name,
             "primary_condition": primary_condition.display_name,
             "matched_code_in_rr": matched_code,
             "total_conditions_used": len(configuration.included_conditions),
@@ -564,9 +565,9 @@ def _get_reportable_codes_for_jurisdiction(
 async def _map_rc_codes_to_conditions(
     db: AsyncDatabaseConnection,
     rc_codes: list[str],
-) -> dict[str, list[DbCondition]]:
+) -> dict[str, list[DbConditionRsgMatch]]:
     """
-    Map each RC SNOMED code to a matching DbCondition, or None if not found.
+    Map each RC SNOMED code to the conditions its child RSGs name.
     """
 
     if not rc_codes:
@@ -580,7 +581,7 @@ async def _map_rc_codes_to_conditions(
 
     # STEP 2:
     # build a reverse index: from a RC SNOMED code to ALL conditions (keeping all versions)
-    rc_code_to_conditions_map: dict[str, list[DbCondition]] = defaultdict(list)
+    rc_code_to_conditions_map: dict[str, list[DbConditionRsgMatch]] = defaultdict(list)
 
     for condition in possible_conditions:
         for rc_code in condition.child_rsg_snomed_codes:

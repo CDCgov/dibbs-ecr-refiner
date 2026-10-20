@@ -53,7 +53,7 @@ def build_tes_export_csv(
         tuple[Filename, FileContents]: CSV info in tuple form
     """
     return (
-        _build_export_filename(diff_data.condition_name, version=cur_version),
+        _build_export_filename(diff_data.condition_display_name, version=cur_version),
         _build_csv_row_data(diff_data=diff_data),
     )
 
@@ -71,20 +71,20 @@ def _build_csv_row_data(diff_data: ConditionDiffExportData):
         for code in removed:
             writer.writerow(
                 [
-                    diff_data.condition_name,
+                    diff_data.condition_display_name,
                     code.code,
-                    code.system_name,
-                    code.display,
+                    code.system_display_name,
+                    code.display_name,
                     "Removed",
                 ]
             )
         for code in added:
             writer.writerow(
                 [
-                    diff_data.condition_name,
+                    diff_data.condition_display_name,
                     code.code,
-                    code.system_name,
-                    code.display,
+                    code.system_display_name,
+                    code.display_name,
                     "Added",
                 ]
             )

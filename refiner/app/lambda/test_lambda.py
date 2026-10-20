@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -6,7 +7,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
+from app.core.models.payloads import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.assets import get_asset_path
 
 COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
@@ -60,6 +61,18 @@ def config_lambda_env(monkeypatch) -> dict[str, str]:
     Returns:
         A dictionary containing the environment variables set.
     """
+
+    # NOTE:
+    # `moto` only intercepts the default AWS endpoints, so the lambda has to
+    # build its client without an explicit one. `S3_ENDPOINT_URL` leaks in from
+    # `tests/unit/conftest.py` whenever both suites run in a single pytest
+    # process, which points the client at real localstack and fails every
+    # record. `lambda_function` freezes the value into a module constant at
+    # import time, so clear the env for the in-test import *and* patch the
+    # constant for the case where the module is already cached
+    monkeypatch.delenv("S3_ENDPOINT_URL", raising=False)
+    if (lambda_module := sys.modules.get(f"{__package__}.lambda_function")) is not None:
+        monkeypatch.setattr(lambda_module, "S3_ENDPOINT_URL", None)
 
     monkeypatch.setenv("EICR_INPUT_PREFIX", ECR_INPUT_PREFIX)
     monkeypatch.setenv("REFINER_INPUT_PREFIX", REFINER_INPUT_PREFIX)

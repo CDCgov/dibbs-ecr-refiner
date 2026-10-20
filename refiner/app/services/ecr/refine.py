@@ -6,12 +6,12 @@ from lxml.etree import _Element
 
 from app.core.exceptions import StructureValidationError
 from app.core.models.types import XMLFiles
-from app.db.configurations.model import DbConfigurationSectionInstructions
 from app.services.ecr.model import (
     HL7_NS,
     EICRRefinementPlan,
     EICRSpecification,
     RRRefinementPlan,
+    SectionInstructions,
     SectionOutcome,
     SectionProvenanceRecord,
     SectionRunResult,
@@ -41,13 +41,13 @@ from app.services.terminology import ProcessedConfiguration
 # * DEFAULT_SECTION_INSTRUCTIONS
 #   - we should match how it shows up in the UI where narrative is set
 #     to 'remove' and refine is set to 'refine'
-SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
+SKIP_SECTION_INSTRUCTIONS = SectionInstructions(
     include=True,
     narrative="retain",
     action="retain",
 )
 
-DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
+DEFAULT_SECTION_INSTRUCTIONS = SectionInstructions(
     include=True,
     narrative="remove",
     action="refine",
@@ -88,46 +88,42 @@ def get_file_size_in_mib(file_content: str) -> float:
 
 def _build_section_rules_map(
     processed_configuration: ProcessedConfiguration,
-) -> dict[str, DbConfigurationSectionInstructions]:
+) -> dict[str, SectionInstructions]:
     """
     Builds a section rules map from a processed configuration.
 
-    The map key is a section LOINC code and the value is a `DbConfigurationSectionInstructions`.
+    The map key is a section LOINC code and the value is a `SectionInstructions`.
 
     Args:
         processed_configuration (ProcessedConfiguration): The processed configuration
 
     Returns:
-        dict[str, DbConfigurationSectionInstructions]: The resulting section rules map
+        dict[str, SectionInstructions]: The resulting section rules map
     """
 
-    rules_map: dict[str, DbConfigurationSectionInstructions] = {}
-
-    for rule in processed_configuration.section_processing:
-        code = rule.get("code")
-        if not code:
-            continue
-
-        rules_map[code] = DbConfigurationSectionInstructions(
-            include=rule.get("include", DEFAULT_SECTION_INSTRUCTIONS.include),
-            narrative=rule.get("narrative", DEFAULT_SECTION_INSTRUCTIONS.narrative),
-            action=rule.get("action", DEFAULT_SECTION_INSTRUCTIONS.action),
+    # every field is required on `ActiveSection`, so there is nothing to
+    # default here -- validation happened when active.json was parsed
+    return {
+        section.code: SectionInstructions(
+            include=section.include,
+            narrative=section.narrative,
+            action=section.action,
         )
-
-    return rules_map
+        for section in processed_configuration.section_processing
+    }
 
 
 def _apply_section_skip_rules(
-    rules_map: dict[str, DbConfigurationSectionInstructions],
-) -> dict[str, DbConfigurationSectionInstructions]:
+    rules_map: dict[str, SectionInstructions],
+) -> dict[str, SectionInstructions]:
     """
     Takes a section rules map, copies it, updates it to include skipped sections, and then returns the new map.
 
     Args:
-        rules_map (dict[str, DbConfigurationSectionInstructions]): The original map without skips
+        rules_map (dict[str, SectionInstructions]): The original map without skips
 
     Returns:
-        dict[str, DbConfigurationSectionInstructions]: The modified map that includes skipped sections
+        dict[str, SectionInstructions]: The modified map that includes skipped sections
     """
 
     modified_map = rules_map.copy()
@@ -156,16 +152,15 @@ def _build_section_name_lookup(
     """
 
     return {
-        rule["code"]: rule.get("name", rule["code"])
-        for rule in processed_configuration.section_processing
-        if rule.get("code")
+        section.code: section.name
+        for section in processed_configuration.section_processing
     }
 
 
 def _build_section_provenance(
     present_section_codes: list[str],
-    rules_map: dict[str, DbConfigurationSectionInstructions],
-    rules_map_with_skips: dict[str, DbConfigurationSectionInstructions],
+    rules_map: dict[str, SectionInstructions],
+    rules_map_with_skips: dict[str, SectionInstructions],
     specification: EICRSpecification,
     section_name_lookup: dict[str, str],
     config_version: int | None,

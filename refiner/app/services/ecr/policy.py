@@ -14,7 +14,10 @@ the IG doesn't tell us to skip it — we decided to.
 
 from enum import StrEnum
 
-from app.db.configurations.model import DbNarrativeAction, DbSectionAction
+from app.core.models.configurations import (
+    NarrativeAction,
+    SectionAction,
+)
 
 # NOTE:
 # SECTIONS ALWAYS RETAINED REGARDLESS OF JURISDICTION CONFIGURATION
@@ -164,7 +167,7 @@ TRIGGER_CODE_SECTIONS = [section.value for section in TriggerCodeSection]
 # "reconstruct" rebuilds <text> from refined entries; "keep_on_match"
 # decides narrative disposition based on the matching outcome. neither
 # has meaning on a retained (untouched) section.
-NARRATIVE_ACTION_REQUIRES_REFINE: frozenset[DbNarrativeAction] = frozenset(
+NARRATIVE_ACTION_REQUIRES_REFINE: frozenset[NarrativeAction] = frozenset(
     {"reconstruct", "keep_on_match"}
 )
 
@@ -195,7 +198,7 @@ def is_trigger_code_section(code: str) -> bool:
     return code in TRIGGER_CODE_SECTIONS
 
 
-def narrative_requires_refine(narrative_action: DbNarrativeAction) -> bool:
+def narrative_requires_refine(narrative_action: NarrativeAction) -> bool:
     """
     Return True if the narrative setting only makes sense with action="refine".
     """
@@ -206,9 +209,9 @@ def narrative_requires_refine(narrative_action: DbNarrativeAction) -> bool:
 def normalize_section_processing(
     code: str,
     include: bool,
-    section_action: DbSectionAction,
-    narrative_action: DbNarrativeAction,
-) -> tuple[bool, DbSectionAction, DbNarrativeAction, list[str]]:
+    section_action: SectionAction,
+    narrative_action: NarrativeAction,
+) -> tuple[bool, SectionAction, NarrativeAction, list[str]]:
     """
     Coerce an `(include, action, narrative)` triple into a valid combination.
 
@@ -244,8 +247,8 @@ def normalize_section_processing(
 
     notes: list[str] = []
     coerced_include: bool = include
-    coerced_action: DbSectionAction = section_action
-    coerced_narrative_action: DbNarrativeAction = narrative_action
+    coerced_action: SectionAction = section_action
+    coerced_narrative_action: NarrativeAction = narrative_action
 
     # rule 1: trigger code sections are always included
     if is_trigger_code_section(code) and not coerced_include:
