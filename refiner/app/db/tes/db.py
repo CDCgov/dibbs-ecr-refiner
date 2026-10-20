@@ -136,7 +136,7 @@ async def _get_baseline_tes_diff_db(
         SELECT
             c.canonical_url,
             c.display_name,
-            COALESCE(array_agg(cc.code_id)) as added_code_ids,
+            array_agg(DISTINCT cc.code_id) as added_code_ids,
             '{}'::text[] as removed_code_ids,
             TRUE as is_new
         FROM conditions_codes_temp cc
@@ -162,14 +162,13 @@ async def _get_baseline_tes_update_condition_diff_db(
     query = """
         SELECT DISTINCT
             cond.canonical_url,
-            cond.display_name AS condition_name,
+            cond.display_name AS condition_display_name,
             COALESCE(
                 jsonb_agg(
-                    jsonb_build_object(
+                    DISTINCT jsonb_build_object(
                         'code', c.code,
-                        'system_name', s.display_name,
-                        'system_id', s.id,
-                        'display', c.display
+                        'display_name', c.display_name,
+                        'system_display_name', s.display_name
                     )
                 ) FILTER (WHERE c.id IS NOT NULL),
                 '[]'::jsonb
@@ -236,11 +235,10 @@ async def get_tes_update_condition_diff_db(
         WITH cur AS (
             SELECT DISTINCT
                 cond.canonical_url,
-                cond.display_name as condition_name,
+                cond.display_name as condition_display_name,
                 c.code,
-                s.display_name as system_name,
-                s.id as system_id,
-                c.display as code_name,
+                s.display_name as system_display_name,
+                c.display_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
             LEFT JOIN conditions cond ON cc.condition_id = cond.id
@@ -252,11 +250,10 @@ async def get_tes_update_condition_diff_db(
         prev AS (
             SELECT DISTINCT
                 cond.canonical_url,
-                cond.display_name as condition_name,
+                cond.display_name as condition_display_name,
                 c.code,
-                s.display_name as system_name,
-                s.id as system_id,
-                c.display as code_name,
+                s.display_name as system_display_name,
+                c.display_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
             LEFT JOIN conditions cond ON cc.condition_id = cond.id
@@ -267,21 +264,21 @@ async def get_tes_update_condition_diff_db(
         )
         SELECT
             COALESCE (prev.canonical_url, cur.canonical_url) AS canonical_url,
-            MAX(COALESCE(cur.condition_name, prev.condition_name)) AS condition_name,
+            MAX(
+                COALESCE(cur.condition_display_name, prev.condition_display_name)
+            ) AS condition_display_name,
             COALESCE(JSONB_AGG(
                 JSONB_BUILD_OBJECT(
                     'code', cur.code,
-                    'system_name', cur.system_name,
-                    'system_id', cur.system_id,
-                    'display', cur.code_name
+                    'display_name', cur.display_name,
+                    'system_display_name', cur.system_display_name
                 ))
             FILTER (WHERE prev.code_id IS NULL), '[]'::jsonb) as added_codes,
             COALESCE(JSONB_AGG(
                 JSONB_BUILD_OBJECT(
                     'code', prev.code,
-                    'system_name', prev.system_name,
-                    'system_id', prev.system_id,
-                    'display', prev.code_name
+                    'display_name', prev.display_name,
+                    'system_display_name', prev.system_display_name
                 ))
             FILTER (WHERE cur.code_id IS NULL), '[]'::jsonb) as removed_codes
         FROM cur
@@ -417,7 +414,7 @@ async def get_configurations_set_to_tes_version(
     query = """
         SELECT
             conf.id AS configuration_id,
-            conf.name AS configuration_name,
+            conf.display_name AS configuration_display_name,
             COALESCE(
                 array_agg(
                     DISTINCT cond.display_name
@@ -453,9 +450,9 @@ async def get_configurations_set_to_tes_version(
             )
         GROUP BY
             conf.id,
-            conf.name
+            conf.display_name
         ORDER BY
-            conf.name
+            conf.display_name
     """
 
     params = {

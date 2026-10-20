@@ -3,8 +3,8 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
+from app.core.models.terminology import CodeSystem
 from app.db.code_systems.db import get_code_system_by_id_db
-from app.db.code_systems.model import DbCodeSystem
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 from app.db.events.db import insert_custom_code_event_db, insert_event_db
@@ -21,7 +21,7 @@ async def get_custom_codes_by_configuration_id_db(
     query = """
     SELECT
         id,
-        display,
+        display_name,
         code,
         system_id,
         created_at,
@@ -52,7 +52,7 @@ async def get_custom_code_by_id_db(
     query = """
     SELECT
         id,
-        display,
+        display_name,
         code,
         system_id,
         created_at,
@@ -88,14 +88,14 @@ async def insert_custom_code_db(
     """
 
     query = """
-            INSERT INTO custom_codes (configuration_id, display, code, system_id)
-            VALUES (%(configuration_id)s, %(display)s, %(code)s, %(system_id)s)
+            INSERT INTO custom_codes (configuration_id, display_name, code, system_id)
+            VALUES (%(configuration_id)s, %(display_name)s, %(code)s, %(system_id)s)
             RETURNING *;
         """
 
     params = {
         "configuration_id": config.id,
-        "display": display_name,
+        "display_name": display_name,
         "code": code,
         "system_id": system_id,
     }
@@ -126,7 +126,7 @@ async def insert_custom_code_db(
 async def insert_custom_codes_db(
     config: DbConfiguration,
     custom_codes: list[AddCustomCodeInput],
-    code_systems: list[DbCodeSystem],
+    code_systems: list[CodeSystem],
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> list[DbCustomCode]:
@@ -136,14 +136,16 @@ async def insert_custom_codes_db(
 
     placeholders = ", ".join(["(%s, %s, %s, %s)"] * len(custom_codes))
     query = f"""
-        INSERT INTO custom_codes (configuration_id, display, code, system_id)
+        INSERT INTO custom_codes (configuration_id, display_name, code, system_id)
         VALUES {placeholders}
         ON CONFLICT DO NOTHING
         RETURNING *;
     """
 
     params = [
-        val for c in custom_codes for val in (config.id, c.display, c.code, c.system_id)
+        val
+        for c in custom_codes
+        for val in (config.id, c.display_name, c.code, c.system_id)
     ]
 
     async with db.get_connection() as conn, conn.transaction():
@@ -168,7 +170,7 @@ async def delete_custom_codes_db(
     config: DbConfiguration,
     ids: list[UUID],
     user_id: UUID,
-    code_systems: list[DbCodeSystem],
+    code_systems: list[CodeSystem],
     db: AsyncDatabaseConnection,
     delete_all: bool = False,
     ids_to_skip: list[UUID] | None = None,
@@ -221,9 +223,9 @@ async def edit_custom_code_db(
     config: DbConfiguration,
     custom_code: DbCustomCode,
     user_id: UUID,
-    display: str,
+    display_name: str,
     code: str,
-    system: DbCodeSystem,
+    system: CodeSystem,
     db: AsyncDatabaseConnection,
 ) -> DbCustomCode | None:
     """
@@ -232,7 +234,7 @@ async def edit_custom_code_db(
 
     query = """
             UPDATE custom_codes
-            SET display = %(display)s,
+            SET display_name = %(display_name)s,
                 code = %(code)s,
                 system_id = %(system_id)s
             WHERE id = %(id)s
@@ -240,7 +242,7 @@ async def edit_custom_code_db(
             """
 
     params = {
-        "display": display,
+        "display_name": display_name,
         "code": code,
         "system_id": system.id,
         "id": custom_code.id,
@@ -270,14 +272,14 @@ async def edit_custom_code_db(
                 )
 
             # 2. Name changed
-            if display != custom_code.display:
+            if display_name != custom_code.display_name:
                 events_to_insert.append(
                     EventInput(
                         jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
                         configuration_id=config.id,
                         event_type="edit_code",
-                        action_text=f"Updated name for custom code '{custom_code.code}' from '{custom_code.display}' to '{display}'",
+                        action_text=f"Updated name for custom code '{custom_code.code}' from '{custom_code.display_name}' to '{display_name}'",
                     )
                 )
 

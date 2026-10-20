@@ -10,7 +10,7 @@ class DbCustomCode:
     """
 
     id: UUID
-    display: str
+    display_name: str
     code: str
     system_id: UUID
     created_at: datetime
