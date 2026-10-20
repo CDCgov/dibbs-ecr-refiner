@@ -2,7 +2,7 @@ import type { ConfigurationCodeStatus } from './configurationCodeStatus';
 import type { ConfigurationCodeStatusLabel } from './configurationCodeStatusLabel';
 
 /**
- * Model to represent a status filter option.
+ * An included/excluded status the client can filter by.
  */
 export interface StatusFilterOption {
   display_name: ConfigurationCodeStatusLabel;

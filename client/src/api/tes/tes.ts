@@ -33,7 +33,7 @@ import type {
   GetTesDiffDetailsParams,
   HTTPValidationError,
   TesConfigsToUpdateResponse,
-  TesDiffConditionDetails,
+  TesDiffConditionDetailsResponse,
   TesResponse
 } from '../schemas';
 
@@ -184,7 +184,7 @@ export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates
  */
 export const getTesDiffDetails = (
     params: GetTesDiffDetailsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TesDiffConditionDetails[]>> => {
+ ): Promise<AxiosResponse<TesDiffConditionDetailsResponse[]>> => {
 
 
     return axios.default.get(

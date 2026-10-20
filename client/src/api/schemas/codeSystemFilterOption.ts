@@ -1,6 +1,6 @@
 
 /**
- * Model to represent a code system filter option.
+ * A code system the client can filter a configuration's codes by.
  */
 export interface CodeSystemFilterOption {
   system_id: string;

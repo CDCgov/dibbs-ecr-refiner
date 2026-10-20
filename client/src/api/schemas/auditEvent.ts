@@ -1,6 +1,6 @@
 
 /**
- * An event returned by the DB function.
+ * One row of the audit log page.
  */
 export interface AuditEvent {
   id: string;
