@@ -9,8 +9,10 @@ from fastapi.concurrency import run_in_threadpool
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import AppConfig, get_app_config
 from app.core.exceptions import ResourceNotFoundError
+from app.core.models.terminology import CodeLabel
 from app.db.code_systems.db import get_id_to_code_system_dict_db
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
+from app.db.codes.model import DbChildRsgCode
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -167,6 +169,10 @@ async def create_configuration(
         )
 
     return CreateConfigurationResponse(id=config.id, display_name=config.display_name)
+
+
+def _to_code_label(row: DbChildRsgCode) -> CodeLabel:
+    return CodeLabel(code=row.code, display_name=row.display_name)
 
 
 @dataclass(frozen=True)
@@ -418,7 +424,7 @@ async def get_configuration(
             [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.display_name.lower(),
         ),
-        rsg_codes=rsg_codes,
+        rsg_codes=[_to_code_label(r) for r in rsg_codes],
         all_versions=[to_configuration_version(v) for v in all_versions],
         version=config.version,
         active_version=active_version,

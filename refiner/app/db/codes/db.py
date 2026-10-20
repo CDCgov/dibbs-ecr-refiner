@@ -2,20 +2,19 @@ from uuid import UUID
 
 from psycopg.rows import class_row
 
-from app.core.models.terminology import CodeLabel, Coding
+from app.db.codes.model import DbChildRsgCode, DbConfigurationCode
 from app.db.pool import AsyncDatabaseConnection
 
 
 async def get_rsg_codes_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
-) -> list[CodeLabel]:
+) -> list[DbChildRsgCode]:
     """
     Return the SNOMED codes that name a condition's child RSGs, with their labels.
 
     One row per `(code, label)`; the system is not carried because every child-RSG
     code is SNOMED by construction -- `is_child_rsg` means "this code is the SNOMED
-    that names its own RSG". Callers render these, they do not match on them, which
-    is why the return type is `CodeLabel` rather than `Coding`.
+    that names its own RSG". Callers render these, they do not match on them.
     """
 
     query = """
@@ -26,7 +25,7 @@ async def get_rsg_codes_by_condition_id_db(
     """
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeLabel)) as cur,
+        conn.cursor(row_factory=class_row(DbChildRsgCode)) as cur,
     ):
         await cur.execute(query, {"condition_id": condition_id})
 
@@ -35,16 +34,12 @@ async def get_rsg_codes_by_condition_id_db(
 
 async def get_pruned_configuration_codes_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
-) -> list[Coding]:
+) -> list[DbConfigurationCode]:
     """
     Every code a configuration contributes to `active.json`, minus its exclusions.
 
-    Returns `Coding`, so the system arrives **resolved to an OID** rather than as a
-    `systems.id` the caller has to look up again. The refiner matches on
-    `(code, system_oid)`, which is the whole reason this shape exists.
-
-    `system_oid` is the literal `"Other"` for custom codes in the catch-all system;
-    that is a routing key into `OID_TO_SYSTEM_KEY_MAP`, not an identifier.
+    The system arrives **resolved to an OID** rather than as a `systems.id` the caller
+    has to look up again -- the refiner matches on `(code, system_oid)`.
 
     Custom codes appear here only for configurations that have at least one row in
     `configurations_conditions` -- the branch below joins through it. Callers add
@@ -82,7 +77,7 @@ async def get_pruned_configuration_codes_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(Coding)) as cur,
+        conn.cursor(row_factory=class_row(DbConfigurationCode)) as cur,
     ):
         await cur.execute(query, {"configuration_id": configuration_id})
 

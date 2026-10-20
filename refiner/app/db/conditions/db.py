@@ -2,7 +2,7 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
-from app.core.models.terminology import CodeExportRow
+from app.db.codes.model import DbLabeledCode
 from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.database.timing import log_query_perf
 from app.services.tes import get_latest_tes_version
@@ -234,16 +234,14 @@ async def get_condition_by_id_db(
 
 async def get_condition_codes_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
-) -> list[CodeExportRow]:
+) -> list[DbLabeledCode]:
     """
     Every code a condition owns, as rows for the code-set CSV export.
 
-    One row per membership, **not** per code: `conditions_codes_temp` is keyed
-    `(condition_id, code_id, valueset_id)`, so a code contributed by eight sibling
-    groupers is eight rows here. The docstring used to claim these were deduplicated
-    by code system and code; the query has no `DISTINCT` and never did -- see the
-    dedup item in `.scratch/outlines/step2-display-name.md`, which is tracked
-    separately because it is shared with an open proposal.
+    One row per distinct `(code, display_name, system label)`. `conditions_codes_temp`
+    is keyed per membership, so the `DISTINCT` is load-bearing: without it a code
+    contributed by eight sibling groupers would be eight rows.
+    `tests/integration/test_condition_code_grain.py` holds this.
     """
 
     query = """
@@ -260,7 +258,7 @@ async def get_condition_codes_by_condition_id_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeExportRow)) as cur,
+        conn.cursor(row_factory=class_row(DbLabeledCode)) as cur,
     ):
         await cur.execute(query, {"condition_id": condition_id})
         rows = await cur.fetchall()

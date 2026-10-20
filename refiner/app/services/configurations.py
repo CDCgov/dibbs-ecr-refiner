@@ -17,6 +17,7 @@ from app.db.code_systems.db import (
 )
 from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.db import get_pruned_configuration_codes_db
+from app.db.codes.model import DbConfigurationCode
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
@@ -187,6 +188,12 @@ def as_coding(code: DbCustomCode, code_systems: dict[UUID, DbCodeSystem]) -> Cod
     )
 
 
+def _to_coding(row: DbConfigurationCode) -> Coding:
+    return Coding(
+        code=row.code, display_name=row.display_name, system_oid=row.system_oid
+    )
+
+
 def index_code_list_by_system_key(
     codes: list[Coding],
     logger: Logger,
@@ -314,7 +321,7 @@ async def convert_config_to_storage_payload(
     # the query covers custom codes only for configurations that have at least one
     # `configurations_conditions` row, so they are added again here. duplicates
     # collapse downstream -- `CodeSystemSets.from_dict` keys each system by code
-    codes_to_index = configuration_codes + [
+    codes_to_index = [_to_coding(row) for row in configuration_codes] + [
         as_coding(code, code_systems) for code in configuration.custom_codes
     ]
 

@@ -1,6 +1,6 @@
 import unittest
 
-from app.core.models.terminology import Coding
+from app.db.codes.model import DbConfigurationCode
 from app.db.conditions.model import DbCondition
 from app.db.configurations.model import DbConfiguration
 from app.services.configurations import convert_config_to_storage_payload
@@ -15,24 +15,24 @@ async def create_processed_config(
     mock_systems = create_mock_systems()
     systems_by_id = {m.id: m for m in mock_systems}
 
-    def _as_coding(code) -> Coding:
+    def _as_row(code) -> DbConfigurationCode:
         """
-        Mirrors what `get_pruned_configuration_codes_db` now resolves in SQL.
+        Mirrors what `get_pruned_configuration_codes_db` resolves in SQL.
 
-        The real query joins `systems` and returns an OID, so the mock has to hand
-        back `Coding` too -- a mock that returns the old `DbCode`/`DbCustomCode`
-        shape would let a signature change pass silently here.
+        The real query joins `systems` and returns an OID, so the mock hands back
+        `DbConfigurationCode` too -- a mock returning any other shape would let a
+        signature change pass silently here.
         """
 
         system = systems_by_id.get(code.system_id)
-        return Coding(
+        return DbConfigurationCode(
             code=code.code,
             display_name=code.display_name,
             system_oid=system.oid if system and system.oid else OTHER_OID,
         )
 
     pruned = [
-        _as_coding(code)
+        _as_row(code)
         for code in (
             list(config.custom_codes) + [item for c in conditions for item in c.codes]
         )

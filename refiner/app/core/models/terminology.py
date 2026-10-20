@@ -7,11 +7,12 @@ from dataclasses import dataclass
 # lists. a reader could not tell them apart, which is how a code lost its system on the
 # way to S3 (#967) and how an OID-scoped section stopped matching custom codes.
 #
-# they live in `core` because every layer reads them: `db/` queries produce them, `api/`
-# and `services/tes.py` ship them to a browser or a CSV, and `services/ecr/` matches on
-# them with no database in reach. a home under `services/` would make `db/` import from
-# `services/` to spell its own query's return type; a home under `db/` would make the
-# refinement core import the database layer, which `tests/unit/test_layering.py` forbids
+# they live in `core` because every layer reads them: `db/` nests them inside its frozen
+# rows, `services/` builds them from those rows, `api/` ships them to a browser, and
+# `services/ecr/` matches on them with no database in reach. a home under `services/`
+# would make `db/` import from `services/` to type its own rows; a home under `db/`
+# would make the refinement core import the database layer, which
+# `tests/unit/test_layering.py` forbids
 
 
 @dataclass(frozen=True)
@@ -57,8 +58,8 @@ class CodeExportRow:
     """
     One row of a code CSV export: a code, its label, and its system's label.
 
-    Both export writers take the condition name from the enclosing object rather
-    than the row, so it is not a field here. The system is a **label** and not an
+    The TES diff writer takes the condition name from the enclosing `DbConditionDiff`
+    rather than the row, so it is not a field here. The system is a **label** and not an
     OID because these rows are read by a person in a spreadsheet, never matched
     against a document -- `Coding` is the shape for that.
     """
