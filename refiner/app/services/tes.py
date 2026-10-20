@@ -3,7 +3,7 @@ from io import StringIO
 
 from packaging.version import parse
 
-from app.db.tes.model import ConditionDiffExportData, DbTes
+from app.db.tes.model import DbConditionDiff, DbTes
 
 
 def get_latest_tes_version(available_versions: list[DbTes]) -> DbTes:
@@ -24,13 +24,13 @@ type FileContents = str
 
 
 def build_tes_export_csv(
-    diff_data: ConditionDiffExportData, cur_version: str
+    diff_data: DbConditionDiff, cur_version: str
 ) -> tuple[Filename, FileContents]:
     """
     Build the export CSV for a condition within a TES update given the relevant data.
 
     Args:
-        diff_data (ConditionDiffExportData): Data derived from the DB with all codes added/removed for a condition
+        diff_data (DbConditionDiff): Data derived from the DB with all codes added/removed for a condition
         cur_version (str): The current TES version to put in the filename
 
     Returns:
@@ -42,7 +42,7 @@ def build_tes_export_csv(
     )
 
 
-def _build_csv_row_data(diff_data: ConditionDiffExportData):
+def _build_csv_row_data(diff_data: DbConditionDiff):
     with StringIO() as csv_text:
         writer = csv.writer(csv_text)
         writer.writerow(

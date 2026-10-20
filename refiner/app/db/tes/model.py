@@ -32,27 +32,19 @@ class DbTesConditionUpdate:
     is_new: bool
 
 
-@dataclass
-class ConditionDiffExportData:
+@dataclass(frozen=True)
+class DbConditionDiff:
     """
-    All metadata for a TES update needed for the frontend.
+    The codes one condition gained and lost between two TES releases.
+
+    The diff queries aggregate each side into JSONB; `_to_condition_diff` in `db.py`
+    parses it into `CodeExportRow`s as the row lands, so nothing downstream sees a dict.
     """
 
     canonical_url: str
     condition_display_name: str
     added_codes: list[CodeExportRow]
     removed_codes: list[CodeExportRow]
-
-    def __post_init__(self):
-        """Rebuilds the nested JSONB the diff queries aggregate into export rows."""
-        self.added_codes = [
-            c if isinstance(c, CodeExportRow) else CodeExportRow(**c)
-            for c in self.added_codes
-        ]
-        self.removed_codes = [
-            c if isinstance(c, CodeExportRow) else CodeExportRow(**c)
-            for c in self.removed_codes
-        ]
 
 
 class ExportDiffInput(BaseModel):
