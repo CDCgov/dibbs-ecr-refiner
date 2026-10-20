@@ -38,7 +38,7 @@ class EventFilterOption:
     """
 
     id: UUID
-    name: str
+    display_name: str
     canonical_url: str
 
 
@@ -134,7 +134,9 @@ async def get_events(
         total_pages=total_pages,
         audit_events=audit_events,
         configuration_options=[
-            EventFilterOption(id=co.id, name=co.name, canonical_url=co.canonical_url)
+            EventFilterOption(
+                id=co.id, display_name=co.display_name, canonical_url=co.canonical_url
+            )
             for co in configuration_options
         ],
     )
@@ -149,7 +151,7 @@ class CustomCodeUploadEventResponse:
     id: UUID
     system_display_name: str
     code: str
-    name: str
+    display_name: str
 
 
 @router.get(
@@ -190,9 +192,9 @@ async def get_custom_code_upload_events(
     return [
         CustomCodeUploadEventResponse(
             id=cc.id,
-            system_display_name=cc.system,
+            system_display_name=cc.system_display_name,
             code=cc.code,
-            name=cc.name,
+            display_name=cc.display_name,
         )
         for cc in custom_code_events
     ]
@@ -301,7 +303,10 @@ async def get_events_export(
         writer.writerow(
             [
                 event.username,
-                f"{event.configuration_name} (Version {event.configuration_version})",
+                (
+                    f"{event.configuration_display_name} "
+                    f"(Version {event.configuration_version})"
+                ),
                 _format_action_text(
                     action_text=event.action_text,
                     custom_code_uploads=event.custom_code_uploads,
@@ -357,7 +362,7 @@ async def get_event_codes_export(
             detail="This event does not have an associated condition.",
         )
 
-    if event.condition_name is None:
+    if event.condition_display_name is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to determine condition name for this event.",
@@ -383,10 +388,10 @@ async def get_event_codes_export(
     for code in codes:
         writer.writerow(
             [
-                event.condition_name,
+                event.condition_display_name,
                 code.code,
-                code.system_name,
-                code.display,
+                code.system_display_name,
+                code.display_name,
             ]
         )
 
@@ -406,13 +411,13 @@ def _get_code_set_export_file_name(event: CodeSetEvent) -> str:
     Returns the filename for a historical code set export.
     """
 
-    if event.condition_name is None:
+    if event.condition_display_name is None:
         raise ValueError("Code set event does not have an associated condition name.")
 
     action = "added" if event.event_type == "add_code" else "removed"
 
     timestamp = event.created_at.strftime("%m%d%y_%H_%M_%S")
 
-    condition_name = event.condition_name.replace(" ", "_")
+    condition_name = event.condition_display_name.replace(" ", "_")
 
     return f"{condition_name}_code_set_{action}_{timestamp}.csv"

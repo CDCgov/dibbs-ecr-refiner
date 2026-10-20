@@ -7,6 +7,10 @@ from fastapi import status as http_status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.codes.model import FilterInput
+from app.core.models.configurations import (
+    ConfigurationCodeStatus,
+    ConfigurationCodeStatusLabel,
+)
 from app.db.conditions.db import get_primary_condition_db
 from app.db.configurations.codes.db import (
     CodeFilterOptions,
@@ -17,10 +21,6 @@ from app.db.configurations.codes.db import (
     set_codes_status_within_rendered_set_db,
 )
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.model import (
-    ConfigurationCodeStatus,
-    ConfigurationCodeStatusLabel,
-)
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 
@@ -35,11 +35,11 @@ class CodeResponse:
 
     id: UUID
     condition_id: UUID | None
-    source: list[str]
+    source_display_names: list[str]
     code: str
-    description: str
+    display_name: str
     system_id: UUID
-    system_name: str
+    system_display_name: str
     status: ConfigurationCodeStatusLabel
     is_custom: bool
     is_trigger_code: bool
@@ -49,12 +49,16 @@ class CodeResponse:
 class CodeCountsResponse:
     """
     Code count information to return to the client.
+
+    Field-identical to `DbCodeResultCountMetadata` now that both follow
+    `<thing>_count`. The mapping below was already a pure rename; collapsing the two
+    models is an E1 question (a db shape reaching the browser), not a naming one.
     """
 
-    total_code_count: int
-    total_code_sets_count: int
-    total_excluded_codes_count: int
-    total_custom_codes_count: int
+    code_count: int
+    code_set_count: int
+    excluded_code_count: int
+    custom_code_count: int
     primary_condition_rctc_count: int
 
 
@@ -245,11 +249,11 @@ async def get_codes(
                 status="Included" if c.status == "included" else "Excluded",
                 id=c.id,
                 condition_id=c.condition_id,
-                source=c.source,
+                source_display_names=c.source_display_names,
                 code=c.code,
-                description=c.description,
+                display_name=c.display_name,
                 system_id=c.system_id,
-                system_name=c.system_name,
+                system_display_name=c.system_display_name,
             )
             for c in codes
         ],
@@ -306,10 +310,12 @@ async def get_code_counts(
         )
 
     return CodeCountsResponse(
-        total_code_count=code_counts.total_code_count + code_counts.custom_code_count,
-        total_code_sets_count=code_counts.code_set_count,
-        total_excluded_codes_count=code_counts.excluded_code_count,
-        total_custom_codes_count=code_counts.custom_code_count,
+        # the client's headline number includes custom codes; the db model keeps them
+        # separate, so this is the one field that is not a straight copy
+        code_count=code_counts.code_count + code_counts.custom_code_count,
+        code_set_count=code_counts.code_set_count,
+        excluded_code_count=code_counts.excluded_code_count,
+        custom_code_count=code_counts.custom_code_count,
         primary_condition_rctc_count=code_counts.primary_condition_rctc_count,
     )
 

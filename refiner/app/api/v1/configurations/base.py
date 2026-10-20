@@ -71,7 +71,7 @@ async def get_configurations(
     return [
         GetConfigurationsResponse(
             id=c.id,
-            name=c.name,
+            display_name=c.display_name,
             status=c.status,
         )
         for c in summary_response
@@ -163,7 +163,7 @@ async def create_configuration(
             detail="Unable to acquire lock for new configuration",
         )
 
-    return CreateConfigurationResponse(id=config.id, name=config.name)
+    return CreateConfigurationResponse(id=config.id, display_name=config.display_name)
 
 
 @router.get(
@@ -357,10 +357,10 @@ async def get_configuration(
     custom_codes = [
         CustomCodeResponse(
             id=cc.id,
-            display=cc.display,
+            display_name=cc.display_name,
             code=cc.code,
             system_id=cc.system_id,
-            system_name=systems[cc.system_id].display_name,
+            system_display_name=systems[cc.system_id].display_name,
         )
         for cc in config.custom_codes
     ]
@@ -376,14 +376,14 @@ async def get_configuration(
         is_draft=is_draft,
         condition_id=primary_condition.id,
         condition_canonical_url=primary_condition.canonical_url,
-        display_name=config.name,
+        display_name=config.display_name,
         status=config.status,
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=custom_codes,
         section_processing=sorted(
             [format_section_naming(section) for section in config.section_processing],
-            key=lambda r: r.name.lower(),
+            key=lambda r: r.display_name.lower(),
         ),
         rsg_codes=rsg_codes,
         all_versions=all_versions,

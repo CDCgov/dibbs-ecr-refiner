@@ -5,9 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.v1.code_systems import CodeSystemsReponse
-from app.db.code_systems.db import get_code_systems_db
-from app.db.codes.model import CodedConcept, DbCode
+from app.core.models.terminology import CodeLabel
 from app.db.conditions.model import (
     DbConditionsContextGrouper,
 )
@@ -15,7 +13,6 @@ from app.services.conditions.grouper_statuses import CodeSetStatus
 
 from ...db.conditions.db import (
     get_condition_by_id_db,
-    get_condition_codes_by_condition_id_db,
     get_conditions_with_rsg_codes_db,
     get_context_groupers_by_condition_id_db,
 )
@@ -32,7 +29,7 @@ class GetConditionsResponse:
 
     id: UUID
     display_name: str
-    rsg_codes: list[CodedConcept]
+    rsg_codes: list[CodeLabel]
 
 
 @router.get(
@@ -74,7 +71,7 @@ class CodeCategoryCompletenessStatus:
     """
 
     category: str
-    name: str
+    display_name: str
     completeness: CodeCategoryStatus
 
 
@@ -92,13 +89,15 @@ class CompletenessStatus:
 class GetConditionResponse:
     """
     Condition response model.
+
+    Carries no code list on purpose: a condition's codes are paged through
+    `configurations/{id}/codes`, and code systems through `code_systems`. Returning
+    them whole here meant tens of thousands of rows per request that no caller read.
     """
 
     id: UUID
     display_name: str
     completeness_status: CompletenessStatus
-    codes: list[DbCode]
-    systems: list[CodeSystemsReponse]
 
 
 def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
@@ -157,12 +156,12 @@ def _get_code_category_statuses(
     return [
         CodeCategoryCompletenessStatus(
             category=category,
-            name=name,
+            display_name=display_name,
             completeness=_get_code_category_status(
                 completeness_by_category.get(category)
             ),
         )
-        for category, name in category_names.items()
+        for category, display_name in category_names.items()
     ]
 
 
@@ -195,10 +194,6 @@ async def get_condition(
             status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
         )
 
-    condition_codes = await get_condition_codes_by_condition_id_db(
-        condition_id=condition.id, db=db
-    )
-
     code_set_status = _get_code_set_status(condition.coverage_level)
 
     groupers = await get_context_groupers_by_condition_id_db(
@@ -214,11 +209,4 @@ async def get_condition(
             code_set_status=code_set_status,
             code_category_statuses=code_category_statuses,
         ),
-        codes=condition_codes,
-        systems=[
-            CodeSystemsReponse(
-                id=s.id, key=s.key, display_name=s.display_name, oid=s.oid
-            )
-            for s in await get_code_systems_db(db)
-        ],
     )

@@ -114,7 +114,7 @@ async def associate_condition_codeset_with_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=updated_config.included_conditions,
-        condition_name=condition.display_name,
+        condition_display_name=condition.display_name,
     )
 
 
@@ -182,7 +182,7 @@ async def remove_condition_codeset_from_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
         )
 
-    if condition.display_name == config.name:
+    if condition.display_name == config.display_name:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Cannot remove initial condition.",
@@ -201,5 +201,5 @@ async def remove_condition_codeset_from_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=updated_config.included_conditions,
-        condition_name=condition.display_name,
+        condition_display_name=condition.display_name,
     )

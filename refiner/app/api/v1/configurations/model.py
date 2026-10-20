@@ -4,13 +4,14 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v1.configurations.custom_codes.model import CustomCodeResponse
-from app.db.codes.model import DbCode
+from app.core.models.configurations import (
+    ConfigurationStatus,
+    NarrativeAction,
+    SectionAction,
+)
+from app.core.models.terminology import CodeLabel, CodeSetSummary
 from app.db.configurations.model import (
-    DbConfigurationSectionProcessing,
-    DbConfigurationStatus,
-    DbNarrativeAction,
-    DbSectionAction,
-    DbTotalConditionCodeCount,
+    ConfiguredSection,
     GetConfigurationResponseVersion,
 )
 from app.db.simulator.model import Condition
@@ -25,8 +26,8 @@ class GetConfigurationsResponse:
     """
 
     id: UUID
-    name: str
-    status: DbConfigurationStatus
+    display_name: str
+    status: ConfigurationStatus
 
 
 class CreateConfigInput(BaseModel):
@@ -44,7 +45,7 @@ class CreateConfigurationResponse:
     """
 
     id: UUID
-    name: str
+    display_name: str
 
 
 @dataclass(frozen=True)
@@ -80,13 +81,13 @@ class GetConfigurationResponse:
     condition_id: UUID
     condition_canonical_url: str
     display_name: str
-    status: DbConfigurationStatus
-    code_sets: list[DbTotalConditionCodeCount]
+    status: ConfigurationStatus
+    code_sets: list[CodeSetSummary]
     included_conditions: list[IncludedCondition]
     custom_codes: list[CustomCodeResponse]
-    section_processing: list[DbConfigurationSectionProcessing]
+    section_processing: list[ConfiguredSection]
     all_versions: list[GetConfigurationResponseVersion]
-    rsg_codes: list[DbCode]
+    rsg_codes: list[CodeLabel]
     version: int
     active_configuration_id: UUID | None
     active_version: int | None
@@ -111,7 +112,7 @@ class AssociateCodesetResponse:
 
     id: UUID
     included_conditions: list[UUID]
-    condition_name: str
+    condition_display_name: str
 
 
 @dataclass(frozen=True)
@@ -145,9 +146,9 @@ class SectionUpdateInput(BaseModel):
     """
 
     include: bool | None = None
-    narrative: DbNarrativeAction | None = None
-    action: DbSectionAction | None = None
-    name: str | None = None
+    narrative: NarrativeAction | None = None
+    action: SectionAction | None = None
+    display_name: str | None = None
     current_code: str
     new_code: str | None = None
 
@@ -157,7 +158,7 @@ class AddSectionInput(SectionInputBase):
     Request body for adding a section.
     """
 
-    name: str
+    display_name: str
 
 
 @dataclass(frozen=True)
@@ -167,4 +168,4 @@ class ConfigurationStatusUpdateResponse:
     """
 
     configuration_id: UUID
-    status: DbConfigurationStatus
+    status: ConfigurationStatus

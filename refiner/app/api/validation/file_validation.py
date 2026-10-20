@@ -1,7 +1,6 @@
 from dataclasses import replace
 from logging import Logger
 from pathlib import Path
-from typing import Literal, get_args
 
 from fastapi import HTTPException, UploadFile, status
 from lxml import etree
@@ -12,25 +11,16 @@ from app.core.exceptions import (
     ZipSizeError,
     ZipValidationError,
 )
+from app.core.models.limits import (
+    UNCOMPRESSED_MAX_BYTES,
+    UNCOMPRESSED_MAX_MB,
+)
 from app.core.models.types import XMLFiles
 from app.services import file_io
 from app.services.ecr.model import RefinedDocument
 from app.services.ecr.narrative import compact_reconstruction_references
 from app.services.format import format_xml_document_for_display
 from app.services.sample_file import create_sample_zip_file
-
-# File uploads
-MEGABYTES = 1024 * 1024
-
-# defining these type literals to get Orval to pick them up and codegen them to the frontend
-DiffMax = Literal[2]
-UncompressedMax = Literal[15]
-
-DIFF_RENDERING_MAX_MB = get_args(DiffMax)[0]
-UNCOMPRESSED_MAX_MB = get_args(UncompressedMax)[0]
-
-DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
-UNCOMPRESSED_MAX_BYTES = UNCOMPRESSED_MAX_MB * MEGABYTES
 
 
 def format_refined_document_or_raise(doc: RefinedDocument) -> RefinedDocument:
