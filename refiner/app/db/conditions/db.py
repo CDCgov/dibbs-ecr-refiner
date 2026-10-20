@@ -9,11 +9,11 @@ from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
 from .model import (
-    ConditionSummary,
     DbCondition,
     DbConditionBase,
     DbConditionRsgMatch,
     DbConditionsContextGrouper,
+    DbConditionSummary,
 )
 
 
@@ -556,7 +556,7 @@ async def get_context_groupers_by_condition_id_db(
 
 async def get_conditions_with_rsg_codes_db(
     db: AsyncDatabaseConnection,
-) -> list[ConditionSummary]:
+) -> list[DbConditionSummary]:
     """
     Function to fetch all conditions with joins into codes to grab the associated condition RSGs.
 
@@ -583,4 +583,4 @@ async def get_conditions_with_rsg_codes_db(
         await cur.execute(query, params)
         rows = await cur.fetchall()
 
-    return [ConditionSummary.from_db_row(r) for r in rows]
+    return [DbConditionSummary.from_db_row(r) for r in rows]

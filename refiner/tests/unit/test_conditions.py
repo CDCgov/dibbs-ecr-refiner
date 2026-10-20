@@ -6,12 +6,12 @@ from fastapi import status
 
 from app.api.v1.conditions import _get_code_category_statuses
 from app.core.models.terminology import CodeLabel
-from app.db.conditions.model import ConditionSummary, DbConditionsContextGrouper
+from app.db.conditions.model import DbConditionsContextGrouper, DbConditionSummary
 
 
 @pytest.mark.asyncio
 async def test_get_latest_conditions(monkeypatch, authed_client):
-    fake_condition_summary = ConditionSummary(
+    fake_condition_summary = DbConditionSummary(
         id=uuid4(),
         display_name="Hypospadias",
         rsg_codes=[CodeLabel(code="416010008", display_name="Hypospadias (disorder)")],

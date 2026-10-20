@@ -51,7 +51,7 @@ class DbEvent(_EventBase):
 
 
 @dataclass(frozen=True)
-class CodeSetEvent:
+class DbCodeSetEvent:
     """
     Minimal event data needed to export a code set.
     """

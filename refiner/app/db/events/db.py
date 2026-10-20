@@ -13,11 +13,11 @@ from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 
 from ..pool import AsyncDatabaseConnection
-from .model import CodeSetEvent, EventInput
+from .model import DbCodeSetEvent, EventInput
 
 
 @dataclass(frozen=True)
-class CsvEvent:
+class DbCsvEvent:
     """
     Model for a CSV export row.
     """
@@ -123,7 +123,7 @@ async def get_code_set_event_by_id_db(
     event_id: UUID,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
-) -> CodeSetEvent | None:
+) -> DbCodeSetEvent | None:
     """
     Returns the event information needed to export a historical code set.
 
@@ -147,7 +147,7 @@ async def get_code_set_event_by_id_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSetEvent)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSetEvent)) as cur,
     ):
         await cur.execute(
             query,
@@ -251,7 +251,7 @@ async def get_all_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> AsyncIterator[CsvEvent]:
+) -> AsyncIterator[DbCsvEvent]:
     """
     Streams all events for a jurisdiction.
 
@@ -289,7 +289,7 @@ async def get_all_events_by_jd_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CsvEvent)) as cur,
+        conn.cursor(row_factory=class_row(DbCsvEvent)) as cur,
     ):
         await cur.execute(query, params)
         while chunk := await cur.fetchmany(500):

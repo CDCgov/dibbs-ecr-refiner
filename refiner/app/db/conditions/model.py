@@ -131,7 +131,7 @@ class DbConditionRsgMatch:
 
 
 @dataclass(frozen=True)
-class ConditionSummary:
+class DbConditionSummary:
     """
     High-level information for a condition.
     """
