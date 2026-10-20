@@ -131,7 +131,7 @@ test.describe('Activity log', () => {
     const systems = await api.getSystems();
     const customCodes = Array.from({ length: 50 }, (_, i) => ({
       code: `mc-${i + 1}`,
-      display: `mock code ${i + 1}`,
+      display_name: `mock code ${i + 1}`,
       system_id: systems[i % systems.length].id,
     }));
 
@@ -157,7 +157,7 @@ test.describe('Activity log', () => {
       customCodes.length + 1 // including header row
     );
     await expect(
-      page.getByText(customCodes[1].display, { exact: true })
+      page.getByText(customCodes[1].display_name, { exact: true })
     ).toBeInViewport();
 
     // We shouldn't be able to see the last row until we scroll
@@ -187,7 +187,7 @@ test.describe('Activity log', () => {
     const systems = await api.getSystems();
     const customCodes = Array.from({ length: 10 }, (_, i) => ({
       code: `mc-${i + 1}`,
-      display: `mock code ${i + 1}`,
+      display_name: `mock code ${i + 1}`,
       system_id: systems[i % systems.length].id,
     }));
 
@@ -233,7 +233,7 @@ test.describe('Activity log', () => {
         customCodes.length + 1 // including header row
       );
       await expect(
-        page.getByText(customCodes[1].display, { exact: true })
+        page.getByText(customCodes[1].display_name, { exact: true })
       ).toBeInViewport();
     });
   });

@@ -51,7 +51,7 @@ export async function makeOldTesVersionConfiguration(
         WHERE c.display_name = '${conditionName}' AND t.version = '${PREVIOUS_TES_VERSION}'
     ),
     inserted_config AS (
-        INSERT INTO configurations (version, jurisdiction_id, status, name, created_by)
+        INSERT INTO configurations (version, jurisdiction_id, status, display_name, created_by)
         SELECT
             1,
             'SDDH',
@@ -59,12 +59,12 @@ export async function makeOldTesVersionConfiguration(
             condition_name,
             (SELECT id FROM users WHERE username = 'refiner')
         FROM condition_to_insert
-        RETURNING id, name
+        RETURNING id, display_name
     )
     INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
     SELECT ic.id, cti.condition_id, true
     FROM inserted_config ic
-    JOIN condition_to_insert cti ON ic.name = cti.condition_name;
+    JOIN condition_to_insert cti ON ic.display_name = cti.condition_name;
   `
   );
 }
