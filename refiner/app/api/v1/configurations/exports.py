@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.codes.model import FilterInput
 from app.core.models.configurations import (
+    ConfiguredSection,
     NarrativeAction,
     SectionAction,
 )
@@ -16,7 +17,6 @@ from app.core.models.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 from app.db.configurations.codes.db import get_codes_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import (
-    ConfiguredSection,
     DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db

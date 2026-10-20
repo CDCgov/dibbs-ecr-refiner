@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Literal
 
 # NOTE:
@@ -20,3 +21,28 @@ type SectionType = Literal["standard", "custom"]
 # `ConfigurationCodeStatusLabel` is how the client renders it in a filter chip
 type ConfigurationCodeStatus = Literal["included", "excluded"]
 type ConfigurationCodeStatusLabel = Literal["Included", "Excluded"]
+
+
+@dataclass(frozen=True)
+class ConfiguredSection:
+    """
+    Section Processing instructions for a Configuration.
+
+    `display_name` is the section's label.
+    `code` is the LOINC code for the section.
+    `versions` is a list of versions this section appears in.
+    `section_type` is an indicator as to how the section was created.
+
+    Field order is carried over from the base class this used to inherit, so
+    that nothing downstream shifts: `asdict(DbConfiguration)` recurses into
+    `section_processing` for the structured log payloads in
+    `services/testing.py`, and that key order follows declaration order here.
+    """
+
+    include: bool
+    narrative: NarrativeAction
+    action: SectionAction
+    display_name: str
+    code: str
+    versions: list[str]
+    section_type: SectionType

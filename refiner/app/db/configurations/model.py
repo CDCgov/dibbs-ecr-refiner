@@ -5,9 +5,7 @@ from uuid import UUID
 
 from app.core.models.configurations import (
     ConfigurationStatus,
-    NarrativeAction,
-    SectionAction,
-    SectionType,
+    ConfiguredSection,
 )
 from app.db.configurations.custom_codes.model import DbCustomCode
 
@@ -40,31 +38,6 @@ class DbCodeSetSummary:
     condition_id: UUID
     display_name: str
     code_count: int
-
-
-@dataclass(frozen=True)
-class ConfiguredSection:
-    """
-    Section Processing instructions for a Configuration.
-
-    `display_name` is the section's label.
-    `code` is the LOINC code for the section.
-    `versions` is a list of versions this section appears in.
-    `section_type` is an indicator as to how the section was created.
-
-    Field order is carried over from the base class this used to inherit, so
-    that nothing downstream shifts: `asdict(DbConfiguration)` recurses into
-    `section_processing` for the structured log payloads in
-    `services/testing.py`, and that key order follows declaration order here.
-    """
-
-    include: bool
-    narrative: NarrativeAction
-    action: SectionAction
-    display_name: str
-    code: str
-    versions: list[str]
-    section_type: SectionType
 
 
 @dataclass(frozen=True)

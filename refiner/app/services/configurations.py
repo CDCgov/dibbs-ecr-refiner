@@ -5,7 +5,7 @@ from logging import Logger
 from typing import Any
 from uuid import UUID
 
-from app.core.models.configurations import SectionAction
+from app.core.models.configurations import ConfiguredSection, SectionAction
 from app.core.models.payloads import (
     CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
     ConfigurationStorageMetadata,
@@ -21,7 +21,6 @@ from app.db.codes.model import DbConfigurationCode
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
-    ConfiguredSection,
     DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection

@@ -1,6 +1,6 @@
 from app.api.v1.configurations.model import SectionUpdateInput
 from app.api.v1.configurations.sections import _build_section_update
-from app.db.configurations.model import ConfiguredSection
+from app.core.models.configurations import ConfiguredSection
 from app.services.configurations import (
     clone_section_processing_instructions,
     get_default_sections,

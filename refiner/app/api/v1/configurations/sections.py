@@ -10,6 +10,7 @@ from app.api.v1.configurations.model import (
     SectionUpdateInput,
 )
 from app.core.models.configurations import (
+    ConfiguredSection,
     NarrativeAction,
     SectionAction,
     SectionType,
@@ -22,7 +23,6 @@ from app.db.configurations.db import (
     update_configuration_section_db,
 )
 from app.db.configurations.model import (
-    ConfiguredSection,
     DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db

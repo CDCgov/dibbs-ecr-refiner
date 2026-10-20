@@ -8,12 +8,12 @@ from app.api.v1.configurations.custom_codes.model import CustomCodeResponse
 from app.api.v1.simulator.model import Condition
 from app.core.models.configurations import (
     ConfigurationStatus,
+    ConfiguredSection,
     NarrativeAction,
     SectionAction,
 )
 from app.core.models.terminology import CodeLabel
 from app.db.configurations.model import (
-    ConfiguredSection,
     DbCodeSetSummary,
     DbConfigurationVersion,
 )

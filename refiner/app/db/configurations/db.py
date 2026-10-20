@@ -6,7 +6,7 @@ from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
-from app.core.models.configurations import SectionAction
+from app.core.models.configurations import ConfiguredSection, SectionAction
 from app.core.models.labels import (
     CODED_DATA_LABELS,
     NARRATIVE_DATA_LABELS,
@@ -27,7 +27,6 @@ from app.services.logger import get_logger
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
-    ConfiguredSection,
     DbConfiguration,
     DbConfigurationSection,
     DbConfigurationSummary,
