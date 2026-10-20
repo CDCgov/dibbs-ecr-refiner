@@ -8,7 +8,7 @@ from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSummary,
-    GetConfigurationResponseVersion,
+    DbConfigurationVersion,
 )
 from app.services.configuration_locks import ConfigurationLock
 
@@ -49,7 +49,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition
     )
 
     versions_mock = [
-        GetConfigurationResponseVersion(
+        DbConfigurationVersion(
             id=UUID("11111111-1111-1111-1111-111111111111"),
             status="draft",
             version=1,

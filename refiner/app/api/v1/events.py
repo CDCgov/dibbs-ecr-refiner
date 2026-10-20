@@ -13,7 +13,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.core.exceptions import DatabaseConnectionError, DatabaseQueryError
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.db.events.db import (
-    AuditEvent,
+    DbAuditEvent,
     get_all_events_by_jd_db,
     get_code_set_event_by_id_db,
     get_custom_code_upload_events_by_event_id,
@@ -40,6 +40,39 @@ class EventFilterOption:
     id: UUID
     display_name: str
     canonical_url: str
+
+
+@dataclass(frozen=True)
+class AuditEvent:
+    """
+    One row of the audit log page.
+    """
+
+    id: UUID
+    username: str
+    configuration_display_name: str
+    configuration_version: int
+    condition_id: UUID | None
+    action_text: str
+    code_count: int | None
+    created_at: datetime
+    event_type: str
+    has_custom_code_upload_events: bool
+
+
+def _to_audit_event(row: DbAuditEvent) -> AuditEvent:
+    return AuditEvent(
+        id=row.id,
+        username=row.username,
+        configuration_display_name=row.configuration_display_name,
+        configuration_version=row.configuration_version,
+        condition_id=row.condition_id,
+        action_text=row.action_text,
+        code_count=row.code_count,
+        created_at=row.created_at,
+        event_type=row.event_type,
+        has_custom_code_upload_events=row.has_custom_code_upload_events,
+    )
 
 
 @dataclass
@@ -132,7 +165,7 @@ async def get_events(
 
     return EventsResponse(
         total_pages=total_pages,
-        audit_events=audit_events,
+        audit_events=[_to_audit_event(e) for e in audit_events],
         configuration_options=[
             EventFilterOption(
                 id=co.id, display_name=co.display_name, canonical_url=co.canonical_url

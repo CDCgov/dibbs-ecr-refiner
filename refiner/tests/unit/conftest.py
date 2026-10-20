@@ -35,7 +35,7 @@ from lxml.etree import _Element
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
 from app.db.code_systems.db import (
-    CodeSystem,
+    DbCodeSystem,
 )
 from app.db.conditions.model import DbCondition
 from app.db.configurations.model import DbConfiguration
@@ -158,9 +158,9 @@ def get_mock_system_id_by_name(system_display_name: str):
     return UUID(id_string)
 
 
-def create_mock_systems() -> list[CodeSystem]:
+def create_mock_systems() -> list[DbCodeSystem]:
     return [
-        CodeSystem(
+        DbCodeSystem(
             id=UUID(id_str),
             key=system["key"],
             display_name=system["display_name"],
@@ -251,8 +251,8 @@ def mock_logged_in_user(mock_user, test_app):
 
 
 @pytest.fixture
-def get_mock_system(mock_all_systems: list[CodeSystem]):
-    def _get(key: str) -> CodeSystem:
+def get_mock_system(mock_all_systems: list[DbCodeSystem]):
+    def _get(key: str) -> DbCodeSystem:
         return next(s for s in mock_all_systems if s.key == key)
 
     return _get

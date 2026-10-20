@@ -25,7 +25,7 @@ from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSummary,
-    GetConfigurationResponseVersion,
+    DbConfigurationVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
@@ -113,7 +113,7 @@ def mock_db_functions(
     )
 
     versions_mock = [
-        GetConfigurationResponseVersion(
+        DbConfigurationVersion(
             id=mock_configuration.id,
             status="draft",
             version=1,

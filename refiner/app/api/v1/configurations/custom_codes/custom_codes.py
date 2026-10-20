@@ -15,11 +15,12 @@ from app.api.v1.configurations.custom_codes.model import (
     UploadCustomCodesCsvInput,
     UploadCustomCodesPreviewItem,
 )
-from app.core.models.terminology import CodeSetSummary, CodeSystem
+from app.api.v1.configurations.model import CodeSetSummary
 from app.db.code_systems.db import (
     get_code_system_by_id_db,
     get_code_systems_db,
 )
+from app.db.code_systems.model import DbCodeSystem
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.custom_codes.db import (
     delete_custom_codes_db,
@@ -209,6 +210,24 @@ async def add_custom_code(
     )
 
 
+@dataclass(frozen=True)
+class CodeSystem:
+    """
+    A code system a user may pick for a custom code.
+    """
+
+    id: UUID
+    key: str
+    display_name: str
+    oid: str
+
+
+def _to_code_system(row: DbCodeSystem) -> CodeSystem:
+    return CodeSystem(
+        id=row.id, key=row.key, display_name=row.display_name, oid=row.oid
+    )
+
+
 class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
@@ -259,15 +278,15 @@ async def _get_requested_config_or_raise(
 
 
 def _validate_csv_upload_row(
-    row: dict, supported_systems: list[CodeSystem]
-) -> tuple[str, CodeSystem, str] | list[str]:
+    row: dict, supported_systems: list[DbCodeSystem]
+) -> tuple[str, DbCodeSystem, str] | list[str]:
     code = (row.get("code") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
     display_name = (row.get("display_name") or "").strip()
 
     system_names = [s.display_name for s in supported_systems]
 
-    # get the CodeSystem that matches CSV system
+    # get the DbCodeSystem that matches CSV system
     matching_system = find_code_system_by_display_name(
         systems=supported_systems, display_name=code_system_raw
     )
@@ -295,7 +314,7 @@ def _validate_csv_upload_row(
 
 def _check_row_response_for_duplicates(
     code: str,
-    system: CodeSystem,
+    system: DbCodeSystem,
     custom_codes: list[DbCustomCode],
     codes_seen_so_far: set,
 ) -> tuple[str, CodeSystemKey] | list[str]:
@@ -413,7 +432,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
-        code_systems=code_systems,
+        code_systems=[_to_code_system(s) for s in code_systems],
     )
 
 

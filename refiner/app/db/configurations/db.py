@@ -11,11 +11,11 @@ from app.core.models.labels import (
     CODED_DATA_LABELS,
     NARRATIVE_DATA_LABELS,
 )
-from app.core.models.terminology import CodeSetSummary
 from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
 )
+from app.db.configurations.model import DbCodeSetSummary
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -31,7 +31,7 @@ from .model import (
     DbConfiguration,
     DbConfigurationSection,
     DbConfigurationSummary,
-    GetConfigurationResponseVersion,
+    DbConfigurationVersion,
 )
 
 EMPTY_JSONB = Jsonb([])
@@ -662,7 +662,7 @@ async def disassociate_condition_codeset_with_configuration_db(
 
 async def get_total_condition_code_counts_by_configuration_db(
     config_id: UUID, db: AsyncDatabaseConnection
-) -> list[CodeSetSummary]:
+) -> list[DbCodeSetSummary]:
     """
     Given a config ID, returns the total associated code count by condition.
     """
@@ -691,7 +691,7 @@ async def get_total_condition_code_counts_by_configuration_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSetSummary)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSetSummary)) as cur,
     ):
         await cur.execute(query, {"configuration_id": config_id})
         row = await cur.fetchall()
@@ -928,7 +928,7 @@ async def get_active_config_db(
 
 async def get_configuration_versions_db(
     jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
-) -> list[GetConfigurationResponseVersion]:
+) -> list[DbConfigurationVersion]:
     """
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
@@ -955,7 +955,7 @@ async def get_configuration_versions_db(
     params = (jurisdiction_id, condition_canonical_url)
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(GetConfigurationResponseVersion)) as cur,
+        conn.cursor(row_factory=class_row(DbConfigurationVersion)) as cur,
     ):
         await cur.execute(query, params)
         rows = await cur.fetchall()

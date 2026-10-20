@@ -13,7 +13,7 @@ from app.db.configurations.custom_codes.model import DbCustomCode
 
 
 @dataclass(frozen=True)
-class GetConfigurationResponseVersion:
+class DbConfigurationVersion:
     """
     Model representing a version of a configuration.
     """
@@ -26,6 +26,20 @@ class GetConfigurationResponseVersion:
     created_by: str
     last_activated_at: datetime | None
     last_activated_by: str | None
+
+
+@dataclass(frozen=True)
+class DbCodeSetSummary:
+    """
+    One code set a configuration includes, with how many codes it contributes.
+
+    "Code set" is what the UI calls a condition associated to a configuration, so the
+    identifier follows rule 7's settled `code_set` spelling.
+    """
+
+    condition_id: UUID
+    display_name: str
+    code_count: int
 
 
 @dataclass(frozen=True)

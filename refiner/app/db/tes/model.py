@@ -66,7 +66,7 @@ class ExportDiffInput(BaseModel):
 
 
 @dataclass(frozen=True)
-class TesConfigToUpdate:
+class DbTesConfigToUpdate:
     """A configuration to update with new TES codes."""
 
     configuration_id: UUID
@@ -76,10 +76,10 @@ class TesConfigToUpdate:
 
 
 @dataclass(frozen=True)
-class DbTesConfigsToUpdateResponse:
+class DbTesConfigsToUpdate:
     """
     The response needed for rendering of the TES update configuration page.
     """
 
-    existing_drafts: list[TesConfigToUpdate]
-    drafts_to_create: list[TesConfigToUpdate]
+    existing_drafts: list[DbTesConfigToUpdate]
+    drafts_to_create: list[DbTesConfigToUpdate]

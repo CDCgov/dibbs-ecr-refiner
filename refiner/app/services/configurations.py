@@ -11,10 +11,11 @@ from app.core.models.payloads import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
 )
-from app.core.models.terminology import CodeSystem, Coding
+from app.core.models.terminology import Coding
 from app.db.code_systems.db import (
     get_id_to_code_system_dict_db,
 )
+from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.db import get_pruned_configuration_codes_db
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.custom_codes.model import DbCustomCode
@@ -162,7 +163,7 @@ def clone_section_processing_instructions(
     return standard_updates + custom_sections
 
 
-def as_coding(code: DbCustomCode, code_systems: dict[UUID, CodeSystem]) -> Coding:
+def as_coding(code: DbCustomCode, code_systems: dict[UUID, DbCodeSystem]) -> Coding:
     """
     Resolves a custom code's `systems.id` into the OID the refiner matches on.
 
@@ -172,7 +173,7 @@ def as_coding(code: DbCustomCode, code_systems: dict[UUID, CodeSystem]) -> Codin
 
     Args:
         code (DbCustomCode): The custom code row.
-        code_systems (dict[UUID, CodeSystem]): Every code system, keyed by id.
+        code_systems (dict[UUID, DbCodeSystem]): Every code system, keyed by id.
 
     Returns:
         Coding: The code with its system resolved to an OID.

@@ -467,8 +467,8 @@ async def set_codes_status_within_rendered_set_db(
     return [row["code_id"] for row in rows]
 
 
-@dataclass
-class CodeSystemFilterOption:
+@dataclass(frozen=True)
+class DbCodeSystemFilterOption:
     """
     Model to represent a code system filter option.
     """
@@ -478,8 +478,8 @@ class CodeSystemFilterOption:
     code_count: int
 
 
-@dataclass
-class SourceFilterOption:
+@dataclass(frozen=True)
+class DbSourceFilterOption:
     """
     Model to represent a source filter option.
     """
@@ -489,8 +489,8 @@ class SourceFilterOption:
     code_count: int
 
 
-@dataclass
-class StatusFilterOption:
+@dataclass(frozen=True)
+class DbStatusFilterOption:
     """
     Model to represent a status filter option.
     """
@@ -500,21 +500,21 @@ class StatusFilterOption:
     code_count: int
 
 
-@dataclass
-class CodeFilterOptions:
+@dataclass(frozen=True)
+class DbCodeFilterOptions:
     """
     Model to represent all filter options available to the client.
     """
 
-    code_systems: list[CodeSystemFilterOption]
-    sources: list[SourceFilterOption]
-    statuses: list[StatusFilterOption]
+    code_systems: list[DbCodeSystemFilterOption]
+    sources: list[DbSourceFilterOption]
+    statuses: list[DbStatusFilterOption]
 
 
 async def get_all_filter_options_db(
     configuration_id: UUID,
     db: AsyncDatabaseConnection,
-) -> CodeFilterOptions:
+) -> DbCodeFilterOptions:
     """
     Fetches filter options to present to the client.
     """
@@ -605,7 +605,7 @@ async def get_all_filter_options_db(
     for filter_type, value, display_name, _, code_count in rows:
         if filter_type == "code_system":
             code_systems.append(
-                CodeSystemFilterOption(
+                DbCodeSystemFilterOption(
                     system_id=UUID(value),
                     display_name=display_name,
                     code_count=code_count,
@@ -613,7 +613,7 @@ async def get_all_filter_options_db(
             )
         elif filter_type == "source":
             sources.append(
-                SourceFilterOption(
+                DbSourceFilterOption(
                     condition_id=UUID(value) if value is not None else None,
                     display_name=display_name,
                     code_count=code_count,
@@ -621,12 +621,12 @@ async def get_all_filter_options_db(
             )
         elif filter_type == "status":
             statuses.append(
-                StatusFilterOption(
+                DbStatusFilterOption(
                     status=value, display_name=display_name, code_count=code_count
                 )
             )
 
-    return CodeFilterOptions(
+    return DbCodeFilterOptions(
         code_systems=code_systems,
         sources=sources,
         statuses=statuses,

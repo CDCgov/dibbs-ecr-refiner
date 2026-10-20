@@ -2,24 +2,26 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.core.models.terminology import CodeSystem
 from app.db.code_systems.db import get_code_systems_db
+from app.db.code_systems.model import DbCodeSystem
 from app.db.pool import AsyncDatabaseConnection
 
 
-def find_code_system_by_id_or_raise(id: UUID, systems: list[CodeSystem]) -> CodeSystem:
+def find_code_system_by_id_or_raise(
+    id: UUID, systems: list[DbCodeSystem]
+) -> DbCodeSystem:
     """
     Attempts to find a code by the provided ID.
 
     Args:
         id (UUID): The desired system ID
-        systems (list[CodeSystem]): A list of systems to search for the matching ID
+        systems (list[DbCodeSystem]): A list of systems to search for the matching ID
 
     Raises:
         HTTPException: 404 is raised if the system ID is not found in the list of systems
 
     Returns:
-        CodeSystem: The matching code system
+        DbCodeSystem: The matching code system
     """
     system = next((s for s in systems if s.id == id), None)
     if system is None:
@@ -31,17 +33,17 @@ def find_code_system_by_id_or_raise(id: UUID, systems: list[CodeSystem]) -> Code
 
 
 def find_code_system_by_display_name(
-    systems: list[CodeSystem], display_name: str
-) -> CodeSystem | None:
+    systems: list[DbCodeSystem], display_name: str
+) -> DbCodeSystem | None:
     """
-    Attempts to find a `CodeSystem` in a `CodeSystem[]` that has the specified `display_name`.
+    Attempts to find a `DbCodeSystem` in a `DbCodeSystem[]` that has the specified `display_name`.
 
     Args:
-        systems (list[CodeSystem]): List of `CodeSystem`
-        display_name (str): The `display_name` of the `CodeSystem` to search for
+        systems (list[DbCodeSystem]): List of `DbCodeSystem`
+        display_name (str): The `display_name` of the `DbCodeSystem` to search for
 
     Returns:
-        CodeSystem | None: The system, or `None` if one could not be found
+        DbCodeSystem | None: The system, or `None` if one could not be found
     """
     return next((s for s in systems if s.display_name == display_name), None)
 

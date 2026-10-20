@@ -2,11 +2,11 @@ from uuid import UUID
 
 from psycopg.rows import class_row
 
-from app.core.models.terminology import CodeSystem
+from app.db.code_systems.model import DbCodeSystem
 from app.db.pool import AsyncDatabaseConnection
 
 
-async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[CodeSystem]:
+async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[DbCodeSystem]:
     """
     Fetches all available code systems.
     """
@@ -16,7 +16,7 @@ async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[CodeSystem]:
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSystem)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
     ):
         await cur.execute(query)
         rows = await cur.fetchall()
@@ -25,7 +25,7 @@ async def get_code_systems_db(db: AsyncDatabaseConnection) -> list[CodeSystem]:
 
 async def get_id_to_code_system_dict_db(
     db: AsyncDatabaseConnection,
-) -> dict[UUID, CodeSystem]:
+) -> dict[UUID, DbCodeSystem]:
     """
     Returns a dictionary of all code systems.
 
@@ -35,7 +35,7 @@ async def get_id_to_code_system_dict_db(
         db: AsyncDatabaseConnection: A database connection.
 
     Returns:
-        dict[UUID, CodeSystem]: Dictionary of found code systems, indexed by ID.
+        dict[UUID, DbCodeSystem]: Dictionary of found code systems, indexed by ID.
     """
 
     query = """
@@ -44,7 +44,7 @@ async def get_id_to_code_system_dict_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSystem)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
     ):
         await cur.execute(query)
         rows = await cur.fetchall()
@@ -54,7 +54,7 @@ async def get_id_to_code_system_dict_db(
 async def get_code_system_by_key_db(
     key: str,
     db: AsyncDatabaseConnection,
-) -> CodeSystem | None:
+) -> DbCodeSystem | None:
     """
     Get code system by the internal key.
 
@@ -63,7 +63,7 @@ async def get_code_system_by_key_db(
         db: AsyncDatabaseConnection: A database connection.
 
     Returns:
-        CodeSystem | None: Matched code system if found, none otherwise.
+        DbCodeSystem | None: Matched code system if found, none otherwise.
     """
 
     query = """
@@ -73,7 +73,7 @@ async def get_code_system_by_key_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSystem)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
     ):
         await cur.execute(query=query, params=params)
         row = await cur.fetchone()
@@ -87,7 +87,7 @@ async def get_code_system_by_key_db(
 async def get_code_system_by_id_db(
     id: UUID,
     db: AsyncDatabaseConnection,
-) -> CodeSystem | None:
+) -> DbCodeSystem | None:
     """
     Get code system by its ID.
 
@@ -96,7 +96,7 @@ async def get_code_system_by_id_db(
         db (AsyncDatabaseConnection): A database connection
 
     Returns:
-        CodeSystem | None: Matched code system if found, none otherwise.
+        DbCodeSystem | None: Matched code system if found, none otherwise.
     """
 
     query = """
@@ -112,7 +112,7 @@ async def get_code_system_by_id_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSystem)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
     ):
         await cur.execute(query=query, params=params)
         row = await cur.fetchone()
@@ -125,7 +125,7 @@ async def get_code_system_by_id_db(
 
 async def get_code_system_by_display_name_db(
     name: str, db: AsyncDatabaseConnection
-) -> CodeSystem | None:
+) -> DbCodeSystem | None:
     """
     Get code system by its display name.
 
@@ -135,7 +135,7 @@ async def get_code_system_by_display_name_db(
         logger: Logger: The system logger.
 
     Returns:
-        CodeSystem | None: Values from the systems table to be consumed by the system enum.
+        DbCodeSystem | None: Values from the systems table to be consumed by the system enum.
     """
 
     query = """
@@ -145,7 +145,7 @@ async def get_code_system_by_display_name_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSystem)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSystem)) as cur,
     ):
         await cur.execute(query, params)
         row = await cur.fetchone()

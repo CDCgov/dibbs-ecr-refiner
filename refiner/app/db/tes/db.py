@@ -10,8 +10,8 @@ from app.db.tes.model import (
     ConditionDiffExportData,
     DbTes,
     DbTesConditionUpdate,
-    DbTesConfigsToUpdateResponse,
-    TesConfigToUpdate,
+    DbTesConfigsToUpdate,
+    DbTesConfigToUpdate,
 )
 
 
@@ -395,7 +395,7 @@ async def _get_cur_and_prev_tes_records_db(
 async def get_configurations_set_to_tes_version(
     db: AsyncDatabaseConnection,
     jurisdiction_id: str,
-) -> DbTesConfigsToUpdateResponse:
+) -> DbTesConfigsToUpdate:
     """
     Return drafts and active configurations that use an older TES release.
 
@@ -462,7 +462,7 @@ async def get_configurations_set_to_tes_version(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(TesConfigToUpdate)) as cur,
+        conn.cursor(row_factory=class_row(DbTesConfigToUpdate)) as cur,
     ):
         await cur.execute(
             query,
@@ -482,7 +482,7 @@ async def get_configurations_set_to_tes_version(
         )
         active_rows = await cur.fetchall()
 
-    return DbTesConfigsToUpdateResponse(
+    return DbTesConfigsToUpdate(
         existing_drafts=draft_rows,
         drafts_to_create=active_rows,
     )

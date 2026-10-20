@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from logging import Logger
 from uuid import UUID
@@ -43,6 +44,8 @@ from .model import (
     GetConfigurationsResponse,
     IncludedCondition,
     LockedByUser,
+    to_code_set_summary,
+    to_configuration_version,
 )
 
 router = APIRouter()
@@ -166,9 +169,38 @@ async def create_configuration(
     return CreateConfigurationResponse(id=config.id, display_name=config.display_name)
 
 
+@dataclass(frozen=True)
+class SerializedFile:
+    """
+    One serialized configuration file, as stored in S3.
+    """
+
+    key: str
+    content: str
+
+
+@dataclass(frozen=True)
+class SerializedFilesResponse:
+    """
+    The three files an active configuration serializes to.
+    """
+
+    active: SerializedFile
+    current: SerializedFile
+    metadata: SerializedFile
+
+
+def _to_serialized_files_response(files: SerializedFiles) -> SerializedFilesResponse:
+    return SerializedFilesResponse(
+        active=SerializedFile(key=files.active.key, content=files.active.content),
+        current=SerializedFile(key=files.current.key, content=files.current.content),
+        metadata=SerializedFile(key=files.metadata.key, content=files.metadata.content),
+    )
+
+
 @router.get(
     "/{configuration_id}/serialized",
-    response_model=SerializedFiles,
+    response_model=SerializedFilesResponse,
     tags=["configurations"],
     operation_id="getSerializedConfiguration",
 )
@@ -178,7 +210,7 @@ async def get_serialized_configuration(
     app_config: AppConfig = Depends(get_app_config),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> SerializedFiles:
+) -> SerializedFilesResponse:
     """
     Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
 
@@ -229,13 +261,14 @@ async def get_serialized_configuration(
         )
 
     try:
-        return await run_in_threadpool(
+        files = await run_in_threadpool(
             get_serialized_files,
             user.jurisdiction_id,
             primary_condition.canonical_url,
             config.version,
             logger,
         )
+        return _to_serialized_files_response(files)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -378,7 +411,7 @@ async def get_configuration(
         condition_canonical_url=primary_condition.canonical_url,
         display_name=config.display_name,
         status=config.status,
-        code_sets=config_condition_info,
+        code_sets=[to_code_set_summary(c) for c in config_condition_info],
         included_conditions=included_conditions,
         custom_codes=custom_codes,
         section_processing=sorted(
@@ -386,7 +419,7 @@ async def get_configuration(
             key=lambda r: r.display_name.lower(),
         ),
         rsg_codes=rsg_codes,
-        all_versions=all_versions,
+        all_versions=[to_configuration_version(v) for v in all_versions],
         version=config.version,
         active_version=active_version,
         active_configuration_id=active_configuration_id,

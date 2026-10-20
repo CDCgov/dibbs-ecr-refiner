@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from uuid import UUID
 
 # NOTE:
 # the three code shapes this codebase actually needs, side by side on purpose. before
@@ -67,47 +66,3 @@ class CodeExportRow:
     code: str
     display_name: str
     system_display_name: str
-
-
-@dataclass(frozen=True)
-class CodeSetSummary:
-    """
-    One code set a configuration includes, with how many codes it contributes.
-
-    "Code set" is what the UI calls a condition associated to a configuration, so the
-    identifier follows rule 7's settled `code_set` spelling.
-
-    Carries no `Db` prefix on purpose. Rule 3 reserves that for a row or projection
-    out of Postgres that is **never** generated to the client, and this is both -- a
-    `class_row` projection that ships on `GetConfigurationResponse.code_sets`. ADR
-    0016 §2.4 flagged the same contradiction for `DbCodeSystem`; dropping the prefix
-    follows the `ConfiguredSection` precedent, which the ADR blesses for anything
-    belonging to no boundary.
-    """
-
-    condition_id: UUID
-    display_name: str
-    code_count: int
-
-
-@dataclass(frozen=True)
-class CodeSystem:
-    """
-    One row of the `systems` table: a code system the app can store codes in.
-
-    Carries no `Db` prefix, for the same reason as `CodeSetSummary`. It is a row out
-    of Postgres **and** it is generated to the client (the custom-code CSV import
-    needs the list of systems a user may pick), which rule 3 says cannot both be
-    true of a `Db*` model. ADR 0016 §2.4 called this the hardest case; dropping the
-    prefix follows the `ConfiguredSection` precedent the ADR blesses for anything
-    belonging to no single boundary.
-
-    `oid` is the literal `"Other"` on exactly one row -- the catch-all for custom
-    codes with no standard system. That is a routing key into
-    `OID_TO_SYSTEM_KEY_MAP`, not an identifier; see the note on `Coding`.
-    """
-
-    id: UUID
-    key: str
-    display_name: str
-    oid: str

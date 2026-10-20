@@ -3,8 +3,8 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.custom_codes.model import AddCustomCodeInput
-from app.core.models.terminology import CodeSystem
 from app.db.code_systems.db import get_code_system_by_id_db
+from app.db.code_systems.model import DbCodeSystem
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 from app.db.events.db import insert_custom_code_event_db, insert_event_db
@@ -126,7 +126,7 @@ async def insert_custom_code_db(
 async def insert_custom_codes_db(
     config: DbConfiguration,
     custom_codes: list[AddCustomCodeInput],
-    code_systems: list[CodeSystem],
+    code_systems: list[DbCodeSystem],
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> list[DbCustomCode]:
@@ -170,7 +170,7 @@ async def delete_custom_codes_db(
     config: DbConfiguration,
     ids: list[UUID],
     user_id: UUID,
-    code_systems: list[CodeSystem],
+    code_systems: list[DbCodeSystem],
     db: AsyncDatabaseConnection,
     delete_all: bool = False,
     ids_to_skip: list[UUID] | None = None,
@@ -225,7 +225,7 @@ async def edit_custom_code_db(
     user_id: UUID,
     display_name: str,
     code: str,
-    system: CodeSystem,
+    system: DbCodeSystem,
     db: AsyncDatabaseConnection,
 ) -> DbCustomCode | None:
     """

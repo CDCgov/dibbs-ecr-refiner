@@ -13,7 +13,7 @@ from app.core.models.configurations import (
 )
 from app.db.conditions.db import get_primary_condition_db
 from app.db.configurations.codes.db import (
-    CodeFilterOptions,
+    DbCodeFilterOptions,
     get_all_filter_options_db,
     get_code_count_metadata_db,
     get_codes_db,
@@ -320,9 +320,82 @@ async def get_code_counts(
     )
 
 
+@dataclass(frozen=True)
+class CodeSystemFilterOption:
+    """
+    A code system the client can filter a configuration's codes by.
+    """
+
+    system_id: UUID
+    display_name: str
+    code_count: int
+
+
+@dataclass(frozen=True)
+class SourceFilterOption:
+    """
+    A code source the client can filter by -- a condition, or `None` for custom codes.
+    """
+
+    condition_id: UUID | None
+    display_name: str
+    code_count: int
+
+
+@dataclass(frozen=True)
+class StatusFilterOption:
+    """
+    An included/excluded status the client can filter by.
+    """
+
+    display_name: ConfigurationCodeStatusLabel
+    status: ConfigurationCodeStatus
+    code_count: int
+
+
+@dataclass(frozen=True)
+class CodeFilterOptionsResponse:
+    """
+    Every filter option available for a configuration's codes.
+    """
+
+    code_systems: list[CodeSystemFilterOption]
+    sources: list[SourceFilterOption]
+    statuses: list[StatusFilterOption]
+
+
+def _to_code_filter_options_response(
+    row: DbCodeFilterOptions,
+) -> CodeFilterOptionsResponse:
+    return CodeFilterOptionsResponse(
+        code_systems=[
+            CodeSystemFilterOption(
+                system_id=o.system_id,
+                display_name=o.display_name,
+                code_count=o.code_count,
+            )
+            for o in row.code_systems
+        ],
+        sources=[
+            SourceFilterOption(
+                condition_id=o.condition_id,
+                display_name=o.display_name,
+                code_count=o.code_count,
+            )
+            for o in row.sources
+        ],
+        statuses=[
+            StatusFilterOption(
+                display_name=o.display_name, status=o.status, code_count=o.code_count
+            )
+            for o in row.statuses
+        ],
+    )
+
+
 @router.get(
     "/filters",
-    response_model=CodeFilterOptions,
+    response_model=CodeFilterOptionsResponse,
     tags=["configurations"],
     operation_id="getCodeFilters",
 )
@@ -330,7 +403,7 @@ async def get_code_filters(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> CodeFilterOptions:
+) -> CodeFilterOptionsResponse:
     """
     Fetches code filter information for the client to display.
 
@@ -343,7 +416,7 @@ async def get_code_filters(
         HTTPException: 404 if the configuration couldn't be found
 
     Returns:
-        CodeFilterOptions: The code filters
+        CodeFilterOptionsResponse: The code filters
     """
 
     config = await get_configuration_by_id_db(
@@ -358,4 +431,5 @@ async def get_code_filters(
             detail="Configuration cannot be found.",
         )
 
-    return await get_all_filter_options_db(configuration_id=config.id, db=db)
+    row = await get_all_filter_options_db(configuration_id=config.id, db=db)
+    return _to_code_filter_options_response(row)

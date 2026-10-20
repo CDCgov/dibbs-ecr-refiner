@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -10,10 +11,11 @@ from app.core.models.configurations import (
     NarrativeAction,
     SectionAction,
 )
-from app.core.models.terminology import CodeLabel, CodeSetSummary
+from app.core.models.terminology import CodeLabel
 from app.db.configurations.model import (
     ConfiguredSection,
-    GetConfigurationResponseVersion,
+    DbCodeSetSummary,
+    DbConfigurationVersion,
 )
 from app.db.users.model import UserInfoBase
 from app.services.conditions.grouper_statuses import CodeSetStatus
@@ -67,6 +69,74 @@ class LockedByUser(UserInfoBase):
     """
     LockedByUser response to provide user information.
     """
+
+
+@dataclass(frozen=True)
+class CodeSetSummary:
+    """
+    One code set a configuration includes, with how many codes it contributes.
+    """
+
+    condition_id: UUID
+    display_name: str
+    code_count: int
+
+
+def to_code_set_summary(row: DbCodeSetSummary) -> CodeSetSummary:
+    """
+    Maps a code set row onto its wire shape.
+
+    Args:
+        row (DbCodeSetSummary): The row from the database
+
+    Returns:
+        CodeSetSummary: The code set as the client sees it
+    """
+    return CodeSetSummary(
+        condition_id=row.condition_id,
+        display_name=row.display_name,
+        code_count=row.code_count,
+    )
+
+
+@dataclass(frozen=True)
+class GetConfigurationResponseVersion:
+    """
+    Model representing a version of a configuration.
+    """
+
+    id: UUID
+    version: int
+    condition_canonical_url: str
+    status: ConfigurationStatus
+    created_at: datetime
+    created_by: str
+    last_activated_at: datetime | None
+    last_activated_by: str | None
+
+
+def to_configuration_version(
+    row: DbConfigurationVersion,
+) -> GetConfigurationResponseVersion:
+    """
+    Maps a configuration version row onto its wire shape.
+
+    Args:
+        row (DbConfigurationVersion): The row from the database
+
+    Returns:
+        GetConfigurationResponseVersion: The version as the client sees it
+    """
+    return GetConfigurationResponseVersion(
+        id=row.id,
+        version=row.version,
+        condition_canonical_url=row.condition_canonical_url,
+        status=row.status,
+        created_at=row.created_at,
+        created_by=row.created_by,
+        last_activated_at=row.last_activated_at,
+        last_activated_by=row.last_activated_by,
+    )
 
 
 @dataclass(frozen=True)

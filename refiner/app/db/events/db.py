@@ -8,7 +8,7 @@ from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import DatabaseQueryError
-from app.core.models.terminology import CodeSystem
+from app.db.code_systems.model import DbCodeSystem
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 
@@ -31,7 +31,7 @@ class CsvEvent:
 
 
 @dataclass(frozen=True)
-class AuditEvent:
+class DbAuditEvent:
     """
     An event returned by the DB function.
     """
@@ -195,7 +195,7 @@ async def get_events_by_jd_db(
     page_size: int,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> list[AuditEvent]:
+) -> list[DbAuditEvent]:
     """
     Fetches paginated event results for a jurisdiction.
 
@@ -240,7 +240,7 @@ async def get_events_by_jd_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(AuditEvent)) as cur,
+        conn.cursor(row_factory=class_row(DbAuditEvent)) as cur,
     ):
         await cur.execute(query, params)
         events_rows = await cur.fetchall()
@@ -329,7 +329,7 @@ async def insert_custom_code_event_db(
     user_id: UUID,
     event_type: Literal["add", "delete"],
     custom_codes: list[DbCustomCode],
-    code_systems: list[CodeSystem],
+    code_systems: list[DbCodeSystem],
     cursor: AsyncCursor[Any],
 ) -> None:
     """
