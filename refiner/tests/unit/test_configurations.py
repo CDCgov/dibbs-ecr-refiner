@@ -11,17 +11,20 @@ from fastapi import status
 import app.api.v1.configurations.custom_codes.custom_codes as custom_codes_module
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
-from app.db.conditions.model import DbCode, DbCondition
-from app.db.configurations.custom_codes.model import DbCustomCode
-from app.db.configurations.labels import (
+from app.core.models.configurations import (
+    NarrativeAction,
+    SectionAction,
+)
+from app.core.models.labels import (
     CODED_DATA_LABELS,
     NARRATIVE_DATA_LABELS,
 )
+from app.db.codes.model import DbConditionCode
+from app.db.conditions.model import DbCondition
+from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSummary,
-    DbNarrativeAction,
-    DbSectionAction,
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
@@ -55,7 +58,7 @@ def mock_db_functions(
 
     fake_config_summary = DbConfigurationSummary(
         id=mock_configuration.id,
-        name=mock_configuration.name,
+        display_name=mock_configuration.display_name,
         status=mock_configuration.status,
     )
 
@@ -66,35 +69,30 @@ def mock_db_functions(
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
         codes=[
-            DbCode(
+            DbConditionCode(
                 code="11111",
-                display="Hypertension SNOMED",
+                display_name="Hypertension SNOMED",
                 system_id=get_mock_system_id_by_name("SNOMED"),
-                system_name="SNOMED",
             ),
-            DbCode(
+            DbConditionCode(
                 code="22222",
-                display="Hypertension LOINC",
+                display_name="Hypertension LOINC",
                 system_id=get_mock_system_id_by_name("LOINC"),
-                system_name="LOINC",
             ),
-            DbCode(
+            DbConditionCode(
                 code="I10",
-                display="Essential hypertension",
+                display_name="Essential hypertension",
                 system_id=get_mock_system_id_by_name("ICD-10"),
-                system_name="ICD-10",
             ),
-            DbCode(
+            DbConditionCode(
                 code="33333",
-                display="Hypertension RXNORM",
+                display_name="Hypertension RXNORM",
                 system_id=get_mock_system_id_by_name("RxNorm"),
-                system_name="RxNorm",
             ),
-            DbCode(
+            DbConditionCode(
                 code="124124",
-                display="Hypertension CVX",
+                display_name="Hypertension CVX",
                 system_id=get_mock_system_id_by_name("CVX"),
-                system_name="CVX",
             ),
         ],
     )
@@ -146,7 +144,7 @@ def mock_db_functions(
     # Mock insert_configuration_db
     new_config_mock = GetConfigurationsResponse(
         id=new_config_id,
-        name="New Config",
+        display_name="New Config",
         status="draft",
     )
     monkeypatch.setattr(
@@ -159,7 +157,7 @@ def mock_db_functions(
 
     updated_config_mock = DbConfiguration(
         id=new_config_id,
-        name="New Config",
+        display_name="New Config",
         jurisdiction_id="JD-1",
         condition_id=mock_condition.id,
         included_conditions=[assoc_condition],
@@ -296,7 +294,7 @@ async def test_add_custom_code_to_configuration(
             DbCustomCode(
                 id=mock_custom_code_id,
                 code="test-code",
-                display="test-name",
+                display_name="test-name",
                 system_id=code_system.id,
                 updated_at=datetime.now(UTC),
                 created_at=datetime.now(UTC),
@@ -313,7 +311,7 @@ async def test_add_custom_code_to_configuration(
     config_id = str(mock_configuration.id)
     payload = {
         "code": "test-code",
-        "display": "test-name",
+        "display_name": "test-name",
         "system_id": str(code_system.id),
     }
     response = await authed_client.post(
@@ -334,7 +332,7 @@ async def test_delete_custom_code_from_configuration(
 
     custom_code_to_delete = DbCustomCode(
         id=custom_code_id,
-        display="delete me",
+        display_name="delete me",
         code="deleted soon",
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -379,7 +377,7 @@ async def test_delete_custom_code_from_configuration(
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == str(custom_code_to_delete.id)
-    assert data["system_name"] == "SNOMED"
+    assert data["system_display_name"] == "SNOMED"
 
 
 @pytest.mark.asyncio
@@ -399,7 +397,7 @@ async def test_edit_custom_code_from_configuration(
             DbCustomCode(
                 id=custom_code_id,
                 code="test-code",
-                display="updated-name",
+                display_name="updated-name",
                 system_id=get_mock_system("snomed").id,
                 updated_at=datetime.now(UTC),
                 created_at=datetime.now(UTC),
@@ -418,7 +416,7 @@ async def test_edit_custom_code_from_configuration(
     # explicitly monkeypatch to ensure the code to edit is present
     mock_config = DbConfiguration(
         id=UUID(config_id),
-        name="test config",
+        display_name="test config",
         jurisdiction_id="SDDH",
         condition_id=mock_condition.id,
         included_conditions=[],
@@ -426,7 +424,7 @@ async def test_edit_custom_code_from_configuration(
             DbCustomCode(
                 id=custom_code_id,
                 code="test-code",
-                display="test-name",
+                display_name="test-name",
                 system_id=get_mock_system("loinc").id,
                 updated_at=datetime.now(UTC),
                 created_at=datetime.now(UTC),
@@ -461,7 +459,7 @@ async def test_edit_custom_code_from_configuration(
 
     payload = {
         "id": str(custom_code_id),
-        "display": "updated-name",
+        "display_name": "updated-name",
         "code": "test-code",
         "system_id": str(get_mock_system("snomed").id),
     }
@@ -474,7 +472,7 @@ async def test_edit_custom_code_from_configuration(
     data = response.json()
     assert data["code"] == "test-code"
     assert data["system_id"] == str(get_mock_system("snomed").id)
-    assert data["display"] == "updated-name"
+    assert data["display_name"] == "updated-name"
 
 
 @pytest.mark.asyncio
@@ -616,8 +614,8 @@ def test_all_coded_data_actions_have_labels():
     """
     All defined section coded data actions must have an associated label.
     """
-    assert set(CODED_DATA_LABELS) == _get_literal_values(DbSectionAction), (
-        f"Missing labels: {_get_literal_values(DbSectionAction) - set(CODED_DATA_LABELS)}"
+    assert set(CODED_DATA_LABELS) == _get_literal_values(SectionAction), (
+        f"Missing labels: {_get_literal_values(SectionAction) - set(CODED_DATA_LABELS)}"
     )
 
 
@@ -625,8 +623,8 @@ def test_all_narrative_actions_have_labels():
     """
     All defined section narrative actions must have an associated label.
     """
-    assert set(NARRATIVE_DATA_LABELS) == _get_literal_values(DbNarrativeAction), (
-        f"Missing labels: {_get_literal_values(DbNarrativeAction) - set(NARRATIVE_DATA_LABELS)}"
+    assert set(NARRATIVE_DATA_LABELS) == _get_literal_values(NarrativeAction), (
+        f"Missing labels: {_get_literal_values(NarrativeAction) - set(NARRATIVE_DATA_LABELS)}"
     )
 
 

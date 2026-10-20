@@ -186,8 +186,12 @@ class TestEventsCsvExport:
         await upload_custom_codes(
             config["id"],
             [
-                AddCustomCodeInput(code="tc0", system_id=snomed.id, display="tc0-name"),
-                AddCustomCodeInput(code="tc1", system_id=icd_10.id, display="tc1-name"),
+                AddCustomCodeInput(
+                    code="tc0", system_id=snomed.id, display_name="tc0-name"
+                ),
+                AddCustomCodeInput(
+                    code="tc1", system_id=icd_10.id, display_name="tc1-name"
+                ),
             ],
         )
 

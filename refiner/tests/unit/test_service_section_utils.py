@@ -1,6 +1,7 @@
 from lxml import etree
 from lxml.etree import _Element
 
+from app.core.models.terminology import Coding
 from app.services.ecr.model import HL7_NS
 from app.services.ecr.narrative.reconstruction import reconstruct_narrative
 from app.services.ecr.section.utils import (
@@ -9,7 +10,7 @@ from app.services.ecr.section.utils import (
     enrich_surviving_entries,
 )
 from app.services.ecr.specification.constants import SNOMED_OID
-from app.services.terminology import CodeSystemSets, Coding
+from app.services.terminology import CodeSystemSets
 
 _NSDECL = 'xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
 

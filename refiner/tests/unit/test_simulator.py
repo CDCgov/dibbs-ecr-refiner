@@ -9,10 +9,8 @@ from fastapi import HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
 
 from app.api.v1.simulator import download_refined_ecr
-from app.api.validation.file_validation import (
-    UNCOMPRESSED_MAX_BYTES,
-    _validate_ecr_zip_pair,
-)
+from app.api.validation.file_validation import _validate_ecr_zip_pair
+from app.core.models.limits import UNCOMPRESSED_MAX_BYTES
 from app.db.users.model import DbUser
 from app.services.file_io import (
     ZipFileItem,

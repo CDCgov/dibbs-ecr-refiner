@@ -18,7 +18,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "required": [
           "code",
           "name",
@@ -60,17 +60,13 @@
           "additionalProperties": false,
           "required": [
             "code",
-            "display",
-            "system"
+            "display"
           ],
           "properties": {
             "code": {
               "type": "string"
             },
             "display": {
-              "type": "string"
-            },
-            "system": {
               "type": "string"
             }
           }

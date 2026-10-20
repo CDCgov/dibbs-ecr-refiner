@@ -12,8 +12,8 @@ from fastapi import status
 from jsonschema import Draft202012Validator
 from psycopg.rows import dict_row
 
+from app.core.models.payloads import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.services.configurations import convert_config_to_storage_payload
 from app.services.logger import get_logger
 from ops.reactivations import regenerate_active_configs as reactivation

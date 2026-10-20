@@ -51,3 +51,37 @@ class TestTesUpdates:
             "Created draft from active configuration with TES updates"
         )
         assert str(rows[0]["user_id"]) == test_user_id
+
+    async def test_configurations_to_update_route_runs(
+        self,
+        authed_client,
+        get_condition_id,
+        create_config,
+        activate_config,
+        previous_tes_version,
+    ):
+        """
+        Exercises `GET /tes/configurations-to-update` end to end.
+
+        This route had **no** coverage, and its query referenced `conf.name` after
+        that column became `conf.display_name` -- so it raised `UndefinedColumn` in
+        production while every other suite stayed green. The assertions are
+        deliberately shallow: the point is that the SQL executes and the response
+        model builds, which is exactly what nothing was checking.
+        """
+
+        condition_id = await get_condition_id("Acanthamoeba", previous_tes_version)
+        config = await create_config(condition_id)
+        await activate_config(config["id"])
+
+        response = await authed_client.get("/api/v1/tes/configurations-to-update")
+        assert response.status_code == 200
+
+        body = response.json()
+        assert set(body) == {"existing_drafts", "drafts_to_create"}
+
+        # the label field the rename touched has to come back populated
+        for bucket in ("existing_drafts", "drafts_to_create"):
+            for entry in body[bucket]:
+                assert entry["configuration_display_name"]
+                assert "configuration_name" not in entry

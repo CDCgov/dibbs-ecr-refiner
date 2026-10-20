@@ -1,7 +1,7 @@
 import os
 from unittest.mock import AsyncMock, MagicMock
 
-from app.db.codes.model import DbCode
+from app.db.codes.model import DbConditionCode
 
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "unit-test"
@@ -35,7 +35,7 @@ from lxml.etree import _Element
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
 from app.db.code_systems.db import (
-    DbCodeSystem,
+    CodeSystem,
 )
 from app.db.conditions.model import DbCondition
 from app.db.configurations.model import DbConfiguration
@@ -158,9 +158,9 @@ def get_mock_system_id_by_name(system_display_name: str):
     return UUID(id_string)
 
 
-def create_mock_systems() -> list[DbCodeSystem]:
+def create_mock_systems() -> list[CodeSystem]:
     return [
-        DbCodeSystem(
+        CodeSystem(
             id=UUID(id_str),
             key=system["key"],
             display_name=system["display_name"],
@@ -179,35 +179,30 @@ def mock_condition():
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
         codes=[
-            DbCode(
+            DbConditionCode(
                 code="11111",
-                display="Hypertension SNOMED",
+                display_name="Hypertension SNOMED",
                 system_id=get_mock_system_id_by_name("SNOMED"),
-                system_name="SNOMED",
             ),
-            DbCode(
+            DbConditionCode(
                 code="22222",
-                display="Hypertension LOINC",
+                display_name="Hypertension LOINC",
                 system_id=get_mock_system_id_by_name("LOINC"),
-                system_name="LOINC",
             ),
-            DbCode(
+            DbConditionCode(
                 code="I10",
-                display="Essential hypertension",
+                display_name="Essential hypertension",
                 system_id=get_mock_system_id_by_name("ICD-10"),
-                system_name="ICD-10",
             ),
-            DbCode(
+            DbConditionCode(
                 code="33333",
-                display="Hypertension RXNORM",
+                display_name="Hypertension RXNORM",
                 system_id=get_mock_system_id_by_name("RxNorm"),
-                system_name="RxNorm",
             ),
-            DbCode(
+            DbConditionCode(
                 code="124124",
-                display="Hypertension CVX",
+                display_name="Hypertension CVX",
                 system_id=get_mock_system_id_by_name("CVX"),
-                system_name="CVX",
             ),
         ],
     )
@@ -217,7 +212,7 @@ def mock_condition():
 def mock_configuration(mock_user):
     return DbConfiguration(
         id=MOCK_CONFIGURATION_ID,
-        name="test config",
+        display_name="test config",
         jurisdiction_id="SDDH",
         condition_id=MOCK_CONDITION_ID,
         included_conditions=[MOCK_CONDITION_ID],
@@ -256,8 +251,8 @@ def mock_logged_in_user(mock_user, test_app):
 
 
 @pytest.fixture
-def get_mock_system(mock_all_systems: list[DbCodeSystem]):
-    def _get(key: str) -> DbCodeSystem:
+def get_mock_system(mock_all_systems: list[CodeSystem]):
+    def _get(key: str) -> CodeSystem:
         return next(s for s in mock_all_systems if s.key == key)
 
     return _get

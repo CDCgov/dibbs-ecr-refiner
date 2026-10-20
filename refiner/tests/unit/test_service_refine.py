@@ -3,14 +3,13 @@ from unittest.mock import AsyncMock
 import pytest
 from lxml import etree
 
-from app.db.conditions.model import DbCode, DbCondition
-from app.db.configurations.model import (
-    DbConfiguration,
-    DbConfigurationSectionInstructions,
-)
+from app.db.codes.model import DbConditionCode
+from app.db.conditions.model import DbCondition
+from app.db.configurations.model import DbConfiguration
 from app.services.ecr.model import (
     HL7_NS,
     EICRRefinementPlan,
+    SectionInstructions,
     SectionOutcome,
     SectionProvenanceRecord,
     SectionSource,
@@ -44,11 +43,10 @@ _PLACEHOLDER_AUGMENTATION_TIMESTAMP = "19700101000000+0000"
 # ProcessedConfiguration must contain at least one code or otherwise is considered
 # to be invalid. We are using a code that definitely will not appear in a real code set.
 _MOCK_CONDITION_CODES = [
-    DbCode(
+    DbConditionCode(
         code="fake-code-0!",
-        display="",
+        display_name="",
         system_id=get_mock_system_id_by_name("Other"),
-        system_name="Other",
     )
 ]
 
@@ -81,7 +79,7 @@ def _make_db_configuration_v1_1(**kwargs) -> DbConfiguration:
 
     defaults = {
         "id": "fake-config-id-v1-1",
-        "name": "Test Config v1.1",
+        "display_name": "Test Config v1.1",
         "jurisdiction_id": "SDDH",
         "condition_id": "fake-condition-id-v1-1",
         "status": "active",
@@ -127,7 +125,7 @@ def _make_db_configuration_v3_1_1(**kwargs) -> DbConfiguration:
 
     defaults = {
         "id": "fake-config-id-v3-1-1",
-        "name": "Test Config v3.1.1",
+        "display_name": "Test Config v3.1.1",
         "jurisdiction_id": "SDDH",
         "condition_id": "fake-condition-id-v3-1-1",
         "status": "active",
@@ -198,9 +196,7 @@ def _make_plan(
         codes_to_check=processed_config.codes,
         code_system_sets=processed_config.code_system_sets,
         section_instructions={
-            code: DbConfigurationSectionInstructions(
-                action=action, include=True, narrative="remove"
-            )
+            code: SectionInstructions(action=action, include=True, narrative="remove")
             for code, action in sections.items()
         },
         section_provenance={},
@@ -240,7 +236,7 @@ class TestRefiningService:
             codes_to_check=set(),
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "29762-2": DbConfigurationSectionInstructions(
+                "29762-2": SectionInstructions(
                     action="retain", include=True, narrative="retain"
                 )
             },
@@ -280,7 +276,7 @@ class TestRefiningService:
             codes_to_check={"NON_EXISTENT_CODE"},
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "11450-4": DbConfigurationSectionInstructions(
+                "11450-4": SectionInstructions(
                     action="refine", include=True, narrative="remove"
                 )
             },
@@ -324,7 +320,7 @@ class TestRefiningService:
             codes_to_check={"NON_EXISTENT_CODE"},
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "11450-4": DbConfigurationSectionInstructions(
+                "11450-4": SectionInstructions(
                     action="refine", include=True, narrative="retain"
                 )
             },
@@ -390,10 +386,9 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="94533-7",
-                    display="SARS-CoV-2 N gene",
-                    system_name="LOINC",
+                    display_name="SARS-CoV-2 N gene",
                     system_id=get_mock_system_id_by_name("LOINC"),
                 ),
             ],
@@ -403,7 +398,7 @@ class TestRefiningService:
             codes_to_check=processed_config.codes,
             code_system_sets=processed_config.code_system_sets,
             section_instructions={
-                "30954-2": DbConfigurationSectionInstructions(
+                "30954-2": SectionInstructions(
                     action="refine", include=True, narrative="keep_on_match"
                 )
             },
@@ -450,7 +445,7 @@ class TestRefiningService:
             codes_to_check={"NON_EXISTENT_CODE"},
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "11450-4": DbConfigurationSectionInstructions(
+                "11450-4": SectionInstructions(
                     action="refine", include=True, narrative="keep_on_match"
                 )
             },
@@ -510,7 +505,7 @@ class TestRefiningService:
             codes_to_check={"NON_EXISTENT_CODE"},
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "30954-2": DbConfigurationSectionInstructions(
+                "30954-2": SectionInstructions(
                     action="refine", include=True, narrative="reconstruct"
                 )
             },
@@ -566,11 +561,10 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="840539006",
-                    display="Disease caused by SARS-CoV-2",
+                    display_name="Disease caused by SARS-CoV-2",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
             ],
         )
@@ -579,7 +573,7 @@ class TestRefiningService:
             codes_to_check=processed_config.codes,
             code_system_sets=processed_config.code_system_sets,
             section_instructions={
-                "46240-8": DbConfigurationSectionInstructions(
+                "46240-8": SectionInstructions(
                     action="refine", include=True, narrative="reconstruct"
                 )
             },
@@ -628,11 +622,10 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="94533-7",
-                    display="",
+                    display_name="",
                     system_id=get_mock_system_id_by_name("LOINC"),
-                    system_name="LOINC",
                 )
             ]
         )
@@ -641,7 +634,7 @@ class TestRefiningService:
             codes_to_check=processed_config.codes,
             code_system_sets=processed_config.code_system_sets,
             section_instructions={
-                "30954-2": DbConfigurationSectionInstructions(
+                "30954-2": SectionInstructions(
                     action="refine", include=True, narrative="remove"
                 )
             },
@@ -679,7 +672,7 @@ class TestRefiningService:
             codes_to_check=set(),
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "29299-5": DbConfigurationSectionInstructions(
+                "29299-5": SectionInstructions(
                     action="refine", include=True, narrative="retain"
                 )
             },
@@ -734,7 +727,7 @@ class TestRefiningService:
             codes_to_check=set(),
             code_system_sets=empty_config.code_system_sets,
             section_instructions={
-                "29299-5": DbConfigurationSectionInstructions(
+                "29299-5": SectionInstructions(
                     action="retain", include=True, narrative="remove"
                 )
             },
@@ -788,17 +781,15 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="94533-7",
-                    display="SARS-CoV-2 N gene",
+                    display_name="SARS-CoV-2 N gene",
                     system_id=get_mock_system_id_by_name("LOINC"),
-                    system_name="LOINC",
                 ),
-                DbCode(
+                DbConditionCode(
                     code="94558-4",
-                    display="SARS-CoV-2 Ag Rapid",
+                    display_name="SARS-CoV-2 Ag Rapid",
                     system_id=get_mock_system_id_by_name("LOINC"),
-                    system_name="LOINC",
                 ),
             ],
         )
@@ -835,23 +826,20 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="840539006",
-                    display="Disease caused by SARS-CoV-2",
+                    display_name="Disease caused by SARS-CoV-2",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
-                DbCode(
+                DbConditionCode(
                     code="186747009",
-                    display="Coronavirus infection",
+                    display_name="Coronavirus infection",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
-                DbCode(
+                DbConditionCode(
                     code="230145002",
-                    display="Difficulty Breathing",
+                    display_name="Difficulty Breathing",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
             ],
         )
@@ -895,17 +883,15 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="94759-8",
-                    display="SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection",
+                    display_name="SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection",
                     system_id=get_mock_system_id_by_name("LOINC"),
-                    system_name="LOINC",
                 ),
-                DbCode(
+                DbConditionCode(
                     code="260373001",
-                    display="Detected (qualifier value)",
+                    display_name="Detected (qualifier value)",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
             ],
         )
@@ -953,17 +939,15 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="94500-6",
-                    display="SARS-CoV-2 RNA panel",
+                    display_name="SARS-CoV-2 RNA panel",
                     system_id=get_mock_system_id_by_name("LOINC"),
-                    system_name="LOINC",
                 ),
-                DbCode(
+                DbConditionCode(
                     code="2284960",
-                    display="remdesivir 100 MG Injection",
+                    display_name="remdesivir 100 MG Injection",
                     system_id=get_mock_system_id_by_name("RxNorm"),
-                    system_name="RxNorm",
                 ),
             ],
         )
@@ -997,11 +981,10 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="840539006",
-                    display="Disease caused by SARS-CoV-2",
+                    display_name="Disease caused by SARS-CoV-2",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
             ],
         )
@@ -1041,11 +1024,10 @@ class TestRefiningService:
 
         processed_config = await _make_processed_config_v1_1(
             codes=[
-                DbCode(
+                DbConditionCode(
                     code="840539006",
-                    display="Disease caused by SARS-CoV-2",
+                    display_name="Disease caused by SARS-CoV-2",
                     system_id=get_mock_system_id_by_name("SNOMED"),
-                    system_name="SNOMED",
                 ),
             ],
         )

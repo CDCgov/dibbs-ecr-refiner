@@ -475,7 +475,9 @@ async def build_scenario_configuration(
             await add_custom_code(
                 config_id,
                 AddCustomCodeInput(
-                    code=cc.code, system_id=get_system_id(cc.system), display=cc.name
+                    code=cc.code,
+                    system_id=get_system_id(cc.system),
+                    display_name=cc.name,
                 ),
             )
 

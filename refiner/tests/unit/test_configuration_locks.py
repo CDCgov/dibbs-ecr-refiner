@@ -29,7 +29,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition
 
     fake_config_summary = DbConfigurationSummary(
         id=mock_configuration.id,
-        name=mock_configuration.name,
+        display_name=mock_configuration.display_name,
         status=mock_configuration.status,
     )
 
@@ -80,7 +80,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition
     # Mock insert_configuration_db
     new_config_mock = GetConfigurationsResponse(
         id=UUID("33333333-3333-3333-3333-333333333333"),
-        name="New Config",
+        display_name="New Config",
         status="draft",
     )
     monkeypatch.setattr(
@@ -93,7 +93,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration, mock_condition
 
     updated_config_mock = DbConfiguration(
         id=UUID("33333333-3333-3333-3333-333333333333"),
-        name="New Config",
+        display_name="New Config",
         jurisdiction_id="JD-1",
         condition_id=UUID("22222222-2222-2222-2222-222222222222"),
         included_conditions=[assoc_condition],
