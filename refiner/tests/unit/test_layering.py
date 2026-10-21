@@ -1,5 +1,5 @@
 """
-Asserts the dependency direction ADR 0016 calls for: `core < db < services < api`.
+Asserts the dependency direction ADR 0016 calls for: `core < db, services < api`.
 
 This is the import-graph test open question 4 of the ADR asks for. It needs no new
 dependency -- it reads the source with `ast` rather than importing anything, so it
@@ -8,12 +8,12 @@ function-local imports, which are still dependencies even when they are deferred
 call time to break a cycle.
 
 `KNOWN_UPWARD_IMPORTS` is a baseline, not a blessing. Every entry is an E1 item. The
-test fails on an eighth, so today's boundaries cannot erode silently, and E1 becomes
-"drive this dict to empty" rather than an archaeology exercise.
+test fails on any import not listed there, so today's boundaries cannot erode
+silently, and E1 becomes "drive this dict to empty" rather than an archaeology
+exercise.
 """
 
 import ast
-from collections import defaultdict
 from pathlib import Path
 
 import pytest
@@ -84,42 +84,82 @@ def _module_name(path: Path) -> str:
 
 
 def _import_targets(path: Path, tree: ast.Module) -> set[str]:
+    """
+    Every dotted name an import statement could load, before resolving to files.
+
+    `from x import y` names `x` and, when `y` is a submodule rather than an attribute,
+    `x.y` -- both are returned, and `_resolve` keeps whichever exists as a file.
+    """
+
     targets: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             if node.level == 0:
-                if node.module:
-                    targets.add(node.module)
-                continue
-            # resolve `from ..x import y` against this file's package
-            base = path.parent
-            for _ in range(node.level - 1):
-                base = base.parent
-            prefix = _module_name(base / "__init__.py").removesuffix(".__init__")
-            targets.add(f"{prefix}.{node.module}" if node.module else prefix)
+                module = node.module or ""
+            else:
+                # resolve `from ..x import y` against this file's package
+                base = path.parent
+                for _ in range(node.level - 1):
+                    base = base.parent
+                prefix = _module_name(base / "__init__.py").removesuffix(".__init__")
+                module = f"{prefix}.{node.module}" if node.module else prefix
+            targets.add(module)
+            targets.update(f"{module}.{alias.name}" for alias in node.names)
         elif isinstance(node, ast.Import):
             targets.update(alias.name for alias in node.names)
     return targets
 
 
+def _resolve(name: str, modules: set[str]) -> str | None:
+    # the graph is keyed by file, so a package is its `__init__`
+    if name in modules:
+        return name
+    if (package := f"{name}.__init__") in modules:
+        return package
+    return None
+
+
 def _build_graph() -> dict[str, set[str]]:
-    graph: dict[str, set[str]] = defaultdict(set)
-    for path in sorted(APP.rglob("*.py")):
-        if "__pycache__" in path.parts or ".venv" in path.parts:
-            continue
+    paths = [
+        path
+        for path in sorted(APP.rglob("*.py"))
+        if "__pycache__" not in path.parts and ".venv" not in path.parts
+    ]
+    modules = {_module_name(path) for path in paths}
+
+    graph: dict[str, set[str]] = {module: set() for module in modules}
+    for path in paths:
         tree = ast.parse(path.read_text(), filename=str(path))
-        graph[_module_name(path)] |= {
-            target for target in _import_targets(path, tree) if target.startswith("app")
-        }
+        for target in _import_targets(path, tree):
+            if not target.startswith("app"):
+                continue
+            # a name with no file of its own is an attribute (`from x import func`)
+            # or a namespace package; neither runs any code
+            if resolved := _resolve(target, modules):
+                graph[_module_name(path)].add(resolved)
     return graph
 
 
+def _parent_packages(module: str) -> list[str]:
+    parts = module.removesuffix(".__init__").split(".")
+    return [".".join(parts[:i]) + ".__init__" for i in range(1, len(parts))]
+
+
 def _reachable(graph: dict[str, set[str]], start: str) -> set[str]:
+    """
+    Every module importing `start` executes, as file-keyed graph nodes.
+
+    Importing `a.b.c` runs `a/__init__.py` and `a/b/__init__.py` first, so those
+    count as reached too -- an import planted in a package's `__init__` ships
+    with everything below it.
+    """
+
     seen: set[str] = set()
     stack = [start]
     while stack:
-        for target in graph.get(stack.pop(), ()):
-            if target not in seen:
+        module = stack.pop()
+        for target in graph.get(module, set()) | set(_parent_packages(module)):
+            if target not in seen and target in graph:
                 seen.add(target)
                 stack.append(target)
     return seen

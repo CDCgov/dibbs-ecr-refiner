@@ -392,7 +392,7 @@ async def _check_update_operation_excludes_primary_condition_trigger_codes(
     primary_condition_id: UUID,
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
-):
+) -> None:
     params = {"code_ids": code_ids, "primary_condition_id": primary_condition_id}
     rsg_check_query = """
         SELECT cc.code_id

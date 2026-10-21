@@ -3,8 +3,9 @@ Asserts where a query result lands and how it travels to the client.
 
 The rule, in full:
 
-* every `*_db` function returns a frozen `Db*` dataclass, a primitive, or a container
-  of those -- never a `core` or `api` model
+* every query -- an `async def` in an `app/db/**/db.py` -- returns a frozen `Db*`
+  dataclass, a primitive, or a container of those; never a `core` or `api` model,
+  and never a raw row
 * a `Db*`'s fields hold primitives, other `Db*`, or frozen `core` types; JSONB is
   parsed into them in `db`, beside the SQL that chose its keys
 * a route's body is a `*Response`; the types nested inside it are plain nouns, and
@@ -28,12 +29,9 @@ APP = REFINER_ROOT / "app"
 DB = APP / "db"
 CORE_MODELS = APP / "core" / "models"
 
-# `_db` by coincidence, not queries: the pool's constructor and its FastAPI dependency
-NOT_QUERIES = {"create_db", "get_db"}
-
 # immutable values and the generic containers that wrap them. `dict`/`list` are
 # allowed as containers -- `frozen` is shallow, and making `Db*` collections into
-# tuples is deferred (see `.scratch/outlines/step3-db-models.md`)
+# tuples is deferred. `Any` is not: it is how a raw row would get past this guard
 PRIMITIVES = {
     "None",
     "bool",
@@ -44,7 +42,6 @@ PRIMITIVES = {
     "UUID",
     "datetime",
     "date",
-    "Any",
     "Literal",
     "list",
     "dict",
@@ -119,19 +116,38 @@ def _where(path: Path, node: ast.AST) -> str:
     return f"{path.relative_to(REFINER_ROOT)}:{node.lineno}"
 
 
+def _dicts_without_db_values(node: ast.expr | None) -> set[str]:
+    # a `dict` is returned as a lookup keyed by id -- `dict[UUID, DbCodeSystem]`. one
+    # whose values are not `Db*`, or a bare `dict`, is a row that skipped its dataclass
+    if node is None:
+        return set()
+    found: set[str] = set()
+    subscripted: set[int] = set()
+    for n in ast.walk(node):
+        if isinstance(n, ast.Subscript) and _annotation_names(n.value) == {"dict"}:
+            subscripted.add(id(n.value))
+            value = n.slice.elts[-1] if isinstance(n.slice, ast.Tuple) else n.slice
+            if not any(name.startswith("Db") for name in _annotation_names(value)):
+                found.add(ast.unparse(n))
+    for n in ast.walk(node):
+        if isinstance(n, ast.Name) and n.id == "dict" and id(n) not in subscripted:
+            found.add("dict")
+    return found
+
+
 def test_queries_return_db_models_or_primitives():
     offenders = []
     for path, tree in _modules(DB):
+        if path.name != "db.py":
+            continue
         for node in ast.walk(tree):
-            if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-                continue
-            if not node.name.endswith("_db") or node.name in NOT_QUERIES:
+            if not isinstance(node, ast.AsyncFunctionDef):
                 continue
             bad = {
                 n
                 for n in _annotation_names(node.returns)
                 if n not in PRIMITIVES and not n.startswith("Db")
-            }
+            } | _dicts_without_db_values(node.returns)
             if bad:
                 offenders.append(
                     f"{_where(path, node)} {node.name} returns {sorted(bad)}"

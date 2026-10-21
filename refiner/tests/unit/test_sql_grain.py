@@ -29,9 +29,13 @@ APP = Path(__file__).resolve().parents[2] / "app"
 FAN_OUT_TABLES = ("conditions_codes_temp",)
 
 # `COUNT(*)` over a membership table is a count of memberships, which is sometimes
-# exactly what is wanted; it is spelled out rather than aggregated into a payload,
-# so it is not what this guard is about
-AGGREGATE = re.compile(r"\b(JSONB_AGG|JSON_AGG|ARRAY_AGG)\s*\(", re.IGNORECASE)
+# exactly what is wanted, and it says so; `COUNT(c.id)` reads like a count of codes,
+# so it is held to the same rule as the list builders -- it is how `code_count` went
+# wrong
+AGGREGATE = re.compile(
+    r"\b(?:(?:JSONB_AGG|JSON_AGG|ARRAY_AGG|STRING_AGG)\s*\(|COUNT\s*\((?!\s*\*))",
+    re.IGNORECASE,
+)
 ARRAY_SUBQUERY = re.compile(r"\bARRAY\s*\(\s*SELECT\b", re.IGNORECASE)
 
 # aggregates whose input is already collapsed before they see it, so `DISTINCT` would
@@ -54,6 +58,13 @@ ALLOWED_WITHOUT_DISTINCT: dict[str, str] = {
     ),
     "JSONB_BUILD_OBJECT( 'code', prev.code": (
         "get_tes_update_condition_diff_db: the `prev` CTE, same reason"
+    ),
+    "COUNT(cur.code_id) FILTER (WHERE prev.code_id IS NULL) > 0": (
+        "get_tes_update_condition_diff_db: same `SELECT DISTINCT` CTEs, and the count "
+        "is only compared to zero"
+    ),
+    "COUNT(prev.code_id) FILTER (WHERE cur.code_id IS NULL) > 0": (
+        "get_tes_update_condition_diff_db: the `prev` side of the same `HAVING`"
     ),
 }
 
