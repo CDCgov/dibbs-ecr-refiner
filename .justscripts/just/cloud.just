@@ -16,7 +16,7 @@ demo-db-url:
 [doc('Retrieve a list of jurisdictions who have authored conditions in the demo application')]
 [group('azure')]
 demo-jurisdiction-authored:
-    psql $(just cloud demo-db-url) -c "SELECT c.jurisdiction_id, c.name FROM configurations AS c ORDER BY c.jurisdiction_id;"
+    psql $(just cloud demo-db-url) -c "SELECT c.jurisdiction_id, c.display_name FROM configurations AS c ORDER BY c.jurisdiction_id;"
 
 [doc('Retrieve the current backend address pool configuration for the Demo environment')]
 [group('azure')]
