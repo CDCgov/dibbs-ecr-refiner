@@ -5,7 +5,6 @@ exclude = [
   ".git",
   ".pytest_cache",
   "__pycache__",
-  "docs",
   "examples/",
   "refiner/openapi.json",
 ]

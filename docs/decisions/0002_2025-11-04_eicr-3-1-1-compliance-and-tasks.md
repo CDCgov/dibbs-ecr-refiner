@@ -61,8 +61,8 @@ All configuration is defined as Python TypedDicts and/or dataclasses in code (`r
 ```python
 class Section:
     def __init__(self, config):
-        self.code = config['code']
-        self.trigger_oids = config.get('trigger_oids', [])
+        self.code = config["code"]
+        self.trigger_oids = config.get("trigger_oids", [])
         # ...other attributes and nesting...
 
     def get_loinc(self) -> str:
@@ -71,9 +71,10 @@ class Section:
     def get_trigger_oids(self) -> list[str]:
         return self.trigger_oids
 
+
 class Document:
     def __init__(self, config):
-        self.sections = [Section(sec) for sec in config['sections']]
+        self.sections = [Section(sec) for sec in config["sections"]]
 
     def get_all_section_loincs(self) -> list[str]:
         return [s.get_loinc() for s in self.sections]
@@ -84,8 +85,9 @@ class Document:
             oids.extend(section.get_trigger_oids())
         return oids
 
+
 # example instantiation
-config = ... # (hardcoded data)
+config = ...  # (hardcoded data)
 doc = Document(config)
 ```
 
@@ -125,14 +127,11 @@ Update and implement helpers as instance methods rather than top-level functions
 ```python
 class Document:
     ...
-    def get_required_sections(self) -> list[str]:
-        ...
-    def get_trigger_code_template_oids(self) -> set[str]:
-        ...
-    def get_section_display_name(self, loinc_code: str) -> str | None:
-        ...
-    def get_section_trigger_code_oids(self, loinc_code: str) -> list[str]:
-        ...
+
+    def get_required_sections(self) -> list[str]: ...
+    def get_trigger_code_template_oids(self) -> set[str]: ...
+    def get_section_display_name(self, loinc_code: str) -> str | None: ...
+    def get_section_trigger_code_oids(self, loinc_code: str) -> list[str]: ...
 ```
 
 ### Document Processing & Version Detection
