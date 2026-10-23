@@ -158,12 +158,13 @@ changes so linkage and grouping have a home, and so mutation stays in one place:
 
   ```python
   class DetailRow(NamedTuple):
-      source: _Element            # the observation / substanceAdministration
-      values: dict[str, str]      # column -> rendered value
+      source: _Element  # the observation / substanceAdministration
+      values: dict[str, str]  # column -> rendered value
+
 
   class Block(NamedTuple):
-      context: dict[str, str]     # group-level fields (panel, concern, specimen)
-      columns: list[str]          # detail-table headers
+      context: dict[str, str]  # group-level fields (panel, concern, specimen)
+      columns: list[str]  # detail-table headers
       rows: list[DetailRow]
   ```
 

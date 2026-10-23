@@ -293,9 +293,7 @@ class FieldSpec(NamedTuple):
     kind: str  # "attr" | "typed" | "text"
 
 
-def extract_fields(
-    anchor: _Element, field_map: list[FieldSpec]
-) -> dict[str, str]:
+def extract_fields(anchor: _Element, field_map: list[FieldSpec]) -> dict[str, str]:
     """
     Read a flat list of fields off ONE anchor element. No joining here--
     every xpath is relative to `anchor`. This is reused at every structural
@@ -460,9 +458,7 @@ def reconstruct_results(
             else {"Specimen": ""}
         )
 
-        for obs in organizer.xpath(
-            "hl7:component/hl7:observation", namespaces=NS
-        ):
+        for obs in organizer.xpath("hl7:component/hl7:observation", namespaces=NS):
             result = extract_fields(obs, RESULT_FIELDS)  # the row's own fields
             rows.append({**panel, **specimen, **result})  # <-- THE JOIN
 
