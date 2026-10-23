@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.api.validation.file_validation import (
+from app.core.models.limits import (
     DIFF_RENDERING_MAX_MB,
     UNCOMPRESSED_MAX_MB,
     DiffMax,

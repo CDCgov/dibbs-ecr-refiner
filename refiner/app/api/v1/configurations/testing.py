@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.api.v1.simulator.model import Condition
 from app.api.validation.file_validation import (
     format_refined_document_or_raise,
     get_validated_file,
@@ -21,7 +22,6 @@ from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection, get_db
-from app.db.simulator.model import Condition
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
 from app.services.conditions.refinement import filter_refined_files_by_diff_rendering

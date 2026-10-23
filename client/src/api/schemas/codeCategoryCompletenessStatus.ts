@@ -5,6 +5,6 @@ import type { CodeCategoryStatus } from './codeCategoryStatus';
  */
 export interface CodeCategoryCompletenessStatus {
   category: string;
-  name: string;
+  display_name: string;
   completeness: CodeCategoryStatus;
 }

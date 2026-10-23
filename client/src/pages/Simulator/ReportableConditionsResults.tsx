@@ -35,7 +35,7 @@ export function ReportableConditionsResults({
     () =>
       new Map(
         matchedSetsWithConfig.map((cg) => [
-          cg.name,
+          cg.display_name,
           {
             checked: true,
             // try to set "active" as the default, otherwise fall back to whatever is first since the backend reverse sorts the response based on version number
@@ -52,7 +52,7 @@ export function ReportableConditionsResults({
   );
 
   const uncheckedConditionIds = matchedSetsWithConfig
-    .filter((cg) => !conditionSetSelections.get(cg.name)?.checked)
+    .filter((cg) => !conditionSetSelections.get(cg.display_name)?.checked)
     .map((cg) => cg.condition_id);
 
   // helper for toggling a checkbox
@@ -108,20 +108,22 @@ export function ReportableConditionsResults({
             We found the following reportable condition(s) in the RR:
           </p>
           {matchedSetsWithConfig.map((cg) => {
-            const selection = conditionSetSelections.get(cg.name)!;
+            const selection = conditionSetSelections.get(cg.display_name)!;
             return (
-              <div key={cg.name} className="flex gap-2">
+              <div key={cg.display_name} className="flex gap-2">
                 <Checkbox
-                  aria-label={`Use ${cg.name} configuration in refinement process`}
+                  aria-label={`Use ${cg.display_name} configuration in refinement process`}
                   checked={selection.checked}
-                  onChange={() => toggleConditionSet(cg.name)}
+                  onChange={() => toggleConditionSet(cg.display_name)}
                 />
                 <SelectContainer>
                   <Field>
-                    <Label>{cg.name}</Label>
+                    <Label>{cg.display_name}</Label>
                     <Select
                       value={selection.selectedId}
-                      onChange={(e) => setSelectedId(cg.name, e.target.value)}
+                      onChange={(e) =>
+                        setSelectedId(cg.display_name, e.target.value)
+                      }
                     >
                       {cg.versions.map((v) => (
                         <option key={v.id} value={v.id}>
@@ -140,7 +142,7 @@ export function ReportableConditionsResults({
               <hr className="border-gray-cool-20" />
               <ConditionWarnings
                 missingConditions={matchedSetsWithoutConfig.map(
-                  (wc) => wc.name
+                  (wc) => wc.display_name
                 )}
               />
             </>
@@ -189,7 +191,9 @@ export function ReportableConditionsResults({
     <Container className="max-w-188">
       <ConditionsContainer>
         <ConditionWarnings
-          missingConditions={matchedSetsWithoutConfig.map((wc) => wc.name)}
+          missingConditions={matchedSetsWithoutConfig.map(
+            (wc) => wc.display_name
+          )}
         />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">

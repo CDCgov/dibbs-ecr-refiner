@@ -63,7 +63,7 @@ test.describe('Codes management - custom code interactions', () => {
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: 'test-code-1',
-          display: 'My test code',
+          display_name: 'My test code',
           system_id: systems[0].id,
         },
       ]);
@@ -116,7 +116,7 @@ test.describe('Codes management - custom code interactions', () => {
     await api.uploadCustomCodeCsv(config.id, [
       {
         code: 'test-code-1',
-        display: 'My test code',
+        display_name: 'My test code',
         system_id: systems[0].id,
       },
     ]);
@@ -782,7 +782,7 @@ test.describe('Codes management - search', () => {
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: '123-4',
-          display: 'mock custom code',
+          display_name: 'mock custom code',
           system_id: systems[0].id,
         },
       ]);
@@ -844,7 +844,7 @@ test.describe('Codes management - search', () => {
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: 'A06.22',
-          display: 'Amebic',
+          display_name: 'Amebic',
           system_id: icd10Id,
         },
       ]);
@@ -1235,7 +1235,7 @@ test.describe('Codes management - filters', () => {
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: '123-4',
-          display: 'mock custom code',
+          display_name: 'mock custom code',
           system_id: systems.find((s) => s.display_name === 'Other')!.id,
         },
       ]);
@@ -1394,7 +1394,7 @@ test.describe('Codes management - filters', () => {
       await api.uploadCustomCodeCsv(config.id, [
         {
           code: '123-4',
-          display: 'mock custom code',
+          display_name: 'mock custom code',
           system_id: systems[0].id,
         },
       ]);
@@ -1574,12 +1574,12 @@ test.describe('Codes management - data loading', () => {
     await api.uploadCustomCodeCsv(config.id, [
       {
         code: '123-4',
-        display: 'test code 1',
+        display_name: 'test code 1',
         system_id: systems[0].id,
       },
       {
         code: '432-1',
-        display: 'test code 2',
+        display_name: 'test code 2',
         system_id: systems[1].id,
       },
     ]);
@@ -1621,7 +1621,7 @@ test.describe('Codes management - data loading', () => {
 
       const customCodes = Array.from({ length: customCodeCount }, (_, i) => ({
         code: `test-code-${i + 1}`,
-        display: `Test code ${i + 1}`,
+        display_name: `Test code ${i + 1}`,
         system_id: systems[Math.floor(Math.random() * systems.length)].id,
       }));
 

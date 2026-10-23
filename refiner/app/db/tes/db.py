@@ -1,17 +1,19 @@
+from typing import Any
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
 from app.core.exceptions import InputValidationError, ValidationError
+from app.core.models.terminology import CodeExportRow
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection
 from app.db.tes.model import (
-    ConditionDiffExportData,
+    DbConditionDiff,
     DbTes,
     DbTesConditionUpdate,
-    DbTesConfigsToUpdateResponse,
-    TesConfigToUpdate,
+    DbTesConfigsToUpdate,
+    DbTesConfigToUpdate,
 )
 
 
@@ -25,6 +27,7 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[DbTes]
     Returns:
         list[DbTes]: A list of all the relevant TES details needed for the diff page
     """
+
     query = """
     SELECT
         id,
@@ -58,6 +61,7 @@ async def _get_latest_tes_record_db(
     Raises:
         ValueError: If no TES releases have been loaded.
     """
+
     query = """
         SELECT
             id,
@@ -95,6 +99,7 @@ async def _get_tes_by_version_number_db(
     Returns:
         DbTes: the TES record.
     """
+
     query = """
     SELECT
         id,
@@ -136,7 +141,7 @@ async def _get_baseline_tes_diff_db(
         SELECT
             c.canonical_url,
             c.display_name,
-            COALESCE(array_agg(cc.code_id)) as added_code_ids,
+            array_agg(DISTINCT cc.code_id) as added_code_ids,
             '{}'::text[] as removed_code_ids,
             TRUE as is_new
         FROM conditions_codes_temp cc
@@ -154,22 +159,42 @@ async def _get_baseline_tes_diff_db(
         return result
 
 
+def _to_condition_diff(row: dict[str, Any]) -> DbConditionDiff:
+    # the keys inside each JSONB element are the aliases the two diff queries below
+    # build with `JSONB_BUILD_OBJECT`, so they are parsed here, beside that SQL
+
+    return DbConditionDiff(
+        canonical_url=row["canonical_url"],
+        condition_display_name=row["condition_display_name"],
+        added_codes=[_to_code_export_row(c) for c in row["added_codes"]],
+        removed_codes=[_to_code_export_row(c) for c in row["removed_codes"]],
+    )
+
+
+def _to_code_export_row(element: dict[str, str]) -> CodeExportRow:
+    return CodeExportRow(
+        code=element["code"],
+        display_name=element["display_name"],
+        system_display_name=element["system_display_name"],
+    )
+
+
 async def _get_baseline_tes_update_condition_diff_db(
     db: AsyncDatabaseConnection,
     tes_record: DbTes,
     cond_url: str,
-) -> ConditionDiffExportData:
+) -> DbConditionDiff:
+
     query = """
         SELECT DISTINCT
             cond.canonical_url,
-            cond.display_name AS condition_name,
+            cond.display_name AS condition_display_name,
             COALESCE(
                 jsonb_agg(
-                    jsonb_build_object(
+                    DISTINCT jsonb_build_object(
                         'code', c.code,
-                        'system_name', s.display_name,
-                        'system_id', s.id,
-                        'display', c.display
+                        'display_name', c.display_name,
+                        'system_display_name', s.display_name
                     )
                 ) FILTER (WHERE c.id IS NOT NULL),
                 '[]'::jsonb
@@ -188,7 +213,7 @@ async def _get_baseline_tes_update_condition_diff_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur,
+        conn.cursor(row_factory=dict_row) as cur,
     ):
         await cur.execute(
             query,
@@ -202,7 +227,7 @@ async def _get_baseline_tes_update_condition_diff_db(
             raise ValueError(
                 f"Condition with URL {cond_url} not found for TES versions {tes_record.version} "
             )
-        return result
+        return _to_condition_diff(result)
 
 
 async def get_tes_update_condition_diff_db(
@@ -210,7 +235,7 @@ async def get_tes_update_condition_diff_db(
     cur_version: str,
     prev_version: str,
     cond_url: str,
-) -> ConditionDiffExportData:
+) -> DbConditionDiff:
     """
     Returns an array of codes for a specified condition within the specified TES diff.
 
@@ -223,6 +248,7 @@ async def get_tes_update_condition_diff_db(
     Returns:
         list[DbTes]: A list of all the relevant TES details needed for the diff page
     """
+
     (cur_tes_record, prev_tes_record) = await _get_cur_and_prev_tes_records_db(
         db=db, cur_version=cur_version, prev_version=prev_version
     )
@@ -236,11 +262,10 @@ async def get_tes_update_condition_diff_db(
         WITH cur AS (
             SELECT DISTINCT
                 cond.canonical_url,
-                cond.display_name as condition_name,
+                cond.display_name as condition_display_name,
                 c.code,
-                s.display_name as system_name,
-                s.id as system_id,
-                c.display as code_name,
+                s.display_name as system_display_name,
+                c.display_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
             LEFT JOIN conditions cond ON cc.condition_id = cond.id
@@ -252,11 +277,10 @@ async def get_tes_update_condition_diff_db(
         prev AS (
             SELECT DISTINCT
                 cond.canonical_url,
-                cond.display_name as condition_name,
+                cond.display_name as condition_display_name,
                 c.code,
-                s.display_name as system_name,
-                s.id as system_id,
-                c.display as code_name,
+                s.display_name as system_display_name,
+                c.display_name,
                 c.id as code_id
             FROM conditions_codes_temp cc
             LEFT JOIN conditions cond ON cc.condition_id = cond.id
@@ -267,21 +291,21 @@ async def get_tes_update_condition_diff_db(
         )
         SELECT
             COALESCE (prev.canonical_url, cur.canonical_url) AS canonical_url,
-            MAX(COALESCE(cur.condition_name, prev.condition_name)) AS condition_name,
+            MAX(
+                COALESCE(cur.condition_display_name, prev.condition_display_name)
+            ) AS condition_display_name,
             COALESCE(JSONB_AGG(
                 JSONB_BUILD_OBJECT(
                     'code', cur.code,
-                    'system_name', cur.system_name,
-                    'system_id', cur.system_id,
-                    'display', cur.code_name
+                    'display_name', cur.display_name,
+                    'system_display_name', cur.system_display_name
                 ))
             FILTER (WHERE prev.code_id IS NULL), '[]'::jsonb) as added_codes,
             COALESCE(JSONB_AGG(
                 JSONB_BUILD_OBJECT(
                     'code', prev.code,
-                    'system_name', prev.system_name,
-                    'system_id', prev.system_id,
-                    'display', prev.code_name
+                    'display_name', prev.display_name,
+                    'system_display_name', prev.system_display_name
                 ))
             FILTER (WHERE cur.code_id IS NULL), '[]'::jsonb) as removed_codes
         FROM cur
@@ -297,7 +321,7 @@ async def get_tes_update_condition_diff_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(ConditionDiffExportData)) as cur,
+        conn.cursor(row_factory=dict_row) as cur,
     ):
         await cur.execute(
             query,
@@ -312,7 +336,7 @@ async def get_tes_update_condition_diff_db(
             raise ValueError(
                 f"Condition with URL {cond_url} not found for TES versions {cur_version} or {prev_version} "
             )
-        return result
+        return _to_condition_diff(result)
 
 
 async def _get_tes_update_diff_db(
@@ -329,6 +353,7 @@ async def _get_tes_update_diff_db(
     Returns:
         list[DbTesCondition]: All conditions that have changed codes between versions.
     """
+
     if cur_tes_id == prev_tes_id:
         return await _get_baseline_tes_diff_db(db=db, tes_id=cur_tes_id)
 
@@ -373,6 +398,7 @@ async def get_tes_version_diff_db(
     """
     Returns an array off all loaded TES version records.
     """
+
     (cur_tes_record, prev_tes_record) = await _get_cur_and_prev_tes_records_db(
         db=db, cur_version=cur_version, prev_version=prev_version
     )
@@ -384,7 +410,10 @@ async def get_tes_version_diff_db(
 async def _get_cur_and_prev_tes_records_db(
     db: AsyncDatabaseConnection, cur_version: str, prev_version: str
 ) -> tuple[DbTes, DbTes]:
-    """Get current and previous TES records, setting prev to the current if it's the baseline."""
+    """
+    Get current and previous TES records, setting prev to the current if it's the baseline.
+    """
+
     cur_tes_record = await _get_tes_by_version_number_db(db=db, version=cur_version)
     prev_tes_record = (
         await _get_tes_by_version_number_db(db=db, version=prev_version)
@@ -398,7 +427,7 @@ async def _get_cur_and_prev_tes_records_db(
 async def get_configurations_set_to_tes_version(
     db: AsyncDatabaseConnection,
     jurisdiction_id: str,
-) -> DbTesConfigsToUpdateResponse:
+) -> DbTesConfigsToUpdate:
     """
     Return drafts and active configurations that use an older TES release.
 
@@ -412,12 +441,13 @@ async def get_configurations_set_to_tes_version(
     Returns:
         Existing outdated drafts and outdated active configurations.
     """
+
     latest_tes_record = await _get_latest_tes_record_db(db=db)
 
     query = """
         SELECT
             conf.id AS configuration_id,
-            conf.name AS configuration_name,
+            conf.display_name AS configuration_display_name,
             COALESCE(
                 array_agg(
                     DISTINCT cond.display_name
@@ -453,9 +483,9 @@ async def get_configurations_set_to_tes_version(
             )
         GROUP BY
             conf.id,
-            conf.name
+            conf.display_name
         ORDER BY
-            conf.name
+            conf.display_name
     """
 
     params = {
@@ -465,7 +495,7 @@ async def get_configurations_set_to_tes_version(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(TesConfigToUpdate)) as cur,
+        conn.cursor(row_factory=class_row(DbTesConfigToUpdate)) as cur,
     ):
         await cur.execute(
             query,
@@ -485,7 +515,7 @@ async def get_configurations_set_to_tes_version(
         )
         active_rows = await cur.fetchall()
 
-    return DbTesConfigsToUpdateResponse(
+    return DbTesConfigsToUpdate(
         existing_drafts=draft_rows,
         drafts_to_create=active_rows,
     )
@@ -509,6 +539,7 @@ async def _raise_if_invalid_draft_configurations(
             updated because they do not exist, are not drafts, or do not belong to
             the current jurisdiction.
     """
+
     async with db.get_connection() as conn, conn.cursor() as cur:
         await cur.execute(
             """
@@ -551,6 +582,7 @@ async def _raise_if_conditions_missing_in_latest_tes(
     Raises:
         ValidationError: If one or more conditions are missing from the latest TES release.
     """
+
     async with db.get_connection() as conn, conn.cursor() as cur:
         await cur.execute(
             """
@@ -600,6 +632,7 @@ async def _raise_if_conflicting_condition_links(
     Raises:
         ValidationError: If conflicting condition links are present.
     """
+
     async with db.get_connection() as conn, conn.cursor() as cur:
         await cur.execute(
             """
@@ -664,6 +697,7 @@ async def apply_latest_tes_to_existing_drafts_db(
             latest condition cannot be found, or conflicting condition links
             are present.
     """
+
     deduplicated_ids = list(dict.fromkeys(configuration_ids))
 
     if not deduplicated_ids:
@@ -786,6 +820,7 @@ async def _raise_if_invalid_active_configurations(
             cloned because they do not exist, are not active, or do not belong to
             the current jurisdiction.
     """
+
     async with db.get_connection() as conn, conn.cursor() as cur:
         await cur.execute(
             """
@@ -835,6 +870,7 @@ async def _raise_if_drafts_already_exist(
         ValidationError: If a draft configuration already exists for the
             condition associated with a configuration.
     """
+
     # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
     from app.db.configurations.db import is_config_valid_to_insert_db
 
@@ -875,6 +911,7 @@ async def create_drafts_from_active_configurations_db(
             does not belong to the jurisdiction, or a draft already exists
             for the condition.
     """
+
     # Local import to avoid circular dependency: tes.db -> configurations.db -> conditions.db -> tes.db
     from app.db.configurations.db import (
         get_configuration_by_id_db,

@@ -4,5 +4,5 @@
  */
 export interface CreateConfigurationResponse {
   id: string;
-  name: string;
+  display_name: string;
 }

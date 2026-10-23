@@ -1,11 +1,11 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+from app.core.models.configurations import NarrativeAction, SectionAction
+from app.core.models.terminology import Coding
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
-
-from ..db.configurations.model import DbNarrativeAction
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -16,22 +16,6 @@ from ..db.configurations.model import DbNarrativeAction
 # =============================================================================
 type CodeSystemKey = str
 type Oid = str
-
-
-@dataclass(frozen=True)
-class Coding:
-    """
-    A code + display + system triple, representing a single coded concept.
-
-    This is the fundamental unit of terminology data throughout the refinement
-    pipeline. It carries enough context for both matching (code + system) and
-    enrichment (display). For `system` the value will be an OID when known,
-    and a human label for custom codes with "Other".
-    """
-
-    code: str
-    display: str
-    system_oid: str
 
 
 type Code = str
@@ -147,11 +131,18 @@ class CodeSystemSets:
         def _serialize_system(
             system_dict: dict[str, Coding],
         ) -> list[dict[str, str]]:
+            # NOTE:
+            # the system is already carried by the key this list hangs off
+            # (`loinc`, `snomed`, ...), and `from_dict` reads `system_oid` --
+            # so a `"system"` key here was written on every activation and
+            # discarded on every read. matching resolves an OID from the
+            # document element via `oid_to_system_map`, never from the coding
             return [
                 {
                     "code": coding.code,
-                    "display": coding.display,
-                    "system": coding.system_oid,
+                    # the payload key stays `display` until the active.json
+                    # schema bump; the field it reads is ours
+                    "display": coding.display_name,
                 }
                 for coding in system_dict.values()
             ]
@@ -191,7 +182,7 @@ class CodeSystemSets:
             return {
                 item["code"]: Coding(
                     code=item["code"],
-                    display=item.get("display", ""),
+                    display_name=item.get("display", ""),
                     system_oid=item.get("system_oid", ""),
                 )
                 for item in codings
@@ -215,15 +206,21 @@ class CodeSystemSets:
 # =============================================================================
 
 
-class Section(BaseModel):
+class ActiveSection(BaseModel):
     """
-    Section data coming from an active.json S3 file.
+    One section of an activated configuration, read back from `active.json`.
+
+    S3 is an unverified source, so this is the pydantic validation boundary --
+    every field is required and the action literals are checked here rather
+    than defaulted downstream. Frozen because it is carried, not edited.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     code: str
     name: str
-    action: str
-    narrative: DbNarrativeAction
+    action: SectionAction
+    narrative: NarrativeAction
     include: bool
 
 
@@ -235,7 +232,7 @@ class ProcessedConfigurationData(BaseModel):
     is derived from code_system_sets when building the ProcessedConfiguration.
     """
 
-    sections: list[Section]
+    sections: list[ActiveSection]
     included_condition_rsg_codes: set[str]
     code_system_sets: dict[str, list[dict[str, str]]]
 
@@ -259,7 +256,7 @@ class ProcessedConfiguration:
 
     codes: set[str]
     code_system_sets: CodeSystemSets
-    section_processing: list[dict]
+    section_processing: list[ActiveSection]
     included_condition_rsg_codes: set[str]
 
     @classmethod
@@ -293,6 +290,6 @@ class ProcessedConfiguration:
         return cls(
             codes=codes,
             code_system_sets=code_system_sets,
-            section_processing=[s.model_dump() for s in validated.sections],
+            section_processing=validated.sections,
             included_condition_rsg_codes=validated.included_condition_rsg_codes,
         )

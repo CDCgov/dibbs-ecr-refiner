@@ -289,10 +289,10 @@ export function UpdateConfigurations() {
                           checked={selectedConfigurations.includes(
                             draft.configuration_id
                           )}
-                          aria-label={`Select ${draft.configuration_name}`}
+                          aria-label={`Select ${draft.configuration_display_name}`}
                         />
 
-                        <span>{draft.configuration_name}</span>
+                        <span>{draft.configuration_display_name}</span>
                       </div>
                     </TableCell>
 
@@ -368,10 +368,10 @@ export function UpdateConfigurations() {
                               configuration.configuration_id
                             )
                           }
-                          aria-label={`Select ${configuration.configuration_name}`}
+                          aria-label={`Select ${configuration.configuration_display_name}`}
                         />
 
-                        <span>{configuration.configuration_name}</span>
+                        <span>{configuration.configuration_display_name}</span>
                       </div>
                     </TableCell>
 

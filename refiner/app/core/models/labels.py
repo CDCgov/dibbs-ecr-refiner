@@ -1,18 +1,23 @@
 from dataclasses import dataclass
 from typing import Final, Literal, get_args
 
-from .model import (
-    DbNarrativeAction,
-    DbSectionAction,
+from app.core.models.configurations import (
+    NarrativeAction,
+    SectionAction,
 )
 
 # NOTE:
 # CONFIG DISPLAY LABELS
 # =============================================================================
-# canonical human-readable labels for the configuration enums. shared by the
-# CSV config export (api/v1/configurations/exports.py) and the per-section
-# provenance footnote (services/ecr/narrative/footnote.py) so the two never
-# drift from each other.
+# canonical human-readable labels for the configuration enums, so that nothing
+# spells a user-facing action string on its own. every layer reads them, which
+# is why they live in `core`:
+# * the CSV config export -- `api/v1/configurations/exports.py`
+# * the configuration event log -- `db/configurations/db.py`
+# * the per-section provenance footnote -- `services/ecr/narrative/footnote.py`
+#
+# the last one matters for placement: the refinement core stamps these into a
+# refined document, and it has to do that with no database in reach.
 #
 # Variables are defined this way to allow Orval to codegen and ship them to the
 # frontend so that the user-facing strings are driven by the definitions here.
@@ -46,21 +51,21 @@ class NarrativeDataLabels:
 @dataclass
 class CodedDataLabels:
     """
-    Enum class to type the narrative actions possible for the frontend.
+    Enum class to type the coded data actions possible for the frontend.
     """
 
     retain: KeepOriginalLiteral = RETAIN_LABEL
     refine: RefineLiteral = REFINE_LABEL
 
 
-NARRATIVE_DATA_LABELS: Final[dict[DbNarrativeAction, str]] = {
+NARRATIVE_DATA_LABELS: Final[dict[NarrativeAction, str]] = {
     "retain": RETAIN_LABEL,
     "keep_on_match": KEEP_ON_MATCH_LABEL,
     "reconstruct": RECONSTRUCT_LABEL,
     "remove": REMOVE_LABEL,
 }
 
-CODED_DATA_LABELS: Final[dict[DbSectionAction, str]] = {
+CODED_DATA_LABELS: Final[dict[SectionAction, str]] = {
     "retain": RETAIN_LABEL,
     "refine": REFINE_LABEL,
 }

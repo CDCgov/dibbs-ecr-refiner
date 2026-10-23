@@ -25,7 +25,7 @@ vi.mock('../../hooks/useGetEnv', () => ({
 const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
   sets: [
     {
-      name: 'COVID-19',
+      display_name: 'COVID-19',
       condition_id: '2da5c712-6dc6-4ddf-8d1a-e34c0e77913a',
       versions: [
         {
@@ -36,7 +36,7 @@ const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
       ],
     },
     {
-      name: 'Influenza',
+      display_name: 'Influenza',
       condition_id: '9bf9da1a-10a8-487c-8bcf-85a55ad229dd',
       versions: [
         {

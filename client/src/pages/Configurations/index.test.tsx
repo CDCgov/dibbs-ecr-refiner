@@ -31,9 +31,9 @@ vi.mock('../../api/configurations/configurations', async () => {
     useGetConfigurations: vi.fn(() => ({
       data: {
         data: [
-          { id: '1', name: 'COVID-19', is_active: true },
-          { id: '2', name: 'Zika Virus Disease', is_active: true },
-          { id: '3', name: 'Zika Virus Disease', is_active: false },
+          { id: '1', display_name: 'COVID-19', is_active: true },
+          { id: '2', display_name: 'Zika Virus Disease', is_active: true },
+          { id: '3', display_name: 'Zika Virus Disease', is_active: false },
         ],
       },
     })),
@@ -51,7 +51,9 @@ vi.mock('../../api/configurations/configurations', async () => {
             codes: [],
             code_systems: {},
           }, // not needed for these tests
-          rsg_codes: [{ display: 'Anaplasmosis (disorder)', code: '13906002' }],
+          rsg_codes: [
+            { display_name: 'Anaplasmosis (disorder)', code: '13906002' },
+          ],
           included_conditions: [
             { id: '1', display_name: 'Anaplasmosis', associated: true },
             {
@@ -79,7 +81,7 @@ vi.mock('../../api/conditions/conditions', async () => {
             id: '1',
             display_name: 'Anaplasmosis',
             rsg_codes: [
-              { display: 'Anaplasmosis (disorder)', code: '13906002' },
+              { display_name: 'Anaplasmosis (disorder)', code: '13906002' },
             ],
           },
           {
@@ -200,7 +202,7 @@ describe('Configurations Page', () => {
 
     const response: CreateConfigurationResponse = {
       id: 'config-id',
-      name: 'Anaplasmosis',
+      display_name: 'Anaplasmosis',
     };
 
     const mockMutate = vi.fn().mockImplementation(

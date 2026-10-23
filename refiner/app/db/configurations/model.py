@@ -1,27 +1,17 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
+from app.core.models.configurations import (
+    ConfigurationStatus,
+    ConfiguredSection,
+)
 from app.db.configurations.custom_codes.model import DbCustomCode
-
-type DbSectionAction = Literal["retain", "refine"]
-
-type DbNarrativeAction = Literal["retain", "remove", "reconstruct", "keep_on_match"]
-
-type DbConfigurationStatus = Literal["draft", "inactive", "active"]
-
-type DbSectionType = Literal["standard", "custom"]
-
-type ConfigurationCodeStatus = Literal["included", "excluded"]
-type ConfigurationCodeStatusLabel = Literal["Included", "Excluded"]
-
-CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION = 1
-MAINTENANCE_LOCK_KEY = "configurations/maintenance.lock"
 
 
 @dataclass(frozen=True)
-class GetConfigurationResponseVersion:
+class DbConfigurationVersion:
     """
     Model representing a version of a configuration.
     """
@@ -29,7 +19,7 @@ class GetConfigurationResponseVersion:
     id: UUID
     version: int
     condition_canonical_url: str
-    status: DbConfigurationStatus
+    status: ConfigurationStatus
     created_at: datetime
     created_by: str
     last_activated_at: datetime | None
@@ -37,47 +27,21 @@ class GetConfigurationResponseVersion:
 
 
 @dataclass(frozen=True)
-class DbTotalConditionCodeCount:
+class DbCodeSetSummary:
     """
-    Total code count model.
+    One code set a configuration includes, with how many codes it contributes.
+
+    "Code set" is what the UI calls a condition associated to a configuration, so the
+    identifier follows rule 7's settled `code_set` spelling.
     """
 
     condition_id: UUID
     display_name: str
-    total_codes: int
+    code_count: int
 
 
 @dataclass(frozen=True)
-class DbConfigurationSectionInstructions:
-    """
-    Properties of a section that describe how it should be processed during refining.
-    """
-
-    include: bool
-    narrative: DbNarrativeAction
-    action: DbSectionAction
-
-
-@dataclass(frozen=True)
-class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
-    """
-    Section Processing instructions for a Configuration.
-
-    `name` is the section's name.
-    `code` is the LOINC code for the section.
-    `versions` is a list of versions this section appears in.
-    `section_type` is an indicator as to how the section was created.
-
-    """
-
-    name: str
-    code: str
-    versions: list[str]
-    section_type: DbSectionType
-
-
-@dataclass(frozen=True)
-class DbConfigurationSection(DbConfigurationSectionProcessing):
+class DbConfigurationSection(ConfiguredSection):
     """
     A section row from the `configurations_sections` table.
     """
@@ -86,25 +50,6 @@ class DbConfigurationSection(DbConfigurationSectionProcessing):
     configuration_id: UUID
     created_at: datetime
     updated_at: datetime
-
-    def to_processing_dict(self) -> dict:
-        """
-        Convert a DbConfigurationSection to a dictionary that can be used for processing.
-
-        Data not needed for processing is excluded.
-
-        Returns:
-            dict: The dictionary
-        """
-        return {
-            "code": self.code,
-            "name": self.name,
-            "action": self.action,
-            "include": self.include,
-            "versions": self.versions,
-            "narrative": self.narrative,
-            "section_type": self.section_type,
-        }
 
 
 @dataclass(frozen=True)
@@ -124,13 +69,13 @@ class DbConfiguration:
     """
 
     id: UUID
-    name: str
-    status: DbConfigurationStatus
+    display_name: str
+    status: ConfigurationStatus
     jurisdiction_id: str
     condition_id: UUID
     included_conditions: list[UUID]
     custom_codes: list[DbCustomCode]
-    section_processing: list[DbConfigurationSectionProcessing]
+    section_processing: list[ConfiguredSection]
     version: int
     last_activated_at: datetime | None
     last_activated_by: UUID | None
@@ -151,7 +96,7 @@ class DbConfiguration:
 
         return cls(
             id=row["id"],
-            name=row["name"],
+            display_name=row["display_name"],
             status=row["status"],
             jurisdiction_id=row["jurisdiction_id"],
             condition_id=row["condition_id"],
@@ -160,7 +105,7 @@ class DbConfiguration:
                 DbCustomCode(
                     id=UUID(c["id"]),
                     code=c["code"],
-                    display=c["display"],
+                    display_name=c["display_name"],
                     system_id=UUID(c["system_id"]),
                     created_at=c["created_at"],
                     updated_at=c["updated_at"],
@@ -169,8 +114,7 @@ class DbConfiguration:
                 for c in row["custom_codes"]
             ],
             section_processing=[
-                DbConfigurationSectionProcessing(**sp)
-                for sp in (row.get("section_processing") or [])
+                ConfiguredSection(**sp) for sp in (row.get("section_processing") or [])
             ],
             version=row["version"],
             last_activated_at=row["last_activated_at"],
@@ -187,68 +131,5 @@ class DbConfigurationSummary:
     """
 
     id: UUID
-    name: str
-    status: DbConfigurationStatus
-
-
-@dataclass(frozen=True)
-class ConfigurationStoragePayload:
-    """
-    The model for a configuration that is being written to S3.
-
-    Contains the enriched code_system_sets required for refinement,
-    along with section processing and included condition RSG code, and
-    the active payload schema version.
-    """
-
-    schema_version: int
-    sections: list[dict[str, Any]]
-    included_condition_rsg_codes: set[str]
-    code_system_sets: dict[str, list[dict[str, str]]]
-
-    def to_dict(self) -> dict:
-        """
-        Returns the ConfigurationStoragePayload represented as a dict.
-
-        Returns:
-            dict: ConfigurationStoragePayload represented as a dict
-        """
-
-        result = {
-            "schema_version": self.schema_version,
-            "code_system_sets": self.code_system_sets,
-            "sections": self.sections,
-            "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
-        }
-
-        return result
-
-
-@dataclass(frozen=True)
-class ConfigurationStorageMetadata:
-    """
-    The model for configuration metadata that is being written to S3.
-    """
-
-    condition_name: str
-    canonical_url: str
-    tes_version: str
-    jurisdiction_id: str
-    configuration_version: int
-    child_rsg_snomed_codes: list[str]
-
-    def to_dict(self) -> dict:
-        """
-        Returns the ConfigurationStorageMetadata represented as a dict.
-
-        Returns:
-            dict: ConfigurationStorageMetadata represented as a dict
-        """
-        return {
-            "condition_name": self.condition_name,
-            "canonical_url": self.canonical_url,
-            "tes_version": self.tes_version,
-            "jurisdiction_id": self.jurisdiction_id,
-            "configuration_version": self.configuration_version,
-            "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
-        }
+    display_name: str
+    status: ConfigurationStatus

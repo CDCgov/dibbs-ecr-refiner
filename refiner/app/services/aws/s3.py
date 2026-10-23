@@ -13,8 +13,8 @@ from botocore.exceptions import ClientError
 from fastapi.concurrency import run_in_threadpool
 
 from app.core.config import get_app_config, get_aws_config
-from app.db.conditions.model import ConditionMappingPayload
-from app.db.configurations.model import (
+from app.core.models.payloads import (
+    ConditionMappingPayload,
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
 )

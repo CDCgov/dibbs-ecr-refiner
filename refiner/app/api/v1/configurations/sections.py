@@ -9,19 +9,21 @@ from app.api.v1.configurations.model import (
     DeleteSectionInput,
     SectionUpdateInput,
 )
+from app.core.models.configurations import (
+    ConfiguredSection,
+    NarrativeAction,
+    SectionAction,
+    SectionType,
+)
+from app.core.models.labels import CodedDataLabels, NarrativeDataLabels
 from app.db.configurations.db import (
     delete_custom_section_db,
     get_configuration_by_id_db,
     insert_custom_section_db,
     update_configuration_section_db,
 )
-from app.db.configurations.labels import CodedDataLabels, NarrativeDataLabels
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationSectionProcessing,
-    DbNarrativeAction,
-    DbSectionAction,
-    DbSectionType,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -196,7 +198,7 @@ async def update_section(
     _raise_if_invalid_section_update(
         existing_section=prev_section,
         all_sections=config.section_processing,
-        desired_name=section_input.name,
+        desired_name=section_input.display_name,
         desired_code=section_input.new_code,
     )
 
@@ -252,7 +254,7 @@ async def update_section(
 
 
 def _raise_if_invalid_section_fields(
-    sections: list[DbConfigurationSectionProcessing],
+    sections: list[ConfiguredSection],
     desired_name: str | None,
     desired_code: str | None,
 ):
@@ -260,7 +262,7 @@ def _raise_if_invalid_section_fields(
     Raises an exception if the desired name or desired code are invalid.
 
     Args:
-        sections (list[DbConfigurationSectionProcessing]): The list of sections to check against
+        sections (list[ConfiguredSection]): The list of sections to check against
         desired_name (str | None): The desired name to use
         desired_code (str | None): The desired code to use
 
@@ -299,14 +301,14 @@ def _raise_if_invalid_section_addition(
     """
     _raise_if_invalid_section_fields(
         sections=config.section_processing,
-        desired_name=section_input.name,
+        desired_name=section_input.display_name,
         desired_code=section_input.code,
     )
 
 
 def _raise_if_invalid_section_update(
-    existing_section: DbConfigurationSectionProcessing,
-    all_sections: list[DbConfigurationSectionProcessing],
+    existing_section: ConfiguredSection,
+    all_sections: list[ConfiguredSection],
     desired_name: str | None,
     desired_code: str | None,
 ) -> None:
@@ -314,8 +316,8 @@ def _raise_if_invalid_section_update(
     Raises an exception if any properties of an update are not valid.
 
     Args:
-        existing_section (DbConfigurationSectionProcessing): The existing section to update
-        all_sections (list[DbConfigurationSectionProcessing]): All sections associated with a config
+        existing_section (ConfiguredSection): The existing section to update
+        all_sections (list[ConfiguredSection]): All sections associated with a config
         desired_name (str | None): The desired name to update to
         desired_code (str | None): the desired code to update to
     """
@@ -359,8 +361,8 @@ def _raise_if_section_not_configurable(code: str) -> None:
 
 
 def _raise_if_invalid_narrative_action_combo(
-    narrative: DbNarrativeAction,
-    action: DbSectionAction,
+    narrative: NarrativeAction,
+    action: SectionAction,
 ) -> None:
     """
     Reject narrative/action combinations the refiner cannot execute.
@@ -397,7 +399,7 @@ def _raise_if_invalid_narrative_action_combo(
 
 
 def _raise_if_reconstruct_unsupported(
-    narrative: DbNarrativeAction,
+    narrative: NarrativeAction,
     code: str,
 ) -> None:
     """
@@ -473,39 +475,41 @@ def _value_or_default[T](new_value: T | None, old_value: T) -> T:
 
 
 def _build_section_update(
-    prev_section: DbConfigurationSectionProcessing,
+    prev_section: ConfiguredSection,
     section_input: SectionUpdateInput,
-) -> DbConfigurationSectionProcessing:
+) -> ConfiguredSection:
     """
     Builds a section update object when given the existing section and the properties to modify.
 
     Args:
-        prev_section (DbConfigurationSectionProcessing): The existing section to modify
+        prev_section (ConfiguredSection): The existing section to modify
         section_input (SectionUpdateInput): The object containing section properties to update
 
     Returns:
-        DbConfigurationSectionProcessing: The modified section
+        ConfiguredSection: The modified section
     """
     include = _value_or_default(section_input.include, prev_section.include)
     narrative = _value_or_default(section_input.narrative, prev_section.narrative)
     action = _value_or_default(section_input.action, prev_section.action)
-    section_type: DbSectionType
+    section_type: SectionType
 
     if prev_section.section_type == "custom":
         code = _value_or_default(section_input.new_code, prev_section.code)
-        name = _value_or_default(section_input.name, prev_section.name)
+        display_name = _value_or_default(
+            section_input.display_name, prev_section.display_name
+        )
         section_type = "custom"
     else:
-        # standard section code and name cannot be changed
+        # a standard section's code and display name cannot be changed
         code = prev_section.code
-        name = prev_section.name
+        display_name = prev_section.display_name
         section_type = "standard"
         if code in NARRATIVE_ONLY_SECTIONS:
             action = "retain"
 
-    return DbConfigurationSectionProcessing(
+    return ConfiguredSection(
         code=code,
-        name=name,
+        display_name=display_name,
         action=action,
         narrative=narrative,
         include=include,
@@ -515,20 +519,20 @@ def _build_section_update(
 
 
 def _validate_section_exists_or_raise(
-    code: str, sections: list[DbConfigurationSectionProcessing]
-) -> DbConfigurationSectionProcessing:
+    code: str, sections: list[ConfiguredSection]
+) -> ConfiguredSection:
     """
     Raises an exception if a section in the list doesn't match the code. Otherwise returns the matched section.
 
     Args:
         code (str): The section's code to match on
-        sections (list[DbConfigurationSectionProcessing]): The list of sections
+        sections (list[ConfiguredSection]): The list of sections
 
     Raises:
         HTTPException: 400 if no matching section was found
 
     Returns:
-        DbConfigurationSectionProcessing: The section with the matching code
+        ConfiguredSection: The section with the matching code
     """
     section = next((s for s in sections if s.code == code), None)
 
@@ -585,15 +589,13 @@ async def _validate_configuration_or_raise(
     return config
 
 
-def _is_valid_code(
-    desired_code: str, sections: list[DbConfigurationSectionProcessing]
-) -> bool:
+def _is_valid_code(desired_code: str, sections: list[ConfiguredSection]) -> bool:
     """
     Returns True if the desired name has not already been used by another section in the list.
 
     Args:
         desired_code (str): The desired code of the custom section
-        sections (list[DbConfigurationSectionProcessing]): A list of sections to check the codes of
+        sections (list[ConfiguredSection]): A list of sections to check the codes of
 
     Returns:
         bool: True if the desired code is allowed, else False
@@ -602,15 +604,13 @@ def _is_valid_code(
     return desired_code not in existing_codes
 
 
-def _is_valid_name(
-    desired_name: str, sections: list[DbConfigurationSectionProcessing]
-) -> bool:
+def _is_valid_name(desired_name: str, sections: list[ConfiguredSection]) -> bool:
     """
     Returns True if the desired name has not already been used by another section in the list.
 
     Args:
         desired_name (str): The desired name of the custom section
-        sections (list[DbConfigurationSectionProcessing]): A list of sections to check the names of
+        sections (list[ConfiguredSection]): A list of sections to check the names of
 
     Returns:
         bool: True if the desired name is allowed, else False
@@ -620,19 +620,19 @@ def _is_valid_name(
 
     # all standard section names as they are (lowercase)
     standard_section_names = [
-        s.name.lower() for s in sections if s.section_type == "standard"
+        s.display_name.lower() for s in sections if s.section_type == "standard"
     ]
 
     # all standard section names with "section" removed at the end (lowecase)
     standard_section_names_formatted = [
-        format_section_naming(s).name.lower()
+        format_section_naming(s).display_name.lower()
         for s in sections
         if s.section_type == "standard"
     ]
 
     # all custom names in use
     custom_names_in_use = [
-        s.name.lower() for s in sections if s.section_type == "custom"
+        s.display_name.lower() for s in sections if s.section_type == "custom"
     ]
 
     # all of the above make up a list of names that cannot be used

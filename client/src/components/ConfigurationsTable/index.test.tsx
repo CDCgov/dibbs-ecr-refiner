@@ -2,24 +2,24 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 import userEvent from '@testing-library/user-event';
-import { DbConfigurationStatus } from '../../api/schemas';
+import { ConfigurationStatus } from '../../api/schemas';
 
 const tableData = {
   data: [
     {
       id: 'chlamydia-config-id',
-      name: 'Chlamydia trachomatis infection',
-      status: DbConfigurationStatus.active,
+      display_name: 'Chlamydia trachomatis infection',
+      status: ConfigurationStatus.active,
     },
     {
       id: 'asdf-zxcv-qwer-hjkl',
-      name: 'Disease caused by Enterovirus',
-      status: DbConfigurationStatus.inactive,
+      display_name: 'Disease caused by Enterovirus',
+      status: ConfigurationStatus.inactive,
     },
     {
       id: '1234-5678-9101-1121',
-      name: 'Acanthamoeba',
-      status: DbConfigurationStatus.draft,
+      display_name: 'Acanthamoeba',
+      status: ConfigurationStatus.draft,
     },
   ],
 };

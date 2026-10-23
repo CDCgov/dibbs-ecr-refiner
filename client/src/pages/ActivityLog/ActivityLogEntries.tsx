@@ -64,7 +64,7 @@ export function ActivityLogEntries({
                 <TableCell size="sm" data-label={conditionHeader}>
                   <div className="flex flex-col gap-1">
                     <span className="text-gray-cool-90!">
-                      {r.configuration_name}
+                      {r.configuration_display_name}
                     </span>
                     <span className="text-gray-cool-90!">
                       Version {r.configuration_version}
@@ -190,7 +190,9 @@ function ViewAllCustomCodeEventsButton({
                         <TableRow key={cc.id}>
                           <TableCell>{cc.system_display_name}</TableCell>
                           <TableCell>{cc.code}</TableCell>
-                          <TableCell className="py-3">{cc.name}</TableCell>
+                          <TableCell className="py-3">
+                            {cc.display_name}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

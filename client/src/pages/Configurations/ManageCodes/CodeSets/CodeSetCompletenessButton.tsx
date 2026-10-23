@@ -100,7 +100,7 @@ function StatusModal({ conditionId, isOpen, onClose }: StatusModalProps) {
           <TableBody className="divide-gray-cool-20 divide-y">
             {condition.completeness_status.code_category_statuses.map((ccs) => (
               <TableRow key={ccs.category}>
-                <TableCell className="px-2 py-3">{ccs.name}</TableCell>
+                <TableCell className="px-2 py-3">{ccs.display_name}</TableCell>
                 <TableCell className="px-2 py-3">
                   <CategoryCompletenessStatus completeness={ccs.completeness} />
                 </TableCell>

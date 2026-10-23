@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from app.api.validation.file_validation import (
-    DIFF_RENDERING_MAX_BYTES,
     format_xml_document_for_display_or_raise,
 )
+from app.core.models.limits import DIFF_RENDERING_MAX_BYTES
 from app.core.models.types import XMLFiles
 from app.services.ecr.model import RefinedDocument
 from app.services.ecr.refine import get_file_size_in_bytes

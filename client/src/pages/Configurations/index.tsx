@@ -9,7 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
-  CodedConcept,
+  CodeLabel,
   GetConditionsResponse,
   NotificationKeys,
   UserResponse,
@@ -71,7 +71,7 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
   const { searchText, setSearchText, results } = useSearch(configs, {
-    keys: [{ name: 'name', weight: 1 }],
+    keys: [{ name: 'display_name', weight: 1 }],
   });
 
   const [isOpen, setIsOpen] = useState(false);
@@ -234,7 +234,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const { searchText, setSearchText, results } = useSearch(conditions, {
     keys: [
       { name: 'display_name' },
-      { name: 'rsg_codes.display' },
+      { name: 'rsg_codes.display_name' },
       { name: 'rsg_codes.code' },
     ],
     threshold: 0.3,
@@ -363,7 +363,7 @@ function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
   const { item, matches } = matchResult;
   const conditionDisplayMatch = matches?.find((r) => r.key === 'display_name');
   const rsgMatches = matches?.filter(
-    (m) => m.key === 'rsg_codes.display' || m.key === 'rsg_codes.code'
+    (m) => m.key === 'rsg_codes.display_name' || m.key === 'rsg_codes.code'
   );
 
   return (
@@ -384,11 +384,11 @@ function ConditionOption({ matchResult, condition }: ConditionOptionProps) {
 
 interface RsgMatchRowProps {
   matchResult: FuseResultMatch;
-  rsgCodes: CodedConcept[];
+  rsgCodes: CodeLabel[];
 }
 function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
   const matchedCode = rsgCodes[matchResult?.refIndex as number];
-  const isRsgDisplayMatch = matchResult.key === 'rsg_codes.display';
+  const isRsgDisplayMatch = matchResult.key === 'rsg_codes.display_name';
   const isRsgCodeMatch = matchResult.key === 'rsg_codes.code';
 
   return (
@@ -397,8 +397,8 @@ function RsgMatchRow({ rsgCodes, matchResult }: RsgMatchRowProps) {
         <div>⤷</div>
         <p className="ml-1 flex-2 pb-2">
           {isRsgDisplayMatch
-            ? highlightMatches(matchedCode.display, matchResult.indices)
-            : `${matchedCode.display}`}
+            ? highlightMatches(matchedCode.display_name, matchResult.indices)
+            : `${matchedCode.display_name}`}
         </p>
         <p className="text-gray-cool-90! flex-1 text-right">
           {isRsgCodeMatch
@@ -439,7 +439,7 @@ function SelectedConditionPanel({
             {selectedCondition.rsg_codes.map((c) => {
               return (
                 <tr key={c.code}>
-                  <td>{c.display}</td>
+                  <td>{c.display_name}</td>
                   <td className="text-right align-top">{c.code}</td>
                 </tr>
               );

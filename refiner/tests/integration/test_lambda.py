@@ -6,7 +6,7 @@ import pytest_asyncio
 from botocore.exceptions import ClientError
 from lxml import etree
 
-from app.db.configurations.model import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
+from app.core.models.payloads import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from tests.integration.conftest import assert_schematron_valid, validate_refined_xml
 from tests.localstack.seed import (
     create_s3_client,

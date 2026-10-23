@@ -1,20 +1,20 @@
 import {
   CustomCodeResponse,
-  DbCodeSystem,
-  DbTotalConditionCodeCount,
+  CodeSystem,
+  CodeSetSummary,
   GetConfigurationResponse,
   GetConfigurationResponseVersion,
 } from '../../../api/schemas';
 
 export const MOCK_CONFIG_DRAFT_ID = 'b8f96556-2567-48c1-9d1a-cf3e202e5fdb';
 
-export const mockCodeSets: DbTotalConditionCodeCount[] = [
-  { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
-  { condition_id: 'chlamydia-1', display_name: 'Chlamydia', total_codes: 8 },
-  { condition_id: 'gonorrhea-1', display_name: 'Gonorrhea', total_codes: 5 },
+export const mockCodeSets: CodeSetSummary[] = [
+  { condition_id: 'covid-1', display_name: 'COVID-19', code_count: 12 },
+  { condition_id: 'chlamydia-1', display_name: 'Chlamydia', code_count: 8 },
+  { condition_id: 'gonorrhea-1', display_name: 'Gonorrhea', code_count: 5 },
 ];
 
-export const mockCodeSystems: DbCodeSystem[] = [
+export const mockCodeSystems: CodeSystem[] = [
   {
     id: '157a00b0-62e6-48c8-b822-475c5d855f3f',
     key: 'snomed',
@@ -57,13 +57,11 @@ export const mockCustomCodes: CustomCodeResponse[] = [
   {
     id: '3c4ee804-dad5-42ba-b786-4dd752779197',
     code: 'custom-code1',
-    display: 'test-custom-code1',
+    display_name: 'test-custom-code1',
     system_id: mockCodeSystems.find((cs) => cs.display_name === 'ICD-10')!.id,
-    system_name: 'ICD-10',
+    system_display_name: 'ICD-10',
   },
 ];
-
-const MOCK_SNOMED_DB_ID = '37a4a3f9-6148-41aa-bf45-f1aed2d4caa9';
 
 const mockVersions: GetConfigurationResponseVersion[] = [
   {
@@ -100,30 +98,24 @@ export const baseMockConfig: GetConfigurationResponse = {
   code_sets: mockCodeSets,
   rsg_codes: [
     {
-      display: 'Coronavirus infection (disorder)',
       code: '186747009',
-      system_id: MOCK_SNOMED_DB_ID,
-      system_name: 'SNOMED',
+      display_name: 'Coronavirus infection (disorder)',
     },
     {
-      display:
-        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
       code: '840539006',
-      system_id: MOCK_SNOMED_DB_ID,
-      system_name: 'SNOMED',
+      display_name:
+        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
     },
     {
-      display:
-        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
       code: '1001411000124108',
-      system_id: MOCK_SNOMED_DB_ID,
-      system_name: 'SNOMED',
+      display_name:
+        'Death associated with disease caused by severe acute respiratory syndrome coronavirus 2 (event)',
     },
   ],
   custom_codes: mockCustomCodes,
   section_processing: [
     {
-      name: 'Encounters Section',
+      display_name: 'Encounters Section',
       code: 'some code',
       narrative: 'remove',
       include: true,

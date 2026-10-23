@@ -3,14 +3,14 @@ from datetime import datetime
 from uuid import UUID
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCustomCode:
     """
     Model to represent a custom code row in the database.
     """
 
     id: UUID
-    display: str
+    display_name: str
     code: str
     system_id: UUID
     created_at: datetime

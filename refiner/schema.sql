@@ -158,7 +158,7 @@ CREATE TABLE public.active_payload_schema_reactivations (
 
 CREATE TABLE public.codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    display text CONSTRAINT codes_name_not_null NOT NULL,
+    display_name text NOT NULL,
     code text CONSTRAINT codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -216,7 +216,7 @@ CREATE TABLE public.configurations (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     version integer NOT NULL,
     jurisdiction_id text NOT NULL,
-    name text NOT NULL,
+    display_name text NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     status public.configuration_status DEFAULT 'draft'::public.configuration_status NOT NULL,
@@ -269,7 +269,7 @@ CREATE TABLE public.configurations_sections (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     configuration_id uuid NOT NULL,
     code text NOT NULL,
-    name text NOT NULL,
+    display_name text NOT NULL,
     action public.section_action NOT NULL,
     include boolean NOT NULL,
     versions text[] DEFAULT '{}'::text[] NOT NULL,
@@ -286,7 +286,7 @@ CREATE TABLE public.configurations_sections (
 
 CREATE TABLE public.custom_codes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    display text CONSTRAINT custom_codes_name_not_null NOT NULL,
+    display_name text NOT NULL,
     code text CONSTRAINT custom_codes_value_not_null NOT NULL,
     system_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -319,9 +319,9 @@ CREATE TABLE public.events (
 CREATE TABLE public.events_custom_codes (
     id uuid DEFAULT gen_random_uuid() CONSTRAINT events_custom_code_uploads_id_not_null NOT NULL,
     event_id uuid CONSTRAINT events_custom_code_uploads_event_id_not_null NOT NULL,
-    system text CONSTRAINT events_custom_code_uploads_system_not_null NOT NULL,
+    system_display_name text NOT NULL,
     code text CONSTRAINT events_custom_code_uploads_code_not_null NOT NULL,
-    name text CONSTRAINT events_custom_code_uploads_name_not_null NOT NULL
+    display_name text NOT NULL
 );
 
 
@@ -551,11 +551,11 @@ ALTER TABLE ONLY public.configurations_sections
 
 
 --
--- Name: configurations_sections configurations_sections_configuration_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: configurations_sections configurations_sections_configuration_id_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.configurations_sections
-    ADD CONSTRAINT configurations_sections_configuration_id_name_key UNIQUE (configuration_id, name);
+    ADD CONSTRAINT configurations_sections_configuration_id_display_name_key UNIQUE (configuration_id, display_name);
 
 
 --
@@ -1108,4 +1108,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260902230457'),
     ('20260903182620'),
     ('20260909225054'),
-    ('20260916173742');
+    ('20260916173742'),
+    ('20261019163101');

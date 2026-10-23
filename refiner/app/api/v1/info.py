@@ -46,7 +46,7 @@ async def get_info(
     # minimal response to send to the client
     config_details = [
         {
-            "name": config.name,
+            "name": config.display_name,
             "status": config.status,
             "version": config.version,
             "condition_tes_version": cond.version

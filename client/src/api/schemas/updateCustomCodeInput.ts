@@ -6,5 +6,5 @@ export interface UpdateCustomCodeInput {
   id: string;
   system_id: string;
   code: string;
-  display: string;
+  display_name: string;
 }

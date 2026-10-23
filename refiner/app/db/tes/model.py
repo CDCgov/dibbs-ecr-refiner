@@ -4,10 +4,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.db.codes.model import DbCode
+from app.core.models.terminology import CodeExportRow
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbTes:
     """
     Model to represent a TES record in the database.
@@ -19,7 +19,7 @@ class DbTes:
     updated_at: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbTesConditionUpdate:
     """
     Model to represent the codes within a condition packaged in a TES update.
@@ -32,36 +32,19 @@ class DbTesConditionUpdate:
     is_new: bool
 
 
-@dataclass
-class TesUpdate:
+@dataclass(frozen=True)
+class DbConditionDiff:
     """
-    All metadata for a TES update needed for the frontend.
-    """
+    The codes one condition gained and lost between two TES releases.
 
-    id: UUID
-    version: str
-    created_at: datetime
-
-
-@dataclass
-class ConditionDiffExportData:
-    """
-    All metadata for a TES update needed for the frontend.
+    The diff queries aggregate each side into JSONB; `_to_condition_diff` in `db.py`
+    parses it into `CodeExportRow`s as the row lands, so nothing downstream sees a dict.
     """
 
     canonical_url: str
-    condition_name: str
-    added_codes: list[DbCode]
-    removed_codes: list[DbCode]
-
-    def __post_init__(self):
-        """Helper to transform nested JSON returned from SQL into CodeDisplay objects."""
-        self.added_codes = [
-            c if isinstance(c, DbCode) else DbCode(**c) for c in self.added_codes
-        ]
-        self.removed_codes = [
-            c if isinstance(c, DbCode) else DbCode(**c) for c in self.removed_codes
-        ]
+    condition_display_name: str
+    added_codes: list[CodeExportRow]
+    removed_codes: list[CodeExportRow]
 
 
 class ExportDiffInput(BaseModel):
@@ -75,20 +58,20 @@ class ExportDiffInput(BaseModel):
 
 
 @dataclass(frozen=True)
-class TesConfigToUpdate:
+class DbTesConfigToUpdate:
     """A configuration to update with new TES codes."""
 
     configuration_id: UUID
-    configuration_name: str
+    configuration_display_name: str
     codesets_to_update: list[str]
     configuration_tes_version: str
 
 
-@dataclass
-class DbTesConfigsToUpdateResponse:
+@dataclass(frozen=True)
+class DbTesConfigsToUpdate:
     """
     The response needed for rendering of the TES update configuration page.
     """
 
-    existing_drafts: list[TesConfigToUpdate]
-    drafts_to_create: list[TesConfigToUpdate]
+    existing_drafts: list[DbTesConfigToUpdate]
+    drafts_to_create: list[DbTesConfigToUpdate]

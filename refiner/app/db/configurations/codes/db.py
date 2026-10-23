@@ -6,15 +6,17 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.api.v1.configurations.codes.model import FilterInput
-from app.db.configurations.model import (
+from app.core.models.configurations import (
     ConfigurationCodeStatus,
     ConfigurationCodeStatusLabel,
+)
+from app.db.configurations.model import (
     DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCodeResult:
     """
     Result from query.
@@ -22,16 +24,16 @@ class DbCodeResult:
 
     id: UUID
     condition_id: UUID | None
-    source: list[str]
+    source_display_names: list[str]
     code: str
-    description: str
+    display_name: str
     system_id: UUID
-    system_name: str
+    system_display_name: str
     status: ConfigurationCodeStatus
     is_trigger_code: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCodeCursor:
     """
     Cursor object for pagination.
@@ -89,7 +91,7 @@ def _build_filter_condition_clauses(filters: FilterInput, configuration_id: UUID
 
     if search:
         cond_clauses.append(
-            " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+            " AND (c.code ILIKE %(search)s OR c.display_name ILIKE %(search)s)"
         )
         cond_params["search"] = f"%{search}%"
 
@@ -159,7 +161,7 @@ async def get_codes_db(
 
             if search:
                 custom_clauses.append(
-                    " AND (c.code ILIKE %(search)s OR c.display ILIKE %(search)s)"
+                    " AND (c.code ILIKE %(search)s OR c.display_name ILIKE %(search)s)"
                 )
                 custom_params["search"] = f"%{search}%"
 
@@ -168,11 +170,11 @@ async def get_codes_db(
                     SELECT
                         c.id,
                         NULL::uuid AS condition_id,
-                        ARRAY['Custom Code'] AS source,
+                        ARRAY['Custom Code'] AS source_display_names,
                         c.code,
-                        c.display AS description,
+                        c.display_name,
                         c.system_id,
-                        s.display_name AS system_name,
+                        s.display_name AS system_display_name,
                         'included' AS status,
                         FALSE AS is_trigger_code
                     FROM custom_codes c
@@ -235,11 +237,11 @@ async def get_codes_db(
             SELECT
                 c.id,
                 cfgc.condition_id,
-                COALESCE(ARRAY_AGG(DISTINCT v.display_name)) AS source,
+                ARRAY_AGG(DISTINCT v.display_name) AS source_display_names,
                 c.code,
-                c.display AS description,
+                c.display_name,
                 c.system_id,
-                s.display_name AS system_name,
+                s.display_name AS system_display_name,
                 CASE WHEN e.code_id IS NULL THEN 'included' ELSE 'excluded' END AS status,
                 BOOL_OR(cc.is_trigger_code AND cfgc.condition_id = %(primary_condition_id)s) AS is_trigger_code
             FROM configurations_conditions cfgc
@@ -258,7 +260,7 @@ async def get_codes_db(
                 cfgc.condition_id,
                 con.display_name,
                 c.code,
-                c.display,
+                c.display_name,
                 c.system_id,
                 s.display_name,
                 e.code_id
@@ -390,7 +392,7 @@ async def _check_update_operation_excludes_primary_condition_trigger_codes(
     primary_condition_id: UUID,
     code_ids: list[UUID],
     db: AsyncDatabaseConnection,
-):
+) -> None:
     params = {"code_ids": code_ids, "primary_condition_id": primary_condition_id}
     rsg_check_query = """
         SELECT cc.code_id
@@ -465,54 +467,54 @@ async def set_codes_status_within_rendered_set_db(
     return [row["code_id"] for row in rows]
 
 
-@dataclass
-class CodeSystemFilterOption:
+@dataclass(frozen=True)
+class DbCodeSystemFilterOption:
     """
     Model to represent a code system filter option.
     """
 
     system_id: UUID
-    system_name: str
+    display_name: str
     code_count: int
 
 
-@dataclass
-class SourceFilterOption:
+@dataclass(frozen=True)
+class DbSourceFilterOption:
     """
     Model to represent a source filter option.
     """
 
     condition_id: UUID | None  # This will be `None` for custom codes
-    source: str
+    display_name: str
     code_count: int
 
 
-@dataclass
-class StatusFilterOption:
+@dataclass(frozen=True)
+class DbStatusFilterOption:
     """
     Model to represent a status filter option.
     """
 
-    label: ConfigurationCodeStatusLabel
+    display_name: ConfigurationCodeStatusLabel
     status: ConfigurationCodeStatus
     code_count: int
 
 
-@dataclass
-class CodeFilterOptions:
+@dataclass(frozen=True)
+class DbCodeFilterOptions:
     """
     Model to represent all filter options available to the client.
     """
 
-    code_systems: list[CodeSystemFilterOption]
-    sources: list[SourceFilterOption]
-    statuses: list[StatusFilterOption]
+    code_systems: list[DbCodeSystemFilterOption]
+    sources: list[DbSourceFilterOption]
+    statuses: list[DbStatusFilterOption]
 
 
 async def get_all_filter_options_db(
     configuration_id: UUID,
     db: AsyncDatabaseConnection,
-) -> CodeFilterOptions:
+) -> DbCodeFilterOptions:
     """
     Fetches filter options to present to the client.
     """
@@ -556,7 +558,7 @@ async def get_all_filter_options_db(
         SELECT
             'code_system' AS filter_type,
             s.id::text AS value,
-            s.display_name AS label,
+            s.display_name AS display_name,
             NULL::uuid as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM systems s
@@ -569,7 +571,7 @@ async def get_all_filter_options_db(
         SELECT
             'source' AS filter_type,
             bc.source_id::text AS value,
-            bc.source_name AS label,
+            bc.source_name AS display_name,
             bc.cond_id as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM base_codes bc
@@ -581,7 +583,7 @@ async def get_all_filter_options_db(
         SELECT
             'status' AS filter_type,
             st.status AS value,
-            st.status_label AS label,
+            st.status_label AS display_name,
             NULL::uuid as cond_id,
             COUNT(DISTINCT bc.code_id) AS code_count
         FROM (VALUES ('included', 'Included'), ('excluded', 'Excluded')) AS st(status, status_label)
@@ -597,40 +599,47 @@ async def get_all_filter_options_db(
         rows = await cur.fetchall()
 
     code_systems, sources, statuses = [], [], []
-    for filter_type, value, label, _, code_count in rows:
+    # one `display_name` column arrives for all three filter kinds -- it used to land
+    # on three differently-named fields (`system_name`, `source`, `label`) despite
+    # being the same alias in the same SELECT
+    for filter_type, value, display_name, _, code_count in rows:
         if filter_type == "code_system":
             code_systems.append(
-                CodeSystemFilterOption(
-                    system_id=UUID(value), system_name=label, code_count=code_count
+                DbCodeSystemFilterOption(
+                    system_id=UUID(value),
+                    display_name=display_name,
+                    code_count=code_count,
                 )
             )
         elif filter_type == "source":
             sources.append(
-                SourceFilterOption(
+                DbSourceFilterOption(
                     condition_id=UUID(value) if value is not None else None,
-                    source=label,
+                    display_name=display_name,
                     code_count=code_count,
                 )
             )
         elif filter_type == "status":
             statuses.append(
-                StatusFilterOption(status=value, label=label, code_count=code_count)
+                DbStatusFilterOption(
+                    status=value, display_name=display_name, code_count=code_count
+                )
             )
 
-    return CodeFilterOptions(
+    return DbCodeFilterOptions(
         code_systems=code_systems,
         sources=sources,
         statuses=statuses,
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbCodeResultCountMetadata:
     """
     Code count metadata.
     """
 
-    total_code_count: int
+    code_count: int
     excluded_code_count: int
     code_set_count: int
     custom_code_count: int
@@ -646,7 +655,7 @@ async def get_code_count_metadata_db(
 
     query = """
     SELECT
-        COUNT(DISTINCT c.id) AS total_code_count,
+        COUNT(DISTINCT c.id) AS code_count,
         COUNT(DISTINCT e.code_id) AS excluded_code_count,
         COUNT(DISTINCT cfgc.condition_id) AS code_set_count,
         (

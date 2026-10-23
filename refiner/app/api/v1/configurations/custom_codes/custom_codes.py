@@ -15,6 +15,7 @@ from app.api.v1.configurations.custom_codes.model import (
     UploadCustomCodesCsvInput,
     UploadCustomCodesPreviewItem,
 )
+from app.api.v1.configurations.model import CodeSetSummary
 from app.db.code_systems.db import (
     get_code_system_by_id_db,
     get_code_systems_db,
@@ -33,7 +34,6 @@ from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.db import (
     get_configuration_by_id_db,
 )
-from app.db.configurations.model import DbTotalConditionCodeCount
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_systems import (
@@ -98,10 +98,10 @@ async def get_custom_code(
 
     return CustomCodeResponse(
         id=code.id,
-        display=code.display,
+        display_name=code.display_name,
         code=code.code,
         system_id=code.system_id,
-        system_name=find_code_system_by_id_or_raise(
+        system_display_name=find_code_system_by_id_or_raise(
             id=code.system_id, systems=systems
         ).display_name,
     )
@@ -115,7 +115,7 @@ class ConfigurationCustomCodeResponse:
 
     id: UUID
     display_name: str
-    code_sets: list[DbTotalConditionCodeCount]
+    code_sets: list[CodeSetSummary]
     custom_codes: list[CustomCodeResponse]
 
 
@@ -185,7 +185,7 @@ async def add_custom_code(
     added_code = await insert_custom_code_db(
         config=config,
         code=body.code.strip(),
-        display_name=body.display,
+        display_name=body.display_name,
         system_id=body.system_id,
         user_id=user.id,
         db=db,
@@ -201,12 +201,30 @@ async def add_custom_code(
 
     return CustomCodeResponse(
         id=added_code.id,
-        display=added_code.display,
+        display_name=added_code.display_name,
         code=added_code.code,
         system_id=added_code.system_id,
-        system_name=find_code_system_by_id_or_raise(
+        system_display_name=find_code_system_by_id_or_raise(
             id=added_code.system_id, systems=systems
         ).display_name,
+    )
+
+
+@dataclass(frozen=True)
+class CodeSystem:
+    """
+    A code system a user may pick for a custom code.
+    """
+
+    id: UUID
+    key: str
+    display_name: str
+    oid: str
+
+
+def _to_code_system(row: DbCodeSystem) -> CodeSystem:
+    return CodeSystem(
+        id=row.id, key=row.key, display_name=row.display_name, oid=row.oid
     )
 
 
@@ -216,7 +234,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     preview_items: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
-    code_systems: list[DbCodeSystem]
+    code_systems: list[CodeSystem]
 
 
 def _create_csv_reader(
@@ -264,7 +282,7 @@ def _validate_csv_upload_row(
 ) -> tuple[str, DbCodeSystem, str] | list[str]:
     code = (row.get("code") or "").strip()
     code_system_raw = (row.get("code_system") or "").strip()
-    name = (row.get("display_name") or "").strip()
+    display_name = (row.get("display_name") or "").strip()
 
     system_names = [s.display_name for s in supported_systems]
 
@@ -277,7 +295,7 @@ def _validate_csv_upload_row(
 
     if not code:
         row_errors.append("Missing code")
-    if not name:
+    if not display_name:
         row_errors.append("Missing display_name")
     if not code_system_raw:
         row_errors.append("Missing code_system")
@@ -291,7 +309,7 @@ def _validate_csv_upload_row(
     if row_errors or not matching_system:
         return row_errors
 
-    return (code, matching_system, name)
+    return (code, matching_system, display_name)
 
 
 def _check_row_response_for_duplicates(
@@ -370,7 +388,7 @@ async def upload_custom_codes_csv(
             errors.append({"row": row_number, "error": ", ".join(row_errors)})
             continue
 
-        (code, row_system, name) = row_response
+        (code, row_system, display_name) = row_response
 
         duplicate_check_response = _check_row_response_for_duplicates(
             code=code,
@@ -389,8 +407,8 @@ async def upload_custom_codes_csv(
                 id=uuid4(),
                 code=code,
                 system_id=row_system.id,
-                system_name=row_system.display_name,
-                display=name,
+                system_display_name=row_system.display_name,
+                display_name=display_name,
                 row=row_number,
             )
         )
@@ -414,7 +432,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
-        code_systems=code_systems,
+        code_systems=[_to_code_system(s) for s in code_systems],
     )
 
 
@@ -487,10 +505,10 @@ async def confirm_upload_custom_codes_csv(
     return [
         CustomCodeResponse(
             id=c.id,
-            display=c.display,
+            display_name=c.display_name,
             code=c.code,
             system_id=c.system_id,
-            system_name=find_code_system_by_id_or_raise(
+            system_display_name=find_code_system_by_id_or_raise(
                 id=c.system_id, systems=code_systems
             ).display_name,
         )
@@ -581,10 +599,10 @@ async def delete_custom_code(
 
     return CustomCodeResponse(
         id=deleted_code.id,
-        display=deleted_code.display,
+        display_name=deleted_code.display_name,
         code=deleted_code.code,
         system_id=deleted_code.system_id,
-        system_name=find_code_system_by_id_or_raise(
+        system_display_name=find_code_system_by_id_or_raise(
             id=deleted_code.system_id, systems=systems
         ).display_name,
     )
@@ -672,10 +690,10 @@ async def bulk_delete_custom_codes(
     return [
         CustomCodeResponse(
             id=deleted_code.id,
-            display=deleted_code.display,
+            display_name=deleted_code.display_name,
             code=deleted_code.code,
             system_id=deleted_code.system_id,
-            system_name=find_code_system_by_id_or_raise(
+            system_display_name=find_code_system_by_id_or_raise(
                 id=deleted_code.system_id, systems=systems
             ).display_name,
         )
@@ -753,8 +771,8 @@ async def validate_custom_code(
     # Flatten all codes from all included conditions and custom codes
     all_codes: set[str] = set()
 
-    for c in conditions:
-        all_codes.update(c.code for c in c.get_codes_from_all_systems())
+    for condition in conditions:
+        all_codes.update(code.code for code in condition.codes)
 
     # Include custom codes from the configuration
     for custom_code in config.custom_codes:
@@ -777,7 +795,7 @@ class UpdateCustomCodeInput(BaseModel):
     id: UUID
     system_id: UUID
     code: str
-    display: str
+    display_name: str
 
 
 @router.put(
@@ -853,7 +871,7 @@ async def edit_custom_code(
         user_id=user.id,
         code=body.code,
         system=custom_code_system,
-        display=body.display,
+        display_name=body.display_name,
         db=db,
     )
 
@@ -865,10 +883,10 @@ async def edit_custom_code(
 
     return CustomCodeResponse(
         id=edited_code.id,
-        display=edited_code.display,
+        display_name=edited_code.display_name,
         code=edited_code.code,
         system_id=edited_code.system_id,
-        system_name=find_code_system_by_id_or_raise(
+        system_display_name=find_code_system_by_id_or_raise(
             id=edited_code.system_id, systems=systems
         ).display_name,
     )

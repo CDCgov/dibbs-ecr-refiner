@@ -7,12 +7,12 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.core.exceptions import StructureValidationError, XMLParsingError
+from app.core.models.configurations import NarrativeAction
 from app.services.format import remove_element
 from app.services.terminology import CodeSystemSets
 
 from ..model import (
     HL7_NS,
-    DbNarrativeAction,
     NamespaceMap,
     SectionRunResult,
     SectionSpecification,
@@ -89,7 +89,7 @@ def process(
     section_specification: SectionSpecification | None,
     augmentation_timestamp: str = "",
     code_system_sets: CodeSystemSets | None = None,
-    narrative_action: DbNarrativeAction = "retain",
+    narrative_action: NarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using the generic matching logic.

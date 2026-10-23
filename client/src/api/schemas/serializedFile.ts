@@ -1,6 +1,6 @@
 
 /**
- * An individual serialized file.
+ * One serialized configuration file, as stored in S3.
  */
 export interface SerializedFile {
   key: string;

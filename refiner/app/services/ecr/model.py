@@ -2,10 +2,9 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final, Literal, TypedDict
 
-from app.db.configurations.model import (
-    DbConfigurationSectionInstructions,
-    DbNarrativeAction,
-    DbSectionAction,
+from app.core.models.configurations import (
+    NarrativeAction,
+    SectionAction,
 )
 
 if TYPE_CHECKING:
@@ -591,8 +590,8 @@ class SectionProvenanceRecord:
     loinc_code: str
     display_name: str
     include: bool
-    action: DbSectionAction
-    narrative: DbNarrativeAction
+    action: SectionAction
+    narrative: NarrativeAction
     config_version: int | None
     source: SectionSource
     outcome: SectionOutcome = SectionOutcome.REFINED_WITH_MATCHES
@@ -601,6 +600,22 @@ class SectionProvenanceRecord:
 # NOTE:
 # REFINEMENT PLAN MODELS
 # =============================================================================
+
+
+@dataclass(frozen=True)
+class SectionInstructions:
+    """
+    What to do with one section during refinement.
+
+    Deliberately carries no `code` or `name`: most instructions come from a
+    jurisdiction's configuration, but `SKIP_SECTION_INSTRUCTIONS` and
+    `DEFAULT_SECTION_INSTRUCTIONS` are decisions the system makes for sections
+    nobody configured, and those have no section behind them to name.
+    """
+
+    include: bool
+    narrative: NarrativeAction
+    action: SectionAction
 
 
 @dataclass
@@ -652,7 +667,7 @@ class EICRRefinementPlan:
 
     codes_to_check: set[str]
     code_system_sets: "CodeSystemSets"
-    section_instructions: dict[str, DbConfigurationSectionInstructions]
+    section_instructions: dict[str, SectionInstructions]
     section_provenance: dict[str, SectionProvenanceRecord]
     specification: EICRSpecification
     augmentation_timestamp: str

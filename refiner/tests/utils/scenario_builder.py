@@ -123,7 +123,7 @@ class ScenarioBuilder:
                 json={
                     "code": cc.code,
                     "system_id": _get_system_id(cc.system),
-                    "display": cc.name,
+                    "display_name": cc.name,
                 },
             )
             self._validate_response(resp)

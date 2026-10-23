@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Final
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.terminology import Coding
+from app.core.models.configurations import NarrativeAction
+from app.core.models.terminology import Coding
 
 if TYPE_CHECKING:
     from app.services.terminology import CodeSystemSets
@@ -12,7 +13,6 @@ if TYPE_CHECKING:
 from app.services.format import remove_element
 
 from ..model import (
-    DbNarrativeAction,
     EntryMatchRule,
     NamespaceMap,
     SectionRunResult,
@@ -156,8 +156,8 @@ def _enrich_display_name(code_element: _Element, coding: "Coding") -> None:
     if existing and existing.strip():
         return
 
-    if coding.display:
-        code_element.set("displayName", coding.display)
+    if coding.display_name:
+        code_element.set("displayName", coding.display_name)
 
 
 def _index_narrative_display_ids(
@@ -272,7 +272,7 @@ def build_entry_match_comment_text(
 
         tag = etree.QName(m.matched_code_element.tag).localname
         code = m.matched_coding.code
-        display = m.matched_coding.display or ""
+        display = m.matched_coding.display_name or ""
         sys_label = code_system_label(m.rule.code_system_oid)
         tier = m.rule.tier
 
@@ -396,7 +396,7 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
 
 def resolve_no_match_section(
     section: _Element,
-    narrative_action: "DbNarrativeAction",
+    narrative_action: "NarrativeAction",
     namespaces: NamespaceMap,
     augmentation_timestamp: str,
 ) -> "SectionRunResult | None":

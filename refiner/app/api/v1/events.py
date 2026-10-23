@@ -13,7 +13,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.core.exceptions import DatabaseConnectionError, DatabaseQueryError
 from app.db.conditions.db import get_condition_codes_by_condition_id_db
 from app.db.events.db import (
-    AuditEvent,
+    DbAuditEvent,
     get_all_events_by_jd_db,
     get_code_set_event_by_id_db,
     get_custom_code_upload_events_by_event_id,
@@ -22,7 +22,7 @@ from app.db.events.db import (
     get_events_by_jd_db,
     is_event_valid,
 )
-from app.db.events.model import CodeSetEvent
+from app.db.events.model import DbCodeSetEvent
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.file_exports import get_export_timestamp
@@ -38,8 +38,41 @@ class EventFilterOption:
     """
 
     id: UUID
-    name: str
+    display_name: str
     canonical_url: str
+
+
+@dataclass(frozen=True)
+class AuditEvent:
+    """
+    One row of the audit log page.
+    """
+
+    id: UUID
+    username: str
+    configuration_display_name: str
+    configuration_version: int
+    condition_id: UUID | None
+    action_text: str
+    code_count: int | None
+    created_at: datetime
+    event_type: str
+    has_custom_code_upload_events: bool
+
+
+def _to_audit_event(row: DbAuditEvent) -> AuditEvent:
+    return AuditEvent(
+        id=row.id,
+        username=row.username,
+        configuration_display_name=row.configuration_display_name,
+        configuration_version=row.configuration_version,
+        condition_id=row.condition_id,
+        action_text=row.action_text,
+        code_count=row.code_count,
+        created_at=row.created_at,
+        event_type=row.event_type,
+        has_custom_code_upload_events=row.has_custom_code_upload_events,
+    )
 
 
 @dataclass
@@ -132,9 +165,11 @@ async def get_events(
 
     return EventsResponse(
         total_pages=total_pages,
-        audit_events=audit_events,
+        audit_events=[_to_audit_event(e) for e in audit_events],
         configuration_options=[
-            EventFilterOption(id=co.id, name=co.name, canonical_url=co.canonical_url)
+            EventFilterOption(
+                id=co.id, display_name=co.display_name, canonical_url=co.canonical_url
+            )
             for co in configuration_options
         ],
     )
@@ -149,7 +184,7 @@ class CustomCodeUploadEventResponse:
     id: UUID
     system_display_name: str
     code: str
-    name: str
+    display_name: str
 
 
 @router.get(
@@ -190,9 +225,9 @@ async def get_custom_code_upload_events(
     return [
         CustomCodeUploadEventResponse(
             id=cc.id,
-            system_display_name=cc.system,
+            system_display_name=cc.system_display_name,
             code=cc.code,
-            name=cc.name,
+            display_name=cc.display_name,
         )
         for cc in custom_code_events
     ]
@@ -260,8 +295,8 @@ def _format_action_text(action_text: str, custom_code_uploads: str) -> str:
     ```
 
     Args:
-        action_text (str): A CsvEvent's `action_text` string
-        custom_code_uploads (str): A CsvEvent's `custom_code_uploads` string
+        action_text (str): A DbCsvEvent's `action_text` string
+        custom_code_uploads (str): A DbCsvEvent's `custom_code_uploads` string
 
     Returns:
         str: The formatted action text, including custom code upload info
@@ -301,7 +336,10 @@ async def get_events_export(
         writer.writerow(
             [
                 event.username,
-                f"{event.configuration_name} (Version {event.configuration_version})",
+                (
+                    f"{event.configuration_display_name} "
+                    f"(Version {event.configuration_version})"
+                ),
                 _format_action_text(
                     action_text=event.action_text,
                     custom_code_uploads=event.custom_code_uploads,
@@ -357,7 +395,7 @@ async def get_event_codes_export(
             detail="This event does not have an associated condition.",
         )
 
-    if event.condition_name is None:
+    if event.condition_display_name is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to determine condition name for this event.",
@@ -383,10 +421,10 @@ async def get_event_codes_export(
     for code in codes:
         writer.writerow(
             [
-                event.condition_name,
+                event.condition_display_name,
                 code.code,
-                code.system_name,
-                code.display,
+                code.system_display_name,
+                code.display_name,
             ]
         )
 
@@ -401,18 +439,18 @@ async def get_event_codes_export(
     )
 
 
-def _get_code_set_export_file_name(event: CodeSetEvent) -> str:
+def _get_code_set_export_file_name(event: DbCodeSetEvent) -> str:
     """
     Returns the filename for a historical code set export.
     """
 
-    if event.condition_name is None:
+    if event.condition_display_name is None:
         raise ValueError("Code set event does not have an associated condition name.")
 
     action = "added" if event.event_type == "add_code" else "removed"
 
     timestamp = event.created_at.strftime("%m%d%y_%H_%M_%S")
 
-    condition_name = event.condition_name.replace(" ", "_")
+    condition_name = event.condition_display_name.replace(" ", "_")
 
     return f"{condition_name}_code_set_{action}_{timestamp}.csv"

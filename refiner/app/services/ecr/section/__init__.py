@@ -1,9 +1,9 @@
 from lxml.etree import _Element
 
+from app.core.models.configurations import NarrativeAction
 from app.services.terminology import CodeSystemSets
 
 from ..model import (
-    DbNarrativeAction,
     NamespaceMap,
     SectionRunResult,
     SectionSpecification,
@@ -25,7 +25,7 @@ def process_section(
     section_specification: SectionSpecification | None,
     code_system_sets: CodeSystemSets | None,
     augmentation_timestamp: str = "",
-    narrative: DbNarrativeAction = "retain",
+    narrative: NarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Dispatch a section to the right matching engine.

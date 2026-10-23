@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import classNames from 'classnames';
 import {
-  DbConfigurationStatus,
+  ConfigurationStatus,
   GetConfigurationsResponse,
 } from '../../api/schemas';
 import {
@@ -77,8 +77,8 @@ export function ConfigurationsTable({
           </TableRow>
         </TableHead>
         <TableBody bordered background="white">
-          {data.map(({ id, name, status }) => {
-            const isActive = status === DbConfigurationStatus.active;
+          {data.map(({ id, display_name, status }) => {
+            const isActive = status === ConfigurationStatus.active;
             return (
               <TableRow key={id}>
                 <TableCell
@@ -86,11 +86,11 @@ export function ConfigurationsTable({
                   className="p-0! font-bold!"
                 >
                   <Link
-                    aria-label={`Configure ${name}`}
+                    aria-label={`Configure ${display_name}`}
                     to={`/configurations/${id}/customize-sections`}
                     className="text-gray-cool-90 relative z-0 flex items-center px-4 py-2 after:absolute after:inset-0 after:content-['']"
                   >
-                    {name}
+                    {display_name}
                   </Link>
                 </TableCell>
                 <TableCell

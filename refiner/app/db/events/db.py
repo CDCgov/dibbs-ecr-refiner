@@ -13,17 +13,17 @@ from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import DbConfiguration
 
 from ..pool import AsyncDatabaseConnection
-from .model import CodeSetEvent, EventInput
+from .model import DbCodeSetEvent, EventInput
 
 
 @dataclass(frozen=True)
-class CsvEvent:
+class DbCsvEvent:
     """
     Model for a CSV export row.
     """
 
     username: str
-    configuration_name: str
+    configuration_display_name: str
     configuration_version: int
     action_text: str
     created_at: datetime
@@ -31,14 +31,14 @@ class CsvEvent:
 
 
 @dataclass(frozen=True)
-class AuditEvent:
+class DbAuditEvent:
     """
     An event returned by the DB function.
     """
 
     id: UUID
     username: str
-    configuration_name: str
+    configuration_display_name: str
     configuration_version: int
     condition_id: UUID | None
     action_text: str
@@ -55,7 +55,7 @@ class DbEventFilterOption:
     """
 
     id: UUID
-    name: str
+    display_name: str
     canonical_url: str
 
 
@@ -67,9 +67,9 @@ class DbCustomCodeUploadEvent:
 
     id: UUID
     event_id: UUID
-    system: str
+    system_display_name: str
     code: str
-    name: str
+    display_name: str
 
 
 async def get_event_count_by_condition_db(
@@ -123,7 +123,7 @@ async def get_code_set_event_by_id_db(
     event_id: UUID,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
-) -> CodeSetEvent | None:
+) -> DbCodeSetEvent | None:
     """
     Returns the event information needed to export a historical code set.
 
@@ -134,7 +134,7 @@ async def get_code_set_event_by_id_db(
         SELECT
             e.id,
             e.condition_id,
-            cond.display_name AS condition_name,
+            cond.display_name AS condition_display_name,
             e.code_count,
             e.event_type,
             e.created_at
@@ -147,7 +147,7 @@ async def get_code_set_event_by_id_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CodeSetEvent)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSetEvent)) as cur,
     ):
         await cur.execute(
             query,
@@ -166,11 +166,11 @@ async def get_event_filter_options_db(
     Collects all possible conditions within a jurisdiction a user can filter events by.
     """
     query = """
-    SELECT id, name, canonical_url
+    SELECT id, display_name, canonical_url
     FROM (
         SELECT DISTINCT ON (cond.canonical_url)
             c.id,
-            c.name,
+            c.display_name,
             c.version,
             cond.canonical_url
         FROM configurations c
@@ -179,7 +179,7 @@ async def get_event_filter_options_db(
         WHERE c.jurisdiction_id = %s
         ORDER BY cond.canonical_url, c.version DESC
     ) sub
-    ORDER BY LOWER(name)
+    ORDER BY LOWER(display_name)
     """
     async with (
         db.get_connection() as conn,
@@ -195,7 +195,7 @@ async def get_events_by_jd_db(
     page_size: int,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> list[AuditEvent]:
+) -> list[DbAuditEvent]:
     """
     Fetches paginated event results for a jurisdiction.
 
@@ -207,7 +207,7 @@ async def get_events_by_jd_db(
         SELECT
             e.id,
             u.username,
-            c.name AS configuration_name,
+            c.display_name AS configuration_display_name,
             c.version AS configuration_version,
             cond.id AS condition_id,
             e.condition_id,
@@ -240,7 +240,7 @@ async def get_events_by_jd_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(AuditEvent)) as cur,
+        conn.cursor(row_factory=class_row(DbAuditEvent)) as cur,
     ):
         await cur.execute(query, params)
         events_rows = await cur.fetchall()
@@ -251,7 +251,7 @@ async def get_all_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> AsyncIterator[CsvEvent]:
+) -> AsyncIterator[DbCsvEvent]:
     """
     Streams all events for a jurisdiction.
 
@@ -262,13 +262,13 @@ async def get_all_events_by_jd_db(
     query = """
         SELECT
             u.username,
-            c.name AS configuration_name,
+            c.display_name AS configuration_display_name,
             c.version AS configuration_version,
             e.action_text,
             e.created_at,
             COALESCE(
                 STRING_AGG(
-                    ecu.system || ' | ' || ecu.code || ' | ' || ecu.name,
+                    ecu.system_display_name || ' | ' || ecu.code || ' | ' || ecu.display_name,
                     '; '
                 ),
                 ''
@@ -282,14 +282,14 @@ async def get_all_events_by_jd_db(
         LEFT JOIN events_custom_codes ecu ON ecu.event_id = e.id
         WHERE e.jurisdiction_id = %s
         AND (%s::TEXT IS NULL OR cond.id IS NOT NULL)
-        GROUP BY e.id, u.username, c.name, c.version, cond.id, e.action_text, e.created_at
+        GROUP BY e.id, u.username, c.display_name, c.version, cond.id, e.action_text, e.created_at
         ORDER BY e.created_at DESC;
     """
     params = (canonical_url, canonical_url, jurisdiction_id, canonical_url)
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(CsvEvent)) as cur,
+        conn.cursor(row_factory=class_row(DbCsvEvent)) as cur,
     ):
         await cur.execute(query, params)
         while chunk := await cur.fetchmany(500):
@@ -307,9 +307,9 @@ async def get_custom_code_upload_events_by_event_id(
     SELECT
         id,
         event_id,
-        system,
+        system_display_name,
         code,
-        name
+        display_name
     FROM events_custom_codes
     WHERE event_id = %s
     """
@@ -380,11 +380,11 @@ async def insert_custom_code_event_db(
 
     await cursor.executemany(
         """
-        INSERT INTO events_custom_codes (event_id, system, code, name)
+        INSERT INTO events_custom_codes (event_id, system_display_name, code, display_name)
         VALUES (%s, %s, %s, %s)
         """,
         [
-            (event_id, _get_system_name(cc.system_id), cc.code, cc.display)
+            (event_id, _get_system_name(cc.system_id), cc.code, cc.display_name)
             for cc in custom_codes
         ],
     )

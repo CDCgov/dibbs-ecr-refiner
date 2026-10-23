@@ -76,8 +76,8 @@ class TestConfigurations:
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         assert "id" in response.json()
-        assert "name" in response.json()
-        assert response.json()["name"] == "Drowning and Submersion"
+        assert "display_name" in response.json()
+        assert response.json()["display_name"] == "Drowning and Submersion"
 
         # Assert that associated config creation event was logged
         # as well as condition added event for condition code
@@ -90,7 +90,7 @@ class TestConfigurations:
         creation_event = audit_events[0]
         assert creation_event is not None
         assert creation_event["username"] == test_username
-        assert creation_event["configuration_name"] == condition_name
+        assert creation_event["configuration_display_name"] == condition_name
 
         # Attempt to create the same config again (should fail)
         response = await authed_client.post("/api/v1/configurations/", json=payload)
@@ -156,7 +156,7 @@ class TestConfigurations:
         ):
             await cur.execute(
                 """
-                    INSERT INTO configurations (jurisdiction_id, name, created_by, version)
+                    INSERT INTO configurations (jurisdiction_id, display_name, created_by, version)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
@@ -265,7 +265,10 @@ class TestConfigurations:
 
         # create a new custom section
         config_id = response.json()["id"]
-        original_payload = {"name": "test section name", "code": "section-code123"}
+        original_payload = {
+            "display_name": "test section name",
+            "code": "section-code123",
+        }
         payload = original_payload
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/sections", json=payload
@@ -274,7 +277,7 @@ class TestConfigurations:
         assert response.json() == "section-code123"
 
         # try adding one with a duplicate name
-        payload = {"name": "test section name", "code": "new-code"}
+        payload = {"display_name": "test section name", "code": "new-code"}
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/sections", json=payload
         )
@@ -282,7 +285,7 @@ class TestConfigurations:
         assert response.json()["detail"] == "Section name is already in use."
 
         # try adding one with a duplicate code
-        payload = {"name": "new name", "code": "section-code123"}
+        payload = {"display_name": "new name", "code": "section-code123"}
         response = await authed_client.post(
             f"/api/v1/configurations/{config_id}/sections", json=payload
         )
@@ -291,7 +294,7 @@ class TestConfigurations:
 
         # editing the custom section with the original values should work
         payload = {
-            "name": original_payload["name"],
+            "display_name": original_payload["display_name"],
             "current_code": original_payload["code"],
             "new_code": original_payload["code"],
         }
@@ -304,7 +307,7 @@ class TestConfigurations:
 
         # try editing in a new name and new code
         payload = {
-            "name": "new name",
+            "display_name": "new name",
             "current_code": original_payload["code"],
             "new_code": "new-code",
         }
@@ -318,7 +321,7 @@ class TestConfigurations:
         # for good measure, try editing a standard section's name and code which shouldn't work
         medications_admin_code = "29549-3"
         payload = {
-            "name": "This should not work",
+            "display_name": "This should not work",
             "new_code": "This also should not work",
             "current_code": medications_admin_code,
         }
@@ -359,7 +362,7 @@ class TestConfigurations:
             "include": True,
             "narrative": "retain",
             "action": "refine",
-            "name": "Admission Diagnosis",
+            "display_name": "Admission Diagnosis",
             "code": "46241-6",
             "versions": ["3.1", "3.1.1"],
             "section_type": "standard",
@@ -400,7 +403,7 @@ class TestConfigurations:
             "include": False,
             "narrative": "retain",
             "action": "retain",
-            "name": "Admission Diagnosis",
+            "display_name": "Admission Diagnosis",
             "code": "46241-6",
             "versions": ["3.1", "3.1.1"],
             "section_type": "standard",
@@ -596,7 +599,7 @@ class TestConfigurations:
             config_id,
             AddCustomCodeInput(
                 code=initial_code,
-                display=initial_display_name,
+                display_name=initial_display_name,
                 system_id=initial_system.id,
             ),
         )
@@ -607,7 +610,7 @@ class TestConfigurations:
         edit_payload: UpdateCustomCodeInput = UpdateCustomCodeInput(
             id=custom_code["id"],
             code=new_code if new_code else initial_code,
-            display=new_name if new_name else initial_display_name,
+            display_name=new_name if new_name else initial_display_name,
             system_id=new_system.id if new_system else initial_system.id,
         )
 
@@ -623,9 +626,9 @@ class TestConfigurations:
         else:
             assert edit_response["system_id"] == str(initial_system.id)
         if new_name:
-            assert edit_response["display"] == new_name
+            assert edit_response["display_name"] == new_name
         else:
-            assert edit_response["display"] == initial_display_name
+            assert edit_response["display_name"] == initial_display_name
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
@@ -686,7 +689,7 @@ class TestConfigurations:
             config_id,
             AddCustomCodeInput(
                 code=same_code,
-                display="Mock code",
+                display_name="Mock code",
                 system_id=loinc.id,
             ),
         )
@@ -723,7 +726,7 @@ class TestConfigurations:
             config_id,
             AddCustomCodeInput(
                 code=desired_code,
-                display="Mock code",
+                display_name="Mock code",
                 system_id=loinc.id,
             ),
         )
@@ -736,7 +739,7 @@ class TestConfigurations:
             config_id,
             AddCustomCodeInput(
                 code=code_to_edit,
-                display="edit me",
+                display_name="edit me",
                 system_id=rxnorm.id,
             ),
         )
@@ -1003,6 +1006,54 @@ class TestConfigurations:
 
         # This is the previously activated version from the test above
         assert current_file_resp.json()["version"] is None
+
+    async def test_clone_copies_custom_codes(
+        self,
+        setup,
+        get_condition_id,
+        create_config,
+        activate_config,
+        add_custom_code,
+        get_config_by_id,
+        authed_client,
+        db_pool,
+    ):
+        """
+        Exercises the clone path's custom-code copy.
+
+        That `INSERT INTO custom_codes` listed its columns in a different order than
+        the two inserts in `custom_codes/db.py`, so a rename applied by exact string
+        match missed it -- and no clone test had ever added a custom code first, so
+        the loop body never ran and every suite stayed green.
+        """
+
+        condition_id = await get_condition_id("Acanthamoeba")
+        config = await create_config(condition_id)
+
+        systems = await authed_client.get("/api/v1/code-systems/")
+        assert systems.status_code == 200
+        snomed = next(s for s in systems.json() if s["key"] == "snomed")
+
+        added = await add_custom_code(
+            config["id"],
+            AddCustomCodeInput(
+                code="clone-me", system_id=snomed["id"], display_name="Clone Me"
+            ),
+        )
+        assert added
+
+        # activating then re-drafting is what clones the configuration
+        await activate_config(config["id"])
+        response = await authed_client.post(
+            "/api/v1/tes/configurations/drafts-from-active",
+            json={"configuration_ids": [config["id"]]},
+        )
+        assert response.status_code == 200
+        cloned_id = response.json()["created_configuration_ids"][0]
+
+        cloned = await get_config_by_id(cloned_id)
+        codes = [c["code"] for c in cloned["custom_codes"]]
+        assert "clone-me" in codes, "the clone did not carry its custom codes over"
 
 
 @pytest.mark.integration

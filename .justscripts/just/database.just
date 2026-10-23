@@ -51,7 +51,7 @@ find-condition NAME:
 [doc('Show the 5 most recently created configurations')]
 [group('db')]
 recent-configurations:
-    just db query "SELECT id, version, jurisdiction_id, name FROM configurations ORDER BY created_at DESC LIMIT 5;"
+    just db query "SELECT id, version, jurisdiction_id, display_name FROM configurations ORDER BY created_at DESC LIMIT 5;"
 
 [doc('Check if conditions exist for a specific version (e.g., `just db check-condition-version 3.0.0`)')]
 [group('db')]
@@ -61,22 +61,22 @@ check-condition-version VERSION:
 [doc('Find all configurations for a specific jurisdiction (e.g., `just db check-configs-by-jurisdiction wa`)')]
 [group('db')]
 check-configs-by-jurisdiction JURISDICTION_ID:
-    just db query "SELECT name, version, jurisdiction_id FROM configurations WHERE jurisdiction_id = '{{ JURISDICTION_ID }}';"
+    just db query "SELECT display_name, version, jurisdiction_id FROM configurations WHERE jurisdiction_id = '{{ JURISDICTION_ID }}';"
 
 [doc('Find configurations for a jurisdiction and condition name (e.g., `just db check-config-combo wa zika`)')]
 [group('db')]
 check-config-combo JURISDICTION_ID CONDITION_NAME:
-    just db query "SELECT c.name, c.jurisdiction_id, cond.display_name FROM configurations c JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary JOIN conditions cond ON cond.id = cc.condition_id WHERE c.jurisdiction_id = '{{ JURISDICTION_ID }}' AND cond.display_name ILIKE '%{{ CONDITION_NAME }}%';"
+    just db query "SELECT c.display_name, c.jurisdiction_id, cond.display_name AS condition FROM configurations c JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary JOIN conditions cond ON cond.id = cc.condition_id WHERE c.jurisdiction_id = '{{ JURISDICTION_ID }}' AND cond.display_name ILIKE '%{{ CONDITION_NAME }}%';"
 
 [doc('Find a code within a condition and TES version. Usage: just db find-code "COVID-19" "7.0.0" "94500-6"')]
 [group('db')]
 find-code CONDITION VERSION CODE:
-    just db query "SELECT c.display_name, t.version, s.display_name AS system, co.code, co.display, v.display_name AS grouper, cct.is_child_rsg, cct.is_trigger_code FROM conditions c JOIN tes t ON t.id = c.tes_id JOIN conditions_codes_temp cct ON cct.condition_id = c.id JOIN codes co ON co.id = cct.code_id JOIN systems s ON s.id = co.system_id JOIN valuesets v ON v.id = cct.valueset_id WHERE c.display_name = '{{ CONDITION }}' AND t.version = '{{ VERSION }}' AND co.code = '{{ CODE }}';"
+    just db query "SELECT c.display_name, t.version, s.display_name AS system, co.code, co.display_name AS code_display_name, v.display_name AS grouper, cct.is_child_rsg, cct.is_trigger_code FROM conditions c JOIN tes t ON t.id = c.tes_id JOIN conditions_codes_temp cct ON cct.condition_id = c.id JOIN codes co ON co.id = cct.code_id JOIN systems s ON s.id = co.system_id JOIN valuesets v ON v.id = cct.valueset_id WHERE c.display_name = '{{ CONDITION }}' AND t.version = '{{ VERSION }}' AND co.code = '{{ CODE }}';"
 
 [doc('Cascade delete all the related configuration artifacts. For use after an E2E test run')]
 [group('db')]
 delete-configuration CONFIGURATION_NAME:
-    just db query "DELETE FROM configurations WHERE name = '{{ CONFIGURATION_NAME }}';"
+    just db query "DELETE FROM configurations WHERE display_name = '{{ CONFIGURATION_NAME }}';"
 
 [doc('Set the jurisdiction for the "refiner" user. Creates the jurisdiction record if it does not exist')]
 [group('db')]

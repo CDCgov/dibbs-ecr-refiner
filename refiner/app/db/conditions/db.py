@@ -2,17 +2,18 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
-from app.db.codes.model import DbCode
+from app.db.codes.model import DbLabeledCode
 from app.db.tes.db import get_loaded_tes_versions_db
 from app.services.database.timing import log_query_perf
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
 from .model import (
-    ConditionSummary,
     DbCondition,
     DbConditionBase,
+    DbConditionRsgMatch,
     DbConditionsContextGrouper,
+    DbConditionSummary,
 )
 
 
@@ -208,17 +209,15 @@ async def get_condition_by_id_db(
                 c.coverage_level_reason,
                 c.coverage_level_date,
                 JSONB_AGG(
-                   JSON_BUILD_OBJECT(
+                   DISTINCT JSONB_BUILD_OBJECT(
                     'code', codes.code,
-                    'display', codes.display,
-                    'system_id', codes.system_id,
-                    'system_name', s.display_name
+                    'display_name', codes.display_name,
+                    'system_id', codes.system_id
                 )) as codes
             FROM conditions c
             JOIN tes t ON t.id = c.tes_id
             JOIN conditions_codes_temp cc ON cc.condition_id = c.id
             JOIN codes ON codes.id = cc.code_id
-            JOIN systems s ON codes.system_id = s.id
             WHERE c.id = %(id)s
             GROUP BY c.id
             """
@@ -235,23 +234,21 @@ async def get_condition_by_id_db(
 
 async def get_condition_codes_by_condition_id_db(
     condition_id: UUID, db: AsyncDatabaseConnection
-) -> list[DbCode]:
+) -> list[DbLabeledCode]:
     """
-    For a condition ID, flatten all codes into a DbCode shape.
+    Every code a condition owns, as rows for the code-set CSV export.
 
-    For a given condition ID, organizes joins into the relevant tables to return
-    the list of codes corresponding to the condition.
-
-    Codes are deduplicated by code system and code so the exported code count
-    matches the historical code count stored on the event.
+    One row per distinct `(code, display_name, system label)`. `conditions_codes_temp`
+    is keyed per membership, so the `DISTINCT` is load-bearing: without it a code
+    contributed by eight sibling groupers would be eight rows.
+    `tests/integration/test_condition_code_grain.py` holds this.
     """
 
     query = """
-            SELECT
-              codes.display,
+            SELECT DISTINCT
               codes.code,
-              codes.system_id,
-              systems.display_name as system_name
+              codes.display_name,
+              systems.display_name AS system_display_name
             FROM conditions c
             JOIN conditions_codes_temp cc ON cc.condition_id = c.id
             JOIN codes ON codes.id = cc.code_id
@@ -261,7 +258,7 @@ async def get_condition_codes_by_condition_id_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(DbCode)) as cur,
+        conn.cursor(row_factory=class_row(DbLabeledCode)) as cur,
     ):
         await cur.execute(query, {"condition_id": condition_id})
         rows = await cur.fetchall()
@@ -271,9 +268,9 @@ async def get_condition_codes_by_condition_id_db(
 
 async def get_conditions_by_child_rsg_snomed_codes_db(
     db: AsyncDatabaseConnection, codes: list[str]
-) -> list[DbCondition]:
+) -> list[DbConditionRsgMatch]:
     """
-    Given a list of RC SNOMED codes, find their assocaited CG rows.
+    Given a list of RC SNOMED codes, find their associated CG rows.
 
     Finds all conditions that are associated with the given list of child RSG SNOMED codes
     for any potential version of that condition data.
@@ -291,52 +288,47 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     if not codes:
         return []
 
+    # NOTE:
+    # the `EXISTS` below is a real semi-join. it used to have no `FROM`, which makes
+    # `EXISTS (SELECT 1 WHERE <predicate on the outer row>)` just that predicate --
+    # a row filter rather than a semi-join. the visible effect was on the `codes`
+    # aggregate this query used to build: it held only the child-RSG codes that
+    # matched the argument, not the condition's codes. nothing read it, so the bug
+    # stayed latent; the aggregate is gone now rather than fixed, because populating
+    # it correctly cost 412ms against 15ms without it
     query = """
         SELECT
             c.id,
             c.display_name,
             c.canonical_url,
-            MAX(t.version) as version,
+            t.version,
+            c.coverage_level,
             ARRAY(
-                SELECT codes.code
+                SELECT DISTINCT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
-            ) as child_rsg_snomed_codes,
-            COALESCE(
-                JSONB_AGG(
-                    JSON_BUILD_OBJECT(
-                    'code', codes.code,
-                    'display', codes.display,
-                    'system_id', codes.system_id,
-                    'system_name', s.display_name
-                )) FILTER (WHERE codes.id IS NOT NULL),
-                '[]'::jsonb
-            ) as codes,
-            c.coverage_level,
-            c.coverage_level_reason,
-            c.coverage_level_date
+            ) as child_rsg_snomed_codes
         FROM conditions c
-        JOIN conditions_codes_temp crc ON crc.condition_id = c.id
-        JOIN codes ON codes.id = crc.code_id
         JOIN tes t ON t.id = c.tes_id
-        JOIN systems s ON codes.system_id = s.id
         WHERE EXISTS (
             SELECT 1
+            FROM conditions_codes_temp crc
+            JOIN codes ON codes.id = crc.code_id
             WHERE crc.condition_id = c.id
-            AND crc.is_child_rsg
-            AND codes.code = ANY(%s)
-        )
-        GROUP BY c.id;
+              AND crc.is_child_rsg
+              AND codes.code = ANY(%s)
+        );
     """
 
     params = (codes,)
 
-    async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+    async with (
+        db.get_connection() as conn,
+        conn.cursor(row_factory=class_row(DbConditionRsgMatch)) as cur,
+    ):
         await cur.execute(query, params)
-        rows = await cur.fetchall()
-
-    return [DbCondition.from_db_row(row) for row in rows]
+        return await cur.fetchall()
 
 
 @log_query_perf()
@@ -357,17 +349,16 @@ async def get_conditions_by_ids_db(
             c.display_name,
             MAX(t.version) as version,
             ARRAY(
-                SELECT codes.code
+                SELECT DISTINCT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
             JSONB_AGG(
-                JSON_BUILD_OBJECT(
+                DISTINCT JSONB_BUILD_OBJECT(
                 'code', codes.code,
-                'display', codes.display,
-                'system_id', codes.system_id,
-                'system_name', s.display_name
+                'display_name', codes.display_name,
+                'system_id', codes.system_id
             )) as codes,
             c.coverage_level,
             c.coverage_level_reason,
@@ -375,7 +366,6 @@ async def get_conditions_by_ids_db(
         FROM conditions c
         JOIN conditions_codes_temp crc ON crc.condition_id = c.id
         JOIN codes ON codes.id = crc.code_id
-        JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
         GROUP BY c.id;
@@ -405,18 +395,17 @@ async def get_primary_conditions_for_configurations_db(
             c.display_name,
             MAX(t.version) as version,
             ARRAY(
-                SELECT codes.code
+                SELECT DISTINCT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
             COALESCE(
                 JSONB_AGG(
-                    JSON_BUILD_OBJECT(
+                    DISTINCT JSONB_BUILD_OBJECT(
                     'code', codes.code,
-                    'display', codes.display,
-                    'system_id', codes.system_id,
-                    'system_name', s.display_name
+                    'display_name', codes.display_name,
+                    'system_id', codes.system_id
                 )) FILTER (WHERE codes.id IS NOT NULL),
                 '[]'::jsonb
             ) as codes,
@@ -427,7 +416,6 @@ async def get_primary_conditions_for_configurations_db(
         JOIN configurations_conditions cc ON cc.condition_id = c.id
         LEFT JOIN conditions_codes_temp crc ON crc.condition_id = c.id
         LEFT JOIN codes ON codes.id = crc.code_id
-        LEFT JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE cc.configuration_id = ANY(%s)
         AND cc.is_primary = true
@@ -474,18 +462,17 @@ async def get_included_conditions_db(
             c.display_name,
             MAX(t.version) as version,
             ARRAY(
-                SELECT codes.code
+                SELECT DISTINCT codes.code
                 FROM conditions_codes_temp crc
                 JOIN codes ON crc.code_id = codes.id
                 WHERE crc.condition_id = c.id AND crc.is_child_rsg
             ) as child_rsg_snomed_codes,
              COALESCE(
                  JSONB_AGG(
-                     JSON_BUILD_OBJECT(
+                     DISTINCT JSONB_BUILD_OBJECT(
                      'code', codes.code,
-                     'display', codes.display,
-                     'system_id', codes.system_id,
-                     'system_name', s.display_name
+                     'display_name', codes.display_name,
+                     'system_id', codes.system_id
                  )) FILTER (WHERE codes.id IS NOT NULL),
                  '[]'::jsonb
              ) as codes,
@@ -495,7 +482,6 @@ async def get_included_conditions_db(
         FROM conditions c
         JOIN conditions_codes_temp crc ON crc.condition_id = c.id
         JOIN codes ON codes.id = crc.code_id
-        JOIN systems s ON codes.system_id = s.id
         JOIN tes t ON t.id = c.tes_id
         WHERE c.id = ANY(%s)
         GROUP BY c.id
@@ -568,7 +554,7 @@ async def get_context_groupers_by_condition_id_db(
 
 async def get_conditions_with_rsg_codes_db(
     db: AsyncDatabaseConnection,
-) -> list[ConditionSummary]:
+) -> list[DbConditionSummary]:
     """
     Function to fetch all conditions with joins into codes to grab the associated condition RSGs.
 
@@ -578,7 +564,7 @@ async def get_conditions_with_rsg_codes_db(
         SELECT
             c.id,
             c.display_name,
-            JSONB_AGG(JSONB_BUILD_OBJECT('display', codes.display, 'code', codes.code)) as rsg_codes
+            JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('display_name', codes.display_name, 'code', codes.code)) as rsg_codes
         FROM conditions as c
         JOIN tes t ON t.id = c.tes_id
         LEFT JOIN conditions_codes_temp as rsg ON rsg.condition_id = c.id
@@ -595,4 +581,4 @@ async def get_conditions_with_rsg_codes_db(
         await cur.execute(query, params)
         rows = await cur.fetchall()
 
-    return [ConditionSummary.from_db_row(r) for r in rows]
+    return [DbConditionSummary.from_db_row(r) for r in rows]

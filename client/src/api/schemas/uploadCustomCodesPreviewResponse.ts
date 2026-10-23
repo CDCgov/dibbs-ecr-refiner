@@ -1,4 +1,4 @@
-import type { DbCodeSystem } from './dbCodeSystem';
+import type { CodeSystem } from './codeSystem';
 import type { UploadCustomCodesPreviewItem } from './uploadCustomCodesPreviewItem';
 
 /**
@@ -8,5 +8,5 @@ export interface UploadCustomCodesPreviewResponse {
   preview_items: UploadCustomCodesPreviewItem[];
   codes_processed?: number | null;
   total_custom_codes_in_configuration?: number | null;
-  code_systems: DbCodeSystem[];
+  code_systems: CodeSystem[];
 }

@@ -211,8 +211,8 @@ function CustomCodeDeletionMenu({
   const { selectedCustomCodeIds, allSelected } = state;
 
   let totalCustomCodes = selectedCustomCodeIds.size;
-  if (allSelected && codeCounts?.data.total_custom_codes_count) {
-    totalCustomCodes = codeCounts.data.total_custom_codes_count;
+  if (allSelected && codeCounts?.data.custom_code_count) {
+    totalCustomCodes = codeCounts.data.custom_code_count;
   }
 
   const deletePastCursor = allSelected && hasNextPage;
@@ -387,20 +387,17 @@ function calculateCounts(
     // If in the all selected case, start with the totals as fetched from the
     // code counts hook and tally any custom codes we've selected. Forbid exclusion
     // only if we've down-selected to a subset with only custom codes
-    const { total_code_count, total_custom_codes_count } = codeCounts;
+    const { code_count, custom_code_count } = codeCounts;
     const deselectedCodeCount = renderedCodes.filter(
       (c) => !selectedCodeIds.has(c.id) && !c.is_trigger_code && !c.is_custom
     ).length;
 
     const excludeableCodeCount =
-      total_code_count -
-      deselectedCodeCount -
-      total_custom_codes_count -
-      lockedCodesCount;
+      code_count - deselectedCodeCount - custom_code_count - lockedCodesCount;
 
     return {
-      totalCodeCount: total_code_count,
-      totalCustomCodeCount: total_custom_codes_count,
+      totalCodeCount: code_count,
+      totalCustomCodeCount: custom_code_count,
       excludeableCodeCount,
       exclusionForbidden: excludeableCodeCount <= 0,
     };
@@ -542,7 +539,7 @@ function formatSelectedCodeCount(
     filters.search;
 
   if (!atLeastOneFilterActive) {
-    const { primary_condition_rctc_count, total_code_count } = codeCounts;
+    const { primary_condition_rctc_count, code_count } = codeCounts;
     const deselectedCodesCount = renderedCodes
       .filter((c) => !c.is_custom && !c.is_trigger_code)
       .map((c) => c.id)
@@ -553,7 +550,7 @@ function formatSelectedCodeCount(
       .map((c) => c.id)
       .filter((id) => !selectedCustomCodeIds.has(id)).length;
     return (
-      total_code_count -
+      code_count -
       primary_condition_rctc_count -
       deselectedCodesCount -
       deselectedCustomCodesCount

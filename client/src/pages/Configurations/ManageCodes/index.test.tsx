@@ -40,7 +40,9 @@ vi.mock('../../../api/configurations/configurations', async () => {
             codes: [],
             code_systems: {},
           },
-          rsg_codes: [{ display: 'Anaplasmosis (disorder)', code: '13906002' }],
+          rsg_codes: [
+            { display_name: 'Anaplasmosis (disorder)', code: '13906002' },
+          ],
           included_conditions: [
             { id: '1', display_name: 'Anaplasmosis', associated: true },
             {
@@ -95,7 +97,7 @@ vi.mock('../../../api/conditions/conditions', async () => {
             id: '1',
             display_name: 'Anaplasmosis',
             rsg_codes: [
-              { display: 'Anaplasmosis (disorder)', code: '13906002' },
+              { display_name: 'Anaplasmosis (disorder)', code: '13906002' },
             ],
           },
         ],
@@ -220,7 +222,7 @@ describe('Mangage codes page', () => {
     const exclusionButton = screen.getByText('Exclude');
 
     const rctcCount = testTesCodes.filter((c) => c.is_trigger_code).length;
-    const totalCodeCount = testCodeCounts.total_code_count;
+    const totalCodeCount = testCodeCounts.code_count;
     const excludeableCodeCount =
       totalCodeCount - rctcCount - testCustomCodes.length;
 
