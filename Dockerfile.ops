@@ -25,6 +25,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
+# Pick up Alpine fixes the base image may lag on, including ca-certificates
+# 20261020-r0, which drops the distrusted emSign ECC Root CA - G3.
+RUN apk upgrade --no-cache
+
 # Install system dependencies
 RUN apk update && apk add --no-cache \
     ca-certificates \
@@ -77,6 +81,17 @@ COPY ./refiner/app/db app/db
 COPY ./ops/entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh
+
+# Fail the build if either distrusted root is left in any CA bundle, whether from
+# the OS or vendored by a Python package. Each pattern is one line of a root's
+# base64 body (emSign ECC Root CA - G3, then AAA Certificate Services), so it
+# matches however a bundle labels the certificate. grep exits 1 only when
+# nothing matched.
+RUN grep -rlF \
+    -e 'CUfvO6wIBHxcmbHtRwfSAjEAnbpV/KlK6O3t5nYBQnvI+GDZjVGLVTv7jHvrZQnD' \
+    -e 'l2D4kF501KKaU73yqWjgom7C12yxow+ev+to51byrvLjKzg6CYG1a4XXvi3tPxq3' \
+    /etc /usr /var; \
+    test $? -eq 1
 
 # Start this file, fall back to bash
 ENTRYPOINT ["./entrypoint.sh"]
