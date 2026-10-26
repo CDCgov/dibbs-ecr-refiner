@@ -104,18 +104,6 @@ When the RR contains reportable conditions for a jurisdiction but only some have
 
 Both entry points use `RefinementTrace` objects (defined in `pipeline.py`) to track what happened during refinement. Each trace captures the jurisdiction, condition code, whether a configuration was resolved, the refinement outcome (refined, skipped, or error), and the skip reason if applicable. Lambda logs a summary of all traces at the end of each invocation.
 
-### Stage and Role metadata
-
-Every function and class in `lambda_function.py` has a docstring with `Stage:`
-and `Role:` metadata fields. These drive the auto-generated [Lambda Function
-Reference docs](/docs/reference/lambda/) - they determine which pipeline stage a
-function appears under and what color-coded role badge it gets.
-
-> [!IMPORTANT]
-> Without these specific metadata fields, the `just docs::sync` command will
-> fail and local docs will not be able to render. Please keep this in mind when
-> you disregard adding the metadata fields.
-
 #### Conventions
 
 **Stage** = where in the pipeline the function logically belongs (not where it's
