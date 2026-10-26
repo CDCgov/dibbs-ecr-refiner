@@ -46,6 +46,3 @@ refined-ecr
 test-results/
 playwright-report/
 client/e2e/downloads/
-
-# Structurizr
-.structurizr/
