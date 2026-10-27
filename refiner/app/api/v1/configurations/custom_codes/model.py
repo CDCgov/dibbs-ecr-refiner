@@ -19,7 +19,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    display: str
+    display_name: str
     system_id: UUID
 
 
@@ -29,8 +29,8 @@ class UploadCustomCodesPreviewItem(BaseModel):
     id: UUID
     code: str
     system_id: UUID
-    system_name: str
-    display: str
+    system_display_name: str
+    display_name: str
     row: int | None = None
 
 
@@ -47,7 +47,7 @@ class CustomCodeResponse:
     """
 
     id: UUID
-    display: str
+    display_name: str
     code: str
     system_id: UUID
-    system_name: str
+    system_display_name: str

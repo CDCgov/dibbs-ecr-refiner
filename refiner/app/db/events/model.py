@@ -51,14 +51,14 @@ class DbEvent(_EventBase):
 
 
 @dataclass(frozen=True)
-class CodeSetEvent:
+class DbCodeSetEvent:
     """
     Minimal event data needed to export a code set.
     """
 
     id: UUID
     condition_id: UUID | None
-    condition_name: str | None
+    condition_display_name: str | None
     code_count: int | None
     event_type: str
     created_at: datetime

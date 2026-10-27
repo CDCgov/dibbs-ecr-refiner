@@ -274,7 +274,7 @@ function checkOtherCode(exists = true) {
 
 function checkCode(codeSystemName: string, exists = true) {
   const mockCode = mockPreviewItems.find(
-    (i) => i.system_name === codeSystemName
+    (i) => i.system_display_name === codeSystemName
   )?.code as string;
 
   const matcher = exists ? 'getByText' : 'queryByText';
@@ -317,10 +317,10 @@ const mockPreviewItems: UploadCustomCodesPreviewItem[] = uploadLines.map(
       system_id: mockCodeSystems.find(
         (system) => system.key === row['code_system']
       )!.id,
-      system_name: mockCodeSystems.find(
+      system_display_name: mockCodeSystems.find(
         (system) => system.key === row['code_system']
       )!.display_name,
-      display: row['display_name'],
+      display_name: row['display_name'],
       row: i,
     };
   }

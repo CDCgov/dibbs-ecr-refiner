@@ -2,9 +2,9 @@ import { Select } from '@components/Select';
 import { useSectionUpdater } from './useSectionUpdater';
 import { useSectionError } from './useSectionError';
 import {
-  DbSectionAction,
-  DbNarrativeAction,
-  DbConfigurationSectionProcessing,
+  SectionAction,
+  NarrativeAction,
+  ConfiguredSection,
   NarrativeDataLabelsValue,
 } from '../../../../api/schemas';
 
@@ -13,11 +13,11 @@ import {
 
 interface NarrativeSelectProps {
   configurationId: string;
-  currentSection: DbConfigurationSectionProcessing;
+  currentSection: ConfiguredSection;
   disabled: boolean;
   isNarrativeOnly: boolean;
   isReconstructable: boolean;
-  codedDataAction: DbSectionAction;
+  codedDataAction: SectionAction;
 }
 
 export function NarrativeSelect({
@@ -39,10 +39,10 @@ export function NarrativeSelect({
         onChange={(e) => {
           clearError();
           updateSection(currentSection, {
-            narrative: e.target.value as DbNarrativeAction,
+            narrative: e.target.value as NarrativeAction,
           });
         }}
-        aria-label={`Narrative data handling for ${currentSection.name} section`}
+        aria-label={`Narrative data handling for ${currentSection.display_name} section`}
         className="min-w-38"
       >
         <option value="retain">{NarrativeDataLabelsValue.retain}</option>

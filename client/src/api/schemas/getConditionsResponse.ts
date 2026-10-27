@@ -1,4 +1,4 @@
-import type { CodedConcept } from './codedConcept';
+import type { CodeLabel } from './codeLabel';
 
 /**
  * Conditions response model.
@@ -6,5 +6,5 @@ import type { CodedConcept } from './codedConcept';
 export interface GetConditionsResponse {
   id: string;
   display_name: string;
-  rsg_codes: CodedConcept[];
+  rsg_codes: CodeLabel[];
 }

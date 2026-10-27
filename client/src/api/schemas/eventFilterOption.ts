@@ -4,6 +4,6 @@
  */
 export interface EventFilterOption {
   id: string;
-  name: string;
+  display_name: string;
   canonical_url: string;
 }

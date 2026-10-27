@@ -29,10 +29,12 @@ COPY ./refiner/app/lambda/lambda_function.py app/lambda/lambda_function.py
 # Copy assets
 COPY ./refiner/assets ./assets
 
-# Copy refiner modules
+# Copy refiner modules. `app/db` is deliberately absent: the Lambda has no database
+# connection, and `tests/unit/test_layering.py` asserts the handler reaches nothing
+# under `app.db` so this stays true. the S3 payload shapes it used to import from
+# there now live in `app/core/models/payloads.py`
 COPY ./refiner/app/core app/core
 COPY ./refiner/app/services app/services
-COPY ./refiner/app/db app/db
 
 # Fail the build if either distrusted root is left in any CA bundle, whether from
 # the OS or vendored by a Python package. Each pattern is one line of a root's

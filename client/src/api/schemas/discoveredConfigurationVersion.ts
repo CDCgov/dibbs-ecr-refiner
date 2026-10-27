@@ -1,4 +1,4 @@
-import type { DbConfigurationStatus } from './dbConfigurationStatus';
+import type { ConfigurationStatus } from './configurationStatus';
 
 /**
  * Model to represent individual discovered configurations.
@@ -6,5 +6,5 @@ import type { DbConfigurationStatus } from './dbConfigurationStatus';
 export interface DiscoveredConfigurationVersion {
   id: string;
   version: number;
-  status: DbConfigurationStatus;
+  status: ConfigurationStatus;
 }

@@ -4,7 +4,7 @@ import type { DiscoveredConfigurationVersion } from './discoveredConfigurationVe
  * Model to represent a set of discovered configurations.
  */
 export interface DiscoveredConfigurationSet {
-  name: string;
+  display_name: string;
   condition_id: string;
   versions: DiscoveredConfigurationVersion[];
 }

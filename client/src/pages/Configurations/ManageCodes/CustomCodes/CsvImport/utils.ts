@@ -1,6 +1,6 @@
-import { DbCodeSystem } from '../../../../../api/schemas/dbCodeSystem';
+import { CodeSystem } from '../../../../../api/schemas/codeSystem';
 
-export function buildCsvDownloadTemplate(systemsSupported: DbCodeSystem[]) {
+export function buildCsvDownloadTemplate(systemsSupported: CodeSystem[]) {
   const headers = 'code,code_system,display_name';
 
   let content = headers + '\n';

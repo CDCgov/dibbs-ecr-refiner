@@ -5,12 +5,13 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.core.exceptions import XMLParsingError
+from app.core.models.configurations import NarrativeAction
+from app.core.models.terminology import Coding
 from app.services.format import remove_element
-from app.services.terminology import CodeSystemSets, Coding
+from app.services.terminology import CodeSystemSets
 
 from ..model import (
     HL7_XSI_NS,
-    DbNarrativeAction,
     EntryMatchRule,
     NamespaceMap,
     SectionRunResult,
@@ -76,7 +77,7 @@ def process(
     section_specification: SectionSpecification,
     namespaces: NamespaceMap,
     augmentation_timestamp: str = "",
-    narrative_action: DbNarrativeAction = "retain",
+    narrative_action: NarrativeAction = "retain",
 ) -> SectionRunResult:
     """
     Process a section using IG-driven entry match rules.

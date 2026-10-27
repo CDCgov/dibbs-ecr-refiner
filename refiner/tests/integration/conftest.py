@@ -8,6 +8,11 @@ from uuid import UUID
 import pytest
 import pytest_asyncio
 
+from app.core.models.configurations import (
+    NarrativeAction,
+    SectionAction,
+)
+
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
@@ -41,10 +46,6 @@ from app.core.config import (
     get_auth_config,
     get_aws_config,
     get_db_config,
-)
-from app.db.configurations.model import (
-    DbNarrativeAction,
-    DbSectionAction,
 )
 from app.db.pool import create_db
 from tests.validation.validate_document_schematron import (
@@ -193,8 +194,8 @@ def update_section_processing(authed_client):
         current_code: str,
         *,
         include: bool | None = None,
-        narrative: DbNarrativeAction | None = None,
-        action: DbSectionAction | None = None,
+        narrative: NarrativeAction | None = None,
+        action: SectionAction | None = None,
     ):
         payload = {
             "current_code": current_code,
@@ -323,6 +324,13 @@ async def get_condition_by_id(db_pool):
     Returns a function that fetches a condition object given its ID.
 
     condition = await get_condition_by_id("ID")
+
+    NOTE: this duplicates `get_condition_by_id_db`'s SQL to hand back a raw row rather
+    than a `DbCondition`. It drifted from the original -- it kept `JSON_BUILD_OBJECT`
+    and a `system_name` the production query dropped, and it never had the `DISTINCT`
+    the junction grain requires. Calling the real function and adapting the six
+    consumers to attribute access would remove the drift for good; `tests/unit/
+    test_sql_grain.py` only scans `app/`, so nothing guards this copy.
     """
 
     async def _get(id: UUID):
@@ -338,23 +346,21 @@ async def get_condition_by_id(db_pool):
                         c.display_name,
                         MAX(t.version) as version,
                         ARRAY(
-                            SELECT codes.code
+                            SELECT DISTINCT codes.code
                             FROM conditions_codes_temp crc
                             JOIN codes ON crc.code_id = codes.id
                             WHERE crc.condition_id = c.id AND crc.is_child_rsg
                         ) as child_rsg_snomed_codes,
-                         JSONB_AGG(
-                            JSON_BUILD_OBJECT(
+                        JSONB_AGG(
+                            DISTINCT JSONB_BUILD_OBJECT(
                             'code', codes.code,
-                            'display', codes.display,
-                            'system_id', codes.system_id,
-                            'system_name', s.display_name
+                            'display_name', codes.display_name,
+                            'system_id', codes.system_id
                         )) as codes
                         FROM conditions c
                         JOIN tes t ON t.id = c.tes_id
                         JOIN conditions_codes_temp cc ON cc.condition_id = c.id
                         JOIN codes ON codes.id = cc.code_id
-                        JOIN systems s ON codes.system_id = s.id
                         WHERE c.id = %(id)s
                         GROUP BY c.id
                     """,

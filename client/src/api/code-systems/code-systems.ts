@@ -21,7 +21,7 @@ import type {
 } from 'axios';
 
 import type {
-  CodeSystemsReponse
+  CodeSystemResponse
 } from '../schemas';
 
 
@@ -52,7 +52,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  */
 export const getCodeSystems = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CodeSystemsReponse[]>> => {
+ ): Promise<AxiosResponse<CodeSystemResponse[]>> => {
 
 
     return axios.default.get(

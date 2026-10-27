@@ -1,8 +1,5 @@
-from app.db.conditions.model import (
-    ConditionMappingPayload,
-    ConditionMapValue,
-    DbCondition,
-)
+from app.core.models.payloads import ConditionMappingPayload, ConditionMapValue
+from app.db.conditions.model import DbCondition
 from app.services.conditions.naming import get_computed_condition_name
 
 

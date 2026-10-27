@@ -10,7 +10,7 @@ const auditEvents: AuditEvent[] = [
   {
     id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
     username: 'refiner',
-    configuration_name: 'Alpha-gal Syndrome',
+    configuration_display_name: 'Alpha-gal Syndrome',
     configuration_version: 1,
     condition_id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
     action_text: 'Created configuration',
@@ -23,7 +23,7 @@ const auditEvents: AuditEvent[] = [
     id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
     username: 'refiner',
     condition_id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
-    configuration_name: 'Acanthamoeba',
+    configuration_display_name: 'Acanthamoeba',
     configuration_version: 1,
     action_text: 'Created configuration',
     event_type: 'create_configuration',
@@ -35,7 +35,7 @@ const auditEvents: AuditEvent[] = [
     id: '411215db-e623-41c6-90b1-131b9f74ed39',
     username: 'refiner',
     condition_id: '569de1f6-f9f4-4a7b-824e-ad805059bb3f',
-    configuration_name: 'COVID-19',
+    configuration_display_name: 'COVID-19',
     configuration_version: 1,
     action_text: 'Added 3 custom codes from CSV',
     event_type: 'bulk_add_custom_code',
@@ -46,13 +46,13 @@ const auditEvents: AuditEvent[] = [
 ];
 const configurations: EventFilterOption[] = [
   {
-    name: 'Alpha-gal Syndrome',
+    display_name: 'Alpha-gal Syndrome',
     id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
     canonical_url:
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
   },
   {
-    name: 'Acanthamoeba',
+    display_name: 'Acanthamoeba',
     id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
     canonical_url:
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba65',
@@ -83,7 +83,7 @@ function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
   eventsToCheck.forEach((r) => {
     const matchingRow = screen
       .getByRole('cell', {
-        name: `${r.configuration_name}Version ${r.configuration_version}`,
+        name: `${r.configuration_display_name}Version ${r.configuration_version}`,
       })
       .closest('tr');
     expect(matchingRow).toBeInTheDocument();

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from logging import Logger
 from uuid import UUID
@@ -8,8 +9,10 @@ from fastapi.concurrency import run_in_threadpool
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import AppConfig, get_app_config
 from app.core.exceptions import ResourceNotFoundError
+from app.core.models.terminology import CodeLabel
 from app.db.code_systems.db import get_id_to_code_system_dict_db
 from app.db.codes.db import get_rsg_codes_by_condition_id_db
+from app.db.codes.model import DbChildRsgCode
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -43,6 +46,8 @@ from .model import (
     GetConfigurationsResponse,
     IncludedCondition,
     LockedByUser,
+    to_code_set_summary,
+    to_configuration_version,
 )
 
 router = APIRouter()
@@ -71,7 +76,7 @@ async def get_configurations(
     return [
         GetConfigurationsResponse(
             id=c.id,
-            name=c.name,
+            display_name=c.display_name,
             status=c.status,
         )
         for c in summary_response
@@ -163,12 +168,45 @@ async def create_configuration(
             detail="Unable to acquire lock for new configuration",
         )
 
-    return CreateConfigurationResponse(id=config.id, name=config.name)
+    return CreateConfigurationResponse(id=config.id, display_name=config.display_name)
+
+
+def _to_code_label(row: DbChildRsgCode) -> CodeLabel:
+    return CodeLabel(code=row.code, display_name=row.display_name)
+
+
+@dataclass(frozen=True)
+class SerializedFile:
+    """
+    One serialized configuration file, as stored in S3.
+    """
+
+    key: str
+    content: str
+
+
+@dataclass(frozen=True)
+class SerializedFilesResponse:
+    """
+    The three files an active configuration serializes to.
+    """
+
+    active: SerializedFile
+    current: SerializedFile
+    metadata: SerializedFile
+
+
+def _to_serialized_files_response(files: SerializedFiles) -> SerializedFilesResponse:
+    return SerializedFilesResponse(
+        active=SerializedFile(key=files.active.key, content=files.active.content),
+        current=SerializedFile(key=files.current.key, content=files.current.content),
+        metadata=SerializedFile(key=files.metadata.key, content=files.metadata.content),
+    )
 
 
 @router.get(
     "/{configuration_id}/serialized",
-    response_model=SerializedFiles,
+    response_model=SerializedFilesResponse,
     tags=["configurations"],
     operation_id="getSerializedConfiguration",
 )
@@ -178,7 +216,7 @@ async def get_serialized_configuration(
     app_config: AppConfig = Depends(get_app_config),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> SerializedFiles:
+) -> SerializedFilesResponse:
     """
     Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
 
@@ -229,13 +267,14 @@ async def get_serialized_configuration(
         )
 
     try:
-        return await run_in_threadpool(
+        files = await run_in_threadpool(
             get_serialized_files,
             user.jurisdiction_id,
             primary_condition.canonical_url,
             config.version,
             logger,
         )
+        return _to_serialized_files_response(files)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -357,10 +396,10 @@ async def get_configuration(
     custom_codes = [
         CustomCodeResponse(
             id=cc.id,
-            display=cc.display,
+            display_name=cc.display_name,
             code=cc.code,
             system_id=cc.system_id,
-            system_name=systems[cc.system_id].display_name,
+            system_display_name=systems[cc.system_id].display_name,
         )
         for cc in config.custom_codes
     ]
@@ -376,17 +415,17 @@ async def get_configuration(
         is_draft=is_draft,
         condition_id=primary_condition.id,
         condition_canonical_url=primary_condition.canonical_url,
-        display_name=config.name,
+        display_name=config.display_name,
         status=config.status,
-        code_sets=config_condition_info,
+        code_sets=[to_code_set_summary(c) for c in config_condition_info],
         included_conditions=included_conditions,
         custom_codes=custom_codes,
         section_processing=sorted(
             [format_section_naming(section) for section in config.section_processing],
-            key=lambda r: r.name.lower(),
+            key=lambda r: r.display_name.lower(),
         ),
-        rsg_codes=rsg_codes,
-        all_versions=all_versions,
+        rsg_codes=[_to_code_label(r) for r in rsg_codes],
+        all_versions=[to_configuration_version(v) for v in all_versions],
         version=config.version,
         active_version=active_version,
         active_configuration_id=active_configuration_id,

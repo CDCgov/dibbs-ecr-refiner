@@ -165,19 +165,19 @@ export function Filters({
 
   const codeSystemOptions = code_systems.map((f) => ({
     id: f.system_id,
-    label: f.system_name,
+    label: f.display_name,
     count: f.code_count,
   }));
 
   const sourceOptions = sources.map((f) => ({
-    id: f.condition_id ?? f.source,
-    label: f.source,
+    id: f.condition_id ?? f.display_name,
+    label: f.display_name,
     count: f.code_count,
   }));
 
   const statusOptions = statuses.map((f) => ({
     id: f.status,
-    label: f.label,
+    label: f.display_name,
     count: f.code_count,
   }));
 

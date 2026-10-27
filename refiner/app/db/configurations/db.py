@@ -6,14 +6,16 @@ from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
+from app.core.models.configurations import ConfiguredSection, SectionAction
+from app.core.models.labels import (
+    CODED_DATA_LABELS,
+    NARRATIVE_DATA_LABELS,
+)
 from app.db.conditions.db import (
     get_latest_tes_condition_db,
     get_latest_tes_condition_ids_db,
 )
-from app.db.configurations.labels import (
-    CODED_DATA_LABELS,
-    NARRATIVE_DATA_LABELS,
-)
+from app.db.configurations.model import DbCodeSetSummary
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -27,11 +29,8 @@ from ..pool import AsyncDatabaseConnection
 from .model import (
     DbConfiguration,
     DbConfigurationSection,
-    DbConfigurationSectionProcessing,
     DbConfigurationSummary,
-    DbSectionAction,
-    DbTotalConditionCodeCount,
-    GetConfigurationResponseVersion,
+    DbConfigurationVersion,
 )
 
 EMPTY_JSONB = Jsonb([])
@@ -57,13 +56,16 @@ async def insert_custom_section_db(
     Returns:
         DbConfiguration: Updated configuration
     """
-    name, code = custom_section_input.name, custom_section_input.code
+    display_name, code = (
+        custom_section_input.display_name,
+        custom_section_input.code,
+    )
 
     query = """
         INSERT INTO configurations_sections (
             configuration_id,
             code,
-            name,
+            display_name,
             action,
             include,
             narrative,
@@ -88,7 +90,7 @@ async def insert_custom_section_db(
     params = (
         config.id,
         code,
-        name,
+        display_name,
         "refine",
         True,
         "remove",
@@ -108,7 +110,7 @@ async def insert_custom_section_db(
                 jurisdiction_id=config.jurisdiction_id,
                 user_id=user_id,
                 event_type="create_custom_section",
-                action_text=f"Custom section '{name}' with code '{code}' created",
+                action_text=f"Custom section '{display_name}' with code '{code}' created",
             ),
             cursor=cur,
         )
@@ -148,7 +150,7 @@ async def delete_custom_section_db(
 
     section_name = next(
         (
-            s.name
+            s.display_name
             for s in config.section_processing
             if s.code == custom_section_input.code
         ),
@@ -181,7 +183,7 @@ async def delete_custom_section_db(
 
 async def _insert_configuration_sections_db(
     configuration_id: UUID,
-    sections_to_insert: list[DbConfigurationSectionProcessing],
+    sections_to_insert: list[ConfiguredSection],
     cursor: AsyncCursor[CursorType],
 ) -> None:
     """
@@ -191,7 +193,7 @@ async def _insert_configuration_sections_db(
         INSERT INTO configurations_sections (
             configuration_id,
             code,
-            name,
+            display_name,
             action,
             include,
             narrative,
@@ -215,7 +217,7 @@ async def _insert_configuration_sections_db(
         (
             configuration_id,
             s.code,
-            s.name,
+            s.display_name,
             s.action,
             s.include,
             s.narrative,
@@ -313,7 +315,7 @@ async def insert_configuration_db(
     query = """
     INSERT INTO configurations (
         jurisdiction_id,
-        name,
+        display_name,
         created_by,
         version
     )
@@ -337,8 +339,8 @@ async def insert_configuration_db(
         if config_to_clone:
             params = (
                 jurisdiction_id,
-                # always set name to condition display name
-                config_to_clone.name,
+                # the configuration's display name is always the condition's
+                config_to_clone.display_name,
                 # cloned by this user
                 user_id,
                 next_version,
@@ -346,7 +348,7 @@ async def insert_configuration_db(
         else:
             params = (
                 jurisdiction_id,
-                # always set name to condition display name
+                # the configuration's display name is always the condition's
                 latest_condition.display_name,
                 # created by this user
                 user_id,
@@ -376,11 +378,11 @@ async def insert_configuration_db(
             if config_to_clone.custom_codes:
                 await cur.executemany(
                     """
-                        INSERT INTO custom_codes (configuration_id, code, display, system_id)
+                        INSERT INTO custom_codes (configuration_id, code, display_name, system_id)
                         VALUES (%s, %s, %s, %s)
                         """,
                     [
-                        (config_id, cc.code, cc.display, cc.system_id)
+                        (config_id, cc.code, cc.display_name, cc.system_id)
                         for cc in config_to_clone.custom_codes
                     ],
                 )
@@ -444,7 +446,7 @@ async def insert_configuration_db(
                     event_type="add_code",
                     action_text=f"Added '{latest_condition.display_name}' code set",
                     condition_id=latest_condition.id,
-                    code_count=latest_condition.get_total_code_count(),
+                    code_count=latest_condition.get_code_count(),
                 ),
                 cursor=cur,
             )
@@ -468,7 +470,7 @@ async def get_configurations_db(
         query += " AND status = %s"
         params += (status,)
 
-    query += " ORDER BY name ASC;"
+    query += " ORDER BY display_name ASC;"
 
     async with db.get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
         await cur.execute(query, params)
@@ -492,7 +494,7 @@ async def get_configurations_by_ids_db(
     query = (
         _get_configurations_core_query()
         + " WHERE c.id = ANY(%s) AND c.jurisdiction_id = %s"
-        + " ORDER BY c.name ASC;"
+        + " ORDER BY c.display_name ASC;"
     )
 
     params = (
@@ -592,7 +594,7 @@ async def associate_condition_codeset_with_configuration_db(
                 event_type="add_code",
                 action_text=f"Added '{condition.display_name}' code set",
                 condition_id=condition.id,
-                code_count=condition.get_total_code_count(),
+                code_count=condition.get_code_count(),
             ),
             cursor=cur,
         )
@@ -647,7 +649,7 @@ async def disassociate_condition_codeset_with_configuration_db(
                 event_type="delete_code",
                 action_text=f"Removed '{condition.display_name}' code set",
                 condition_id=condition.id,
-                code_count=condition.get_total_code_count(),
+                code_count=condition.get_code_count(),
             ),
             cursor=cur,
         )
@@ -659,7 +661,7 @@ async def disassociate_condition_codeset_with_configuration_db(
 
 async def get_total_condition_code_counts_by_configuration_db(
     config_id: UUID, db: AsyncDatabaseConnection
-) -> list[DbTotalConditionCodeCount]:
+) -> list[DbCodeSetSummary]:
     """
     Given a config ID, returns the total associated code count by condition.
     """
@@ -673,7 +675,7 @@ async def get_total_condition_code_counts_by_configuration_db(
         SELECT
             c.id AS condition_id,
             c.display_name,
-            COUNT(DISTINCT cd.id) AS total_codes
+            COUNT(DISTINCT cd.id) AS code_count
         FROM conditions c
         JOIN conditions_to_tally ON c.id = conditions_to_tally.cond_id
         JOIN conditions_codes_temp crc ON crc.condition_id = c.id
@@ -688,7 +690,7 @@ async def get_total_condition_code_counts_by_configuration_db(
 
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur,
+        conn.cursor(row_factory=class_row(DbCodeSetSummary)) as cur,
     ):
         await cur.execute(query, {"configuration_id": config_id})
         row = await cur.fetchall()
@@ -706,7 +708,7 @@ async def _get_configuration_section_by_code(
         SELECT
             id,
             configuration_id,
-            name,
+            display_name,
             code,
             action,
             include,
@@ -744,7 +746,7 @@ def _bool_label(value: bool) -> Literal["enabled", "disabled"]:
 async def update_configuration_section_db(
     config: DbConfiguration,
     current_code: str,
-    section_update: DbConfigurationSectionProcessing,
+    section_update: ConfiguredSection,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -763,7 +765,7 @@ async def update_configuration_section_db(
     """
 
     # Validate input actions
-    valid_actions: set[DbSectionAction] = {"retain", "refine"}
+    valid_actions: set[SectionAction] = {"retain", "refine"}
     if section_update.action not in valid_actions:
         raise ValueError(
             f"Invalid action '{section_update.action}' for section update."
@@ -799,8 +801,8 @@ async def update_configuration_section_db(
             lambda old, new: f"code from '{old}' to '{new}'",
         ),
         (
-            prev_section.name,
-            section_update.name,
+            prev_section.display_name,
+            section_update.display_name,
             lambda old, new: f"name from '{old}' to '{new}'",
         ),
         (
@@ -818,7 +820,7 @@ async def update_configuration_section_db(
             user_id=user_id,
             configuration_id=config.id,
             event_type="section_update",
-            action_text=f"Updated section '{prev_section.name}' {formatter(old, new)}",
+            action_text=f"Updated section '{prev_section.display_name}' {formatter(old, new)}",
         )
         for old, new, formatter in change_specs
         if old != new
@@ -828,7 +830,7 @@ async def update_configuration_section_db(
             UPDATE configurations_sections
             SET
                 code = %s,
-                name = %s,
+                display_name = %s,
                 action = %s,
                 include = %s,
                 narrative = %s,
@@ -840,7 +842,7 @@ async def update_configuration_section_db(
 
     params = (
         section_update.code,
-        section_update.name,
+        section_update.display_name,
         section_update.action,
         section_update.include,
         section_update.narrative,
@@ -925,7 +927,7 @@ async def get_active_config_db(
 
 async def get_configuration_versions_db(
     jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
-) -> list[GetConfigurationResponseVersion]:
+) -> list[DbConfigurationVersion]:
     """
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
@@ -952,7 +954,7 @@ async def get_configuration_versions_db(
     params = (jurisdiction_id, condition_canonical_url)
     async with (
         db.get_connection() as conn,
-        conn.cursor(row_factory=class_row(GetConfigurationResponseVersion)) as cur,
+        conn.cursor(row_factory=class_row(DbConfigurationVersion)) as cur,
     ):
         await cur.execute(query, params)
         rows = await cur.fetchall()
@@ -970,7 +972,7 @@ async def get_configurations_summary_db(
         WITH ranked AS (
             SELECT
                 c.id,
-                c.name,
+                c.display_name,
                 c.status,
                 cond.canonical_url,
                 ROW_NUMBER() OVER (
@@ -988,10 +990,10 @@ async def get_configurations_summary_db(
             JOIN conditions cond ON cond.id = cc.condition_id
             WHERE c.jurisdiction_id = %s
         )
-        SELECT id, name, status
+        SELECT id, display_name, status
         FROM ranked
         WHERE rn = 1
-        ORDER BY LOWER(name)
+        ORDER BY LOWER(display_name)
     """
     params = (jurisdiction_id,)
     async with (
@@ -1008,7 +1010,7 @@ def _get_configurations_core_query() -> str:
     return """
     SELECT
         c.id,
-        c.name,
+        c.display_name,
         c.status,
         c.jurisdiction_id,
         cc_primary.condition_id,
@@ -1029,7 +1031,7 @@ def _get_configurations_core_query() -> str:
                    jsonb_build_object(
                        'id', cc.id::text,
                        'code', cc.code,
-                       'display', cc.display,
+                       'display_name', cc.display_name,
                        'system_id', cc.system_id::text,
                        'created_at', cc.created_at,
                        'updated_at', cc.updated_at,
@@ -1048,7 +1050,7 @@ def _get_configurations_core_query() -> str:
         SELECT jsonb_agg(
                    jsonb_build_object(
                        'code', s.code,
-                       'name', s.name,
+                       'display_name', s.display_name,
                        'action', s.action::text,
                        'include', s.include,
                        'versions', to_jsonb(s.versions),

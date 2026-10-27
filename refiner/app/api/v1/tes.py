@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from packaging.version import parse
 from pydantic import BaseModel, Field
 
 from app.api.auth.middleware import get_logged_in_user
@@ -14,11 +16,26 @@ from app.db.tes.db import (
     get_tes_update_condition_diff_db,
     get_tes_version_diff_db,
 )
-from app.db.tes.model import TesConfigToUpdate, TesUpdate
+from app.db.tes.model import DbTes, DbTesConfigToUpdate
 from app.db.users.model import DbUser
-from app.services.tes import build_tes_export_csv, sort_tes_updates_by_version
+from app.services.tes import build_tes_export_csv
 
 router = APIRouter(prefix="/tes")
+
+
+@dataclass
+class TesUpdate:
+    """
+    All metadata for a TES update needed for the frontend.
+    """
+
+    id: UUID
+    version: str
+    created_at: datetime
+
+
+def _to_tes_update(row: DbTes) -> TesUpdate:
+    return TesUpdate(id=row.id, version=row.version, created_at=row.created_at)
 
 
 @dataclass
@@ -50,12 +67,13 @@ async def get_tes_updates(
             - The version
             - The when it was created
     """
-    updates = await get_loaded_tes_versions_db(db=db)
-    return TesResponse(sort_tes_updates_by_version(updates))
+    rows = await get_loaded_tes_versions_db(db=db)
+    newest_first = sorted(rows, key=lambda r: parse(r.version), reverse=True)
+    return TesResponse([_to_tes_update(r) for r in newest_first])
 
 
 @dataclass
-class TesDiffConditionDetails:
+class TesDiffConditionDetailsResponse:
     """
     A condition within a TES diff, with details for the diff page to display.
     """
@@ -69,7 +87,7 @@ class TesDiffConditionDetails:
 
 @router.get(
     "/",
-    response_model=list[TesDiffConditionDetails],
+    response_model=list[TesDiffConditionDetailsResponse],
     tags=["tes"],
     operation_id="getTesDiffDetails",
 )
@@ -77,7 +95,7 @@ async def get_tes_diff_details(
     cur_version: str,
     prev_version: str,
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[TesDiffConditionDetails]:
+) -> list[TesDiffConditionDetailsResponse]:
     """
     Returns a list of all TES updates, ordered from newest to oldest.
 
@@ -97,7 +115,7 @@ async def get_tes_diff_details(
         )
 
         return [
-            TesDiffConditionDetails(
+            TesDiffConditionDetailsResponse(
                 canonical_url=c.canonical_url,
                 display_name=c.display_name,
                 added_code_total=len(c.added_code_ids),
@@ -162,6 +180,25 @@ async def export_tes_condition_diff(
         )
 
 
+@dataclass(frozen=True)
+class TesConfigToUpdate:
+    """A configuration to update with new TES codes."""
+
+    configuration_id: UUID
+    configuration_display_name: str
+    codesets_to_update: list[str]
+    configuration_tes_version: str
+
+
+def _to_tes_config_to_update(row: DbTesConfigToUpdate) -> TesConfigToUpdate:
+    return TesConfigToUpdate(
+        configuration_id=row.configuration_id,
+        configuration_display_name=row.configuration_display_name,
+        codesets_to_update=row.codesets_to_update,
+        configuration_tes_version=row.configuration_tes_version,
+    )
+
+
 @dataclass
 class TesConfigsToUpdateResponse:
     """
@@ -190,8 +227,12 @@ async def get_configurations_to_update(
     )
 
     return TesConfigsToUpdateResponse(
-        existing_drafts=configs_to_update.existing_drafts,
-        drafts_to_create=configs_to_update.drafts_to_create,
+        existing_drafts=[
+            _to_tes_config_to_update(c) for c in configs_to_update.existing_drafts
+        ],
+        drafts_to_create=[
+            _to_tes_config_to_update(c) for c in configs_to_update.drafts_to_create
+        ],
     )
 
 

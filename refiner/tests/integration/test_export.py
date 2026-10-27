@@ -204,7 +204,7 @@ class TestConfigurationExportCodesCsv:
             AddCustomCodeInput(
                 code="MOCK-CODE-001",
                 system_id=loinc.id,
-                display="Mock custom code",
+                display_name="Mock custom code",
             ),
         )
 

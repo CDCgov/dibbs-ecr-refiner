@@ -2,6 +2,10 @@ from app.services.conditions.parsing import extract_uuid_from_canonical_url
 
 S3_CONFIGURATION_DIR_PREFIX = "configurations"
 
+# the lock the ops reactivation job takes and the Lambda refuses to run under. it is
+# an S3 key, so it is built from the prefix above rather than spelled out again
+MAINTENANCE_LOCK_KEY = f"{S3_CONFIGURATION_DIR_PREFIX}/maintenance.lock"
+
 
 def get_jurisdiction_directory(jurisdiction_id: str) -> str:
     """

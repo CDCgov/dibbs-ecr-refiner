@@ -4,5 +4,5 @@
  */
 export interface AddSectionInput {
   code: string;
-  name: string;
+  display_name: string;
 }

@@ -50,7 +50,7 @@ async def test_full_simulator_flow_smoke(
     data = response.json()
 
     # Both config IDs should be present
-    sets_by_name = {set["name"]: set for set in data["sets"]}
+    sets_by_name = {set["display_name"]: set for set in data["sets"]}
 
     assert sets_by_name["COVID-19"]["condition_id"] == str(covid_condition_id)
     assert sets_by_name["COVID-19"]["versions"][0]["status"] == "active"
@@ -271,7 +271,7 @@ async def test_discovers_configs_across_multiple_tes_versions(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
 
-    sets_by_name = {set["name"]: set for set in data["sets"]}
+    sets_by_name = {set["display_name"]: set for set in data["sets"]}
     assert len(sets_by_name["COVID-19"]["versions"]) == 22
     assert sets_by_name["COVID-19"]["condition_id"] == str(current_covid_id)
 

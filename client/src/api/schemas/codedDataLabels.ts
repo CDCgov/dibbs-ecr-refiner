@@ -1,6 +1,6 @@
 
 /**
- * Enum class to type the narrative actions possible for the frontend.
+ * Enum class to type the coded data actions possible for the frontend.
  */
 export const CodedDataLabelsValue = {
   retain: 'Keep original',

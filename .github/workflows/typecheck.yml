@@ -32,3 +32,18 @@ jobs:
       - name: Run mypy
         run: |
           mypy
+  run-ts-type-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        working-directory: ./client
+        run: |
+          npm ci
+      # `tsc` alone checks nothing here: client/tsconfig.json is solution-style
+      # (`files: []` plus `references`), and plain tsc does not follow project
+      # references. `npm run check` is `tsc -b --noEmit`, which does.
+      - name: Client type check
+        working-directory: ./client
+        run: |
+          npm run check

@@ -1,32 +1,15 @@
 import { APIRequestContext, expect } from '@playwright/test';
-import type { CodeSystemsReponse } from '../../src/api/schemas/codeSystemsReponse';
-
-interface Configuration {
-  id: string;
-  name: string;
-}
-
-interface CodedConcept {
-  code: string;
-  display: string;
-}
-
-interface Condition {
-  id: string;
-  display_name: string;
-  rsg_codes: CodedConcept[];
-}
-
-interface CustomCode {
-  code: string;
-  system_id: string;
-  display: string;
-}
+import type {
+  AddCustomCodeInput,
+  CodeSystemResponse,
+  CreateConfigurationResponse,
+  GetConditionsResponse,
+} from '../../src/api/schemas';
 
 export class Api {
   constructor(private request: APIRequestContext) {}
 
-  async getCondition(conditionName: string): Promise<Condition> {
+  async getCondition(conditionName: string): Promise<GetConditionsResponse> {
     const conditionsReq = await this.request.get('/api/v1/conditions/');
     expect(conditionsReq.ok()).toBeTruthy();
 
@@ -37,7 +20,7 @@ export class Api {
       })
     );
 
-    const condition = (json as [Condition]).find(
+    const condition = (json as GetConditionsResponse[]).find(
       (c) => c.display_name === conditionName
     );
     expect(condition).toBeTruthy();
@@ -47,7 +30,9 @@ export class Api {
     return condition;
   }
 
-  async createConfiguration(conditionName: string): Promise<Configuration> {
+  async createConfiguration(
+    conditionName: string
+  ): Promise<CreateConfigurationResponse> {
     const condition = await this.getCondition(conditionName);
 
     const configReq = await this.request.post('/api/v1/configurations/', {
@@ -60,7 +45,7 @@ export class Api {
     const json = await configReq.json();
     expect(json).toEqual(
       expect.objectContaining({
-        name: conditionName,
+        display_name: conditionName,
       })
     );
 
@@ -70,10 +55,10 @@ export class Api {
       );
     }
 
-    return json as Configuration;
+    return json as CreateConfigurationResponse;
   }
 
-  async uploadCustomCodeCsv(configId: string, codes: CustomCode[]) {
+  async uploadCustomCodeCsv(configId: string, codes: AddCustomCodeInput[]) {
     const payload = [];
     for (const c of codes) {
       payload.push({ ...c });
@@ -94,11 +79,11 @@ export class Api {
     expect(Array.isArray(json)).toBe(true);
   }
 
-  async getSystems(): Promise<CodeSystemsReponse[]> {
+  async getSystems(): Promise<CodeSystemResponse[]> {
     const systemsReq = await this.request.get(`/api/v1/code-systems/`);
     expect(systemsReq.ok()).toBeTruthy();
     const json = await systemsReq.json();
-    return json as CodeSystemsReponse[];
+    return json as CodeSystemResponse[];
   }
 
   async updateConfigurationStatus(

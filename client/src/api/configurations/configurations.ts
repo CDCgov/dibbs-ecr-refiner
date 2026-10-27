@@ -38,7 +38,7 @@ import type {
   BodySetCodesStatus,
   BulkDeleteCustomCodesInput,
   CodeCountsResponse,
-  CodeFilterOptions,
+  CodeFilterOptionsResponse,
   CodesResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
@@ -52,7 +52,7 @@ import type {
   GetConfigurationsResponse,
   HTTPValidationError,
   SectionUpdateInput,
-  SerializedFiles,
+  SerializedFilesResponse,
   SetCodesStatusParams,
   UpdateCustomCodeInput,
   UpdateSectionProcessingResponse,
@@ -288,7 +288,7 @@ export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
  */
 export const getSerializedConfiguration = (
     configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SerializedFiles>> => {
+ ): Promise<AxiosResponse<SerializedFilesResponse>> => {
 
 
     return axios.default.get(
@@ -2715,12 +2715,12 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
  *     HTTPException: 404 if the configuration couldn't be found
  *
  * Returns:
- *     CodeFilterOptions: The code filters
+ *     CodeFilterOptionsResponse: The code filters
  * @summary Get Code Filters
  */
 export const getCodeFilters = (
     configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CodeFilterOptions>> => {
+ ): Promise<AxiosResponse<CodeFilterOptionsResponse>> => {
 
 
     return axios.default.get(

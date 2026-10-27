@@ -25,7 +25,6 @@ from app.db.conditions.db import (
 )
 from app.db.configurations.db import get_configurations_by_ids_db
 from app.db.pool import AsyncDatabaseConnection, get_db
-from app.db.simulator.model import Condition, FileInfoResponse, SimulatorUploadResponse
 from app.db.users.model import DbUser
 from app.services.aws.s3 import (
     fetch_zip_from_s3,
@@ -48,6 +47,8 @@ from app.services.testing import (
     run_simulation,
 )
 from app.services.xslt import create_refined_eicr_html_file
+
+from .model import Condition, FileInfoResponse, SimulatorUploadResponse
 
 # Only allow:
 # - letters

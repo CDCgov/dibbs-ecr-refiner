@@ -89,7 +89,9 @@ class TestSerialization:
             for c in coding:
                 assert c["code"] and c["code"] != ""
                 assert c["display"] and c["display"] != ""
-                assert c["system"] in OID_TO_SYSTEM_KEY_MAP
+                # the system is carried by `k`, not by the coding --
+                # see the NOTE in `CodeSystemSets.to_dict`
+                assert set(c) == {"code", "display"}
 
     async def test_exclusion_excludes_code_from_serialization(
         self,
@@ -125,7 +127,9 @@ class TestSerialization:
                 payload_without_exclusion_length += 1
                 assert c["code"] and c["code"] != "" and c["code"]
                 assert c["display"] and c["display"] != ""
-                assert c["system"] in OID_TO_SYSTEM_KEY_MAP
+                # the system is carried by `k`, not by the coding --
+                # see the NOTE in `CodeSystemSets.to_dict`
+                assert set(c) == {"code", "display"}
 
         # exclude codes and ensure the payloads on reserialization pick up the change
         # both must be non-trigger codes for the condition: the primary
@@ -213,7 +217,16 @@ class TestSerialization:
         )
         assert payload
 
-        alpha_gal_codes = (await get_condition_by_id(id=alpha_gal_id))["codes"]
+        # NOTE:
+        # this was `["codes"]`, a list of dicts, compared against `c["code"]`, a
+        # string -- so `not in` was always true and the assertion could never fail.
+        # the point of the test is that disassociating a code set removes its codes,
+        # so the comparison has to be against the code values
+        alpha_gal_codes = {
+            code["code"]
+            for code in (await get_condition_by_id(id=alpha_gal_id))["codes"]
+        }
+        assert alpha_gal_codes, "fixture must yield codes for this to assert anything"
 
         # make sure the code sets don't include the excluded codes
         for k, coding in payload.code_system_sets.items():

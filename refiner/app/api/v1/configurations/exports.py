@@ -8,14 +8,16 @@ from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.codes.model import FilterInput
+from app.core.models.configurations import (
+    ConfiguredSection,
+    NarrativeAction,
+    SectionAction,
+)
+from app.core.models.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 from app.db.configurations.codes.db import get_codes_db
 from app.db.configurations.db import get_configuration_by_id_db
-from app.db.configurations.labels import CODED_DATA_LABELS, NARRATIVE_DATA_LABELS
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationSectionProcessing,
-    DbNarrativeAction,
-    DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -60,7 +62,7 @@ async def get_configuration_export(
         name=_build_export_filename(
             filename="Configuration_Export",
             extension="zip",
-            config_name=config.name,
+            config_name=config.display_name,
             config_version=config.version,
             timestamp=timestamp,
         )
@@ -71,7 +73,7 @@ async def get_configuration_export(
             file_name=_build_export_filename(
                 filename="Code_Export",
                 extension="csv",
-                config_name=config.name,
+                config_name=config.display_name,
                 config_version=config.version,
                 timestamp=timestamp,
             ),
@@ -84,7 +86,7 @@ async def get_configuration_export(
             file_name=_build_export_filename(
                 filename="Section_Export",
                 extension="csv",
-                config_name=config.name,
+                config_name=config.display_name,
                 config_version=config.version,
                 timestamp=timestamp,
             ),
@@ -102,7 +104,7 @@ async def get_configuration_export(
 
 
 def _build_sections_csv(
-    sections: list[DbConfigurationSectionProcessing],
+    sections: list[ConfiguredSection],
 ) -> str:
     """Build a CSV summarizing configuration section information."""
     with StringIO() as csv_text:
@@ -111,10 +113,10 @@ def _build_sections_csv(
             ["Section Name", "LOINC", "Include", "Coded Data", "Narrative Data"]
         )
 
-        for section in sorted(sections, key=lambda r: r.name.lower()):
+        for section in sorted(sections, key=lambda r: r.display_name.lower()):
             writer.writerow(
                 [
-                    section.name,
+                    section.display_name,
                     section.code,
                     "Yes" if section.include else "No",
                     _get_coded_data_value(
@@ -130,7 +132,7 @@ def _build_sections_csv(
         return csv_text.getvalue()
 
 
-def _get_coded_data_value(loinc: str, action: DbSectionAction, included: bool) -> str:
+def _get_coded_data_value(loinc: str, action: SectionAction, included: bool) -> str:
     if not included:
         return "N/A"
 
@@ -140,7 +142,7 @@ def _get_coded_data_value(loinc: str, action: DbSectionAction, included: bool) -
     return CODED_DATA_LABELS.get(action, "N/A")
 
 
-def _get_narrative_data_value(narrative: DbNarrativeAction, included: bool) -> str:
+def _get_narrative_data_value(narrative: NarrativeAction, included: bool) -> str:
     if not included:
         return "N/A"
 
@@ -172,11 +174,11 @@ async def _build_config_csv(
             for code in codes:
                 writer.writerow(
                     [
-                        code.system_name,
+                        code.system_display_name,
                         code.code,
                         code.status,
-                        code.description,
-                        ", ".join(code.source),
+                        code.display_name,
+                        ", ".join(code.source_display_names),
                     ]
                 )
 

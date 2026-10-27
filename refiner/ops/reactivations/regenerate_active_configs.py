@@ -11,17 +11,15 @@ from dotenv import load_dotenv
 from psycopg.rows import dict_row
 
 from app.core.config import get_aws_config
+from app.core.models.payloads import CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION
 from app.db.configurations.db import get_configurations_db
-from app.db.configurations.model import (
-    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-    MAINTENANCE_LOCK_KEY,
-    DbConfiguration,
-)
+from app.db.configurations.model import DbConfiguration
 from app.db.pool import AsyncDatabaseConnection, create_db
 from app.services.aws.s3 import (
     s3_client,
     upload_configuration_payload,
 )
+from app.services.aws.s3_keys import MAINTENANCE_LOCK_KEY
 from app.services.configurations import (
     convert_config_to_storage_payload,
     get_config_payload_metadata,

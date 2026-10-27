@@ -21,7 +21,7 @@ import {
   TableCell,
 } from '@components/Table';
 import {
-  DbCodeSystem,
+  CodeSystem,
   UploadCustomCodesPreviewItem,
 } from '../../../../../api/schemas';
 import { useGetCodeSystems } from '../../../../../api/code-systems/code-systems';
@@ -76,7 +76,7 @@ export function ImportCustomCodes({
   const [previewItems, setPreviewItems] = useState<
     UploadCustomCodesPreviewItem[]
   >([]);
-  const [codeSystems, setCodeSystems] = useState<DbCodeSystem[] | null>(null);
+  const [codeSystems, setCodeSystems] = useState<CodeSystem[] | null>(null);
 
   const [error, setError] = useState<UploadError | null>(null);
   const [step, setStep] = useState<CsvImportStep>('intro');
@@ -90,7 +90,7 @@ export function ImportCustomCodes({
   } = useSearch(previewItems, {
     keys: [
       { name: 'code', weight: 0.6 },
-      { name: 'display', weight: 0.4 },
+      { name: 'display_name', weight: 0.4 },
     ],
     includeMatches: true,
     threshold: 0.3,
@@ -422,7 +422,7 @@ interface PreviewEditTableProps {
   setPreviewItems: React.Dispatch<
     React.SetStateAction<UploadCustomCodesPreviewItem[]>
   >;
-  codeSystems: DbCodeSystem[] | null;
+  codeSystems: CodeSystem[] | null;
   error: UploadError | null;
   exitPreviewStep: () => void;
   setError: React.Dispatch<React.SetStateAction<UploadError | null>>;
@@ -523,10 +523,10 @@ function PreviewRow({
         {highlightMatches(item.code, matches, 'code')}
       </TableCell>
       <TableCell className="text-gray-cool-90 px-2 py-1">
-        {item.system_name}
+        {item.system_display_name}
       </TableCell>
       <TableCell className="text-gray-cool-90 px-2 py-1">
-        {highlightMatches(item.display, matches, 'display')}
+        {highlightMatches(item.display_name, matches, 'display')}
       </TableCell>
       <TableCell className="px-2 py-1 text-right text-sm">
         <Button

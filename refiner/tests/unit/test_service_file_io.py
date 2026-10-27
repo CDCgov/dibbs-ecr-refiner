@@ -6,13 +6,13 @@ from zipfile import ZipFile, ZipInfo
 import pytest
 from lxml import etree
 
-from app.api.validation.file_validation import UNCOMPRESSED_MAX_BYTES
 from app.core.exceptions import (
     FileProcessingError,
     XMLValidationError,
     ZipSizeError,
     ZipValidationError,
 )
+from app.core.models.limits import UNCOMPRESSED_MAX_BYTES
 from app.core.models.types import XMLFiles
 from app.services.assets import get_asset_path
 from app.services.file_io import (

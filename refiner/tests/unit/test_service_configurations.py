@@ -1,6 +1,6 @@
 from app.api.v1.configurations.model import SectionUpdateInput
 from app.api.v1.configurations.sections import _build_section_update
-from app.db.configurations.model import DbConfigurationSectionProcessing
+from app.core.models.configurations import ConfiguredSection
 from app.services.configurations import (
     clone_section_processing_instructions,
     get_default_sections,
@@ -80,9 +80,9 @@ class TestCloneSectionProcessingInstructions:
         narrative_only_code = NARRATIVE_ONLY_SECTIONS[0]
 
         clone_from = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=narrative_only_code,
-                name="Test Section",
+                display_name="Test Section",
                 action="refine",
                 include=True,
                 narrative="retain",
@@ -92,9 +92,9 @@ class TestCloneSectionProcessingInstructions:
         ]
 
         clone_to = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=narrative_only_code,
-                name="Test Section",
+                display_name="Test Section",
                 action="retain",
                 include=True,
                 narrative="retain",
@@ -118,9 +118,9 @@ class TestCloneSectionProcessingInstructions:
         refinable_code = "11450-4"
 
         clone_from = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=refinable_code,
-                name="Problem Section",
+                display_name="Problem Section",
                 action="refine",
                 include=True,
                 narrative="remove",
@@ -130,9 +130,9 @@ class TestCloneSectionProcessingInstructions:
         ]
 
         clone_to = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=refinable_code,
-                name="Problem Section",
+                display_name="Problem Section",
                 action="retain",
                 include=True,
                 narrative="retain",
@@ -156,9 +156,9 @@ class TestCloneSectionProcessingInstructions:
         custom_code = "custom-123"
 
         clone_from = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=custom_code,
-                name="Custom Section",
+                display_name="Custom Section",
                 action="refine",
                 include=True,
                 narrative="remove",
@@ -187,27 +187,27 @@ class TestCloneSectionProcessingInstructions:
         custom_code = "custom-456"
 
         clone_from = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=narrative_code,
-                name="Narrative Section",
+                display_name="Narrative Section",
                 action="refine",
                 include=True,
                 narrative="retain",
                 versions=["1.1"],
                 section_type="standard",
             ),
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=refinable_code,
-                name="Social History Section",
+                display_name="Social History Section",
                 action="refine",
                 include=False,
                 narrative="remove",
                 versions=["1.1"],
                 section_type="standard",
             ),
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=custom_code,
-                name="Custom Section",
+                display_name="Custom Section",
                 action="retain",
                 include=True,
                 narrative="retain",
@@ -217,18 +217,18 @@ class TestCloneSectionProcessingInstructions:
         ]
 
         clone_to = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=narrative_code,
-                name="Narrative Section",
+                display_name="Narrative Section",
                 action="retain",
                 include=True,
                 narrative="retain",
                 versions=["3.1.1"],
                 section_type="standard",
             ),
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=refinable_code,
-                name="Social History Section",
+                display_name="Social History Section",
                 action="retain",
                 include=True,
                 narrative="retain",
@@ -260,9 +260,9 @@ class TestCloneTriggerCodeSections:
         trigger_code = "30954-2"  # Results
 
         clone_from = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=trigger_code,
-                name="Results Section",
+                display_name="Results Section",
                 action="refine",
                 include=False,
                 narrative="remove",
@@ -272,9 +272,9 @@ class TestCloneTriggerCodeSections:
         ]
 
         clone_to = [
-            DbConfigurationSectionProcessing(
+            ConfiguredSection(
                 code=trigger_code,
-                name="Results Section",
+                display_name="Results Section",
                 action="retain",
                 include=True,
                 narrative="retain",
@@ -300,9 +300,9 @@ class TestBuildSectionUpdateNormalization:
         """
         narrative_code = NARRATIVE_ONLY_SECTIONS[0]
 
-        prev_section = DbConfigurationSectionProcessing(
+        prev_section = ConfiguredSection(
             code=narrative_code,
-            name="Chief Complaint",
+            display_name="Chief Complaint",
             action="refine",  # Legacy value from before narrative refinement PR
             include=True,
             narrative="retain",
@@ -330,9 +330,9 @@ class TestBuildSectionUpdateNormalization:
         """
         narrative_code = NARRATIVE_ONLY_SECTIONS[0]
 
-        prev_section = DbConfigurationSectionProcessing(
+        prev_section = ConfiguredSection(
             code=narrative_code,
-            name="Custom Narrative Section",
+            display_name="Custom Narrative Section",
             action="refine",
             include=True,
             narrative="retain",
@@ -359,9 +359,9 @@ class TestBuildSectionUpdateNormalization:
         """
         refinable_code = "11450-4"  # Problem Section
 
-        prev_section = DbConfigurationSectionProcessing(
+        prev_section = ConfiguredSection(
             code=refinable_code,
-            name="Problem Section",
+            display_name="Problem Section",
             action="retain",
             include=True,
             narrative="remove",
@@ -397,10 +397,10 @@ class TestCloneSectionNarrativeNormalization:
         action: str,
         narrative: str,
         section_type: str = "standard",
-    ) -> DbConfigurationSectionProcessing:
-        return DbConfigurationSectionProcessing(
+    ) -> ConfiguredSection:
+        return ConfiguredSection(
             code=code,
-            name=f"Section {code}",
+            display_name=f"Section {code}",
             action=action,  # type: ignore[arg-type]
             include=True,
             narrative=narrative,  # type: ignore[arg-type]

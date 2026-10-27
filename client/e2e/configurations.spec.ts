@@ -82,7 +82,7 @@ test.describe('Configurations screen', () => {
     await expect(conditionCell).toHaveText('Anotia');
 
     await configurationsPage.search('ano');
-    await expect(conditionCell).toHaveText(config.name);
+    await expect(conditionCell).toHaveText(config.display_name);
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -95,7 +95,7 @@ test.describe('Configurations screen', () => {
 
     await conditionCell.click();
     await expect(
-      page.getByRole('heading', { name: config.name, level: 1 })
+      page.getByRole('heading', { name: config.display_name, level: 1 })
     ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();

@@ -1,25 +1,27 @@
 import re
 from collections import defaultdict
-from dataclasses import asdict, replace
+from dataclasses import replace
 from logging import Logger
 from typing import Any
 from uuid import UUID
 
+from app.core.models.configurations import ConfiguredSection, SectionAction
+from app.core.models.payloads import (
+    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
+    ConfigurationStorageMetadata,
+    ConfigurationStoragePayload,
+)
+from app.core.models.terminology import Coding
 from app.db.code_systems.db import (
     get_id_to_code_system_dict_db,
 )
 from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.db import get_pruned_configuration_codes_db
-from app.db.codes.model import DbCode
+from app.db.codes.model import DbConfigurationCode
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
-    CURRENT_ACTIVE_CONFIG_SCHEMA_VERSION,
-    ConfigurationStorageMetadata,
-    ConfigurationStoragePayload,
     DbConfiguration,
-    DbConfigurationSectionProcessing,
-    DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.policy import (
@@ -35,16 +37,15 @@ from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP, OTHE
 from app.services.terminology import (
     CodeSystemKey,
     CodeSystemSets,
-    Coding,
 )
 
 
-def get_default_sections() -> list[DbConfigurationSectionProcessing]:
+def get_default_sections() -> list[ConfiguredSection]:
     """
     Constructs and returns a list of default sections for the latest spec.
 
     Returns:
-        list[DbConfigurationSectionProcessing]: List of sections with default values set.
+        list[ConfiguredSection]: List of sections with default values set.
     """
 
     spec = load_spec("3.1.1")
@@ -57,8 +58,8 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     # Narrative-only sections (has_match_rules=False) should default to "retain"
     # since there is nothing to match against
     section_processing_defaults = [
-        DbConfigurationSectionProcessing(
-            name=section_spec.display_name,
+        ConfiguredSection(
+            display_name=section_spec.display_name,
             code=loinc_code,
             narrative="retain",
             include=True,
@@ -78,10 +79,10 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
 
 
 def clone_section_processing_instructions(
-    clone_from: list[DbConfigurationSectionProcessing],
-    clone_to: list[DbConfigurationSectionProcessing],
+    clone_from: list[ConfiguredSection],
+    clone_to: list[ConfiguredSection],
     logger: Logger | None = None,
-) -> list[DbConfigurationSectionProcessing]:
+) -> list[ConfiguredSection]:
     """
     Clones section processing instruction info from one list of sections into another.
 
@@ -100,14 +101,14 @@ def clone_section_processing_instructions(
     raising to avoid blocking unrelated work.
 
     Args:
-        clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info from.
-        clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info into.
+        clone_from (list[ConfiguredSection]): The list of sections to clone processing instruction info from.
+        clone_to (list[ConfiguredSection]): The list of sections to clone processing instruction info into.
         logger (Logger | None): Logger used to emit a warning per
             coercion. None silences the messages but still applies
             normalization.
 
     Returns:
-        list[DbConfigurationSectionProcessing]: The new list of sections.
+        list[ConfiguredSection]: The new list of sections.
     """
 
     # Custom sections can just be copied straight over from the original since
@@ -128,7 +129,7 @@ def clone_section_processing_instructions(
     standard_updates = []
     for section in clone_to:
         if section.code in NARRATIVE_ONLY_SECTIONS:
-            new_action: DbSectionAction = "retain"
+            new_action: SectionAction = "retain"
         else:
             new_action = action_map.get(section.code, section.action)
 
@@ -162,28 +163,81 @@ def clone_section_processing_instructions(
     return standard_updates + custom_sections
 
 
+def as_coding(code: DbCustomCode, code_systems: dict[UUID, DbCodeSystem]) -> Coding:
+    """
+    Resolves a custom code's `systems.id` into the OID the refiner matches on.
+
+    Only custom codes need this: `get_pruned_configuration_codes_db` resolves the OID
+    in SQL, but `convert_config_to_storage_payload` also passes
+    `configuration.custom_codes` directly, and those rows carry a `system_id`.
+
+    Args:
+        code (DbCustomCode): The custom code row.
+        code_systems (dict[UUID, DbCodeSystem]): Every code system, keyed by id.
+
+    Returns:
+        Coding: The code with its system resolved to an OID.
+    """
+
+    system = code_systems.get(code.system_id)
+    return Coding(
+        code=code.code,
+        display_name=code.display_name,
+        system_oid=system.oid if system and system.oid else OTHER_OID,
+    )
+
+
+def _to_coding(row: DbConfigurationCode) -> Coding:
+    return Coding(
+        code=row.code, display_name=row.display_name, system_oid=row.system_oid
+    )
+
+
 def index_code_list_by_system_key(
-    codes: list[DbCode | DbCustomCode],
-    code_systems: dict[UUID, DbCodeSystem],
+    codes: list[Coding],
     logger: Logger,
 ) -> dict[CodeSystemKey, list[dict]]:
     """
-    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
+    Groups resolved codings into the per-system buckets `active.json` is keyed by.
+
+    Args:
+        codes (list[Coding]): Codes with their systems already resolved to OIDs.
+        logger (Logger): Used to warn about an OID with no bucket.
+
+    Returns:
+        dict[CodeSystemKey, list[dict]]: Codings per system key, in payload shape.
     """
+
     result: dict[CodeSystemKey, list[dict]] = defaultdict(list)
     for c in codes:
-        if c.system_id not in code_systems:
+        # NOTE:
+        # this guard used to key off `system_id not in code_systems`, which could never
+        # fire -- `codes.system_id` and `custom_codes.system_id` are NOT NULL foreign
+        # keys into `systems` and the dict held every row, so the warning was dead. the
+        # reachable version of the same worry is an OID with no bucket, which a seventh
+        # seeded code system would produce
+        system_key = OID_TO_SYSTEM_KEY_MAP.get(c.system_oid)
+        if system_key is None:
             logger.warning(
-                f"Code system id of {c.system_id} not found in map, defaulting to other to {OTHER_OID}"
+                f"Code system OID {c.system_oid!r} has no bucket in "
+                f"OID_TO_SYSTEM_KEY_MAP; routing to {OTHER_OID}"
             )
-            system_oid = OTHER_OID
             system_key = OID_TO_SYSTEM_KEY_MAP[OTHER_OID]
-        else:
-            system_oid = code_systems[c.system_id].oid
-            system_key = code_systems[c.system_id].key
 
+        # NOTE:
+        # the payload keys are spelled here rather than taken from `asdict(Coding(...))`.
+        # that `asdict` worked only because the field names happened to equal the
+        # `active.json` keys, so renaming `Coding.display` -> `display_name` silently
+        # emptied every display on the way to `CodeSystemSets.from_dict` -- the same
+        # writer/reader mismatch as #967, which is what ADR 0016 was written about.
+        # `from_dict` reads `display`, so `display` is what gets written, until the
+        # schema bump renames the key on both sides
         result[system_key].append(
-            asdict(Coding(code=c.code, display=c.display, system_oid=system_oid))
+            {
+                "code": c.code,
+                "display": c.display_name,
+                "system_oid": c.system_oid,
+            }
         )
 
     return result
@@ -263,11 +317,15 @@ async def convert_config_to_storage_payload(
     configuration_codes = await get_pruned_configuration_codes_db(
         configuration_id=configuration.id, db=db
     )
-    codes_to_index = configuration_codes + configuration.custom_codes
+    # the query covers custom codes only for configurations that have at least one
+    # `configurations_conditions` row, so they are added again here. duplicates
+    # collapse downstream -- `CodeSystemSets.from_dict` keys each system by code
+    codes_to_index = [_to_coding(row) for row in configuration_codes] + [
+        as_coding(code, code_systems) for code in configuration.custom_codes
+    ]
 
-    # map each db code list to its target dict + OID
     coding_by_code_system: dict[str, list[dict]] = index_code_list_by_system_key(
-        codes=codes_to_index, code_systems=code_systems, logger=logger
+        codes=codes_to_index, logger=logger
     )
 
     # activation is the last system-initiated path before a configuration
@@ -288,15 +346,19 @@ async def convert_config_to_storage_payload(
         for note in notes:
             logger.warning("convert_config_to_storage_payload: %s", note)
 
+        # NOTE:
+        # only the fields the refiner actually reads are serialized. `versions`
+        # and `section_type` are UI context derived from `_VERSION_SECTIONS`,
+        # which the refinement core imports directly -- reading a stale copy
+        # back from S3 would be strictly worse than calling `load_spec`
         sections.append(
-            asdict(
-                replace(
-                    section_process,
-                    include=coerced_include,
-                    action=coerced_action,
-                    narrative=coerced_narrative,
-                )
-            )
+            {
+                "code": section_process.code,
+                "name": section_process.display_name,
+                "action": coerced_action,
+                "narrative": coerced_narrative,
+                "include": coerced_include,
+            }
         )
 
     for c in conditions:
@@ -317,16 +379,16 @@ async def convert_config_to_storage_payload(
 
 
 def format_section_naming(
-    section: DbConfigurationSectionProcessing,
-) -> DbConfigurationSectionProcessing:
+    section: ConfiguredSection,
+) -> ConfiguredSection:
     """
     Takes a section and modifies its name to remove `Section` at the end of it. It also converts the name to title case.
 
     Args:
-        section (DbConfigurationSectionProcessing): Section with name to modify
+        section (ConfiguredSection): Section with name to modify
 
     Returns:
-        DbConfigurationSectionProcessing: Section with modified name
+        ConfiguredSection: Section with modified name
     """
 
     # Don't modify the name of a custom section
@@ -334,6 +396,6 @@ def format_section_naming(
         return section
 
     name_without_section = re.sub(
-        r"\s+section\s*$", "", section.name, flags=re.IGNORECASE
+        r"\s+section\s*$", "", section.display_name, flags=re.IGNORECASE
     )
-    return replace(section, name=name_without_section.strip().title())
+    return replace(section, display_name=name_without_section.strip().title())
