@@ -197,9 +197,7 @@ had left open:
 inside the **condition** loop:
 
 ```python
-excluded_codes = await get_code_exclusions_db(
-    configuration_id=configuration.id, db=db
-)
+excluded_codes = await get_code_exclusions_db(configuration_id=configuration.id, db=db)
 
 for condition in conditions:
     # exclusions are scoped to (configuration, condition), so they are applied
@@ -211,11 +209,17 @@ for condition in conditions:
 
     for key, code_list in code_system_map.items():
         ...
-        coding_by_code_system[system_metadata.key].extend([
-            asdict(Coding(code=c.code, display=c.display, system_oid=system_metadata.oid))
-            for c in code_list
-            if (key, c.code) not in excluded_for_condition
-        ])
+        coding_by_code_system[system_metadata.key].extend(
+            [
+                asdict(
+                    Coding(
+                        code=c.code, display=c.display, system_oid=system_metadata.oid
+                    )
+                )
+                for c in code_list
+                if (key, c.code) not in excluded_for_condition
+            ]
+        )
 ```
 
 Placement is the whole design:

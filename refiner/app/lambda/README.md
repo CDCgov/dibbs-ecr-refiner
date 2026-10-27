@@ -104,18 +104,6 @@ When the RR contains reportable conditions for a jurisdiction but only some have
 
 Both entry points use `RefinementTrace` objects (defined in `pipeline.py`) to track what happened during refinement. Each trace captures the jurisdiction, condition code, whether a configuration was resolved, the refinement outcome (refined, skipped, or error), and the skip reason if applicable. Lambda logs a summary of all traces at the end of each invocation.
 
-### Stage and Role metadata
-
-Every function and class in `lambda_function.py` has a docstring with `Stage:`
-and `Role:` metadata fields. These drive the auto-generated [Lambda Function
-Reference docs](/docs/reference/lambda/) - they determine which pipeline stage a
-function appears under and what color-coded role badge it gets.
-
-> [!IMPORTANT]
-> Without these specific metadata fields, the `just docs::sync` command will
-> fail and local docs will not be able to render. Please keep this in mind when
-> you disregard adding the metadata fields.
-
 #### Conventions
 
 **Stage** = where in the pipeline the function logically belongs (not where it's
@@ -142,42 +130,3 @@ called from).
 | `Output`         | Writing output artifacts to S3                                     |
 | `Error Handling` | Exception types, skip logic, error manifests                       |
 | `Data Type`      | Classes, TypedDicts, enums, dataclasses                            |
-
-#### When to update
-
-Add or update `Stage:` / `Role:` in a docstring whenever you:
-
-1. **Add a new function or class** to `lambda_function.py` - it won't appear in
-   the function reference docs without these fields.
-2. **Change what a function does** - if its primary responsibility shifts to a
-   different pipeline stage, update both fields.
-3. **Introduce a new stage or role** - add it to
-   `docs/_includes/lambda-stage-data.liquid` in the `stageOrder` and
-   `roleColors` arrays.
-
-#### Auto-extraction pipeline
-
-A docstring parser scans `lambda_function.py` and writes the results to
-`docs/_data/lambda-api.json`. The site reads `stage` and `role` from this JSON
-to group functions and assign badge colors. The parser looks for literal
-`Stage:` and `Role:` at the start of a line with the value on the next indented
-line:
-
-```
-Stage:
-    My Stage
-Role:
-    My Role
-```
-
-After updating `lambda_function.py`, regenerate the JSON with `just docs::sync`
-or have it continuously updated with `just docs::serve`.
-
-#### Diagram
-
-The pipeline diagram at `docs/reference/lambda/diagram/` is maintained by hand
-using [asciiflow.com](https://asciiflow.com). You can find the link to the
-current diagram in an HTML comment within the Liquid template
-(`docs/reference/lambda/diagram/index.liquid`). Please update this diagram when
-the high-level flow changes (new branches, new pipeline stages). Internal helper
-renames don't require diagram changes.
