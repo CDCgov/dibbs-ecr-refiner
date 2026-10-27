@@ -15,7 +15,7 @@ Note: Please search to see if an issue already exists for the feature you are re
 <!--
 A clear and concise description of your feature request
 
-If it is related to a problem, a description of what the problem is. 
+If it is related to a problem, a description of what the problem is.
 Ex. I'm always frustrated when [...]
 -->
 
