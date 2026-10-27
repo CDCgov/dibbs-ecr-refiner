@@ -30,7 +30,7 @@ Example: steps to reproduce the behavior:
 
 1. ...
 
-## 🌃 Environment:
+## 🌃 Environment
 
 <!--
 Example:
@@ -42,7 +42,7 @@ Example:
 - OS:
 - ...
 
-## 🫴 Expected Result
+## 🫴 Expected result
 
 <!--
 Explain how it should function if the bug was fixed. Attach screenshot if applicable
@@ -59,8 +59,6 @@ Explain what's happening now when the bug is present. Attach screenshot if appli
 <!--
 Provide an estimate for level of impact the bug has today by placing an `X` in the applicable bracket
 -->
-
-#### Priority
 
 - [ ] **Low priority** _The bug does not have to be fixed immediately. High and medium priority bugs should be addressed first._
 - [ ] **Medium priority** _Typically, medium-priority bugs do not affect customers directly and therefore can be fixed in the normal course of testing and development._
