@@ -42,6 +42,13 @@ updates:
       npm-minor-and-patch:
         applies-to: version-updates
         update-types: ["minor", "patch"]
+      npm-per-dependency:
+        # Everything the group above doesn't take (majors, and constraint-only
+        # updates Dependabot can't classify): one PR per dependency, covering
+        # every directory that uses it.
+        applies-to: version-updates
+        patterns: ["*"]
+        group-by: dependency-name
 
   - package-ecosystem: "pip"
     directories:
@@ -62,6 +69,13 @@ updates:
       python-minor-and-patch:
         applies-to: version-updates
         update-types: ["minor", "patch"]
+      python-per-dependency:
+        # Everything the group above doesn't take (majors, and constraint-only
+        # updates Dependabot can't classify): one PR per dependency, covering
+        # every directory that uses it.
+        applies-to: version-updates
+        patterns: ["*"]
+        group-by: dependency-name
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -98,6 +112,13 @@ updates:
       docker-compose-minor-and-patch:
         applies-to: version-updates
         update-types: ["minor", "patch"]
+      docker-compose-per-dependency:
+        # Everything the group above doesn't take (majors, and constraint-only
+        # updates Dependabot can't classify): one PR per dependency, covering
+        # every directory that uses it.
+        applies-to: version-updates
+        patterns: ["*"]
+        group-by: dependency-name
     ignore:
       # the calver `localstack/localstack` images (2026.x) require a pro license and exit
       # without `LOCALSTACK_AUTH_TOKEN`; stay on the `4` community line
