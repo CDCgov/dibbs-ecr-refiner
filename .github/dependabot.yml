@@ -1,79 +1,126 @@
+# https://docs.github.com/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Shared DIBBs conventions: every ecosystem runs weekly on Monday at 12:00 UTC
+# (07:00/08:00 US Eastern), minor and patch version updates are grouped into one
+# PR per ecosystem, majors get their own PRs, and version updates wait out a
+# 5-day cooldown. Security updates are not grouped or delayed.
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/client"
-    open-pull-requests-limit: 5
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "12:00"
+    open-pull-requests-limit: 5
     cooldown:
       default-days: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     groups:
-      frontend-minor-and-patch:
+      actions-minor-and-patch:
         applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directories:
+      - "/client"
+      - "/docs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "12:00"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 5
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    groups:
+      npm-minor-and-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+      npm-per-dependency:
+        # Everything the group above doesn't take (majors, and constraint-only
+        # updates Dependabot can't classify): one PR per dependency, covering
+        # every directory that uses it.
+        applies-to: version-updates
+        patterns: ["*"]
+        group-by: dependency-name
 
   - package-ecosystem: "pip"
     directories:
       - "/refiner"
       - "/refiner/app/lambda"
-    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "12:00"
+    open-pull-requests-limit: 5
     cooldown:
       default-days: 5
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
     groups:
-      backend-minor-and-patch:
+      python-minor-and-patch:
         applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
+        update-types: ["minor", "patch"]
+      python-per-dependency:
+        # Everything the group above doesn't take (majors, and constraint-only
+        # updates Dependabot can't classify): one PR per dependency, covering
+        # every directory that uses it.
+        applies-to: version-updates
+        patterns: ["*"]
+        group-by: dependency-name
 
   - package-ecosystem: "docker"
     directory: "/"
-    open-pull-requests-limit: 5
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "12:00"
+    open-pull-requests-limit: 5
     cooldown:
       default-days: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     groups:
       docker-minor-and-patch:
         applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "docker-compose"
-    directory: "/"
-    open-pull-requests-limit: 5
+    directories:
+      - "/"
+      - "/keycloak"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "12:00"
+    open-pull-requests-limit: 5
     cooldown:
       default-days: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      docker-compose-minor-and-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+      docker-compose-per-dependency:
+        # Everything the group above doesn't take (majors, and constraint-only
+        # updates Dependabot can't classify): one PR per dependency, covering
+        # every directory that uses it.
+        applies-to: version-updates
+        patterns: ["*"]
+        group-by: dependency-name
     ignore:
       # the calver `localstack/localstack` images (2026.x) require a pro license and exit
       # without `LOCALSTACK_AUTH_TOKEN`; stay on the `4` community line
       - dependency-name: "localstack/localstack"
-        update-types:
-          - "version-update:semver-major"
-    groups:
-      docker-compose-minor-and-patch:
-        applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    open-pull-requests-limit: 5
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 5
-    groups:
-      actions-minor-and-patch:
-        applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
+        update-types: ["version-update:semver-major"]
