@@ -8,6 +8,7 @@ export default defineConfig({
   expect: {
     timeout: 10 * 1000,
   },
+  globalTimeout: 15 * 60 * 1000, // 15 mins
   retries: process.env.CI ? 2 : 0,
   forbidOnly: !!process.env.CI,
   workers: 1,
