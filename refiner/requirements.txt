@@ -1,4 +1,4 @@
-boto3==1.43.118
+boto3==1.43.120
 Authlib==1.9.1
 certifi==2026.10.23
 fastapi==0.162.0
