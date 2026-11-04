@@ -130,8 +130,8 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
     useFilterState(id);
   const {
     data,
-    isPending,
-    isError,
+    isPending: isCodesPending,
+    isError: isCodesError,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -158,18 +158,10 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
     }
   );
 
-  if (isPending) return <Spinner variant="centered" />;
-  if (isError) return 'Error!';
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
   return (
-    <CodeManagementProvider
-      initialCodeState={{
-        selectedCodeIds: new Set(),
-        selectedCustomCodeIds: new Set(),
-        allSelected: false,
-      }}
-    >
+    <>
       <CodeInformationBar id={id} />
       <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
         <SearchBar filters={filters} setFilters={setFilters} />
@@ -179,19 +171,29 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
           onFiltersChange={setFilters}
         />
       </div>
-      <CodesTable
-        key={filtersKey}
-        id={id}
-        codes={codes}
-        fetchNextPage={fetchNextPage}
-        hasNextPage={hasNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-        disabled={disabled}
-        filters={filters}
-        onClearFilters={clearFilters}
-        isFilterActive={isFilterActive}
-      />
-    </CodeManagementProvider>
+      <CodeManagementProvider
+        initialCodeState={{
+          selectedCodeIds: new Set(),
+          selectedCustomCodeIds: new Set(),
+          allSelected: false,
+        }}
+      >
+        <CodesTable
+          key={filtersKey}
+          id={id}
+          codes={codes}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          disabled={disabled}
+          filters={filters}
+          onClearFilters={clearFilters}
+          isFilterActive={isFilterActive}
+          isPending={isCodesPending}
+          isError={isCodesError}
+        />
+      </CodeManagementProvider>
+    </>
   );
 }
 
@@ -211,6 +213,8 @@ interface CodesTableProps {
   filters: CodeFilters;
   isFilterActive: boolean;
   onClearFilters: () => void;
+  isPending: boolean;
+  isError: boolean;
 }
 
 function CodesTable({
@@ -223,6 +227,8 @@ function CodesTable({
   filters,
   isFilterActive,
   onClearFilters,
+  isPending,
+  isError,
 }: CodesTableProps) {
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
@@ -232,6 +238,9 @@ function CodesTable({
     selectedCodeIds.size + selectedCustomCodeIds.size > 0 || allSelected;
 
   const selectableCodes = codes.filter((c) => !c.is_trigger_code);
+
+  if (isPending) return <Spinner variant="centered" />;
+  if (isError) return 'Error!';
 
   return (
     <div className="flex flex-col items-end gap-4">
