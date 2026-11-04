@@ -158,6 +158,9 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
     }
   );
 
+  if (isCodesPending) return <Spinner variant="centered" />;
+  if (isCodesError) return 'Error!';
+
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
   return (
