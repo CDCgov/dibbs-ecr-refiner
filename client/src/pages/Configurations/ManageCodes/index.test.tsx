@@ -265,29 +265,30 @@ describe('Mangage codes page', () => {
     } as any);
 
     const user = userEvent.setup();
-    renderPageView();
+    const { rerender } = renderPageView();
 
     const search = screen.getByPlaceholderText('Search by keyword');
     await user.type(search, 'ana');
 
-    vi.mocked(useGetCodesInfinite).mockReturnValueOnce({
+    vi.mocked(useGetCodesInfinite).mockReturnValue({
       ...getCodesInfiniteResponse,
       data: undefined,
       hasNextPage: false,
       isPending: true,
     });
+
     renderPageView();
     expect(screen.queryAllByTestId('spinner').length).toBeGreaterThan(0);
 
     // shouldn't see the spinner in the summary box
     expect(
-      within(screen.getByTestId('codes-included-display')).queryByTestId(
+      within(screen.getAllByTestId('codes-included-display')[0]).queryByTestId(
         'spinner'
       )
     ).not.toBeInTheDocument();
 
     vi.mocked(useGetCodesInfinite).mockReturnValue(getCodesInfiniteResponse);
-
+    rerender(baseComponent);
     expect(
       screen.getByRole('columnheader', { name: 'Description' })
     ).toBeInTheDocument();

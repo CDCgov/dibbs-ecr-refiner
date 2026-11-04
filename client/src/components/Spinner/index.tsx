@@ -8,7 +8,7 @@ export function Spinner({ variant, ...props }: SpinnerProps) {
   if (variant === 'centered') {
     return (
       <div
-        data-testid={'spinner'}
+        data-testid="spinner"
         className="absolute inset-0 flex items-center justify-center"
       >
         <ClipLoader {...props} />
@@ -16,5 +16,5 @@ export function Spinner({ variant, ...props }: SpinnerProps) {
     );
   }
 
-  return <ClipLoader data-testid={'spinner'} {...props} />;
+  return <ClipLoader data-testid="spinner" {...props} />;
 }
