@@ -161,7 +161,13 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
   const codes = data?.pages.flatMap((page) => page.data.codes) ?? [];
 
   return (
-    <>
+    <CodeManagementProvider
+      initialCodeState={{
+        selectedCodeIds: new Set(),
+        selectedCustomCodeIds: new Set(),
+        allSelected: false,
+      }}
+    >
       <CodeInformationBar id={id} />
       <div className="flex w-full flex-col items-start justify-between gap-4 lg:flex-row">
         <SearchBar filters={filters} setFilters={setFilters} />
@@ -171,29 +177,22 @@ function CodesPanel({ id, disabled }: CodesPanelProps) {
           onFiltersChange={setFilters}
         />
       </div>
-      <CodeManagementProvider
-        initialCodeState={{
-          selectedCodeIds: new Set(),
-          selectedCustomCodeIds: new Set(),
-          allSelected: false,
-        }}
-      >
-        <CodesTable
-          key={filtersKey}
-          id={id}
-          codes={codes}
-          fetchNextPage={fetchNextPage}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          disabled={disabled}
-          filters={filters}
-          onClearFilters={clearFilters}
-          isFilterActive={isFilterActive}
-          isPending={isCodesPending}
-          isError={isCodesError}
-        />
-      </CodeManagementProvider>
-    </>
+
+      <CodesTable
+        key={filtersKey}
+        id={id}
+        codes={codes}
+        fetchNextPage={fetchNextPage}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        disabled={disabled}
+        filters={filters}
+        onClearFilters={clearFilters}
+        isFilterActive={isFilterActive}
+        isPending={isCodesPending}
+        isError={isCodesError}
+      />
+    </CodeManagementProvider>
   );
 }
 
