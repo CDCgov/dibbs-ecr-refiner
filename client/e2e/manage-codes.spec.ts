@@ -1290,11 +1290,8 @@ test.describe('Codes management - filters', () => {
 
       await expect(snomedOption).toBeVisible();
       await expect(otherOption).toBeVisible();
-
-      await snomedOption.click();
-
-      await codeSystemFilterButton.click();
       await otherOption.click();
+      await snomedOption.click();
 
       await page.keyboard.press('Escape');
       await expect(codeSystemFilterButton).toHaveText('2 selected');
@@ -1310,14 +1307,20 @@ test.describe('Codes management - filters', () => {
       await expect(sourceOptions).toBeVisible();
       await expect(sourceOptions.getByRole('option')).toHaveCount(4); // both RSGs + custom code + clear selection
 
-      // use all 3 options
+      // use keyboard arrowdown bc Playwright clicks on the dropdown button
+      // are firing faster than React can render the UI
+      await sourceFilterButton.focus();
+      await sourceFilterButton.press('ArrowDown');
+
+      await expect(sourceOptions).toBeVisible();
+
+      // use all 3 options. Manually click the options since Headless
+      // renders the option dropdowns as divs
       const optionCountExcludingClearSelectionButton = 3;
       for (let i = 0; i < optionCountExcludingClearSelectionButton; i++) {
         const option = sourceOptions.getByRole('option').nth(i);
         await expect(option).toBeVisible();
         await option.click();
-        await sourceFilterButton.click();
-
         await expect(option).toHaveAttribute('aria-selected', 'true');
       }
       await page.keyboard.press('Escape');
@@ -1332,12 +1335,13 @@ test.describe('Codes management - filters', () => {
         exact: false,
       });
 
-      await expect(statusFilterButton).toBeVisible();
-      await statusFilterButton.click();
+      // use keyboard arrowdown bc Playwright clicks on the dropdown button
+      // are firing faster than React can render the UI
+      await statusFilterButton.focus();
+      await statusFilterButton.press('ArrowDown');
       await expect(statusOptions).toBeVisible();
       await expect(includedOption).toBeVisible();
       await includedOption.click();
-      await statusFilterButton.click();
       await expect(includedOption).toHaveAttribute('aria-selected', 'true');
 
       await page.keyboard.press('Escape');

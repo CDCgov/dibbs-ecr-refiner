@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { ManageCodes } from '.';
@@ -14,7 +14,16 @@ import {
 } from './fixtures';
 import userEvent from '@testing-library/user-event';
 import { useFilterState } from './useFilterState';
+import { useGetCodesInfinite } from '../../../api/configurations/configurations';
 
+const getCodesInfiniteResponse = {
+  data: { pages: [{ data: testCodeResponse }] },
+  isPending: false,
+  isError: false,
+  fetchNextPage: vi.fn(),
+  hasNextPage: true,
+  isFetchingNextPage: false,
+} as any;
 // Mock all API requests.
 vi.mock('../../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
@@ -62,16 +71,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
         },
       },
     })),
-
-    useGetCodesInfinite: vi.fn(() => ({
-      data: { pages: [{ data: testCodeResponse }] },
-      isPending: false,
-      isError: false,
-      fetchNextPage: vi.fn(),
-      hasNextPage: true,
-      isFetchingNextPage: false,
-    })),
-
+    useGetCodesInfinite: vi.fn(),
     useGetCodeCounts: vi.fn(() => ({
       data: { data: testCodeCounts },
     })),
@@ -105,25 +105,26 @@ vi.mock('../../../api/conditions/conditions', async () => {
     })),
   };
 });
-
-const renderPageView = () =>
-  render(
-    <MemoryRouter initialEntries={['/configurations/config-id/manage-codes']}>
-      <TestProviders>
-        <ToastContainer />
-        <Routes>
-          <Route
-            path="/configurations/:id/manage-codes"
-            element={<ManageCodes />}
-          />
-        </Routes>
-      </TestProviders>
-    </MemoryRouter>
-  );
+const baseComponent = (
+  <MemoryRouter initialEntries={['/configurations/config-id/manage-codes']}>
+    <TestProviders>
+      <ToastContainer />
+      <Routes>
+        <Route
+          path="/configurations/:id/manage-codes"
+          element={<ManageCodes />}
+        />
+      </Routes>
+    </TestProviders>
+  </MemoryRouter>
+);
+const renderPageView = () => render(baseComponent);
 
 describe('Mangage codes page', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+
+    vi.mocked(useGetCodesInfinite).mockReturnValue(getCodesInfiniteResponse);
   });
 
   it('renders page in MemoryRouter with the correct tab selected', () => {
@@ -248,15 +249,54 @@ describe('Mangage codes page', () => {
 
     const user = userEvent.setup();
     renderPageView();
-
     const search = screen.getByPlaceholderText('Search by keyword');
     await user.type(search, 'ana');
-
     const selectAllCheckbox = screen.getByLabelText(
       'Include all codes in bulk operation'
     );
     await user.click(selectAllCheckbox);
     expect(screen.getByTestId(`control-panel`)).toBeVisible();
     expect(screen.getByText('100+ codes selected')).toBeVisible();
+  });
+
+  it('displays loading state only in the codes table row', async () => {
+    vi.mocked(useFilterState).mockReturnValue({
+      filters: { ...testFiltersResponse, search: 'ana' },
+    } as any);
+
+    const user = userEvent.setup();
+    const { rerender } = renderPageView();
+
+    const search = screen.getByPlaceholderText('Search by keyword');
+    await user.type(search, 'ana');
+
+    vi.mocked(useGetCodesInfinite).mockReturnValue({
+      ...getCodesInfiniteResponse,
+      data: undefined,
+      hasNextPage: false,
+      isPending: true,
+    });
+
+    renderPageView();
+    expect(screen.queryAllByTestId('spinner').length).toBeGreaterThan(0);
+
+    // shouldn't see the spinner in the summary box
+    expect(
+      within(screen.getAllByTestId('codes-included-display')[0]).queryByTestId(
+        'spinner'
+      )
+    ).not.toBeInTheDocument();
+
+    vi.mocked(useGetCodesInfinite).mockReturnValue(getCodesInfiniteResponse);
+    rerender(baseComponent);
+    expect(
+      screen.getByRole('columnheader', { name: 'Description' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'System' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Code no.' })
+    ).toBeInTheDocument();
   });
 });
