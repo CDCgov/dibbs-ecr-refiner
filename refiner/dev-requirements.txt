@@ -8,9 +8,9 @@ ruff==0.17.3
 saxonche==13.1.1
 testcontainers[compose]==4.15.0
 tqdm==4.70.1
-mypy==2.4.0
+mypy==2.4.1
 lxml-stubs==0.5.1
-boto3-stubs==1.43.120
+boto3-stubs==1.43.123
 requests==2.34.2
 rich==15.0.0
 types-Authlib
