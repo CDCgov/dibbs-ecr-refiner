@@ -1,16 +1,16 @@
 fhir.resources==8.3.0
 httpx==0.28.1
 pytest==9.2.0
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
 pytest-cov==7.1.0
 python-dotenv==1.2.4
 ruff==0.17.3
 saxonche==13.1.1
 testcontainers[compose]==4.15.0
 tqdm==4.70.1
-mypy==2.4.0
+mypy==2.4.1
 lxml-stubs==0.5.1
-boto3-stubs==1.43.120
+boto3-stubs==1.43.123
 requests==2.34.2
 rich==15.0.0
 types-Authlib
@@ -20,4 +20,4 @@ jsonschema==4.26.0
 # Local-dev documentation site
 griffe==2.4.1
 docstring-parser==0.18.0
-watchdog==6.0.0
+watchdog==7.0.0
