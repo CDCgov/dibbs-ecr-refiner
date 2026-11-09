@@ -20,4 +20,4 @@ jsonschema==4.26.0
 # Local-dev documentation site
 griffe==2.4.1
 docstring-parser==0.18.0
-watchdog==6.0.0
+watchdog==7.0.0
