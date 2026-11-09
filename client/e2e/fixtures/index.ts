@@ -64,17 +64,14 @@ const extendedExpect = baseExpect.extend({
   async toHaveNoAxeViolations(makeAxeBuilder: () => AxeBuilder) {
     const assertionName = 'toHaveNoAxeViolations';
     const axe = makeAxeBuilder();
-    let pass = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let violations: any[] = [];
+    let violations: unknown[] = [];
     try {
       const results = await axe.analyze();
-      violations = results.violations ?? [];
-      pass = violations.length === 0;
+      violations = results.violations;
     } catch {
-      pass = false;
+      violations = [];
     }
-
+    const pass = violations.length === 0;
     const message = pass
       ? () =>
           this.utils.matcherHint(assertionName, undefined, undefined, {
