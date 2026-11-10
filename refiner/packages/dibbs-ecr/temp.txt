@@ -1,0 +1,5 @@
+Temporary CI failure probes.
+The expected immunizations_flat/1.1/section.xml title was deliberately changed.
+The expected immunizations_flat/3.1/section.xml has one extra trailing newline.
+The refinement parity check should fail for both files.
+Revert this probe commit after CI records the failures.

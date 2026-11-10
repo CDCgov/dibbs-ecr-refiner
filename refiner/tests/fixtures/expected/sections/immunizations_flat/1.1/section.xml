@@ -1,6 +1,6 @@
 <section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="Immunizations"/>
-  <title>Immunizations</title>
+  <title>INTENTIONAL PARITY FAILURE</title>
   <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Immunization</th><th>Date</th><th>Status</th></tr></thead><tbody><tr ID="ecr-refiner-11369-6-20260101000000-row1"><td>Flucelvax Quadrivalent (RxNorm 2563008)</td><td>2020-11-07</td><td>completed</td></tr><tr ID="ecr-refiner-11369-6-20260101000000-row2"><td>COVID-19 mRNA vaccine</td><td>2020-12-01</td><td>completed</td></tr></tbody></table></text><!-- eCR Refiner matched: code[2563008] 'Flucelvax Quadrivalent' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
   <entry typeCode="DRIV">
     <substanceAdministration classCode="SBADM" moodCode="EVN">
