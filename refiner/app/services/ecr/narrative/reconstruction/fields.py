@@ -279,7 +279,7 @@ _ADMINISTRATION_TIME = "hl7:effectiveTime[not(@xsi:type='PIVL_TS' and hl7:period
 # Medication Activity relates to, not off the administration itself
 _SUPPLY_QUANTITY = "hl7:entryRelationship/hl7:supply/hl7:quantity"
 
-MEDICATION_FIELDS: list[FieldSpec] = [
+MEDICATION_ADMINISTERED_FIELDS: list[FieldSpec] = [
     FieldSpec("Medication", _MANUFACTURED_MATERIAL_CODE, "concept"),
     FieldSpec("Dose", "hl7:doseQuantity", "typed"),  # monomorphic PQ
     FieldSpec("Quantity", _SUPPLY_QUANTITY, "typed"),  # monomorphic PQ
@@ -303,6 +303,8 @@ MEDICATION_FIELDS: list[FieldSpec] = [
     # Medication Activity, so this column costs nothing and is always present
     FieldSpec("Status", "hl7:statusCode/@code", "attr"),
 ]
+
+# todo: figure out how to properly render the date administered range for the field spec?
 
 # plan of treatment is the first heterogeneous section: five unrelated clinical
 # statements share one <section>, so it needs five field maps rather than one.

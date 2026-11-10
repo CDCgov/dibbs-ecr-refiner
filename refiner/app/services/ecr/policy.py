@@ -89,7 +89,7 @@ class ReconstructableSection(StrEnum):
     """
     These sections support the "reconstruct" narrative action.
 
-    Results, Problems, Immunizations, Medications Administered, and Plan of
+    Results, Problems, Immunizations, Medications Administered, Medications, and Plan of
     Treatment are enabled. Make sure to update unit tests to ensure only
     certain sections are reconstructable.
     """
@@ -98,6 +98,7 @@ class ReconstructableSection(StrEnum):
     PROBLEM = "11450-4"
     IMMUNIZATIONS = "11369-6"
     MEDICATIONS_ADMINISTERED = "29549-3"
+    MEDICATIONS = "10160-0"
     PLAN_OF_TREATMENT = "18776-5"
 
 

@@ -30,6 +30,7 @@ from .sections import (
     _unrepresented_statements,
     reconstruct_immunizations,
     reconstruct_medications,
+    reconstruct_medications_administered,
     reconstruct_plan_of_treatment,
     reconstruct_problems,
     reconstruct_results,
@@ -49,6 +50,7 @@ __all__ = [
     "format_ts",
     "reconstruct_immunizations",
     "reconstruct_medications",
+    "reconstruct_medications_administered",
     "reconstruct_narrative",
     "reconstruct_plan_of_treatment",
     "reconstruct_problems",
@@ -67,7 +69,8 @@ SECTION_RECONSTRUCTORS: dict[str, SectionReconstructor] = {
     ReconstructableSection.RESULTS.value: reconstruct_results,
     ReconstructableSection.PROBLEM.value: reconstruct_problems,
     ReconstructableSection.IMMUNIZATIONS.value: reconstruct_immunizations,
-    ReconstructableSection.MEDICATIONS_ADMINISTERED.value: reconstruct_medications,
+    ReconstructableSection.MEDICATIONS_ADMINISTERED.value: reconstruct_medications_administered,
+    ReconstructableSection.MEDICATIONS.value: reconstruct_medications,
     ReconstructableSection.PLAN_OF_TREATMENT.value: reconstruct_plan_of_treatment,
 }
 

@@ -4,7 +4,7 @@ from app.services.ecr.model import HL7_NS
 from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.narrative.reconstruction import (
     reconstruct_immunizations,
-    reconstruct_medications,
+    reconstruct_medications_administered,
     reconstruct_narrative,
     reconstruct_plan_of_treatment,
     reconstruct_problems,
@@ -219,7 +219,7 @@ _MEDICATIONS_SECTION = load_section("medications_administered")
 
 
 def test_reconstruct_medications_is_flat_with_convention_columns():
-    blocks = reconstruct_medications(parse_element(_MEDICATIONS_SECTION))
+    blocks = reconstruct_medications_administered(parse_element(_MEDICATIONS_SECTION))
 
     assert len(blocks) == 1
     assert blocks[0].context == {}
@@ -260,7 +260,9 @@ _NO_KNOWN_MEDICATIONS_SECTION = load_section("medications_no_known_negated")
 
 
 def test_no_known_medications_row_is_flagged_negated():
-    blocks = reconstruct_medications(parse_element(_NO_KNOWN_MEDICATIONS_SECTION))
+    blocks = reconstruct_medications_administered(
+        parse_element(_NO_KNOWN_MEDICATIONS_SECTION)
+    )
 
     assert len(blocks) == 1
     assert blocks[0].rows[0].negated is True
@@ -691,7 +693,7 @@ def test_medication_row_carries_supply_quantity_and_single_administration_date()
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     # the high bound (the moment the infusion ended) is dropped: an
     # administration happened at a time, not over a clinically meaningful window
     assert row["Date administered"] == "2026-08-03 19:00:00 +00:00"
@@ -713,7 +715,7 @@ def test_medication_date_falls_back_to_a_flat_effective_time():
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2026-08-03"
 
 
@@ -733,7 +735,7 @@ def test_periodic_interval_without_a_period_is_a_date_not_a_frequency():
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07 11:59 -07:00"
     assert row["Frequency"] == ""
 
@@ -755,7 +757,7 @@ def test_a_real_periodic_interval_still_renders_as_frequency():
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07"
     assert row["Frequency"] == "every 8 h"
 
@@ -803,7 +805,9 @@ def test_medication_date_administered_is_unaffected_by_interval_wording():
         """
     )
     assert (
-        reconstruct_medications(section)[0].rows[0].values["Date administered"]
+        reconstruct_medications_administered(section)[0]
+        .rows[0]
+        .values["Date administered"]
         == "2026-08-03"
     )
 
