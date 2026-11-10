@@ -1,0 +1,23 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="29549-3" codeSystem="2.16.840.1.113883.6.1" displayName="Medications Administered"/>
+  <title>Medications Administered</title>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Medication</th><th>Dose</th><th>Quantity</th><th>Date administered</th><th>Frequency</th><th>Route</th><th>Status</th></tr></thead><tbody><tr ID="ecr-refiner-29549-3-20260101000000-row1"><td>oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)</td><td>1 g</td><td></td><td>2012-03-18</td><td>every 8 h</td><td>ORAL (NCI Thesaurus C38288)</td><td>completed</td></tr></tbody></table></text><!-- eCR Refiner matched: code[1115699] 'oseltamivir 6 MG/ML [Tamiflu]' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+      <id root="00000000-0000-0000-0000-0000000000aa"/>
+      <text><reference value="#ecr-refiner-29549-3-20260101000000-row1"/></text><statusCode code="completed"/>
+      <effectiveTime xsi:type="IVL_TS"><low value="20120318"/></effectiveTime>
+      <effectiveTime xsi:type="PIVL_TS"><period value="8" unit="h"/></effectiveTime>
+      <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="ORAL"/>
+      <doseQuantity value="1" unit="g"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code code="1115699" codeSystem="2.16.840.1.113883.6.88" displayName="oseltamivir 6 MG/ML [Tamiflu]"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

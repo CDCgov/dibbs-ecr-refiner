@@ -1,0 +1,33 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+  <title>Problems</title>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Concern Status</th><th>Date(s)</th></tr></thead><tbody><tr><td>active</td><td>2025-11-07 onward</td></tr></tbody></table><table border="1" styleCode="xallIndent"><thead><tr><th>Problem Type</th><th>Problem</th><th>Date(s)</th></tr></thead><tbody><tr ID="ecr-refiner-11450-4-20260101000000-row1"><td>Symptom</td><td>Dark stools (finding) (SNOMED CT 35064005)</td><td>2025-11-01 onward</td></tr><tr ID="ecr-refiner-11450-4-20260101000000-row2"><td>Complaint</td><td>Paroxysmal cough (finding) (SNOMED CT 409586006)</td><td>2025-11-04 to 2025-11-10</td></tr></tbody></table></text><!--
+  eCR Refiner matched: value[35064005] 'Dark stools (finding)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value]
+  eCR Refiner matched: value[409586006] (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value]
+-->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+      <statusCode code="active"/>
+      <effectiveTime><low value="20251107"/></effectiveTime>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          <code code="75325-1" displayName="Symptom"/>
+          <text><reference value="#ecr-refiner-11450-4-20260101000000-row1"/></text><effectiveTime><low value="20251101"/></effectiveTime>
+          <value xsi:type="CD" code="35064005" codeSystem="2.16.840.1.113883.6.96" displayName="Dark stools (finding)"/>
+        </observation>
+      </entryRelationship>
+      <entryRelationship typeCode="SUBJ">
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+          <code code="75322-8" displayName="Complaint"/>
+          <text><reference value="#ecr-refiner-11450-4-20260101000000-row2"/></text><effectiveTime><low value="20251104"/><high value="20251110"/></effectiveTime>
+          <value xsi:type="CD" code="409586006" codeSystem="2.16.840.1.113883.6.96">
+            <originalText>Paroxysmal cough (finding)</originalText>
+          </value>
+        </observation>
+      </entryRelationship>
+    </act>
+  </entry>
+</section>
