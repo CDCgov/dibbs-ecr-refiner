@@ -16,6 +16,7 @@ from .fields import (
     GENERIC_FIELDS,
     IMMUNIZATION_FIELDS,
     MEDICATION_ADMINISTERED_FIELDS,
+    MEDICATION_FIELDS,
     PANEL_FIELDS,
     PLANNED_ACT_FIELDS,
     PLANNED_IMMUNIZATION_FIELDS,
@@ -242,7 +243,7 @@ def reconstruct_medications_administered(section: _Element) -> list[Block]:
 
 def reconstruct_medications(section: _Element) -> list[Block]:
     """
-    Reconstruct the Medications Administered section: one row per medication.
+    Reconstruct the Medications section: one row per medication.
 
     Args:
         section: The post-prune, post-enrich Medications <section>.
@@ -254,7 +255,7 @@ def reconstruct_medications(section: _Element) -> list[Block]:
     return _reconstruct_flat(
         section,
         anchor_xpath="hl7:entry/hl7:substanceAdministration",
-        fields=MEDICATION_ADMINISTERED_FIELDS,
+        fields=MEDICATION_FIELDS,
     )
 
 

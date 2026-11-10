@@ -4,6 +4,7 @@ from app.services.ecr.model import HL7_NS
 from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.narrative.reconstruction import (
     reconstruct_immunizations,
+    reconstruct_medications,
     reconstruct_medications_administered,
     reconstruct_narrative,
     reconstruct_plan_of_treatment,
@@ -760,6 +761,65 @@ def test_a_real_periodic_interval_still_renders_as_frequency():
     row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07"
     assert row["Frequency"] == "every 8 h"
+
+
+def test_medication_range_renders_start_and_end():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime xsi:type="IVL_TS">
+                <low value="20260803" />
+                <high value="20260805" />
+            </effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Medication date"] == "2026-08-03 to 2026-08-05"
+
+
+def test_medication_effective_time_without_high_field_renders_same_start_and_end():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+             <effectiveTime xsi:type="IVL_TS">
+                <low value="20260803" />
+            </effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Medication date"] == "2026-08-03 onward"
+
+
+def test_medication_effective_time_with_single_value_renders_same_start_and_end():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime value="20260803"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Medication date"] == "2026-08-03"
 
 
 def test_results_detail_table_is_captioned_and_marked_subordinate():
