@@ -124,7 +124,7 @@ def _check_case_coverage(cases: list[dict], fixture_names: set[str]) -> None:
         )
 
 
-def _pair_snapshot_files(
+def _full_document_snapshot_files(
     pair: FixturePair, case: dict, augmentation_time: str
 ) -> Iterator[tuple[Path, bytes]]:
     """Check RR discovery and replay the pair's recorded configurations."""
@@ -197,7 +197,7 @@ def iter_snapshot_files() -> Iterator[tuple[Path, bytes]]:
     _check_case_coverage(catalog["pairs"], set(pairs))
     _check_case_coverage(catalog["sections"], set(sections))
     for case in catalog["pairs"]:
-        yield from _pair_snapshot_files(
+        yield from _full_document_snapshot_files(
             pairs[case["fixture"]], case, catalog["augmentation_time"]
         )
     for case in catalog["sections"]:
