@@ -1,0 +1,4 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" nullFlavor="NI">
+  <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" displayName="Results"/>
+  <title>Results</title>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><paragraph>Narrative reconstructed after refinement: no clinical entries in this section matched the configured code sets for this condition.</paragraph></text></section>
