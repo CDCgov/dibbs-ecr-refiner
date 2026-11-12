@@ -47,6 +47,11 @@ test-integration: _venv
 test-scenarios: _venv
     .venv/bin/python3 -m pytest tests/integration/scenarios
 
+[doc('Generate refinement parity XML snapshots in tests/fixtures/expected')]
+[group('test')]
+generate-snapshots: _venv
+    .venv/bin/python3 -m scripts.snapshot_generator.generate_snapshots
+
 [doc('Update Scenarios tests snapshots.')]
 [group('test')]
 update-snapshots: _venv

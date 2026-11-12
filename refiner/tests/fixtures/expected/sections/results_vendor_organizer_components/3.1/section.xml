@@ -1,0 +1,120 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <templateId root="2.16.840.1.113883.10.20.22.2.3.1" extension="2015-08-01"/>
+  <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" displayName="Results"/>
+  <title>Results</title>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Panel name</th><th>Date(s)</th><th>Performer</th><th>Result Status</th><th>Specimen</th><th>Target Site</th></tr></thead><tbody><tr><td>LOINC 94531-1</td><td></td><td></td><td>F</td><td>Blood specimen (SNOMED CT 119297000)</td><td></td></tr></tbody></table><table border="1" styleCode="xallIndent"><caption>Tests in panel: 94531-1</caption><thead><tr><th>Test</th><th>Result value</th><th>Interpretation</th><th>Reference Range</th><th>Date(s)</th></tr></thead><tbody><tr ID="ecr-refiner-30954-2-20260101000000-row1"><td>LOINC 94500-6</td><td>Detected (SNOMED CT 260373001)</td><td></td><td></td><td></td></tr><tr ID="ecr-refiner-30954-2-20260101000000-row2"><td>LOINC 2160-0</td><td>0.9 mg/dL</td><td></td><td></td><td></td></tr><tr ID="ecr-refiner-30954-2-20260101000000-row3"><td>Specimen collection (procedure) (SNOMED CT 17636008)</td><td></td><td></td><td></td><td></td></tr></tbody></table><table border="1"><thead><tr><th>Panel name</th><th>Date(s)</th><th>Performer</th><th>Result Status</th><th>Specimen</th><th>Target Site</th></tr></thead><tbody><tr><td>LOINC 24323-8</td><td></td><td></td><td>completed</td><td></td><td></td></tr></tbody></table><table border="1" styleCode="xallIndent"><caption>Tests in panel: 24323-8</caption><thead><tr><th>Test</th><th>Result value</th><th>Interpretation</th><th>Reference Range</th><th>Date(s)</th></tr></thead><tbody><tr ID="ecr-refiner-30954-2-20260101000000-row4"><td>LOINC 1920-8</td><td>22 U/L</td><td></td><td></td><td></td></tr></tbody></table></text><!--
+  eCR Refiner matched: code[94500-6] (LOINC) Entry match fired for: rule 1 (T1) [hl7:code]
+  eCR Refiner matched: code[2160-0] (LOINC) Entry match fired for: rule 1 (T1) [hl7:code]
+  eCR Refiner matched: code[2951-2] (LOINC) Entry match fired for: rule 1 (T1) [hl7:code]
+-->
+  <entry typeCode="DRIV">
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.1" extension="2015-08-01"/>
+      <id root="2.16.840.1.113883.19.5" extension="organizer-matched"/>
+      <code code="94531-1" codeSystem="2.16.840.1.113883.6.1"/>
+      <statusCode code="completed"/>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <id root="2.16.840.1.113883.19.5" extension="specimen-no-templateid"/>
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96" displayName="Specimen collection (procedure)"/>
+          <effectiveTime value="20260105143651+0000"/>
+          <participant typeCode="PRD">
+            <participantRole classCode="SPEC">
+              <playingEntity>
+                <code code="119297000" codeSystem="2.16.840.1.113883.6.96" displayName="Blood specimen"/>
+              </playingEntity>
+            </participantRole>
+          </participant>
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01"/>
+          <id root="2.16.840.1.113883.19.5" extension="result-matched"/>
+          <code code="94500-6" codeSystem="2.16.840.1.113883.6.1"/>
+          <text><reference value="#ecr-refiner-30954-2-20260101000000-row1"/></text><statusCode code="completed"/>
+          <value xsi:type="CD" code="260373001" codeSystem="2.16.840.1.113883.6.96" displayName="Detected"/>
+        </observation>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01"/>
+          <id root="2.16.840.1.113883.19.5" extension="result-unmatched"/>
+          <code code="2160-0" codeSystem="2.16.840.1.113883.6.1"/>
+          <text><reference value="#ecr-refiner-30954-2-20260101000000-row2"/></text><statusCode code="completed"/>
+          <value xsi:type="PQ" value="0.9" unit="mg/dL"/>
+        </observation>
+      </component>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <templateId root="1.2.840.114350.1.72.3.7"/>
+          <id root="2.16.840.1.113883.19.5" extension="epic-venipuncture"/>
+          <code nullFlavor="UNK">
+            <originalText>Venipuncture</originalText>
+          </code>
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.415" extension="2018-09-01"/>
+          <id root="2.16.840.1.113883.19.5" extension="specimen-as-observation"/>
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96" displayName="Specimen collection (procedure)"/>
+        <text><reference value="#ecr-refiner-30954-2-20260101000000-row3"/></text></observation>
+      </component>
+      <component>
+        <act classCode="ACT" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.64"/>
+          <id root="2.16.840.1.113883.19.5" extension="comment-activity"/>
+          <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" displayName="Annotation comment"/>
+          <text>Specimen received hemolyzed; result may be affected.</text>
+        </act>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.418" extension="2018-09-01"/>
+          <id root="2.16.840.1.113883.19.5" extension="lab-result-status"/>
+          <code code="92235-1" codeSystem="2.16.840.1.113883.6.1"/>
+          <value xsi:type="CD" code="F" codeSystem="2.16.840.1.113883.18.51"/>
+        </observation>
+      </component>
+      <component>
+        <organizer classCode="BATTERY" moodCode="EVN">
+          <id root="2.16.840.1.113883.19.5" extension="nested-organizer-unmatched"/>
+          <code code="24326-1" codeSystem="2.16.840.1.113883.6.1"/>
+          <statusCode code="completed"/>
+          <component>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01"/>
+              <id root="2.16.840.1.113883.19.5" extension="nested-result-unmatched"/>
+              <code code="2951-2" codeSystem="2.16.840.1.113883.6.1"/>
+              <value xsi:type="PQ" value="140" unit="mmol/L"/>
+            </observation>
+          </component>
+        </organizer>
+      </component>
+    </organizer>
+  </entry>
+  <!-- eCR Refiner matched: code[1920-8] (LOINC) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.1" extension="2015-08-01"/>
+      <id root="2.16.840.1.113883.19.5" extension="organizer-unmatched"/>
+      <code code="24323-8" codeSystem="2.16.840.1.113883.6.1"/>
+      <statusCode code="completed"/>
+      <component>
+        <procedure classCode="PROC" moodCode="EVN">
+          <id root="2.16.840.1.113883.19.5" extension="specimen-in-unmatched-organizer"/>
+          <code code="17636008" codeSystem="2.16.840.1.113883.6.96" displayName="Specimen collection (procedure)"/>
+        </procedure>
+      </component>
+      <component>
+        <observation classCode="OBS" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01"/>
+          <id root="2.16.840.1.113883.19.5" extension="result-in-unmatched-organizer"/>
+          <code code="1920-8" codeSystem="2.16.840.1.113883.6.1"/>
+          <text><reference value="#ecr-refiner-30954-2-20260101000000-row4"/></text><value xsi:type="PQ" value="22" unit="U/L"/>
+        </observation>
+      </component>
+    </organizer>
+  </entry>
+</section>

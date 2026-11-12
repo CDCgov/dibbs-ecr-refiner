@@ -11,6 +11,9 @@
 *.yml text eol=lf
 *.csv text eol=lf
 
+# Preserve the recorded refinement output bytes on checkout.
+refiner/tests/fixtures/expected/** -text
+
 # Ignore Orval generated file diffs
 client/src/api/** -diff
 
