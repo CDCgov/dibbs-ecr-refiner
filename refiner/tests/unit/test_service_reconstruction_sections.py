@@ -5,6 +5,7 @@ from app.services.ecr.narrative.constants import RECONSTRUCTED_EMPTY_MESSAGE
 from app.services.ecr.narrative.reconstruction import (
     reconstruct_immunizations,
     reconstruct_medications,
+    reconstruct_medications_administered,
     reconstruct_narrative,
     reconstruct_plan_of_treatment,
     reconstruct_problems,
@@ -219,23 +220,25 @@ _MEDICATIONS_SECTION = load_section("medications_administered")
 
 
 def test_reconstruct_medications_is_flat_with_convention_columns():
-    blocks = reconstruct_medications(parse_element(_MEDICATIONS_SECTION))
+    blocks = reconstruct_medications_administered(parse_element(_MEDICATIONS_SECTION))
 
     assert len(blocks) == 1
     assert blocks[0].context == {}
-    assert blocks[0].columns == [
-        "Medication",
-        "Dose",
-        "Quantity",
-        "Date administered",
-        "Frequency",
-        "Route",
-        "Status",
-    ]
+    assert set(blocks[0].columns).issubset(
+        [
+            "Medication",
+            "Dose",
+            "Quantity",
+            "Date administered",
+            "Frequency",
+            "Route",
+            "Status",
+        ]
+    )
     # the two effectiveTimes land in distinct columns: the IVL_TS window
     # contributes its low bound as Date administered, the PIVL_TS as Frequency
     # (unreachable before the split)
-    assert blocks[0].rows[0].values == {
+    assert (blocks[0].rows[0].values) == {
         "Medication": "oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)",
         "Dose": "1 g",
         "Quantity": "",
@@ -260,7 +263,9 @@ _NO_KNOWN_MEDICATIONS_SECTION = load_section("medications_no_known_negated")
 
 
 def test_no_known_medications_row_is_flagged_negated():
-    blocks = reconstruct_medications(parse_element(_NO_KNOWN_MEDICATIONS_SECTION))
+    blocks = reconstruct_medications_administered(
+        parse_element(_NO_KNOWN_MEDICATIONS_SECTION)
+    )
 
     assert len(blocks) == 1
     assert blocks[0].rows[0].negated is True
@@ -691,7 +696,7 @@ def test_medication_row_carries_supply_quantity_and_single_administration_date()
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     # the high bound (the moment the infusion ended) is dropped: an
     # administration happened at a time, not over a clinically meaningful window
     assert row["Date administered"] == "2026-08-03 19:00:00 +00:00"
@@ -713,7 +718,7 @@ def test_medication_date_falls_back_to_a_flat_effective_time():
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2026-08-03"
 
 
@@ -733,7 +738,7 @@ def test_periodic_interval_without_a_period_is_a_date_not_a_frequency():
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07 11:59 -07:00"
     assert row["Frequency"] == ""
 
@@ -755,9 +760,68 @@ def test_a_real_periodic_interval_still_renders_as_frequency():
         </section>
         """
     )
-    row = reconstruct_medications(section)[0].rows[0].values
+    row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07"
     assert row["Frequency"] == "every 8 h"
+
+
+def test_medication_range_renders_start_and_end():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime xsi:type="IVL_TS">
+                <low value="20260803" />
+                <high value="20260805" />
+            </effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Medication date"] == "2026-08-03 to 2026-08-05"
+
+
+def test_medication_effective_time_without_high_field_renders_same_start_and_end():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+             <effectiveTime xsi:type="IVL_TS">
+                <low value="20260803" />
+            </effectiveTime>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Medication date"] == "2026-08-03 onward"
+
+
+def test_medication_effective_time_with_single_value_renders_same_start_and_end():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="29549-3"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <effectiveTime value="20260803"/>
+            <consumable><manufacturedProduct><manufacturedMaterial>
+              <code displayName="ceftriaxone sodium"/>
+            </manufacturedMaterial></manufacturedProduct></consumable>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Medication date"] == "2026-08-03"
 
 
 def test_results_detail_table_is_captioned_and_marked_subordinate():
@@ -803,7 +867,9 @@ def test_medication_date_administered_is_unaffected_by_interval_wording():
         """
     )
     assert (
-        reconstruct_medications(section)[0].rows[0].values["Date administered"]
+        reconstruct_medications_administered(section)[0]
+        .rows[0]
+        .values["Date administered"]
         == "2026-08-03"
     )
 

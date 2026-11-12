@@ -98,7 +98,6 @@ def process_section(
         section=section,
         codes_to_match=codes_to_match,
         namespaces=namespaces,
-        section_specification=section_specification,
         augmentation_timestamp=augmentation_timestamp,
         code_system_sets=code_system_sets,
         narrative_action=narrative,

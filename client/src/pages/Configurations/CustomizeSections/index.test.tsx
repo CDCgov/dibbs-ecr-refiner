@@ -95,7 +95,7 @@ const sectionsWithReconstruct: ConfiguredSection[] = [
     include: true,
     code: '30954-2',
     narrative: 'reconstruct',
-    versions: ['1.1', '3.1'],
+    versions: ['1.1', '3.0', '3.1'],
     section_type: 'standard',
   },
   {
@@ -104,7 +104,7 @@ const sectionsWithReconstruct: ConfiguredSection[] = [
     include: true,
     code: '10160-0',
     narrative: 'retain',
-    versions: ['1.1', '3.1'],
+    versions: ['3.1'],
     section_type: 'standard',
   },
 ];
@@ -419,7 +419,7 @@ describe('Configuration sections', () => {
     const reconstructOption = options.find(
       (opt) => opt.getAttribute('value') === 'reconstruct'
     );
-    expect(reconstructOption).not.toBeDefined();
+    expect(reconstructOption).toBeDisabled();
   });
 
   it('should enable Reconstruct option when coded data action is reconstruct', () => {

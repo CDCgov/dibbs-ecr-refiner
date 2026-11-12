@@ -15,7 +15,6 @@ from ..model import (
     HL7_NS,
     NamespaceMap,
     SectionRunResult,
-    SectionSpecification,
 )
 from ..narrative import (
     ReconstructedNarrative,
@@ -86,7 +85,6 @@ def process(
     section: _Element,
     codes_to_match: set[str],
     namespaces: NamespaceMap,
-    section_specification: SectionSpecification | None,
     augmentation_timestamp: str = "",
     code_system_sets: CodeSystemSets | None = None,
     narrative_action: NarrativeAction = "retain",

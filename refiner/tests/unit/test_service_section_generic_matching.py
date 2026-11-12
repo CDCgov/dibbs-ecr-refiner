@@ -601,7 +601,6 @@ def test_generic_path_recovers_display_from_narrative_reference():
     generic_process(
         section=section,
         codes_to_match={"MATCHME"},
-        section_specification=None,
         namespaces=HL7_NS,
         code_system_sets=CodeSystemSets(),
     )
@@ -652,7 +651,6 @@ def test_generic_reconstruct_without_matches_reconstructs_an_empty_narrative() -
     result = generic_process(
         section=section,
         codes_to_match={"SOMETHING-ELSE"},
-        section_specification=None,
         namespaces=HL7_NS,
         code_system_sets=CodeSystemSets(),
         narrative_action="reconstruct",
@@ -708,7 +706,6 @@ def test_generic_reconstruct_no_match_restores_the_neutralized_section_code() ->
     generic_process(
         section=section,
         codes_to_match={"SOMETHING-ELSE"},
-        section_specification=None,
         namespaces=HL7_NS,
         code_system_sets=CodeSystemSets(),
         narrative_action="reconstruct",
@@ -729,7 +726,6 @@ def test_generic_reconstruct_with_matches_actually_reconstructs() -> None:
     result = generic_process(
         section=section,
         codes_to_match={"MATCHME"},
-        section_specification=None,
         namespaces=HL7_NS,
         code_system_sets=CodeSystemSets(),
         narrative_action="reconstruct",
@@ -764,7 +760,6 @@ def test_generic_section_code_is_truthful_once_matching_is_done() -> None:
         generic_process(
             section=section,
             codes_to_match={"MATCHME"},
-            section_specification=None,
             namespaces=HL7_NS,
             code_system_sets=CodeSystemSets(),
             narrative_action="reconstruct",
@@ -785,7 +780,6 @@ def test_generic_reconstruct_no_match_matches_the_entry_engine() -> None:
     generic_result = generic_process(
         section=generic_section,
         codes_to_match={"SOMETHING-ELSE"},
-        section_specification=None,
         namespaces=HL7_NS,
         code_system_sets=CodeSystemSets(),
         narrative_action="reconstruct",
@@ -812,7 +806,6 @@ def test_generic_retain_still_keeps_the_original_narrative() -> None:
     result = generic_process(
         section=section,
         codes_to_match={"SOMETHING-ELSE"},
-        section_specification=None,
         namespaces=HL7_NS,
         code_system_sets=CodeSystemSets(),
         narrative_action="retain",

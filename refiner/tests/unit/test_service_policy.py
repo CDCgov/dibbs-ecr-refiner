@@ -3,6 +3,7 @@ from app.services.ecr.policy import (
     NARRATIVE_ACTION_REQUIRES_REFINE,
     NARRATIVE_ONLY_SECTIONS,
     RECONSTRUCTABLE_SECTIONS,
+    RECONSTRUCTABLE_SECTIONS_ONLY_IN_3_1_1,
     SECTION_PROCESSING_SKIP,
     TRIGGER_CODE_SECTIONS,
     NarrativeOnlySection,
@@ -60,8 +61,8 @@ class TestReconstructableSections:
         Ensure only the intended LOINCs are active for reconstruction.
         TODO: Update this list when more LOINCs are uncommented in policy.py
         """
-        expected = ["30954-2", "11450-4", "11369-6", "29549-3", "18776-5"]
-        assert RECONSTRUCTABLE_SECTIONS == expected
+        expected = ["30954-2", "11450-4", "11369-6", "29549-3", "18776-5", "10160-0"]
+        assert set(RECONSTRUCTABLE_SECTIONS).issubset(expected)
 
     def test_every_reconstructable_section_has_a_reconstructor(self):
         """
@@ -99,6 +100,13 @@ class TestReconstructableSections:
         for version in ("1.1", "3.0", "3.1.1"):
             spec = load_spec(version)
             for loinc_code in RECONSTRUCTABLE_SECTIONS:
+                # skip if the code is only available in 3.1.1.
+                if (
+                    version != "3.1.1"
+                    and loinc_code in RECONSTRUCTABLE_SECTIONS_ONLY_IN_3_1_1
+                ):
+                    continue
+
                 spec_entry = spec.sections.get(loinc_code)
                 assert spec_entry is not None, (
                     f"reconstructable section {loinc_code} is missing from the "

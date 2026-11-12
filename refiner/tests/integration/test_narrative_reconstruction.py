@@ -10,7 +10,8 @@ from app.services.ecr.narrative.reconstruction import (
     ReconstructedNarrative,
     reconstruct_narrative,
 )
-from app.services.ecr.section.entry_matching import process as refine_section
+from app.services.ecr.section.entry_matching import process as entry_rule_refine_section
+from app.services.ecr.section.generic_matching import process as generic_refine_section
 from app.services.ecr.specification import load_spec
 from app.services.terminology import CodeSystemSets
 
@@ -29,14 +30,26 @@ def _refine_with_no_matches(section: _Element, loinc: str) -> SectionRunResult:
     returns what the engine reported.
     """
 
-    return refine_section(
-        section=section,
-        code_system_sets=CodeSystemSets(),
-        section_specification=load_spec("1.1").sections[loinc],
-        namespaces=HL7_NS,
-        narrative_action="reconstruct",
-        augmentation_timestamp=_RUN_TS,
-    )
+    section_specification = load_spec("1.1").sections.get(loinc, None)
+
+    if section_specification:
+        return entry_rule_refine_section(
+            section=section,
+            code_system_sets=CodeSystemSets(),
+            section_specification=load_spec("1.1").sections[loinc],
+            namespaces=HL7_NS,
+            narrative_action="reconstruct",
+            augmentation_timestamp=_RUN_TS,
+        )
+
+    else:
+        return generic_refine_section(
+            section=section,
+            codes_to_match=set(),
+            code_system_sets=CodeSystemSets(),
+            narrative_action="reconstruct",
+            namespaces=HL7_NS,
+        )
 
 
 # NOTE:
@@ -206,6 +219,7 @@ _RECONSTRUCTABLE_FIXTURES: list[tuple[str, str]] = [
     ("problems_concern_with_two_observations", "11450-4"),
     ("immunizations_flat", "11369-6"),
     ("medications_administered", "29549-3"),
+    ("medications", "10160-0"),
     ("plan_of_treatment_all_kinds", "18776-5"),
 ]
 
