@@ -259,7 +259,7 @@ class UserResponse(BaseModel):
     @classmethod
     async def from_db_user(
         cls, user: DbUser, db: AsyncDatabaseConnection
-    ) -> "UserResponse":
+    ) -> UserResponse:
         """
         Mapping method to layer notification information into base db info.
         """

@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -25,7 +24,7 @@ class ConfigurationLock:
     @staticmethod
     async def get_lock(
         configuration_id: UUID, db: AsyncDatabaseConnection
-    ) -> Optional["ConfigurationLock"]:
+    ) -> ConfigurationLock | None:
         """
         Retrieve the current lock for a configuration, if any.
         """

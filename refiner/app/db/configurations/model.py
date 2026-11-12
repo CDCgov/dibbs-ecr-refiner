@@ -83,7 +83,7 @@ class DbConfiguration:
     s3_url: str
 
     @classmethod
-    def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
+    def from_db_row(cls, row: dict[str, Any]) -> DbConfiguration:
         """
         Transforms a dictionary object into a DbConfiguration.
 

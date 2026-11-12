@@ -157,7 +157,7 @@ class CodeSystemSets:
         cls,
         coding_by_code_system: dict[CodeSystemKey, list[dict[Code, str]]],
         oid_to_system_map: dict[Oid, CodeSystemKey],
-    ) -> "CodeSystemSets":
+    ) -> CodeSystemSets:
         """
         Deserialize a CodeSystemSets from a dictionary (read from S3).
 
@@ -260,7 +260,7 @@ class ProcessedConfiguration:
     included_condition_rsg_codes: set[str]
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ProcessedConfiguration":
+    def from_dict(cls, data: dict) -> ProcessedConfiguration:
         """
         Creates a ProcessedConfiguration from a validated dictionary.
 

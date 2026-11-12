@@ -38,7 +38,7 @@ class ConditionMapValue:
     tes_version: str
 
     @classmethod
-    def from_dict(cls, data: ConditionMapValueDict) -> "ConditionMapValue":
+    def from_dict(cls, data: ConditionMapValueDict) -> ConditionMapValue:
         """
         Converts a payload map value dictionary into an object.
 
@@ -67,7 +67,7 @@ class ConditionMappingPayload:
     @classmethod
     def from_dict(
         cls, data: dict[str, ConditionMapValueDict]
-    ) -> "ConditionMappingPayload":
+    ) -> ConditionMappingPayload:
         """
         Converts a payload dictionary into an object.
 
