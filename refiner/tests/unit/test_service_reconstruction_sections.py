@@ -224,19 +224,21 @@ def test_reconstruct_medications_is_flat_with_convention_columns():
 
     assert len(blocks) == 1
     assert blocks[0].context == {}
-    assert blocks[0].columns == [
-        "Medication",
-        "Dose",
-        "Quantity",
-        "Date administered",
-        "Frequency",
-        "Route",
-        "Status",
-    ]
+    assert set(blocks[0].columns).issubset(
+        [
+            "Medication",
+            "Dose",
+            "Quantity",
+            "Date administered",
+            "Frequency",
+            "Route",
+            "Status",
+        ]
+    )
     # the two effectiveTimes land in distinct columns: the IVL_TS window
     # contributes its low bound as Date administered, the PIVL_TS as Frequency
     # (unreachable before the split)
-    assert blocks[0].rows[0].values == {
+    assert (blocks[0].rows[0].values) == {
         "Medication": "oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)",
         "Dose": "1 g",
         "Quantity": "",

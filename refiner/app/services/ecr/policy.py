@@ -102,7 +102,10 @@ class ReconstructableSection(StrEnum):
     PLAN_OF_TREATMENT = "18776-5"
 
 
+# TODO: Update the correspondig list in test_service_policy when adding codes
+
 RECONSTRUCTABLE_SECTIONS = [section.value for section in ReconstructableSection]
+RECONSTRUCTABLE_SECTIONS_ONLY_IN_3_1_1 = ["10160-0"]
 
 
 class TriggerCodeSection(StrEnum):
