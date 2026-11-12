@@ -15,7 +15,6 @@ from ..model import (
     HL7_NS,
     NamespaceMap,
     SectionRunResult,
-    SectionSpecification,
 )
 from ..narrative import (
     ReconstructedNarrative,
