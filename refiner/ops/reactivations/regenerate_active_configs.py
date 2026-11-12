@@ -154,7 +154,7 @@ def remove_expired_maintenance_lock() -> bool:
 
     try:
         lock = json.loads(response["Body"].read())
-    except (json.JSONDecodeError, TypeError):
+    except json.JSONDecodeError, TypeError:
         logger.warning(
             "Removing corrupt active configuration maintenance lock. "
             "bucket=%s key=%s reason=invalid_json",
