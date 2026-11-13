@@ -54,6 +54,7 @@ updates:
     directories:
       - "/refiner"
       - "/refiner/app/lambda"
+      - "/refiner/packages/dibbs-ecr"
     schedule:
       interval: "weekly"
       day: "monday"

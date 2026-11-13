@@ -49,7 +49,7 @@ def get_git_info() -> GitInfo:
 
         return {"branch": branch, "commit_hash": commit}
     # not a git checkout, or git isn't installed
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except subprocess.CalledProcessError, FileNotFoundError:
         return {"branch": "unknown", "commit_hash": "unknown"}
 
 

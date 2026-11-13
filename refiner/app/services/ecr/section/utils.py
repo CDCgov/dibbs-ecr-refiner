@@ -53,7 +53,7 @@ def code_system_label(oid: str | None) -> str:
 
 def enrich_surviving_entries(
     section: _Element,
-    code_system_sets: "CodeSystemSets",
+    code_system_sets: CodeSystemSets,
     namespaces: NamespaceMap,
     narrative_index: dict[str, str] | None = None,
 ) -> None:
@@ -144,7 +144,7 @@ def enrich_surviving_entries(
                     element.set("displayName", display)
 
 
-def _enrich_display_name(code_element: _Element, coding: "Coding") -> None:
+def _enrich_display_name(code_element: _Element, coding: Coding) -> None:
     """
     Set `displayName` on a code-bearing element from a Coding.
 
@@ -396,10 +396,10 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
 
 def resolve_no_match_section(
     section: _Element,
-    narrative_action: "NarrativeAction",
+    narrative_action: NarrativeAction,
     namespaces: NamespaceMap,
     augmentation_timestamp: str,
-) -> "SectionRunResult | None":
+) -> SectionRunResult | None:
     """
     Prune a section that matched nothing and settle its narrative.
 

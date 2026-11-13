@@ -12,7 +12,7 @@ exclude = [
 line-length = 88
 indent-width = 4
 show-fixes = true
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 # rule selection with comments for clarity
