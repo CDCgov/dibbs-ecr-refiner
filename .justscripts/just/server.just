@@ -112,7 +112,7 @@ install: _venv
 [doc('Install all dependencies locally')]
 [group('dependencies')]
 install-dev: _venv
-    .venv/bin/pip install -r ./dev-requirements.txt -r ./requirements.txt
+    .venv/bin/pip install -r ./dev-requirements.txt -r ./requirements.txt -e ./packages/dibbs-ecr
 
 [doc('Install Lambda dependencies locally')]
 [group('dependencies')]
