@@ -41,9 +41,19 @@ from the package directory:
 
 ```sh
 cd refiner/packages/dibbs-ecr
-python -m venv .venv # . .venv/bin/activate if .venv already exists
+python -m venv .venv
+. .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r dev-requirements.txt -e .
+```
+
+Then run the tests and checks:
+
+```sh
+python -m pytest
+python -m ruff check .
+python -m ruff format --check .
+python -m mypy --config-file pyproject.toml
 ```
 
 With the tools and package installed in `refiner/.venv`, the equivalent commands
