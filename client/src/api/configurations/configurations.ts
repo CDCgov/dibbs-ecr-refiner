@@ -143,6 +143,13 @@ export type GetConfigurationsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type GetConfigurationsQueryError = AxiosError<unknown>
 
 
+/**
+ * Returns a list of configurations based on the logged-in user.
+ *
+ * Returns:
+ *     List of configuration objects.
+ * @summary Get Configurations
+ */
 export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -153,6 +160,13 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of configurations based on the logged-in user.
+ *
+ * Returns:
+ *     List of configuration objects.
+ * @summary Get Configurations
+ */
 export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -163,14 +177,24 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of configurations based on the logged-in user.
+ *
+ * Returns:
+ *     List of configuration objects.
+ * @summary Get Configurations
+ */
 export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns a list of configurations based on the logged-in user.
+ *
+ * Returns:
+ *     List of configuration objects.
  * @summary Get Configurations
  */
-
 export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -254,6 +278,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type CreateConfigurationMutationVariables = {data: CreateConfigInput}
 
     /**
+ * Create a new configuration for a jurisdiction.
  * @summary Create Configuration
  */
 export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -341,6 +366,26 @@ export type GetSerializedConfigurationQueryResult = NonNullable<Awaited<ReturnTy
 export type GetSerializedConfigurationQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
+ *
+ * Args:
+ *     configuration_id (UUID): The active configuration ID
+ *     user (DbUser): The logged-in user
+ *     app_config (AppConfig): The required application environment variables
+ *     db (AsyncDatabaseConnection): The database connection
+ *     logger (Logger): The standard app logger
+ *
+ * Raises:
+ *     HTTPException: 403 if not running locally
+ *     HTTPException: 404 if configuration cannot be found in the user's jurisdiction
+ *     HTTPException: 400 if the configuration's status is not `active`
+ *     HTTPException: 404 if the configuration's primary condition is not found
+ *
+ * Returns:
+ *     Response: The serialized configuration file content
+ * @summary Get Serialized Configuration
+ */
 export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -351,6 +396,26 @@ export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof 
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
+ *
+ * Args:
+ *     configuration_id (UUID): The active configuration ID
+ *     user (DbUser): The logged-in user
+ *     app_config (AppConfig): The required application environment variables
+ *     db (AsyncDatabaseConnection): The database connection
+ *     logger (Logger): The standard app logger
+ *
+ * Raises:
+ *     HTTPException: 403 if not running locally
+ *     HTTPException: 404 if configuration cannot be found in the user's jurisdiction
+ *     HTTPException: 400 if the configuration's status is not `active`
+ *     HTTPException: 404 if the configuration's primary condition is not found
+ *
+ * Returns:
+ *     Response: The serialized configuration file content
+ * @summary Get Serialized Configuration
+ */
 export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -361,14 +426,50 @@ export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof 
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
+ *
+ * Args:
+ *     configuration_id (UUID): The active configuration ID
+ *     user (DbUser): The logged-in user
+ *     app_config (AppConfig): The required application environment variables
+ *     db (AsyncDatabaseConnection): The database connection
+ *     logger (Logger): The standard app logger
+ *
+ * Raises:
+ *     HTTPException: 403 if not running locally
+ *     HTTPException: 404 if configuration cannot be found in the user's jurisdiction
+ *     HTTPException: 400 if the configuration's status is not `active`
+ *     HTTPException: 404 if the configuration's primary condition is not found
+ *
+ * Returns:
+ *     Response: The serialized configuration file content
+ * @summary Get Serialized Configuration
+ */
 export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Given an active configuration ID, fetches and returns the serialized configuration file content from S3.
+ *
+ * Args:
+ *     configuration_id (UUID): The active configuration ID
+ *     user (DbUser): The logged-in user
+ *     app_config (AppConfig): The required application environment variables
+ *     db (AsyncDatabaseConnection): The database connection
+ *     logger (Logger): The standard app logger
+ *
+ * Raises:
+ *     HTTPException: 403 if not running locally
+ *     HTTPException: 404 if configuration cannot be found in the user's jurisdiction
+ *     HTTPException: 400 if the configuration's status is not `active`
+ *     HTTPException: 404 if the configuration's primary condition is not found
+ *
+ * Returns:
+ *     Response: The serialized configuration file content
  * @summary Get Serialized Configuration
  */
-
 export function useGetSerializedConfiguration<TData = Awaited<ReturnType<typeof getSerializedConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSerializedConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -445,6 +546,10 @@ export type GetConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof 
 export type GetConfigurationQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Get a single configuration by its ID including all associated conditions.
+ * @summary Get Configuration
+ */
 export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -455,6 +560,10 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Get a single configuration by its ID including all associated conditions.
+ * @summary Get Configuration
+ */
 export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -465,14 +574,18 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Get a single configuration by its ID including all associated conditions.
+ * @summary Get Configuration
+ */
 export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Get a single configuration by its ID including all associated conditions.
  * @summary Get Configuration
  */
-
 export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -573,6 +686,23 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type AssociateConditionWithConfigurationMutationVariables = {configurationId: string;data: AssociateCodesetInput}
 
     /**
+ * Associate a specified code set with the given configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration
+ *     body (AssociateCodesetInput): payload containing a condition_id
+ *     user (dict[str, Any], optional): User making the request
+ *     db (AsyncDatabaseConnection, optional): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration is not found in JD
+ *     HTTPException: 404 if configuration is not found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration cannot be updated
+ *
+ * Returns:
+ *     AssociateCodesetResponse: ID of updated configuration, the full list of included conditions,
+ *           and the condition_name
  * @summary Associate Condition Codeset With Configuration
  */
 export const useAssociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -669,6 +799,24 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type DisassociateConditionWithConfigurationMutationVariables = {configurationId: string;conditionId: string}
 
     /**
+ * Remove a specified code set from the given configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration
+ *     condition_id (UUID): ID of the condition to remove
+ *     user (DbUser): User making the request
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration is not found in JD
+ *     HTTPException: 404 if condition is not found
+ *     HTTPException: 409 if trying to remove the main condition
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration is cannot be updated
+ *
+ * Returns:
+ *     AssociateCodesetResponse: ID of updated configuration and the full list
+ *     of included conditions plus condition_name
  * @summary Remove Condition Codeset From Configuration
  */
 export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -756,6 +904,22 @@ export type GetCustomCodeQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetCustomCodeQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Fetch a custom code by its ID.
+ *
+ * Args:
+ *     configuration_id (UUID): The associated configuration ID
+ *     id (UUID): The custom code ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     CustomCodeResponse: The custom code response object
+ * @summary Get Custom Code
+ */
 export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>> & Pick<
@@ -767,6 +931,22 @@ export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetch a custom code by its ID.
+ *
+ * Args:
+ *     configuration_id (UUID): The associated configuration ID
+ *     id (UUID): The custom code ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     CustomCodeResponse: The custom code response object
+ * @summary Get Custom Code
+ */
 export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>> & Pick<
@@ -778,15 +958,43 @@ export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetch a custom code by its ID.
+ *
+ * Args:
+ *     configuration_id (UUID): The associated configuration ID
+ *     id (UUID): The custom code ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     CustomCodeResponse: The custom code response object
+ * @summary Get Custom Code
+ */
 export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Fetch a custom code by its ID.
+ *
+ * Args:
+ *     configuration_id (UUID): The associated configuration ID
+ *     id (UUID): The custom code ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     CustomCodeResponse: The custom code response object
  * @summary Get Custom Code
  */
-
 export function useGetCustomCode<TData = Awaited<ReturnType<typeof getCustomCode>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCode>>, TError, TData>>, axios?: AxiosRequestConfig}
@@ -887,6 +1095,22 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type DeleteCustomCodeFromConfigurationMutationVariables = {configurationId: string;id: string}
 
     /**
+ * Delete a custom code from a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     id (str): The ID of the custom code.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 400 if id is not provided
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration
  * @summary Delete Custom Code
  */
 export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -980,6 +1204,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type AddCustomCodeToConfigurationMutationVariables = {configurationId: string;data: AddCustomCodeInput}
 
     /**
+ * Add a user-defined custom code to a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to update.
+ *     body (AddCustomCodeInput): The custom code information provided by the user.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration isn't found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if custom code can't be added
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: Updated configuration
  * @summary Add Custom Code
  */
 export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -1073,6 +1312,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type EditCustomCodeFromConfigurationMutationVariables = {configurationId: string;data: UpdateCustomCodeInput}
 
     /**
+ * Modify a configuration's custom code based on system_key/code pair.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     body (UpdateCustomCodeInput): User-provided object containing custom code info.
+ *     user (dict[str, Any]): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *     logger (Logger): The system logger.
+ *
+ * Raises:
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if the configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration.
  * @summary Edit Custom Code
  */
 export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -1158,6 +1412,13 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type UploadCustomCodesCsvMutationVariables = {configurationId: string;data: UploadCustomCodesCsvInput}
 
     /**
+ * Accepts a CSV payload in JSON body.
+ *
+ * Expected CSV headers:
+ *     code,code_system,display_name
+ *
+ * Returns:
+ *     UploadCustomCodesResponse
  * @summary Upload Custom Codes Csv
  */
 export const useUploadCustomCodesCsv = <TError = AxiosError<HTTPValidationError>,
@@ -1237,6 +1498,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type ConfirmUploadCustomCodesCsvMutationVariables = {configurationId: string;data: ConfirmUploadCustomCodesInput}
 
     /**
+ * Confirm and save custom codes from preview list.
  * @summary Confirm Upload Custom Codes Csv
  */
 export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidationError>,
@@ -1330,6 +1592,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type DeleteCustomCodesMutationVariables = {configurationId: string;data: BulkDeleteCustomCodesInput}
 
     /**
+ * Deletes custom codes in bulk for a given configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration to modify.
+ *     body (BulkDeleteCustomCodesInput): The input body containing IDs of the custom codes.
+ *     user (DbUser): The logged-in user.
+ *     db (AsyncDatabaseConnection): The database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if configuration can't be updated
+ *
+ * Returns:
+ *     ConfigurationCustomCodeResponse: The updated configuration
  * @summary Bulk Delete Custom Codes
  */
 export const useDeleteCustomCodes = <TError = AxiosError<HTTPValidationError>,
@@ -1421,6 +1698,19 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type ValidateCustomCodeFromConfigurationMutationVariables = {configurationId: string;data: ValidateCustomCodeInput}
 
     /**
+ * Determines whether a custom code update is valid or not.
+ *
+ * If the desired code is already associated with the configuration, then the update is
+ * invalid.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     body (ValidateCustomCodeInput): Body including the code to validate
+ *     user (DbUser, optional): The logged in user
+ *     db (AsyncDatabaseConnection, optional): The database connection
+ *
+ * Returns:
+ *     bool: Returns True if the code has not been used, otherwise returns False
  * @summary Validate Custom Code
  */
 export const useValidateCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -1492,6 +1782,10 @@ export type GetConfigurationExportQueryResult = NonNullable<Awaited<ReturnType<t
 export type GetConfigurationExportQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Create a CSV export of a configuration and all associated codes.
+ * @summary Get Configuration Export
+ */
 export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1502,6 +1796,10 @@ export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getC
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Create a CSV export of a configuration and all associated codes.
+ * @summary Get Configuration Export
+ */
 export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1512,14 +1810,18 @@ export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getC
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Create a CSV export of a configuration and all associated codes.
+ * @summary Get Configuration Export
+ */
 export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Create a CSV export of a configuration and all associated codes.
  * @summary Get Configuration Export
  */
-
 export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -1635,6 +1937,34 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type RunInlineConfigurationTestMutationVariables = {data: BodyRunInlineConfigurationTest}
 
     /**
+ * Runs an inline test of a given configuration against an eICR/RR pair.
+ *
+ * This endpoint orchestrates the validation and refinement process by:
+ * 1. Handling file input, either from a user upload or a default sample file.
+ * 2. Calling the `inline_testing` service, which validates that the specified
+ *    configuration's condition is reportable in the provided file.
+ * 3. Handling the service response:
+ *     - If validation fails, raises a 400 Bad Request with a specific error.
+ *     - If successful, proceeds with the returned refined document.
+ * 4. Packaging the original eICR, RR, and the single refined eICR into a
+ *    new in-memory zip archive.
+ * 5. Uploading the archive to S3 and generating a pre-signed download URL.
+ * 6. Returning a `ConfigurationTestResponse` with the download URL and details
+ *    of the successful refinement.
+ *
+ * Args:
+ *     id: The ID of the configuration to test.
+ *     uploaded_file: An optional user-provided zip file with an eICR and RR.
+ *     create_output_zip: Dependency to create a zip archive in memory.
+ *     upload_zip: Dependency to upload the archive to S3.
+ *     user: The authenticated user making the request.
+ *     db: The database connection.
+ *     sample_zip_path: Path to the default sample zip file.
+ *     logger: The application logger.
+ *
+ * Returns:
+ *     A response object containing the original eICR, a URL to download the
+ *     zipped results, and details about the refined condition.
  * @summary Run Configuration Test
  */
 export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidationError>,
@@ -1721,6 +2051,13 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type AddCustomSectionMutationVariables = {configurationId: string;data: AddSectionInput}
 
     /**
+ * Create a new custom section for a given configuration ID.
+ *
+ * Args:
+ *     configuration_id (UUID): The ID of the configuration
+ *     section_input (CustomSectionInput): Desired properties of the section
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
  * @summary Insert Custom Section
  */
 export const useAddCustomSection = <TError = AxiosError<HTTPValidationError>,
@@ -1814,6 +2151,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type DeleteCustomSectionMutationVariables = {configurationId: string;data: DeleteSectionInput}
 
     /**
+ * Delete a custom section.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration with custom section to delete
+ *     section_input (DeleteCustomSectionInput): Custom section deletion input
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration isn't found
+ *     HTTPException: 409 if configuration isn't a draft
+ *     HTTPException: 404 if custom section code to delete isn't found
+ *
+ * Returns:
+ *     str: Deleted custom section code
  * @summary Delete Custom Section
  */
 export const useDeleteCustomSection = <TError = AxiosError<HTTPValidationError>,
@@ -1916,6 +2268,30 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type UpdateSectionMutationVariables = {configurationId: string;data: SectionUpdateInput}
 
     /**
+ * Update a section entry for a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     section_input (SectionUpdateInput): Updated section info
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 400 if the code is not valid, code is in use,
+ *         name is in use, the section is system-skipped
+ *         (`DisabledSection`) and therefore not configurable, the
+ *         narrative/action combination is unsupported (e.g.
+ *         narrative="reconstruct" or "keep_on_match" with
+ *         action="retain"), narrative "reconstruct" targets a
+ *         section without a registered reconstructor, or the
+ *         section can carry a trigger code and was sent with
+ *         include=False
+ *     HTTPException: 404 if configuration isn't found
+ *     HTTPException: 409 if configuration is not a draft and therefore not editable
+ *     HTTPException: 500 if section processing can't be updated
+ *
+ * Returns:
+ *     UpdateSectionProcessingResponse: The message to show the user
  * @summary Update Section
  */
 export const useUpdateSection = <TError = AxiosError<HTTPValidationError>,
@@ -2008,6 +2384,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type ActivateConfigurationMutationVariables = {configurationId: string}
 
     /**
+ * Activate the specified configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 400 if configuration can't be activated because of its current state
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if configuration can't be activated by the server
+ *
+ * Returns:
+ *     ActivateConfigurationResponse: Metadata about the activated condition for confirmation
  * @summary Activate Configuration
  */
 export const useActivateConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -2100,6 +2491,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type DeactivateConfigurationMutationVariables = {configurationId: string}
 
     /**
+ * Deactivate the specified configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard application logger
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 400 if configuration can't be deactivated because of its current state
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if configuration can't be deactivated by the server
+ *
+ * Returns:
+ *     ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
  * @summary Deactivate Configuration
  */
 export const useDeactivateConfiguration = <TError = AxiosError<HTTPValidationError>,
@@ -2186,6 +2592,15 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type AcquireConfigurationLockMutationVariables = {configurationId: string}
 
     /**
+ * Acquire config lock for user.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to lock
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Returns:
+ *     Response: 204 No Content on success
  * @summary Acquire Configuration Lock
  */
 export const useAcquireConfigurationLock = <TError = AxiosError<HTTPValidationError>,
@@ -2269,6 +2684,12 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type ReleaseConfigurationLockMutationVariables = {configurationId: string}
 
     /**
+ * Release config lock if held by user.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
  * @summary Release Configuration Lock
  */
 export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationError>,
@@ -2374,6 +2795,29 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type SetCodesStatusMutationVariables = {configurationId: string;data: BodySetCodesStatus;params: SetCodesStatusParams}
 
     /**
+ * Sets selected codes to the specified `status` for the given configuration ID.
+ *
+ * If `update_beyond_rendered_set` is false, we update status for only the specified
+ * `code_ids` within the rendered page.
+ *
+ * If `update_beyond_rendered_set` is true, we skip any codes within `code_ids_to_skip`
+ * and update status for all other codes that don't get clipped away by the passed-in filters
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     update_beyond_rendered_set (bool): Whether the action should be only within the rendered codes or include all codes.
+ *     code_ids (list[UUID]): List of code IDs to specifically action. Used in the "within cursor" flow.
+ *     code_ids_to_skip (list[UUID]): List of code IDs to skip since they've been manually actioned by the user.
+ *     filters (FilterInput): Filter input coming from the client to build the "complete" set of codes to bulk select
+ *     status (Literal['included', 'excluded'): Set codes as 'included' or 'excluded'
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *
+ * Returns:
+ *     list[UUID]: Code IDs that had their status changed
  * @summary Set Codes Status
  */
 export const useSetCodesStatus = <TError = AxiosError<HTTPValidationError>,
@@ -2466,6 +2910,18 @@ export type GetCodesInfiniteQueryResult = NonNullable<Awaited<ReturnType<typeof 
 export type GetCodesInfiniteQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
 export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params: undefined |  GetCodesParams, options: { query:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>> & Pick<
@@ -2477,6 +2933,18 @@ export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<type
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
 export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>> & Pick<
@@ -2488,15 +2956,35 @@ export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<type
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
 export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseInfiniteQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
  * @summary Get Codes
  */
-
 export function useGetCodesInfinite<TData = InfiniteData<Awaited<ReturnType<typeof getCodes>>, GetCodesParams['cursor']>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params?: GetCodesParams, options?: { query?:Partial<UseInfiniteQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData, QueryKey, GetCodesParams['cursor']>>, axios?: AxiosRequestConfig}
@@ -2538,6 +3026,18 @@ export type GetCodesQueryResult = NonNullable<Awaited<ReturnType<typeof getCodes
 export type GetCodesQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params: undefined |  GetCodesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
@@ -2549,6 +3049,18 @@ export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>> & Pick<
@@ -2560,15 +3072,35 @@ export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
+ * @summary Get Codes
+ */
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Fetches all codes associated with a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     filters (FilterInput): Filter input coming from the client
+ *     cursor (str | None): The cursor for the page to start from
+ *     user (DbUser): The logged-in user
+ *     logger (Logger): The standard logger
+ *     db (AsyncDatabaseConnection): Database connection
  * @summary Get Codes
  */
-
 export function useGetCodes<TData = Awaited<ReturnType<typeof getCodes>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string,
     params?: GetCodesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodes>>, TError, TData>>, axios?: AxiosRequestConfig}
@@ -2658,6 +3190,22 @@ export type GetCodeCountsQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetCodeCountsQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Fetch code count information for a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if code count metadata can't be fetched
+ *
+ * Returns:
+ *     CodeCountsResponse: Object containing code count info
+ * @summary Get Code Counts
+ */
 export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2668,6 +3216,22 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetch code count information for a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if code count metadata can't be fetched
+ *
+ * Returns:
+ *     CodeCountsResponse: Object containing code count info
+ * @summary Get Code Counts
+ */
 export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2678,14 +3242,42 @@ export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetch code count information for a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if code count metadata can't be fetched
+ *
+ * Returns:
+ *     CodeCountsResponse: Object containing code count info
+ * @summary Get Code Counts
+ */
 export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Fetch code count information for a configuration.
+ *
+ * Args:
+ *     configuration_id (UUID): ID of the configuration to update
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): Database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if configuration can't be found
+ *     HTTPException: 500 if code count metadata can't be fetched
+ *
+ * Returns:
+ *     CodeCountsResponse: Object containing code count info
  * @summary Get Code Counts
  */
-
 export function useGetCodeCounts<TData = Awaited<ReturnType<typeof getCodeCounts>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeCounts>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -2773,6 +3365,21 @@ export type GetCodeFiltersQueryResult = NonNullable<Awaited<ReturnType<typeof ge
 export type GetCodeFiltersQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Fetches code filter information for the client to display.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if the configuration couldn't be found
+ *
+ * Returns:
+ *     CodeFilterOptionsResponse: The code filters
+ * @summary Get Code Filters
+ */
 export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2783,6 +3390,21 @@ export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilte
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches code filter information for the client to display.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if the configuration couldn't be found
+ *
+ * Returns:
+ *     CodeFilterOptionsResponse: The code filters
+ * @summary Get Code Filters
+ */
 export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2793,14 +3415,40 @@ export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilte
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches code filter information for the client to display.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if the configuration couldn't be found
+ *
+ * Returns:
+ *     CodeFilterOptionsResponse: The code filters
+ * @summary Get Code Filters
+ */
 export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Fetches code filter information for the client to display.
+ *
+ * Args:
+ *     configuration_id (UUID): The configuration ID
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if the configuration couldn't be found
+ *
+ * Returns:
+ *     CodeFilterOptionsResponse: The code filters
  * @summary Get Code Filters
  */
-
 export function useGetCodeFilters<TData = Awaited<ReturnType<typeof getCodeFilters>>, TError = AxiosError<HTTPValidationError>>(
  configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeFilters>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient

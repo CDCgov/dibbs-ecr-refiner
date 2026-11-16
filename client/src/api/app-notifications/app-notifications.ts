@@ -91,6 +91,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type UpdateUserNotificationsMutationVariables = {data: UpdateUserNotificationsRequest}
 
     /**
+ * Updates notification acknowledgement state for the current user.
  * @summary Update User Notifications
  */
 export const useUpdateUserNotifications = <TError = AxiosError<HTTPValidationError>,

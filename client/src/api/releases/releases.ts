@@ -105,6 +105,13 @@ export type GetReleasesQueryResult = NonNullable<Awaited<ReturnType<typeof getRe
 export type GetReleasesQueryError = AxiosError<unknown>
 
 
+/**
+ * Hook to get release data from GitHub and serve it to the frontend.
+ *
+ * Returns:
+ *     ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
+ * @summary Get Releases Data
+ */
 export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReleases>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -115,6 +122,13 @@ export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, 
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Hook to get release data from GitHub and serve it to the frontend.
+ *
+ * Returns:
+ *     ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
+ * @summary Get Releases Data
+ */
 export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReleases>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -125,14 +139,24 @@ export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, 
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Hook to get release data from GitHub and serve it to the frontend.
+ *
+ * Returns:
+ *     ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
+ * @summary Get Releases Data
+ */
 export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReleases>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Hook to get release data from GitHub and serve it to the frontend.
+ *
+ * Returns:
+ *     ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
  * @summary Get Releases Data
  */
-
 export function useGetReleases<TData = Awaited<ReturnType<typeof getReleases>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReleases>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient

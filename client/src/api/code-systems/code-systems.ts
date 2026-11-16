@@ -105,6 +105,13 @@ export type GetCodeSystemsQueryResult = NonNullable<Awaited<ReturnType<typeof ge
 export type GetCodeSystemsQueryError = AxiosError<unknown>
 
 
+/**
+ * Returns a list of supported code systems.
+ *
+ * Returns:
+ *     List of code system.
+ * @summary Get Code Systems
+ */
 export function useGetCodeSystems<TData = Awaited<ReturnType<typeof getCodeSystems>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeSystems>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -115,6 +122,13 @@ export function useGetCodeSystems<TData = Awaited<ReturnType<typeof getCodeSyste
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of supported code systems.
+ *
+ * Returns:
+ *     List of code system.
+ * @summary Get Code Systems
+ */
 export function useGetCodeSystems<TData = Awaited<ReturnType<typeof getCodeSystems>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeSystems>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -125,14 +139,24 @@ export function useGetCodeSystems<TData = Awaited<ReturnType<typeof getCodeSyste
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of supported code systems.
+ *
+ * Returns:
+ *     List of code system.
+ * @summary Get Code Systems
+ */
 export function useGetCodeSystems<TData = Awaited<ReturnType<typeof getCodeSystems>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeSystems>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns a list of supported code systems.
+ *
+ * Returns:
+ *     List of code system.
  * @summary Get Code Systems
  */
-
 export function useGetCodeSystems<TData = Awaited<ReturnType<typeof getCodeSystems>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCodeSystems>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient

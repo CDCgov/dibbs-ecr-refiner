@@ -989,13 +989,12 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
           <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           <title>Admission Medications</title>
-          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; reconstruction currently unavailable for this section, original narrative retained and may describe removed entries</td></tr></tbody></table></footnote></text>
-          <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
-          <entry>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><caption>Additional entries — shown in reduced form; full reconstruction unavailable for this structure</caption><thead><tr><th>Item</th><th>Date</th><th>Status</th></tr></thead><tbody><tr ID="ecr-refiner-42346-7-20260101000000-row1"><td>LOINC 42346-7</td><td></td><td></td></tr></tbody></table><footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed, but some entries could not be fully rebuilt and are shown in reduced form</td></tr></tbody></table></footnote></text><!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+          <entry typeCode="DRIV">
             <act classCode="ACT" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.36" extension="2014-06-09"/>
               <code code="42346-7" codeSystem="2.16.840.1.113883.6.1"/>
-              <entryRelationship typeCode="SUBJ">
+              <text><reference value="#ecr-refiner-42346-7-20260101000000-row1"/></text><entryRelationship typeCode="SUBJ">
                 <substanceAdministration classCode="SBADM" moodCode="EVN">
                   <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
                   <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29"/>

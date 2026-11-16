@@ -241,6 +241,24 @@ def reconstruct_medications_administered(section: _Element) -> list[Block]:
     )
 
 
+def reconstruct_admission_medications(section: _Element) -> list[Block]:
+    """
+    Reconstruct the Admission Medication section: one row per medication.
+
+    Args:
+        section: The post-prune, post-enrich Admission Medication <section>.
+
+    Returns:
+        A single flat Block, or [] when no substanceAdministration survived.
+    """
+
+    return _reconstruct_flat(
+        section,
+        anchor_xpath="hl7:act/hl7:entryRelationship/hl7:substanceAdministration",
+        fields=MEDICATION_FIELDS,
+    )
+
+
 def reconstruct_medications(section: _Element) -> list[Block]:
     """
     Reconstruct the Medications section: one row per medication.

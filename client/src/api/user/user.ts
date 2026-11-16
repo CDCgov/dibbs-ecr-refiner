@@ -110,6 +110,18 @@ export type GetUserQueryResult = NonNullable<Awaited<ReturnType<typeof getUser>>
 export type GetUserQueryError = AxiosError<unknown>
 
 
+/**
+ * Returns the current logged-in user's information.
+ *
+ * Reads user info from the session or token.
+ *
+ * Returns:
+ *     JSON object with user claims if authenticated.
+ *
+ * Raises:
+ *     HTTPException 401 if user not authenticated.
+ * @summary Get User
+ */
 export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -120,6 +132,18 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current logged-in user's information.
+ *
+ * Reads user info from the session or token.
+ *
+ * Returns:
+ *     JSON object with user claims if authenticated.
+ *
+ * Raises:
+ *     HTTPException 401 if user not authenticated.
+ * @summary Get User
+ */
 export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -130,14 +154,34 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current logged-in user's information.
+ *
+ * Reads user info from the session or token.
+ *
+ * Returns:
+ *     JSON object with user claims if authenticated.
+ *
+ * Raises:
+ *     HTTPException 401 if user not authenticated.
+ * @summary Get User
+ */
 export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns the current logged-in user's information.
+ *
+ * Reads user info from the session or token.
+ *
+ * Returns:
+ *     JSON object with user claims if authenticated.
+ *
+ * Raises:
+ *     HTTPException 401 if user not authenticated.
  * @summary Get User
  */
-
 export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
