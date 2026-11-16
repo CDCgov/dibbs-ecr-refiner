@@ -4,13 +4,13 @@ pytest==9.2.0
 pytest-asyncio==1.4.1.post1
 pytest-cov==7.1.0
 python-dotenv==1.2.4
-ruff==0.17.3
+ruff==0.17.4
 saxonche==13.1.1
 testcontainers[compose]==4.15.0
 tqdm==4.70.1
 mypy==2.4.1
 lxml-stubs==0.5.1
-boto3-stubs==1.43.123
+boto3-stubs==1.44.0
 requests==2.34.2
 rich==15.0.0
 types-Authlib
@@ -20,4 +20,4 @@ jsonschema==4.26.0
 # Local-dev documentation site
 griffe==2.4.1
 docstring-parser==0.18.0
-watchdog==7.0.0
+watchdog==7.1.0
