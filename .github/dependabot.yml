@@ -49,6 +49,16 @@ updates:
         applies-to: version-updates
         patterns: ["*"]
         group-by: dependency-name
+    ignore:
+      # @headlessui/react 2.2.10's virtual Combobox renders no options with
+      # @tanstack/virtual-core >= 3.19.6 (@tanstack/react-virtual >= 3.14.21);
+      # see https://github.com/tailwindlabs/headlessui/issues/3910. Lift once fixed.
+      - dependency-name: "@tanstack/react-virtual"
+        versions: [">=3.14.21"]
+      # @trussworks/react-uswds 13.x declares a peer of focus-trap-react@^11; see
+      # https://github.com/trussworks/react-uswds/pull/3590. Lift once it accepts ^12.
+      - dependency-name: "focus-trap-react"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "pip"
     directories:
