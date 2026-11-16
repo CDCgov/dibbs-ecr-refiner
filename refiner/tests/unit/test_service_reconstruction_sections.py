@@ -227,12 +227,13 @@ def test_reconstruct_medications_is_flat_with_convention_columns():
     assert set(blocks[0].columns).issubset(
         [
             "Medication",
-            "Dose",
-            "Quantity",
+            "Dose quantity",
+            "Supply quantity",
             "Date administered",
-            "Frequency",
+            "Dose frequency",
             "Route",
             "Status",
+            "Reason for treatment",
         ]
     )
     # the two effectiveTimes land in distinct columns: the IVL_TS window
@@ -240,12 +241,13 @@ def test_reconstruct_medications_is_flat_with_convention_columns():
     # (unreachable before the split)
     assert (blocks[0].rows[0].values) == {
         "Medication": "oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)",
-        "Dose": "1 g",
-        "Quantity": "",
+        "Dose quantity": "1 g",
+        "Supply quantity": "",
         "Date administered": "2012-03-18",
-        "Frequency": "every 8 h",
+        "Dose frequency": "every 8 h",
         "Route": "ORAL (NCI Thesaurus C38288)",
         "Status": "completed",
+        "Reason for treatment": "",
     }
 
 
@@ -674,6 +676,35 @@ def test_negated_planned_entry_reads_as_not_planned():
     assert "Not administered:" not in rendered
 
 
+def test_medication_reason_for_treatment():
+    section = parse_element(
+        f"""
+        <section {NSDECL}>
+          <code code="10160-0"/>
+          <entry><substanceAdministration classCode="SBADM" moodCode="EVN">
+            <precondition typeCode="PRCN">
+                <criterion>
+                <templateId root="2.16.840.1.113883.10.20.22.4.25" extension="2014-06-09" />
+                <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
+                <value xsi:type="CD"
+                    code="56018004"
+                    codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED CT"
+                    displayName="Wheezing">
+                    <originalText>
+                    <reference value="#med1_precondition" />
+                    </originalText>
+                </value>
+                </criterion>
+            </precondition>
+          </substanceAdministration></entry>
+        </section>
+        """
+    )
+    row = reconstruct_medications(section)[0].rows[0].values
+    assert row["Reason for treatment"] == "Wheezing (SNOMED CT 56018004)"
+
+
 def test_medication_row_carries_supply_quantity_and_single_administration_date():
     section = parse_element(
         f"""
@@ -700,7 +731,7 @@ def test_medication_row_carries_supply_quantity_and_single_administration_date()
     # the high bound (the moment the infusion ended) is dropped: an
     # administration happened at a time, not over a clinically meaningful window
     assert row["Date administered"] == "2026-08-03 19:00:00 +00:00"
-    assert row["Quantity"] == "60.0 tbl"
+    assert row["Supply quantity"] == "60.0 tbl"
     assert row["Status"] == "completed"
 
 
@@ -740,7 +771,7 @@ def test_periodic_interval_without_a_period_is_a_date_not_a_frequency():
     )
     row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07 11:59 -07:00"
-    assert row["Frequency"] == ""
+    assert row["Dose frequency"] == ""
 
 
 def test_a_real_periodic_interval_still_renders_as_frequency():
@@ -762,7 +793,7 @@ def test_a_real_periodic_interval_still_renders_as_frequency():
     )
     row = reconstruct_medications_administered(section)[0].rows[0].values
     assert row["Date administered"] == "2020-11-07"
-    assert row["Frequency"] == "every 8 h"
+    assert row["Dose frequency"] == "every 8 h"
 
 
 def test_medication_range_renders_start_and_end():
