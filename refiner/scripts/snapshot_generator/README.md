@@ -53,12 +53,13 @@ augmentation time **20260101000000+0000**, and terminology provenance
 baseline. Replay does not query TES, rebuild configurations from the specification,
 or derive canonical URLs from directory names.
 
-The baseline contains **72 XML files**:
+The baseline contains **74 XML files**:
 
 - **21 pair scenarios** produce 42 eICR/RR outputs. All 10 original loose/archive
   pairs retain their reportable jurisdiction and condition-grouper contexts.
-- **30 section scenarios** produce 30 fragment outputs. All 10 fragments run
-  under specifications **1.1**, **3.1**, and **3.1.1**.
+- **32 section scenarios** produce 32 fragment outputs. Ten fragments run
+  under specifications **1.1**, **3.1**, and **3.1.1**. The medications
+  fragment runs under **3.1** and **3.1.1**, where its section is configured.
 
 All configured pair sections use `include: true`, `action: refine`, and
 `narrative: reconstruct`. Each pair uses the canonical URL and jurisdiction
@@ -73,7 +74,9 @@ Each section fragment is processed by the same `process_section` function used
 by Refiner. Its LOINC code, matching codes, and display names come from
 `cases.json`, so every run uses the same inputs. The runner reconstructs the
 narrative for each fragment using specification versions **1.1**, **3.1**, and
-**3.1.1**. Any code-system lists or display names left out of `cases.json` are
+**3.1.1** by default. A case's optional `versions` list restricts replay to the
+recorded versions when its section is unavailable in an older specification.
+Any code-system lists or display names left out of `cases.json` are
 treated as empty.
 
 ## Expected outputs

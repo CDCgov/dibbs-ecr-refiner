@@ -769,6 +769,38 @@
           }
         ]
       }
+    },
+    {
+      "fixture": "medications",
+      "loinc": "10160-0",
+      "versions": ["3.1", "3.1.1"],
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "10160-0",
+            "display": "Medications",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "C38288",
+            "display": "ORAL",
+            "system_oid": "2.16.840.1.113883.3.26.1.1"
+          },
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "rxnorm": [
+          {
+            "code": "1115699",
+            "display": "oseltamivir 6 MG/ML [Tamiflu]",
+            "system_oid": "2.16.840.1.113883.6.88"
+          }
+        ]
+      }
     }
   ]
 }

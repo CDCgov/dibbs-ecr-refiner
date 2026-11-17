@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "refiner/packages/dibbs-ecr/**"
+      - "refiner/tests/fixtures/**"
+      - "refiner/tests/parity/**"
+      - "refiner/app/services/**"
+      - "refiner/scripts/snapshot_generator/**"
   workflow_dispatch:
 
 permissions:
