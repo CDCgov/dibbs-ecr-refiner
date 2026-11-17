@@ -13,7 +13,7 @@ and ``RR.xml`` in the same directory. Source directories are ``ecr_pairs``,
 ``eicr_v1_1``, or ``eicr_v3_1_1``; ZIP members use their archive's source directory.
 
 SECTION_FIXTURES lists bare sections processed directly with reconstruction under
-the harness's fixed versions: 1.1, 3.1, and 3.1.1. Outputs use
+versions recorded in each case (default: 1.1, 3.1, and 3.1.1). Outputs use
 ``expected/sections/<name>/<version>/section.xml``.
 Exclude ``expected/`` from input discovery; it contains generated outputs.
 
@@ -147,6 +147,10 @@ SECTION_FIXTURES: list[SectionFixture] = [
     {
         "name": "results_vendor_organizer_components",
         "path": "sections/results_vendor_organizer_components.xml",
+    },
+    {
+        "name": "medications",
+        "path": "sections/medications.xml",
     },
 ]
 
