@@ -1,0 +1,38 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="Immunizations"/>
+  <title>Immunizations</title>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Immunization</th><th>Date</th><th>Status</th></tr></thead><tbody><tr ID="ecr-refiner-11369-6-20260101000000-row1"><td>Flucelvax Quadrivalent (RxNorm 2563008)</td><td>2020-11-07</td><td>completed</td></tr><tr ID="ecr-refiner-11369-6-20260101000000-row2"><td>COVID-19 mRNA vaccine</td><td>2020-12-01</td><td>completed</td></tr></tbody></table></text><!-- eCR Refiner matched: code[2563008] 'Flucelvax Quadrivalent' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+      <id root="00000000-0000-0000-0000-000000000001"/>
+      <text><reference value="#ecr-refiner-11369-6-20260101000000-row1"/></text><statusCode code="completed"/>
+      <effectiveTime value="20201107"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code code="2563008" codeSystem="2.16.840.1.113883.6.88" displayName="Flucelvax Quadrivalent"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+  <!-- eCR Refiner matched: translation[207] 'COVID-19 mRNA vaccine' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <substanceAdministration classCode="SBADM" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+      <id root="00000000-0000-0000-0000-000000000002"/>
+      <text><reference value="#ecr-refiner-11369-6-20260101000000-row2"/></text><statusCode code="completed"/>
+      <effectiveTime value="20201201"/>
+      <consumable>
+        <manufacturedProduct>
+          <manufacturedMaterial>
+            <code nullFlavor="OTH">
+              <translation code="207" codeSystem="2.16.840.1.113883.12.292" displayName="COVID-19 mRNA vaccine"/>
+            </code>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

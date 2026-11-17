@@ -1,0 +1,764 @@
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:cda="urn:hl7-org:v3" xmlns:sdtc="urn:hl7-org:sdtc" xmlns:voc="http://www.lantanagroup.com/voc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 ../../schema/infrastructure/cda/CDA_SDTC.xsd">
+  <realmCode code="US"/>
+  <!-- [C-CDA R1.1] US Realm Header-->
+  <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3"/>
+  <!-- [C-CDA R2.1] US Realm Header (V3) -->
+  <templateId root="2.16.840.1.113883.10.20.22.1.1"/>
+  <!-- [eICR R2 STU1.1] Initial Public Health Case Report Document (eICR) (V2) -->
+  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.1.1"/>
+  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2"/>
+  <!-- Globally unique document ID (extension) is scoped by vendor/software-->
+  <templateId root="2.16.840.1.113883.10.20.15.2.1.3" extension="2025-11-01"/><id root="860082e7-2776-5b76-a181-321719cea4fb" assigningAuthorityName="ecr-refiner"/>
+  <!-- Documen Code-->
+  <code code="55751-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Public Health Case Report"/>
+  <title>Initial Public Health Case Report</title>
+  <effectiveTime value="20260101000000+0000"/>
+  <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="Normal"/>
+  <languageCode code="en-US"/>
+  <setId root="80266def-2504-5d51-9e82-0ea275a4cdaa" assigningAuthorityName="ecr-refiner"/>
+  <versionNumber value="3"/>
+  <!-- recordTarget: The patient -->
+  <recordTarget>
+    <!-- Patient demographics -->
+    <patientRole>
+      <!-- Patient ID-->
+      <id extension="MRN-00884455" root="2.16.840.1.113883.19.5"/>
+      <!--SSN-->
+      <id extension="000-65-4321" root="2.16.840.1.113883.4.1"/>
+      <addr use="H">
+        <streetAddressLine>500 Republica, Suite 400</streetAddressLine>
+        <city>Senate District</city>
+        <state>Galactic City</state>
+        <postalCode>GC-500</postalCode>
+        <county>Administrative Core</county>
+        <country>Coruscant</country>
+      </addr>
+      <telecom use="MC" value="tel:+1-555-555-9876"/>
+      <telecom use="WP" value="mailto:mon.mothma@senate.gr.example.com"/>
+      <patient>
+        <name use="L">
+          <prefix>Senator</prefix>
+          <given>Mon</given>
+          <family>Mothma</family>
+        </name>
+        <administrativeGenderCode code="F" codeSystem="2.16.840.1.113883.5.1" displayName="Female"/>
+        <birthTime value="19750101"/>
+        <sdtc:deceasedInd value="false"/>
+        <raceCode code="2106-3" codeSystem="2.16.840.1.113883.6.238" codeSystemName="Race &amp; Ethnicity - CDC" displayName="White"/>
+        <ethnicGroupCode code="2186-5" codeSystem="2.16.840.1.113883.6.238" codeSystemName="Race &amp; Ethnicity - CDC" displayName="Not Hispanic or Latino"/>
+        <languageCommunication>
+          <languageCode code="en"/>
+          <preferenceInd value="true"/>
+        </languageCommunication>
+      </patient>
+    </patientRole>
+  </recordTarget>
+
+  <!-- Author/authenticator may be software or may be a provider such as "infection control
+  professional"-->
+  <author>
+    <time value="20250227150045-0400"/>
+    <assignedAuthor>
+      <id root="2.16.840.1.113883.3.72.5.20"/>
+      <addr use="WP">
+        <streetAddressLine>500 Republica Medical Plaza, Suite 1000</streetAddressLine>
+        <city>Senate District</city>
+        <state>Galactic City</state>
+        <postalCode>GC-500</postalCode>
+        <county>Administrative Core</county>
+        <country>Coruscant</country>
+      </addr>
+      <telecom use="WP" value="tel:+1-888-000-9999"/>
+      <telecom use="WP" value="fax:+1-888-000-1111"/>
+      <assignedAuthoringDevice>
+        <manufacturerModelName>EpicCore Galactic - Version 45.7</manufacturerModelName>
+        <softwareName>EpicCore Galactic - Version 45.7</softwareName>
+      </assignedAuthoringDevice>
+    </assignedAuthor>
+  </author>
+
+  <author><time value="20260101000000+0000"/><assignedAuthor><id nullFlavor="NA"/><addr nullFlavor="NA"/><telecom nullFlavor="NA"/><assignedAuthoringDevice><softwareName code="ecr-refiner" codeSystem="2.16.840.1.113883.10.20.15.2.7.1" codeSystemName="eCRDataAugmentation" displayName="eCR Refiner"/></assignedAuthoringDevice></assignedAuthor></author><!-- Custodian: organization or entity that is responsible for maintaining and safeguarding the
+  document -->
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <!-- Custodian ID (NPI) -->
+        <id extension="1234567893" root="2.16.840.1.113883.4.6"/>
+        <name>Grand Republic Medical Facility Clinic</name>
+        <telecom use="WP" value="tel:+1-888-000-9999"/>
+        <addr use="WP">
+          <streetAddressLine>500 Republica Medical Plaza, Suite 1000</streetAddressLine>
+          <city>Senate District</city>
+          <state>Galactic City</state>
+          <postalCode>GC-500</postalCode>
+          <county>Administrative Core</county>
+          <country>Coruscant</country>
+        </addr>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+
+  <!-- Emergency contact -->
+  <participant typeCode="IND">
+    <time nullFlavor="UNK"/>
+    <associatedEntity classCode="ECON">
+      <addr use="H">
+        <streetAddressLine>500 Republica, Suite 400</streetAddressLine>
+        <city>Senate District</city>
+        <state>Galactic City</state>
+        <postalCode>GC-500</postalCode>
+        <county>Administrative Core Withé Some Non-Ascii Chars à, ü, ô, ñ</county>
+        <country>Coruscant</country>
+      </addr>
+      <telecom value="tel:+1-555-555-9877" use="MC"/>
+      <associatedPerson>
+        <name use="L">
+          <prefix>Mr</prefix>
+          <given>Perrin</given>
+          <family>Fertha</family>
+        </name>
+      </associatedPerson>
+    </associatedEntity>
+  </participant>
+
+  <!-- componentOf: contains the encompassingEncouter and the provider and facility infomation for
+  the case -->
+  <relatedDocument typeCode="XFRM"><parentDocument><id root="10c13861-86a8-4a9a-aec6-b615921178df" assigningAuthorityName="original-document"/>
+  <setId extension="8d86218e-0fea-11eb-8216-a80388425cfb" root="1.2.840.114350.1.13.380.3.7.1.1" assigningAuthorityName="original-document"/>
+  <versionNumber value="3"/>
+  </parentDocument></relatedDocument><componentOf>
+    <encompassingEncounter>
+      <!-- encounter ID-->
+      <id extension="9937015" root="2.16.840.1.113883.19"/>
+      <code code="AMB" codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActEncounterCode" displayName="Ambulatory"/>
+      <effectiveTime>
+        <low value="20200513"/>
+        <high value="20200513"/>
+      </effectiveTime>
+      <responsibleParty>
+        <assignedEntity>
+          <!-- Provider ID (NPI) -->
+          <id extension="1234567890" root="2.16.840.1.113883.4.6"/>
+          <addr use="H">
+            <streetAddressLine>200 Corusca Street</streetAddressLine>
+            <city>Senate District</city>
+            <state>Galactic City</state>
+            <postalCode>GC-500</postalCode>
+            <county>Administrative Core</county>
+            <country>Coruscant</country>
+          </addr>
+          <telecom use="WP" value="tel:+1-555-777-0123"/>
+          <telecom use="WP" value="fax:+1-555-777-0987"/>
+          <telecom use="WP" value="mailto:dr.hemlock@grmfc.gc.example.com"/>
+          <assignedPerson>
+            <name>
+              <prefix>Dr</prefix>
+              <given>Royce</given>
+              <family>Hemlock</family>
+              <suffix>MD</suffix>
+            </name>
+          </assignedPerson>
+          <representedOrganization>
+            <!-- Represented Organization-->
+            <id extension="1234567893" root="2.16.840.1.113883.4.6"/>
+            <!-- Provider Facility/Office Name-->
+            <name>Grand Republic Medical Facility Clinic</name>
+            <addr use="WP">
+              <streetAddressLine>500 Republica Medical Plaza, Suite 1000</streetAddressLine>
+              <city>Senate District</city>
+              <state>Galactic City</state>
+              <postalCode>GC-500</postalCode>
+              <county>Administrative Core</county>
+              <country>Coruscant</country>
+            </addr>
+          </representedOrganization>
+        </assignedEntity>
+      </responsibleParty>
+      <location>
+        <healthCareFacility>
+          <!-- Facility ID (NPI) -->
+          <id extension="1234567890" root="2.16.840.1.113883.4.6"/>
+          <!-- Facility location within larger healthcare organization e.g Kaiser Vacaville within
+          Kaiser North-->
+          <code code="OF" codeSystem="2.16.840.1.113883.5.111" codeSystemName="HL7RoleCode" displayName="Outpatient Facility"/>
+          <location>
+            <addr use="WP">
+              <streetAddressLine>500 Republica Medical Plaza, Suite 1000</streetAddressLine>
+              <city>Senate District</city>
+              <state>Galactic City</state>
+              <postalCode>GC-500</postalCode>
+              <county>Administrative Core</county>
+              <country>Coruscant</country>
+            </addr>
+          </location>
+          <serviceProviderOrganization>
+            <!-- Provider Facility/Office Name-->
+            <name>Grand Republic Medical Facility Clinic</name>
+            <telecom use="WP" value="tel:+1-888-000-9999"/>
+            <telecom use="WP" value="fax:+1-888-000-1111"/>
+            <addr use="WP">
+              <streetAddressLine>500 Republica Medical Plaza, Suite 1000</streetAddressLine>
+              <city>Senate District</city>
+              <state>Galactic City</state>
+              <postalCode>GC-500</postalCode>
+              <county>Administrative Core</county>
+              <country>Coruscant</country>
+            </addr>
+          </serviceProviderOrganization>
+        </healthCareFacility>
+      </location>
+    </encompassingEncounter>
+  </componentOf>
+
+  <!-- first component holds the structredBody -->
+  <component>
+    <!-- structredBody contains all of the clinical sections of the eICR -->
+    <structuredBody>
+
+      <!-- Encounters section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.22"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.22" extension="2015-08-01"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1" extension="2015-08-01"/>
+          <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of encounters"/>
+          <title>Encounters</title>
+          <text>
+            <table>
+              <thead>
+                <tr>
+                  <th>Encounter</th>
+                  <th>Date(s)</th>
+                  <th>Location</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="encounter_20250216_ref">
+                  <td>Office outpatient visit 15 minutes</td>
+                  <td>Feb 16, 2025</td>
+                  <td>
+                    <list styleCode="none">
+                      <item>
+                        <content styleCode="Italics">Grand Republic Medical Facility Clinic</content>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <tr ID="encounter_20250217_ref">
+                  <td>Office outpatient visit - followup</td>
+                  <td>Feb 17, 2025</td>
+                  <td>
+                    <list styleCode="none">
+                      <item>
+                        <content styleCode="Italics">Grand Republic Medical Facility Clinic</content>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <tr ID="encounter_20250221_ref">
+                  <td>Office outpatient visit - results review</td>
+                  <td>Feb 21, 2025</td>
+                  <td>
+                    <list styleCode="none">
+                      <item>
+                        <content styleCode="Italics">Grand Republic Medical Facility Clinic</content>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="20">
+                    <list styleCode="none">
+                      <item>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Encounter Diagnosis Type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Diagnosis</td>
+                            </tr>
+                            <tr>
+                              <td colspan="20">
+                                <list styleCode="none">
+                                  <item>
+                                    <table>
+                                      <thead>
+                                        <tr>
+                                          <th>Initial Case Report Trigger Code Problem Observation</th>
+                                          <th>Problem</th>
+                                          <th>Trigger Code</th>
+                                          <th>Trigger Code codeSystem</th>
+                                          <th>RCTC OID</th>
+                                          <th>RCTC Version</th>
+                                          <th>Date(s)</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr ID="covid_diagnosis_ref">
+                                          <td>Diagnosis</td>
+                                          <td>Disease caused by severe acute respiratory syndrome
+                                            coronavirus 2 (disorder)</td>
+                                          <td>840539006</td>
+                                          <td>SNOMED CT</td>
+                                          <td>2.16.840.1.114222.4.11.7508</td>
+                                          <td>20250216</td>
+                                          <td>Feb 21, 2025</td>
+                                        </tr>
+                                        <tr ID="influenza_diagnosis_ref">
+                                          <td>Diagnosis</td>
+                                          <td>Influenza A virus infection (disorder)</td>
+                                          <td>719865001</td>
+                                          <td>SNOMED CT</td>
+                                          <td>2.16.840.1.114222.4.11.7508</td>
+                                          <td>20250216</td>
+                                          <td>Feb 21, 2025</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </item>
+                                </list>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          <footnote ID="ecr-refiner-46240-8-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>46240-8</td><td>Encounters Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; reconstruction currently unavailable for this section, original narrative retained and may describe removed entries</td></tr></tbody></table></footnote></text>
+          <!-- eCR Refiner matched: value[772828001] 'Novel Influenza A Virus Infections' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value] -->
+          <entry typeCode="DRIV">
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.49"/>
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01"/>
+              <id root="6e12d84f-9e8a-45cb-b1d7-f43a72a86cc5"/>
+              <code code="99212" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" displayName="Office outpatient visit - results review"/>
+              <effectiveTime value="20250221"/>
+              <performer>
+                <assignedEntity>
+                  <id extension="1234567890" root="2.16.840.1.113883.4.6"/>
+                  <assignedPerson>
+                    <name>
+                      <prefix>Dr</prefix>
+                      <given>Royce</given>
+                      <family>Hemlock</family>
+                    </name>
+                  </assignedPerson>
+                </assignedEntity>
+              </performer>
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275" codeSystemName="HealthcareServiceLocation" displayName="Grand Republic Medical Facility Clinic"/>
+                </participantRole>
+              </participant>
+
+              <entryRelationship typeCode="COMP">
+                <act classCode="ACT" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.80"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.80" extension="2015-08-01"/>
+                  <code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis"/>
+                  <entryRelationship typeCode="SUBJ">
+                    <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                      <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01"/>
+                      <templateId root="2.16.840.1.113883.10.20.15.2.3.3" extension="2016-12-01"/>
+                      <id root="7f32bd91-c5f3-422b-8a9d-3bc24c1e8bc1"/>
+                      <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Condition">
+                        <translation code="282291009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Diagnosis"/>
+                      </code>
+                      <statusCode code="completed"/>
+                      <effectiveTime>
+                        <low value="20250221"/>
+                      </effectiveTime>
+                      <value xsi:type="CD" code="772828001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Influenza caused by Influenza A virus subtype H5N1 (disorder)" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"/>
+                    </observation>
+                  </entryRelationship>
+                </act>
+              </entryRelationship>
+            </encounter>
+          </entry>
+        </section>
+      </component>
+
+      <!-- History of Present Illness Section -->
+      <component>
+        <section>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.4"/>
+          <code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Present Illness"/>
+          <title>History of Present Illness</title>
+          <text mediaType="text/x-hl7-text+xml">
+            <paragraph>The patient initially presented on February 16, 2025 with difficulty
+              breathing and fever. At follow-up on February 17, patient reported worsening symptoms
+              including cough. Patient disclosed recent travel to a known COVID-19 hot zone from
+              February 8-14, 2025, prompting SARS-CoV-2 testing.</paragraph>
+            <paragraph>On February 21, 2025, test results returned positive for SARS-CoV-2. Patient
+              also reported increased muscle aches, headache, and fatigue. Additional testing
+              revealed concurrent Influenza A infection. Patient diagnosis updated to confirmed
+              COVID-19 and Influenza A co-infection.</paragraph>
+            <paragraph>Patient has pre-existing essential hypertension and type 2 diabetes mellitus,
+              both well-controlled on current medications. Baseline labs including BMP and lipid
+              panel were within normal limits aside from mildly elevated glucose.</paragraph>
+          <footnote ID="ecr-refiner-10164-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>10164-2</td><td>History of Present Illness Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Narrative-only section; narrative retained</td></tr></tbody></table></footnote></text>
+        </section>
+      </component>
+
+      <!-- Medications Administered Section -->
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.38"/>
+          <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.38"/>
+          <code code="29549-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Medications Administered"/>
+          <title>Medications Administered</title>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><paragraph>Narrative reconstructed after refinement: no clinical entries in this section matched the configured code sets for this condition.</paragraph><footnote ID="ecr-refiner-29549-3-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>29549-3</td><td>Medications Administered Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed successfully, but no entries matched the configuration, so the reconstruction reports no content</td></tr></tbody></table></footnote></text></section>
+      </component>
+
+      <!-- Problems Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.5"/>
+          <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.5"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1"/>
+          <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.5.1"/>
+          <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem List"/>
+          <title>Problem List</title>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Concern Status</th><th>Date(s)</th></tr></thead><tbody><tr><td>active</td><td>2025-02-16 onward</td></tr></tbody></table><table border="1" styleCode="xallIndent"><thead><tr><th>Problem Type</th><th>Problem</th><th>Date(s)</th></tr></thead><tbody><tr ID="ecr-refiner-11450-4-20260101000000-row1"><td>SYMPTOM</td><td>Difficulty Breathing (finding) (SNOMED CT 230145002)</td><td>2025-02-16 onward</td></tr><tr ID="ecr-refiner-11450-4-20260101000000-row2"><td>Condition</td><td>Influenza A virus infection (disorder) (SNOMED CT 719865001)</td><td>2025-02-21 onward</td></tr></tbody></table><footnote ID="ecr-refiner-11450-4-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11450-4</td><td>Problem Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed</td></tr></tbody></table></footnote></text><!--
+  eCR Refiner matched: value[230145002] 'Difficulty breathing (finding)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value]
+  eCR Refiner matched: value[719865001] 'Influenza caused by pandemic influenza virus (disorder)' (SNOMED CT) Entry match fired for: rule 1 (T1) [hl7:value]
+-->
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.3"/>
+              <id root="a1c0c380-eacc-4b40-9207-85164185558d"/>
+              <code code="CONC" codeSystem="2.16.840.1.113883.5.6" displayName="Concern"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20250216"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <id root="1ab9be3d-7d95-478c-9db1-655bd93f7040"/>
+                  <code code="75325-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="SYMPTOM">
+                    <translation code="418799008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="SYMPTOM"/>
+                  </code>
+                  <text><reference value="#ecr-refiner-11450-4-20260101000000-row1"/></text><statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20250216"/>
+                  </effectiveTime>
+                  <value code="230145002" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Difficulty Breathing (finding)" xsi:type="CD"/>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.3"/>
+                  <id root="7f32bd91-c5f3-422b-8a9d-3bc24c1e8bc1"/>
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Condition"/>
+                  </code>
+                  <text><reference value="#ecr-refiner-11450-4-20260101000000-row2"/></text><statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20250221"/>
+                  </effectiveTime>
+                  <value code="719865001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Influenza A virus infection (disorder)" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216" xsi:type="CD"/>
+                </observation>
+              </entryRelationship>
+              </act>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Reason for visit Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.12"/>
+          <code code="29299-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Reason for visit"/>
+          <title>Reason for visit</title>
+          <text>
+            <paragraph>fever, cough, exposure to COVID-19 hot zone
+            </paragraph>
+          <footnote ID="ecr-refiner-29299-5-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>29299-5</td><td>Reason for Visit Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Narrative-only section; narrative retained</td></tr></tbody></table></footnote></text>
+        </section>
+      </component>
+
+      <!-- Results Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.3"/>
+          <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.3"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.3.1"/>
+          <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.3.1"/>
+          <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Relevant diagnostic tests and/or laboratory data"/>
+          <title>Results</title>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Panel name</th><th>Date(s)</th><th>Performer</th><th>Result Status</th><th>Specimen</th><th>Target Site</th></tr></thead><tbody><tr><td>Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection (LOINC 34487-9)</td><td>2025-02-21</td><td></td><td>completed</td><td></td><td></td></tr></tbody></table><table border="1" styleCode="xallIndent"><caption>Tests in panel: Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection</caption><thead><tr><th>Test</th><th>Result value</th><th>Interpretation</th><th>Reference Range</th><th>Date(s)</th></tr></thead><tbody><tr ID="ecr-refiner-30954-2-20260101000000-row1"><td>Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection (LOINC 34487-9)</td><td>Detected (qualifier value) (SNOMED CT 260373001)</td><td></td><td></td><td>2025-02-21</td></tr></tbody></table><footnote ID="ecr-refiner-30954-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>30954-2</td><td>Results Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed</td></tr></tbody></table></footnote></text><!-- eCR Refiner matched: code[34487-9] 'Influenza virus A RNA [Presence] in Specimen by NAA with probe detection' (LOINC) Entry match fired for: rule 1 (T1) [hl7:code] -->
+
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1"/>
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1"/>
+              <id root="3f4b84f1-d3f6-4731-8e61-7c63d8f39a70"/>
+              <code code="34487-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection"/>
+              <statusCode code="completed"/>
+              <effectiveTime>
+                <low value="20250221"/>
+                <high value="20250221"/>
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2"/>
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.2"/>
+                  <id root="6c53c5ff-42a9-4f3c-a2c0-d412f019c0de"/>
+                  <code code="34487-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250221" xsi:type="CD"/>
+                  <text><reference value="#ecr-refiner-30954-2-20260101000000-row1"/></text><statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value code="260373001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Detected (qualifier value)" xsi:type="CD"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+
+          </section>
+      </component>
+
+      <!-- ================================================================ -->
+      <!-- Immunizations Section (typical CDA content - NOT COVID-relevant) -->
+      <!-- This section is REQUIRED by the eICR IG (SHALL per CONF:3284-149 -->
+      <!-- in Vol 2 STU1.1) but the specific immunization content here      -->
+      <!-- (seasonal flu vaccine) is not a COVID-19 trigger and should be   -->
+      <!-- filtered out when looking for COVID-relevant data.               -->
+      <!-- ================================================================ -->
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.2"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.2" extension="2015-08-01"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.2.1"/>
+          <templateId root="2.16.840.1.113883.10.20.22.2.2.1" extension="2015-08-01"/>
+          <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of immunizations"/>
+          <title>Immunizations</title>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><paragraph>Narrative reconstructed after refinement: no clinical entries in this section matched the configured code sets for this condition.</paragraph><footnote ID="ecr-refiner-11369-6-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>11369-6</td><td>Immunizations Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed successfully, but no entries matched the configuration, so the reconstruction reports no content</td></tr></tbody></table></footnote></text></section>
+      </component>
+
+      <!-- ================================================================ -->
+      <!-- Vital Signs Section (typical CDA content - NOT COVID-relevant)   -->
+      <!-- Vital signs are standard C-CDA content commonly present in       -->
+      <!-- clinical documents. The codes here (body temp, heart rate, BP,   -->
+      <!-- SpO2, respiratory rate) are NOT in the COVID-19 condition grouper-->
+      <!-- and should be filtered out when looking for COVID-relevant data. -->
+      <!-- ================================================================ -->
+      <component>
+        <section>
+          <!-- [C-CDA R1.1] Vital Signs Section (entries optional) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4"/>
+          <!-- [C-CDA R2.1] Vital Signs Section (entries optional) (V3) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4" extension="2015-08-01"/>
+          <!-- [C-CDA R1.1] Vital Signs Section (entries required) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1"/>
+          <!-- [C-CDA R2.1] Vital Signs Section (entries required) (V3) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1" extension="2015-08-01"/>
+          <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital Signs"/>
+          <title>Vital Signs</title>
+          <text>
+            <table>
+              <thead>
+                <tr>
+                  <th>Vital Sign</th>
+                  <th>Value</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Body Temperature</td>
+                  <td>38.9 Cel</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Heart Rate</td>
+                  <td>98 /min</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Systolic Blood Pressure</td>
+                  <td>128 mm[Hg]</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Diastolic Blood Pressure</td>
+                  <td>82 mm[Hg]</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Oxygen Saturation</td>
+                  <td>94 %</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Respiratory Rate</td>
+                  <td>22 /min</td>
+                  <td>02/21/2025</td>
+                </tr>
+              </tbody>
+            </table>
+          <footnote ID="ecr-refiner-8716-3-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>8716-3</td><td>8716-3</td><td>Yes</td><td>Keep original</td><td>Keep original</td><td>v1</td><td>Not in jurisdiction configuration — retained as-is</td><td>Retained as-is</td></tr></tbody></table></footnote></text>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <!-- [C-CDA R1.1] Vital Signs Organizer -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.26"/>
+              <!-- [C-CDA R2.1] Vital Signs Organizer (V3) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.26" extension="2015-08-01"/>
+              <id root="a3b4c5d6-e7f8-4901-2345-0123456789ab"/>
+              <code code="46680-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital Signs"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20250221"/>
+              <!-- Body Temperature -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="b4c5d6e7-f8a9-4012-3456-123456789abc"/>
+                  <code code="8310-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Body Temperature"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value xsi:type="PQ" value="38.9" unit="Cel"/>
+                  <interpretationCode code="H" codeSystem="2.16.840.1.113883.5.83" displayName="High"/>
+                </observation>
+              </component>
+              <!-- Heart Rate -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="c5d6e7f8-a9b0-4123-4567-23456789abcd"/>
+                  <code code="8867-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Heart rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value xsi:type="PQ" value="98" unit="/min"/>
+                </observation>
+              </component>
+              <!-- Systolic Blood Pressure -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="d6e7f8a9-b0c1-4234-5678-3456789abcde"/>
+                  <code code="8480-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Systolic blood pressure"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value xsi:type="PQ" value="128" unit="mm[Hg]"/>
+                </observation>
+              </component>
+              <!-- Diastolic Blood Pressure -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="e7f8a9b0-c1d2-4345-6789-456789abcdef"/>
+                  <code code="8462-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diastolic blood pressure"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value xsi:type="PQ" value="82" unit="mm[Hg]"/>
+                </observation>
+              </component>
+              <!-- Oxygen Saturation -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="f8a9b0c1-d2e3-4456-7890-56789abcdef0"/>
+                  <code code="2708-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Oxygen saturation in Arterial blood"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value xsi:type="PQ" value="94" unit="%"/>
+                  <interpretationCode code="L" codeSystem="2.16.840.1.113883.5.83" displayName="Low"/>
+                </observation>
+              </component>
+              <!-- Respiratory Rate -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="a9b0c1d2-e3f4-4567-8901-6789abcdef01"/>
+                  <code code="9279-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Respiratory rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20250221"/>
+                  <value xsi:type="PQ" value="22" unit="/min"/>
+                  <interpretationCode code="H" codeSystem="2.16.840.1.113883.5.83" displayName="High"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Plan of Care/Treatment Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.10"/>
+          <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.10"/>
+          <code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Plan of Treatment"/>
+          <title>Plan of Treatment</title>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><caption>Planned Medications</caption><thead><tr><th>Planned Medication</th><th>Date</th><th>Dose</th><th>Route</th><th>Status</th><th>Performer</th></tr></thead><tbody><tr ID="ecr-refiner-18776-5-20260101000000-row1"><td>Oseltamivir (Tamiflu) 75mg capsule PO twice daily for 5 days (RxNorm 261315)</td><td>2025-02-21 to 2025-02-27</td><td>1 capsule</td><td>Oral route (SNOMED CT 26643006)</td><td>active</td><td></td></tr></tbody></table><footnote ID="ecr-refiner-18776-5-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>18776-5</td><td>Plan of Treatment Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed</td></tr></tbody></table></footnote></text><!-- eCR Refiner matched: code[261315] 'oseltamivir 75 MG Oral Capsule [Tamiflu]' (any code system) Entry match fired for: rule 3 (T2) [hl7:code] -->
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="INT">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
+              <id root="91eb919e-5fc3-4a4b-9b22-3897c8e8e180"/>
+              <text><reference value="#ecr-refiner-18776-5-20260101000000-row1"/></text><statusCode code="active"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20250221"/>
+                <high value="20250227"/>
+              </effectiveTime>
+              <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                <period value="12" unit="h"/>
+              </effectiveTime>
+              <routeCode code="26643006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Oral route"/>
+              <doseQuantity value="1" unit="capsule"/>
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
+                  <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
+                  <manufacturedMaterial>
+                    <code code="261315" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Oseltamivir 75 MG Oral Capsule">
+                      <originalText>Oseltamivir (Tamiflu) 75mg capsule PO twice daily for 5 days</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="RSON">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19"/>
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" extension="2014-06-09"/>
+                  <id root="db734647-fc99-424c-a864-7e3cda82e703"/>
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Condition"/>
+                  <statusCode code="completed"/>
+                  <value xsi:type="CD" code="772828001" codeSystem="2.16.840.1.113883.6.96" displayName="Influenza caused by Influenza A virus subtype H5N1 (disorder)"/>
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          </section>
+      </component>
+
+      <!-- Social History Section -->
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+          <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.17"/>
+          <code code="29762-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Social History"/>
+          <title>Social History</title>
+          <text><paragraph>No clinical information matches the configured code sets for this condition.</paragraph><footnote ID="ecr-refiner-29762-2-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>29762-2</td><td>Social History Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; no matches found, narrative removed</td></tr></tbody></table></footnote></text></section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>

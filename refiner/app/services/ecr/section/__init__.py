@@ -70,10 +70,11 @@ def process_section(
         narrative: What to do with the section's narrative <text>:
             "retain" keeps the original, "remove" replaces it with a
             removal notice, "reconstruct" rebuilds it from the
-            surviving entries (falling back to removal when the
-            section has no registered reconstructor or nothing
-            survived), "keep_on_match" keeps the original when matches
-            are found and removes it otherwise.
+            surviving entries (when nothing survived, the rebuilt
+            narrative says no entries matched; a section with no
+            registered reconstructor keeps the original),
+            "keep_on_match" keeps the original when matches are found
+            and removes it otherwise.
 
     Returns:
         SectionRunResult describing what the engine did. Consumed

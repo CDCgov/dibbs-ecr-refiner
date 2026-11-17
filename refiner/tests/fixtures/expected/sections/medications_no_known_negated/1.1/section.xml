@@ -1,0 +1,22 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="29549-3" codeSystem="2.16.840.1.113883.6.1" displayName="Medications Administered"/>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Medication</th><th>Dose</th><th>Quantity</th><th>Date administered</th><th>Frequency</th><th>Route</th><th>Status</th></tr></thead><tbody><tr ID="ecr-refiner-29549-3-20260101000000-row1"><td>Not administered: drug or medication</td><td></td><td></td><td>2011-01-03</td><td></td><td></td><td>active</td></tr></tbody></table></text><!-- eCR Refiner matched: translation[410942007] 'drug or medication' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="true">
+      <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
+      <id root="072f00fc-4f9d-4516-8d6f-ed00ed523fe0"/>
+      <text><reference value="#ecr-refiner-29549-3-20260101000000-row1"/></text><statusCode code="active"/>
+      <effectiveTime xsi:type="IVL_TS"><low value="20110103"/></effectiveTime>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
+          <manufacturedMaterial>
+            <code nullFlavor="OTH" codeSystem="2.16.840.1.113883.6.88">
+              <translation code="410942007" displayName="drug or medication" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"/>
+            </code>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

@@ -1,0 +1,71 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="18776-5" codeSystem="2.16.840.1.113883.6.1"/>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><caption>Planned Observations</caption><thead><tr><th>Planned Observation</th><th>Date</th><th>Status</th><th>Performer</th></tr></thead><tbody><tr ID="ecr-refiner-18776-5-20260101000000-row1"><td>SARS-CoV-2 Ag [Presence] in Specimen (LOINC 105066-5)</td><td>2020-11-08</td><td>active</td><td>Community Health</td></tr></tbody></table><table border="1"><caption>Planned Procedures</caption><thead><tr><th>Planned Procedure</th><th>Date</th><th>Target Site</th><th>Method</th><th>Status</th><th>Performer</th></tr></thead><tbody><tr ID="ecr-refiner-18776-5-20260101000000-row2"><td>Extracorporeal membrane oxygenation (SNOMED CT 233573008)</td><td>2020-11-08</td><td>Abdomen and pelvis (SNOMED CT 416949008)</td><td>Diagnostic ultrasonography (SNOMED CT 16310003)</td><td>active</td><td></td></tr></tbody></table><table border="1"><caption>Planned Activities</caption><thead><tr><th>Planned Activity</th><th>Date</th><th>Status</th><th>Performer</th></tr></thead><tbody><tr ID="ecr-refiner-18776-5-20260101000000-row3"><td>Airborne precautions (SNOMED CT 409524006)</td><td>2020-11-08</td><td>active</td><td></td></tr></tbody></table><table border="1"><caption>Planned Medications</caption><thead><tr><th>Planned Medication</th><th>Date</th><th>Dose</th><th>Route</th><th>Status</th><th>Performer</th></tr></thead><tbody><tr ID="ecr-refiner-18776-5-20260101000000-row4"><td>Azithromycin 500 MG Oral Tablet (RxNorm 248656)</td><td>2020-11-07</td><td>1 g</td><td>ORAL (NCI Thesaurus C38288)</td><td>active</td><td></td></tr></tbody></table><table border="1"><caption>Planned Immunizations</caption><thead><tr><th>Planned Immunization</th><th>Date</th><th>Dose</th><th>Route</th><th>Lot</th><th>Manufacturer</th><th>Status</th><th>Performer</th></tr></thead><tbody><tr ID="ecr-refiner-18776-5-20260101000000-row5"><td>COVID-19 mRNA vaccine (CVX 207)</td><td>2020-11-10</td><td></td><td></td><td>LOT-1234</td><td>Moderna</td><td>active</td><td></td></tr></tbody></table></text><!-- eCR Refiner matched: code[105066-5] 'SARS-CoV-2 Ag [Presence] in Specimen' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <observation classCode="OBS" moodCode="RQO">
+      <templateId root="2.16.840.1.113883.10.20.22.4.44" extension="2014-06-09"/>
+      <code code="105066-5" codeSystem="2.16.840.1.113883.6.1" displayName="SARS-CoV-2 Ag [Presence] in Specimen"/>
+      <text><reference value="#ecr-refiner-18776-5-20260101000000-row1"/></text><statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+      <performer>
+        <assignedEntity>
+          <representedOrganization><name>Community Health</name></representedOrganization>
+        </assignedEntity>
+      </performer>
+    </observation>
+  </entry>
+  <!-- eCR Refiner matched: code[233573008] 'Extracorporeal membrane oxygenation' (any code system) Entry match fired for: rule 7 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <procedure classCode="PROC" moodCode="RQO">
+      <templateId root="2.16.840.1.113883.10.20.22.4.41" extension="2014-06-09"/>
+      <code code="233573008" codeSystem="2.16.840.1.113883.6.96" displayName="Extracorporeal membrane oxygenation"/>
+      <text><reference value="#ecr-refiner-18776-5-20260101000000-row2"/></text><statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+      <methodCode code="16310003" codeSystem="2.16.840.1.113883.6.96" displayName="Diagnostic ultrasonography"/>
+      <targetSiteCode code="416949008" codeSystem="2.16.840.1.113883.6.96" displayName="Abdomen and pelvis"/>
+    </procedure>
+  </entry>
+  <!-- eCR Refiner matched: code[409524006] 'Airborne precautions' (any code system) Entry match fired for: rule 6 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.39" extension="2014-06-09"/>
+      <code code="409524006" codeSystem="2.16.840.1.113883.6.96" displayName="Airborne precautions"/>
+      <text><reference value="#ecr-refiner-18776-5-20260101000000-row3"/></text><statusCode code="active"/>
+      <effectiveTime value="20201108"/>
+    </act>
+  </entry>
+  <!-- eCR Refiner matched: code[248656] 'Azithromycin 500 MG Oral Tablet' (any code system) Entry match fired for: rule 2 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <substanceAdministration classCode="SBADM" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.42" extension="2014-06-09"/>
+      <text><reference value="#ecr-refiner-18776-5-20260101000000-row4"/></text><statusCode code="active"/>
+      <effectiveTime value="20201107"/>
+      <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="ORAL"/>
+      <doseQuantity value="1" unit="g"/>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <manufacturedMaterial>
+            <code code="248656" codeSystem="2.16.840.1.113883.6.88" displayName="Azithromycin 500 MG Oral Tablet"/>
+          </manufacturedMaterial>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+  <!-- eCR Refiner matched: code[207] 'COVID-19 mRNA vaccine' (any code system) Entry match fired for: rule 4 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <substanceAdministration classCode="SBADM" moodCode="INT">
+      <templateId root="2.16.840.1.113883.10.20.22.4.120"/>
+      <text><reference value="#ecr-refiner-18776-5-20260101000000-row5"/></text><statusCode code="active"/>
+      <effectiveTime value="20201110"/>
+      <consumable>
+        <manufacturedProduct classCode="MANU">
+          <manufacturedMaterial>
+            <code code="207" codeSystem="2.16.840.1.113883.12.292" displayName="COVID-19 mRNA vaccine"/>
+            <lotNumberText>LOT-1234</lotNumberText>
+          </manufacturedMaterial>
+          <manufacturerOrganization><name>Moderna</name></manufacturerOrganization>
+        </manufacturedProduct>
+      </consumable>
+    </substanceAdministration>
+  </entry>
+</section>

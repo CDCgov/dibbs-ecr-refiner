@@ -1,0 +1,774 @@
+{
+  "augmentation_time": "20260101000000+0000",
+  "tes_version": "3.0.0",
+  "pairs": [
+    {
+      "fixture": "all_sections_covid_influenza",
+      "reportable_conditions": {
+        "UT": [
+          "43692000",
+          "541131000124102",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "UT_covid_19",
+          "configuration": "configurations/covid_19/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "UT"
+          }
+        },
+        {
+          "name": "UT_influenza",
+          "configuration": "configurations/influenza/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "UT"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "covid_influenza_v1_1",
+      "reportable_conditions": {
+        "JDDH": [
+          "772828001"
+        ],
+        "SDDH": [
+          "772828001",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "JDDH_influenza",
+          "configuration": "configurations/influenza/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "JDDH"
+          }
+        },
+        {
+          "name": "SDDH_covid_19",
+          "configuration": "configurations/covid_19/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "SDDH"
+          }
+        },
+        {
+          "name": "SDDH_influenza",
+          "configuration": "configurations/influenza/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "zika_v3_1_1",
+      "reportable_conditions": {
+        "SDDH": [
+          "3928002"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "SDDH_zika_virus_disease",
+          "configuration": "configurations/zika_virus_disease/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/2236d7c1-2778-4f1e-bfda-73730632896e",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "multi_condition_multi_covid",
+      "reportable_conditions": {
+        "JDDH": [
+          "772828001"
+        ],
+        "SDDH": [
+          "186747009",
+          "772828001",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "JDDH_influenza",
+          "configuration": "configurations/influenza/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "JDDH"
+          }
+        },
+        {
+          "name": "SDDH_covid_19",
+          "configuration": "configurations/covid_19/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "SDDH"
+          }
+        },
+        {
+          "name": "SDDH_influenza",
+          "configuration": "configurations/influenza/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "all_sections_v3_1_1",
+      "reportable_conditions": {
+        "SDDH": [
+          "43692000",
+          "541131000124102",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "SDDH_covid_19",
+          "configuration": "configurations/covid_19/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "SDDH"
+          }
+        },
+        {
+          "name": "SDDH_influenza",
+          "configuration": "configurations/influenza/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "covid_influenza_v1_1_zip",
+      "reportable_conditions": {
+        "JDDH": [
+          "772828001"
+        ],
+        "SDDH": [
+          "772828001",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "JDDH_influenza",
+          "configuration": "configurations/influenza/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "JDDH"
+          }
+        },
+        {
+          "name": "SDDH_covid_19",
+          "configuration": "configurations/covid_19/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "SDDH"
+          }
+        },
+        {
+          "name": "SDDH_influenza",
+          "configuration": "configurations/influenza/1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "zika_v3_1_1_zip",
+      "reportable_conditions": {
+        "SDDH": [
+          "3928002"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "SDDH_zika_virus_disease",
+          "configuration": "configurations/zika_virus_disease/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/2236d7c1-2778-4f1e-bfda-73730632896e",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "all_sections_sddh_zip",
+      "reportable_conditions": {
+        "SDDH": [
+          "43692000",
+          "541131000124102",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "SDDH_covid_19",
+          "configuration": "configurations/covid_19/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "SDDH"
+          }
+        },
+        {
+          "name": "SDDH_influenza",
+          "configuration": "configurations/influenza/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "all_sections_sddh_nonsense_problems_zip",
+      "reportable_conditions": {
+        "SDDH": [
+          "43692000",
+          "541131000124102",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "SDDH_covid_19",
+          "configuration": "configurations/covid_19/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "SDDH"
+          }
+        },
+        {
+          "name": "SDDH_influenza",
+          "configuration": "configurations/influenza/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "SDDH"
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "all_sections_test_zip",
+      "reportable_conditions": {
+        "TEST": [
+          "43692000",
+          "541131000124102",
+          "840539006"
+        ]
+      },
+      "scenarios": [
+        {
+          "name": "TEST_covid_19",
+          "configuration": "configurations/covid_19/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+            "jurisdiction_id": "TEST"
+          }
+        },
+        {
+          "name": "TEST_influenza",
+          "configuration": "configurations/influenza/3.1.1/config.json",
+          "context": {
+            "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+            "jurisdiction_id": "TEST"
+          }
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "fixture": "immunizations_flat",
+      "loinc": "11369-6",
+      "code_system_sets": {
+        "cvx": [
+          {
+            "code": "207",
+            "display": "COVID-19 mRNA vaccine",
+            "system_oid": "2.16.840.1.113883.12.292"
+          }
+        ],
+        "loinc": [
+          {
+            "code": "11369-6",
+            "display": "Immunizations",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "rxnorm": [
+          {
+            "code": "2563008",
+            "display": "Flucelvax Quadrivalent",
+            "system_oid": "2.16.840.1.113883.6.88"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "medications_administered",
+      "loinc": "29549-3",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "29549-3",
+            "display": "Medications Administered",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "C38288",
+            "display": "ORAL",
+            "system_oid": "2.16.840.1.113883.3.26.1.1"
+          },
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "rxnorm": [
+          {
+            "code": "1115699",
+            "display": "oseltamivir 6 MG/ML [Tamiflu]",
+            "system_oid": "2.16.840.1.113883.6.88"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "medications_no_known_negated",
+      "loinc": "29549-3",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "29549-3",
+            "display": "Medications Administered",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "active",
+            "system_oid": "Other"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "410942007",
+            "display": "drug or medication",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "plan_of_treatment_all_kinds",
+      "loinc": "18776-5",
+      "code_system_sets": {
+        "cvx": [
+          {
+            "code": "207",
+            "display": "COVID-19 mRNA vaccine",
+            "system_oid": "2.16.840.1.113883.12.292"
+          }
+        ],
+        "loinc": [
+          {
+            "code": "105066-5",
+            "display": "SARS-CoV-2 Ag [Presence] in Specimen",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "18776-5",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "C38288",
+            "display": "ORAL",
+            "system_oid": "2.16.840.1.113883.3.26.1.1"
+          },
+          {
+            "code": "active",
+            "system_oid": "Other"
+          }
+        ],
+        "rxnorm": [
+          {
+            "code": "248656",
+            "display": "Azithromycin 500 MG Oral Tablet",
+            "system_oid": "2.16.840.1.113883.6.88"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "16310003",
+            "display": "Diagnostic ultrasonography",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "233573008",
+            "display": "Extracorporeal membrane oxygenation",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "409524006",
+            "display": "Airborne precautions",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "416949008",
+            "display": "Abdomen and pelvis",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "problems_concern_with_two_observations",
+      "loinc": "11450-4",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "11450-4",
+            "display": "Problem List",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "75322-8",
+            "display": "Complaint",
+            "system_oid": "Other"
+          },
+          {
+            "code": "75325-1",
+            "display": "Symptom",
+            "system_oid": "Other"
+          },
+          {
+            "code": "active",
+            "system_oid": "Other"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "35064005",
+            "display": "Dark stools (finding)",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "409586006",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "problems_icd10_primary",
+      "loinc": "11450-4",
+      "code_system_sets": {
+        "icd10": [
+          {
+            "code": "A53.9",
+            "display": "Syphilis, unspecified",
+            "system_oid": "2.16.840.1.113883.6.90"
+          },
+          {
+            "code": "J30.2",
+            "system_oid": "2.16.840.1.113883.6.90"
+          },
+          {
+            "code": "O09.32",
+            "system_oid": "2.16.840.1.113883.6.90"
+          },
+          {
+            "code": "O98.812",
+            "system_oid": "2.16.840.1.113883.6.90"
+          },
+          {
+            "code": "Z34.90",
+            "system_oid": "2.16.840.1.113883.6.90"
+          }
+        ],
+        "loinc": [
+          {
+            "code": "11450-4",
+            "display": "Problem list",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "75323-6",
+            "display": "Condition",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "647.63",
+            "display": "Chlamydia infection affecting pregnancy in second trimester",
+            "system_oid": "2.16.840.1.113883.6.103"
+          },
+          {
+            "code": "CONC",
+            "system_oid": "2.16.840.1.113883.5.6"
+          },
+          {
+            "code": "V23.7",
+            "display": "Late prenatal care affecting pregnancy in second trimester",
+            "system_oid": "2.16.840.1.113883.6.103"
+          },
+          {
+            "code": "active",
+            "system_oid": "Other"
+          },
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "1621000119101",
+            "display": "Chlamydia infection affecting pregnancy in second trimester",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "367498001",
+            "display": "Seasonal allergic rhinitis",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "426403007",
+            "display": "Late prenatal care affecting pregnancy in second trimester",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "72892002",
+            "display": "Normal pregnancy",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "76272004",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "results_organizer_three_components",
+      "loinc": "30954-2",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "30954-2",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "58410-2",
+            "display": "CBC panel",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "718-7",
+            "display": "Hemoglobin",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "92235-1",
+            "display": "Lab order result status",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "final",
+            "display": "Final",
+            "system_oid": "2.16.840.1.113883.5.83"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "17636008",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "368208006",
+            "display": "Left upper arm structure",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "results_partial_reconstruction",
+      "loinc": "30954-2",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "58410-2",
+            "display": "CBC panel",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "94533-7",
+            "display": "COVID",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "30954-2",
+            "system_oid": "Other"
+          },
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "results_two_panels",
+      "loinc": "30954-2",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "30954-2",
+            "display": "Results",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "58410-2",
+            "display": "CBC panel",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "L",
+            "display": "Low",
+            "system_oid": "Other"
+          },
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "112283007",
+            "display": "E. coli",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "results_vendor_organizer_components",
+      "loinc": "30954-2",
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "1920-8",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "2160-0",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "24323-8",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "24326-1",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "2951-2",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "30954-2",
+            "display": "Results",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "48767-8",
+            "display": "Annotation comment",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "92235-1",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "94500-6",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "94531-1",
+            "system_oid": "2.16.840.1.113883.6.1"
+          }
+        ],
+        "other": [
+          {
+            "code": "16",
+            "system_oid": "1.2.840.114350.1.72.1.5007"
+          },
+          {
+            "code": "F",
+            "system_oid": "2.16.840.1.113883.18.51"
+          },
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "119297000",
+            "display": "Blood specimen",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "17636008",
+            "display": "Specimen collection (procedure)",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "260373001",
+            "display": "Detected",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
+    }
+  ]
+}

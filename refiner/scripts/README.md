@@ -7,10 +7,8 @@ This directory contains all scripts and resources for managing the DIBBS eCR Ref
 | Directory      | Purpose / Contents                                                                                                 |
 | -------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `data/`        | All data used by scripts. Includes raw source eICR/RR files, TES groupers, config samples, and generated packages. |
-| `exports/`     | Scripts and ephemeral output for internal/client engagement (e.g., CSVs, CG-RSG relationships, etc).               |
-| `pipeline/`    | Update-detection, download, and hash scripts for TES and related artifacts.                                        |
-| `seeding/`     | Main logic and scripts for database seeding, typically called through orchestration/just commands.                 |
-| `validation/`  | HL7 eICR/RR document validation engine, including Schematron, XSLT, and automation scripts.                        |
+| `oid_catalog_builder/`     | Parses the eICR 3.1.1 implementation guide to generate named template OID constants, grouped by clinical section, for the Refiner's entry-matching rules.               |
+| [`snapshot_generator/`](snapshot_generator/README.md) | Replays fixed eICR/RR pairs and section fragments to record XML baselines for byte comparison during eCR specification extraction. Use `just server generate-snapshots` to invoke. |
 
 ---
 

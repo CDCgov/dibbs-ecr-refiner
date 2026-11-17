@@ -22,10 +22,12 @@ repos:
       - id: end-of-file-fixer
         # * source-ersd/ holds eRSD releases byte-for-byte as served; normalize
         #   records their hashes, so any rewrite fails verify-processed
+        # * fixtures/expected/ records exact refinement output bytes
         exclude: |
           (?x)^(
             refiner/openapi\.json|
             client/src/api/|
+            refiner/tests/fixtures/expected/.+|
             refiner/tes/data/source-ersd/ersd_.+\.json
           )$
       # - remove trailing whitespace
@@ -34,6 +36,7 @@ repos:
           (?x)^(
             refiner/openapi\.json|
             client/src/api/|
+            refiner/tests/fixtures/expected/.+|
             refiner/tests/integration/scenarios/snapshots/.+/.+\.xml|
             refiner/tes/data/source-ersd/ersd_.+\.json
           )$

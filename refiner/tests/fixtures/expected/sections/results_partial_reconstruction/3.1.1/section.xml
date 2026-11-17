@@ -1,0 +1,25 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <code code="30954-2"/>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Panel name</th><th>Date(s)</th><th>Performer</th><th>Result Status</th><th>Specimen</th><th>Target Site</th></tr></thead><tbody><tr><td>CBC panel (LOINC 58410-2)</td><td></td><td></td><td>completed</td><td></td><td></td></tr></tbody></table><table border="1" styleCode="xallIndent"><caption>Tests in panel: CBC panel</caption><thead><tr><th>Test</th><th>Result value</th><th>Interpretation</th><th>Reference Range</th><th>Date(s)</th></tr></thead><tbody><tr ID="ecr-refiner-30954-2-20260101000000-row1"><td>COVID (LOINC 94533-7)</td><td>1 1</td><td></td><td></td><td></td></tr></tbody></table><table border="1"><caption>Additional entries — shown in reduced form; full reconstruction unavailable for this structure</caption><thead><tr><th>Item</th><th>Date</th><th>Status</th></tr></thead><tbody><tr ID="ecr-refiner-30954-2-20260101000000-row2"><td>Bare result (LOINC 94533-7)</td><td>2026-08-03</td><td>completed</td></tr></tbody></table></text><!-- eCR Refiner matched: code[94533-7] 'COVID' (LOINC) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <organizer classCode="BATTERY" moodCode="EVN">
+      <statusCode code="completed"/>
+      <code code="58410-2" codeSystem="2.16.840.1.113883.6.1" displayName="CBC panel"/>
+      <component><observation classCode="OBS" moodCode="EVN">
+        <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+        <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" displayName="COVID"/>
+        <text><reference value="#ecr-refiner-30954-2-20260101000000-row1"/></text><value xsi:type="PQ" value="1" unit="1"/>
+      </observation></component>
+    </organizer>
+  </entry>
+  <!-- eCR Refiner matched: code[94533-7] 'COVID' (LOINC) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <observation classCode="OBS" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+      <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" displayName="Bare result"/>
+      <text><reference value="#ecr-refiner-30954-2-20260101000000-row2"/></text><statusCode code="completed"/>
+      <effectiveTime value="20260803"/>
+      <value xsi:type="PQ" value="2" unit="1"/>
+    </observation>
+  </entry>
+</section>
