@@ -18,7 +18,7 @@ COPY ./client ./
 RUN npm run build
 
 # Install system deps
-FROM python:3.14-alpine AS system-builder
+FROM python:3.15-alpine AS system-builder
 
 RUN apk add --no-cache \
     gcc \
@@ -33,7 +33,7 @@ RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
 
 
 # Runtime image
-FROM python:3.14-alpine
+FROM python:3.15-alpine
 
 # Pick up Alpine fixes the base image may lag on, including ca-certificates
 # 20261020-r0, which drops the distrusted emSign ECC Root CA - G3.
