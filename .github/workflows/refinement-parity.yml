@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "refiner/packages/dibbs-ecr/**"
+      - "refiner/tests/fixtures/**"
   workflow_dispatch:
 
 permissions:
