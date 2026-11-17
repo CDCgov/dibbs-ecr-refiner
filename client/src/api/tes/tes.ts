@@ -123,6 +123,18 @@ export type GetTesUpdatesQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetTesUpdatesQueryError = AxiosError<unknown>
 
 
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     TesResponse: A bundle with a list of TesUpdates, including
+ *         - The version
+ *         - The when it was created
+ * @summary Get Tes Updates
+ */
 export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdates>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -133,6 +145,18 @@ export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     TesResponse: A bundle with a list of TesUpdates, including
+ *         - The version
+ *         - The when it was created
+ * @summary Get Tes Updates
+ */
 export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdates>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -143,14 +167,34 @@ export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     TesResponse: A bundle with a list of TesUpdates, including
+ *         - The version
+ *         - The when it was created
+ * @summary Get Tes Updates
+ */
 export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdates>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     TesResponse: A bundle with a list of TesUpdates, including
+ *         - The version
+ *         - The when it was created
  * @summary Get Tes Updates
  */
-
 export function useGetTesUpdates<TData = Awaited<ReturnType<typeof getTesUpdates>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesUpdates>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -239,6 +283,20 @@ export type GetTesDiffDetailsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type GetTesDiffDetailsQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     cur_version: Version to compare on.
+ *     prev_version: Version to compare against. Potentially an empty string if we're in the "baseline" TES version
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[TesDiffResponse]: A bundle with a list of TesDiffResponse, including
+ *         - The condition metadata across the versions
+ *         - The number of added and removed codes
+ * @summary Get Tes Diff Details
+ */
 export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDiffDetails>>, TError = AxiosError<HTTPValidationError>>(
  params: GetTesDiffDetailsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesDiffDetails>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -249,6 +307,20 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     cur_version: Version to compare on.
+ *     prev_version: Version to compare against. Potentially an empty string if we're in the "baseline" TES version
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[TesDiffResponse]: A bundle with a list of TesDiffResponse, including
+ *         - The condition metadata across the versions
+ *         - The number of added and removed codes
+ * @summary Get Tes Diff Details
+ */
 export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDiffDetails>>, TError = AxiosError<HTTPValidationError>>(
  params: GetTesDiffDetailsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesDiffDetails>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -259,14 +331,38 @@ export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDif
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     cur_version: Version to compare on.
+ *     prev_version: Version to compare against. Potentially an empty string if we're in the "baseline" TES version
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[TesDiffResponse]: A bundle with a list of TesDiffResponse, including
+ *         - The condition metadata across the versions
+ *         - The number of added and removed codes
+ * @summary Get Tes Diff Details
+ */
 export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDiffDetails>>, TError = AxiosError<HTTPValidationError>>(
  params: GetTesDiffDetailsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesDiffDetails>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns a list of all TES updates, ordered from newest to oldest.
+ *
+ * Args:
+ *     cur_version: Version to compare on.
+ *     prev_version: Version to compare against. Potentially an empty string if we're in the "baseline" TES version
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[TesDiffResponse]: A bundle with a list of TesDiffResponse, including
+ *         - The condition metadata across the versions
+ *         - The number of added and removed codes
  * @summary Get Tes Diff Details
  */
-
 export function useGetTesDiffDetails<TData = Awaited<ReturnType<typeof getTesDiffDetails>>, TError = AxiosError<HTTPValidationError>>(
  params: GetTesDiffDetailsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTesDiffDetails>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -354,6 +450,19 @@ export type ExportConditionDiffQueryResult = NonNullable<Awaited<ReturnType<type
 export type ExportConditionDiffQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Generates and exports a CSV of condition diffs between specified TES versions.
+ *
+ * Args:
+ *     cur_version(str) : The ceiling TES version to compare against
+ *     prev_version(str) : The floor TES version to compare against
+ *     canonical_url(str) : The condition diff being requested
+ *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *         Response: an HTTP response that gives the browser a CSV file to download
+ * @summary Export Tes Condition Diff
+ */
 export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
  params: ExportConditionDiffParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -364,6 +473,19 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Generates and exports a CSV of condition diffs between specified TES versions.
+ *
+ * Args:
+ *     cur_version(str) : The ceiling TES version to compare against
+ *     prev_version(str) : The floor TES version to compare against
+ *     canonical_url(str) : The condition diff being requested
+ *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *         Response: an HTTP response that gives the browser a CSV file to download
+ * @summary Export Tes Condition Diff
+ */
 export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
  params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -374,14 +496,36 @@ export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportC
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Generates and exports a CSV of condition diffs between specified TES versions.
+ *
+ * Args:
+ *     cur_version(str) : The ceiling TES version to compare against
+ *     prev_version(str) : The floor TES version to compare against
+ *     canonical_url(str) : The condition diff being requested
+ *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *         Response: an HTTP response that gives the browser a CSV file to download
+ * @summary Export Tes Condition Diff
+ */
 export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
  params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Generates and exports a CSV of condition diffs between specified TES versions.
+ *
+ * Args:
+ *     cur_version(str) : The ceiling TES version to compare against
+ *     prev_version(str) : The floor TES version to compare against
+ *     canonical_url(str) : The condition diff being requested
+ *     db (AsyncDatabaseConnection) : The db connection.
+ *
+ * Returns:
+ *         Response: an HTTP response that gives the browser a CSV file to download
  * @summary Export Tes Condition Diff
  */
-
 export function useExportConditionDiff<TData = Awaited<ReturnType<typeof exportConditionDiff>>, TError = AxiosError<HTTPValidationError>>(
  params: ExportConditionDiffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportConditionDiff>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -458,6 +602,10 @@ export type GetConfigurationsToUpdateQueryResult = NonNullable<Awaited<ReturnTyp
 export type GetConfigurationsToUpdateQueryError = AxiosError<unknown>
 
 
+/**
+ * Return outdated drafts and active configurations for the current jurisdiction.
+ * @summary Get Configurations To Update
+ */
 export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -468,6 +616,10 @@ export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof g
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Return outdated drafts and active configurations for the current jurisdiction.
+ * @summary Get Configurations To Update
+ */
 export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -478,14 +630,18 @@ export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof g
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Return outdated drafts and active configurations for the current jurisdiction.
+ * @summary Get Configurations To Update
+ */
 export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Return outdated drafts and active configurations for the current jurisdiction.
  * @summary Get Configurations To Update
  */
-
 export function useGetConfigurationsToUpdate<TData = Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationsToUpdate>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -572,6 +728,10 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type ApplyTesUpdatesToExistingDraftsMutationVariables = {data: ApplyTesUpdatesToDraftsRequest}
 
     /**
+ * Apply the latest TES release to selected existing drafts.
+ *
+ * Active configurations are not handled by this endpoint. The separate
+ * create-draft workflow handles those configurations.
  * @summary Apply Tes Updates To Existing Drafts
  */
 export const useApplyTesUpdatesToExistingDrafts = <TError = AxiosError<HTTPValidationError>,
@@ -654,6 +814,11 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type CreateDraftsFromActiveConfigurationsMutationVariables = {data: CreateDraftsFromActiveConfigsRequest}
 
     /**
+ * Create new draft configurations from selected active configurations.
+ *
+ * Each new draft uses the latest TES release and inherits all settings
+ * (custom codes, section processing, code exclusions) from the active config.
+ * Active configurations remain unchanged until new drafts are activated.
  * @summary Create Drafts From Active Configurations
  */
 export const useCreateDraftsFromActiveConfigurations = <TError = AxiosError<HTTPValidationError>,

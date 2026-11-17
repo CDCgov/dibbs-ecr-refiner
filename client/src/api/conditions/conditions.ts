@@ -110,6 +110,16 @@ export type GetConditionsQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetConditionsQueryError = AxiosError<unknown>
 
 
+/**
+ * Fetches a summary of all available conditions from the database and returns them as a list.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[GetConditionsResponse]: List of all condition summaries.
+ * @summary Get Conditions
+ */
 export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions>>, TError = AxiosError<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -120,6 +130,16 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches a summary of all available conditions from the database and returns them as a list.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[GetConditionsResponse]: List of all condition summaries.
+ * @summary Get Conditions
+ */
 export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -130,14 +150,30 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Fetches a summary of all available conditions from the database and returns them as a list.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[GetConditionsResponse]: List of all condition summaries.
+ * @summary Get Conditions
+ */
 export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Fetches a summary of all available conditions from the database and returns them as a list.
+ *
+ * Args:
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Returns:
+ *     list[GetConditionsResponse]: List of all condition summaries.
  * @summary Get Conditions
  */
-
 export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -224,6 +260,20 @@ export type GetConditionQueryResult = NonNullable<Awaited<ReturnType<typeof getC
 export type GetConditionQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Returns information about a given condition.
+ *
+ * Args:
+ *     condition_id (UUID): ID of the condition
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if no condition is found
+ *
+ * Returns:
+ *     GetCondition: Info about the condition
+ * @summary Get Condition
+ */
 export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>, TError = AxiosError<HTTPValidationError>>(
  conditionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCondition>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -234,6 +284,20 @@ export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns information about a given condition.
+ *
+ * Args:
+ *     condition_id (UUID): ID of the condition
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if no condition is found
+ *
+ * Returns:
+ *     GetCondition: Info about the condition
+ * @summary Get Condition
+ */
 export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>, TError = AxiosError<HTTPValidationError>>(
  conditionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCondition>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -244,14 +308,38 @@ export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns information about a given condition.
+ *
+ * Args:
+ *     condition_id (UUID): ID of the condition
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if no condition is found
+ *
+ * Returns:
+ *     GetCondition: Info about the condition
+ * @summary Get Condition
+ */
 export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>, TError = AxiosError<HTTPValidationError>>(
  conditionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCondition>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns information about a given condition.
+ *
+ * Args:
+ *     condition_id (UUID): ID of the condition
+ *     db (AsyncDatabaseConnection): Database connection.
+ *
+ * Raises:
+ *     HTTPException: 404 if no condition is found
+ *
+ * Returns:
+ *     GetCondition: Info about the condition
  * @summary Get Condition
  */
-
 export function useGetCondition<TData = Awaited<ReturnType<typeof getCondition>>, TError = AxiosError<HTTPValidationError>>(
  conditionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCondition>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
