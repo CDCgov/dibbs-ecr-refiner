@@ -167,10 +167,10 @@ def _full_document_snapshot_files(
 def _section_snapshot_files(
     fixture: SectionFixture, case: dict, augmentation_time: str
 ) -> Iterator[tuple[Path, bytes]]:
-    """Refine and reconstruct a fragment under the three fixed specification versions."""
+    """Refine and reconstruct a fragment under its recorded specification versions."""
     source = (FIXTURE_DIR / fixture["path"]).read_bytes()
     codes = CodeSystemSets.from_dict(case["code_system_sets"], OID_TO_SYSTEM_KEY_MAP)
-    for version in ("1.1", "3.1", "3.1.1"):
+    for version in case.get("versions", ("1.1", "3.1", "3.1.1")):
         directory = Path("sections") / fixture["name"] / version
         try:
             section = etree.fromstring(source)
