@@ -37,6 +37,11 @@ test +ARGS: _venv
 test-unit: _venv
     .venv/bin/python3 -m pytest tests/unit
 
+[doc('Run dibbs-ecr package tests')]
+[group('test')]
+test-dibbs-ecr: _venv
+    .venv/bin/python3 -m pytest -c packages/dibbs-ecr/pyproject.toml packages/dibbs-ecr/tests
+
 [doc('Run Integration tests')]
 [group('test')]
 test-integration: _venv
@@ -84,6 +89,15 @@ lint: _venv
 check: _venv
     .venv/bin/mypy
 
+[doc('Check dibbs-ecr package lint and formatting')]
+lint-dibbs-ecr: _venv
+    .venv/bin/python3 -m ruff check packages/dibbs-ecr
+    .venv/bin/python3 -m ruff format --check packages/dibbs-ecr
+
+[doc('Run dibbs-ecr package mypy checks')]
+check-dibbs-ecr: _venv
+    .venv/bin/python3 -m mypy --config-file packages/dibbs-ecr/pyproject.toml
+
 [doc('Install all depenencies e.g Refiner and Lambda')]
 [group('dependencies')]
 install-all: _venv
@@ -98,7 +112,7 @@ install: _venv
 [doc('Install all dependencies locally')]
 [group('dependencies')]
 install-dev: _venv
-    .venv/bin/pip install -r ./dev-requirements.txt -r ./requirements.txt
+    .venv/bin/pip install -r ./dev-requirements.txt -r ./requirements.txt -e ./packages/dibbs-ecr
 
 [doc('Install Lambda dependencies locally')]
 [group('dependencies')]

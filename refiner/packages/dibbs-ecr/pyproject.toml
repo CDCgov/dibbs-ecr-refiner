@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dibbs-ecr"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "lxml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+extend = "../../../pyproject.toml"
+target-version = "py314"
+
+[tool.ruff.lint.isort]
+known-first-party = ["dibbs_ecr"]
+
+[tool.mypy]
+python_version = "3.14"
+files = ["$MYPY_CONFIG_FILE_DIR/src/dibbs_ecr", "$MYPY_CONFIG_FILE_DIR/tests"]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--import-mode=importlib", "-v"]

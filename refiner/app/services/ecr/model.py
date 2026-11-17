@@ -666,7 +666,7 @@ class EICRRefinementPlan:
     """
 
     codes_to_check: set[str]
-    code_system_sets: "CodeSystemSets"
+    code_system_sets: CodeSystemSets
     section_instructions: dict[str, SectionInstructions]
     section_provenance: dict[str, SectionProvenanceRecord]
     specification: EICRSpecification

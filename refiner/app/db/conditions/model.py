@@ -59,7 +59,7 @@ class DbCondition(DbConditionBase):
     coverage_level_date: datetime | None = None
 
     @classmethod
-    def from_db_row(cls, row: dict[str, Any]) -> "DbCondition":
+    def from_db_row(cls, row: dict[str, Any]) -> DbCondition:
         """
         Transforms a dictionary object into a DbCondition.
 
