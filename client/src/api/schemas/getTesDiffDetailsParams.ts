@@ -1,5 +1,5 @@
 
 export type GetTesDiffDetailsParams = {
-cur_version: string;
-prev_version: string;
+  cur_version: string;
+  prev_version: string;
 };
