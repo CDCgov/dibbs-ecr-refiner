@@ -844,11 +844,12 @@
               <thead>
                 <tr>
                   <th>Medication</th>
-                  <th>Dose</th>
-                  <th>Quantity</th>
-                  <th>Frequency</th>
+                  <th>Dose quantity</th>
+                  <th>Supply quantity</th>
+                  <th>Dose frequency</th>
                   <th>Route</th>
                   <th>Status</th>
+                  <th>Reason for treatment</th>
                   <th>Date administered</th>
                 </tr>
               </thead>
@@ -860,6 +861,7 @@
                   <td/>
                   <td>ORAL (NCI Thesaurus C38288)</td>
                   <td>completed</td>
+                  <td/>
                   <td>2020-11-07 11:59 -07:00</td>
                 </tr>
                 <tr ID="ecr-refiner-29549-3-20260101000000-row2">
@@ -869,6 +871,7 @@
                   <td/>
                   <td>ORAL (NCI Thesaurus C38288)</td>
                   <td>completed</td>
+                  <td/>
                   <td>2020-11-07 11:59 -07:00</td>
                 </tr>
               </tbody>
