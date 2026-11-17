@@ -271,18 +271,33 @@ IMMUNIZATION_FIELDS: list[FieldSpec] = [
 # and splitting on @xsi:type alone filed that date under "Frequency" while
 # leaving the administration date blank. discriminate on the period, so each
 # column can only ever hold the kind of thing its header promises
-_FREQUENCY = "hl7:effectiveTime[@xsi:type='PIVL_TS'][hl7:period]"
+_DOSE_FREQUENCY = "hl7:effectiveTime[@xsi:type='PIVL_TS'][hl7:period]"
 _ADMINISTRATION_TIME = "hl7:effectiveTime[not(@xsi:type='PIVL_TS' and hl7:period)]"
 
 # the SUPPLIED quantity ("60 tablets"), which is a different question from the
 # dose ("500 mg") -- it hangs off the Medication Supply Order/Dispense that the
 # Medication Activity relates to, not off the administration itself
 _SUPPLY_QUANTITY = "hl7:entryRelationship/hl7:supply/hl7:quantity"
+_REASON_FOR_TREATMENT = "hl7:precondition/hl7:criterion/hl7:value"
 
-MEDICATION_FIELDS: list[FieldSpec] = [
+# shared fields for all sections conforming to the Medication Activity (V2)
+# (substanceAdministration: identifier urn:hl7ii:2.16.840.1.113883.10.20.22.4.16:2014-06-09)
+#  template
+MEDICATION_ACTIVITY_FIELDS: list[FieldSpec] = [
     FieldSpec("Medication", _MANUFACTURED_MATERIAL_CODE, "concept"),
-    FieldSpec("Dose", "hl7:doseQuantity", "typed"),  # monomorphic PQ
-    FieldSpec("Quantity", _SUPPLY_QUANTITY, "typed"),  # monomorphic PQ
+    FieldSpec("Dose quantity", "hl7:doseQuantity", "typed"),  # monomorphic PQ
+    FieldSpec("Supply quantity", _SUPPLY_QUANTITY, "typed"),  # monomorphic PQ
+    FieldSpec("Dose frequency", _DOSE_FREQUENCY, "typed"),
+    FieldSpec("Route", "hl7:routeCode", "concept"),
+    # "completed" vs "aborted" is the difference between a drug that was given
+    # and one that was stopped, refused or cancelled -- statusCode is SHALL on
+    # Medication Activity, so this column costs nothing and is always present
+    FieldSpec("Status", "hl7:statusCode/@code", "attr"),
+    # seen in some Epic eICRs
+    FieldSpec("Reason for treatment", _REASON_FOR_TREATMENT, "typed"),
+]
+
+MEDICATION_ADMINISTERED_FIELDS: list[FieldSpec] = MEDICATION_ACTIVITY_FIELDS + [
     # the low bound alone, NOT the rendered interval. an administration is
     # given at a time, not over a window: senders that stamp a high bound put
     # it minutes after the low (the end of the infusion, the moment the nurse
@@ -295,14 +310,20 @@ MEDICATION_FIELDS: list[FieldSpec] = [
         f"{_ADMINISTRATION_TIME}/hl7:low",
         "typed",
         fallback=FieldSource(_ADMINISTRATION_TIME, "typed"),
-    ),
-    FieldSpec("Frequency", _FREQUENCY, "typed"),
-    FieldSpec("Route", "hl7:routeCode", "concept"),
-    # "completed" vs "aborted" is the difference between a drug that was given
-    # and one that was stopped, refused or cancelled -- statusCode is SHALL on
-    # Medication Activity, so this column costs nothing and is always present
-    FieldSpec("Status", "hl7:statusCode/@code", "attr"),
+    )
 ]
+
+MEDICATION_FIELDS: list[FieldSpec] = MEDICATION_ACTIVITY_FIELDS + [
+    # for medications, a passed-in range is appropriate since it's a course
+    # of treatment. In instances where there's a low and high passed in,
+    # use the helper typed render function to present an appropriate string
+    FieldSpec(
+        "Medication date",
+        "hl7:effectiveTime",
+        "typed",
+    ),
+]
+
 
 # plan of treatment is the first heterogeneous section: five unrelated clinical
 # statements share one <section>, so it needs five field maps rather than one.

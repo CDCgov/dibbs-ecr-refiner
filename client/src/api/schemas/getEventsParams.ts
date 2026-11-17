@@ -1,5 +1,5 @@
 
 export type GetEventsParams = {
-page?: number;
-canonical_url?: string | null;
+  page?: number;
+  canonical_url?: string | null;
 };
