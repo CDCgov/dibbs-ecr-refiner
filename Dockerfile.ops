@@ -1,5 +1,5 @@
 # Install system deps
-FROM python:3.14-alpine AS system-builder
+FROM python:3.15-alpine AS system-builder
 
 RUN apk add --no-cache \
     gcc \
@@ -13,7 +13,7 @@ WORKDIR /app
 RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
 
 # Install Python dependencies
-FROM python:3.14-alpine
+FROM python:3.15-alpine
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
