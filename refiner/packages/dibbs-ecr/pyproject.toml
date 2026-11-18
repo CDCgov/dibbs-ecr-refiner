@@ -18,6 +18,12 @@ where = ["src"]
 extend = "../../../pyproject.toml"
 target-version = "py314"
 
+[tool.ruff.lint]
+extend-select = ["TID251"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"app".msg = "dibbs_ecr must not depend on the Refiner application."
+
 [tool.ruff.lint.isort]
 known-first-party = ["dibbs_ecr"]
 

@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "refiner/packages/dibbs-ecr/**"
+      - ".github/workflows/dibbs-ecr.yml"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
@@ -36,7 +38,7 @@ jobs:
           python -m pip install -r dev-requirements.txt .
       - name: Test regular installation
         run: python -m pytest
-      - name: Check package lint and formatting
+      - name: Check package import boundary, lint, and formatting
         run: |
           python -m ruff check .
           python -m ruff format --check .
