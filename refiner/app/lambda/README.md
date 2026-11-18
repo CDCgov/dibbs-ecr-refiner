@@ -43,6 +43,8 @@ The Lambda Docker container starts up as part of the project's [Docker Compose f
 
 `http://localhost:9000/2015-03-31/functions/function/invocations`
 
+That endpoint is served by the AWS Runtime Interface Emulator, which only exists in the `local` stage of `Dockerfile.lambda` (the one Docker Compose builds). The default `production` stage, which is pushed and deployed, removes it because AWS Lambda never uses it.
+
 This endpoint can be requested using an HTTP client of your choice in order to invoke the Lambda function. Note that the Lambda function expects an SQS-style JSON event as part of the request. Please refer to the [Lambda integration tests](../../tests/integration/test_lambda.py) for an example event.
 
 ## Seeding Localstack for manual testing
