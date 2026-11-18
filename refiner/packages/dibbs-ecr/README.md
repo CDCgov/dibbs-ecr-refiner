@@ -67,6 +67,19 @@ codebase, including `app` modules. This applies to imports inside functions and
 `TYPE_CHECKING` blocks as well. The package must work independently of the Refiner
 application.
 
+Ruff's `TID251` (`banned-api`) rule enforces this boundary, including imports
+inside functions and `TYPE_CHECKING` blocks. A violation reports the file, line
+number, and offending import. The `Check dibbs-ecr` CI workflow runs the same
+check as part of package linting. To run just the boundary check from the package
+directory:
+
+```sh
+python -m ruff check --select TID251 src/dibbs_ecr
+```
+
+The installed-package smoke test also imports `dibbs_ecr` in an isolated Python
+process outside the checkout and verifies that `app` is unavailable.
+
 Consumers may import `dibbs_ecr`. Product-specific match rules, pruning,
 precedence, processing state, tool identity, and ID-generation policy belong in
 the consuming applications.
