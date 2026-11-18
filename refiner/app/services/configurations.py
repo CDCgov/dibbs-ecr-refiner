@@ -20,7 +20,6 @@ from app.db.codes.db import get_pruned_configuration_codes_db
 from app.db.codes.model import DbConfigurationCode
 from app.db.conditions.db import (
     get_condition_by_id_db,
-    get_included_conditions_db,
     get_primary_condition_db,
 )
 from app.db.configurations.custom_codes.model import DbCustomCode

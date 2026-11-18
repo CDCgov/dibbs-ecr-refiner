@@ -74,8 +74,8 @@ export async function getConditionIdByName(
 ): Promise<string> {
   const latestConditionId = await db.query(`
     SELECT conditions.id
-    FROM conditions 
-    JOIN tes t on t.id = conditions.tes_id 
+    FROM conditions
+    JOIN tes t on t.id = conditions.tes_id
     WHERE display_name='${conditionName}'
     ORDER BY t.version DESC
     LIMIT 1;`);
@@ -95,16 +95,16 @@ export async function getRsgSnomedCodesFromCondition(
   const rsgSnomedCodes = await db.query(`
     WITH latest_condition AS (
       SELECT conditions.id
-      FROM conditions 
-      JOIN tes t ON t.id = conditions.tes_id 
+      FROM conditions
+      JOIN tes t ON t.id = conditions.tes_id
       WHERE display_name = '${conditionName}'
       ORDER BY t.version DESC
-      LIMIT 1 
+      LIMIT 1
   )
   SELECT codes.code
-  FROM codes 
-  LEFT JOIN conditions_codes_temp cc ON cc.code_id = codes.id 
-  LEFT JOIN conditions c ON c.id = cc.condition_id 
+  FROM codes
+  LEFT JOIN conditions_codes_temp cc ON cc.code_id = codes.id
+  LEFT JOIN conditions c ON c.id = cc.condition_id
   JOIN latest_condition lc ON c.id = lc.id
   WHERE cc.is_child_rsg;
   `);
