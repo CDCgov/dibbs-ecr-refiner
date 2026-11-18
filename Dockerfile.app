@@ -52,15 +52,14 @@ ENV VERSION=$VERSION
 
 WORKDIR /code
 
-RUN python -m pip install --upgrade pip
-
-# copy & install wheel from builder
+# Install Python dependencies, then remove pip. Nothing needs it at runtime, and
+# pip vendors part of an old setuptools release that scanners flag through the
+# SBOM pip ships (pip/_vendor/bom.cdx.json).
 COPY --from=system-builder /app/wheels /wheels
-RUN pip install --no-cache-dir /wheels/*
-
-
 COPY ./refiner/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir /wheels/* \
+    && python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip uninstall -y pip
 
 COPY ./refiner/app ./app
 COPY ./refiner/assets ./assets
