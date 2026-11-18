@@ -5,6 +5,7 @@ import type {
   CreateConfigurationResponse,
   GetConditionsResponse,
 } from '../../src/api/schemas';
+import { getConditionIdByName } from '../db';
 
 export class Api {
   constructor(private request: APIRequestContext) {}
@@ -101,5 +102,20 @@ export class Api {
         status: status,
       })
     );
+  }
+
+  async addCodeSetToExistingConfig(configId: string, conditionToAdd: string) {
+    const conditionId = await getConditionIdByName(conditionToAdd);
+
+    const statusUpdateReq = await this.request.put(
+      `/api/v1/configurations/${configId}/code-sets`,
+      {
+        data: {
+          condition_id: conditionId,
+        },
+      }
+    );
+
+    expect(statusUpdateReq.ok()).toBeTruthy();
   }
 }

@@ -425,12 +425,6 @@ def test_lambda_one_active(
         not in complete_json["RefinerOutputFiles"]
     )
 
-    rr_content = s3_client.get_object(
-        Bucket=data_bucket,
-        key=f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_RR.xml",
-    )
-    print(rr_content)
-
 
 def test_lambda_all_active(
     lambda_event,
