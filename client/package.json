@@ -60,7 +60,7 @@
     "@typescript-eslint/parser": "8.72.2",
     "@vitejs/plugin-react": "6.3.0",
     "@vitest/coverage-v8": "5.1.0",
-    "adm-zip": "^0.6.1",
+    "adm-zip": "0.6.1",
     "concurrently": "10.0.7",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
