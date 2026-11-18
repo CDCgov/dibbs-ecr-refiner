@@ -26,6 +26,9 @@ services:
       KC_DB_DATABASE: keycloak
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Mitigates CVE-2026-114938 (JDK Base64 intrinsic overflow). Remove once
+      # the image ships a patched JDK. See keycloak/keycloak#55293.
+      JAVA_OPTS_APPEND: "-XX:-UseBASE64Intrinsics"
     ports:
       - "8080:8080"
     depends_on:
