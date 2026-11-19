@@ -30,6 +30,7 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt
+          pip install ./packages/dibbs-ecr
       - name: Run unit tests
         run: |
           pytest tests/unit
@@ -48,6 +49,8 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt
+          pip install ./packages/dibbs-ecr
+
       - name: Run integration tests
         run: |
           pytest tests/integration --ignore=tests/integration/scenarios
@@ -66,6 +69,8 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt
+          pip install ./packages/dibbs-ecr
+
       - name: Run scenarios
         run: pytest tests/integration/scenarios
 
@@ -83,6 +88,8 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r app/lambda/dev-requirements.txt -r app/lambda/requirements.txt
+          pip install ./packages/dibbs-ecr
+
       - name: Run tests
         run: |
           pytest app/lambda

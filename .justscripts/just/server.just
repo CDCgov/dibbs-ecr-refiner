@@ -25,7 +25,7 @@ alias ild := install-lambda-dev
 set dotenv-load := true
 
 _venv:
-    [ -d .venv ] || python3 -m venv .venv
+    [ -d .venv ] || python3 -m venv .venv 
 
 [doc('Run pytest wrapper. Must include arguments.')]
 [group('test')]
@@ -107,7 +107,7 @@ install-all: _venv
 [doc('Install dependencies locally')]
 [group('dependencies')]
 install: _venv
-    .venv/bin/pip install -r ./requirements.txt
+    .venv/bin/pip install -r ./requirements.txt && .venv/bin/pip install -e packages/dibbs-ecr
 
 [doc('Install all dependencies locally')]
 [group('dependencies')]
