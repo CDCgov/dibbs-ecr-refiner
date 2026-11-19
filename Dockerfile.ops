@@ -90,7 +90,12 @@ RUN chmod +x ./entrypoint.sh
 # base64 body (emSign ECC Root CA - G3, then AAA Certificate Services), so it
 # matches however a bundle labels the certificate. grep exits 1 only when
 # nothing matched.
-RUN grep -rlF \
+RUN grep -rlFs \
     -e 'CUfvO6wIBHxcmbHtRwfSAjEAnbpV/KlK6O3t5nYBQnvI+GDZjVGLVTv7jHvrZQnD' \
     -e 'l2D4kF501KKaU73yqWjgom7C12yxow+ev+to51byrvLjKzg6CYG1a4XXvi3tPxq3' \
-    /etc /usr /var; \
+    /etc /usr /var 2>/dev/null; \
+    test $? -eq 1
+    
+# Start this file, fall back to bash
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["bash"]
