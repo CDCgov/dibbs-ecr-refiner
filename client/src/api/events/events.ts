@@ -121,6 +121,23 @@ export type GetEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getEven
 export type GetEventsQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Returns a list of all events for a jurisdiction, ordered from newest to oldest.
+ *
+ * Args:
+ *     user (DbUser): The user making the request.
+ *     db (AsyncDatabaseConnection): Database connection.
+ *     logger (Logger): Standard logger.
+ *     page (int): page of events to return to the client.
+ *     canonical_url (str | None): An optional filter on the condition.
+ *
+ * Returns:
+ *     EventResponse: A bundle with
+ *         - Total page count
+ *         - The list of AuditEvents relevant for the (optional) filter
+ *         - The list of condition information with potentially filter-able data
+ * @summary Get Events
+ */
 export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
  params: undefined |  GetEventsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -131,6 +148,23 @@ export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TErr
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all events for a jurisdiction, ordered from newest to oldest.
+ *
+ * Args:
+ *     user (DbUser): The user making the request.
+ *     db (AsyncDatabaseConnection): Database connection.
+ *     logger (Logger): Standard logger.
+ *     page (int): page of events to return to the client.
+ *     canonical_url (str | None): An optional filter on the condition.
+ *
+ * Returns:
+ *     EventResponse: A bundle with
+ *         - Total page count
+ *         - The list of AuditEvents relevant for the (optional) filter
+ *         - The list of condition information with potentially filter-able data
+ * @summary Get Events
+ */
 export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
  params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -141,14 +175,44 @@ export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TErr
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all events for a jurisdiction, ordered from newest to oldest.
+ *
+ * Args:
+ *     user (DbUser): The user making the request.
+ *     db (AsyncDatabaseConnection): Database connection.
+ *     logger (Logger): Standard logger.
+ *     page (int): page of events to return to the client.
+ *     canonical_url (str | None): An optional filter on the condition.
+ *
+ * Returns:
+ *     EventResponse: A bundle with
+ *         - Total page count
+ *         - The list of AuditEvents relevant for the (optional) filter
+ *         - The list of condition information with potentially filter-able data
+ * @summary Get Events
+ */
 export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
  params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns a list of all events for a jurisdiction, ordered from newest to oldest.
+ *
+ * Args:
+ *     user (DbUser): The user making the request.
+ *     db (AsyncDatabaseConnection): Database connection.
+ *     logger (Logger): Standard logger.
+ *     page (int): page of events to return to the client.
+ *     canonical_url (str | None): An optional filter on the condition.
+ *
+ * Returns:
+ *     EventResponse: A bundle with
+ *         - Total page count
+ *         - The list of AuditEvents relevant for the (optional) filter
+ *         - The list of condition information with potentially filter-able data
  * @summary Get Events
  */
-
 export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
  params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -233,6 +297,18 @@ export type GetCustomCodeUploadEventsQueryResult = NonNullable<Awaited<ReturnTyp
 export type GetCustomCodeUploadEventsQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Returns a list of all custom code upload events associated with a parent event ID.
+ *
+ * Args:
+ *     event_id (UUID): The parent event
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
+ * @summary Get Custom Code Upload Events
+ */
 export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -243,6 +319,18 @@ export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof g
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all custom code upload events associated with a parent event ID.
+ *
+ * Args:
+ *     event_id (UUID): The parent event
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
+ * @summary Get Custom Code Upload Events
+ */
 export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -253,14 +341,34 @@ export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof g
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns a list of all custom code upload events associated with a parent event ID.
+ *
+ * Args:
+ *     event_id (UUID): The parent event
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
+ * @summary Get Custom Code Upload Events
+ */
 export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Returns a list of all custom code upload events associated with a parent event ID.
+ *
+ * Args:
+ *     event_id (UUID): The parent event
+ *     user (DbUser): The logged in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *
+ * Raises:
+ *     HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
  * @summary Get Custom Code Upload Events
  */
-
 export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -348,6 +456,19 @@ export type GetEventsExportApiV1EventsExportGetQueryResult = NonNullable<Awaited
 export type GetEventsExportApiV1EventsExportGetQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Generate a CSV export of all events within a jurisdiction.
+ *
+ * Args:
+ *     timezone (str): The user's IANA timezone
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *     canonical_url (str | None): An optional canonical URL to filter the export by condition
+ *
+ * Returns:
+ *     Response: The generated CSV file
+ * @summary Get Events Export
+ */
 export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
  params: undefined |  GetEventsExportApiV1EventsExportGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -358,6 +479,19 @@ export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnTyp
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Generate a CSV export of all events within a jurisdiction.
+ *
+ * Args:
+ *     timezone (str): The user's IANA timezone
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *     canonical_url (str | None): An optional canonical URL to filter the export by condition
+ *
+ * Returns:
+ *     Response: The generated CSV file
+ * @summary Get Events Export
+ */
 export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
  params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -368,14 +502,36 @@ export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnTyp
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Generate a CSV export of all events within a jurisdiction.
+ *
+ * Args:
+ *     timezone (str): The user's IANA timezone
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *     canonical_url (str | None): An optional canonical URL to filter the export by condition
+ *
+ * Returns:
+ *     Response: The generated CSV file
+ * @summary Get Events Export
+ */
 export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
  params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Generate a CSV export of all events within a jurisdiction.
+ *
+ * Args:
+ *     timezone (str): The user's IANA timezone
+ *     user (DbUser): The logged-in user
+ *     db (AsyncDatabaseConnection): The database connection
+ *     canonical_url (str | None): An optional canonical URL to filter the export by condition
+ *
+ * Returns:
+ *     Response: The generated CSV file
  * @summary Get Events Export
  */
-
 export function useGetEventsExportApiV1EventsExportGet<TData = Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError = AxiosError<HTTPValidationError>>(
  params?: GetEventsExportApiV1EventsExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventsExportApiV1EventsExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
@@ -452,6 +608,10 @@ export type GetEventCodesExportApiV1EventsEventIdCodesExportGetQueryResult = Non
 export type GetEventCodesExportApiV1EventsEventIdCodesExportGetQueryError = AxiosError<HTTPValidationError>
 
 
+/**
+ * Exports the historical condition codes associated with a code-set event.
+ * @summary Get Event Codes Export
+ */
 export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -462,6 +622,10 @@ export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = A
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Exports the historical condition codes associated with a code-set event.
+ * @summary Get Event Codes Export
+ */
 export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -472,14 +636,18 @@ export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = A
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Exports the historical condition codes associated with a code-set event.
+ * @summary Get Event Codes Export
+ */
 export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Exports the historical condition codes associated with a code-set event.
  * @summary Get Event Codes Export
  */
-
 export function useGetEventCodesExportApiV1EventsEventIdCodesExportGet<TData = Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError = AxiosError<HTTPValidationError>>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventCodesExportApiV1EventsEventIdCodesExportGet>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
