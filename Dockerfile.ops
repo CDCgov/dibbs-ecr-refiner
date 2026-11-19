@@ -51,8 +51,11 @@ WORKDIR /app
 COPY --from=system-builder /app/wheels /wheels
 COPY ./refiner/scripts-requirements.txt ./
 COPY ./refiner/requirements.txt ./
+COPY ./refiner/packages/dibbs-ecr/ ./packages/dibbs-ecr/
+
 RUN python -m pip install --no-cache-dir /wheels/* \
     && python -m pip install --no-cache-dir -r scripts-requirements.txt -r requirements.txt \
+    && python -m pip install --no-cache-dir ./packages/dibbs-ecr \
     && python -m pip uninstall -y pip
 
 # Copy migration files

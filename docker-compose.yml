@@ -23,6 +23,11 @@ services:
       dockerfile: Dockerfile.lambda
       # keeps the Runtime Interface Emulator that serves :9000 locally
       target: local
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        pip install --no-deps -e /var/task/packages/dibbs-ecr &&
+        exec /lambda-entrypoint.sh app.lambda.lambda_function.lambda_handler
     ports:
       - "9000:8080"
     environment:
@@ -42,8 +47,9 @@ services:
       - ./refiner/app/services:/var/task/app/services
       - ./refiner/app/db:/var/task/app/db
       - ./refiner/assets:/var/task/assets
+      - ./refiner/packages/dibbs-ecr:/var/task/packages/dibbs-ecr
 
-# Run with `docker compose --profile ops run --rm ops prepare-db`
+  # Run with `docker compose --profile ops run --rm ops prepare-db`
   ops:
     build:
       context: .

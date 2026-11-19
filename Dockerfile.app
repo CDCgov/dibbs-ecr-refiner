@@ -57,8 +57,11 @@ WORKDIR /code
 # SBOM pip ships (pip/_vendor/bom.cdx.json).
 COPY --from=system-builder /app/wheels /wheels
 COPY ./refiner/requirements.txt .
+COPY ./refiner/packages/dibbs-ecr/ ./packages/dibbs-ecr/
+
 RUN python -m pip install --no-cache-dir /wheels/* \
     && python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir ./packages/dibbs-ecr \
     && python -m pip uninstall -y pip
 
 COPY ./refiner/app ./app
