@@ -33,7 +33,7 @@ RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
 
 
 # Runtime image
-FROM python:3.15-alpine
+FROM python:3.15-alpine as runtime
 
 # Pick up Alpine fixes the base image may lag on, including ca-certificates
 # 20261020-r0, which drops the distrusted emSign ECC Root CA - G3.
@@ -82,3 +82,8 @@ RUN grep -rlF \
 
 EXPOSE 8080
 CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8080"]
+
+# Re-add pip after build so that the tests can install the stuff as needed
+FROM runtime AS local
+RUN python -m ensurepip --upgrade \
+    && python -m pip install --no-cache-dir hatchling
