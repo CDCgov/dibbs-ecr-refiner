@@ -25,7 +25,7 @@ alias ild := install-lambda-dev
 set dotenv-load := true
 
 _venv:
-    [ -d .venv ] || python3 -m venv .venv 
+    [ -d .venv ] || python3 -m venv .venv
 
 [doc('Run pytest wrapper. Must include arguments.')]
 [group('test')]
