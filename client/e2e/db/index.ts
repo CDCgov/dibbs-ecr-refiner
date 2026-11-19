@@ -78,7 +78,7 @@ export async function getConditionIdByName(
     SELECT conditions.id
     FROM conditions
     JOIN tes t on t.id = conditions.tes_id
-    WHERE display_name=$1 
+    WHERE display_name=$1
     ORDER BY t.version DESC
     LIMIT 1;`,
     [conditionName]
