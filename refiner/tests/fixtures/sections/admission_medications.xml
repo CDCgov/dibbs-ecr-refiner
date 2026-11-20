@@ -1,9 +1,8 @@
 <!--
-  Medications (10160-0): the flat twin of Immunizations.
+  Admission Medications (42346-7)
 
-  Carries TWO effectiveTimes — an IVL_TS administration window and a PIVL_TS
-  dosing frequency — so the field map's split between "Date administered" and
-  "Frequency" is exercised rather than assumed.
+  Has an <act> element that contains medication activity
+  with the <precondition> element found in some Epic eICRs
 -->
 
 <section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -21,82 +20,64 @@
           <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09" />
           <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29" />
           <statusCode code="completed" />
-          <effectiveTime xsi:type="PIVL_TS" operator="A" value="202011071159-0700" />
+          <effectiveTime xsi:type="IVL_TS">
+            <low value="20120318" />
+          </effectiveTime>
+          <effectiveTime xsi:type="PIVL_TS">
+            <period value="8" unit="h" />
+          </effectiveTime>
           <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1"
             codeSystemName="NCI Thesaurus" displayName="ORAL" />
           <doseQuantity value="1" unit="g" />
           <consumable>
             <manufacturedProduct classCode="MANU">
-              <!-- [C-CDA R2.0] Medication Information (V2) -->
               <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09" />
-              <!-- [eICR R2 STU2] Initial Case Report Trigger Code Medication Information -->
-
               <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8" />
               <manufacturedMaterial>
-                <code code="1115699" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"
-                  displayName="oseltamivir 6 MG/ML [Tamiflu]" />
+                <code code="1115699" codeSystem="2.16.840.1.113883.6.88"
+                  codeSystemName="RxNorm" displayName="oseltamivir 6 MG/ML [Tamiflu]" />
               </manufacturedMaterial>
             </manufacturedProduct>
           </consumable>
-          <author>
-            <templateId root="2.16.840.1.113883.10.20.22.4.119" />
-            <time value="201308011235-0800" />
-            <assignedAuthor>
-              <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c" />
-              <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53"
-                codeSystemName="Health
-                        Care Provider Taxonomy"
-                displayName="Registered nurse" />
-              <assignedPerson>
-                <name>
-                  <given>Nurse</given>
-                  <family>Nightingale</family>
-                  <suffix>RN</suffix>
-                </name>
-              </assignedPerson>
-              <representedOrganization>
-                <id root="2.16.840.1.113883.19.5" />
-                <name>Good Health Hospital</name>
-              </representedOrganization>
-            </assignedAuthor>
-          </author>
           <entryRelationship typeCode="REFR">
             <supply classCode="SPLY" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.18" extension="2014-06-09" />
               <id root="2.16.840.1.113883.19.5" />
               <statusCode code="completed" />
-              <effectiveTime value="200802260805-0800" />
+              <effectiveTime xsi:type="PIVL_TS">
+                <period value="8" unit="h" />
+              </effectiveTime>
+              <quantity value="75" />
               <product>
                 <manufacturedProduct classCode="MANU">
-                  <!-- ** Medication information ** -->
                   <templateId root="2.16.840.1.113883.10.20.22.4.23"
                     extension="2014-06-09" />
                   <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8" />
                   <manufacturedMaterial>
-                    <code code="248656" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"
-                      displayName="Azithromycin 500 MG Oral Tablet"
-                      />
+                    <code code="248656" codeSystem="2.16.840.1.113883.6.88"
+                      codeSystemName="RxNorm" displayName="Azithromycin 500 MG Oral Tablet"
+                    />
                   </manufacturedMaterial>
                 </manufacturedProduct>
               </product>
             </supply>
           </entryRelationship>
-          <entryRelationship typeCode="CAUS">
-            <observation classCode="OBS" moodCode="EVN">
-              <!-- [eICR R2] Therapeutic Medication Response Observation -->
-              <templateId root="2.16.840.1.113883.10.20.15.2.3.37" extension="2019-04-01" />
-              <id root="ab1791b0-5c71-11db-b0de-0800200c9a55" />
-              <code code="67540-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
-                displayName="Response to medication" />
-              <statusCode code="completed" />
-              <effectiveTime>
-                <low value="20201101" />
-              </effectiveTime>
-              <value code="268910001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"
-                displayName="Patient's condition improved (finding)" xsi:type="CD" />
-
-            </observation>
-          </entryRelationship>
+          <!-- ** Add precondition section found in some Epic eICRs-->          
+          <precondition typeCode="PRCN">
+            <criterion>
+              <templateId root="2.16.840.1.113883.10.20.22.4.25" extension="2014-06-09" />
+              <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
+              <value xsi:type="CD"
+                code="56018004"
+                codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT"
+                displayName="Wheezing">
+                <originalText>
+                  <reference value="#med1_precondition" />
+                </originalText>
+              </value>
+            </criterion>
+          </precondition>
         </substanceAdministration>
       </entryRelationship>
     </act>

@@ -254,7 +254,7 @@ def reconstruct_admission_medications(section: _Element) -> list[Block]:
 
     return _reconstruct_flat(
         section,
-        anchor_xpath="hl7:act/hl7:entryRelationship/hl7:substanceAdministration",
+        anchor_xpath="hl7:entry/hl7:act/hl7:entryRelationship/hl7:substanceAdministration",
         fields=MEDICATION_FIELDS,
     )
 
