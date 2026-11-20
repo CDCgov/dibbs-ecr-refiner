@@ -62,7 +62,7 @@
               </product>
             </supply>
           </entryRelationship>
-          <!-- ** Add precondition section found in some Epic eICRs-->          
+          <!-- ** Add precondition section found in some Epic eICRs-->
           <precondition typeCode="PRCN">
             <criterion>
               <templateId root="2.16.840.1.113883.10.20.22.4.25" extension="2014-06-09" />
