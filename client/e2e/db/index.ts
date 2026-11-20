@@ -48,14 +48,14 @@ export async function makeOldTesVersionConfiguration(
         SELECT c.display_name AS condition_name, c.id AS condition_id
         FROM conditions c
         LEFT JOIN tes t ON c.tes_id = t.id
-        WHERE c.display_name = '${conditionName}' AND t.version = '${PREVIOUS_TES_VERSION}'
+        WHERE c.display_name = $1 AND t.version = $2
     ),
     inserted_config AS (
         INSERT INTO configurations (version, jurisdiction_id, status, display_name, created_by)
         SELECT
             1,
             'SDDH',
-            '${status}',
+            $3,
             condition_name,
             (SELECT id FROM users WHERE username = 'refiner')
         FROM condition_to_insert
@@ -65,6 +65,55 @@ export async function makeOldTesVersionConfiguration(
     SELECT ic.id, cti.condition_id, true
     FROM inserted_config ic
     JOIN condition_to_insert cti ON ic.display_name = cti.condition_name;
-  `
+  `,
+    [conditionName, PREVIOUS_TES_VERSION, status]
   );
+}
+
+const CONDITION_BY_NAME_QUERY = `SELECT conditions.id
+    FROM conditions
+    JOIN tes t on t.id = conditions.tes_id
+    WHERE display_name=$1
+    ORDER BY t.version DESC
+    LIMIT 1`;
+
+export async function getConditionIdByName(
+  conditionName: string
+): Promise<string> {
+  const latestConditionId = await db.query(CONDITION_BY_NAME_QUERY, [
+    conditionName,
+  ]);
+
+  if (!latestConditionId || latestConditionId.rows.length === 0) {
+    throw Error(
+      `Requested condition ID for condition ${conditionName} not found`
+    );
+  }
+
+  return latestConditionId.rows[0]['id'];
+}
+
+export async function getRsgSnomedCodesFromCondition(
+  conditionName: string
+): Promise<string[]> {
+  const rsgSnomedCodes = await db.query(
+    `
+  WITH latest_condition AS (${CONDITION_BY_NAME_QUERY})
+  SELECT codes.code
+  FROM codes
+  LEFT JOIN conditions_codes_temp cc ON cc.code_id = codes.id
+  LEFT JOIN conditions c ON c.id = cc.condition_id
+  JOIN latest_condition lc ON c.id = lc.id
+  WHERE cc.is_child_rsg;
+  `,
+    [conditionName]
+  );
+
+  if (!rsgSnomedCodes || rsgSnomedCodes.rows.length === 0) {
+    throw Error(
+      `Requested condition ID for condition ${conditionName} not found`
+    );
+  }
+
+  return rsgSnomedCodes.rows.map((c) => c['code']);
 }

@@ -1,6 +1,9 @@
 import { Locator } from '@playwright/test';
-import { clearDb } from './db';
+import { clearDb, getRsgSnomedCodesFromCondition } from './db';
 import { test, expect } from './fixtures';
+import { readFileSync } from 'fs';
+import path from 'path';
+import AdmZip from 'adm-zip';
 
 test.describe('Simulate testing', () => {
   test.beforeEach(async ({ configurationsPage }) => {
@@ -91,7 +94,7 @@ test.describe('Simulate testing', () => {
     await api.updateConfigurationStatus(covid.id, 'active');
 
     // create a draft
-    await api.createConfiguration('COVID-19');
+    const draftTwo = await api.createConfiguration('COVID-19');
 
     await simulatorPage.goto();
     await simulatorPage.uploadTestFile();
@@ -154,6 +157,47 @@ test.describe('Simulate testing', () => {
     ]);
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // set up state for last step
+    await page.goto('/');
+
+    // check refined RR with an associated Influenza codeset correctly refines
+    // out the the RSG codes for Influenza
+    await api.addCodeSetToExistingConfig(draftTwo.id, 'Influenza');
+    await simulatorPage.goto();
+    await simulatorPage.uploadTestFile();
+    await refineButton.click();
+
+    await expect(
+      page.getByRole('heading', { name: 'eCR Refinement Results' })
+    ).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByText('Download results').click();
+    const download = await downloadPromise;
+
+    const downloadDir = path.join('e2e', 'downloads');
+    const downloadPath = path.join(downloadDir, download.suggestedFilename());
+    await download.saveAs(downloadPath);
+
+    const extractDir = path.join(downloadDir, 'extracted');
+    const zip = new AdmZip(downloadPath);
+    zip.extractAllTo(extractDir, true);
+
+    const rrFilePath = path.join(extractDir, 'CDA_RR_COVID19.xml');
+    const refinedRRContent = readFileSync(rrFilePath, 'utf-8');
+
+    const influenzaSnomedRsgs =
+      await getRsgSnomedCodesFromCondition('Influenza');
+
+    influenzaSnomedRsgs.forEach((c) => {
+      expect(refinedRRContent.includes(c)).toBeFalsy();
+    });
+
+    const covidSnomedRsgs = await getRsgSnomedCodesFromCondition('COVID-19');
+    expect(
+      covidSnomedRsgs.some((c) => refinedRRContent.includes(c))
+    ).toBeTruthy();
   });
 
   test('Only Influenza is selected for refinement', async ({

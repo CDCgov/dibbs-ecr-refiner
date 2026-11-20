@@ -8,7 +8,17 @@ from pathlib import Path
 def test_import_outside_source_directory(tmp_path: Path) -> None:
     """Import the installed package without the checkout or PYTHONPATH."""
     result = subprocess.run(
-        [sys.executable, "-I", "-c", "import dibbs_ecr"],
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            (
+                "import importlib.util\n"
+                "assert importlib.util.find_spec('app') is None, "
+                "'Refiner app must not be on the Python path'\n"
+                "import dibbs_ecr\n"
+            ),
+        ],
         cwd=tmp_path,
         capture_output=True,
         text=True,

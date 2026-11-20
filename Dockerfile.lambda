@@ -1,4 +1,7 @@
-FROM public.ecr.aws/lambda/python:3.15
+# `local` keeps the AWS Runtime Interface Emulator so the container can serve
+# invocations on its own (docker-compose.yml targets this stage). The final
+# stage is what gets built by default, pushed, and deployed.
+FROM public.ecr.aws/lambda/python:3.15 AS local
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
@@ -7,6 +10,13 @@ ARG VERSION="0.0.0"
 
 # make it available as an environment variable inside the container
 ENV VERSION=$VERSION
+
+# The base image pins its AL2023 release, so a plain `dnf upgrade` is a no-op.
+# Upgrade to the latest release to pick up security fixes the base image lags
+# on. This runs before the CA trust edit below so a ca-certificates upgrade
+# cannot undo it.
+RUN dnf upgrade -y --refresh --releasever=latest \
+    && dnf clean all
 
 # AL2023's ca-certificates still ships two roots distrusted after the eMudhra CA
 # key compromise: emSign ECC Root CA - G3 and Comodo's AAA Certificate Services.
@@ -17,11 +27,12 @@ RUN gawk -i inplace -v RS= -v ORS='\n\n' \
     /usr/share/pki/ca-trust-source/ca-bundle.trust.p11-kit \
     && update-ca-trust extract
 
-RUN python -m pip install --no-cache-dir --upgrade pip
-
-# Install dependencies
+# Install dependencies, then remove pip. Nothing needs it at runtime, and pip
+# vendors part of an old setuptools release that scanners flag through the SBOM
+# pip ships (pip/_vendor/bom.cdx.json).
 COPY ./refiner/app/lambda/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip uninstall -y pip
 
 # Copy handler
 COPY ./refiner/app/lambda/lambda_function.py app/lambda/lambda_function.py
@@ -49,3 +60,11 @@ RUN grep -rlF \
 
 # Handler entrypoint
 CMD [ "app.lambda.lambda_function.lambda_handler" ]
+
+
+# Deployed image. AWS Lambda always provides the Runtime API, so the base
+# image's entrypoint never starts the emulator here, and removing it drops a
+# binary that trails Go security releases.
+FROM local AS production
+
+RUN rm /usr/local/bin/aws-lambda-rie
