@@ -220,6 +220,7 @@ _RECONSTRUCTABLE_FIXTURES: list[tuple[str, str]] = [
     ("immunizations_flat", "11369-6"),
     ("medications_administered", "29549-3"),
     ("medications", "10160-0"),
+    ("admission_medications", "42346-7"),
     ("plan_of_treatment_all_kinds", "18776-5"),
 ]
 

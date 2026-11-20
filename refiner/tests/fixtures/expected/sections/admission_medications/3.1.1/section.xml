@@ -1,0 +1,66 @@
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
+  <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+  <title>Admission Medications</title>
+  <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Medication</th><th>Dose quantity</th><th>Supply quantity</th><th>Dose frequency</th><th>Route</th><th>Status</th><th>Reason for treatment</th><th>Medication date</th></tr></thead><tbody><tr ID="ecr-refiner-42346-7-20260101000000-row1"><td>oseltamivir 6 MG/ML [Tamiflu] (RxNorm 1115699)</td><td>1 g</td><td>75</td><td>every 8 h</td><td>ORAL (NCI Thesaurus C38288)</td><td>completed</td><td>Wheezing (SNOMED CT 56018004)</td><td>2012-03-18 onward</td></tr></tbody></table></text><!-- eCR Refiner matched: code[1115699] 'oseltamivir 6 MG/ML [Tamiflu]' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+  <entry typeCode="DRIV">
+    <act classCode="ACT" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.36" extension="2014-06-09"/>
+      <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" displayName="Admission Medications"/>
+      <entryRelationship typeCode="SUBJ">
+        <substanceAdministration classCode="SBADM" moodCode="EVN">
+          <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
+          <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29"/>
+          <text><reference value="#ecr-refiner-42346-7-20260101000000-row1"/></text><statusCode code="completed"/>
+          <effectiveTime xsi:type="IVL_TS">
+            <low value="20120318"/>
+          </effectiveTime>
+          <effectiveTime xsi:type="PIVL_TS">
+            <period value="8" unit="h"/>
+          </effectiveTime>
+          <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="ORAL"/>
+          <doseQuantity value="1" unit="g"/>
+          <consumable>
+            <manufacturedProduct classCode="MANU">
+              <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
+              <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
+              <manufacturedMaterial>
+                <code code="1115699" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="oseltamivir 6 MG/ML [Tamiflu]"/>
+              </manufacturedMaterial>
+            </manufacturedProduct>
+          </consumable>
+          <entryRelationship typeCode="REFR">
+            <supply classCode="SPLY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.18" extension="2014-06-09"/>
+              <id root="2.16.840.1.113883.19.5"/>
+              <statusCode code="completed"/>
+              <effectiveTime xsi:type="PIVL_TS">
+                <period value="8" unit="h"/>
+              </effectiveTime>
+              <quantity value="75"/>
+              <product>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
+                  <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
+                  <manufacturedMaterial>
+                    <code code="248656" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Azithromycin 500 MG Oral Tablet"/>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </product>
+            </supply>
+          </entryRelationship>
+          <precondition typeCode="PRCN">
+            <criterion>
+              <templateId root="2.16.840.1.113883.10.20.22.4.25" extension="2014-06-09"/>
+              <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
+              <value xsi:type="CD" code="56018004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Wheezing">
+                <originalText>
+                  </originalText>
+              </value>
+            </criterion>
+          </precondition>
+        </substanceAdministration>
+      </entryRelationship>
+    </act>
+  </entry>
+</section>

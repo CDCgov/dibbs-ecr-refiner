@@ -964,9 +964,8 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.44"/>
           <code code="42346-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
           <title>Admission Medications</title>
-          <text>Some text here<footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; reconstruction currently unavailable for this section, original narrative retained and may describe removed entries</td></tr></tbody></table></footnote></text>
-          <!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
-          <entry>
+          <text><!-- Narrative reconstructed by the eCR Refiner from surviving clinical entries: machine-derived, not clinician-attested. --><table border="1"><thead><tr><th>Medication</th><th>Dose quantity</th><th>Supply quantity</th><th>Dose frequency</th><th>Route</th><th>Status</th><th>Reason for treatment</th><th>Medication date</th></tr></thead><tbody><tr ID="ecr-refiner-42346-7-20260101000000-row1"><td>ritonavir Oral Product (RxNorm 1165486)</td><td>1 g</td><td></td><td></td><td>ORAL (NCI Thesaurus C38288)</td><td>completed</td><td></td><td>2020-11-07 11:59 -07:00</td></tr></tbody></table><footnote ID="ecr-refiner-42346-7-20260101000000"><paragraph><content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content></paragraph><table border="1"><thead><tr><th>Section (LOINC)</th><th>Section Name</th><th>Included</th><th>Coded data</th><th>Narrative data</th><th>Config Version</th><th>Source</th><th>Outcome</th></tr></thead><tbody><tr><td>42346-7</td><td>Admission Medications Section</td><td>Yes</td><td>Refine</td><td>Reconstruct</td><td>v1</td><td>Configured by jurisdiction</td><td>Refined; narrative reconstructed</td></tr></tbody></table></footnote></text><!-- eCR Refiner matched: code[1165486] 'ritonavir Oral Product' (any code system) Entry match fired for: rule 1 (T1) [hl7:code] -->
+          <entry typeCode="DRIV">
             <act classCode="ACT" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.36" extension="2014-06-09"/>
               <code code="42346-7" codeSystem="2.16.840.1.113883.6.1"/>
@@ -974,7 +973,7 @@
                 <substanceAdministration classCode="SBADM" moodCode="EVN">
                   <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
                   <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29"/>
-                  <statusCode code="completed"/>
+                  <text><reference value="#ecr-refiner-42346-7-20260101000000-row1"/></text><statusCode code="completed"/>
                   <effectiveTime xsi:type="PIVL_TS" operator="A" value="202011071159-0700"/>
                   <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="ORAL"/>
                   <doseQuantity value="1" unit="g"/>
