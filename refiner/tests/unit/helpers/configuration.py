@@ -40,8 +40,8 @@ async def create_processed_config(
 
     with (
         unittest.mock.patch(
-            "app.services.configurations.get_included_conditions_db",
-            return_value=conditions,
+            "app.services.configurations.get_primary_condition_db",
+            return_value=conditions[0],
         ),
         unittest.mock.patch(
             "app.services.configurations.get_id_to_code_system_dict_db",

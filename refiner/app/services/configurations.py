@@ -18,7 +18,10 @@ from app.db.code_systems.db import (
 from app.db.code_systems.model import DbCodeSystem
 from app.db.codes.db import get_pruned_configuration_codes_db
 from app.db.codes.model import DbConfigurationCode
-from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
+from app.db.conditions.db import (
+    get_condition_by_id_db,
+    get_primary_condition_db,
+)
 from app.db.configurations.custom_codes.model import DbCustomCode
 from app.db.configurations.model import (
     DbConfiguration,
@@ -308,10 +311,16 @@ async def convert_config_to_storage_payload(
 
     included_condition_rsg_codes: set[str] = set()
 
-    # build per-system code dicts for CodeSystemSets
-    conditions = await get_included_conditions_db(
-        included_conditions=configuration.included_conditions, db=db
+    primary_condition = await get_primary_condition_db(
+        configuration_id=configuration.id, db=db
     )
+
+    if not primary_condition:
+        raise ValueError("Condition being converted doesn't have a primary condition")
+
+    included_condition_rsg_codes.update(primary_condition.child_rsg_snomed_codes)
+
+    # build per-system code dicts for CodeSystemSets
     code_systems = await get_id_to_code_system_dict_db(db=db)
 
     configuration_codes = await get_pruned_configuration_codes_db(
@@ -360,9 +369,6 @@ async def convert_config_to_storage_payload(
                 "include": coerced_include,
             }
         )
-
-    for c in conditions:
-        included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
     # STEP 3: build the CodeSystemSets
     code_system_sets = CodeSystemSets.from_dict(
