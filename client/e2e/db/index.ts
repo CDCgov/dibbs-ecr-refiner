@@ -70,19 +70,19 @@ export async function makeOldTesVersionConfiguration(
   );
 }
 
-export async function getConditionIdByName(
-  conditionName: string
-): Promise<string> {
-  const latestConditionId = await db.query(
-    `
-    SELECT conditions.id
+const CONDITION_BY_NAME_QUERY = `SELECT conditions.id
     FROM conditions
     JOIN tes t on t.id = conditions.tes_id
     WHERE display_name=$1
     ORDER BY t.version DESC
-    LIMIT 1;`,
-    [conditionName]
-  );
+    LIMIT 1`;
+
+export async function getConditionIdByName(
+  conditionName: string
+): Promise<string> {
+  const latestConditionId = await db.query(CONDITION_BY_NAME_QUERY, [
+    conditionName,
+  ]);
 
   if (!latestConditionId || latestConditionId.rows.length === 0) {
     throw Error(
@@ -98,14 +98,7 @@ export async function getRsgSnomedCodesFromCondition(
 ): Promise<string[]> {
   const rsgSnomedCodes = await db.query(
     `
-    WITH latest_condition AS (
-      SELECT conditions.id
-      FROM conditions
-      JOIN tes t ON t.id = conditions.tes_id
-      WHERE display_name = $1
-      ORDER BY t.version DESC
-      LIMIT 1
-  )
+  WITH latest_condition AS (${CONDITION_BY_NAME_QUERY})
   SELECT codes.code
   FROM codes
   LEFT JOIN conditions_codes_temp cc ON cc.code_id = codes.id
