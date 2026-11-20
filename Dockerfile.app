@@ -32,8 +32,8 @@ WORKDIR /app
 RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
 
 
-# Runtime image
-FROM python:3.15-alpine
+# Runtime image (default target for production builds)
+FROM python:3.15-alpine AS runtime
 
 # Pick up Alpine fixes the base image may lag on, including ca-certificates
 # 20261020-r0, which drops the distrusted emSign ECC Root CA - G3.
@@ -57,9 +57,13 @@ WORKDIR /code
 # SBOM pip ships (pip/_vendor/bom.cdx.json).
 COPY --from=system-builder /app/wheels /wheels
 COPY ./refiner/requirements.txt .
+COPY ./refiner/packages/dibbs-ecr/ ./packages/dibbs-ecr/
+
 RUN python -m pip install --no-cache-dir /wheels/* \
     && python -m pip install --no-cache-dir -r requirements.txt \
-    && python -m pip uninstall -y pip
+    && python -m pip install --no-cache-dir ./packages/dibbs-ecr \
+    && python -m pip uninstall -y pip \
+    && rm -rf /wheels
 
 COPY ./refiner/app ./app
 COPY ./refiner/assets ./assets
@@ -79,3 +83,9 @@ RUN grep -rlF \
 
 EXPOSE 8080
 CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8080"]
+
+# Local dev stage (used by docker-compose.override.yml via `target: local`).
+# Placed at the very bottom so default builds without `--target` still build `runtime`.
+FROM runtime AS local
+RUN python -m ensurepip --upgrade \
+    && python -m pip install --no-cache-dir setuptools

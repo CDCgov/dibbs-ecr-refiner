@@ -107,7 +107,7 @@ install-all: _venv
 [doc('Install dependencies locally')]
 [group('dependencies')]
 install: _venv
-    .venv/bin/pip install -r ./requirements.txt
+    .venv/bin/pip install -r ./requirements.txt && .venv/bin/pip install -e packages/dibbs-ecr
 
 [doc('Install all dependencies locally')]
 [group('dependencies')]
