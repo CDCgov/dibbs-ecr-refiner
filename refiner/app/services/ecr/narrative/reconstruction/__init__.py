@@ -28,6 +28,7 @@ from .renderers import (
 from .sections import (
     _generic_block,
     _unrepresented_statements,
+    reconstruct_admission_medications,
     reconstruct_immunizations,
     reconstruct_medications,
     reconstruct_medications_administered,
@@ -48,6 +49,7 @@ __all__ = [
     "SectionReconstructor",
     "extract_fields",
     "format_ts",
+    "reconstruct_admission_medications",
     "reconstruct_immunizations",
     "reconstruct_medications",
     "reconstruct_medications_administered",
@@ -71,6 +73,7 @@ SECTION_RECONSTRUCTORS: dict[str, SectionReconstructor] = {
     ReconstructableSection.IMMUNIZATIONS.value: reconstruct_immunizations,
     ReconstructableSection.MEDICATIONS_ADMINISTERED.value: reconstruct_medications_administered,
     ReconstructableSection.MEDICATIONS.value: reconstruct_medications,
+    ReconstructableSection.ADMISSION_MEDICATIONS.value: reconstruct_admission_medications,
     ReconstructableSection.PLAN_OF_TREATMENT.value: reconstruct_plan_of_treatment,
 }
 

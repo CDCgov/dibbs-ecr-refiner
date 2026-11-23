@@ -113,6 +113,10 @@ SECTION_FIXTURES: list[SectionFixture] = [
         "path": "sections/immunizations_flat.xml",
     },
     {
+        "name": "admission_medications",
+        "path": "sections/admission_medications.xml",
+    },
+    {
         "name": "medications_administered",
         "path": "sections/medications_administered.xml",
     },
