@@ -29,6 +29,8 @@ jobs:
         run: |
           pip install -U pip
           pip install -r dev-requirements.txt -r requirements.txt -r app/lambda/dev-requirements.txt
+          pip install ./packages/dibbs-ecr
+
       - name: Run mypy
         run: |
           mypy

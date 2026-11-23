@@ -83,9 +83,3 @@ RUN grep -rlF \
 
 EXPOSE 8080
 CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8080"]
-
-# Local dev stage (used by docker-compose.override.yml via `target: local`).
-# Placed at the very bottom so default builds without `--target` still build `runtime`.
-FROM runtime AS local
-RUN python -m ensurepip --upgrade \
-    && python -m pip install --no-cache-dir setuptools
