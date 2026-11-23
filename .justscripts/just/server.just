@@ -117,12 +117,12 @@ install-dev: _venv
 [doc('Install Lambda dependencies locally')]
 [group('dependencies')]
 install-lambda: _venv
-    .venv/bin/pip install -r ./requirements.txt -r ./app/lambda/requirements.txt
+    .venv/bin/pip install -r ./requirements.txt -r ./app/lambda/requirements.txt && .venv/bin/pip install -e packages/dibbs-ecr
 
 [doc('Install all Lambda dependencies locally')]
 [group('dependencies')]
 install-lambda-dev: _venv
-    .venv/bin/pip install -r ./dev-requirements.txt -r ./app/lambda/dev-requirements.txt -r ./app/lambda/requirements.txt
+    .venv/bin/pip install -r ./dev-requirements.txt -r ./app/lambda/dev-requirements.txt -r ./app/lambda/requirements.txt && .venv/bin/pip install -e packages/dibbs-ecr
 
 [doc('Seed Localstack with the infra needed for manual tests')]
 [group('localstack')]
