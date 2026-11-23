@@ -10,7 +10,7 @@ testcontainers[compose]==4.15.0
 tqdm==4.70.1
 mypy==2.4.1
 lxml-stubs==0.5.1
-boto3-stubs==1.44.1
+boto3-stubs==1.44.5
 requests==2.34.2
 rich==15.0.0
 types-Authlib
