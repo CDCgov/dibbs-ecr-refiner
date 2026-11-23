@@ -31,7 +31,10 @@ RUN gawk -i inplace -v RS= -v ORS='\n\n' \
 # vendors part of an old setuptools release that scanners flag through the SBOM
 # pip ships (pip/_vendor/bom.cdx.json).
 COPY ./refiner/app/lambda/requirements.txt .
+COPY ./refiner/packages/dibbs-ecr/ ./packages/dibbs-ecr/
+
 RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir ./packages/dibbs-ecr \
     && python -m pip uninstall -y pip
 
 # Copy handler
@@ -58,13 +61,19 @@ RUN grep -rlF \
     /etc /usr /var; \
     test $? -eq 1
 
+# Restore pip + hatchling for local dev editable installs
+RUN python -m ensurepip --upgrade \
+    && python -m pip install --no-cache-dir setuptools
+
 # Handler entrypoint
 CMD [ "app.lambda.lambda_function.lambda_handler" ]
 
 
 # Deployed image. AWS Lambda always provides the Runtime API, so the base
 # image's entrypoint never starts the emulator here, and removing it drops a
-# binary that trails Go security releases.
+# binary that trails Go security releases. We also uninstall pip again so the
+# SBOM scanner check stays clean in production.
 FROM local AS production
 
-RUN rm /usr/local/bin/aws-lambda-rie
+RUN rm /usr/local/bin/aws-lambda-rie \
+    && python -m pip uninstall -y pip setuptools
