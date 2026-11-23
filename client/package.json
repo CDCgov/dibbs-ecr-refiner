@@ -48,7 +48,7 @@
     "@eslint-react/kit": "5.30.4",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.65.1",
-    "@stylistic/eslint-plugin": "5.10.0",
+    "@stylistic/eslint-plugin": "6.0.1",
     "@tanstack/eslint-plugin-query": "5.108.0",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
