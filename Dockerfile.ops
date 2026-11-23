@@ -13,7 +13,7 @@ WORKDIR /app
 RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels lxml
 
 # Install Python dependencies
-FROM python:3.15-alpine
+FROM python:3.15-alpine AS runtime
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
@@ -51,9 +51,13 @@ WORKDIR /app
 COPY --from=system-builder /app/wheels /wheels
 COPY ./refiner/scripts-requirements.txt ./
 COPY ./refiner/requirements.txt ./
+COPY ./refiner/packages/dibbs-ecr/ ./packages/dibbs-ecr/
+
 RUN python -m pip install --no-cache-dir /wheels/* \
     && python -m pip install --no-cache-dir -r scripts-requirements.txt -r requirements.txt \
-    && python -m pip uninstall -y pip
+    && python -m pip install --no-cache-dir ./packages/dibbs-ecr \
+    && python -m pip uninstall -y pip \
+    && rm -rf /wheels
 
 # Copy migration files
 COPY ./refiner/migrations ./migrations
