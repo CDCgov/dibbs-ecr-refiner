@@ -37,6 +37,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -r dev-requirements.txt -r requirements.txt
-          python -m pip install --no-build-isolation ./packages/dibbs-ecr
+          python -m pip install ./packages/dibbs-ecr
       - name: Run refinement parity tests
         run: python -m pytest tests/parity/test_refinement_parity.py
