@@ -53,11 +53,11 @@ augmentation time **20260101000000+0000**, and terminology provenance
 baseline. Replay does not query TES, rebuild configurations from the specification,
 or derive canonical URLs from directory names.
 
-The baseline contains **76 XML files**:
+The baseline contains **78 XML files**:
 
 - **21 pair scenarios** produce 42 eICR/RR outputs. All 10 original loose/archive
   pairs retain their reportable jurisdiction and condition-grouper contexts.
-- **34 section scenarios** produce 34 fragment outputs. Ten fragments run
+- **36 section scenarios** produce 36 fragment outputs. Ten fragments run
   under specifications **1.1**, **3.1**, and **3.1.1**. The medications
   fragment runs under **3.1** and **3.1.1**, where its section is configured.
 

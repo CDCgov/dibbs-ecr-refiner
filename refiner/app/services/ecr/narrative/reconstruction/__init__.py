@@ -32,6 +32,7 @@ from .sections import (
     reconstruct_immunizations,
     reconstruct_medications,
     reconstruct_medications_administered,
+    reconstruct_past_medical_history,
     reconstruct_plan_of_treatment,
     reconstruct_problems,
     reconstruct_results,
@@ -54,6 +55,7 @@ __all__ = [
     "reconstruct_medications",
     "reconstruct_medications_administered",
     "reconstruct_narrative",
+    "reconstruct_past_medical_history",
     "reconstruct_plan_of_treatment",
     "reconstruct_problems",
     "reconstruct_results",
@@ -75,6 +77,7 @@ SECTION_RECONSTRUCTORS: dict[str, SectionReconstructor] = {
     ReconstructableSection.MEDICATIONS.value: reconstruct_medications,
     ReconstructableSection.ADMISSION_MEDICATIONS.value: reconstruct_admission_medications,
     ReconstructableSection.PLAN_OF_TREATMENT.value: reconstruct_plan_of_treatment,
+    ReconstructableSection.PAST_MEDICAL_HISTORY.value: reconstruct_past_medical_history,
 }
 
 

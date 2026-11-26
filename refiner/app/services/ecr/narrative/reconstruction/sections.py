@@ -168,6 +168,24 @@ def reconstruct_problems(section: _Element) -> list[Block]:
     return blocks
 
 
+def reconstruct_past_medical_history(section: _Element) -> list[Block]:
+    """
+    Reconstruct the Past Medical History section: one row per entry.
+
+    Args:
+        section: The post-prune, post-enrich Past Medical History <section>.
+
+    Returns:
+        A single flat Block, or [] when no Problem Observation survived.
+    """
+
+    return _reconstruct_flat(
+        section,
+        anchor_xpath="hl7:entry/hl7:observation",
+        fields=PROBLEM_FIELDS,
+    )
+
+
 def _reconstruct_flat(
     section: _Element,
     *,

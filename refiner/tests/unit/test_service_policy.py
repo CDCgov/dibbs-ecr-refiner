@@ -69,6 +69,7 @@ class TestReconstructableSections:
             "18776-5",
             "10160-0",
             "42346-7",
+            "11348-0",
         ]
         assert set(RECONSTRUCTABLE_SECTIONS).issubset(expected)
 

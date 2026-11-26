@@ -1,0 +1,53 @@
+<!--
+  Past Medical History (11348-0)
+-->
+
+<section xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <templateId root="2.16.840.1.113883.10.20.22.2.20" extension="2015-08-01" />
+  <!-- ** History of Past Illness Section ** -->
+  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="11348-0"
+    displayName="HISTORY OF PAST ILLNESS" />
+  <title>PAST MEDICAL HISTORY</title>
+  <text>
+    <paragraph>...original clinician narrative...</paragraph>
+  </text>
+  <entry>
+    <observation classCode="OBS" moodCode="EVN">
+      <!-- [C-CDA R1.1] Problem Observation -->
+      <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+      <!-- [C-CDA R2.1] Problem Observation (V3) -->
+      <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+      <id root="ab1791b0-5c71-11db-b0de-0800200c9a66" />
+      <code code="75325-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+        displayName="Symptom">
+        <translation code="418799008" codeSystem="2.16.840.1.113883.6.96"
+          codeSystemName="SNOMED CT" displayName="Symptom" />
+      </code>
+      <statusCode code="completed" />
+      <effectiveTime>
+        <low value="20201101" />
+      </effectiveTime>
+      <value code="35064005" codeSystem="2.16.840.1.113883.6.96"
+        displayName="Dark stools (finding)" xsi:type="CD" />
+    </observation>
+  </entry>
+  <entry>
+    <observation classCode="OBS" moodCode="EVN">
+      <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+      <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+      <id root="ab1791b0-5c71-11db-b0de-0800200c9a66" />
+      <code code="64572001" codeSystem="2.16.840.1.113883.6.96"
+        codeSystemName="SNOMED CT" displayName="Condition">
+        <translation code="75323-6" codeSystem="2.16.840.1.113883.6.1"
+          codeSystemName="LOINC" displayName="Condition" />
+      </code>
+      <statusCode code="completed" />
+      <effectiveTime>
+        <low value="20210310" />
+        <high value="20210405" />
+      </effectiveTime>
+      <value xsi:type="CD" code="1119303003" codeSystem="2.16.840.1.113883.6.96"
+        codeSystemName="SNOMED CT" displayName="Post-acute COVID-19 (disorder)" />
+    </observation>
+  </entry>
+</section>

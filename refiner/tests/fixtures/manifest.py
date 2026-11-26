@@ -156,6 +156,10 @@ SECTION_FIXTURES: list[SectionFixture] = [
         "name": "medications",
         "path": "sections/medications.xml",
     },
+    {
+        "name": "past_medical_history",
+        "path": "sections/past_medical_history.xml",
+    },
 ]
 
 IGNORED_ARCHIVE_MEMBER_PATTERNS: tuple[str, ...] = ("__MACOSX/*",)

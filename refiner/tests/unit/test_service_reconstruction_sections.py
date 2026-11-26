@@ -7,6 +7,7 @@ from app.services.ecr.narrative.reconstruction import (
     reconstruct_medications,
     reconstruct_medications_administered,
     reconstruct_narrative,
+    reconstruct_past_medical_history,
     reconstruct_plan_of_treatment,
     reconstruct_problems,
     reconstruct_results,
@@ -151,6 +152,33 @@ def test_reconstruct_problems_ignores_priority_preference_refr():
     assert problems == ["Dark stools (finding) (SNOMED CT 35064005)"], (
         "the Priority Preference REFR observation leaked in as a problem row"
     )
+
+
+_PAST_MEDICAL_HISTORY_SECTION = load_section("past_medical_history")
+
+
+def test_reconstruct_past_medical_history_is_flat_single_block():
+    blocks = reconstruct_past_medical_history(
+        parse_element(_PAST_MEDICAL_HISTORY_SECTION)
+    )
+
+    # flat: exactly one block, empty context, one row per substanceAdministration
+    assert len(blocks) == 1
+    assert blocks[0].context == {}
+    assert blocks[0].columns == ["Problem Type", "Problem", "Date(s)"]
+    assert len(blocks[0].rows) == 2
+
+    assert (blocks[0].rows[0].values) == {
+        "Problem Type": "Symptom",
+        "Problem": "Dark stools (finding) (SNOMED CT 35064005)",
+        "Date(s)": "2020-11-01 onward",
+    }
+
+    assert (blocks[0].rows[1].values) == {
+        "Problem Type": "Condition",
+        "Problem": "Viral pneumonia (SNOMED CT 75570004)",
+        "Date(s)": "2021-03-10 to 2021-04-05",
+    }
 
 
 # NOTE:

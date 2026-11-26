@@ -2,8 +2,7 @@
 /**
  * These sections support the "reconstruct" narrative action.
  *
- * Results, Problems, Immunizations, Medications Administered, Medications, Admissions Medications, and Plan of
- * Treatment are enabled. Make sure to update unit tests to ensure only
+ * Results, Problems, Immunizations, Medications Administered, Medications, Admissions Medications, Plan of Treatment, and Past Medical History are enabled. Make sure to update unit tests to ensure only
  * certain sections are reconstructable.
  */
 export type ReconstructableSection = typeof ReconstructableSection[keyof typeof ReconstructableSection];
@@ -17,4 +16,5 @@ export const ReconstructableSection = {
   '10160-0': '10160-0',
   '42346-7': '42346-7',
   '18776-5': '18776-5',
+  '11348-0': '11348-0',
 } as const;

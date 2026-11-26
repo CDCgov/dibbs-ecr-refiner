@@ -89,8 +89,7 @@ class ReconstructableSection(StrEnum):
     """
     These sections support the "reconstruct" narrative action.
 
-    Results, Problems, Immunizations, Medications Administered, Medications, Admissions Medications, and Plan of
-    Treatment are enabled. Make sure to update unit tests to ensure only
+    Results, Problems, Immunizations, Medications Administered, Medications, Admissions Medications, Plan of Treatment, and Past Medical History are enabled. Make sure to update unit tests to ensure only
     certain sections are reconstructable.
     """
 
@@ -101,12 +100,13 @@ class ReconstructableSection(StrEnum):
     MEDICATIONS = "10160-0"
     ADMISSION_MEDICATIONS = "42346-7"
     PLAN_OF_TREATMENT = "18776-5"
+    PAST_MEDICAL_HISTORY = "11348-0"
 
 
 # TODO: Update the correspondig list in test_service_policy when adding codes
 
 RECONSTRUCTABLE_SECTIONS = [section.value for section in ReconstructableSection]
-RECONSTRUCTABLE_SECTIONS_ONLY_IN_3_1_1 = ["10160-0", "42346-7"]
+RECONSTRUCTABLE_SECTIONS_ONLY_IN_3_1_1 = ["10160-0", "42346-7", "11348-0"]
 
 
 class TriggerCodeSection(StrEnum):

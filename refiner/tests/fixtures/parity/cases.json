@@ -833,6 +833,47 @@
           }
         ]
       }
+    },
+    {
+      "fixture": "past_medical_history",
+      "loinc": "11348-0",
+      "versions": ["3.1", "3.1.1"],
+      "code_system_sets": {
+        "loinc": [
+          {
+            "code": "11348-0",
+            "system_oid": "2.16.840.1.113883.6.1"
+          },
+          {
+            "code": "75322-8",
+            "display": "Complaint",
+            "system_oid": "Other"
+          },
+          {
+            "code": "75325-1",
+            "display": "Symptom",
+            "system_oid": "Other"
+          }
+        ],
+        "other": [
+          {
+            "code": "completed",
+            "system_oid": "Other"
+          }
+        ],
+        "snomed": [
+          {
+            "code": "35064005",
+            "display": "Dark stools (finding)",
+            "system_oid": "2.16.840.1.113883.6.96"
+          },
+          {
+            "code": "1119303003",
+            "display": "Post-acute COVID-19 (disorder)",
+            "system_oid": "2.16.840.1.113883.6.96"
+          }
+        ]
+      }
     }
   ]
 }
