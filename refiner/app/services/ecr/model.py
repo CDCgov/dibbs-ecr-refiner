@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING, Final, Literal, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict
+
+from dibbs_ecr.cda import (
+    HL7_NAMESPACE,
+    HL7_NS,
+    HL7_XSI_NS,
+    NamespaceMap,
+)
+from dibbs_ecr.eicr import (
+    EicrVersion,
+    TriggerCode,
+)
 
 from app.core.models.configurations import (
     NarrativeAction,
@@ -11,29 +22,6 @@ from app.core.models.configurations import (
 
 if TYPE_CHECKING:
     from app.services.terminology import CodeSystemSets
-
-# NOTE:
-# NAMESPACE CONSTANTS
-# =============================================================================
-
-type NamespaceMap = dict[str, str]
-
-HL7_NAMESPACE: Final[str] = "urn:hl7-org:v3"
-
-HL7_NS: Final[NamespaceMap] = {"hl7": HL7_NAMESPACE}
-
-HL7_XSI_NS: Final[NamespaceMap] = {
-    "hl7": HL7_NAMESPACE,
-    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-}
-
-
-# NOTE:
-# VERSION TYPE
-# =============================================================================
-
-type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
-
 
 # NOTE:
 # REPORTABLE CONDITION MODELS
@@ -83,20 +71,6 @@ class RefinedDocument:
 # NOTE:
 # STATIC SPECIFICATION MODELS
 # =============================================================================
-
-
-@dataclass(frozen=True)
-class TriggerCode:
-    """
-    Represents a specific trigger code definition within a section.
-
-    `element_tag` here means something like: "observation", "act",
-    "manufacturedProduct"
-    """
-
-    oid: str
-    display_name: str
-    element_tag: str
 
 
 @dataclass(frozen=True)
@@ -750,3 +724,27 @@ class SectionRunResult:
         "reconstructed_empty",
         "reconstruct_unavailable",
     ]
+
+
+__all__ = [
+    "HL7_NAMESPACE",
+    "HL7_NS",
+    "HL7_XSI_NS",
+    "EICRRefinementPlan",
+    "EICRSpecification",
+    "EicrVersion",
+    "EntryMatchRule",
+    "JurisdictionReportableConditions",
+    "NamespaceMap",
+    "ProcessedRR",
+    "RRRefinementPlan",
+    "RefinedDocument",
+    "ReportableCondition",
+    "SectionInstructions",
+    "SectionOutcome",
+    "SectionProvenanceRecord",
+    "SectionRunResult",
+    "SectionSource",
+    "SectionSpecification",
+    "TriggerCode",
+]
